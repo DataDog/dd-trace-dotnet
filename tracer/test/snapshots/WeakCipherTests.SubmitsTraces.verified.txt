@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -19,13 +19,13 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
-
+      
       "evidence": {
         "value": "DES"
       }
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,
@@ -55,13 +55,13 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
-
+      
       "evidence": {
         "value": "DES"
       }
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,
@@ -91,13 +91,13 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
-
+      
       "evidence": {
         "value": "RC2"
       }
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,
@@ -127,13 +127,13 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
-
+      
       "evidence": {
         "value": "RC2"
       }
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,
@@ -163,13 +163,13 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
-
+      
       "evidence": {
         "value": "TripleDES"
       }
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,
@@ -199,13 +199,13 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
-
+      
       "evidence": {
         "value": "TripleDES"
       }
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,

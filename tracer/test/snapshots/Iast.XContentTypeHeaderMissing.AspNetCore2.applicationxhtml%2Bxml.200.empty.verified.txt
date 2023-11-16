@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -30,7 +30,7 @@
       "hash": -80579412
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,

@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -28,13 +28,13 @@
   "vulnerabilities": [
     {
       "type": "WEAK_RANDOMNESS",
-
+      
       "evidence": {
         "value": "System.Random"
       }
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,

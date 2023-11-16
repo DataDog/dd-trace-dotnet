@@ -27,7 +27,7 @@
   "vulnerabilities": [
     {
       "type": "LDAP_INJECTION",
-
+      
       "evidence": {
         "valueParts": [
           {
@@ -51,7 +51,7 @@
       "value": "Babs Jensen"
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,

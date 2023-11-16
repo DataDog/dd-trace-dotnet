@@ -34,7 +34,7 @@
       }
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,

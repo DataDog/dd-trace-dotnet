@@ -27,13 +27,13 @@
   "vulnerabilities": [
     {
       "type": "WEAK_RANDOMNESS",
-
+      
       "evidence": {
         "value": "System.Random"
       }
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,

@@ -27,7 +27,7 @@
   "vulnerabilities": [
     {
       "type": "COMMAND_INJECTION",
-
+      
       "evidence": {
         "valueParts": [
           {
@@ -57,7 +57,7 @@
       "value": "arg1"
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,

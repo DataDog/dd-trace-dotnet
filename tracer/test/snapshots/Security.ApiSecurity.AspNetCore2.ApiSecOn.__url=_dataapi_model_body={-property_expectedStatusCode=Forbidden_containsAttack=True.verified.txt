@@ -57,7 +57,7 @@
       _dd.appsec.s.res.headers: [{"content-type":[[[8]],{"len":1}]}],
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.origin: appsec,,
+      _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
     Metrics: {

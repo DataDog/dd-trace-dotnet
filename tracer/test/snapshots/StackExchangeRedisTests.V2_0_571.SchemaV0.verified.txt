@@ -228,7 +228,7 @@
       env: integration_tests,
       error.msg: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, ,
       error.stack:
-StackExchange.Redis.RedisServerException: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`,
+StackExchange.Redis.RedisServerException: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, 
 at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
       error.type: StackExchange.Redis.RedisServerException,
       out.host: stackexchangeredis,
@@ -261,7 +261,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       env: integration_tests,
       error.msg: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, ,
       error.stack:
-StackExchange.Redis.RedisServerException: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`,
+StackExchange.Redis.RedisServerException: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, 
 at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
       error.type: StackExchange.Redis.RedisServerException,
       out.host: stackexchangeredis,

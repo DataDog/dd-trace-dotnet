@@ -27,7 +27,7 @@
   "vulnerabilities": [
     {
       "type": "COMMAND_INJECTION",
-
+      
       "evidence": {
         "valueParts": [
           {
@@ -45,7 +45,7 @@
       "value": "nonexisting.exe"
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,

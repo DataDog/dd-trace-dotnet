@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -12,7 +12,7 @@
       env: integration_tests,
       error.msg: unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, ,
       error.stack:
-ServiceStack.Redis.RedisResponseException: unknown command `DDCUSTOM`, with args beginning with: `COMMAND`,
+ServiceStack.Redis.RedisResponseException: unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, 
 at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       error.type: ServiceStack.Redis.RedisResponseException,
       out.host: servicestackredis,

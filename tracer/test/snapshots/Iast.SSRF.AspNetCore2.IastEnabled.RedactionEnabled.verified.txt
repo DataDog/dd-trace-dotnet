@@ -27,7 +27,7 @@
   "vulnerabilities": [
     {
       "type": "SSRF",
-
+      
       "evidence": {
         "valueParts": [
           {
@@ -78,7 +78,7 @@
       "value": "localhost"
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,

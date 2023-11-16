@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -28,7 +28,7 @@
   "vulnerabilities": [
     {
       "type": "LDAP_INJECTION",
-
+      
       "evidence": {
         "valueParts": [
           {
@@ -52,7 +52,7 @@
       "value": "Babs Jensen"
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,

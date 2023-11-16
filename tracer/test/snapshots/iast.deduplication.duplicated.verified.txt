@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -19,13 +19,13 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-
+      
       "evidence": {
         "value": "MD5"
       }
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,
@@ -55,13 +55,13 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-
+      
       "evidence": {
         "value": "MD5"
       }
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,
@@ -91,13 +91,13 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-
+      
       "evidence": {
         "value": "MD5"
       }
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,
@@ -127,13 +127,13 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-
+      
       "evidence": {
         "value": "MD5"
       }
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,
@@ -163,13 +163,13 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-
+      
       "evidence": {
         "value": "MD5"
       }
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,

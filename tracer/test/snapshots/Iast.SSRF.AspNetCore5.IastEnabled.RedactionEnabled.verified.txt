@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -28,7 +28,7 @@
   "vulnerabilities": [
     {
       "type": "SSRF",
-
+      
       "evidence": {
         "valueParts": [
           {
@@ -79,7 +79,7 @@
       "value": "localhost"
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,

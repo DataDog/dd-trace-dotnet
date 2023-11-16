@@ -27,7 +27,7 @@
   "vulnerabilities": [
     {
       "type": "PATH_TRAVERSAL",
-
+      
       "evidence": {
         "valueParts": [
           {
@@ -45,7 +45,7 @@
       "value": "nonexisting.txt"
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,

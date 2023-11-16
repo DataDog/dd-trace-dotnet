@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -28,7 +28,7 @@
   "vulnerabilities": [
     {
       "type": "SQL_INJECTION",
-
+      
       "evidence": {
         "valueParts": [
           {
@@ -46,7 +46,7 @@
       "value": "SELECT Surname from Persons where name='Vicent'"
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,

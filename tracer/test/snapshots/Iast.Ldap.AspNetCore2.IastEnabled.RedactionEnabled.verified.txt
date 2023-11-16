@@ -27,7 +27,7 @@
   "vulnerabilities": [
     {
       "type": "LDAP_INJECTION",
-
+      
       "evidence": {
         "valueParts": [
           {
@@ -53,7 +53,7 @@
       "pattern": "abcdefghijk"
     }
   ]
-},
+}
     },
     Metrics: {
       process_id: 0,
