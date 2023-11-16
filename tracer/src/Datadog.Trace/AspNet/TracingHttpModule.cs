@@ -281,7 +281,20 @@ namespace Datadog.Trace.AspNet
                         {
                             if (rootSpan is not null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
                             {
-                                ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode);
+                                try
+                                {
+                                    ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode);
+                                }
+                                catch (PlatformNotSupportedException ex)
+                                {
+                                    // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
+                                    Log.Error(ex, "Unable to access response headers when analyzing headers. Disabling for the rest of the application lifetime.");
+                                    _canReadHttpResponseHeaders = false;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log.Error(ex, "Error analyzing HTTP response headers");
+                                }
                             }
 
                             CookieAnalyzer.AnalyzeCookies(app.Context.Response.Cookies, IntegrationId);
