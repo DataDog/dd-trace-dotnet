@@ -88,25 +88,21 @@ internal static class ReturnedHeadersAnalyzer
             string contentTypeValue = string.Empty;
             string contentOptionValue = string.Empty;
 
-            // We iterate instead of trying to get the key directly because keys are case insensitive
+            // We iterate instead of trying to get the value directly from the key because we need to take into account that
+            // keys are case insensitive
             foreach (var header in responseHeaders)
             {
-                var headerKeyLow = header.Key.ToLowerInvariant();
-                if (headerKeyLow == ContentTypeLow)
+                if (ContentTypeLow.Equals(header.Key, StringComparison.OrdinalIgnoreCase))
                 {
-                    contentTypeValue = header.Value;
-
-                    if (!IsHtmlResponse(contentTypeValue))
+                    if (!IsHtmlResponse(header.Value))
                     {
                         return;
                     }
                 }
 
-                if (headerKeyLow == XContentTypeOptionsLow)
+                if (XContentTypeOptionsLow.Equals(header.Key, StringComparison.OrdinalIgnoreCase))
                 {
-                    contentOptionValue = header.Value;
-
-                    if (IsNoSniffContentOptions(contentOptionValue))
+                    if (IsNoSniffContentOptions(header.Value))
                     {
                         return;
                     }
@@ -132,8 +128,12 @@ internal static class ReturnedHeadersAnalyzer
 
     private static bool IsHtmlResponse(string contentTypeValue)
     {
+#if NETCOREAPP
+        return contentTypeValue.Contains("text/html", StringComparison.OrdinalIgnoreCase) || contentTypeValue.Contains("application/xhtml+xml", StringComparison.OrdinalIgnoreCase);
+#else
         var contentType = contentTypeValue.ToLowerInvariant();
         return contentType.Contains("text/html") || contentType.Contains("application/xhtml+xml");
+#endif
     }
 
     private static bool IsNoSniffContentOptions(string contentOptionValue)
