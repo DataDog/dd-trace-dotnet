@@ -23,6 +23,7 @@ internal static class ReturnedHeadersAnalyzer
     private const string XContentTypeOptions = "x-content-type-options";
     private const string StrictTransportSecurity = "strict-transport-security";
     private const string XForwardedProto = "x-forwarded-proto";
+    private const string MaxAge = "max-age=";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ReturnedHeadersAnalyzer));
 
     // Analyze the headers. If the response is HTML, check for X-Content-Type-Options: nosniff. If it
@@ -85,13 +86,12 @@ internal static class ReturnedHeadersAnalyzer
             return false;
         }
 
-        var strictTransportSecurityValueLow = strictTransportSecurityValue.ToLowerInvariant().Trim();
-        if (!strictTransportSecurityValueLow.StartsWith("max-age="))
+        if (!strictTransportSecurityValue.StartsWith(MaxAge, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
-        var maxAge = strictTransportSecurityValueLow.Substring("max-age=".Length);
+        var maxAge = strictTransportSecurityValue.Substring(MaxAge.Length);
         var maxAgeValue = maxAge.Contains(";") ? maxAge.Split(';')[0] : maxAge;
 
         return (int.TryParse(maxAgeValue, out var maxAgeInt) && maxAgeInt >= 0);

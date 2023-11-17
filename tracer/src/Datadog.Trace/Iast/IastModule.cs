@@ -478,6 +478,6 @@ internal static class IastModule
 
     internal static Scope? OnStrictTransportSecurityHeaderMissing(IntegrationId integrationId, string serviceName)
     {
-        return AddWebVulnerability(null, integrationId, VulnerabilityTypeName.HstsHeaderMissing, (VulnerabilityTypeName.HstsHeaderMissing.ToString() + ":" + serviceName).GetStaticHashCode());
+        return AddWebVulnerability(null, integrationId, VulnerabilityTypeName.HstsHeaderMissing, (VulnerabilityTypeName.HstsHeaderMissing + ":" + serviceName).GetStaticHashCode());
     }
 }
