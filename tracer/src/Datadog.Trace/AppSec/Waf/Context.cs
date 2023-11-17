@@ -86,7 +86,8 @@ namespace Datadog.Trace.AppSec.Waf
                 try
                 {
                     var pwArgs = Encoder.Encode(addresses, applySafetyLimits: true, argToFree: _argCache, pool: pool);
-                    code = _waf.Run(_contextHandle, ref pwArgs, ref retNative, timeoutMicroSeconds);
+                    var empty = Encoder.Encode(new Dictionary<string, object>(), applySafetyLimits: true, argToFree: _argCache, pool: pool);
+                    code = _waf.Run(_contextHandle, ref pwArgs, ref empty, ref retNative, timeoutMicroSeconds);
                 }
                 finally
                 {
