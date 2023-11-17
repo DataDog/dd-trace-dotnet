@@ -43,7 +43,7 @@ public:
 
     // IContentionListener implementation
     void OnContention(double contentionDurationNs) override;
-    void OnContention(double contentionDurationNs, std::vector<uintptr_t> stack) override;
+    void OnContention(uint32_t threadId, double contentionDurationNs, std::vector<uintptr_t> stack) override;
 
     // IUpscaleProvider implementation
     UpscalingInfo GetInfo() override;

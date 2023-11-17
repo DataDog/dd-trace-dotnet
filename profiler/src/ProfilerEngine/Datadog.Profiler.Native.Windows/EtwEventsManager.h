@@ -13,24 +13,45 @@
 #include <memory>
 
 
+enum class EventId : uint32_t
+{
+    Unknown = 0,
+    ContentionStart = 1,
+    AllocationTick = 2
+};
+
+
 struct ThreadInfo
 {
-    // same as key in the map
+    // same key as in the map
     uint32_t ThreadId = 0;
 
-    // callstacks
-    // we need to know if the last event was a ContentionStart
-    // so the next ClrStackWalk will be attached to it
-    bool LastEventWasContentionStart = false;
+    // bit field to identify the last received event for ClrStackWalk association
+    EventId LastEventId = EventId::Unknown;
 
     // Lock contention
     std::vector<uintptr_t> ContentionCallStack;
     uint64_t ContentionStartTimestamp = 0;
 
     // Allocations
+    std::vector<uintptr_t> AllocationCallStack;
     uint64_t AllocationTickTimestamp = 0;
     std::string AllocatedType;
     uintptr_t ClassId = 0;
+
+public:
+    inline bool LastEventWasContentionStart()
+    {
+        return LastEventId == EventId::ContentionStart;
+    }
+    inline bool LastEventWasAllocationTick()
+    {
+        return LastEventId == EventId::AllocationTick;
+    }
+    inline void ClearLastEventId()
+    {
+        LastEventId = EventId::Unknown;
+    }
 };
 
 
@@ -66,6 +87,8 @@ private:
     ThreadInfo* GetOrCreate(uint32_t tid);
     ThreadInfo* Find(uint32_t tid);
     void AttachContentionCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData);
+    void AttachAllocationCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData);
+    void AttachCallstack(std::vector<uintptr_t>& stack, uint16_t userDataLength, const uint8_t* pUserData);
 
 private:
     IAllocationsListener* _pAllocationListener;

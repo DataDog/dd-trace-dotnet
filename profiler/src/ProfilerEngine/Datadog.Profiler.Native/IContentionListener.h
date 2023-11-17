@@ -11,5 +11,5 @@ public:
     virtual ~IContentionListener() = default;
 
     virtual void OnContention(double contentionDurationNs) = 0;
-    virtual void OnContention(double contentionDurationNs, std::vector<uintptr_t> stack) = 0;
+    virtual void OnContention(uint32_t threadId, double contentionDurationNs, std::vector<uintptr_t> stack) = 0;
 };

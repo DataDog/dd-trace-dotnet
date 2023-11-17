@@ -43,12 +43,16 @@ void EtwEventsManager::OnEvent(
     if (keyword == KEYWORD_STACKWALK)
     {
         auto pThreadInfo = GetOrCreate(tid);
-        if (pThreadInfo->LastEventWasContentionStart)
+        if (pThreadInfo->LastEventWasContentionStart())
         {
             AttachContentionCallstack(pThreadInfo, cbEventData, pEventData);
         }
+        else if (pThreadInfo->LastEventWasAllocationTick())
+        {
+            AttachAllocationCallstack(pThreadInfo, cbEventData, pEventData);
+        }
 
-        pThreadInfo->LastEventWasContentionStart = false;
+        pThreadInfo->ClearLastEventId();
     }
     else if (keyword == KEYWORD_CONTENTION)
     {
@@ -61,20 +65,20 @@ void EtwEventsManager::OnEvent(
         {
             auto pThreadInfo = GetOrCreate(tid);
             pThreadInfo->ContentionStartTimestamp = timestamp;
-            pThreadInfo->LastEventWasContentionStart = true;
+            pThreadInfo->LastEventId = EventId::ContentionStart;
         }
         else if (id == EVENT_CONTENTION_STOP)
         {
             auto pThreadInfo = Find(tid);
             if (pThreadInfo != nullptr)
             {
-                pThreadInfo->LastEventWasContentionStart = false;
+                pThreadInfo->ClearLastEventId();
                 if (pThreadInfo->ContentionStartTimestamp != 0)
                 {
                     auto duration = timestamp - pThreadInfo->ContentionStartTimestamp;
                     pThreadInfo->ContentionStartTimestamp = 0;
 
-                    _pContentionListener->OnContention(duration, pThreadInfo->ContentionCallStack);
+                    _pContentionListener->OnContention(tid, duration, pThreadInfo->ContentionCallStack);
                 }
             }
             else
@@ -86,7 +90,6 @@ void EtwEventsManager::OnEvent(
     else if (keyword == KEYWORD_GC)
     {
         auto pThreadInfo = GetOrCreate(tid);
-        pThreadInfo->LastEventWasContentionStart = false;
 
         if (id == EVENT_ALLOCATION_TICK)
         {
@@ -95,7 +98,10 @@ void EtwEventsManager::OnEvent(
                 return;
             }
 
-            // TODO: do we accept to only get the name of the allocated class but not the size?
+            pThreadInfo->LastEventId = EventId::AllocationTick;
+
+            // TODO: get the type name and ClassID from the payload
+            // TODO: update IAllocationListener to take the type name, ClassID and stack
         }
     }
 }
@@ -124,9 +130,9 @@ ThreadInfo* EtwEventsManager::Find(uint32_t tid)
     return nullptr;
 }
 
-void EtwEventsManager::AttachContentionCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData)
+void EtwEventsManager::AttachCallstack(std::vector<uintptr_t>& stack, uint16_t userDataLength, const uint8_t* pUserData)
 {
-    pThreadInfo->ContentionCallStack.clear();
+    stack.clear();
 
     if (userDataLength == 0)
     {
@@ -146,8 +152,18 @@ void EtwEventsManager::AttachContentionCallstack(ThreadInfo* pThreadInfo, uint16
 
     for (uint32_t i = 0; i < pPayload->FrameCount; ++i)
     {
-        pThreadInfo->ContentionCallStack.push_back(pPayload->Stack[i]);
+        stack.push_back(pPayload->Stack[i]);
     }
+}
+
+void EtwEventsManager::AttachContentionCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData)
+{
+    AttachCallstack(pThreadInfo->ContentionCallStack, userDataLength, pUserData);
+}
+
+void EtwEventsManager::AttachAllocationCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData)
+{
+    AttachCallstack(pThreadInfo->AllocationCallStack, userDataLength, pUserData);
 }
 
 
