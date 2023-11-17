@@ -55,8 +55,8 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
-    [InlineData("text/html", 200, "max-age=31536000", "https")]
-    [InlineData("application/xhtml%2Bxml", 200, "max-age%3D0%3Botherthings", "https")]
+    [InlineData("text/html;charset=UTF-8", 200, "max-age=31536000", "https")]
+    [InlineData("application/xhtml%2Bxml", 200, "max-age%3D10%3Botherthings", "https")]
     [InlineData("text/html", 500, "invalid", "https")]
     [InlineData("text/html", 200, "invalid", "")]
     [InlineData("text/plain", 200, "invalid", "https")]
@@ -65,7 +65,7 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     [InlineData("text/html", 200, "invalid", "https")]
     public async Task TestStrictTransportSecurityHeaderMissing(string contentType, int returnCode, string hstsHeaderValue, string xForwardedProto)
     {
-        var testName = "Security." + nameof(AspNetMvc5) + ".Integrated.enableIast=true";
+        var testName = "Security." + nameof(AspNetMvc5) + ".Integrated.IastEnabled";
         await TestStrictTransportSecurityHeaderMissingVulnerability(contentType, returnCode, hstsHeaderValue, xForwardedProto, testName);
     }
 }
@@ -412,8 +412,9 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing(scrubHash: false);
-        var filename = $"{testName}.path={sanitisedUrl}";
-        filename = filename.Substring(0, Math.Min(180, filename.Length));
+        var filename = testName + "." + contentType.Replace("/", string.Empty) +
+            "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(hstsHeaderValue) ? "empty" : hstsHeaderValue)
+            + "." + (string.IsNullOrEmpty(xForwardedProto) ? "empty" : xForwardedProto);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();

@@ -12,12 +12,12 @@
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: http://localhost:00000/Iast/StrictTransportSecurity?contentType=text/html&returnCode=200&hstsHeaderValue=invalid&xForwardedProto=https,
+      http.url: http://localhost:00000/Iast/StrictTransportSecurity?contentType=application/xhtml%2Bxml&returnCode=200&hstsHeaderValue=max-age%3D10%3Botherthings&xForwardedProto=https,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.iast.enabled: 1
     },
     Metrics: {
       process_id: 0,
@@ -43,7 +43,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost:00000/Iast/StrictTransportSecurity?contentType=text/html&returnCode=200&hstsHeaderValue=invalid&xForwardedProto=https,
+      http.url: http://localhost:00000/Iast/StrictTransportSecurity?contentType=application/xhtml%2Bxml&returnCode=200&hstsHeaderValue=max-age%3D10%3Botherthings&xForwardedProto=https,
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
