@@ -43,8 +43,6 @@ namespace Samples.Security.AspNetCore5.Controllers
 
     [XContentTypeOptionsAttribute]
     [Route("[controller]")]
-    [XContentTypeOptionsAttribute]
-    [Route("[controller]")]
     public class IastController : Controller
     {
         static SQLiteConnection dbConnection = null;
