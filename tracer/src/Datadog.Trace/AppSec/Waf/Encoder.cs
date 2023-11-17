@@ -23,7 +23,7 @@ namespace Datadog.Trace.AppSec.Waf
         private const int MaxBytesForMaxStringLength = (WafConstants.MaxStringLength * 4) + 1;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
         private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
-        private static int _poolSize = 1000;
+        private static int _poolSize = 10;
 
         [ThreadStatic]
         private static UnmanagedMemoryPool? _pool;

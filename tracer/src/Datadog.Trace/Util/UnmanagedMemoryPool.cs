@@ -43,11 +43,7 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public bool IsDisposed => _isDisposed;
 
-    /// <summary>
-    /// Beware that this method is not thread safe, and needs to be used with [ThreadStatic] in case of multiple thread scenarios
-    /// </summary>
-    /// <returns>Pointer to a memory block of size specified in the constructor</returns>
-    public IntPtr Rent()
+    private IntPtr InternalRent()
     {
         if (IsDisposed)
         {
@@ -68,9 +64,30 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
         return RentSlow();
     }
 
+    /// <summary>
+    /// Beware that this method is not thread safe, and needs to be used with [ThreadStatic] in case of multiple thread scenarios
+    /// </summary>
+    /// <returns>Pointer to a memory block of size specified in the constructor</returns>
+    public IntPtr Rent()
+    {
+        var ptr = InternalRent();
+        if (ptr == IntPtr.Zero)
+        {
+            throw new Exception("Rent - null pointer");
+        }
+
+        return ptr;
+    }
+
     private IntPtr RentSlow()
     {
-        return Marshal.AllocCoTaskMem(_blockSize);
+        var ptr = Marshal.AllocCoTaskMem(_blockSize);
+        if (ptr == IntPtr.Zero)
+        {
+            throw new Exception("RentSlow - null pointer");
+        }
+
+        return ptr;
     }
 
     public void Return(IList<IntPtr> blocks)
@@ -90,7 +107,13 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
         {
             if (_items[i] == IntPtr.Zero)
             {
-                _items[i] = blocks[blockIndex++];
+                var ptr = blocks[blockIndex++];
+                if (ptr == IntPtr.Zero)
+                {
+                    throw new Exception("Return - null pointer");
+                }
+
+                _items[i] = ptr;
                 if (blockIndex == blocks.Count)
                 {
                     _initialSearchIndex = 0;
@@ -107,6 +130,11 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     private void ReturnSlow(IntPtr block)
     {
+        if (block == IntPtr.Zero)
+        {
+            throw new Exception("ReturnSlow - null pointer");
+        }
+
         Marshal.FreeCoTaskMem(block);
     }
 
