@@ -234,7 +234,7 @@
     <!-- Integration: System.ServiceModel -->
     <!-- Assembly: System.ServiceModel -->
     <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/6.2.0 -->
-    <PackageReference Include="System.ServiceModel.Http" Version="4.10.3" />
+    <PackageReference Include="System.ServiceModel.Http" Version="6.2.0" />
 
     <!-- Integration: System.Net.Requests -->
     <!-- Assembly: System.Net.Requests -->
