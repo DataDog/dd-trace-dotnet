@@ -159,7 +159,7 @@ internal static class ReturnedHeadersAnalyzer
         }
     }
 
-    // Strict-Transport-Security has a valid value, when it starts with max-age followed by a positive number (>0),
+    // Strict-Transport-Security has a valid value when it starts with max-age followed by a positive number (>0),
     // it can finish there or continue with a semicolon ; and more content.
     private static bool IsValidStrictTransportSecurityValue(string strictTransportSecurityValue)
     {
@@ -176,7 +176,7 @@ internal static class ReturnedHeadersAnalyzer
         var maxAge = strictTransportSecurityValue.Substring(MaxAge.Length);
         var maxAgeValue = maxAge.Contains(";") ? maxAge.Split(';')[0] : maxAge;
 
-        return (int.TryParse(maxAgeValue, out var maxAgeInt) && maxAgeInt >= 0);
+        return (int.TryParse(maxAgeValue, out var maxAgeInt) && maxAgeInt > 0);
     }
 
     private static bool IsHtmlResponse(string contentTypeValue)

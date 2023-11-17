@@ -14,7 +14,7 @@
       http.request.headers.host: localhost:00000,
       http.route: iast/stricttransportsecurity,
       http.status_code: 200,
-      http.url: http://localhost:00000/Iast/StrictTransportSecurity?contentType=application/xhtml%2Bxml&returnCode=200&hstsHeaderValue=max-age%3D0%3Botherthings&xForwardedProto=https,
+      http.url: http://localhost:00000/Iast/StrictTransportSecurity?contentType=text/html;charset=UTF-8&returnCode=200&hstsHeaderValue=max-age=31536000&xForwardedProto=https,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
