@@ -163,18 +163,15 @@ internal static class ReturnedHeadersAnalyzer
     // it can finish there or continue with a semicolon ; and more content.
     private static bool IsValidStrictTransportSecurityValue(string strictTransportSecurityValue)
     {
-        if (string.IsNullOrEmpty(strictTransportSecurityValue) || !strictTransportSecurityValue.StartsWith(MaxAge, StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrEmpty(strictTransportSecurityValue) || !strictTransportSecurityValue.StartsWith(MaxAgeConst, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
-        var maxAge = strictTransportSecurityValue.Substring(MaxAge.Length);
-        var index = maxAge.IndexOf(';');
+        var index = strictTransportSecurityValue.IndexOf(';');
 
-        if (index >= 0)
-        {
-            maxAge = maxAge.Substring(0, index);
-        }
+        var maxAge = (index >= 0 ? strictTransportSecurityValue.Substring(MaxAgeConst.Length, index - MaxAgeConst.Length) :
+            strictTransportSecurityValue.Substring(MaxAgeConst.Length));
 
         return (int.TryParse(maxAge, out var maxAgeInt) && maxAgeInt > 0);
     }
