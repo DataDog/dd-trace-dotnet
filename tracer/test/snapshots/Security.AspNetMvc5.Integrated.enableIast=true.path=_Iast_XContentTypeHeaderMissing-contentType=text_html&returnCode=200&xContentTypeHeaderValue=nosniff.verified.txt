@@ -1,9 +1,9 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
     Name: aspnet.request,
-    Resource: GET /iast/stricttransportsecurity,
+    Resource: GET /iast/xcontenttypeheadermissing,
     Service: sample,
     Type: web,
     Tags: {
@@ -12,21 +12,12 @@
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: http://localhost:00000/Iast/StrictTransportSecurity?contentType=text/html&returnCode=200&hstsHeaderValue=invalid&xForwardedProto=https,
+      http.url: http://localhost:00000/Iast/XContentTypeHeaderMissing?contentType=text/html&returnCode=200&xContentTypeHeaderValue=nosniff,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.iast.enabled: 1,
-      _dd.iast.json:
-{
-  "vulnerabilities": [
-    {
-      "type": "HSTS_HEADER_MISSING",
-      "hash": 2046929799
-    }
-  ]
-}
+      _dd.iast.enabled: 1
     },
     Metrics: {
       process_id: 0,
@@ -40,19 +31,19 @@
     TraceId: Id_1,
     SpanId: Id_3,
     Name: aspnet-mvc.request,
-    Resource: GET /iast/stricttransportsecurity,
+    Resource: GET /iast/xcontenttypeheadermissing,
     Service: sample,
     Type: web,
     ParentId: Id_2,
     Tags: {
-      aspnet.action: stricttransportsecurity,
+      aspnet.action: xcontenttypeheadermissing,
       aspnet.controller: iast,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost:00000/Iast/StrictTransportSecurity?contentType=text/html&returnCode=200&hstsHeaderValue=invalid&xForwardedProto=https,
+      http.url: http://localhost:00000/Iast/XContentTypeHeaderMissing?contentType=text/html&returnCode=200&xContentTypeHeaderValue=nosniff,
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
