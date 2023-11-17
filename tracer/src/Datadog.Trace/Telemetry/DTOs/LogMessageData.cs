@@ -21,6 +21,9 @@ internal class LogMessageData
         11 /*stack_trace*/ +
         11 /* tracer_time */ +
         10 /* tracer_time value */ +
+        5 /* count */ +
+        3 /* count value (assuming <1000 per message) */ +
+        10 /* tracer_time value */ +
         15 /* json ,"{}  etc*/;
 
     public LogMessageData(string message, TelemetryLogLevel level, DateTimeOffset timestamp)
@@ -43,6 +46,11 @@ internal class LogMessageData
     /// Gets or sets unix timestamp (in seconds) for the log
     /// </summary>
     public long TracerTime { get; set; }
+
+    /// <summary>
+    /// Gets or Sets the number of occurrences of the log message
+    /// </summary>
+    public int? Count { get; set; }
 
     public int GetApproximateSerializationSize()
         => Encoding.UTF8.GetMaxByteCount(FixedSerializationCharacterCount + Message.Length + (StackTrace?.Length ?? 0) + (Tags?.Length ?? 0));
