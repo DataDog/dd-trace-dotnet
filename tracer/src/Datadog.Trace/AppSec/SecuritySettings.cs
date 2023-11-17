@@ -84,6 +84,11 @@ namespace Datadog.Trace.AppSec
 
             ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled)
                                        .AsBool(false);
+
+            // both should default to false
+            UseEncoderOld = config
+                               .WithKeys(ConfigurationKeys.AppSec.UseEncoderOld)
+                               .AsBool(false);
         }
 
         public double ApiSecuritySampling { get; }
@@ -150,6 +155,11 @@ namespace Datadog.Trace.AppSec
         /// Gets a value indicating whether or not api security is enabled, defaults to false.
         /// </summary>
         public bool ApiSecurityEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether or not we should reverts to using the old, non-pooled, encoder
+        /// </summary>
+        public bool UseEncoderOld { get; }
 
         public static SecuritySettings FromDefaultSources()
         {

@@ -71,14 +71,21 @@ namespace Datadog.Trace.AppSec.Waf
                 jtokenRoot.Children().Last().AddAfterSelf(schemaConfig!.Children());
             }
 
-            var configObj = Encoder.Encode(jtokenRoot, applySafetyLimits: false);
+            var argCache = new List<ObjOld>();
+            var configObj = EncoderOld.Encode(jtokenRoot, wafLibraryInvoker, argCache, applySafetyLimits: false);
 
-            var initResult = wafConfigurator.ConfigureAndDispose(configObj.Result, rulesFromRcm != null ? embeddedRulesetPath : "RemoteConfig", obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            var initResult = wafConfigurator.ConfigureAndDispose(configObj.InnerStruct, rulesFromRcm != null ? embeddedRulesetPath : "RemoteConfig", obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
             initResult.EmbeddedRules = jtokenRoot;
+
+            foreach (var arg in argCache)
+            {
+                arg.Dispose();
+            }
+
             return initResult;
         }
 
-        private UpdateResult UpdateWafAndDisposeItems(DdwafObjectStruct updateData)
+        private UpdateResult UpdateWafAndDisposeItems(DdwafObjectStruct updateData, List<ObjOld> argCache)
         {
             UpdateResult? res = null;
             DdwafObjectStruct? diagnostics = null;
@@ -113,6 +120,11 @@ namespace Datadog.Trace.AppSec.Waf
                 {
                     var diagValue = diagnostics!.Value;
                     _wafLibraryInvoker.ObjectFreePtr(ref diagValue.Array);
+                }
+
+                foreach (var arg in argCache)
+                {
+                    arg.Dispose();
                 }
             }
 
@@ -164,7 +176,8 @@ namespace Datadog.Trace.AppSec.Waf
             UpdateResult updated;
             try
             {
-                using var encodedArgs = Encoder.Encode(arguments, applySafetyLimits: false);
+                var argCache = new List<ObjOld>();
+                using var encodedArgs = EncoderOld.Encode(arguments, _wafLibraryInvoker, argCache, applySafetyLimits: false);
 
                 // only if rules are provided will the waf give metrics
                 if (arguments.ContainsKey("rules"))
@@ -172,7 +185,8 @@ namespace Datadog.Trace.AppSec.Waf
                     TelemetryFactory.Metrics.RecordCountWafUpdates();
                 }
 
-                updated = UpdateWafAndDisposeItems(encodedArgs.Result);
+                var x = encodedArgs.InnerStruct;
+                updated = UpdateWafAndDisposeItems(x, argCache);
             }
             catch
             {

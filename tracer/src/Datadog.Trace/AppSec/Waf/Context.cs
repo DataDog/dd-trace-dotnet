@@ -63,6 +63,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             DdwafResultStruct retNative = default;
+            WafReturnCode code = default;
 
             if (_waf.Disposed)
             {
@@ -79,20 +80,13 @@ namespace Datadog.Trace.AppSec.Waf
             // not restart cause it's the total runtime over runs, and we run several * during request
             _stopwatch.Start();
 
-            WafReturnCode code;
-            lock (_stopwatch)
+            if (Security.Instance.Settings.UseEncoderOld)
             {
-                var pool = Encoder.Pool;
-                try
-                {
-                    var pwArgs = Encoder.Encode(addresses, applySafetyLimits: true, argToFree: _argCache, pool: pool);
-                    code = _waf.Run(_contextHandle, ref pwArgs, ref retNative, timeoutMicroSeconds);
-                }
-                finally
-                {
-                    pool.Return(_argCache);
-                    _argCache.Clear();
-                }
+                CallWafEncoderOld(addresses, timeoutMicroSeconds, ref code, ref retNative);
+            }
+            else
+            {
+                CallWafEncoder(addresses, timeoutMicroSeconds, ref code, ref retNative);
             }
 
             _stopwatch.Stop();
@@ -109,6 +103,46 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             return result;
+        }
+
+        private void CallWafEncoder(IDictionary<string, object> addresses, ulong timeoutMicroSeconds, ref WafReturnCode code, ref DdwafResultStruct retNative)
+        {
+            lock (_stopwatch)
+            {
+                var pool = Encoder.Pool;
+                try
+                {
+                    var pwArgs = Encoder.Encode(addresses, applySafetyLimits: true, argToFree: _argCache, pool: pool);
+                    code = _waf.Run(_contextHandle, ref pwArgs, ref retNative, timeoutMicroSeconds);
+                }
+                finally
+                {
+                    pool.Return(_argCache);
+                    _argCache.Clear();
+                }
+            }
+        }
+
+        private void CallWafEncoderOld(IDictionary<string, object> addresses, ulong timeoutMicroSeconds, ref WafReturnCode code, ref DdwafResultStruct retNative)
+        {
+            var localArgCache = new List<ObjOld>();
+            using var pwArgs = EncoderOld.Encode(addresses, _wafLibraryInvoker, localArgCache, applySafetyLimits: true);
+            var inputStruct = pwArgs.InnerStruct;
+
+            try
+            {
+                lock (_stopwatch)
+                {
+                    code = _waf.Run(_contextHandle, ref inputStruct, ref retNative, timeoutMicroSeconds);
+                }
+            }
+            finally
+            {
+                foreach (var arg in localArgCache)
+                {
+                    arg.Dispose();
+                }
+            }
         }
 
         public void Dispose(bool disposing)

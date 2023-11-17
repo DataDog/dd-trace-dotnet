@@ -85,6 +85,12 @@ namespace Datadog.Trace.Configuration
             /// Unless set to true or 1, tracers don’t collect schemas. After the experiment, the environment variable will be removed and schema collection will be enabled only when ASM is enabled
             /// </summary>
             internal const string ApiExperimentalSecurityEnabled = "DD_EXPERIMENTAL_API_SECURITY_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling the AppSec.
+            /// Default is value is false (disabled).
+            /// </summary>
+            internal const string UseEncoderOld = "DD_APPSEC_USE_ENCODER_OLD";
         }
     }
 }
