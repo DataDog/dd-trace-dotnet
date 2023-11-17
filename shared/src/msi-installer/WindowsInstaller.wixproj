@@ -17,7 +17,8 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
     <SuppressPdbOutput>True</SuppressPdbOutput>
     <DefineSolutionProperties>false</DefineSolutionProperties>
-    <OutputName>datadog-dotnet-apm-2.42.0-$(Platform)</OutputName> <!-- -The regex recognizes this line -->
+    <OutputName>datadog-dotnet-apm-2.42.0-$(Platform)</OutputName>
+    <!-- -The regex recognizes this line -->
     <MonitoringHomeDirectory Condition="'$(MonitoringHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\..\bin\monitoring-home</MonitoringHomeDirectory>
     <DefineConstants>InstallerVersion=2.42.0;MonitoringHomeDirectory=$(MonitoringHomeDirectory);</DefineConstants>
   </PropertyGroup>
@@ -71,6 +72,11 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Strings.wxl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ContinuousProfiler\" />
+    <Folder Include="shared\" />
+    <Folder Include="Tracer\" />
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets" Condition=" '$(WixTargetsPath)' == '' AND Exists('$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets') " />
