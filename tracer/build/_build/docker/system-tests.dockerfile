@@ -4,10 +4,11 @@ ARG LIBRARY_VERSION
 ARG APPSEC_EVENT_RULES_VERSION
 ARG LIBDDWAF_VERSION
 
-COPY ${LINUX_PACKAGE} /datadog-dotnet-apm.tar.gz
-RUN echo ${LIBRARY_VERSION} | cat > LIBRARY_VERSION \
-  && echo ${LIBDDWAF_VERSION} | cat > LIBDDWAF_VERSION \
-  && echo ${APPSEC_EVENT_RULES_VERSION} | cat > APPSEC_EVENT_RULES_VERSION
+RUN mkdir /binaries \
+  && echo ${LIBRARY_VERSION} | cat > /binaries/LIBRARY_VERSION \
+  && echo ${LIBDDWAF_VERSION} | cat > /binaries/LIBDDWAF_VERSION \
+  && echo ${APPSEC_EVENT_RULES_VERSION} | cat > /binaries/APPSEC_EVENT_RULES_VERSION
+COPY ${LINUX_PACKAGE} /binaries/datadog-dotnet-apm.tar.gz
 
 FROM scratch
-COPY --from=collect /* /
+COPY --from=collect /binaries/* /
