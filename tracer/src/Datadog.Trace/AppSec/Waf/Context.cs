@@ -84,7 +84,7 @@ namespace Datadog.Trace.AppSec.Waf
             WafReturnCode code;
             lock (_sync)
             {
-                code = _waf.Run(_contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+                code = _waf.Run(_contextHandle, rawArgs, IntPtr.Zero, ref retNative, timeoutMicroSeconds);
             }
 
             _stopwatch.Stop();
