@@ -85,10 +85,19 @@ namespace Datadog.Trace.AppSec
             ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled)
                                        .AsBool(false);
 
-            // both should default to false
-            UseEncoderOld = config
-                               .WithKeys(ConfigurationKeys.AppSec.UseEncoderOld)
-                               .AsBool(false);
+#if NETFRAMEWORK
+            UseEncoderOld = true;
+#else
+            UseEncoderOld = false;
+#endif
+            var useEncoderOldSetting = config
+                           .WithKeys(ConfigurationKeys.AppSec.UseEncoderOld)
+                           .AsBool();
+
+            if (useEncoderOldSetting != null)
+            {
+                UseEncoderOld = useEncoderOldSetting.Value;
+            }
         }
 
         public double ApiSecuritySampling { get; }
