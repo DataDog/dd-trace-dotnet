@@ -243,7 +243,7 @@ internal class TelemetryController : ITelemetryController
                 foreach (var batch in batches)
                 {
                     var logPayload = _dataBuilder.BuildLogsTelemetryData(application, host, batch, _namingVersion);
-                    Log.Debug("Pushing diagnostic logs");
+                    Log.Debug<int>("Pushing diagnostic logs batch containing {LogCount} logs", batch.Count);
                     await _transportManager.TryPushTelemetry(logPayload).ConfigureAwait(false);
                 }
             }

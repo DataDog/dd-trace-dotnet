@@ -162,20 +162,22 @@ public class RedactedErrorLogCollectorTests
         const string message = "This is my message";
 
         // Add multiple identical messages
-        for (var i = 0; i < 5; i++)
+        const int count = 5;
+        for (var i = 0; i < count; i++)
         {
             collector.EnqueueLog(new LogMessageData(message, TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow));
         }
 
         var logs = collector.GetLogs();
 
-        logs.Should()
+        var log = logs.Should()
             .NotBeNull()
             .And.ContainSingle()
             .Which.Should()
             .ContainSingle()
-            .Subject.Message.Should()
-            .Be(message); // TODO: Verify instance count
+            .Subject;
+        log.Message.Should().Be(message);
+        log.Count.Should().Be(count);
     }
 
     [Fact]
@@ -185,7 +187,8 @@ public class RedactedErrorLogCollectorTests
         var collector = new RedactedErrorLogCollector();
 
         // Add multiple identical messages with exception from same location
-        for (var i = 0; i < 5; i++)
+        const int count = 5;
+        for (var i = 0; i < count; i++)
         {
             var ex = GetException1();
             collector.EnqueueLog(new LogMessageData(message, TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow)
@@ -196,13 +199,14 @@ public class RedactedErrorLogCollectorTests
 
         var logs = collector.GetLogs();
 
-        logs.Should()
-            .NotBeNull()
-            .And.ContainSingle()
-            .Which.Should()
-            .ContainSingle()
-            .Subject.Message.Should()
-            .Be(message); // TODO: Verify instance count
+        var log = logs.Should()
+                      .NotBeNull()
+                      .And.ContainSingle()
+                      .Which.Should()
+                      .ContainSingle()
+                      .Subject;
+        log.Message.Should().Be(message);
+        log.Count.Should().Be(count);
 
         Exception GetException1()
         {
@@ -224,7 +228,8 @@ public class RedactedErrorLogCollectorTests
         var collector = new RedactedErrorLogCollector();
 
         // Add multiple identical messages with exception from same location
-        for (var i = 0; i < 5; i++)
+        const int count = 5;
+        for (var i = 0; i < count; i++)
         {
             var ex = GetException1();
             collector.EnqueueLog(new LogMessageData(message, TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow)
@@ -234,7 +239,7 @@ public class RedactedErrorLogCollectorTests
         }
 
         // Add multiple identical messages with exception from different location
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < count; i++)
         {
             var ex = GetException2();
             collector.EnqueueLog(new LogMessageData(message, TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow)
@@ -251,7 +256,9 @@ public class RedactedErrorLogCollectorTests
 
         batch.Should().HaveCount(2);
         batch[0].Message.Should().Be("This is my message");
+        batch[0].Count.Should().Be(count);
         batch[1].Message.Should().Be("This is my message");
+        batch[1].Count.Should().Be(count);
 
         Exception GetException1()
         {
@@ -285,7 +292,8 @@ public class RedactedErrorLogCollectorTests
         var collector = new RedactedErrorLogCollector();
 
         // Add multiple identical messages
-        for (var i = 0; i < 5; i++)
+        const int count = 5;
+        for (var i = 0; i < count; i++)
         {
             collector.EnqueueLog(new LogMessageData(message, TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow));
         }
@@ -293,7 +301,7 @@ public class RedactedErrorLogCollectorTests
         var firstBatch = collector.GetLogs();
 
         // Add multiple identical messages
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < count; i++)
         {
             collector.EnqueueLog(new LogMessageData(message, TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow));
         }
@@ -301,21 +309,23 @@ public class RedactedErrorLogCollectorTests
         var secondBatch = collector.GetLogs();
         var thirdBatch = collector.GetLogs();
 
-        firstBatch.Should()
+        var log = firstBatch.Should()
                   .NotBeNull()
                   .And.ContainSingle()
                   .Which.Should()
                   .ContainSingle()
-                  .Subject.Message.Should()
-                  .Be(message);
+                  .Subject;
+        log.Message.Should().Be(message);
+        log.Count.Should().Be(count);
 
-        secondBatch.Should()
-                  .NotBeNull()
-                  .And.ContainSingle()
-                  .Which.Should()
-                  .ContainSingle()
-                  .Subject.Message.Should()
-                  .Be(message);
+        log = secondBatch.Should()
+                   .NotBeNull()
+                   .And.ContainSingle()
+                   .Which.Should()
+                   .ContainSingle()
+                   .Subject;
+        log.Message.Should().Be(message);
+        log.Count.Should().Be(count);
 
         thirdBatch.Should().BeNull();
     }
@@ -336,13 +346,36 @@ public class RedactedErrorLogCollectorTests
         var logs = collector.GetLogs();
         collector.GetLogs().Should().BeNull();
 
+        var log = logs.Should()
+                      .NotBeNull()
+                      .And.ContainSingle()
+                      .Subject.Should()
+                      .ContainSingle()
+                      .Subject;
+        log.Message.Should().Be(message);
+        log.Count.Should().Be(messagesToSend);
+    }
+
+    [Fact]
+    public void WhenDeDupeEnabled_AndUniqueMessages_DoesNotSetCount()
+    {
+        var collector = new RedactedErrorLogCollector();
+        var messagesToSend = RedactedErrorLogCollector.MaximumQueueSize * 2;
+        for (var i = messagesToSend; i > 0; i--)
+        {
+            // Make messages unique to avoid de-duplication
+            collector.EnqueueLog(new($"Something {i}", TelemetryLogLevel.WARN, DateTimeOffset.UtcNow));
+        }
+
+        var logs = collector.GetLogs();
         logs.Should()
             .NotBeNull()
             .And.ContainSingle()
-            .Subject.Should()
-            .ContainSingle()
-            .Subject.Message.Should()
-            .Be(message);
+            .Subject
+            .Should()
+            .HaveCount(RedactedErrorLogCollector.MaximumQueueSize)
+            .And
+            .OnlyContain(x => x.Count == null);
     }
 
     private static string RandomString(int length)
