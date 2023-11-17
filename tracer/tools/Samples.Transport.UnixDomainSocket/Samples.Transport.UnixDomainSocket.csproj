@@ -14,7 +14,7 @@
     <!-- Pass any sensitive information as arguments -->
     <DockerfileBuildArguments>--build-arg DD_API_KEY=$(DD_API_KEY)</DockerfileBuildArguments>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj">
       <CopyLocal>True</CopyLocal>
@@ -29,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.2" />
   </ItemGroup>
 
   <ItemGroup>
