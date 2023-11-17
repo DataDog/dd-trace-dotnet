@@ -60,16 +60,6 @@ internal static class ReturnedHeadersAnalyzer
         {
             IastModule.OnXContentTypeOptionsHeaderMissing(integrationId, contentOptionValue, serviceName);
         }
-
-        LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
-    }
-
-    private static void LaunchXContentTypeOptionsVulnerability(IntegrationId integrationId, string serviceName, string contentTypeValue, string contentOptionValue)
-    {
-        if (!string.IsNullOrEmpty(contentTypeValue))
-        {
-            IastModule.OnXContentTypeOptionsHeaderMissing(integrationId, contentOptionValue, serviceName);
-        }
     }
 
     private static void LaunchStrictTransportSecurity(IntegrationId integrationId, string serviceName, string strictTransportSecurityValue, string xForwardedProtoValue, string protocol)
