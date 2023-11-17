@@ -13,18 +13,15 @@ namespace Datadog.Trace.Telemetry.DTOs;
 
 internal class LogMessageData
 {
+    private const int TagsCharacterCount = 10; // "tags":"",
+    private const int StackTraceCharacterCount = 17; // "stack_trace":"",
+    private const int CountCharacterCount = 12; // "count":123, (assuming <1000 count per message)
+
     private const int FixedSerializationCharacterCount =
-        7 /*message*/ +
-        5 /*level*/ +
-        5 /*level value*/ +
-        4 /*tags*/ +
-        11 /*stack_trace*/ +
-        11 /* tracer_time */ +
-        10 /* tracer_time value */ +
-        5 /* count */ +
-        3 /* count value (assuming <1000 per message) */ +
-        10 /* tracer_time value */ +
-        15 /* json ,"{}  etc*/;
+        13 /* "message":"", */ +
+        16 /* "level":"ERROR", */ +
+        25 /* "tracer_time":1700220630, */ +
+        1 /* {} (-1 for trailing comma) */;
 
     public LogMessageData(string message, TelemetryLogLevel level, DateTimeOffset timestamp)
     {
@@ -53,5 +50,10 @@ internal class LogMessageData
     public int? Count { get; set; }
 
     public int GetApproximateSerializationSize()
-        => Encoding.UTF8.GetMaxByteCount(FixedSerializationCharacterCount + Message.Length + (StackTrace?.Length ?? 0) + (Tags?.Length ?? 0));
+        => Encoding.UTF8.GetMaxByteCount(
+            FixedSerializationCharacterCount
+          + Message.Length
+          + (StackTrace?.Length is { } s ? s + StackTraceCharacterCount : 0)
+          + (Tags?.Length is { } t ? t + TagsCharacterCount : 0)
+          + (Count.HasValue ? CountCharacterCount : 0));
 }
