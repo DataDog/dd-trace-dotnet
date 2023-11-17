@@ -23,7 +23,7 @@ internal static class ReturnedHeadersAnalyzer
     private const string XContentTypeOptions = "x-content-type-options";
     private const string StrictTransportSecurity = "strict-transport-security";
     private const string XForwardedProto = "x-forwarded-proto";
-    private const string MaxAge = "max-age=";
+    private const string MaxAgeConst = "max-age=";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ReturnedHeadersAnalyzer));
 
     // Analyze the headers. If the response is HTML, check for X-Content-Type-Options: nosniff. If it
@@ -82,18 +82,15 @@ internal static class ReturnedHeadersAnalyzer
     // it can finish there or continue with a semicolon ; and more content.
     private static bool IsValidStrictTransportSecurityValue(string strictTransportSecurityValue)
     {
-        if (string.IsNullOrEmpty(strictTransportSecurityValue) || !strictTransportSecurityValue.StartsWith(MaxAge, StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrEmpty(strictTransportSecurityValue) || !strictTransportSecurityValue.StartsWith(MaxAgeConst, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
-        var maxAge = strictTransportSecurityValue.Substring(MaxAge.Length);
-        var index = maxAge.IndexOf(';');
+        var index = strictTransportSecurityValue.IndexOf(';');
 
-        if (index >= 0)
-        {
-            maxAge = maxAge.Substring(0, index);
-        }
+        var maxAge = (index >= 0 ? strictTransportSecurityValue.Substring(MaxAgeConst.Length, index - MaxAgeConst.Length) :
+            strictTransportSecurityValue.Substring(MaxAgeConst.Length));
 
         return (int.TryParse(maxAge, out var maxAgeInt) && maxAgeInt > 0);
     }
