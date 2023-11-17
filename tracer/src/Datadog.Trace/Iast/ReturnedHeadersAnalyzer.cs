@@ -82,20 +82,20 @@ internal static class ReturnedHeadersAnalyzer
     // it can finish there or continue with a semicolon ; and more content.
     private static bool IsValidStrictTransportSecurityValue(string strictTransportSecurityValue)
     {
-        if (string.IsNullOrEmpty(strictTransportSecurityValue))
-        {
-            return false;
-        }
-
-        if (!strictTransportSecurityValue.StartsWith(MaxAge, StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrEmpty(strictTransportSecurityValue) || !strictTransportSecurityValue.StartsWith(MaxAge, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
         var maxAge = strictTransportSecurityValue.Substring(MaxAge.Length);
-        var maxAgeValue = maxAge.Contains(";") ? maxAge.Split(';')[0] : maxAge;
+        var index = maxAge.IndexOf(';');
 
-        return (int.TryParse(maxAgeValue, out var maxAgeInt) && maxAgeInt > 0);
+        if (index >= 0)
+        {
+            maxAge = maxAge.Substring(0, index);
+        }
+
+        return (int.TryParse(maxAge, out var maxAgeInt) && maxAgeInt > 0);
     }
 
     private static bool IsHtmlResponse(string contentTypeValue)
