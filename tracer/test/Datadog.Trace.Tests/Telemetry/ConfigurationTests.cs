@@ -46,6 +46,7 @@ public class ConfigurationTests
         // Internal env vars that we only ever read from environment
         "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH",
         "DD_DOTNET_TRACER_HOME",
+        "DD_APPSEC_USE_ENCODER_OLD",
     };
 
     [Fact]
