@@ -57,7 +57,8 @@ RUN wget https://apt.llvm.org/llvm.sh && \
     ./llvm.sh 16 all && \
     ln -s `which clang-16` /usr/bin/clang && \
     ln -s `which clang++-16` /usr/bin/clang++ && \
-    ln -s `which clang-tidy-16` /usr/bin/clang-tidy
+    ln -s `which clang-tidy-16` /usr/bin/clang-tidy && \
+    ln -s `which run-clang-tidy-16` /usr/bin/run-clang-tidy
 
 # Install the .NET SDK
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
