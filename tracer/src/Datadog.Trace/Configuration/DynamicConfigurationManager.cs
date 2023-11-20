@@ -11,8 +11,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
@@ -66,6 +64,8 @@ namespace Datadog.Trace.Configuration
             var headerTags = TracerSettings.InitializeHeaderTags(settings, ConfigurationKeys.HeaderTags, oldSettings.HeaderTagsNormalizationFixEnabled);
             // var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(settings, ConfigurationKeys.ServiceNameMappings);
 
+            var globalTags = settings.WithKeys(ConfigurationKeys.GlobalTags).AsDictionary();
+
             var dynamicSettings = new ImmutableDynamicSettings
             {
                 // RuntimeMetricsEnabled = settings.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled).AsBool(),
@@ -76,6 +76,7 @@ namespace Datadog.Trace.Configuration
                 LogsInjectionEnabled = settings.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(),
                 HeaderTags = headerTags == null ? null : new ReadOnlyDictionary<string, string>(headerTags),
                 // ServiceNameMappings = serviceNameMappings == null ? null : new ReadOnlyDictionary<string, string>(serviceNameMappings)
+                GlobalTags = globalTags == null ? null : new ReadOnlyDictionary<string, string>(globalTags)
             };
 
             // Needs to be done before returning, to feed the value to the telemetry

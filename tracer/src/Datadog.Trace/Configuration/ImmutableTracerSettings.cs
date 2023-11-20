@@ -34,6 +34,7 @@ namespace Datadog.Trace.Configuration
         private readonly ReadOnlyDictionary<string, string> _headerTags;
         private readonly IReadOnlyDictionary<string, string> _serviceNameMappings;
         private readonly IReadOnlyDictionary<string, string> _peerServiceNameMappings;
+        private readonly IReadOnlyDictionary<string, string> _globalTags;
         private readonly double? _globalSamplingRate;
         private readonly bool _runtimeMetricsEnabled;
         private readonly string? _spanSamplingRules;
@@ -86,7 +87,7 @@ namespace Datadog.Trace.Configuration
                                      .Where(kvp => kvp.Key is not (Tags.Env or Tags.Version or CommonTags.GitCommit or CommonTags.GitRepository))
                                      .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
-            GlobalTagsInternal = new ReadOnlyDictionary<string, string>(globalTags);
+            _globalTags = new ReadOnlyDictionary<string, string>(globalTags);
 
             GitMetadataEnabled = settings.GitMetadataEnabled;
             ServiceNameInternal = settings.ServiceNameInternal;
@@ -320,7 +321,7 @@ namespace Datadog.Trace.Configuration
         /// Gets the global tags, which are applied to all <see cref="Span"/>s.
         /// </summary>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_GlobalTags_Get)]
-        internal IReadOnlyDictionary<string, string> GlobalTagsInternal { get; }
+        internal IReadOnlyDictionary<string, string> GlobalTagsInternal => DynamicSettings.GlobalTags ?? _globalTags;
 
         /// <summary>
         /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
