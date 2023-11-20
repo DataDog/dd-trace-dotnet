@@ -220,7 +220,7 @@ void  WriteToStream(std::ostringstream& oss, T const& x)
     }
     else
     {
-        oss << ::shared::ToString(x, WStrLen(x));
+        oss << ::shared::ToString(x);
     }
 }
 

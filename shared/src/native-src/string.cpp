@@ -21,6 +21,12 @@ namespace shared {
 
     std::string ToString(const WSTRING& wstr) { return ToString(wstr.data(), wstr.size()); }
 
+    std::string ToString(const WCHAR* wstr)
+    {
+        if (wstr == nullptr) return std::string();
+        return ToString(wstr, WStrLen(wstr));
+    }
+
     std::string ToString(const WCHAR* wstr, std::size_t nbChars)
     {
 #ifdef _WIN32
