@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
@@ -76,6 +77,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: aws_sqs");
                 settings.AddSimpleScrubber("peer.service: localstack", "peer.service: aws_sqs");
                 settings.AddSimpleScrubber("peer.service: localstack_arm64", "peer.service: aws_sqs");
+                settings.AddSimpleScrubber("aws.queue.url: localstack_arm64", "peer.service: aws_sqs");
+                settings.AddRegexScrubber(new Regex(@"sqs\..+\.localhost.*\.localstack.*\.cloud:4566"), "localhost:00000");
+
                 if (!string.IsNullOrWhiteSpace(host))
                 {
                     settings.AddSimpleScrubber(host, "localhost:00000");
