@@ -29,7 +29,7 @@ namespace DatadogDebugger.Util
         private State? _state = State.Object;
         private int _currentLevel;
         private int _strMatchIdx;
-        private Func<State> _onStringMatches;
+        private State _stringMatchesState;
         private string _matchingString;
         private Node _root;
 
@@ -49,7 +49,7 @@ namespace DatadogDebugger.Util
 
         public static string Prune(string snapshot, int maxTargetedSize, int minLevel)
         {
-            int delta = snapshot.Length - maxTargetedSize;
+            var delta = Encoding.UTF8.GetByteCount(snapshot) - maxTargetedSize;
             if (delta <= 0)
             {
                 return snapshot;
@@ -64,8 +64,8 @@ namespace DatadogDebugger.Util
                 sortedLeaves.Add(leaf);
             }
 
-            int total = 0;
-            Dictionary<int, Node> nodes = new Dictionary<int, Node>();
+            var total = 0;
+            var nodes = new Dictionary<int, Node>();
             while (sortedLeaves.Any())
             {
                 Node leaf = sortedLeaves.Min;
@@ -98,20 +98,20 @@ namespace DatadogDebugger.Util
                 }
             }
 
-            List<Node> prunedNodes = nodes.Values.OrderBy(n => n.Start).ToList();
-            StringBuilder sb = new StringBuilder();
+            var prunedNodes = nodes.Values.OrderBy(n => n.Start).ToList();
+            var sb = new StringBuilder();
             sb.Append(snapshot.Substring(0, prunedNodes[0].Start));
-            for (int i = 1; i < prunedNodes.Count; i++)
+            for (var i = 1; i < prunedNodes.Count; i++)
             {
                 sb.Append(Pruned);
-                int nextSegmentStart = prunedNodes[i - 1].End + 1;
-                int nextSegmentLength = prunedNodes[i].Start - nextSegmentStart;
+                var nextSegmentStart = prunedNodes[i - 1].End + 1;
+                var nextSegmentLength = prunedNodes[i].Start - nextSegmentStart;
                 sb.Append(snapshot.Substring(nextSegmentStart, nextSegmentLength));
             }
 
             sb.Append(Pruned);
-            int lastSegmentStart = prunedNodes[prunedNodes.Count - 1].End + 1;
-            if (lastSegmentStart < snapshot.Length)
+            var lastSegmentStart = prunedNodes[prunedNodes.Count - 1].End + 1;
+            if (lastSegmentStart < Encoding.UTF8.GetByteCount(snapshot))
             {
                 sb.Append(snapshot.Substring(lastSegmentStart));
             }
@@ -171,17 +171,7 @@ namespace DatadogDebugger.Util
                 case '"':
                     pruner._strMatchIdx = 0;
                     pruner._matchingString = NotCapturedReason;
-                    pruner._onStringMatches = () =>
-                    {
-                        var lastNode = pruner._stack.Peek();
-                        if (lastNode == null)
-                        {
-                            throw new InvalidOperationException("Stack is empty");
-                        }
-
-                        lastNode.NotCaptured = true;
-                        return State.NotCaptured;
-                    };
+                    pruner._stringMatchesState = State.NotCaptured;
                     return State.String;
 
                 default:
@@ -189,14 +179,26 @@ namespace DatadogDebugger.Util
             }
         }
 
+        private State NotCapturedAction()
+        {
+            var lastNode = _stack.Peek();
+            if (lastNode == null)
+            {
+                throw new InvalidOperationException("Stack is empty");
+            }
+
+            lastNode.NotCaptured = true;
+            return _stringMatchesState;
+        }
+
         internal State? ParseString(SnapshotPruner pruner, char c)
         {
             switch (c)
             {
                 case '"':
-                    if (pruner._strMatchIdx == pruner._matchingString.Length)
+                    if (pruner._strMatchIdx == Encoding.UTF8.GetByteCount(pruner._matchingString))
                     {
-                        return pruner._onStringMatches();
+                        return NotCapturedAction();
                     }
 
                     return State.Object;
@@ -225,17 +227,7 @@ namespace DatadogDebugger.Util
                 case '"':
                     pruner._strMatchIdx = 0;
                     pruner._matchingString = Depth;
-                    pruner._onStringMatches = () =>
-                    {
-                        var lastNode = pruner._stack.Peek();
-                        if (lastNode == null)
-                        {
-                            throw new InvalidOperationException("Stack is empty");
-                        }
-
-                        lastNode.NotCapturedDepth = true;
-                        return State.Object;
-                    };
+                    pruner._stringMatchesState = State.Object;
                     return State.String;
 
                 case ' ':
@@ -259,36 +251,30 @@ namespace DatadogDebugger.Util
         {
             public int Compare(Node x, Node y)
             {
-                // First compare by notCapturedDepth, with true values being 'greater' than false
                 int comparison = -x.NotCapturedDepth.CompareTo(y.NotCapturedDepth);
                 if (comparison != 0)
                 {
                     return comparison;
                 }
 
-                // Then by level, in descending order (larger levels 'less' than smaller ones)
                 comparison = -x.Level.CompareTo(y.Level);
                 if (comparison != 0)
                 {
                     return comparison;
                 }
 
-                // Then by notCaptured, with true values being 'greater' than false
                 comparison = -x.NotCaptured.CompareTo(y.NotCaptured);
                 if (comparison != 0)
                 {
                     return comparison;
                 }
 
-                // Finally by size, in descending order (larger sizes 'less' than smaller ones)
                 comparison = -x.Size().CompareTo(y.Size());
                 if (comparison != 0)
                 {
                     return comparison;
                 }
 
-                // If all else is equal (which shouldn't happen in a well-defined priority queue),
-                // we differentiate by reference, ensuring that two different objects are never considered equal.
                 return ReferenceEquals(x, y) ? 0 : -1;
             }
         }
