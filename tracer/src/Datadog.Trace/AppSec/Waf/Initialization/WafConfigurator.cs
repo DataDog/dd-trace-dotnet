@@ -155,7 +155,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return root;
         }
 
-        internal InitResult ConfigureAndDispose(DdwafObjectStruct? rulesObj, string? rulesFile, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal InitResult ConfigureAndDispose(Obj? rulesObj, string? rulesFile, List<Obj> argsToDispose, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
             if (rulesObj == null)
             {
@@ -163,9 +163,9 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 return InitResult.FromUnusableRuleFile();
             }
 
+            Obj? diagnostics = null;
             var keyRegex = IntPtr.Zero;
             var valueRegex = IntPtr.Zero;
-            var diagnostics = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
 
             try
             {
@@ -174,10 +174,10 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 valueRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterValueRegex);
                 args.KeyRegex = keyRegex;
                 args.ValueRegex = valueRegex;
-                args.FreeWafFunction = IntPtr.Zero;
+                args.FreeWafFunction = _wafLibraryInvoker.ObjectFreeFuncPtr;
 
-                var rules = rulesObj.Value;
-                var wafHandle = _wafLibraryInvoker.Init(ref rules, ref args, ref diagnostics);
+                diagnostics = new Obj(_wafLibraryInvoker.ObjectMap());
+                var wafHandle = _wafLibraryInvoker.Init(rulesObj.RawPtr, ref args, diagnostics.RawPtr);
                 if (wafHandle == IntPtr.Zero)
                 {
                     Log.Warning("DDAS-0005-00: WAF initialization failed.");
@@ -222,9 +222,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     Marshal.FreeHGlobal(valueRegex);
                 }
 
-                if (diagnostics.Array != IntPtr.Zero)
+                diagnostics?.Dispose(_wafLibraryInvoker);
+                rulesObj.Dispose(_wafLibraryInvoker);
+                foreach (var arg in argsToDispose)
                 {
-                    _wafLibraryInvoker.ObjectFreePtr(ref diagnostics.Array);
+                    arg.Dispose();
                 }
             }
         }
