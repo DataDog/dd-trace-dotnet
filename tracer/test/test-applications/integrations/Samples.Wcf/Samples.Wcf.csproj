@@ -8,5 +8,6 @@
     <Reference Include="System.Security" />
     <Reference Include="System.ServiceModel" />
     <ProjectReference Include="..\dependency-libs\ActivitySampleHelper\ActivitySampleHelper.csproj" />
+    <Reference Include="System.ServiceModel.Web" />
   </ItemGroup>
 </Project>

@@ -61,6 +61,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
+        public static TheoryData<string, bool, bool> GetWebHttpData() => new()
+        {
+            // We do support v0, but there's such a big overlap with the other
+            // WCF support, it's probably not worth running all these twice here
+            // Also enableWebHttpResourceNames only makes sense if enableNewWcfInstrumentation is true
+            // metadataSchemaVersion, enableNewWcfInstrumentation, enableWebHttpResourceNames
+            { "v0", true, false },
+            { "v0", true, true },
+            { "v0", false, false },
+            { "v1", true, false },
+            { "v1", true, true },
+            { "v1", false, false },
+        };
+
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsWcf(metadataSchemaVersion);
 
         [SkippableTheory]
@@ -72,19 +86,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
-            if (enableNewWcfInstrumentation)
-            {
-                SetEnvironmentVariable("DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED", "true");
-            }
-
-            if (enableWcfObfuscation)
-            {
-                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled, "true");
-            }
-            else
-            {
-                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled, "false");
-            }
+            SetEnvironmentVariable("DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED", enableNewWcfInstrumentation ? "true" : "false");
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled, enableWcfObfuscation ? "true" : "false");
 
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
 
@@ -111,10 +114,55 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var settings = VerifyHelper.GetSpanVerifierSettings(metadataSchemaVersion, binding, enableNewWcfInstrumentation, enableWcfObfuscation);
 
                 await VerifyHelper.VerifySpans(spans, settings)
-                              .UseMethodName("_");
+                                  .UseMethodName("_");
 
                 // The custom binding doesn't trigger the integration
                 telemetry.AssertIntegration(IntegrationId.Wcf, enabled: binding != "Custom", autoEnabled: true);
+            }
+        }
+
+        [SkippableTheory]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [MemberData(nameof(GetWebHttpData))]
+        public async Task WebHttp(string metadataSchemaVersion, bool enableNewWcfInstrumentation, bool enableWebHttpResourceNames)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+
+            // When using the WebHttpBinding (not a real binding) we don't
+            // care about ofuscation really, as it on(it doesn't do anything)
+            SetEnvironmentVariable("DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED", enableNewWcfInstrumentation ? "true" : "false");
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.WcfWebHttpResourceNamesEnabled, enableWebHttpResourceNames ? "true" : "false");
+
+            Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
+
+            var expectedSpanCount = 5;
+
+            using var telemetry = this.ConfigureTelemetry();
+            int wcfPort = 8585;
+
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using (RunSampleAndWaitForExit(agent, arguments: $"WebHttpBinding Port={wcfPort}"))
+            {
+                // Filter out WCF spans unrelated to the actual request handling, and filter them before returning spans
+                // so we can wait on the exact number of spans we expect.
+                agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
+                // The test adds a custom span to show that propagation works with WCF headers
+                agent.SpanFilters.Add(s => s.Type == SpanTypes.Web || s.Type == SpanTypes.Custom);
+                var spans = agent.WaitForSpans(expectedSpanCount);
+                ValidateIntegrationSpans(spans.Where(s => s.Type == SpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+
+                // The files only differ based on enableNewWcfInstrumentation
+                var fileSuffix = $"{metadataSchemaVersion}.{(enableWebHttpResourceNames ? "webHttp" : "disabled")}";
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .DisableRequireUniquePrefix()
+                                  .UseTextForParameters(fileSuffix);
+
+                // The custom binding doesn't trigger the integration
+                telemetry.AssertIntegration(IntegrationId.Wcf, enabled: true, autoEnabled: true);
             }
         }
     }
