@@ -39,8 +39,7 @@ public class StringAspectsBenchmark
 
     public IEnumerable<List<string>> IastContext(bool enabled)
     {
-        yield return InitTaintedContext(5, enabled);
-        yield return InitTaintedContext(100, enabled);
+        yield return InitTaintedContext(10, enabled);
     }
 
     private static List<string> InitTaintedContext(int size, bool initTainted = true)
@@ -78,7 +77,7 @@ public class StringAspectsBenchmark
         return res;
     }
 
-    const int Iterations = 1000;
+    const int Iterations = 100;
 
     [Benchmark]
     [ArgumentsSource(nameof(IastDisabledContext))]
