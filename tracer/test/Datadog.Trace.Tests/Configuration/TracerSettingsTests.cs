@@ -553,6 +553,16 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void WcfWebHttpResourceNamesEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.WcfWebHttpResourceNamesEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.WcfWebHttpResourceNamesEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [MemberData(nameof(BooleanTestCases), true)]
         public void WcfObfuscationEnabled(string value, bool expected)
         {

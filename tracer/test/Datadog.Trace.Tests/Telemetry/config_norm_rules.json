@@ -361,6 +361,7 @@
   "DD_TRACE_DEBUG_LOOKUP_FALLBACK": "trace_lookup_fallback_enabled",
   "DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED": "trace_route_template_resource_names_enabled",
   "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED": "trace_delay_wcf_instrumentation_enabled",
+  "DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED": "trace_wcf_web_http_resource_names_enabled",
   "DD_TRACE_WCF_RESOURCE_OBFUSCATION_ENABLED": "trace_wcf_obfuscation_enabled",
   "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED": "trace_header_tag_normalization_fix_enabled",
   "DD_TRACE_OTEL_ENABLED": "trace_otel_enabled",
