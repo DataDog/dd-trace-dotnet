@@ -127,7 +127,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 var span = scope.Span;
 
                 var requestHeaders = requestMessage.Headers;
-                string action = requestHeaders.Action;
                 Uri requestHeadersTo = requestHeaders.To;
 
                 span.DecorateWebServerSpan(
