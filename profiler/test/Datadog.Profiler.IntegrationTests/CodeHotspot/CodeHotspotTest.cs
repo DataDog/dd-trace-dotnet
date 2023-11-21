@@ -299,12 +299,12 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
                 {
                     if (label.Name == "local root span id")
                     {
-                        localRootSpanId = ulong.Parse(label.Value);
+                        localRootSpanId = (ulong)long.Parse(label.Value);
                     }
 
                     if (label.Name == "span id")
                     {
-                        spanId = ulong.Parse(label.Value);
+                        spanId = (ulong)long.Parse(label.Value);
                     }
                 }
 

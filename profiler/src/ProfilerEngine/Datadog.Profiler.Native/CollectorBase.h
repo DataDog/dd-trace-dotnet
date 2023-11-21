@@ -105,8 +105,8 @@ public:
         auto sample = std::make_shared<Sample>(rawSample.Timestamp, runtimeId == nullptr ? std::string_view() : std::string_view(runtimeId), rawSample.Stack.size());
         if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
         {
-            sample->AddNumericLabel(NumericLabel{Sample::LocalRootSpanIdLabel, rawSample.LocalRootSpanId});
-            sample->AddNumericLabel(NumericLabel{Sample::SpanIdLabel, rawSample.SpanId});
+            sample->AddNumericLabel(SpanLabel{Sample::LocalRootSpanIdLabel, rawSample.LocalRootSpanId});
+            sample->AddNumericLabel(SpanLabel{Sample::SpanIdLabel, rawSample.SpanId});
         }
 
         // compute thread/appdomain details

@@ -38,6 +38,7 @@
       </Component>
     </ComponentGroup>
 
+    <?if $(var.Win64) = yes ?>
     <ComponentGroup Id="dd_dotnet.cmd" Directory="INSTALLFOLDER">
         <Component>
             <File Id="dd_dotnet.cmd"
@@ -54,5 +55,6 @@
             </File>
         </Component>
     </ComponentGroup>
+    <?endif ?>
   </Fragment>
 </Wix>
