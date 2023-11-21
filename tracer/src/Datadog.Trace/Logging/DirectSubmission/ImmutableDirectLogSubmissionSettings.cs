@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.Configuration;
@@ -32,7 +33,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
         private ImmutableDirectLogSubmissionSettings(
             string host,
             string source,
-            string globalTags,
+            IReadOnlyDictionary<string, string> globalTags,
             Uri intakeUrl,
             string apiKey,
             bool isEnabled,
@@ -63,7 +64,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
         public string Source { get; }
 
-        public string GlobalTags { get; }
+        public IReadOnlyDictionary<string, string> GlobalTags { get; }
 
         public Uri IntakeUrl { get; }
 
@@ -135,7 +136,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 validationErrors.Add($"Missing required settings '{ConfigurationKeys.ApiKey}'.");
             }
 
-            var stringifiedTags = StringifyGlobalTags(globalTags);
             var enabledIntegrations = new bool[IntegrationRegistry.Ids.Count];
             var enabledIntegrationNames = new List<string>(SupportedIntegrations.Length);
 
@@ -168,7 +168,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             return new ImmutableDirectLogSubmissionSettings(
                 host: host ?? string.Empty,
                 source: source ?? string.Empty,
-                globalTags: stringifiedTags,
+                globalTags: new ReadOnlyDictionary<string, string>(globalTags),
                 intakeUrl: intakeUri!,
                 apiKey: apiKey ?? string.Empty,
                 isEnabled: isEnabled,
@@ -179,7 +179,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 batchingOptions);
         }
 
-        private static string StringifyGlobalTags(IDictionary<string, string> globalTags)
+        public static string StringifyGlobalTags(IReadOnlyDictionary<string, string> globalTags)
         {
             if (globalTags.Count == 0)
             {
@@ -206,7 +206,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             return new ImmutableDirectLogSubmissionSettings(
                 host: string.Empty,
                 source: string.Empty,
-                globalTags: string.Empty,
+                globalTags: new Dictionary<string, string>(),
                 intakeUrl: new Uri("http://localhost"),
                 apiKey: string.Empty,
                 isEnabled: false,
