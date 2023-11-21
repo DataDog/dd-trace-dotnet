@@ -61,8 +61,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 var activeScope = Tracer.Instance.InternalActiveScope;
                 var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span?.Context;
 
+                var useWcfWebHttpResourceNames = Tracer.Instance.Settings.WcfWebHttpResourceNamesEnabled;
+
                 // Then, create the new scope
-                var scope = WcfCommon.CreateScope(requestContext);
+                var scope = WcfCommon.CreateScope(requestContext, useWcfWebHttpResourceNames);
 
                 if (scope != null)
                 {

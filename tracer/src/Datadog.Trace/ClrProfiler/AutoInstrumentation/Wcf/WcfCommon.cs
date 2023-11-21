@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
         public static ConditionalWeakTable<object, Scope> Scopes { get; } = new();
 
-        internal static Scope? CreateScope<TRequestContext>(TRequestContext requestContext)
+        internal static Scope? CreateScope<TRequestContext>(TRequestContext requestContext, bool useWebHttpResourceNames)
             where TRequestContext : IRequestContext
         {
             var requestMessage = requestContext.RequestMessage;
@@ -125,14 +125,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
                 string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForComponent("wcf");
                 var tags = new WcfTags();
+
+                string? resourceName = null;
+                if (useWebHttpResourceNames
+                 && requestProperties.TryGetValue("UriMatched", out object uriMatched)
+                 && uriMatched is true
+                 && requestProperties.TryGetValue("UriTemplateMatchResults", out var matchResults)
+                 && matchResults is not null
+                 && matchResults.DuckCast<UriTemplateMatchStruct>().Template is { } template
+                 && template.ToString() is { } templateValue
+                 && !string.IsNullOrEmpty(templateValue))
+                {
+                    resourceName = string.IsNullOrEmpty(httpMethod)
+                                       ? templateValue
+                                       : $"{httpMethod} {templateValue}";
+                }
+
                 scope = tracer.StartActiveInternal(operationName, propagatedContext, tags: tags);
                 var span = scope.Span;
 
                 var requestHeaders = requestMessage.Headers;
                 Uri? requestHeadersTo = requestHeaders?.To;
 
+                resourceName ??= GetResourceName(requestHeaders);
                 span.DecorateWebServerSpan(
-                    resourceName: GetResourceName(requestHeaders),
+                    resourceName: resourceName,
                     httpMethod,
                     host,
                     httpUrl: requestHeadersTo?.AbsoluteUri,
