@@ -6,7 +6,7 @@
 using Xunit;
 using Xunit.Abstractions;
 
-[assembly: TestFramework("Datadog.Trace.Tools.Runner.ArtifactTests.CustomTestFramework", "Datadog.Trace.Tools.Runner.ArtifactTests")]
+[assembly: TestFramework("Datadog.Trace.Tools.dd_dotnet.ArtifactTests.CustomTestFramework", "Datadog.Trace.Tools.dd_dotnet.ArtifactTests")]
 
 namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests;
 

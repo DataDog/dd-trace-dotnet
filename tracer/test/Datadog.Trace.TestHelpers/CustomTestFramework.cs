@@ -24,6 +24,22 @@ namespace Datadog.Trace.TestHelpers
             : base(messageSink)
         {
             FluentAssertions.Formatting.Formatter.AddFormatter(new DiffPaneModelFormatter());
+
+            Task memoryDumpTask = null;
+
+            if (bool.Parse(Environment.GetEnvironmentVariable("enable_crash_dumps") ?? "false"))
+            {
+                var progress = new Progress<string>(message => messageSink.OnMessage(new DiagnosticMessage(message)));
+
+                try
+                {
+                    MemoryDumpHelper.InitializeAsync(progress).GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    messageSink.OnMessage(new DiagnosticMessage($"MemoryDumpHelper initialization failed: {ex}"));
+                }
+            }
         }
 
         public CustomTestFramework(IMessageSink messageSink, Type typeTestedAssembly)

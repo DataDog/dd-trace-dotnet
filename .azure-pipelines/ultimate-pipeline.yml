@@ -3396,6 +3396,12 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         enable_crash_dumps: true
 
+    - publish: tracer/build_data
+      displayName: Uploading tool_artifacts_tests_windows logs
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
     - task: PublishTestResults@2
       displayName: publish test results
       inputs:
@@ -3499,6 +3505,16 @@ stages:
       parameters:
         baseImage: $(baseImage)
         command: "BuildAndRunDdDotnetArtifactTests --framework net7.0"
+
+    - script: |
+        sudo chmod -R 644 tracer/build_data/dumps/* || true
+      displayName: Make dumps uploadable to AzDo
+      condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
     - task: PublishTestResults@2
       displayName: publish test results
