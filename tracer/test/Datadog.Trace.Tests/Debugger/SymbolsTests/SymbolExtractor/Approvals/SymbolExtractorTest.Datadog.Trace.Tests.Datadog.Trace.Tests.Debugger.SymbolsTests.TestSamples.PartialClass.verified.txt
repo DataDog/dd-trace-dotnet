@@ -1,4 +1,4 @@
-﻿{
+{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -18,7 +18,8 @@
           "language_specifics": {
             "super_classes": [
               "System.Object"
-            ]
+            ],
+            "pdb_exist": true
           },
           "symbols": [
             {
@@ -61,11 +62,11 @@
               "scope_type": "method",
               "name": "Foo",
               "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
-              "start_line": 21,
+              "start_line": 22,
               "end_line": 25,
               "language_specifics": {
                 "return_type": "System.Void",
-                "start_column": 9,
+                "start_column": 13,
                 "end_column": 55
               },
               "symbols": [
@@ -80,10 +81,10 @@
                 {
                   "scope_type": "local",
                   "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
-                  "start_line": 21,
+                  "start_line": 22,
                   "end_line": 25,
                   "language_specifics": {
-                    "start_column": 9,
+                    "start_column": 13,
                     "end_column": 55
                   },
                   "symbols": [
@@ -91,13 +92,13 @@
                       "name": "rand",
                       "type": "System.Random",
                       "symbol_type": "local",
-                      "line": 21
+                      "line": 22
                     },
                     {
                       "name": "next",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 21
+                      "line": 22
                     }
                   ]
                 }
@@ -107,11 +108,11 @@
               "scope_type": "method",
               "name": "Bar",
               "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClassPartTwo.cs",
-              "start_line": 15,
+              "start_line": 16,
               "end_line": 19,
               "language_specifics": {
                 "return_type": "System.Void",
-                "start_column": 9,
+                "start_column": 13,
                 "end_column": 56
               },
               "symbols": [
@@ -126,10 +127,10 @@
                 {
                   "scope_type": "local",
                   "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClassPartTwo.cs",
-                  "start_line": 15,
+                  "start_line": 16,
                   "end_line": 19,
                   "language_specifics": {
-                    "start_column": 9,
+                    "start_column": 13,
                     "end_column": 56
                   },
                   "symbols": [
@@ -137,13 +138,13 @@
                       "name": "rand",
                       "type": "System.Random",
                       "symbol_type": "local",
-                      "line": 15
+                      "line": 16
                     },
                     {
                       "name": "next",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 15
+                      "line": 16
                     }
                   ]
                 }

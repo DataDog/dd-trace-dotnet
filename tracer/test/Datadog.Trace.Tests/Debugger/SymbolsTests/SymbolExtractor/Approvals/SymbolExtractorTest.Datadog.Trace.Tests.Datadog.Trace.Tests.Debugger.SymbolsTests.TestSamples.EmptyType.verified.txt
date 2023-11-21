@@ -1,4 +1,4 @@
-﻿{
+{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -18,7 +18,8 @@
           "language_specifics": {
             "super_classes": [
               "System.Object"
-            ]
+            ],
+            "pdb_exist": true
           },
           "scopes": [
             {

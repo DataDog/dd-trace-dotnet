@@ -57,6 +57,8 @@ namespace Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples
                 await _service.BookRoom(person, room);
             }
 
+            Console.WriteLine(count);
+
             return await GetCourseSchedule(name, address);
         }
 

@@ -1,4 +1,4 @@
-﻿{
+{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -13,23 +13,24 @@
         {
           "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq",
-          "start_line": 14,
+          "start_line": 15,
           "end_line": 25,
           "language_specifics": {
             "super_classes": [
               "System.Object"
-            ]
+            ],
+            "pdb_exist": true
           },
           "scopes": [
             {
               "scope_type": "method",
               "name": "Foo",
               "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
-              "start_line": 14,
+              "start_line": 15,
               "end_line": 25,
               "language_specifics": {
                 "return_type": "System.Void",
-                "start_column": 9,
+                "start_column": 13,
                 "end_column": 62
               },
               "scopes": [
@@ -180,10 +181,10 @@
                 {
                   "scope_type": "local",
                   "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
-                  "start_line": 14,
+                  "start_line": 15,
                   "end_line": 25,
                   "language_specifics": {
-                    "start_column": 9,
+                    "start_column": 13,
                     "end_column": 62
                   },
                   "symbols": [
@@ -191,7 +192,7 @@
                       "name": "enumerable",
                       "type": "System.Collections.Generic.IEnumerable`1<System.Int32>",
                       "symbol_type": "local",
-                      "line": 14
+                      "line": 15
                     }
                   ]
                 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -13,33 +13,34 @@
         {
           "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleScopes",
-          "start_line": 13,
+          "start_line": 17,
           "end_line": 68,
           "language_specifics": {
             "super_classes": [
               "System.Object"
-            ]
+            ],
+            "pdb_exist": true
           },
           "scopes": [
             {
               "scope_type": "method",
               "name": "LocalScopes",
               "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
-              "start_line": 13,
+              "start_line": 17,
               "end_line": 68,
               "language_specifics": {
                 "return_type": "System.Void",
-                "start_column": 9,
+                "start_column": 17,
                 "end_column": 63
               },
               "scopes": [
                 {
                   "scope_type": "local",
                   "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
-                  "start_line": 13,
+                  "start_line": 17,
                   "end_line": 68,
                   "language_specifics": {
-                    "start_column": 9,
+                    "start_column": 17,
                     "end_column": 63
                   },
                   "symbols": [
@@ -47,29 +48,29 @@
                       "name": "a",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 15
+                      "line": 17
                     },
                     {
                       "name": "b",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 15
+                      "line": 17
                     },
                     {
                       "name": "c",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 15
+                      "line": 17
                     }
                   ]
                 },
                 {
                   "scope_type": "local",
                   "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
-                  "start_line": 13,
+                  "start_line": 17,
                   "end_line": 68,
                   "language_specifics": {
-                    "start_column": 9,
+                    "start_column": 17,
                     "end_column": 63
                   },
                   "symbols": [
@@ -77,29 +78,29 @@
                       "name": "d",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 30
+                      "line": 32
                     },
                     {
                       "name": "e",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 30
+                      "line": 32
                     },
                     {
                       "name": "f",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 30
+                      "line": 32
                     }
                   ]
                 },
                 {
                   "scope_type": "local",
                   "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
-                  "start_line": 13,
+                  "start_line": 17,
                   "end_line": 68,
                   "language_specifics": {
-                    "start_column": 9,
+                    "start_column": 17,
                     "end_column": 63
                   },
                   "symbols": [
@@ -107,23 +108,23 @@
                       "name": "g",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 45
+                      "line": 47
                     },
                     {
                       "name": "h",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 45
+                      "line": 47
                     }
                   ]
                 },
                 {
                   "scope_type": "local",
                   "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
-                  "start_line": 13,
+                  "start_line": 17,
                   "end_line": 68,
                   "language_specifics": {
-                    "start_column": 9,
+                    "start_column": 17,
                     "end_column": 63
                   },
                   "symbols": [
@@ -131,19 +132,19 @@
                       "name": "i",
                       "type": "System.String",
                       "symbol_type": "local",
-                      "line": 55
+                      "line": 57
                     },
                     {
                       "name": "j",
                       "type": "System.String",
                       "symbol_type": "local",
-                      "line": 55
+                      "line": 57
                     },
                     {
                       "name": "k",
                       "type": "System.String",
                       "symbol_type": "local",
-                      "line": 55
+                      "line": 57
                     }
                   ]
                 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -13,12 +13,13 @@
         {
           "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine",
-          "start_line": 17,
+          "start_line": 26,
           "end_line": 59,
           "language_specifics": {
             "super_classes": [
               "System.Object"
-            ]
+            ],
+            "pdb_exist": true
           },
           "symbols": [
             {
@@ -48,64 +49,21 @@
             {
               "scope_type": "method",
               "name": "Init",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
-              "start_line": 17,
-              "end_line": 22,
+              "start_line": 0,
+              "end_line": 0,
               "language_specifics": {
-                "return_type": "System.Threading.Tasks.Task",
-                "start_column": 9,
-                "end_column": 72
-              },
-              "scopes": [
-                {
-                  "scope_type": "closure",
-                  "name": "Init",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
-                  "start_line": 17,
-                  "end_line": 22,
-                  "language_specifics": {
-                    "access_modifiers": [
-                      "Private"
-                    ],
-                    "annotations": [
-                      "Final Virtual"
-                    ],
-                    "return_type": "System.Void",
-                    "start_column": 9,
-                    "end_column": 72
-                  },
-                  "scopes": [
-                    {
-                      "scope_type": "local",
-                      "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
-                      "start_line": 17,
-                      "end_line": 22,
-                      "language_specifics": {
-                        "start_column": 9,
-                        "end_column": 72
-                      },
-                      "symbols": [
-                        {
-                          "name": "person",
-                          "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
-                          "symbol_type": "local",
-                          "line": 0
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
+                "return_type": "System.Threading.Tasks.Task"
+              }
             },
             {
               "scope_type": "method",
               "name": "DoAsyncWork",
               "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
-              "start_line": 25,
+              "start_line": 26,
               "end_line": 43,
               "language_specifics": {
                 "return_type": "System.Threading.Tasks.Task",
-                "start_column": 9,
+                "start_column": 13,
                 "end_column": 115
               },
               "symbols": [
@@ -127,7 +85,7 @@
                   "scope_type": "closure",
                   "name": "DoAsyncWork",
                   "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
-                  "start_line": 25,
+                  "start_line": 26,
                   "end_line": 43,
                   "language_specifics": {
                     "access_modifiers": [
@@ -137,17 +95,17 @@
                       "Final Virtual"
                     ],
                     "return_type": "System.Void",
-                    "start_column": 9,
+                    "start_column": 13,
                     "end_column": 115
                   },
                   "scopes": [
                     {
                       "scope_type": "local",
                       "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
-                      "start_line": 25,
+                      "start_line": 26,
                       "end_line": 43,
                       "language_specifics": {
-                        "start_column": 9,
+                        "start_column": 13,
                         "end_column": 115
                       },
                       "symbols": [
@@ -156,12 +114,24 @@
                           "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
                           "symbol_type": "local",
                           "line": 0
-                        },
+                        }
+                      ]
+                    },
+                    {
+                      "scope_type": "local",
+                      "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
+                      "start_line": 26,
+                      "end_line": 43,
+                      "language_specifics": {
+                        "start_column": 13,
+                        "end_column": 115
+                      },
+                      "symbols": [
                         {
                           "name": "e",
                           "type": "System.Exception",
                           "symbol_type": "local",
-                          "line": 0
+                          "line": 38
                         }
                       ]
                     }
@@ -190,7 +160,8 @@
                 ],
                 "interfaces": [
                   "System.IEquatable`1<Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person>"
-                ]
+                ],
+                "pdb_exist": true
               },
               "symbols": [
                 {
@@ -267,8 +238,8 @@
                   "scope_type": "method",
                   "name": "ToString",
                   "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
-                  "start_line": 48,
-                  "end_line": 50,
+                  "start_line": 49,
+                  "end_line": 49,
                   "language_specifics": {
                     "access_modifiers": [
                       "Public"
@@ -277,7 +248,7 @@
                       "Virtual"
                     ],
                     "return_type": "System.String",
-                    "start_column": 13,
+                    "start_column": 17,
                     "end_column": 52
                   }
                 }
@@ -295,7 +266,8 @@
                 ],
                 "interfaces": [
                   "System.IEquatable`1<Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Address>"
-                ]
+                ],
+                "pdb_exist": true
               },
               "symbols": [
                 {
@@ -355,8 +327,8 @@
                   "scope_type": "method",
                   "name": "ToString",
                   "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
-                  "start_line": 56,
-                  "end_line": 58,
+                  "start_line": 57,
+                  "end_line": 57,
                   "language_specifics": {
                     "access_modifiers": [
                       "Public"
@@ -365,7 +337,7 @@
                       "Virtual"
                     ],
                     "return_type": "System.String",
-                    "start_column": 13,
+                    "start_column": 17,
                     "end_column": 44
                   }
                 }

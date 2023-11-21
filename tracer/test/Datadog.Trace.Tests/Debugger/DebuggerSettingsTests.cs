@@ -96,7 +96,7 @@ namespace Datadog.Trace.Tests.Debugger
                 new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseBatchSizeInBytes, value }, }),
                 NullConfigurationTelemetry.Instance);
 
-            settings.SymbolDatabaseBatchSizeInBytes.Should().Be(1);
+            settings.SymbolDatabaseBatchSizeInBytes.Should().Be(100000);
         }
 
         [Theory]

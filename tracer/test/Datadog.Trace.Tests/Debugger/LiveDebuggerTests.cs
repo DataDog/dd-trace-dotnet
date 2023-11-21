@@ -38,11 +38,11 @@ public class LiveDebuggerTests
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
-        var symbolExtractor = new SymbolsUploaderMock();
+        var symbolsUploader = new SymbolsUploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create("env", "version");
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, symbolExtractor, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         probeStatusPoller.Called.Should().BeTrue();
@@ -61,11 +61,11 @@ public class LiveDebuggerTests
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
-        var symbolExtractor = new SymbolsUploaderMock();
+        var symbolsUploader = new SymbolsUploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, symbolExtractor, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         lineProbeResolver.Called.Should().BeFalse();
@@ -196,7 +196,7 @@ public class LiveDebuggerTests
 
         public Task StartExtractingAssemblySymbolsAsync()
         {
-            throw new NotImplementedException();
+            return Task.CompletedTask;
         }
     }
 
