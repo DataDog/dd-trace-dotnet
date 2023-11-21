@@ -19,7 +19,6 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      
       "evidence": {
         "value": "MD5"
       }
@@ -55,7 +54,6 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      
       "evidence": {
         "value": "MD5"
       }
@@ -91,7 +89,6 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      
       "evidence": {
         "value": "MD5"
       }
@@ -127,7 +124,6 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      
       "evidence": {
         "value": "MD5"
       }
@@ -163,7 +159,6 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      
       "evidence": {
         "value": "MD5"
       }

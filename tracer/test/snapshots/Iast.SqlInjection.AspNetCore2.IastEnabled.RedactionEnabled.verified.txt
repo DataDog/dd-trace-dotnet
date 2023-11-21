@@ -27,7 +27,6 @@
   "vulnerabilities": [
     {
       "type": "SQL_INJECTION",
-      
       "evidence": {
         "valueParts": [
           {

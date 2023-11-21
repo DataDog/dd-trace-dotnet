@@ -27,7 +27,6 @@
   "vulnerabilities": [
     {
       "type": "COMMAND_INJECTION",
-      
       "evidence": {
         "valueParts": [
           {

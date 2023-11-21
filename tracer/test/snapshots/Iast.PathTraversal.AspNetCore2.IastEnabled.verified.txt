@@ -27,7 +27,6 @@
   "vulnerabilities": [
     {
       "type": "PATH_TRAVERSAL",
-      
       "evidence": {
         "valueParts": [
           {

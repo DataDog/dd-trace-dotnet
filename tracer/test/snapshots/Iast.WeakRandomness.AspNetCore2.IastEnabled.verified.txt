@@ -27,7 +27,6 @@
   "vulnerabilities": [
     {
       "type": "WEAK_RANDOMNESS",
-      
       "evidence": {
         "value": "System.Random"
       }

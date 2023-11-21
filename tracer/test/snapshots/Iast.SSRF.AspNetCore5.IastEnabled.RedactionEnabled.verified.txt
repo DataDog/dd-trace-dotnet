@@ -28,7 +28,6 @@
   "vulnerabilities": [
     {
       "type": "SSRF",
-      
       "evidence": {
         "valueParts": [
           {

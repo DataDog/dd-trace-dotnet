@@ -23,7 +23,6 @@
   "vulnerabilities": [
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
-      
       "evidence": {
         "valueParts": [
           {
@@ -35,7 +34,6 @@
     },
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
-      
       "evidence": {
         "valueParts": [
           {
@@ -47,7 +45,6 @@
     },
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
-      
       "evidence": {
         "valueParts": [
           {
@@ -59,7 +56,6 @@
     },
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
-      
       "evidence": {
         "valueParts": [
           {

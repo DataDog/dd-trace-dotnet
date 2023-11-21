@@ -23,7 +23,6 @@
   "vulnerabilities": [
     {
       "type": "LDAP_INJECTION",
-      
       "evidence": {
         "valueParts": [
           {
@@ -35,7 +34,6 @@
     },
     {
       "type": "LDAP_INJECTION",
-      
       "evidence": {
         "valueParts": [
           {

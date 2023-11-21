@@ -28,14 +28,12 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      
       "evidence": {
         "value": "MD5"
       }
     },
     {
       "type": "WEAK_HASH",
-      
       "evidence": {
         "value": "SHA1"
       }

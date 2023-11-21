@@ -19,7 +19,6 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
-      
       "evidence": {
         "value": "DES"
       }
@@ -55,7 +54,6 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
-      
       "evidence": {
         "value": "DES"
       }
@@ -91,7 +89,6 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
-      
       "evidence": {
         "value": "RC2"
       }
@@ -127,7 +124,6 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
-      
       "evidence": {
         "value": "RC2"
       }
@@ -163,7 +159,6 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
-      
       "evidence": {
         "value": "TripleDES"
       }
@@ -199,7 +194,6 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
-      
       "evidence": {
         "value": "TripleDES"
       }
