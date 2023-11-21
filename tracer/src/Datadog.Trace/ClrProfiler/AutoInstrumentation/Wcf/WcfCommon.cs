@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
@@ -24,17 +26,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
     internal class WcfCommon
     {
         private const string HttpRequestMessagePropertyTypeName = "System.ServiceModel.Channels.HttpRequestMessageProperty";
-        private static readonly Lazy<Func<object>> _getCurrentOperationContext = new Lazy<Func<object>>(CreateGetCurrentOperationContextDelegate, isThreadSafe: true);
+        private static readonly Lazy<Func<object>?> _getCurrentOperationContext = new(CreateGetCurrentOperationContextDelegate, isThreadSafe: true);
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WcfCommon));
 
         internal const string IntegrationName = nameof(IntegrationId.Wcf);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.Wcf;
 
-        public static Func<object> GetCurrentOperationContext => _getCurrentOperationContext.Value;
+        public static Func<object>? GetCurrentOperationContext => _getCurrentOperationContext.Value;
 
         public static ConditionalWeakTable<object, Scope> Scopes { get; } = new();
 
-        internal static Scope CreateScope<TRequestContext>(TRequestContext requestContext)
+        internal static Scope? CreateScope<TRequestContext>(TRequestContext requestContext)
             where TRequestContext : IRequestContext
         {
             var requestMessage = requestContext.RequestMessage;
@@ -52,14 +54,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
-                SpanContext propagatedContext = null;
-                string host = null;
-                string userAgent = null;
-                string httpMethod = null;
+                SpanContext? propagatedContext = null;
+                string? host = null;
+                string? userAgent = null;
+                string? httpMethod = null;
                 WebHeadersCollection? headers = null;
 
                 IDictionary<string, object> requestProperties = requestMessage.Properties;
@@ -127,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 var span = scope.Span;
 
                 var requestHeaders = requestMessage.Headers;
-                Uri requestHeadersTo = requestHeaders.To;
+                Uri? requestHeadersTo = requestHeaders?.To;
 
                 span.DecorateWebServerSpan(
                     resourceName: GetResourceName(requestHeaders),
@@ -140,7 +142,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 if (headers is not null)
                 {
                     var headerTagsProcessor = new SpanContextPropagator.SpanTagHeaderTagProcessor(span);
-                    SpanContextPropagator.Instance.ExtractHeaderTags(ref headerTagsProcessor, headers.Value, tracer.Settings.HeaderTagsInternal, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                    SpanContextPropagator.Instance.ExtractHeaderTags(ref headerTagsProcessor, headers.Value, tracer.Settings.HeaderTagsInternal!, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
@@ -155,9 +157,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             return scope;
         }
 
-        private static string GetResourceName(IMessageHeaders requestHeaders)
+        private static string? GetResourceName(IMessageHeaders? requestHeaders)
         {
-            var action = requestHeaders.Action;
+            var action = requestHeaders?.Action;
             if (!string.IsNullOrEmpty(action))
             {
                 return action;
@@ -165,13 +167,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
             if (Tracer.Instance.Settings.WcfObfuscationEnabled)
             {
-                return UriHelpers.GetCleanUriPath(requestHeaders.To?.LocalPath);
+                return UriHelpers.GetCleanUriPath(requestHeaders?.To?.LocalPath);
             }
 
-            return requestHeaders.To?.LocalPath;
+            return requestHeaders?.To?.LocalPath;
         }
 
-        private static Func<object> CreateGetCurrentOperationContextDelegate()
+        private static Func<object>? CreateGetCurrentOperationContextDelegate()
         {
             var operationContextType = Type.GetType("System.ServiceModel.OperationContext, System.ServiceModel, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", throwOnError: false);
             if (operationContextType is not null)

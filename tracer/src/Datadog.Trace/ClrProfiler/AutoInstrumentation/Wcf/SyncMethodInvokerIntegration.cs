@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 return CallTargetState.GetDefault();
             }
 
-            var operationContext = WcfCommon.GetCurrentOperationContext();
+            var operationContext = WcfCommon.GetCurrentOperationContext?.Invoke();
             if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
             {
                 return new CallTargetState(WcfCommon.CreateScope(operationContextProxy.RequestContext));
