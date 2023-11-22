@@ -616,7 +616,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
-      public static IEnumerable<object[]>  DataStreamsRabbitMQ =>
+      public static IEnumerable<object[]> DataStreamsRabbitMQ =>
 
             new List<object[]>
             {
@@ -844,6 +844,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.5.14" },
                 new object[] { "5.14.0" },
                 new object[] { "6.11.0" },
+                new object[] { "8.0.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "5.14.0" },
@@ -856,22 +857,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETCOREAPP3_1
                 new object[] { "5.14.0" },
                 new object[] { "6.11.0" },
+                new object[] { "8.0.0" },
 #endif
 #if NET5_0
                 new object[] { "5.14.0" },
                 new object[] { "6.11.0" },
+                new object[] { "8.0.0" },
 #endif
 #if NET6_0
                 new object[] { "5.14.0" },
                 new object[] { "6.11.0" },
+                new object[] { "8.0.0" },
 #endif
 #if NET7_0
                 new object[] { "5.14.0" },
                 new object[] { "6.11.0" },
+                new object[] { "8.0.0" },
 #endif
 #if NET8_0
                 new object[] { "5.14.0" },
                 new object[] { "6.11.0" },
+                new object[] { "8.0.0" },
 #endif
 #endif
             };

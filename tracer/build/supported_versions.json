@@ -909,16 +909,16 @@
     "integrationName": "ServiceStackRedis",
     "assemblyName": "ServiceStack.Redis",
     "minAssemblyVersionInclusive": "4.0.0",
-    "maxAssemblyVersionInclusive": "6.65535.65535",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
     "packages": [
       {
         "name": "ServiceStack.Redis",
         "minVersionAvailableInclusive": "2.9.0",
         "minVersionSupportedInclusive": "4.0.2",
         "minVersionTestedInclusive": "4.5.14",
-        "maxVersionSupportedInclusive": "6.11.0",
+        "maxVersionSupportedInclusive": "8.0.0",
         "maxVersionAvailableInclusive": "8.0.0",
-        "maxVersionTestedInclusive": "6.11.0"
+        "maxVersionTestedInclusive": "8.0.0"
       }
     ]
   },
