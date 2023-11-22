@@ -1,4 +1,4 @@
-{
+﻿{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -13,6 +13,7 @@
         {
           "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.PartialClass",
+          "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
           "start_line": 14,
           "end_line": 25,
           "language_specifics": {
@@ -49,7 +50,7 @@
             {
               "scope_type": "method",
               "name": ".ctor",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
               "start_line": 14,
               "end_line": 18,
               "language_specifics": {
@@ -61,7 +62,7 @@
             {
               "scope_type": "method",
               "name": "Foo",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
               "start_line": 22,
               "end_line": 25,
               "language_specifics": {
@@ -80,7 +81,7 @@
               "scopes": [
                 {
                   "scope_type": "local",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
                   "start_line": 22,
                   "end_line": 25,
                   "language_specifics": {
@@ -107,7 +108,7 @@
             {
               "scope_type": "method",
               "name": "Bar",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClassPartTwo.cs",
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClassPartTwo.cs",
               "start_line": 16,
               "end_line": 19,
               "language_specifics": {
@@ -126,7 +127,7 @@
               "scopes": [
                 {
                   "scope_type": "local",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClassPartTwo.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClassPartTwo.cs",
                   "start_line": 16,
                   "end_line": 19,
                   "language_specifics": {

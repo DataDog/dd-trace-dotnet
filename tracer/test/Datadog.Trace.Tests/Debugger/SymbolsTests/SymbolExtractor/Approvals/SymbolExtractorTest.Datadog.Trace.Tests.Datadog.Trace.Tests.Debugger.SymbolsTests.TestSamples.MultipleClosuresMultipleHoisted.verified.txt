@@ -1,4 +1,4 @@
-{
+﻿{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -13,6 +13,7 @@
         {
           "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleClosuresMultipleHoisted",
+          "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
           "start_line": 15,
           "end_line": 30,
           "language_specifics": {
@@ -25,7 +26,7 @@
             {
               "scope_type": "method",
               "name": "Foo",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
               "start_line": 15,
               "end_line": 30,
               "language_specifics": {
@@ -51,13 +52,10 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 16,
                   "end_line": 16,
                   "language_specifics": {
-                    "access_modifiers": [
-                      "Assembly"
-                    ],
                     "return_type": "System.Bool",
                     "start_column": 46,
                     "end_column": 57
@@ -74,13 +72,10 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 17,
                   "end_line": 17,
                   "language_specifics": {
-                    "access_modifiers": [
-                      "Assembly"
-                    ],
                     "return_type": "System.Int32",
                     "start_column": 47,
                     "end_column": 53
@@ -97,13 +92,10 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 20,
                   "end_line": 20,
                   "language_specifics": {
-                    "access_modifiers": [
-                      "Assembly"
-                    ],
                     "return_type": "System.Int32",
                     "start_column": 44,
                     "end_column": 50
@@ -120,13 +112,10 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 21,
                   "end_line": 21,
                   "language_specifics": {
-                    "access_modifiers": [
-                      "Assembly"
-                    ],
                     "return_type": "System.Int32",
                     "start_column": 44,
                     "end_column": 46
@@ -143,13 +132,10 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 22,
                   "end_line": 22,
                   "language_specifics": {
-                    "access_modifiers": [
-                      "Assembly"
-                    ],
                     "return_type": "System.Int32",
                     "start_column": 65,
                     "end_column": 80
@@ -172,13 +158,10 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 23,
                   "end_line": 23,
                   "language_specifics": {
-                    "access_modifiers": [
-                      "Assembly"
-                    ],
                     "return_type": "System.Bool",
                     "start_column": 46,
                     "end_column": 60
@@ -194,7 +177,7 @@
                 },
                 {
                   "scope_type": "local",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 15,
                   "end_line": 30,
                   "language_specifics": {

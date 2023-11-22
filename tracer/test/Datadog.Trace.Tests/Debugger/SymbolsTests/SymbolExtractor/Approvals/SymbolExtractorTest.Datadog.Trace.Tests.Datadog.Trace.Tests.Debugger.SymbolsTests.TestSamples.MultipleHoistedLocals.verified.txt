@@ -13,6 +13,7 @@
         {
           "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleHoistedLocals",
+          "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocals.cs",
           "start_line": 14,
           "end_line": 26,
           "language_specifics": {
@@ -25,7 +26,7 @@
             {
               "scope_type": "method",
               "name": "HoistedLocals",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocals.cs",
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocals.cs",
               "start_line": 14,
               "end_line": 26,
               "language_specifics": {
@@ -37,13 +38,10 @@
                 {
                   "scope_type": "closure",
                   "name": "HoistedLocals",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocals.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocals.cs",
                   "start_line": 20,
                   "end_line": 23,
                   "language_specifics": {
-                    "access_modifiers": [
-                      "Assembly"
-                    ],
                     "return_type": "System.Void",
                     "start_column": 17,
                     "end_column": 59
@@ -51,7 +49,7 @@
                   "scopes": [
                     {
                       "scope_type": "local",
-                      "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocals.cs",
+                      "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocals.cs",
                       "start_line": 20,
                       "end_line": 23,
                       "language_specifics": {
@@ -71,7 +69,7 @@
                 },
                 {
                   "scope_type": "local",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocals.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocals.cs",
                   "start_line": 14,
                   "end_line": 26,
                   "language_specifics": {

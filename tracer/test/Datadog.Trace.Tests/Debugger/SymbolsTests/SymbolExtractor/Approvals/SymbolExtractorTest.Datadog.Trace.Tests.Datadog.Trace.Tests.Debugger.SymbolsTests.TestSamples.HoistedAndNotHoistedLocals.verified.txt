@@ -13,6 +13,7 @@
         {
           "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals",
+          "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
           "start_line": 15,
           "end_line": 73,
           "language_specifics": {
@@ -38,7 +39,7 @@
             {
               "scope_type": "method",
               "name": ".ctor",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
               "start_line": 15,
               "end_line": 18,
               "language_specifics": {
@@ -58,7 +59,7 @@
             {
               "scope_type": "method",
               "name": "AssignRoom",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
               "start_line": 27,
               "end_line": 63,
               "language_specifics": {
@@ -90,13 +91,10 @@
                 {
                   "scope_type": "closure",
                   "name": "AssignRoom",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
                   "start_line": 27,
                   "end_line": 63,
                   "language_specifics": {
-                    "access_modifiers": [
-                      "Private"
-                    ],
                     "annotations": [
                       "Final Virtual"
                     ],
@@ -107,7 +105,7 @@
                   "scopes": [
                     {
                       "scope_type": "local",
-                      "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
+                      "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
                       "start_line": 27,
                       "end_line": 63,
                       "language_specifics": {
@@ -165,7 +163,7 @@
             {
               "scope_type": "method",
               "name": "GetPersonById",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
               "start_line": 73,
               "end_line": 73,
               "language_specifics": {
@@ -203,9 +201,6 @@
                   "start_line": 0,
                   "end_line": 0,
                   "language_specifics": {
-                    "access_modifiers": [
-                      "Public"
-                    ],
                     "annotations": [
                       "Final Virtual"
                     ],
@@ -232,9 +227,6 @@
                   "start_line": 0,
                   "end_line": 0,
                   "language_specifics": {
-                    "access_modifiers": [
-                      "Public"
-                    ],
                     "return_type": "System.Void"
                   }
                 }

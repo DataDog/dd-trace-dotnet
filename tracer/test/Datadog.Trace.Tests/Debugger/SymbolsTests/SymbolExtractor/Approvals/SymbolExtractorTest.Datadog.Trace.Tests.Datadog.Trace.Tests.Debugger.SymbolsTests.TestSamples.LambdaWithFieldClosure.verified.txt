@@ -1,4 +1,4 @@
-{
+﻿{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -13,6 +13,7 @@
         {
           "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithFieldClosure",
+          "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
           "start_line": 14,
           "end_line": 28,
           "language_specifics": {
@@ -38,7 +39,7 @@
             {
               "scope_type": "method",
               "name": ".ctor",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
               "start_line": 14,
               "end_line": 17,
               "language_specifics": {
@@ -50,7 +51,7 @@
             {
               "scope_type": "method",
               "name": "Foo",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
               "start_line": 21,
               "end_line": 28,
               "language_specifics": {
@@ -62,13 +63,10 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
                   "start_line": 23,
                   "end_line": 25,
                   "language_specifics": {
-                    "access_modifiers": [
-                      "Private"
-                    ],
                     "return_type": "System.Void",
                     "start_column": 17,
                     "end_column": 45
@@ -76,7 +74,7 @@
                   "scopes": [
                     {
                       "scope_type": "local",
-                      "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
+                      "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
                       "start_line": 23,
                       "end_line": 25,
                       "language_specifics": {
@@ -96,7 +94,7 @@
                 },
                 {
                   "scope_type": "local",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
                   "start_line": 21,
                   "end_line": 28,
                   "language_specifics": {

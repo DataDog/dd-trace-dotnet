@@ -9,7 +9,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Castle.Components.DictionaryAdapter;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -83,42 +82,47 @@ public class SymbolExtractorTest
         var assembly = root.Scopes[0];
         assembly.SourceFile = null;
         assembly.LanguageSpecifics = null;
-        var classes = assembly.Scopes;
-        var classesScope = new List<Trace.Debugger.Symbols.Model.Scope>();
-        for (int i = 0; i < classes.Length; i++)
+        for (int i = 0; i < assembly.Scopes.Length; i++)
         {
-            var @class = classes[0];
-            @class.SourceFile = null;
-            if (@class.LanguageSpecifics.HasValue)
-            {
-                var ls = @class.LanguageSpecifics.Value;
-                ls.AccessModifiers = null; // depends on .net version
-                @class.LanguageSpecifics = ls;
-            }
-
-            var methods = @class.Scopes;
-            List<Trace.Debugger.Symbols.Model.Scope> methodsScope = new EditableList<Trace.Debugger.Symbols.Model.Scope>();
-            for (int j = 0; j < methods.Length; j++)
-            {
-                var method = methods[j];
-                if (method.LanguageSpecifics.HasValue)
-                {
-                    var ls = method.LanguageSpecifics.Value;
-                    ls.AccessModifiers = null; // depends on .net version
-                    method.LanguageSpecifics = ls;
-                }
-
-                methodsScope.Add(method);
-            }
-
-            @class.Scopes = methodsScope.ToArray();
-            classesScope.Add(@class);
+            SanitizeScopeToVerify(ref assembly.Scopes[i]);
         }
 
-        assembly.Scopes = classesScope.ToArray();
         root.Scopes = new[] { assembly };
 
         return JsonConvert.SerializeObject(root, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+        void SanitizeScopeToVerify(ref Trace.Debugger.Symbols.Model.Scope scope)
+        {
+            if (scope == default)
+            {
+                return;
+            }
+
+            var indexOfPathStart = scope.SourceFile?.IndexOf("\\tracer", StringComparison.Ordinal) + 1;
+            if (indexOfPathStart > 0)
+            {
+                // relative path
+                scope.SourceFile = scope.SourceFile.Substring(indexOfPathStart.Value);
+            }
+
+            if (scope.LanguageSpecifics.HasValue)
+            {
+                var ls = scope.LanguageSpecifics.Value;
+                // depends on .net version
+                ls.AccessModifiers = null;
+                scope.LanguageSpecifics = ls;
+            }
+
+            if (scope.Scopes == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < scope.Scopes.Length; i++)
+            {
+                SanitizeScopeToVerify(ref scope.Scopes[i]);
+            }
+        }
     }
 
     private VerifySettings ConfigureVerifySettings(string assemblyName, string className)

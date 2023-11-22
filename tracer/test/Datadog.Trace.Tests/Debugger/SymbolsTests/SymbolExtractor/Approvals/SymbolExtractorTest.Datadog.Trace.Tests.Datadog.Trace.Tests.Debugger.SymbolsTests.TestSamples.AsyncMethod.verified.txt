@@ -1,4 +1,4 @@
-{
+﻿{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -13,6 +13,7 @@
         {
           "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.AsyncMethod",
+          "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
           "start_line": 20,
           "end_line": 21,
           "language_specifics": {
@@ -25,7 +26,7 @@
             {
               "scope_type": "method",
               "name": "GetTime",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
               "start_line": 20,
               "end_line": 21,
               "language_specifics": {
@@ -37,13 +38,10 @@
                 {
                   "scope_type": "closure",
                   "name": "GetTime",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
                   "start_line": 20,
                   "end_line": 21,
                   "language_specifics": {
-                    "access_modifiers": [
-                      "Assembly"
-                    ],
                     "return_type": "System.Int32",
                     "start_column": 21,
                     "end_column": 52
@@ -51,7 +49,7 @@
                   "scopes": [
                     {
                       "scope_type": "local",
-                      "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
+                      "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
                       "start_line": 20,
                       "end_line": 21,
                       "language_specifics": {
