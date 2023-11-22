@@ -136,9 +136,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                  && template.ToString() is { } templateValue
                  && !string.IsNullOrEmpty(templateValue))
                 {
-                    resourceName = string.IsNullOrEmpty(httpMethod)
-                                       ? templateValue
-                                       : $"{httpMethod} {templateValue}";
+                    if (templateValue[0] == '/')
+                    {
+                        resourceName = string.IsNullOrEmpty(httpMethod)
+                                           ? templateValue
+                                           : $"{httpMethod} {templateValue}";
+                    }
+                    else
+                    {
+                        resourceName = string.IsNullOrEmpty(httpMethod)
+                                           ? $"/{templateValue}"
+                                           : $"{httpMethod} /{templateValue}";
+                    }
                 }
 
                 scope = tracer.StartActiveInternal(operationName, propagatedContext, tags: tags);
