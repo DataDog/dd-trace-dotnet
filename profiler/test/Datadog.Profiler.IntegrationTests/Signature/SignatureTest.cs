@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
+
 using System;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
@@ -40,18 +41,12 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             CheckExceptionsInProfiles(framework, exceptionSamples);
         }
 
-        private void CheckExceptionsInProfiles(string framework, (string Type, string Message, long Count, StackTrace Stacktrace)[] exceptionSamples)
+        private static void CheckExceptionsInProfiles(string framework, (string Type, string Message, long Count, StackTrace Stacktrace)[] exceptionSamples)
         {
-            PlatformID os = Environment.OSVersion.Platform;
+            var os = Environment.OSVersion.Platform;
             StackTrace stack;
-            if (os == PlatformID.Unix)
+            if (os == PlatformID.Unix && framework != "net8.0")
             {
-                if (framework == "net8.0")
-                {
-                    // TODO: fix this - they may have fixed the bug in .NET 8!
-                    return;
-                }
-
                 // BUG on Linux: invalid TKey instead of TVal
                 stack = new StackTrace(
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TKey> |fn:ThrowFromGeneric |fg:<T0> |sg:(T0 element, TKey key1, TKey value, TKey key2)"),
