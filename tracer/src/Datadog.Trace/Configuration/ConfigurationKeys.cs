@@ -586,6 +586,14 @@ namespace Datadog.Trace.Configuration
             public const string DelayWcfInstrumentationEnabled = "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED";
 
             /// <summary>
+            /// Configuration key to enable or disable improved template-based resource names
+            /// when using WCF Web HTTP. Requires <see cref="DelayWcfInstrumentationEnabled"/> be set
+            /// to true. Disabled by default
+            /// </summary>
+            /// <seealso cref="TracerSettings.WcfWebHttpResourceNamesEnabled"/>
+            public const string WcfWebHttpResourceNamesEnabled = "DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED";
+
+            /// <summary>
             /// Feature flag to enable obfuscating the <c>LocalPath</c> of a WCF request that goes
             /// into the <c>resourceName</c> of a span.
             /// <para>Note: that this only applies when the WCF action is an empty string.</para>

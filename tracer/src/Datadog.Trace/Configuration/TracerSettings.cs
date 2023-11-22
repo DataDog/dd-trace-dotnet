@@ -226,6 +226,10 @@ namespace Datadog.Trace.Configuration
                                             .WithKeys(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             .AsBool(defaultValue: false);
 
+            WcfWebHttpResourceNamesEnabled = config
+                                            .WithKeys(ConfigurationKeys.FeatureFlags.WcfWebHttpResourceNamesEnabled)
+                                            .AsBool(defaultValue: false);
+
             WcfObfuscationEnabled = config
                                    .WithKeys(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled)
                                    .AsBool(defaultValue: true);
@@ -653,6 +657,12 @@ namespace Datadog.Trace.Configuration
         /// until later in the WCF pipeline when the WCF server exception handling is established.
         /// </summary>
         internal bool DelayWcfInstrumentationEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether to enable improved template-based resource names
+        /// when using WCF Web HTTP.
+        /// </summary>
+        internal bool WcfWebHttpResourceNamesEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether to obfuscate the <c>LocalPath</c> of a WCF request that goes
