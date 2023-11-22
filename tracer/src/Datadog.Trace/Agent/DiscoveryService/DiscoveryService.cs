@@ -75,7 +75,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 tcpTimeout: TimeSpan.FromSeconds(15),
                 initialRetryDelayMs: 500,
                 maxRetryDelayMs: 5_000,
-                recheckIntervalMs: 30_00);
+                recheckIntervalMs: 30_000);
 
         public static DiscoveryService Create(
             ImmutableExporterSettings exporterSettings,
