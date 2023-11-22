@@ -1,4 +1,4 @@
-﻿{
+{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -15,7 +15,7 @@
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleScopes",
           "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
           "start_line": 17,
-          "end_line": 68,
+          "end_line": 999,
           "language_specifics": {
             "super_classes": [
               "System.Object"
@@ -28,21 +28,24 @@
               "name": "LocalScopes",
               "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
               "start_line": 17,
-              "end_line": 68,
+              "end_line": 999,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Void",
-                "start_column": 17,
-                "end_column": 63
+                "start_column": 999,
+                "end_column": 999
               },
               "scopes": [
                 {
                   "scope_type": "local",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
                   "start_line": 17,
-                  "end_line": 68,
+                  "end_line": 999,
                   "language_specifics": {
-                    "start_column": 17,
-                    "end_column": 63
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -69,10 +72,10 @@
                   "scope_type": "local",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
                   "start_line": 17,
-                  "end_line": 68,
+                  "end_line": 999,
                   "language_specifics": {
-                    "start_column": 17,
-                    "end_column": 63
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -99,10 +102,10 @@
                   "scope_type": "local",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
                   "start_line": 17,
-                  "end_line": 68,
+                  "end_line": 999,
                   "language_specifics": {
-                    "start_column": 17,
-                    "end_column": 63
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -123,10 +126,10 @@
                   "scope_type": "local",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
                   "start_line": 17,
-                  "end_line": 68,
+                  "end_line": 999,
                   "language_specifics": {
-                    "start_column": 17,
-                    "end_column": 63
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -157,6 +160,9 @@
               "start_line": 0,
               "end_line": 0,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Void"
               }
             }

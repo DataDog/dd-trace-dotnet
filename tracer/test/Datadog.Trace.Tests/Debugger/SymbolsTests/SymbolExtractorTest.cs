@@ -109,9 +109,16 @@ public class SymbolExtractorTest
             {
                 var ls = scope.LanguageSpecifics.Value;
                 // depends on .net version
-                ls.AccessModifiers = null;
+                ls.AccessModifiers = ls.AccessModifiers?.Count > 0 ? new[] { "sanitized" } : null;
+
+                // depends on build optimization
+                ls.StartColumn = ls.StartColumn is > 0 ? 999 : null;
+                ls.EndColumn = ls.EndColumn is > 0 ? 999 : null;
                 scope.LanguageSpecifics = ls;
             }
+
+            // depends on build optimization
+            scope.EndLine = scope.EndLine > 0 ? 999 : 0;
 
             if (scope.Scopes == null)
             {

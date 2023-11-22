@@ -1,4 +1,4 @@
-﻿{
+{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -15,7 +15,7 @@
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.PartialClass",
           "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
           "start_line": 14,
-          "end_line": 25,
+          "end_line": 999,
           "language_specifics": {
             "super_classes": [
               "System.Object"
@@ -52,11 +52,14 @@
               "name": ".ctor",
               "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
               "start_line": 14,
-              "end_line": 18,
+              "end_line": 999,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Void",
-                "start_column": 9,
-                "end_column": 40
+                "start_column": 999,
+                "end_column": 999
               }
             },
             {
@@ -64,11 +67,14 @@
               "name": "Foo",
               "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
               "start_line": 22,
-              "end_line": 25,
+              "end_line": 999,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Void",
-                "start_column": 13,
-                "end_column": 55
+                "start_column": 999,
+                "end_column": 999
               },
               "symbols": [
                 {
@@ -83,10 +89,10 @@
                   "scope_type": "local",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
                   "start_line": 22,
-                  "end_line": 25,
+                  "end_line": 999,
                   "language_specifics": {
-                    "start_column": 13,
-                    "end_column": 55
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -110,11 +116,14 @@
               "name": "Bar",
               "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClassPartTwo.cs",
               "start_line": 16,
-              "end_line": 19,
+              "end_line": 999,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Void",
-                "start_column": 13,
-                "end_column": 56
+                "start_column": 999,
+                "end_column": 999
               },
               "symbols": [
                 {
@@ -129,10 +138,10 @@
                   "scope_type": "local",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClassPartTwo.cs",
                   "start_line": 16,
-                  "end_line": 19,
+                  "end_line": 999,
                   "language_specifics": {
-                    "start_column": 13,
-                    "end_column": 56
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {

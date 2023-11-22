@@ -15,7 +15,7 @@
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine",
           "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
           "start_line": 26,
-          "end_line": 59,
+          "end_line": 999,
           "language_specifics": {
             "super_classes": [
               "System.Object"
@@ -53,6 +53,9 @@
               "start_line": 0,
               "end_line": 0,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Threading.Tasks.Task"
               }
             },
@@ -61,11 +64,14 @@
               "name": "DoAsyncWork",
               "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
               "start_line": 26,
-              "end_line": 43,
+              "end_line": 999,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Threading.Tasks.Task",
-                "start_column": 13,
-                "end_column": 115
+                "start_column": 999,
+                "end_column": 999
               },
               "symbols": [
                 {
@@ -87,24 +93,27 @@
                   "name": "DoAsyncWork",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
                   "start_line": 26,
-                  "end_line": 43,
+                  "end_line": 999,
                   "language_specifics": {
+                    "access_modifiers": [
+                      "sanitized"
+                    ],
                     "annotations": [
                       "Final Virtual"
                     ],
                     "return_type": "System.Void",
-                    "start_column": 13,
-                    "end_column": 115
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "scopes": [
                     {
                       "scope_type": "local",
                       "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
                       "start_line": 26,
-                      "end_line": 43,
+                      "end_line": 999,
                       "language_specifics": {
-                        "start_column": 13,
-                        "end_column": 115
+                        "start_column": 999,
+                        "end_column": 999
                       },
                       "symbols": [
                         {
@@ -119,10 +128,10 @@
                       "scope_type": "local",
                       "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
                       "start_line": 26,
-                      "end_line": 43,
+                      "end_line": 999,
                       "language_specifics": {
-                        "start_column": 13,
-                        "end_column": 115
+                        "start_column": 999,
+                        "end_column": 999
                       },
                       "symbols": [
                         {
@@ -143,6 +152,9 @@
               "start_line": 0,
               "end_line": 0,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Void"
               }
             },
@@ -151,8 +163,11 @@
               "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
               "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
               "start_line": 45,
-              "end_line": 51,
+              "end_line": 999,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "super_classes": [
                   "System.Object"
                 ],
@@ -202,11 +217,14 @@
                   "name": ".ctor",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
                   "start_line": 45,
-                  "end_line": 51,
+                  "end_line": 999,
                   "language_specifics": {
+                    "access_modifiers": [
+                      "sanitized"
+                    ],
                     "return_type": "System.Void",
-                    "start_column": 32,
-                    "end_column": 69
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -234,14 +252,17 @@
                   "name": "ToString",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
                   "start_line": 49,
-                  "end_line": 49,
+                  "end_line": 999,
                   "language_specifics": {
+                    "access_modifiers": [
+                      "sanitized"
+                    ],
                     "annotations": [
                       "Virtual"
                     ],
                     "return_type": "System.String",
-                    "start_column": 17,
-                    "end_column": 52
+                    "start_column": 999,
+                    "end_column": 999
                   }
                 }
               ]
@@ -251,8 +272,11 @@
               "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Address",
               "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
               "start_line": 53,
-              "end_line": 59,
+              "end_line": 999,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "super_classes": [
                   "System.Object"
                 ],
@@ -291,11 +315,14 @@
                   "name": ".ctor",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
                   "start_line": 53,
-                  "end_line": 59,
+                  "end_line": 999,
                   "language_specifics": {
+                    "access_modifiers": [
+                      "sanitized"
+                    ],
                     "return_type": "System.Void",
-                    "start_column": 33,
-                    "end_column": 56
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -317,14 +344,17 @@
                   "name": "ToString",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
                   "start_line": 57,
-                  "end_line": 57,
+                  "end_line": 999,
                   "language_specifics": {
+                    "access_modifiers": [
+                      "sanitized"
+                    ],
                     "annotations": [
                       "Virtual"
                     ],
                     "return_type": "System.String",
-                    "start_column": 17,
-                    "end_column": 44
+                    "start_column": 999,
+                    "end_column": 999
                   }
                 }
               ]

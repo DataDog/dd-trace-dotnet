@@ -1,4 +1,4 @@
-﻿{
+{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -15,7 +15,7 @@
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals",
           "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
           "start_line": 15,
-          "end_line": 73,
+          "end_line": 999,
           "language_specifics": {
             "super_classes": [
               "System.Object"
@@ -41,11 +41,14 @@
               "name": ".ctor",
               "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
               "start_line": 15,
-              "end_line": 18,
+              "end_line": 999,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Void",
-                "start_column": 9,
-                "end_column": 60
+                "start_column": 999,
+                "end_column": 999
               },
               "symbols": [
                 {
@@ -61,11 +64,14 @@
               "name": "AssignRoom",
               "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
               "start_line": 27,
-              "end_line": 63,
+              "end_line": 999,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Threading.Tasks.Task`1<Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person>",
-                "start_column": 13,
-                "end_column": 83
+                "start_column": 999,
+                "end_column": 999
               },
               "symbols": [
                 {
@@ -93,24 +99,27 @@
                   "name": "AssignRoom",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
                   "start_line": 27,
-                  "end_line": 63,
+                  "end_line": 999,
                   "language_specifics": {
+                    "access_modifiers": [
+                      "sanitized"
+                    ],
                     "annotations": [
                       "Final Virtual"
                     ],
                     "return_type": "System.Void",
-                    "start_column": 13,
-                    "end_column": 83
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "scopes": [
                     {
                       "scope_type": "local",
                       "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
                       "start_line": 27,
-                      "end_line": 63,
+                      "end_line": 999,
                       "language_specifics": {
-                        "start_column": 13,
-                        "end_column": 83
+                        "start_column": 999,
+                        "end_column": 999
                       },
                       "symbols": [
                         {
@@ -143,6 +152,9 @@
               "start_line": 0,
               "end_line": 0,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Threading.Tasks.Task`1<Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person>"
               },
               "symbols": [
@@ -165,11 +177,14 @@
               "name": "GetPersonById",
               "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
               "start_line": 73,
-              "end_line": 73,
+              "end_line": 999,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
-                "start_column": 13,
-                "end_column": 81
+                "start_column": 999,
+                "end_column": 999
               },
               "symbols": [
                 {
@@ -186,6 +201,9 @@
               "start_line": 0,
               "end_line": 0,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "super_classes": [
                   "System.Object"
                 ],
@@ -201,6 +219,9 @@
                   "start_line": 0,
                   "end_line": 0,
                   "language_specifics": {
+                    "access_modifiers": [
+                      "sanitized"
+                    ],
                     "annotations": [
                       "Final Virtual"
                     ],
@@ -227,6 +248,9 @@
                   "start_line": 0,
                   "end_line": 0,
                   "language_specifics": {
+                    "access_modifiers": [
+                      "sanitized"
+                    ],
                     "return_type": "System.Void"
                   }
                 }

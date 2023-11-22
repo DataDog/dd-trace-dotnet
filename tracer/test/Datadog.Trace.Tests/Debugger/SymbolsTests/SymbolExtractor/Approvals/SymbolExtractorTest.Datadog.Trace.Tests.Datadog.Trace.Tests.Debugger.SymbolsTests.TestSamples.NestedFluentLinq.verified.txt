@@ -1,4 +1,4 @@
-﻿{
+{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -15,7 +15,7 @@
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq",
           "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
           "start_line": 15,
-          "end_line": 25,
+          "end_line": 999,
           "language_specifics": {
             "super_classes": [
               "System.Object"
@@ -28,11 +28,14 @@
               "name": "Foo",
               "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
               "start_line": 15,
-              "end_line": 25,
+              "end_line": 999,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Void",
-                "start_column": 13,
-                "end_column": 62
+                "start_column": 999,
+                "end_column": 999
               },
               "scopes": [
                 {
@@ -40,11 +43,14 @@
                   "name": "Foo",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
                   "start_line": 16,
-                  "end_line": 16,
+                  "end_line": 999,
                   "language_specifics": {
+                    "access_modifiers": [
+                      "sanitized"
+                    ],
                     "return_type": "System.Bool",
-                    "start_column": 52,
-                    "end_column": 62
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -60,11 +66,14 @@
                   "name": "Foo",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
                   "start_line": 17,
-                  "end_line": 17,
+                  "end_line": 999,
                   "language_specifics": {
+                    "access_modifiers": [
+                      "sanitized"
+                    ],
                     "return_type": "System.Int32",
-                    "start_column": 53,
-                    "end_column": 58
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -80,11 +89,14 @@
                   "name": "Foo",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
                   "start_line": 20,
-                  "end_line": 20,
+                  "end_line": 999,
                   "language_specifics": {
+                    "access_modifiers": [
+                      "sanitized"
+                    ],
                     "return_type": "System.Bool",
-                    "start_column": 67,
-                    "end_column": 77
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -100,11 +112,14 @@
                   "name": "Foo",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
                   "start_line": 21,
-                  "end_line": 21,
+                  "end_line": 999,
                   "language_specifics": {
+                    "access_modifiers": [
+                      "sanitized"
+                    ],
                     "return_type": "System.Int32",
-                    "start_column": 50,
-                    "end_column": 51
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -120,11 +135,14 @@
                   "name": "Foo",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
                   "start_line": 22,
-                  "end_line": 22,
+                  "end_line": 999,
                   "language_specifics": {
+                    "access_modifiers": [
+                      "sanitized"
+                    ],
                     "return_type": "System.Int32",
-                    "start_column": 50,
-                    "end_column": 51
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -140,11 +158,14 @@
                   "name": "Foo",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
                   "start_line": 23,
-                  "end_line": 23,
+                  "end_line": 999,
                   "language_specifics": {
+                    "access_modifiers": [
+                      "sanitized"
+                    ],
                     "return_type": "System.Int32",
-                    "start_column": 55,
-                    "end_column": 60
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -165,10 +186,10 @@
                   "scope_type": "local",
                   "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
                   "start_line": 15,
-                  "end_line": 25,
+                  "end_line": 999,
                   "language_specifics": {
-                    "start_column": 13,
-                    "end_column": 62
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -187,6 +208,9 @@
               "start_line": 0,
               "end_line": 0,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Void"
               }
             }
