@@ -25,7 +25,6 @@ namespace Datadog.Trace.TestHelpers
         {
             FluentAssertions.Formatting.Formatter.AddFormatter(new DiffPaneModelFormatter());
 
-            Task memoryDumpTask = null;
 
             if (bool.Parse(Environment.GetEnvironmentVariable("enable_crash_dumps") ?? "false"))
             {
