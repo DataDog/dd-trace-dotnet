@@ -14,7 +14,6 @@ namespace Samples.Probes.TestRuns.SmokeTests
             PingPong(GetPopulatedBigObject());
         }
 
-        [LogMethodProbeTestData]
         private BigObject PingPong(BigObject bo)
         {
             var bo2 = new BigObject().Populate();
