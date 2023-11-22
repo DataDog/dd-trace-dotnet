@@ -82,8 +82,8 @@ public:
     inline bool CanReadTraceContext() const;
     inline bool HasTraceContext() const;
 
-    inline std::string GetProfileThreadId();
-    inline std::string GetProfileThreadName();
+    inline std::string GetProfileThreadId() override;
+    inline std::string GetProfileThreadName() override;
 
 #ifdef LINUX
     inline void SetSharedMemory(volatile int* memoryArea);
@@ -128,7 +128,7 @@ private:
     std::string _profileThreadName;
 
     // Linux only
-    // This is pointer to a shared memory area coming from the Datadog.Linux.ApiWarapper library.
+    // This is pointer to a shared memory area coming from the Datadog.Linux.ApiWrapper library.
     // This establishes a simple communication channel between the profiler and this library
     // to know (for now, maybe more later) if the profiler interrupted a thread which was
     // doing a syscalls.

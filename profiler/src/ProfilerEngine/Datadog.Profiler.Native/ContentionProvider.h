@@ -43,15 +43,18 @@ public:
 
     // IContentionListener implementation
     void OnContention(double contentionDurationNs) override;
-    void OnContention(uint32_t threadId, double contentionDurationNs, std::vector<uintptr_t> stack) override;
+    void OnContention(uint64_t timestamp, uint32_t threadId, double contentionDurationNs, const std::vector<uintptr_t>& stack) override;
 
     // IUpscaleProvider implementation
     UpscalingInfo GetInfo() override;
 
 private:
     static std::string GetBucket(double contentionDurationNs);
-
     static std::vector<SampleValueType> SampleTypeDefinitions;
+    void AddContentionSample(uint64_t timestamp, uint32_t threadId, double contentionDurationNs, const std::vector<uintptr_t>& stack);
+
+private:
+    static std::vector<uintptr_t> _emptyStack;
 
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;

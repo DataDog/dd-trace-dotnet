@@ -9,7 +9,7 @@
 
 #include "cor.h"
 #include "corprof.h"
-#include "ManagedThreadInfo.h"
+#include "IThreadInfo.h"
 #include "SampleValueTypeProvider.h"
 
 class Sample;
@@ -34,7 +34,7 @@ public:
     AppDomainID AppDomainId;
     std::uint64_t LocalRootSpanId;  // _localRootSpanId;
     std::uint64_t SpanId;           // _spanId;
-    std::shared_ptr<ManagedThreadInfo> ThreadInfo;
+    std::shared_ptr<IThreadInfo> ThreadInfo;
 
     // array of instruction pointers (32 or 64 bit address)
     std::vector<std::uintptr_t> Stack;

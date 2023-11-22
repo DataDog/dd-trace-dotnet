@@ -3,6 +3,7 @@
 #include "ContentionProvider.h"
 
 #include "COMHelpers.h"
+#include "FrameworkThreadInfo.h"
 #include "IAppDomainStore.h"
 #include "IConfiguration.h"
 #include "IFrameStore.h"
@@ -14,6 +15,8 @@
 #include "Sample.h"
 #include "SampleValueTypeProvider.h"
 
+
+std::vector<uintptr_t> ContentionProvider::_emptyStack;
 
 std::vector<SampleValueType> ContentionProvider::SampleTypeDefinitions(
     {
@@ -72,12 +75,20 @@ std::string ContentionProvider::GetBucket(double contentionDurationNs)
     return "+500 ms";
 }
 
-void ContentionProvider::OnContention(uint32_t threadId, double contentionDurationNs, std::vector<uintptr_t> stack)
+// .NET Framework implementation
+void ContentionProvider::OnContention(uint64_t timestamp, uint32_t threadId, double contentionDurationNs, const std::vector<uintptr_t>& stack)
 {
-    // TODO: .NET framework implementation
+    AddContentionSample(timestamp, threadId, contentionDurationNs, stack);
 }
 
+// .NET synchronous implementation: we are expecting to be called from the same thread that is contending.
+// It means that the current thread will be stack walking itself.
 void ContentionProvider::OnContention(double contentionDurationNs)
+{
+    AddContentionSample(0, -1, contentionDurationNs, _emptyStack);
+}
+
+void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t threadId, double contentionDurationNs, const std::vector<uintptr_t>& stack)
 {
     _lockContentionsCountMetric->Incr();
     _lockContentionsDurationMetric->Add(contentionDurationNs);
@@ -93,39 +104,85 @@ void ContentionProvider::OnContention(double contentionDurationNs)
         }
     }
 
-    std::shared_ptr<ManagedThreadInfo> threadInfo;
-    CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
+    RawContentionSample rawSample;
 
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
-    pStackFramesCollector->PrepareForNextCollection();
-
-    uint32_t hrCollectStack = E_FAIL;
-    const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
+    // Synchronous case where the current thread is the contended thread
+    // (i.e. receiving the contention events directly from ICorProfilerCallback)
     static uint64_t failureCount = 0;
-    if ((result->GetFramesCount() == 0) && (failureCount % 1000 == 0))
+    if ((timestamp == 0) && (threadId == -1) && stack.empty())
     {
-        // log every 1000 failures
-        failureCount++;
-        Log::Warn("Failed to walk ", failureCount, " stacks for sampled contention: ", HResultConverter::ToStringWithCode(hrCollectStack));
-        return;
+        std::shared_ptr<ManagedThreadInfo> threadInfo;
+        CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
+
+        const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
+        pStackFramesCollector->PrepareForNextCollection();
+
+        uint32_t hrCollectStack = E_FAIL;
+        const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
+        if ((result->GetFramesCount() == 0) && (failureCount % 1000 == 0))
+        {
+            // log every 1000 failures
+            failureCount++;
+            Log::Warn("Failed to walk ", failureCount, " stacks for sampled contention: ", HResultConverter::ToStringWithCode(hrCollectStack));
+            return;
+        }
+
+        result->SetUnixTimeUtc(GetCurrentTimestamp());
+        result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
+
+        rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
+        rawSample.SpanId = result->GetSpanId();
+        rawSample.AppDomainId = result->GetAppDomainId();
+        rawSample.Timestamp = result->GetUnixTimeUtc();
+        result->CopyInstructionPointers(rawSample.Stack);
+        rawSample.ThreadInfo = threadInfo;
+    }
+    else
+    // CLR events are received asynchronously from the Agent
+    {
+        // avoid the case where the ClrStackWalk event has been missed for the ContentionStart
+        if ((stack.size() == 0) && (failureCount % 1000 == 0))
+        {
+            // log every 1000 failures
+            failureCount++;
+            Log::Warn("Failed to get ", failureCount, " call stacks for sampled contention");
+            return;
+        }
+
+        // We know that we don't have any span ID nor end point details
+
+        // we need to create a fake IThreadInfo if there is no thread in ManagedThreadList with the same OS thread id
+        // There is one race condition here: the contention events are received asynchronously so the event thread might be dead
+        // (i.e. no more in our ManagedThreadList). In that case, we need to create a fake IThreadInfo with a profilerId = 0
+        // The unique thread id = <profiler thread id> [# OS thread id]
+        // It means that it is possible that the backend will not match this sample with the other samples from the "same" thread.
+        //
+        // The second race condition is different: the emitting thread might be dead and a new one gets created with the same OS thread id.
+        // In that case, the sample will be associated to the new thread (and not the old dead one)
+        //
+        rawSample.Timestamp = timestamp;
+        rawSample.Stack.reserve(stack.size());
+        rawSample.Stack.insert(rawSample.Stack.end(), stack.begin(), stack.end());
+
+        std::shared_ptr<ManagedThreadInfo> threadInfo;
+        if (_pManagedThreadList->TryGetThreadInfo(threadId, threadInfo))
+        {
+            rawSample.ThreadInfo = threadInfo;
+        }
+        else  // create a fake IThreadInfo that wraps the OS thread id (no name, no profiler thread id)
+        {
+            rawSample.ThreadInfo = std::make_shared<FrameworkThreadInfo>(threadId);
+        }
     }
 
-    result->SetUnixTimeUtc(GetCurrentTimestamp());
-    result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
-
-    RawContentionSample rawSample;
-    rawSample.Timestamp = result->GetUnixTimeUtc();
-    rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
-    rawSample.SpanId = result->GetSpanId();
-    rawSample.AppDomainId = result->GetAppDomainId();
-    result->CopyInstructionPointers(rawSample.Stack);
-    rawSample.ThreadInfo = threadInfo;
     rawSample.ContentionDuration = contentionDurationNs;
     rawSample.Bucket = std::move(bucket);
+
     Add(std::move(rawSample));
     _sampledLockContentionsCountMetric->Incr();
     _sampledLockContentionsDurationMetric->Add(contentionDurationNs);
 }
+
 
 UpscalingInfo ContentionProvider::GetInfo()
 {

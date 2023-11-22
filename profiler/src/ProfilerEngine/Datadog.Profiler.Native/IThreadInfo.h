@@ -15,4 +15,6 @@ public:
     virtual DWORD GetOsThreadId() const = 0;
     virtual shared::WSTRING const& GetThreadName() const = 0;
     virtual HANDLE GetOsThreadHandle() const = 0;
+    virtual std::string GetProfileThreadId() = 0;
+    virtual std::string GetProfileThreadName() = 0;
 };

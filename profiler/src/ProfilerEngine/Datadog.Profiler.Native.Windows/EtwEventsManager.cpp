@@ -78,7 +78,7 @@ void EtwEventsManager::OnEvent(
                     auto duration = timestamp - pThreadInfo->ContentionStartTimestamp;
                     pThreadInfo->ContentionStartTimestamp = 0;
 
-                    _pContentionListener->OnContention(tid, duration, pThreadInfo->ContentionCallStack);
+                    _pContentionListener->OnContention(timestamp, tid, duration, pThreadInfo->ContentionCallStack);
                 }
             }
             else

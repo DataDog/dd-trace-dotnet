@@ -270,6 +270,13 @@ HRESULT ManagedThreadList::TryGetCurrentThreadInfo(std::shared_ptr<ManagedThread
     }
 }
 
+bool ManagedThreadList::TryGetThreadInfo(uint32_t osThreadId, std::shared_ptr<ManagedThreadInfo>& ppThreadInfo)
+{
+    // TODO: search by OS thread id
+    return false;
+}
+
+
 std::shared_ptr<ManagedThreadInfo> ManagedThreadList::FindByClrId(ThreadID clrThreadId)
 {
     // !!! This helper method must be called under the update lock (_mutex) from modifying functions !!!

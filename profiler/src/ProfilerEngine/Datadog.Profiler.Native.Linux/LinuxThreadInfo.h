@@ -14,6 +14,8 @@ public:
     DWORD GetOsThreadId() const override;
     shared::WSTRING const& GetThreadName() const override;
     HANDLE GetOsThreadHandle() const override;
+    std::string GetProfileThreadId() const override;
+    std::string GetProfileThreadName() const override;
 
 private:
     DWORD _threadId;

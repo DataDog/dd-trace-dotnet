@@ -428,6 +428,9 @@
     <ClInclude Include="FileSaver.hpp">
       <Filter>libdatadog</Filter>
     </ClInclude>
+    <ClInclude Include="FrameworkThreadInfo.h">
+      <Filter>Threads</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -639,6 +642,9 @@
     </ClCompile>
     <ClCompile Include="Success.cpp">
       <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameworkThreadInfo.cpp">
+      <Filter>Threads</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

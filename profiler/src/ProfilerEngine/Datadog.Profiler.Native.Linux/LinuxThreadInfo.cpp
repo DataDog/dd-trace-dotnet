@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "LinuxThreadInfo.h"
+#include "shared/src/native-src/string.h"
 
 LinuxThreadInfo::LinuxThreadInfo(DWORD threadId, shared::WSTRING name) :
     _threadId{threadId},
@@ -22,4 +23,18 @@ shared::WSTRING const& LinuxThreadInfo::GetThreadName() const
 HANDLE LinuxThreadInfo::GetOsThreadHandle() const
 {
     return {};
+}
+
+std::string LinuxThreadInfo::GetProfileThreadId()
+{
+    std::stringstream buffer;
+    buffer << "<0> [#" << _threadId << "]";
+    return buffer.str();
+}
+
+std::string LinuxThreadInfo::GetProfileThreadName()
+{
+    std::wstringstream wbuffer;
+    wbuffer << name << WStr("[#") << _threadId << WStr("]");
+    return shared::ToString(buffer.str().c_str());
 }

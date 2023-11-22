@@ -4,12 +4,13 @@
 #pragma once
 
 #include "IThreadInfo.h"
-#include "ScopedHandle.h"
 
-class WindowsThreadInfo : public IThreadInfo
+class FrameworkThreadInfo : public IThreadInfo
 {
 public:
-    WindowsThreadInfo(DWORD threadId, ScopedHandle handle, shared::WSTRING name);
+    FrameworkThreadInfo(DWORD threadId);
+
+    // Inherited via IThreadInfo
     DWORD GetOsThreadId() const override;
     shared::WSTRING const& GetThreadName() const override;
     HANDLE GetOsThreadHandle() const override;
@@ -17,7 +18,5 @@ public:
     std::string GetProfileThreadName() override;
 
 private:
-    ScopedHandle _handle;
-    DWORD _threadId;
-    shared::WSTRING _name;
+    uint32_t _osThreadId;
 };
