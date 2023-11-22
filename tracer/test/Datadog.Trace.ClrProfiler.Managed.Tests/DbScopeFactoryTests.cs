@@ -164,6 +164,41 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetEnabledDbmData))]
+        public void CreateDbCommandScope_OnlyInjectsDbmOnceWhenCommandIsReused(Type commandType, string dbmMode)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = DbmCommandText;
+
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.DbmPropagationMode, dbmMode }
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracer = TracerHelper.Create(tracerSettings);
+
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+            }
+
+            // Should have injected the data once
+            var injectedTest = command.CommandText.Should()
+                                     .NotBe(DbmCommandText)
+                                     .And.Contain(DbmCommandText)
+                                     .And.Subject;
+
+            // second attempt should still have the same data
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+            }
+
+            command.CommandText.Should().Be(injectedTest);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetEnabledDbmData))]
         public void CreateDbCommandScope_DoesNotInjectDbmIntoStoredProcedures(Type commandType, string dbmMode)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
