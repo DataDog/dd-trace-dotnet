@@ -23,9 +23,9 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: aws.sqs.request,
+    Name: sqs.request,
     Resource: SQS.CreateQueue,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -41,20 +41,22 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: aws.sqs.request,
+    Name: sqs.request,
     Resource: SQS.CreateQueue,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -70,20 +72,22 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_5,
-    Name: http.client.request,
+    Name: http.request,
     Resource: POST localhost:00000/,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-http-client,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -94,19 +98,21 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       out.host: aws_sqs,
-      peer.service: aws_sqs,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: out.host
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_6,
-    Name: http.client.request,
+    Name: http.request,
     Resource: POST localhost:00000/,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-http-client,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -117,19 +123,21 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       out.host: aws_sqs,
-      peer.service: aws_sqs,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: out.host
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_7,
-    Name: http.client.request,
+    Name: http.request,
     Resource: POST localhost:00000/,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-http-client,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -140,19 +148,21 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       out.host: aws_sqs,
-      peer.service: aws_sqs,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: out.host
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_8,
-    Name: http.client.request,
-    Resource: POST localhost:00000/,
-    Service: Samples.AWS.SQS,
+    Name: http.request,
+    Resource: POST localhost:00000/?/MyAsyncSQSQueue,
+    Service: Samples.AWS.SQS-http-client,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -161,21 +171,23 @@
       http-client-handler-type: System.Net.Http.HttpClientHandler,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       out.host: aws_sqs,
-      peer.service: aws_sqs,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: out.host
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_9,
-    Name: http.client.request,
-    Resource: POST localhost:00000/,
-    Service: Samples.AWS.SQS,
+    Name: http.request,
+    Resource: POST localhost:00000/?/MyAsyncSQSQueue2,
+    Service: Samples.AWS.SQS-http-client,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -184,21 +196,23 @@
       http-client-handler-type: System.Net.Http.HttpClientHandler,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       out.host: aws_sqs,
-      peer.service: aws_sqs,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: out.host
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_10,
-    Name: aws.sqs.send,
+    Name: sqs.request,
     Resource: SQS.SendMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -213,21 +227,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
-      span.kind: producer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_11,
-    Name: aws.sqs.process,
+    Name: sqs.request,
     Resource: SQS.ReceiveMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -242,20 +258,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      language: dotnet,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
-      span.kind: consumer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_12,
-    Name: aws.sqs.request,
+    Name: sqs.request,
     Resource: SQS.DeleteMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -270,21 +289,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_13,
-    Name: aws.sqs.send,
+    Name: sqs.request,
     Resource: SQS.SendMessageBatch,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -299,21 +320,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
-      span.kind: producer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_14,
-    Name: aws.sqs.process,
+    Name: sqs.request,
     Resource: SQS.ReceiveMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -328,20 +351,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      language: dotnet,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
-      span.kind: consumer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_15,
-    Name: aws.sqs.request,
+    Name: sqs.request,
     Resource: SQS.DeleteMessageBatch,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -356,21 +382,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_16,
-    Name: aws.sqs.send,
+    Name: sqs.request,
     Resource: SQS.SendMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -385,21 +413,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
-      span.kind: producer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_17,
-    Name: aws.sqs.process,
+    Name: sqs.request,
     Resource: SQS.ReceiveMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -414,20 +444,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      language: dotnet,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
-      span.kind: consumer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_18,
-    Name: aws.sqs.request,
+    Name: sqs.request,
     Resource: SQS.DeleteMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -442,21 +475,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_19,
-    Name: aws.sqs.send,
+    Name: sqs.request,
     Resource: SQS.SendMessageBatch,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -471,21 +506,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
-      span.kind: producer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_20,
-    Name: aws.sqs.process,
+    Name: sqs.request,
     Resource: SQS.ReceiveMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -500,20 +537,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      language: dotnet,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
-      span.kind: consumer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_21,
-    Name: aws.sqs.request,
+    Name: sqs.request,
     Resource: SQS.DeleteMessageBatch,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -528,21 +568,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_22,
-    Name: aws.sqs.send,
+    Name: sqs.request,
     Resource: SQS.SendMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -557,21 +599,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
-      span.kind: producer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_23,
-    Name: aws.sqs.send,
+    Name: sqs.request,
     Resource: SQS.SendMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -586,21 +630,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
-      span.kind: producer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_24,
-    Name: aws.sqs.process,
+    Name: sqs.request,
     Resource: SQS.ReceiveMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -615,20 +661,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      language: dotnet,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
-      span.kind: consumer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_25,
-    Name: aws.sqs.request,
+    Name: sqs.request,
     Resource: SQS.DeleteMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -643,21 +692,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_26,
-    Name: aws.sqs.process,
+    Name: sqs.request,
     Resource: SQS.ReceiveMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -672,20 +723,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      language: dotnet,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
-      span.kind: consumer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_27,
-    Name: aws.sqs.request,
+    Name: sqs.request,
     Resource: SQS.DeleteMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -700,21 +754,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_28,
-    Name: aws.sqs.send,
+    Name: sqs.request,
     Resource: SQS.SendMessageBatch,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -729,21 +785,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
-      span.kind: producer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_29,
-    Name: aws.sqs.send,
+    Name: sqs.request,
     Resource: SQS.SendMessageBatch,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -758,21 +816,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
-      span.kind: producer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_30,
-    Name: aws.sqs.process,
+    Name: sqs.request,
     Resource: SQS.ReceiveMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -787,20 +847,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      language: dotnet,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
-      span.kind: consumer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_31,
-    Name: aws.sqs.request,
+    Name: sqs.request,
     Resource: SQS.DeleteMessageBatch,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -815,21 +878,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_32,
-    Name: aws.sqs.process,
+    Name: sqs.request,
     Resource: SQS.ReceiveMessage,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -844,20 +909,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      language: dotnet,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
-      span.kind: consumer,
+      runtime-id: Guid_1,
+      span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_33,
-    Name: aws.sqs.request,
+    Name: sqs.request,
     Resource: SQS.DeleteMessageBatch,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -872,21 +940,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_34,
-    Name: aws.sqs.request,
+    Name: sqs.request,
     Resource: SQS.DeleteQueue,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -901,21 +971,23 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_35,
-    Name: aws.sqs.request,
+    Name: sqs.request,
     Resource: SQS.DeleteQueue,
-    Service: Samples.AWS.SQS,
+    Service: Samples.AWS.SQS-aws-sqs,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -930,13 +1002,15 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
-      peer.service: MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
+      runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.peer.service.source: queuename
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   }
 ]

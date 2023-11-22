@@ -70,7 +70,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.UseFileName($"{nameof(AwsSqsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
+                var suffix = GetSnapshotSuffix(packageVersion);
+
+                settings.UseFileName($"{nameof(AwsSqsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}{suffix}");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_sqs");
                 settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_sqs");
                 settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_sqs");
@@ -94,6 +96,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 await VerifyHelper.VerifySpans(spans, settings);
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.AwsSqs);
+
+                static string GetSnapshotSuffix(string packageVersion)
+                    => packageVersion switch
+                    {
+                        null or "" => ".pre3_7_300",
+                        { } v when new Version(v) < new Version("3.7.300.6") => ".pre3_7_300",
+                        _ => string.Empty
+                    };
             }
         }
     }
