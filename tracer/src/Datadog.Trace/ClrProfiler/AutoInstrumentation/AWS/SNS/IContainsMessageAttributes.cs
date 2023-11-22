@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
@@ -15,6 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         /// <summary>
         /// Gets or sets the message attributes
         /// </summary>
-        IDictionary MessageAttributes { get; set;  }
+        IDictionary? MessageAttributes { get; set;  }
     }
 }

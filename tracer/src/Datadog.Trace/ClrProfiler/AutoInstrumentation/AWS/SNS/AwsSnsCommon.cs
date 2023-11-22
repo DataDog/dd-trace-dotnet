@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -21,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSns);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsSns;
 
-        public static Scope CreateScope(Tracer tracer, string operation, string spanKind, out AwsSnsTags tags, ISpanContext parentContext = null)
+        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, out AwsSnsTags? tags, ISpanContext? parentContext = null)
         {
             tags = null;
 
@@ -31,13 +34,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
                 tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAwsSnsTags(spanKind);
-                string serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, DatadogAwsSnsServiceName);
-                string operationName = GetOperationName(tracer, spanKind);
+                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, DatadogAwsSnsServiceName);
+                var operationName = GetOperationName(tracer, spanKind);
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
@@ -59,7 +62,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             return scope;
         }
 
-        public static string GetTopicName(string topicArn)
+        [return: NotNullIfNotNull(nameof(topicArn))]
+        public static string? GetTopicName(string? topicArn)
         {
             if (topicArn is null)
             {

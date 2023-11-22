@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using System.Threading;
@@ -48,13 +50,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             var requestProxy = request.DuckCast<IPublishRequest>();
 
-            var scope = AwsSnsCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, out AwsSnsTags tags);
-            tags.TopicArn = requestProxy.TopicArn;
-            tags.TopicName = AwsSnsCommon.GetTopicName(requestProxy.TopicArn);
-
-            if (scope?.Span.Context != null)
+            var scope = AwsSnsCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, out var tags);
+            if (tags is not null && requestProxy.TopicArn is not null)
             {
-                ContextPropagation.InjectHeadersIntoMessage<TPublishRequest>(requestProxy, scope.Span.Context);
+                tags.TopicArn = requestProxy.TopicArn;
+                tags.TopicName = AwsSnsCommon.GetTopicName(requestProxy.TopicArn);
+            }
+
+            if (scope?.Span.Context is { } context)
+            {
+                ContextPropagation.InjectHeadersIntoMessage<TPublishRequest>(requestProxy, context);
             }
 
             return new CallTargetState(scope);
