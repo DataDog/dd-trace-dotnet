@@ -163,8 +163,8 @@
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
-    <!-- Latest package https://www.nuget.org/packages/Npgsql/7.0.6 -->
-    <PackageReference Include="Npgsql" Version="7.0.6" />
+    <!-- Latest package https://www.nuget.org/packages/Npgsql/8.0.0 -->
+    <PackageReference Include="Npgsql" Version="8.0.0" />
 
     <!-- Integration: nunit.framework -->
     <!-- Assembly: nunit.framework -->
