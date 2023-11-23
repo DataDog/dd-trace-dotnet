@@ -14,6 +14,7 @@
 class Sample;
 
 struct SampleValueType;
+class IConfiguration;
 
 namespace libdatadog {
 
@@ -22,7 +23,7 @@ struct ProfileImpl;
 class Profile
 {
 public:
-    Profile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, std::string applicationName);
+    Profile(IConfiguration* configuration, std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, std::string applicationName);
     ~Profile();
 
     Profile(Profile const&) = delete;
@@ -38,5 +39,6 @@ private:
     friend class Exporter;
     std::unique_ptr<ProfileImpl> _impl;
     std::string _applicationName;
+    bool _addTimestampOnSample;
 };
 } // namespace libdatadog

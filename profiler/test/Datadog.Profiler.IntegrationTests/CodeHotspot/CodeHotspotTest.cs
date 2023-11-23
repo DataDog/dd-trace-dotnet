@@ -259,11 +259,8 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
         private static IEnumerable<string> GetEndpointsFromPprofFiles(string pprofDir)
         {
-            foreach (var file in Directory.EnumerateFiles(pprofDir, "*.pprof", SearchOption.AllDirectories))
+            foreach (var profile in SamplesHelper.GetProfiles(pprofDir))
             {
-                using var s = File.OpenRead(file);
-                var profile = Profile.Parser.ParseFrom(s);
-
                 foreach (var label in profile.Labels().SelectMany(_ => _))
                 {
                     if (label.Name == "trace endpoint")
@@ -277,19 +274,16 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         private static List<(ulong LocalRootSpanId, ulong SpanId)> GetTracingContextsFromPprofFiles(string pprofDir)
         {
             var tracingContext = new List<(ulong LocalRootSpanId, ulong SpanId)>();
-            foreach (var file in Directory.EnumerateFiles(pprofDir, "*.pprof", SearchOption.AllDirectories))
+            foreach (var profile in SamplesHelper.GetProfiles(pprofDir))
             {
-                tracingContext.AddRange(ExtractTracingContext(file));
+                tracingContext.AddRange(ExtractTracingContext(profile));
             }
 
             return tracingContext;
         }
 
-        private static IEnumerable<(ulong LocalRootSpanId, ulong SpanId)> ExtractTracingContext(string file)
+        private static IEnumerable<(ulong LocalRootSpanId, ulong SpanId)> ExtractTracingContext(Profile profile)
         {
-            using var s = File.OpenRead(file);
-            var profile = Profile.Parser.ParseFrom(s);
-
             foreach (var labelsPerSample in profile.Labels())
             {
                 ulong localRootSpanId = 0;
