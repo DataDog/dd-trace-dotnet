@@ -108,21 +108,15 @@ namespace Datadog.Trace.PlatformHelpers
 
             SpanContext propagatedContext = ExtractPropagatedContext(request);
 
-            AspNetCoreTags tags;
-            if (tracer.Settings.RouteTemplateResourceNamesEnabled)
-            {
-                var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
-                httpContext.Features.Set(new RequestTrackingFeature(originalPath));
-                tags = new AspNetCoreEndpointTags();
-            }
-            else
-            {
-                tags = new AspNetCoreTags();
-            }
+            var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
+            var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, propagatedContext, tags: tags);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
             AddHeaderTagsToSpan(scope.Span, request, tracer);
+
+            var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
+            httpContext.Features.Set(new RequestTrackingFeature(originalPath, scope.Span));
 
             if (tracer.Settings.IpHeaderEnabled || security.Enabled)
             {
@@ -152,6 +146,10 @@ namespace Datadog.Trace.PlatformHelpers
                 // If we had an unhandled exception, the status code will already be updated correctly,
                 // but if the span was manually marked as an error, we still need to record the status code
                 var span = scope.Span;
+
+                // WARNING: This code assumes that the active span at the _end_ of the request is the same
+                // as the span at the _start_ of the request. That's "expected" in normal operation
+                // but if a customer isn't disposing a span somewhere, this will not necessarily be true.
                 var isMissingHttpStatusCode = !span.HasHttpStatusCode();
 
                 if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
@@ -185,6 +183,9 @@ namespace Datadog.Trace.PlatformHelpers
 
         public void HandleAspNetCoreException(Tracer tracer, Security security, Span span, HttpContext httpContext, Exception exception)
         {
+            // WARNING: This code assumes that the active span at the _end_ of the request is the same
+            // as the span at the _start_ of the request. That's "expected" in normal operation
+            // but if a customer isn't disposing a span somewhere, this will not necessarily be true.
             if (span != null && httpContext is not null && exception is not null)
             {
                 var statusCode = 500;
@@ -210,9 +211,10 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         internal class RequestTrackingFeature
         {
-            public RequestTrackingFeature(PathString originalPath)
+            public RequestTrackingFeature(PathString originalPath, Span rootAspNetCoreSpan)
             {
                 OriginalPath = originalPath;
+                RootSpan = rootAspNetCoreSpan;
             }
 
             /// <summary>
@@ -239,6 +241,11 @@ namespace Datadog.Trace.PlatformHelpers
             /// Gets a value indicating the original combined Path and PathBase
             /// </summary>
             public PathString OriginalPath { get; }
+
+            /// <summary>
+            /// Gets the root ASP.NET Core span
+            /// </summary>
+            public Span RootSpan { get; }
 
             public bool MatchesOriginalPath(HttpRequest request)
             {

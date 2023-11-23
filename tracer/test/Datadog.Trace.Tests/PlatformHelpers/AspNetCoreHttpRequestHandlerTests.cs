@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         [InlineData("/somepath/home/Index", null)]
         public void MatchesUrl(string pathBase, string path)
         {
-            var feature = new AspNetCoreHttpRequestHandler.RequestTrackingFeature(new PathString(OriginalPath));
+            var feature = new AspNetCoreHttpRequestHandler.RequestTrackingFeature(new PathString(OriginalPath), null);
 
             var request = new DefaultHttpRequest(new DefaultHttpContext())
             {
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         [InlineData("/somepath/homeIndeed", null)]
         public void DoesNotMatchDifferentUrl(string pathBase, string path)
         {
-            var feature = new AspNetCoreHttpRequestHandler.RequestTrackingFeature(new PathString(OriginalPath));
+            var feature = new AspNetCoreHttpRequestHandler.RequestTrackingFeature(new PathString(OriginalPath), null);
 
             var request = new DefaultHttpRequest(new DefaultHttpContext())
             {
