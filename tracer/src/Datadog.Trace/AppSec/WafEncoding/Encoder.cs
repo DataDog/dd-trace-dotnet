@@ -141,8 +141,11 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         where TKeySource : notnull
                     {
                         var itemData = childrenData;
-                        foreach (var originalKeyValue in (Dictionary<TKeySource, TValueSource>)enumerableDic)
+                        var dic = (Dictionary<TKeySource, TValueSource>)enumerableDic;
+                        var maxChildrenCount = childrenCount;
+                        for (var i = 0; i < maxChildrenCount; i++)
                         {
+                            var originalKeyValue = dic.ElementAt(i);
                             var keyValue = UnsafeHelper.As<KeyValuePair<TKeySource, TValueSource>, KeyValuePair<TKey, TValue>>(originalKeyValue);
                             var key = getKey(keyValue!);
                             if (string.IsNullOrEmpty(key))
@@ -160,8 +163,11 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 else
                 {
                     var itemData = childrenData;
-                    foreach (var keyValue in enumerableDic)
+                    var maxChildrenCount = childrenCount;
+
+                    for (var i = 0; i < maxChildrenCount; i++)
                     {
+                        var keyValue = enumerableDic.ElementAt(i);
                         var key = getKey(keyValue);
                         if (string.IsNullOrEmpty(key))
                         {
