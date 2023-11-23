@@ -3,9 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
@@ -51,11 +54,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="basicProperties">The message properties.</param>
         /// <param name="body">The message body.</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, TBasicProperties basicProperties, TBody body)
+        internal static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string? consumerTag, ulong deliveryTag, bool redelivered, string? exchange, string? routingKey, TBasicProperties basicProperties, TBody body)
             where TBasicProperties : IBasicProperties
-            where TBody : IBody // ReadOnlyMemory<byte> body in 6.0.0
+            where TBody : IBody, IDuckType // ReadOnlyMemory<byte> body in 6.0.0
         {
-            return RabbitMQIntegration.BasicDeliver_OnMethodBegin(instance, consumerTag, deliveryTag, redelivered, exchange, routingKey, basicProperties, body);
+            return RabbitMQIntegration.BasicDeliver_OnMethodBegin(instance, deliveryTag, redelivered, exchange, routingKey, basicProperties, body);
         }
 
         /// <summary>

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
     /// <summary>
@@ -13,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <summary>
         /// Gets the message body of the result
         /// </summary>
-        IBody Body { get; }
+        IBody? Body { get; }
 
         /// <summary>
         /// Gets the message properties
