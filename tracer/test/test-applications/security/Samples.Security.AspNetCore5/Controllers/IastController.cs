@@ -443,6 +443,34 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content(result, "text/html");
         }
 
+        [HttpGet("TBV")]
+        [Route("TBV")]
+        public ActionResult Tbv(string name, string value)
+        {
+            string result = string.Empty;
+            try
+            {
+                if (HttpContext.Session == null)
+                {
+                    result = "No session";
+                }
+                else
+                {
+                    HttpContext.Session.SetString(name, value);
+                    HttpContext.Session.SetInt32(name + "-" + value, 42);
+                    result = "Request parameters added to session";
+
+                    result = "Request parameters added to session";
+                }
+            }
+            catch (Exception err)
+            {
+                result = "Error in request. " + err.ToString();
+            }
+
+            return Content(result, "text/html");
+        }
+
         private ActionResult ExecuteQuery(string query)
         {
             var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();

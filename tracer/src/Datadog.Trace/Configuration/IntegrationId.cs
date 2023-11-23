@@ -69,5 +69,6 @@ namespace Datadog.Trace.Configuration
         HardcodedSecret,
         IbmMq,
         Remoting,
+        TrustBoundaryViolation,
     }
 }

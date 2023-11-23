@@ -84,6 +84,7 @@ namespace Datadog.Trace.TestHelpers
             }
 
             settings.ScrubInlineGuids();
+            settings.ScrubEmptyLines();
             return settings;
         }
 

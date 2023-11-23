@@ -17,7 +17,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 57;
+    public const int Length = 58;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.
@@ -87,6 +87,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.HardcodedSecret => nameof(Datadog.Trace.Configuration.IntegrationId.HardcodedSecret),
             Datadog.Trace.Configuration.IntegrationId.IbmMq => nameof(Datadog.Trace.Configuration.IntegrationId.IbmMq),
             Datadog.Trace.Configuration.IntegrationId.Remoting => nameof(Datadog.Trace.Configuration.IntegrationId.Remoting),
+            Datadog.Trace.Configuration.IntegrationId.TrustBoundaryViolation => nameof(Datadog.Trace.Configuration.IntegrationId.TrustBoundaryViolation),
             _ => value.ToString(),
         };
 
@@ -157,6 +158,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.HardcodedSecret,
             Datadog.Trace.Configuration.IntegrationId.IbmMq,
             Datadog.Trace.Configuration.IntegrationId.Remoting,
+            Datadog.Trace.Configuration.IntegrationId.TrustBoundaryViolation,
         };
 
     /// <summary>
@@ -227,5 +229,6 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.HardcodedSecret),
             nameof(Datadog.Trace.Configuration.IntegrationId.IbmMq),
             nameof(Datadog.Trace.Configuration.IntegrationId.Remoting),
+            nameof(Datadog.Trace.Configuration.IntegrationId.TrustBoundaryViolation),
         };
 }
