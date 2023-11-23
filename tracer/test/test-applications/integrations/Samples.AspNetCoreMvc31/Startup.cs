@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -27,6 +28,7 @@ namespace Samples.AspNetCoreMvc
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            var includeExtraMiddleware = Environment.GetEnvironmentVariable("ADD_EXTRA_MIDDLEWARE") == "1";
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -44,7 +46,17 @@ namespace Samples.AspNetCoreMvc
                 });
             });
 
+            if (includeExtraMiddleware)
+            {
+                app.UseMiddleware<CustomSpanMiddleware>("custom_pre_routing");
+            }
+
             app.UseRouting();
+
+            if (includeExtraMiddleware)
+            {
+                app.UseMiddleware<CustomSpanMiddleware>("custom_post_routing");
+            }
 
             app.UseEndpoints(endpoints =>
             {
