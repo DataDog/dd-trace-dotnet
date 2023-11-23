@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -8,7 +8,7 @@
       "snapshot": {
         "captures": {
           "lines": {
-            "21": {
+            "20": {
               "arguments": {
                 "bo": {
                   "fields": {
@@ -64802,39 +64802,25 @@
                                           "value": "BigObject"
                                         },
                                         {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
+                                          "pruned": true
                                         },
                                         {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
+                                          "pruned": true
                                         },
                                         {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
+                                          "pruned": true
                                         },
                                         {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
+                                          "pruned": true
                                         },
                                         {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
+                                          "pruned": true
                                         },
                                         {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
+                                          "pruned": true
                                         },
                                         {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
+                                          "pruned": true
                                         }
                                       ],
                                       "size": 30,
@@ -64851,142 +64837,7 @@
                                       "value": "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
                                     },
                                     "Children": {
-                                      "elements": [
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
-                                        },
-                                        {
-                                          "pruned": true
-                                        },
-                                        {
-                                          "pruned": true
-                                        },
-                                        {
-                                          "pruned": true
-                                        },
-                                        {
-                                          "pruned": true
-                                        },
-                                        {
-                                          "pruned": true
-                                        },
-                                        {
-                                          "pruned": true
-                                        },
-                                        {
-                                          "pruned": true
-                                        },
-                                        {
-                                          "pruned": true
-                                        },
-                                        {
-                                          "pruned": true
-                                        }
-                                      ],
-                                      "size": 30,
-                                      "type": "List`1"
+                                      "pruned": true
                                     }
                                   },
                                   "type": "BigObject",
@@ -72903,7 +72754,7 @@
           "location": {
             "file": "LargeSnapshotTest.cs",
             "lines": [
-              21
+              20
             ]
           },
           "version": 0
