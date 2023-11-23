@@ -95,7 +95,7 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Use legacy encoder for the waf
             /// </summary>
-            internal const string UseLegacyEncoder = "DD_USE_LEGACY_ENCODER";
+            internal const string UseLegacyEncoder = "DD_APPSEC_USE_LEGACY_ENCODER";
         }
     }
 }

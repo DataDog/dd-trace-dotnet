@@ -573,6 +573,12 @@ namespace Datadog.Trace
                 writer.WriteValue(security.Settings.ApiSecuritySampling);
             }
 
+            if (security.Settings.UseLegacyEncoder)
+            {
+                writer.WritePropertyName("appsec_use_legacy_encoder");
+                writer.WriteValue(security.Settings.UseLegacyEncoder);
+            }
+
             writer.WritePropertyName("appsec_trace_rate_limit");
             writer.WriteValue(security.Settings.TraceRateLimit);
 
