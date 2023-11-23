@@ -72,7 +72,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal static InitResult FromIncompatibleWaf() => new(0, 0, string.Empty, new Dictionary<string, object>(), incompatibleWaf: true);
 
-        internal static InitResult From(Obj diagObject, IntPtr? wafHandle, WafLibraryInvoker? wafLibraryInvoker)
+        internal static InitResult From(DdwafObjectStruct diagObject, IntPtr? wafHandle, WafLibraryInvoker? wafLibraryInvoker)
         {
             var reportedDiag = DiagnosticResultUtils.ExtractReportedDiagnostics(diagObject, true);
 

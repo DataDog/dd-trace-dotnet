@@ -136,7 +136,7 @@ internal readonly partial struct SecurityCoordinator
             foreach (var derivative in result.Derivatives)
             {
                 var serializeObject = JsonConvert.SerializeObject(derivative.Value);
-                var bytes = Encoding.UTF8.GetBytes(serializeObject);
+                var bytes = System.Text.Encoding.UTF8.GetBytes(serializeObject);
                 if (bytes.Length <= MaxApiSecurityTagValueLength)
                 {
                     var memoryStream = new MemoryStream();

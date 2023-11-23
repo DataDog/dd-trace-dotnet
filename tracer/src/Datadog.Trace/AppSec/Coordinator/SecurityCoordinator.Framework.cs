@@ -87,11 +87,11 @@ internal readonly partial struct SecurityCoordinator
 
             var messageContentProperty = messageType.GetProperty("Content");
             // StringContent(String content, Encoding, String mediaType)
-            var contentCtor = contentType.GetConstructor(new[] { typeof(string), typeof(Encoding), typeof(string) });
+            var contentCtor = contentType.GetConstructor(new[] { typeof(string), typeof(System.Text.Encoding), typeof(string) });
 
             // body's content
             il.Emit(OpCodes.Ldarg_1);
-            var encodingType = typeof(Encoding);
+            var encodingType = typeof(System.Text.Encoding);
             var encodingUtf8Prop = encodingType.GetProperty("UTF8");
             il.EmitCall(OpCodes.Call, encodingUtf8Prop.GetMethod, null);
             // media type

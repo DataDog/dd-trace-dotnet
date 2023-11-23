@@ -5,9 +5,10 @@
 
 using System;
 using System.Runtime.InteropServices;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
-namespace Datadog.Trace.AppSec.Waf
+namespace Datadog.Trace.AppSec.WafEncoding
 {
     // NOTE: this is referred to as ddwaf_object in the C++ code, we call it Obj to avoid a naming clash
     internal class Obj : IDisposable
@@ -29,7 +30,7 @@ namespace Datadog.Trace.AppSec.Waf
             get
             {
                 Initialize();
-                return Encoder.DecodeArgsType(innerObj.Type);
+                return EncoderLegacy.DecodeArgsType(innerObj.Type);
             }
         }
 
