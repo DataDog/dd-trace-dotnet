@@ -34,7 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         {
             StackTrace expectedStack;
 
-            if (framework == "net45")
+            if (framework == "net462")
             {
                 expectedStack = new StackTrace(
                     new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
