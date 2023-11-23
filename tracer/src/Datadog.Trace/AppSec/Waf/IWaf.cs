@@ -17,10 +17,10 @@ namespace Datadog.Trace.AppSec.Waf
     {
         public string Version { get; }
 
-        public IContext CreateContext();
+        public IContext CreateContext(bool settingsUseLegacyEncoder = false);
 
         internal WafReturnCode Run(IntPtr contextHandle, IntPtr rawPersistentData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
 
-        UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus);
+        UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus, bool settingsUseLegacyEncoder = false);
     }
 }
