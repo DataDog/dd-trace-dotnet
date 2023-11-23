@@ -197,13 +197,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [InlineData(false)]
         public async Task WhenUsingUdsAgent_UsesUdsTelemetry(bool? enableDependencies)
         {
+            if (EnvironmentTools.IsWindows())
+            {
+                throw new SkipException("Trace agent doesn't support UDS on Windows, so this test isn't needed, even though it works (but is slightly flaky)");
+            }
+
             EnvironmentHelper.EnableUnixDomainSockets();
             EnableDependencies(enableDependencies);
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            using (var processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
