@@ -3,7 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Configuration;
+#nullable enable
+
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
@@ -16,16 +17,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
         public override string SpanKind => SpanKinds.Client;
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName { get; set; }
+        public string? InstrumentationName { get; set; }
 
         [Tag(Trace.Tags.RedisRawCommand)]
-        public string RawCommand { get; set; }
+        public string? RawCommand { get; set; }
 
         [Tag(Trace.Tags.OutHost)]
-        public string Host { get; set; }
+        public string? Host { get; set; }
 
         [Tag(Trace.Tags.OutPort)]
-        public string Port { get; set; }
+        public string? Port { get; set; }
 
         // Always use metrics for "number like" tags. Even though it's not really a "metric"
         // that should be summed/averaged, it's important to record it as such so that we
@@ -37,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
     internal partial class RedisV1Tags : RedisTags
     {
-        private string _peerServiceOverride = null;
+        private string? _peerServiceOverride = null;
 
         // Use a private setter for setting the "peer.service" tag so we avoid
         // accidentally setting the value ourselves and instead calculate the
@@ -45,14 +46,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
         [Tag(Trace.Tags.PeerService)]
-        public string PeerService
+        public string? PeerService
         {
             get => _peerServiceOverride ?? Host;
             private set => _peerServiceOverride = value;
         }
 
         [Tag(Trace.Tags.PeerServiceSource)]
-        public string PeerServiceSource
+        public string? PeerServiceSource
         {
             get
             {
