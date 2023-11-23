@@ -3,7 +3,7 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: custom_post_routing,
-    Resource: GET Home/Index,
+    Resource: custom_post_routing,
     Service: Samples.AspNetCoreMvc31,
     ParentId: Id_3,
     Tags: {
@@ -33,7 +33,7 @@
     TraceId: Id_1,
     SpanId: Id_4,
     Name: aspnet_core.request,
-    Resource: GET /,
+    Resource: GET Home/Index,
     Service: Samples.AspNetCoreMvc31,
     Type: web,
     Tags: {
