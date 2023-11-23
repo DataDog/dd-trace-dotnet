@@ -51,7 +51,7 @@ internal static class IastModule
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error while checking for SSRF.");
+            Log.Error(ex, "Error while checking for TBV.");
             return null;
         }
     }
