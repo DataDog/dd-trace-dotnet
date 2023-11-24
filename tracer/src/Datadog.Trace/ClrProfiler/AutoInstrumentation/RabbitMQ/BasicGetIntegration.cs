@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -41,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="queue">The queue name of the message</param>
         /// <param name="autoAck">The original autoAck argument</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string queue, bool autoAck)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string? queue, bool autoAck)
         {
             return new CallTargetState(scope: null, state: queue, startTime: DateTimeOffset.UtcNow);
         }
@@ -59,12 +61,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult basicGetResult, Exception exception, in CallTargetState state)
             where TResult : IBasicGetResult, IDuckType
         {
-            string queue = (string)state.State;
+            string? queue = (string)state.State;
             DateTimeOffset? startTime = state.StartTime;
 
-            SpanContext propagatedContext = null;
-            IBasicProperties basicProperties = null;
-            string messageSize = null;
+            SpanContext? propagatedContext = null;
+            IBasicProperties? basicProperties = null;
+            string? messageSize = null;
 
             if (basicGetResult.Instance != null)
             {
@@ -86,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 }
             }
 
-            using (var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out RabbitMQTags tags, Command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, startTime: startTime))
+            using (var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out var tags, Command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, startTime: startTime))
             {
                 if (scope != null)
                 {
@@ -103,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                         scope.Span.SetException(exception);
                     }
 
-                    if (basicProperties != null)
+                    if (basicProperties != null && tags is not null)
                     {
                         RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(
                             Tracer.Instance,

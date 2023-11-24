@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
@@ -17,5 +19,5 @@ internal struct IConsumer
     /// Gets the model.
     /// </summary>
     [Duck]
-    public IModelBase Model;
+    public IModelBase? Model;
 }

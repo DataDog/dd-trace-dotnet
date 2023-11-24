@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
@@ -16,5 +18,5 @@ internal interface IModelBase : IDuckType
     /// Gets the session associated to this model
     /// </summary>
     [Duck]
-    public ISession Session { get; }
+    public ISession? Session { get; }
 }
