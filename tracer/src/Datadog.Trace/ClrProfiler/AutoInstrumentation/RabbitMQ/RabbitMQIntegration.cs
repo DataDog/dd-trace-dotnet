@@ -160,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             }
         }
 
-        internal static CallTargetState BasicDeliver_OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, ulong deliveryTag, bool redelivered, string? exchange, string? routingKey, TBasicProperties basicProperties, TBody body)
+        internal static CallTargetState BasicDeliver_OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, bool redelivered, string? exchange, string? routingKey, TBasicProperties basicProperties, TBody body)
             where TBasicProperties : IBasicProperties
             where TBody : IBody, IDuckType // ReadOnlyMemory<byte> body in 6.0.0
         {
@@ -196,24 +196,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             }
 
             var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out var tags, "basic.deliver", parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, exchange: exchange, routingKey: routingKey);
-            if (tags != null)
+            if (scope is not null && tags != null)
             {
                 if (body.Instance is not null)
                 {
                     tags.MessageSize = body.Length.ToString() ?? "0";
                 }
 
-                if (scope is not null)
-                {
-                    var timeInQueue = basicProperties != null && basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0;
-                    RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(
-                        Tracer.Instance,
-                        scope.Span,
-                        tags,
-                        basicProperties?.Headers,
-                        body?.Length ?? 0,
-                        timeInQueue);
-                }
+                var timeInQueue = basicProperties != null && basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0;
+                RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(
+                    Tracer.Instance,
+                    scope.Span,
+                    tags,
+                    basicProperties?.Headers,
+                    body?.Length ?? 0,
+                    timeInQueue);
             }
 
             return new CallTargetState(scope);
