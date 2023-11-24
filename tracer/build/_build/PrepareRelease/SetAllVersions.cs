@@ -282,6 +282,10 @@ namespace PrepareRelease
                     NugetVersionReplace);
 
                 SynchronizeVersion(
+                    "src/Datadog.Trace.Tools.dd_dotnet/Datadog.Trace.Tools.dd_dotnet.csproj",
+                    NugetVersionReplace);
+
+                SynchronizeVersion(
                     "src/Datadog.Trace.Trimming/Datadog.Trace.Trimming.csproj",
                     NugetVersionReplace);
 
