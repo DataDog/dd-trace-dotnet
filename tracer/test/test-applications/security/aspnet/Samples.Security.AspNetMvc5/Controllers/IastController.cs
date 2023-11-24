@@ -466,8 +466,8 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content("Random number: " + (new Random()).Next().ToString() , "text/html");
         }
 
-        [Route("TBV")]
-        public ActionResult Tbv(string name, string value)
+        [Route("TrustBoundaryViolation")]
+        public ActionResult TrustBoundaryViolation(string name, string value)
         {
             string result = string.Empty;
             try
@@ -493,5 +493,19 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return Content(result, "text/html");
         }
+
+        [Route("UnvalidatedRedirect")]
+        public ActionResult UnvalidatedRedirect(string param)
+        {
+            var location = $"Redirected?param={param}";
+            return Redirect(location);
+        }
+
+        [Route("Redirected")]
+        public ActionResult Redirected(string param)
+        {
+            return Content($"Redirected param:{param}\n");
+        }
+
     }
 }

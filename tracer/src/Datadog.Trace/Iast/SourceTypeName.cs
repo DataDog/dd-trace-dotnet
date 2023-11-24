@@ -18,5 +18,6 @@ internal enum SourceTypeName
     CookieName = 8,
     CookieValue = 9,
     MatrixParameter = 10,
-    RequestUri = 11
+    RequestUri = 11,
+    Database = 12,
 }

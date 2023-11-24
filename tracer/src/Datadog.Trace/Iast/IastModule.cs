@@ -32,6 +32,7 @@ internal static class IastModule
     private const string OperationNameWeakRandomness = "weak_randomness";
     private const string OperationNameHardcodedSecret = "hardcoded_secret";
     private const string OperationNameTrustBoundaryViolation = "trust_boundary_violation";
+    private const string OperationNameUnvalidatedRedirect = "unvalidated_redirect";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
     private static IastSettings iastSettings = Iast.Instance.Settings;
@@ -41,16 +42,46 @@ internal static class IastModule
         EvidenceRedactorLazy = new(() => CreateRedactor(iastSettings));
     }
 
+    internal static Scope? OnUnvalidatedRedirect(string evidence, IntegrationId integrationId)
+    {
+        bool HasInvalidOrigin(TaintedObject tainted)
+        {
+            foreach (var range in tainted.Ranges)
+            {
+                if (range.Source is null) { continue; }
+                var origin = (SourceTypeName)range.Source.OriginByte;
+                if (origin == SourceTypeName.Database) { continue; }
+                if (origin == SourceTypeName.RequestPath) { continue; }
+                if (origin == SourceTypeName.RequestHeaderValue && range.Source.Name == "Host") { continue; }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        try
+        {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.UnvalidatedRedirect);
+            return GetScope(evidence, integrationId, VulnerabilityTypeName.UnvalidatedRedirect, OperationNameUnvalidatedRedirect, HasInvalidOrigin);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for Unvalidated Redirect.");
+            return null;
+        }
+    }
+
     internal static Scope? OnTrustBoundaryViolation(string name)
     {
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.TrustBoundaryViolation);
-            return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeName.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, true);
+            return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeName.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, (t) => true);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error while checking for TBV.");
+            Log.Error(ex, "Error while checking for TrustBoundaryViolation.");
             return null;
         }
     }
@@ -60,7 +91,7 @@ internal static class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.LdapInjection);
-            return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeName.LdapInjection, OperationNameLdapInjection, true);
+            return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeName.LdapInjection, OperationNameLdapInjection, (t) => true);
         }
         catch (Exception ex)
         {
@@ -74,7 +105,7 @@ internal static class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.Ssrf);
-            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeName.Ssrf, OperationNameSsrf, true);
+            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeName.Ssrf, OperationNameSsrf, (t) => true);
         }
         catch (Exception ex)
         {
@@ -88,7 +119,7 @@ internal static class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakRandomness);
-            return GetScope(evidence, IntegrationId.SystemRandom, VulnerabilityTypeName.WeakRandomness, OperationNameWeakRandomness, false);
+            return GetScope(evidence, IntegrationId.SystemRandom, VulnerabilityTypeName.WeakRandomness, OperationNameWeakRandomness);
         }
         catch (Exception ex)
         {
@@ -102,7 +133,7 @@ internal static class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.PathTraversal);
-            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeName.PathTraversal, OperationNamePathTraversal, true);
+            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeName.PathTraversal, OperationNamePathTraversal, (t) => true);
         }
         catch (Exception ex)
         {
@@ -116,7 +147,7 @@ internal static class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.SqlInjection);
-            return GetScope(query, integrationId, VulnerabilityTypeName.SqlInjection, OperationNameSqlInjection, true);
+            return GetScope(query, integrationId, VulnerabilityTypeName.SqlInjection, OperationNameSqlInjection, (t) => true);
         }
         catch (Exception ex)
         {
@@ -131,7 +162,7 @@ internal static class IastModule
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.CommandInjection);
             var evidence = BuildCommandInjectionEvidence(file, argumentLine, argumentList);
-            return string.IsNullOrEmpty(evidence) ? null : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, true);
+            return string.IsNullOrEmpty(evidence) ? null : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, (t) => true);
         }
         catch (Exception ex)
         {
@@ -314,7 +345,7 @@ internal static class IastModule
         return isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() == true;
     }
 
-    private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, bool taintedFromEvidenceRequired = false)
+    private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Func<TaintedObject, bool>? taintValidator = null)
     {
         var tracer = Tracer.Instance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
@@ -328,7 +359,7 @@ internal static class IastModule
         var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
 
         // We do not have, for now, tainted objects in console apps, so further checking is not neccessary.
-        if (!isRequest && taintedFromEvidenceRequired)
+        if (!isRequest && taintValidator != null)
         {
             return null;
         }
@@ -341,10 +372,10 @@ internal static class IastModule
         }
 
         TaintedObject? tainted = null;
-        if (taintedFromEvidenceRequired)
+        if (taintValidator != null)
         {
             tainted = traceContext?.IastRequestContext?.GetTainted(evidenceValue);
-            if (tainted is null)
+            if (tainted is null || !taintValidator(tainted))
             {
                 return null;
             }

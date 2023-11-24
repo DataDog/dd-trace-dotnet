@@ -36,6 +36,7 @@ internal static class SourceType
         SourceTypeName.CookieName => "http_request_cookie_name",
         SourceTypeName.CookieValue => "http_request_cookie_value",
         SourceTypeName.RequestUri => "http_request_uri",
+        SourceTypeName.Database => "database",
         _ => throw new System.Exception($"SourceTypeName TEXT for value {value} not defined in GetAsTag")
     };
 
@@ -54,6 +55,7 @@ internal static class SourceType
             SourceTypeName.CookieName => "http.request.cookie.name",
             SourceTypeName.CookieValue => "http.request.cookie.value",
             SourceTypeName.RequestUri => "http.request.uri",
+            SourceTypeName.Database => "database",
             _ => throw new System.Exception($"SourceTypeName TEXT for value {value} not defined")
         };
 

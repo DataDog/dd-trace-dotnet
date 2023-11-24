@@ -24,6 +24,7 @@ internal static class ReturnedHeadersAnalyzer
     private const string StrictTransportSecurity = "strict-transport-security";
     private const string XForwardedProto = "x-forwarded-proto";
     private const string MaxAgeConst = "max-age=";
+    private const string Location = "Location";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ReturnedHeadersAnalyzer));
 
     // Analyze the headers. If the response is HTML, check for X-Content-Type-Options: nosniff. If it
@@ -35,15 +36,49 @@ internal static class ReturnedHeadersAnalyzer
     internal static void Analyze(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string protocol)
 #endif
     {
+        AnalyzeXContentTypeOptionsVulnerability(responseHeaders, integrationId, serviceName, responseCode);
+        AnalyzeStrictTransportSecurity(responseHeaders, integrationId, serviceName, responseCode, protocol);
+        AnalyzeUnvalidatedRedirect(responseHeaders, integrationId);
+    }
+
+#if NETFRAMEWORK
+    internal static void AnalyzeXContentTypeOptionsVulnerability(NameValueCollection responseHeaders, IntegrationId integrationId, string serviceName, int responseCode)
+#else
+    internal static void AnalyzeXContentTypeOptionsVulnerability(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode)
+#endif
+    {
+        IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
+
         if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
         {
             return;
         }
 
-        IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
-        IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.HstsHeaderMissing);
         string contentTypeValue = responseHeaders[ContentType];
         string contentOptionValue = responseHeaders[XContentTypeOptions];
+
+        if (!IsHtmlResponse(contentTypeValue))
+        {
+            return;
+        }
+
+        LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
+    }
+
+#if NETFRAMEWORK
+    internal static void AnalyzeStrictTransportSecurity(NameValueCollection responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string protocol)
+#else
+    internal static void AnalyzeStrictTransportSecurity(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string protocol)
+#endif
+    {
+        IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.HstsHeaderMissing);
+
+        if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
+        {
+            return;
+        }
+
+        string contentTypeValue = responseHeaders[ContentType];
         string strictTransportSecurityValue = responseHeaders[StrictTransportSecurity];
         string xForwardedProtoValue = responseHeaders[XForwardedProto];
 
@@ -52,7 +87,6 @@ internal static class ReturnedHeadersAnalyzer
             return;
         }
 
-        LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
         LaunchStrictTransportSecurity(integrationId, serviceName, strictTransportSecurityValue, xForwardedProtoValue, protocol);
     }
 
@@ -129,6 +163,28 @@ internal static class ReturnedHeadersAnalyzer
                 return true;
             default:
                 return false;
+        }
+    }
+
+#if NETFRAMEWORK
+    internal static void AnalyzeUnvalidatedRedirect(NameValueCollection responseHeaders, IntegrationId integrationId)
+#else
+    internal static void AnalyzeUnvalidatedRedirect(IHeaderDictionary responseHeaders, IntegrationId integrationId)
+#endif
+    {
+        try
+        {
+            IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.UnvalidatedRedirect);
+
+            var location = responseHeaders[Location];
+            if (!string.IsNullOrEmpty(location))
+            {
+                IastModule.OnUnvalidatedRedirect(location, integrationId);
+            }
+        }
+        catch (Exception error)
+        {
+            Log.Error(error, $"in Datadog.Trace.Iast.ReturnedHeadersAnalyzer.AnalyzeUnvalidatedRedirect");
         }
     }
 }
