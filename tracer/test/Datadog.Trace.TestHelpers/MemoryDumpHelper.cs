@@ -96,7 +96,7 @@ namespace Datadog.Trace.TestHelpers
 
             try
             {
-                var args = EnvironmentTools.IsWindows() ? $"-ma {process.Id} -accepteula" : process.Id.ToString();
+                var args = EnvironmentTools.IsWindows() ? $"-ma -accepteula {process.Id} {Path.GetTempPath()}" : process.Id.ToString();
                 return CaptureMemoryDump(args);
             }
             catch (Exception ex)
