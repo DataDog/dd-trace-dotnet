@@ -43,7 +43,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     public async Task DetectRuntime()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-        using var helper = await StartConsole(enableProfiler: false, ("crash", "1"));
+        using var helper = await StartConsole(enableProfiler: false);
         var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
 
         processInfo.Should().NotBeNull();
