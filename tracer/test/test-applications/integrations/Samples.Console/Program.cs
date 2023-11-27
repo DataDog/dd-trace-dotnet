@@ -10,7 +10,10 @@ namespace Samples.Console_
     {
         private static async Task Main(string[] args)
         {
-            Thread.Sleep(Timeout.Infinite); // Look Ma I'm frozen!
+            if (System.Environment.GetEnvironmentVariable("crash") == "1")
+            {
+                Thread.Sleep(Timeout.Infinite); // Look Ma I'm frozen!
+            }
 
             // Just to make extra sure that the tracer is loaded, if properly configured
             _ = WebRequest.CreateHttp("http://localhost");
