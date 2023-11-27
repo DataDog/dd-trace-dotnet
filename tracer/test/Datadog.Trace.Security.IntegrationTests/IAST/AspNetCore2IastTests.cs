@@ -117,7 +117,7 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
                           .DisableRequireUniquePrefix();
     }
 
-    // When the request is finished without the header Strict-Transport-Security or with aninvalid value on it, we should detect the vulnerability and send it to the agent when these conditions happens:
+    // When the request is finished without the header Strict-Transport-Security or with an invalid value on it, we should detect the vulnerability and send it to the agent when these conditions happens:
     // The connection protocol is https or the request header X-Forwarded-Proto is https
     // The Content-Type header of the response looks like html(text/html, application/xhtml+xml)
     // Header has a valid value when it starts with max-age followed by a positive number (>0), it can finish there or continue with a semicolon ; and more content.
