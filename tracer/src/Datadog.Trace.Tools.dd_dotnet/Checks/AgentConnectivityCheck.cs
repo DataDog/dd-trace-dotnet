@@ -73,7 +73,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             }
             catch (Exception ex)
             {
-                Utils.WriteError(ErrorDetectingAgent(settings.AgentUri.ToString(), ex.ToString()));
+                Utils.WriteError(ErrorDetectingAgent(settings.AgentUri.ToString(), ex.Message));
                 return false;
             }
 
