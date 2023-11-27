@@ -35,6 +35,6 @@ std::string LinuxThreadInfo::GetProfileThreadId()
 std::string LinuxThreadInfo::GetProfileThreadName()
 {
     std::wstringstream wbuffer;
-    wbuffer << name << WStr("[#") << _threadId << WStr("]");
-    return shared::ToString(buffer.str().c_str());
+    wbuffer << _name << WStr("[#") << _threadId << WStr("]");
+    return shared::ToString(wbuffer.str().c_str());
 }
