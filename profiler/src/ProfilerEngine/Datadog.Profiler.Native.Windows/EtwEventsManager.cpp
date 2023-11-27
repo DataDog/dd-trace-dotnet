@@ -19,11 +19,14 @@ EtwEventsManager::EtwEventsManager(
     IAllocationsListener* pAllocationListener,
     IContentionListener* pContentionListener,
     IGCSuspensionsListener* pGCSuspensionsListener)
+    :
+    _pAllocationListener(pAllocationListener),
+    _pContentionListener(pContentionListener)
 {
     _threadsInfo.reserve(256);
     _parser = std::make_unique<ClrEventsParser>(
-        pAllocationListener,  // TODO nullptr to avoid duplicates
-        pContentionListener,  // TODO nullptr to avoid duplicates
+        nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
+        nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
         pGCSuspensionsListener);
 }
 
@@ -37,9 +40,6 @@ void EtwEventsManager::OnEvent(
     uint32_t cbEventData,
     const uint8_t* pEventData)
 {
-    // call only for no call stack GC events
-    //_parser.get()->ParseEvent(version, keyword, id, cbEventData, pEventData);
-
     if (keyword == KEYWORD_STACKWALK)
     {
         auto pThreadInfo = GetOrCreate(tid);
@@ -102,6 +102,11 @@ void EtwEventsManager::OnEvent(
 
             // TODO: get the type name and ClassID from the payload
             // TODO: update IAllocationListener to take the type name, ClassID and stack
+        }
+        else
+        {
+            // TODO: call only for no call stack GC events
+            //_parser.get()->ParseEvent(version, keyword, id, cbEventData, pEventData);
         }
     }
 }

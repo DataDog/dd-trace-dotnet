@@ -174,7 +174,7 @@ bool CorProfilerCallback::InitializeServices()
             _metricsRegistry);
     }
 
-    // _pCorProfilerInfoEvents must have been set for any CLR events-based profiler to work
+    // _pCorProfilerInfoEvents must have been set for any .NET 5+ CLR events-based profiler to work
     if (_pCorProfilerInfoEvents != nullptr)
     {
         // live objects profiling requires allocations profiling
@@ -281,22 +281,10 @@ bool CorProfilerCallback::InitializeServices()
             _pContentionProvider,
             _pStopTheWorldProvider
             );
-        if (_pRuntimeInfo->IsDotnetFramework())
-        {
-            _pEtwEventsManager = OsSpecificApi::CreateEtwEventsManager(
-                _pAllocationsProvider,
-                _pContentionProvider,
-                _pStopTheWorldProvider
-                );
-        }
 
         if (_pGarbageCollectionProvider != nullptr)
         {
             _pEventPipeEventsManager->Register(_pGarbageCollectionProvider);
-            if (_pRuntimeInfo->IsDotnetFramework())
-            {
-                _pEtwEventsManager->Register(_pGarbageCollectionProvider);
-            }
         }
         if (_pLiveObjectsProvider != nullptr)
         {
@@ -305,19 +293,116 @@ bool CorProfilerCallback::InitializeServices()
         }
         // TODO: register any provider that needs to get notified when GCs start and end
     }
+    else if (_pRuntimeInfo->IsDotnetFramework())
+    // deal with event-based profilers in .NET Framework
+    {
+        // check for allocations profiling only (without heap profiling)
+        if (_pConfiguration->IsAllocationProfilingEnabled())
+        {
+            _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                valueTypeProvider,
+                _pCorProfilerInfo,
+                _pManagedThreadList,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _pAppDomainStore.get(),
+                pRuntimeIdStore,
+                _pConfiguration.get(),
+                nullptr, // no listener
+                _metricsRegistry);
+        }
+
+        if (_pConfiguration->IsContentionProfilingEnabled())
+        {
+            _pContentionProvider = RegisterService<ContentionProvider>(
+                valueTypeProvider,
+                _pCorProfilerInfo,
+                _pManagedThreadList,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _pAppDomainStore.get(),
+                pRuntimeIdStore,
+                _pConfiguration.get(),
+                _metricsRegistry);
+        }
+
+        if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
+        {
+            _pStopTheWorldProvider = RegisterService<StopTheWorldGCProvider>(
+                valueTypeProvider,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _pAppDomainStore.get(),
+                pRuntimeIdStore,
+                _pConfiguration.get());
+
+            _pGarbageCollectionProvider = RegisterService<GarbageCollectionProvider>(
+                valueTypeProvider,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _pAppDomainStore.get(),
+                pRuntimeIdStore,
+                _pConfiguration.get(),
+                _metricsRegistry);
+        }
+        else
+        {
+            _pStopTheWorldProvider = nullptr;
+            _pGarbageCollectionProvider = nullptr;
+        }
+
+        _pEtwEventsManager = OsSpecificApi::CreateEtwEventsManager(
+            _pAllocationsProvider,
+            _pContentionProvider,
+            _pStopTheWorldProvider);
+
+        if (_pGarbageCollectionProvider != nullptr)
+        {
+            _pEtwEventsManager->Register(_pGarbageCollectionProvider);
+        }
+
+        if (_pEtwEventsManager != nullptr)
+        {
+            auto success = _pEtwEventsManager->Start();
+            if (!success)
+            {
+                Log::Error("Failed to the contact Datadog Agent named pipe dedicated to profiling. Try to install the latest version for lock contention and GC profiling.");
+
+                _pEtwEventsManager->Stop();
+                _pEtwEventsManager = nullptr;
+
+                // we should not return a failure because CPU/Wall time and exception profiling will still work as expected
+            }
+        }
+    }
 
     if (_pConfiguration->IsAllocationRecorderEnabled() && !_pConfiguration->GetProfilesOutputDirectory().empty())
     {
         _pAllocationsRecorder = std::make_unique<AllocationsRecorder>(_pCorProfilerInfo, _pFrameStore.get());
     }
 
+    // compute enabled profilers based on configuration and receivable CLR events
+    _pEnabledProfilers = std::make_unique<EnabledProfilers>(_pConfiguration.get(), _pCorProfilerInfoEvents != nullptr, _pLiveObjectsProvider != nullptr);
+
+    // disable profilers if the connection with the agent failed
+    if (_pRuntimeInfo->IsDotnetFramework())
+    {
+        if (_pEtwEventsManager == nullptr)
+        {
+            // keep track that event-based profilers are disabled
+            _pEnabledProfilers->Disable(RuntimeProfiler::LockContention);
+            _pEnabledProfilers->Disable(RuntimeProfiler::GC);
+            _pEnabledProfilers->Disable(RuntimeProfiler::Allocations);
+
+            // these profilers are not supported in .NET Framework anyway
+            _pEnabledProfilers->Disable(RuntimeProfiler::Heap);
+        }
+    }
+
     // Avoid iterating twice on all providers in order to inject this value in each constructor
     // and store it in CollectorBase so it can be used in TransformRawSample (where the sample is created)
     auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
     Sample::ValuesCount = sampleTypeDefinitions.size();
-
-    // compute enabled profilers based on configuration and receivable CLR events
-    _pEnabledProfilers = std::make_unique<EnabledProfilers>(_pConfiguration.get(), _pCorProfilerInfoEvents != nullptr, _pLiveObjectsProvider != nullptr);
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
@@ -1008,26 +1093,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         eventMask |= COR_PRF_MONITOR_OBJECT_ALLOCATED | COR_PRF_ENABLE_OBJECT_ALLOCATED;
     }
 
-    // deal with event-based profilers in .NET Framework
-    if (_pRuntimeInfo->IsDotnetFramework() && (_pEtwEventsManager != nullptr))
-    {
-        auto success = _pEtwEventsManager->Start();
-        if (!success)
-        {
-            // disable event-based profilers
-            _pEnabledProfilers->Disable(RuntimeProfiler::LockContention);
-            _pEnabledProfilers->Disable(RuntimeProfiler::GC);
-            Log::Error("Failed to the contact Datadog Agent named pipe dedicated to profiling. Try to install the latest version for lock contention and GC profiling.");
-
-            // we should not return a failure because CPU/Wall time and exception profiling will still work as expected
-        }
-
-        // these profilers are not supported in .NET Framework anyway
-        _pEnabledProfilers->Disable(RuntimeProfiler::Heap);
-        // TODO: check if we could still have an allocation profiler but without the size...
-        _pEnabledProfilers->Disable(RuntimeProfiler::Allocations);
-    }
-    else
     if (_pCorProfilerInfoEvents != nullptr)
     {
         // listen to CLR events via ICorProfilerCallback
