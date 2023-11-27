@@ -23,7 +23,7 @@ namespace shared {
 
     std::string ToString(const WCHAR* wstr)
     {
-        if (wstr == nullptr) return std::string();
+        if (wstr == nullptr || *wstr == WStr('\0')) return std::string();
         return ToString(wstr, WStrLen(wstr));
     }
 
