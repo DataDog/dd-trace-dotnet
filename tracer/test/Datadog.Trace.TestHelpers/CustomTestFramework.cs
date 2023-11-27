@@ -25,7 +25,6 @@ namespace Datadog.Trace.TestHelpers
         {
             FluentAssertions.Formatting.Formatter.AddFormatter(new DiffPaneModelFormatter());
 
-
             if (bool.Parse(Environment.GetEnvironmentVariable("enable_crash_dumps") ?? "false"))
             {
                 var progress = new Progress<string>(message => messageSink.OnMessage(new DiagnosticMessage(message)));
