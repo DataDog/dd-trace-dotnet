@@ -19,6 +19,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 {
+    [Trait("Category", "WithTracer")]
     public class CodeHotspotTest
     {
         private const string ScenarioCodeHotspot = "--scenario 256";

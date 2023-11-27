@@ -2255,15 +2255,13 @@ stages:
     and(
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      or(
-        eq(variables.isMainBranch, true),
-        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
-      )
+      eq(variables.isMainRepository, true)
     )
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    runTestsWithTracerOnly: $[$(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'])]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -2307,7 +2305,7 @@ stages:
         archiveFilePatterns: '$(Agent.TempDirectory)/windows-tracer-home.zip'
         destinationFolder: $(monitoringHome)
 
-    - script: tracer\build.cmd BuildProfilerSamples BuildAndRunProfilerIntegrationTests --TargetPlatform $(targetPlatform)
+    - script: tracer\build.cmd BuildProfilerSamples BuildAndRunProfilerIntegrationTests --TargetPlatform $(targetPlatform) --RunTestsWithTracerOnly $(runTestsWithTracerOnly)
       displayName: Run Profiler Integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2328,16 +2326,14 @@ stages:
   condition: >
     and(
       succeeded(),
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      or(
-        eq(variables.isMainBranch, true),
-        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
-      )
+      eq(variables['isBenchmarksOnlyBuild'], 'False')
+      eq(variables.isMainRepository, true)
     )
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    runTestsWithTracerOnly: $[$(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'])]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -2381,6 +2377,7 @@ stages:
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
     - template: steps/run-in-docker.yml
+      condition: eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'],'True')
       parameters:
         build: true
         baseImage: $(baseImage)
@@ -2389,6 +2386,7 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
+      condition: eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'],'True')
       parameters:
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
@@ -2397,6 +2395,7 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
+      condition: eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'],'True')
       parameters:
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
@@ -2411,7 +2410,8 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) ProfilerIntegrationTests
+          runTestsWithTracerOnly=$(runTestsWithTracerOnly)
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e runTestsWithTracerOnly=$(runTestsWithTracerOnly) ProfilerIntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)

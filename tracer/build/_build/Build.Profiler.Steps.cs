@@ -21,8 +21,13 @@ using Logger = Serilog.Log;
 
 partial class Build
 {
+    [Parameter("Override the default Profiler test filters: Runs only integration tests  for integration tests (default: false)")]
+    readonly bool RunTestsWithTracerOnly = false;
+
     const string ClangTidyChecks = "-clang-analyzer-osx*,-clang-analyzer-optin.osx*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-pro-type-vararg,-readability-braces-around-statements";
     const string LinuxApiWrapperLibrary = "Datadog.Linux.ApiWrapper.x64.so";
+    const string ProfilerTracerTestsFilter = "Category==WithTracer";
+
 
     AbsolutePath ProfilerDeployDirectory => ProfilerOutputDirectory / "DDProf-Deploy";
 
@@ -219,7 +224,12 @@ partial class Build
         .Executes(async () =>
         {
             // Exclude CpuLimitTest from this path: They are already launched in a specific step + specific setup
+
             var filter = $"{(IsLinux ? "(Category!=WindowsOnly)" : "(Category!=LinuxOnly)")}&(Category!=CpuLimitTest)";
+            if (RunTestsWithTracerOnly)
+            {
+                filter = $"{ProfilerTracerTestsFilter}";
+            }
             await BuildAndRunProfilerIntegrationTestsInternal(filter);
         });
 
