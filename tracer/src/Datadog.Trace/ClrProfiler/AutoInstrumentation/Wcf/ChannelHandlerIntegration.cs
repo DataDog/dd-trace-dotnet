@@ -47,7 +47,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 return CallTargetState.GetDefault();
             }
 
-            return new CallTargetState(WcfCommon.CreateScope(request));
+            // webHttpResourceNames aren't available here, so no point in checking
+            return new CallTargetState(WcfCommon.CreateScope(request, useWebHttpResourceNames: false));
         }
 
         /// <summary>

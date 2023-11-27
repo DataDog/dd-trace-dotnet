@@ -14,7 +14,6 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -45,7 +44,6 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       error.type: Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -70,7 +68,6 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -95,7 +92,6 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -120,7 +116,6 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -145,7 +140,6 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -170,7 +164,6 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -195,7 +188,6 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -220,7 +212,6 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -246,7 +237,6 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,

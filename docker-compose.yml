@@ -11,7 +11,7 @@ services:
     ports:
       - "4566:4566"
     volumes:
-      - "./tracer/build_data/localstack:/tmp/localstack"
+      - "./tracer/build_data/localstack:/tmp"
 
   elasticsearch7_arm64:
     image: elasticsearch:7.10.1
@@ -100,7 +100,7 @@ services:
     ports:
       - "4566:4566"
     volumes:
-      - "./.localstack:/tmp/localstack"
+      - "./.localstack:/tmp"
 
   aerospike:
     # pinning to a known good version because latest version (6.3.0.5 at time of issue)
@@ -847,7 +847,7 @@ services:
     environment:
     - ENABLED_CHECKS=trace_count_header,meta_tracer_version_header,trace_content_length
     - SNAPSHOT_CI=1
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid
 
   smoke-tests:
     build:

@@ -80,19 +80,6 @@ public class TracerSettingsSnapshotTests
     }
 
     [Fact]
-    public void Snapshot_RecordsUpdatesToIntegrationSetting()
-    {
-        var collector = new ConfigurationTelemetry();
-        var settings = new TracerSettings(NullConfigurationSource.Instance);
-        var snapshot = new TracerSettingsSnapshot(settings);
-        settings.Integrations[nameof(IntegrationId.Grpc)].Enabled = false;
-
-        snapshot.RecordChanges(settings, collector);
-        var configKey = string.Format(ConfigurationKeys.Integrations.Enabled, nameof(IntegrationId.Grpc));
-        collector.GetData().Should().ContainSingle(x => x.Name == configKey);
-    }
-
-    [Fact]
     public void Snapshot_RecordsUpdatesToLogSettings()
     {
         var collector = new ConfigurationTelemetry();

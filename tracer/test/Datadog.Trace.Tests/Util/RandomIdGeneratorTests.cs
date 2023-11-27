@@ -149,7 +149,7 @@ public class RandomIdGeneratorTests
     }
 
     [Fact]
-    public void Default_Is_64Bit_TraceId()
+    public void Default_Is_128Bit_TraceId()
     {
         var tracer = new Tracer(
             new TracerSettings(),
@@ -163,7 +163,7 @@ public class RandomIdGeneratorTests
         var scope = (Scope)tracer.StartActive("operation");
 
         scope.Span.TraceId128.Lower.Should().BeGreaterThan(0);
-        scope.Span.TraceId128.Upper.Should().Be(0);
+        scope.Span.TraceId128.Upper.Should().BeGreaterThan(0);
     }
 
     [Fact]

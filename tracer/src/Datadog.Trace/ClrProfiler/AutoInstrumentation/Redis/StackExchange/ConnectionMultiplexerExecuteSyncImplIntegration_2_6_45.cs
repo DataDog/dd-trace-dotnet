@@ -3,10 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
@@ -38,12 +41,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     {
         internal static CallTargetState OnMethodBegin<TTarget, TMessage, TProcessor, TServerEndPoint, TDefaultValue>(TTarget instance, TMessage message, TProcessor resultProcessor, TServerEndPoint serverEndPoint, TDefaultValue defaultValue)
             where TTarget : IConnectionMultiplexer
-            where TMessage : IMessageData
+            where TMessage : IMessageData, IDuckType
         {
-            string rawCommand = message.CommandAndKey ?? "COMMAND";
-            StackExchangeRedisHelper.HostAndPort hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Configuration);
+            if (message.Instance is null)
+            {
+                return CallTargetState.GetDefault();
+            }
 
-            Scope scope = RedisHelper.CreateScope(Tracer.Instance, StackExchangeRedisHelper.IntegrationId, StackExchangeRedisHelper.IntegrationName, hostAndPort.Host, hostAndPort.Port, rawCommand, StackExchangeRedisHelper.GetDb(message.Db));
+            string rawCommand = message.CommandAndKey ?? "COMMAND";
+            // Assuming that instance.Instance is not null, because we're calling an instance method
+            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Configuration);
+
+            var scope = RedisHelper.CreateScope(
+                Tracer.Instance,
+                StackExchangeRedisHelper.IntegrationId,
+                StackExchangeRedisHelper.IntegrationName,
+                hostAndPort.Host,
+                hostAndPort.Port,
+                rawCommand,
+                StackExchangeRedisHelper.GetDb(message.Db));
+
             if (scope is not null)
             {
                 return new CallTargetState(scope);

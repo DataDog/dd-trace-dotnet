@@ -36,7 +36,7 @@ ContentionProvider::ContentionProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry)
     :
-    CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
+    CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
     _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval(), false),

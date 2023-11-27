@@ -534,13 +534,7 @@ partial class Build
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
                     var testDir = project.Directory;
-
-                    // FIXME: This is a hack for the .NET 8 RC2 on macos, where it's
-                    // failing to load MSBuild, so can't get the target frameworks here
-                    // so hardcoding to use the default test frameworks for now
-                    var frameworks = IsOsx
-                        ? TestingFrameworks.Select(x => (string) x).ToArray()
-                        : project.GetTargetFrameworks();
+                    var frameworks = project.GetTargetFrameworks();
 
                     var testBinFolder = testDir / "bin" / BuildConfiguration;
 
@@ -917,6 +911,8 @@ partial class Build
                     $"-v {Version}",
                     packageType == "tar" ? "" : "--prefix /opt/datadog",
                     $"--chdir {assetsDirectory}",
+                    $"--after-install {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}",
+                    $"--after-remove {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}",
                     "createLogPath.sh",
                     "dd-dotnet.sh",
                     "netstandard2.0/",

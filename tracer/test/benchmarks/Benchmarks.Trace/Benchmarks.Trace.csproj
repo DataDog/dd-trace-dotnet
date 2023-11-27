@@ -71,6 +71,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\Datadog.Trace.Security.Unit.Tests\IAST\CustomSettingsForTests.cs" Link="Iast\CustomSettingsForTests.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="DuckTyping\DuckTypeMethodBenchmark.cs" />
     <None Include="DuckTyping\DuckTypeMethodCallComparisonBenchmark.cs" />
     <None Include="DuckTyping\DuckTypeStructCopyValueTypePropertyBenchmark.cs" />

@@ -359,6 +359,13 @@ namespace Datadog.Trace.Configuration
         public const string PropagationStyle = "DD_TRACE_PROPAGATION_STYLE";
 
         /// <summary>
+        /// Configuration key to configure if propagation should only extract the first header once a configure
+        /// propagator extracts a valid trace context.
+        /// </summary>
+        /// <seealso cref="TracerSettings.PropagationExtractFirstOnly"/>
+        public const string PropagationExtractFirstOnly = "DD_TRACE_PROPAGATION_EXTRACT_FIRST";
+
+        /// <summary>
         /// Configuration key for enabling automatic instrumentation on specified methods.
         /// Default value is "" (disabled).
         /// </summary>
@@ -577,6 +584,14 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="TracerSettings.DelayWcfInstrumentationEnabled"/>
             public const string DelayWcfInstrumentationEnabled = "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED";
+
+            /// <summary>
+            /// Configuration key to enable or disable improved template-based resource names
+            /// when using WCF Web HTTP. Requires <see cref="DelayWcfInstrumentationEnabled"/> be set
+            /// to true. Disabled by default
+            /// </summary>
+            /// <seealso cref="TracerSettings.WcfWebHttpResourceNamesEnabled"/>
+            public const string WcfWebHttpResourceNamesEnabled = "DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED";
 
             /// <summary>
             /// Feature flag to enable obfuscating the <c>LocalPath</c> of a WCF request that goes

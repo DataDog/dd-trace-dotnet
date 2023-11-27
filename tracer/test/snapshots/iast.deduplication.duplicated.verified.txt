@@ -19,14 +19,12 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      
       "evidence": {
         "value": "MD5"
       }
     }
   ]
-},
-      _dd.p.dm: -0
+}
     },
     Metrics: {
       process_id: 0,
@@ -56,14 +54,12 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      
       "evidence": {
         "value": "MD5"
       }
     }
   ]
-},
-      _dd.p.dm: -0
+}
     },
     Metrics: {
       process_id: 0,
@@ -93,14 +89,12 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      
       "evidence": {
         "value": "MD5"
       }
     }
   ]
-},
-      _dd.p.dm: -0
+}
     },
     Metrics: {
       process_id: 0,
@@ -130,14 +124,12 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      
       "evidence": {
         "value": "MD5"
       }
     }
   ]
-},
-      _dd.p.dm: -0
+}
     },
     Metrics: {
       process_id: 0,
@@ -167,14 +159,12 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      
       "evidence": {
         "value": "MD5"
       }
     }
   ]
-},
-      _dd.p.dm: -0
+}
     },
     Metrics: {
       process_id: 0,

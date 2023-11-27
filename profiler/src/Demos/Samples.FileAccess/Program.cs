@@ -10,7 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-#if (!NET45)
+#if (!NETFRAMEWORK)
 using System.Text.Json;
 #endif
 using System.Threading;
@@ -30,12 +30,12 @@ namespace Samples.FileAccess
         ReadWriteText = 2,
         ReadWriteFileStream = 4,
         ReadWriteAsync = 8,
-#if (!NET45)
+#if (!NETFRAMEWORK)
         ReadWriteLinesAsync = 16,
 #endif
         ReadWriteXml = 32,
         ReadWriteXmlAsync = 64,
-#if (!NET45)
+#if (!NETFRAMEWORK)
         ReadWriteJson = 128,
 #endif
     }
@@ -299,7 +299,7 @@ namespace Samples.FileAccess
             File.Delete(filename);
         }
 
-#if (!NET45)
+#if (!NETFRAMEWORK)
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static async Task ReadWriteLineAsync(CancellationToken token)
         {
@@ -336,7 +336,7 @@ namespace Samples.FileAccess
         }
 #endif
 
-#if (NET45)
+#if (NETFRAMEWORK)
         private static Task CompletedTask = Task.FromResult(false);
 #endif
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -444,7 +444,7 @@ namespace Samples.FileAccess
 
             if (!asynchronous)
             {
-#if (NET45)
+#if (NETFRAMEWORK)
                 await CompletedTask;
 #else
                 await Task.CompletedTask;
@@ -452,7 +452,7 @@ namespace Samples.FileAccess
             }
         }
 
-#if (!NET45)
+#if (!NETFRAMEWORK)
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static async Task ReadWriteJson(CancellationToken token, bool asynchronous)
         {
@@ -497,7 +497,7 @@ namespace Samples.FileAccess
 
             if (!asynchronous)
             {
-#if (NET45)
+#if (NETFRAMEWORK)
                 await CompletedTask;
 #else
                 await Task.CompletedTask;
@@ -552,7 +552,7 @@ namespace Samples.FileAccess
                         TaskCreationOptions.LongRunning));
             }
 
-#if (!NET45)
+#if (!NETFRAMEWORK)
             if ((scenario & Scenario.ReadWriteLinesAsync) == Scenario.ReadWriteLinesAsync)
             {
                 tasks.Add(
@@ -587,7 +587,7 @@ namespace Samples.FileAccess
                         TaskCreationOptions.LongRunning));
             }
 
-#if (!NET45)
+#if (!NETFRAMEWORK)
             if ((scenario & Scenario.ReadWriteJson) == Scenario.ReadWriteJson)
             {
                 tasks.Add(

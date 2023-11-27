@@ -3,9 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using K4os.Compression.LZ4.Streams;
 using Perftools.Profiles;
 using Xunit;
 
@@ -13,6 +15,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 {
     public static class SamplesHelper
     {
+        private static readonly byte[] Lz4MagicNumber = BitConverter.GetBytes(0x184D2204);
+
         public static int GetSamplesCount(string directory)
         {
             int count = 0;
@@ -28,7 +32,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             foreach (var file in Directory.EnumerateFiles(directory, "*.pprof", SearchOption.AllDirectories))
             {
-                using var stream = File.OpenRead(file);
+                using var stream = GetStream(file);
                 var profile = Profile.Parser.ParseFrom(stream);
 
                 yield return profile;
@@ -120,12 +124,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace, long Time)> SamplesWithTimestamp(string directory)
             {
-                foreach (var file in Directory.EnumerateFiles(directory, "*.pprof", SearchOption.AllDirectories))
+                foreach (var profile in GetProfiles(directory))
                 {
-                    using var stream = File.OpenRead(file);
-
-                    var profile = Profile.Parser.ParseFrom(stream);
-
                     foreach (var sample in profile.Sample)
                     {
                         var count = sample.Value[0];
@@ -161,6 +161,22 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
 
             return true;
+        }
+
+        private static Stream GetStream(string filename)
+        {
+            var s = File.OpenRead(filename);
+            var buffer = new byte[4];
+            s.Read(buffer.AsSpan());
+            s.Position = 0;
+            if (Lz4MagicNumber.SequenceEqual(buffer))
+            {
+                return LZ4Stream.Decode(s);
+            }
+            else
+            {
+                return s;
+            }
         }
     }
 }

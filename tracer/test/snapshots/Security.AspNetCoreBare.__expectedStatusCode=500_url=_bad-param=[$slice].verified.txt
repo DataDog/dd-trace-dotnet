@@ -38,7 +38,6 @@ at Samples.Security.AspNetCoreBare.Controllers.BadController.Get(),
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
-      _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -91,7 +90,6 @@ at Samples.Security.AspNetCoreBare.Controllers.BadController.Get(),
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
-      _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -144,7 +142,6 @@ at Samples.Security.AspNetCoreBare.Controllers.BadController.Get(),
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
-      _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -197,7 +194,6 @@ at Samples.Security.AspNetCoreBare.Controllers.BadController.Get(),
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
-      _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -250,7 +246,6 @@ at Samples.Security.AspNetCoreBare.Controllers.BadController.Get(),
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
-      _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
     Metrics: {

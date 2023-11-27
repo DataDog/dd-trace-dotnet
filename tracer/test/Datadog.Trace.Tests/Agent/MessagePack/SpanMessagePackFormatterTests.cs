@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -27,25 +28,36 @@ public class SpanMessagePackFormatterTests
         var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null);
         var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
-        using (var rootScope = tracer.StartActive("root"))
+        using (_ = tracer.StartActive("root"))
         {
+            using (_ = tracer.StartActive("child"))
+            {
+            }
         }
 
-        await tracer.ForceFlushAsync();
-        var traceChunks = mockApi.Wait();
-        var span = traceChunks[0][0];
-        var tagValue = span.GetTag("_dd.p.tid");
+        await tracer.FlushAsync();
+        var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(1));
+
+        var span0 = traceChunks[0][0];
+        var tagValue0 = span0.GetTag("_dd.p.tid");
+
+        var span1 = traceChunks[0][1];
+        var tagValue1 = span1.GetTag("_dd.p.tid");
 
         if (generate128BitTraceId)
         {
-            // tag is added if missing when serializing
-            HexString.TryParseUInt64(tagValue, out var traceIdUpperValue).Should().BeTrue();
+            // tag is added to first span of every chunk
+            HexString.TryParseUInt64(tagValue0, out var traceIdUpperValue).Should().BeTrue();
             traceIdUpperValue.Should().BeGreaterThan(0);
+
+            // not the second span
+            tagValue1.Should().BeNull();
         }
         else
         {
-            // tag is not added
-            tagValue.Should().BeNull();
+            // tag is not added anywhere
+            tagValue0.Should().BeNull();
+            tagValue1.Should().BeNull();
         }
     }
 }

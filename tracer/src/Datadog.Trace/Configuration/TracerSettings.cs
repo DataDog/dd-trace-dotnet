@@ -118,7 +118,7 @@ namespace Datadog.Trace.Configuration
 
             DisabledIntegrationNamesInternal = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
-            IntegrationsInternal = new IntegrationSettingsCollection(source, _telemetry);
+            IntegrationsInternal = new IntegrationSettingsCollection(source, unusedParamNotToUsePublicApi: false);
 
             ExporterInternal = new ExporterSettings(source, _telemetry);
 
@@ -226,6 +226,10 @@ namespace Datadog.Trace.Configuration
                                             .WithKeys(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             .AsBool(defaultValue: false);
 
+            WcfWebHttpResourceNamesEnabled = config
+                                            .WithKeys(ConfigurationKeys.FeatureFlags.WcfWebHttpResourceNamesEnabled)
+                                            .AsBool(defaultValue: false);
+
             WcfObfuscationEnabled = config
                                    .WithKeys(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled)
                                    .AsBool(defaultValue: true);
@@ -271,6 +275,10 @@ namespace Datadog.Trace.Configuration
                                               $"{ContextPropagationHeaderStyle.W3CTraceContext},{ContextPropagationHeaderStyle.Datadog}"),
                                           validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
                                           converter: style => TrimSplitString(style, commaSeparator));
+
+            PropagationExtractFirstOnly = config
+                                         .WithKeys(ConfigurationKeys.PropagationExtractFirstOnly)
+                                         .AsBool(false);
 
             // If Activity support is enabled, we shouldn't enable the W3C Trace Context propagators.
             if (!IsActivityListenerEnabled)
@@ -353,7 +361,7 @@ namespace Datadog.Trace.Configuration
 
             TraceId128BitGenerationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled)
-                                            .AsBool(false);
+                                            .AsBool(true);
             TraceId128BitLoggingEnabled = config
                                          .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled)
                                          .AsBool(false);
@@ -651,6 +659,12 @@ namespace Datadog.Trace.Configuration
         internal bool DelayWcfInstrumentationEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether to enable improved template-based resource names
+        /// when using WCF Web HTTP.
+        /// </summary>
+        internal bool WcfWebHttpResourceNamesEnabled { get; }
+
+        /// <summary>
         /// Gets a value indicating whether to obfuscate the <c>LocalPath</c> of a WCF request that goes
         /// into the <c>resourceName</c> of a span.
         /// </summary>
@@ -715,6 +729,12 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the extraction propagation style.
         /// </summary>
         internal string[] PropagationStyleExtract { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the propagation should only try
+        /// extract the first header.
+        /// </summary>
+        internal bool PropagationExtractFirstOnly { get; }
 
         /// <summary>
         /// Gets a value indicating whether runtime metrics

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Linq;
 using System.Text;
@@ -18,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RedisHelper));
 
-        internal static Scope CreateScope(Tracer tracer, IntegrationId integrationId, string integrationName, string host, string port, string rawCommand, long? databaseIndex)
+        internal static Scope? CreateScope(Tracer tracer, IntegrationId integrationId, string integrationName, string? host, string? port, string rawCommand, long? databaseIndex)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationId))
             {
@@ -35,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             }
 
             string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(ServiceName);
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -44,9 +46,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="arguments">The original arguments setting</param>
         /// <param name="consumer">The original consumer setting</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TConsumer>(TTarget instance, string queue, bool autoAck, string consumerTag, bool noLocal, bool exclusive, IDictionary<string, object> arguments, TConsumer consumer)
+        internal static CallTargetState OnMethodBegin<TTarget, TConsumer>(TTarget instance, string? queue, bool autoAck, string? consumerTag, bool noLocal, bool exclusive, IDictionary<string, object>? arguments, TConsumer consumer)
         {
-            QueueHelper.SetQueue(consumer, queue);
+            if (consumer is not null && queue is not null)
+            {
+                QueueHelper.SetQueue(consumer, queue);
+            }
+
             return new CallTargetState(RabbitMQIntegration.CreateScope(Tracer.Instance, out _, Command, SpanKinds.Consumer, queue: queue));
         }
 

@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
@@ -17,15 +18,17 @@ namespace Datadog.Trace.Configuration;
 
 internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
 {
+    private readonly IConfigurationTelemetry _telemetry;
     private readonly ImmutableTracerSettings _immutableTracerSettings;
     private readonly IScopeManager _scopeManager;
     private GitMetadata? _cachedGitTags = null;
     private int _tryCount = 0;
 
-    public GitMetadataTagsProvider(ImmutableTracerSettings immutableTracerSettings, IScopeManager scopeManager)
+    public GitMetadataTagsProvider(ImmutableTracerSettings immutableTracerSettings, IScopeManager scopeManager, IConfigurationTelemetry telemetry)
     {
         _immutableTracerSettings = immutableTracerSettings;
         _scopeManager = scopeManager;
+        _telemetry = telemetry;
     }
 
     private IDatadogLogger Log { get; } = DatadogLogging.GetLoggerFor(typeof(GitMetadataTagsProvider));
@@ -69,6 +72,10 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
             if (TryGetGitTagsFromSourceLink(out gitMetadata))
             {
                 _cachedGitTags = gitMetadata;
+                // These tags could be GitMetadata.Empty but record it anyway, as it gives us an indication
+                // that we failed to extract the information
+                _telemetry.Record(ConfigurationKeys.GitRepositoryUrl, gitMetadata.RepositoryUrl, recordValue: true, ConfigurationOrigins.Calculated);
+                _telemetry.Record(ConfigurationKeys.GitCommitSha, gitMetadata.CommitSha, recordValue: true, ConfigurationOrigins.Calculated);
                 PropagateGitMetadataToTheProfiler(gitMetadata);
                 return true;
             }

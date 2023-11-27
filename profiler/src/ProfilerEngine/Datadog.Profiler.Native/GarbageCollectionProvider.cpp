@@ -15,7 +15,7 @@ GarbageCollectionProvider::GarbageCollectionProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry)
     :
-    CollectorBase<RawGarbageCollectionSample>("GarbageCollectorProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
+    CollectorBase<RawGarbageCollectionSample>("GarbageCollectorProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
 {
     _gen0CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen0");
     _gen1CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen1");

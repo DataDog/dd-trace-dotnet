@@ -47,8 +47,7 @@ internal class RedactedErrorLogCollector
             var eventId = EventIdHash.Compute(log.Message, log.StackTrace);
             if (logCounts.TryGetValue(eventId, out var count) && count > 1)
             {
-                // TODO: Add the count to the message (not yet supported in Telemetry)
-                // log.InstanceCount = count - 1;
+                log.Count = count;
             }
 
             if (batchSize + logSize < MaximumBatchSizeBytes)

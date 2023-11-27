@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -23,7 +23,6 @@
   "vulnerabilities": [
     {
       "type": "SQL_INJECTION",
-      
       "evidence": {
         "valueParts": [
           {
@@ -46,8 +45,7 @@
       "value": "http://localhost:00000/Iast/QueryOwnUrl"
     }
   ]
-},
-      _dd.p.dm: -0
+}
     },
     Metrics: {
       process_id: 0,

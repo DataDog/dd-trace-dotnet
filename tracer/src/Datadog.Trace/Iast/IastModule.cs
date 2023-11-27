@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -31,6 +32,7 @@ internal static class IastModule
     private const string OperationNameSsrf = "ssrf";
     private const string OperationNameWeakRandomness = "weak_randomness";
     private const string OperationNameHardcodedSecret = "hardcoded_secret";
+    private const string OperationNameTrustBoundaryViolation = "trust_boundary_violation";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
     private static IastSettings iastSettings = Iast.Instance.Settings;
@@ -38,6 +40,20 @@ internal static class IastModule
     static IastModule()
     {
         EvidenceRedactorLazy = new(() => CreateRedactor(iastSettings));
+    }
+
+    internal static Scope? OnTrustBoundaryViolation(string name)
+    {
+        try
+        {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.TrustBoundaryViolation);
+            return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeName.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, true);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for TBV.");
+            return null;
+        }
     }
 
     internal static Scope? OnLdapInjection(string evidence)
@@ -257,7 +273,7 @@ internal static class IastModule
     }
 
     // This method adds web vulnerabilities, with no location, only on web environments
-    private static Scope? AddWebVulnerability(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
+    private static Scope? AddWebVulnerability(string? evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
     {
         var tracer = Tracer.Instance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
@@ -279,7 +295,7 @@ internal static class IastModule
         var vulnerability = new Vulnerability(
             vulnerabilityType,
             hashId,
-            new Evidence(evidenceValue, null),
+            string.IsNullOrEmpty(evidenceValue) ? null : new Evidence(evidenceValue!, null),
             integrationId);
 
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
@@ -452,4 +468,12 @@ internal static class IastModule
             "TripleDESCryptoServiceProvider" => true,
             _ => string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.Linux, StringComparison.Ordinal) && name.EndsWith("provider", StringComparison.OrdinalIgnoreCase)
         };
+
+    // Evidence: If the customer application is setting the header with an invalid value, the evidence value should be the value that is set. If the header is missing, the evidence should not be sent.
+    // hash('XCONTENTTYPE_HEADER_MISSING:<service-name>')
+    internal static Scope? OnXContentTypeOptionsHeaderMissing(IntegrationId integrationId, string headerValue, string serviceName)
+    {
+        string? evidence = string.IsNullOrEmpty(headerValue) ? null : headerValue;
+        return AddWebVulnerability(evidence, integrationId, VulnerabilityTypeName.XContentTypeHeaderMissing, (VulnerabilityTypeName.XContentTypeHeaderMissing + ":" + serviceName).GetStaticHashCode());
+    }
 }

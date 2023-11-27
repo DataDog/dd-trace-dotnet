@@ -85,6 +85,26 @@ public class AspNetCore5IastTestsSpanTelemetryIastEnabled : AspNetCore5IastTests
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestCookieNameRequest()
+    {
+        var filename = "Iast.CookieName.AspNetCore5.TelemetryEnabled";
+        var url = "/Iast/TestCookieName";
+        AddCookies(new Dictionary<string, string>() { { "cookiename", "cookievalue" } });
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 public class AspNetCore5IastTestsOneVulnerabilityPerRequestIastEnabled : AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled
@@ -141,6 +161,41 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     public AspNetCore5IastTestsFullSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsEnabled")
     {
+    }
+
+    // When the request is finished without this X-Content-Type-Options: nosniff header and the content-type of the request looks
+    // like html (text/html, application/xhtml+xml) we should detect the vulnerability and send it to the agent.
+    // The request is going to be ignored when the response code is one of these: 301, 302, 304, 307, 404, 410, 500.
+    // Location: Do not send it
+    // Evidence: If the customer application is setting the header with an invalid value, the evidence value should be the value
+    // that is set. If the header is missing, the evidence should not be sent.
+
+    [SkippableTheory]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [InlineData("text/html", 200, "nosniff")]
+    [InlineData("text/html; charset=UTF-8", 200, "")]
+    [InlineData("application/xhtml%2Bxml", 200, "")]
+    [InlineData("text/plain", 200, "")]
+    [InlineData("text/html", 200, "dummyvalue")]
+    [InlineData("text/html", 500, "")]
+    public async Task TestIastXContentTypeHeaderMissing(string contentType, int returnCode, string xContentTypeHeaderValue)
+    {
+        var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
+            (string.IsNullOrEmpty(xContentTypeHeaderValue) ? string.Empty : "&xContentTypeHeaderValue=" + xContentTypeHeaderValue);
+        var filename = "Iast.XContentTypeHeaderMissing.AspNetCore5." + contentType.Replace("/", string.Empty) +
+            "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(xContentTypeHeaderValue) ? "empty" : xContentTypeHeaderValue);
+        var url = "/Iast/XContentTypeHeaderMissing" + queryParams;
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing(scrubHash: false);
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
     }
 }
 
@@ -443,10 +498,29 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = "/Iast/HardcodedSecrets";
         IncludeAllHttpSpans = true;
-        AddCookies(new Dictionary<string, string>() { { "file", "file.txt" }, { "argumentLine", "arg1" } });
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, IastEnabled ? 6 : 2, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastTrustBoundaryViolationRequest()
+    {
+        var filename = "Iast.TrustBoundaryViolation.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/Iast/Tbv?name=name&value=value";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, 1, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();

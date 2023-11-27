@@ -32,16 +32,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public TraceAnnotationsVersionMismatchAfterFeatureTests(ITestOutputHelper output)
             : base("TraceAnnotations.VersionMismatch.AfterFeature", twoAssembliesLoaded: true, enableTelemetry: false, output)
         {
-#if NET8_0
-            // The .NET 8 runtime is more aggressive in optimising structs
-            // so if you reference a version of the .NET tracer prior to this fix:
-            // https://github.com/DataDog/dd-trace-dotnet/pull/4608 you may get
-            // struct tearing issues. Bumping the TraceAnnotations.VersionMismatch.AfterFeature project to a version
-            // with the issue solves the problem.
-            // _However_ Duck-typing is broken on .NET 8 prior to when we added explicit support, so there's no
-            // "older" package version we can test with (yet)
-            throw new SkipException("FIXME: Failing with .NET 8 SDK on .NET Framework only currently");
-#endif
         }
     }
 
@@ -50,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public TraceAnnotationsVersionMismatchBeforeFeatureTests(ITestOutputHelper output)
             : base("TraceAnnotations.VersionMismatch.BeforeFeature", twoAssembliesLoaded: true, enableTelemetry: false, output)
         {
-#if NET8_0
+#if NET8_0_OR_GREATER
             // The .NET 8 runtime is more aggressive in optimising structs
             // so if you reference a version of the .NET tracer prior to this fix:
             // https://github.com/DataDog/dd-trace-dotnet/pull/4608 you may get
@@ -66,18 +56,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class TraceAnnotationsVersionMismatchNewerNuGetTests : TraceAnnotationsTests
     {
         public TraceAnnotationsVersionMismatchNewerNuGetTests(ITestOutputHelper output)
-#if NETFRAMEWORK
-            : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: true, enableTelemetry: false, output)
-        {
-            // For some reason the .NET 8 SDK isn't setting the DD_GIT_ tags correctly in this _single_ app
-            // _only_ on .NET FX. I don't know why...
-            throw new SkipException("FIXME: Failing with .NET 8 SDK on .NET Framework only currently");
-        }
-#else
             : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: false, enableTelemetry: false, output)
         {
         }
-#endif
     }
 
     [UsesVerify]
