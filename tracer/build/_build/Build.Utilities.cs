@@ -254,7 +254,7 @@ partial class Build
            var outputPath = TracerDirectory / "build" / "supported_versions.json";
            await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
        });
-    
+
     Target GenerateSpanDocumentation => _ => _
         .Description("Regenerate documentation from our code models")
         .Executes(() =>
@@ -434,7 +434,7 @@ partial class Build
 
     private async Task<bool> IsDebugRun()
     {
-        var forceDebugRun = Environment.GetEnvironmentVariable("ForceDebugRun");
+        var forceDebugRun = "1";
         if (!string.IsNullOrEmpty(forceDebugRun)
          && (forceDebugRun == "1" || (bool.TryParse(forceDebugRun, out var force) && force)))
         {
@@ -471,7 +471,7 @@ partial class Build
             Logger.Warning(ex, "Error calling Azdo API to check for debug run");
             return false;
         }
-    } 
+    }
 
     private static MSBuildTargetPlatform GetDefaultTargetPlatform()
     {

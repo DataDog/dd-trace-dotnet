@@ -756,7 +756,7 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
-  
+
     - script: tracer\build.cmd BuildDdDotnet -framework=$(targetFramework)
       displayName: Build dd-dotnet
 
@@ -842,7 +842,7 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
-  
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
@@ -2016,7 +2016,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Amazon.Lambda.RuntimeSupport"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-        
+
     - script: |
         # Include the serverless dockerfile
         docker-compose -p ddtrace_$(Build.BuildNumber) \
@@ -2153,6 +2153,91 @@ stages:
         baseImage: $(baseImage)
         command: "CheckBuildLogsForErrors"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux1'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux2'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux3'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux4'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux5'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux6'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux7'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux8'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux9'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux10'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux11'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux12'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux13'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux14'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux15'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux16'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux17'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux18'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux19'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux20'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux21'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux22'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux23'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux24'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux25'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux26'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux27'
+- template: stages/integration_tests_linux.yml
+  parameters:
+    stageName: 'linux28'
 
 - stage: integration_tests_linux_debugger
   condition: >
@@ -2475,7 +2560,7 @@ stages:
         baseImage: debian
         command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-        
+
     - template: steps/run-in-docker.yml
       parameters:
         target: builder
@@ -3922,7 +4007,7 @@ stages:
       # bother trying to upload these in case of failure, which means we can retry the
       # stages without issue
       artifact: crank_linux_arm64_1
-    
+
     #### Throughput-AppSec Linux 64
 
   - job: AsmLinux64
@@ -4679,7 +4764,7 @@ stages:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
         vmImage: ubuntu-20.04
-      
+
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -4696,7 +4781,7 @@ stages:
             mkdir -p tracer/build_data/snapshots
             mkdir -p tracer/build_data/logs
           displayName: create test data directories
-        
+
         # Run the "normal" installer smoke tests
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
@@ -4714,7 +4799,7 @@ stages:
           parameters:
             target: 'chiseled-smoke-tests'
             snapshotPrefix: "smoke_test"
-        
+
         # Run the "dd-dotnet" installer smoke tests
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
@@ -5076,7 +5161,7 @@ stages:
             mkdir -p tracer/build_data/logs
           displayName: create test data directories
 
-        # Run the "normal" installer smoke tests 
+        # Run the "normal" installer smoke tests
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
@@ -5160,7 +5245,7 @@ stages:
             mkdir -p tracer/build_data/logs
           displayName: create test data directories
 
-        # Run the "normal" installer smoke tests 
+        # Run the "normal" installer smoke tests
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
@@ -5177,7 +5262,7 @@ stages:
           parameters:
             target: 'chiseled-smoke-tests'
             snapshotPrefix: "smoke_test"
-        
+
         # Run the "dd-dotnet" installer smoke tests
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
@@ -5597,7 +5682,7 @@ stages:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
         vmImage: windows-2022
-      
+
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -5734,7 +5819,7 @@ stages:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
         vmImage: ubuntu-20.04
-      
+
       steps:
         - template: steps/clone-repo.yml
           parameters:

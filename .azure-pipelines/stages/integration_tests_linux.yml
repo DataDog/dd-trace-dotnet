@@ -1,0 +1,121 @@
+parameters:
+  - name: 'stageName'  # defaults for any parameters that aren't specified
+    type: string
+    default: 'integration_tests_linux'
+
+stages:
+- stage: ${{parameters.stageName }}
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: /.azure-pipelines/steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [DockerTest]
+
+  - job: DockerTest
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
+
+    variables:
+      TestAllPackageVersions: true
+      IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
+
+    pool:
+      name: azure-linux-scale-set-2
+
+    steps:
+    - template: /.azure-pipelines/steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: /.azure-pipelines/steps/restore-working-directory.yml
+      parameters:
+        artifact: build-$(artifactSuffix)-working-directory
+
+    # when we build samples separately, we could run this step and the docker-compose one below in //
+    # (currently the docker-compose step relies on serverless samples)
+    - template: /.azure-pipelines/steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux monitoring home
+      inputs:
+        artifact: linux-monitoring-home-$(artifactSuffix)
+        path: $(monitoringHome)
+
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
+        docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
+      env:
+        baseImage: $(baseImage)
+        framework: $(publishTargetFramework)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+      displayName: docker-compose build IntegrationTests and run StartDependencies
+      retryCountOnTaskFailure: 5
+
+    - task: DockerCompose@0
+      displayName: docker-compose run IntegrationTests
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeFileArgs: |
+          baseImage=$(baseImage)
+          runCodeCoverage=$(runCodeCoverage)
+          framework=$(publishTargetFramework)
+          Filter=$(IntegrationTestFilter)
+          SampleName=$(IntegrationTestSampleName)
+          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=true -e Filter=$(IntegrationTestFilter) -e SampleName=$(IntegrationTestSampleName) IntegrationTests
+        projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+    - task: DockerCompose@0
+      displayName: docker-compose stop services
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: down
+        projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - script: |
+        sudo chmod -R 644 tracer/build_data/dumps/* || true
+      displayName: Make dumps uploadable to AzDo
+      condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: /.azure-pipelines/steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "CheckBuildLogsForErrors"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
