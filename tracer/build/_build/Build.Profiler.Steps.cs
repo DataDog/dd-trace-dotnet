@@ -292,7 +292,7 @@ partial class Build
                 .SetTargets("BuildCpp")
                 .AddProperty("RunCodeAnalysis", "true")
                 .AddProperty("EnableClangTidyCodeAnalysis", "true")
-                .AddProperty("ClangTidyChecks", $"\"{ClangTidyChecks}\"")
+                .AddProperty("ClangTidyChecks", $"\"{ClangTidyChecks}\" --list-checks")
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)
                     .SetLoggers($"FileLogger,Microsoft.Build;logfile={ProfilerBuildDataDirectory / $"windows-profiler-clang-tidy-{platform}.txt"}")));
