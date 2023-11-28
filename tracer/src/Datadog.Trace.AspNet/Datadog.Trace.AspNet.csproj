@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net461</TargetFrameworks>
-    <Version>2.46.0</Version>
+    <Version>3.0.0-prerelease</Version>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
   </PropertyGroup>
 

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.46.0</Version>
+    <Version>3.0.0-prerelease</Version>
     <Title>Datadog CI Visibility - BenchmarkDotNet</Title>
     <Description>BenchmarkDotNet exporter for Datadog CI Visibility</Description>
     <Nullable>enable</Nullable>
