@@ -3,6 +3,11 @@
   return: {
     locals: {
       local0: {
+        fields: {
+          SimpleClass: {
+            pruned: true
+          }
+        },
         type: ComplexClass,
         value: ComplexClass
       }

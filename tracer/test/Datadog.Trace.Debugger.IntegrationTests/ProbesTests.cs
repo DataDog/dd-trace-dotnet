@@ -695,6 +695,11 @@ public class ProbesTests : TestHelper
     /// </summary>
     private void SkipOverTestIfNeeded(ProbeTestDescription testDescription)
     {
+        if (testDescription.TestType == typeof(LargeSnapshotTest) && !EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("Should run only on Windows. Different approvals between Windows/Linux.");
+        }
+
         if (testDescription.TestType == typeof(AsyncInstanceMethod) && !EnvironmentTools.IsWindows())
         {
             throw new SkipException("Can't use WindowsNamedPipes on non-Windows");

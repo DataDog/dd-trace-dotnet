@@ -20,7 +20,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
         private readonly ProbeStatusSink _probeStatusSink;
         private readonly TimeSpan _shortPeriod = TimeSpan.FromSeconds(10);
-        private readonly TimeSpan _longPeriod = TimeSpan.FromSeconds(60);
+        private readonly TimeSpan _longPeriod = TimeSpan.FromMinutes(60);
         private readonly HashSet<FetchProbeStatus> _probes = new();
         private readonly object _locker = new object();
         private Timer _pollerTimer;
