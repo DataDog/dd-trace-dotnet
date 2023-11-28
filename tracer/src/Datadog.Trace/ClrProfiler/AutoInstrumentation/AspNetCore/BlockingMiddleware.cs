@@ -134,7 +134,7 @@ internal class BlockingMiddleware
                     }
                     else
                     {
-                        Log.Error("No span available, can't report the request");
+                        Log.Debug("No span available, can't report the request");
                     }
                 }
             }
