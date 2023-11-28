@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.54.0</Version>
+    <Version>3.0.0-prerelease</Version>
     <Title>Datadog APM Auto-instrumentation Launcher</Title>
     <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
     <Description>Auto-instrumentation dotnet tool for Datadog APM</Description>
