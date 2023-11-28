@@ -38,9 +38,9 @@ void StackFramesCollectorBase::SetFrameCount(std::uint16_t count)
     _pStackSnapshotResult->SetFramesCount(count);
 }
 
-std::pair<uintptr_t*, std::uint16_t> StackFramesCollectorBase::Data()
+std::span<uintptr_t> StackFramesCollectorBase::Data()
 {
-    return {_pStackSnapshotResult->Data(), StackSnapshotResultBuffer::MaxSnapshotStackDepth_Limit};
+    return _pStackSnapshotResult->Data();
 }
 
 void StackFramesCollectorBase::RequestAbortCurrentCollection()

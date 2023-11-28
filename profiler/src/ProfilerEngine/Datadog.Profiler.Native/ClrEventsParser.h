@@ -13,6 +13,7 @@
 #include <shared_mutex>
 #include <string>
 #include <vector>
+#include <span>
 
 #include "GarbageCollection.h"
 #include "IAllocationsListener.h"
@@ -138,9 +139,9 @@ public:
     void Register(IGarbageCollectionsListener* pGarbageCollectionsListener);
 
 private:
-    bool TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version);
-    void ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
-    void ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
+    bool TryGetEventInfo(std::span<const BYTE> metadata,WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version);
+    void ParseGcEvent(DWORD id, DWORD version, std::span<const BYTE> eventData);
+    void ParseContentionEvent(DWORD id, DWORD version, std::span<const BYTE> eventData);
 
     // garbage collection events processing
     void OnGCTriggered();
@@ -173,28 +174,26 @@ private:
 private:
     // Points to the UTF16, null terminated string from the given event data buffer
     // and update the offset accordingly
-    static WCHAR* ReadWideString(LPCBYTE eventData, ULONG cbEventData, ULONG* offset)
+    static WCHAR* ReadWideString(std::span<const BYTE>& eventData)
     {
-        WCHAR* start = (WCHAR*)(eventData + *offset);
+        WCHAR* start = (WCHAR*)(eventData.data());
         size_t length = WStrLen(start);
 
         // Account for the null character
-        *offset += (ULONG)((length + 1) * sizeof(WCHAR));
-
-        assert(*offset <= cbEventData);
+        eventData = eventData.subspan((ULONG)((length + 1) * sizeof(WCHAR)));
         return start;
     }
 
     template <typename T>
-    bool Read(T& value, LPCBYTE eventData, ULONG cbEventData, ULONG& offset)
+    bool Read(T& value, std::span<const BYTE>& eventData)
     {
-        if ((offset + sizeof(T)) > cbEventData)
+        if ((sizeof(T)) > eventData.size())
         {
             return false;
         }
 
-        memcpy(&value, (T*)(eventData + offset), sizeof(T));
-        offset += sizeof(T);
+        memcpy(&value, (T*)(eventData.data()), sizeof(T));
+        eventData = eventData.subspan(sizeof(T));
         return true;
     }
 

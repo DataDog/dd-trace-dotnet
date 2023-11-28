@@ -23,20 +23,23 @@ std::string FileHelper::GenerateFilename(std::string const& filename, std::strin
 
 std::string FileHelper::GenerateFileSuffix(const std::string& applicationName, const std::string& extension, std::string const& pid, std::string const& id)
 {
-    auto time = std::time(nullptr);
-    struct tm buf = {};
-
-#ifdef _WINDOWS
-    localtime_s(&buf, &time);
-#else
-    localtime_r(&time, &buf);
-#endif
-
     std::stringstream oss;
-    oss << applicationName + "_" << pid << "_" << std::put_time(&buf, "%F_%H-%M-%S");
+    oss << applicationName + "_" << pid;
     if (!id.empty())
     {
         oss << "_" << id;
+    }
+    else
+    {
+        auto time = std::time(nullptr);
+        struct tm buf = {};
+
+#ifdef _WINDOWS
+        localtime_s(&buf, &time);
+#else
+        localtime_r(&time, &buf);
+#endif
+        oss << "_" << std::put_time(&buf, "%F_%H-%M-%S");
     }
 
     oss << extension;

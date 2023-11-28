@@ -248,8 +248,8 @@ std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
     auto* context = reinterpret_cast<unw_context_t*>(ctx);
 
     // Now walk the stack:
-    auto [data, size] = Data();
-    auto count = unw_backtrace2((void**)data, size, context);
+    auto data = Data();
+    auto count = unw_backtrace2((void**)data.data(), data.size(), context);
 
     if (count == 0)
     {

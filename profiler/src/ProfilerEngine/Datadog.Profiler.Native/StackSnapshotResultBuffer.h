@@ -11,6 +11,7 @@
 #include <array>
 #include <vector>
 #include <cstdint>
+#include <span>
 
 /// <summary>
 /// Allocating when a thread is suspended can lead to deadlocks.
@@ -49,7 +50,7 @@ public:
     inline bool AddFrame(std::uintptr_t ip);
     inline bool AddFakeFrame();
 
-    inline uintptr_t* Data();
+    inline std::span<uintptr_t> Data();
 
     StackSnapshotResultBuffer();
     ~StackSnapshotResultBuffer();
@@ -199,7 +200,7 @@ inline bool StackSnapshotResultBuffer::AddFakeFrame()
     return AddFrame(0);
 }
 
-inline uintptr_t* StackSnapshotResultBuffer::Data()
+inline std::span<uintptr_t> StackSnapshotResultBuffer::Data()
 {
-    return _instructionPointers.data();
+    return _instructionPointers;
 }
