@@ -1,8 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <!-- NuGet -->
-    <Version>2.54.0</Version>
+    <Version>3.0.0-prerelease</Version>
     <Title>Datadog APM</Title>
     <Description>Instrumentation library for Datadog APM.</Description>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
