@@ -133,7 +133,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 // Catching error UnauthorizedAccessException: Access to the registry key 'Global' is denied.
                 // The 'Global' part seems consistent across localizations
 
-                Log.Error(ex, "The process does not have sufficient permissions to read performance counters. Please refer to https://dtdg.co/net-runtime-metrics to learn how to grant those permissions.");
+                Log.Warning(ex, "The process does not have sufficient permissions to read performance counters. Please refer to https://dtdg.co/net-runtime-metrics to learn how to grant those permissions.");
                 throw;
             }
             catch (Exception ex)
