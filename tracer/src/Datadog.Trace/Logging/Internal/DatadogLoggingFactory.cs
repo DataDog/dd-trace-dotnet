@@ -7,11 +7,13 @@
 
 using System;
 using System.IO;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.Internal;
 using Datadog.Trace.Logging.Internal.Configuration;
+using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -93,6 +95,7 @@ internal static class DatadogLoggingFactory
                .WriteTo.Logger(
                     lc => lc
                          .MinimumLevel.Error()
+                         .Filter.ByExcluding(log => IsExcludedMessage(log.MessageTemplate.Text))
                          .WriteTo.Sink(new RedactedErrorLogSink(telemetry.Collector)));
         }
 
@@ -143,6 +146,13 @@ internal static class DatadogLoggingFactory
 
         return new DatadogSerilogLogger(internalLogger, rateLimiter);
     }
+
+    private static bool IsExcludedMessage(string messageTemplateText)
+        => ReferenceEquals(messageTemplateText, Api.FailedToSendMessageTemplate)
+#if NETFRAMEWORK
+        || ReferenceEquals(messageTemplateText, PerformanceCountersListener.InsufficientPermissionsMessageTemplate)
+#endif
+    ;
 
     // Internal for testing
     internal static string GetLogDirectory(IConfigurationTelemetry telemetry)
