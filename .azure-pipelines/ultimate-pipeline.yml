@@ -2326,7 +2326,7 @@ stages:
   condition: >
     and(
       succeeded(),
-      eq(variables['isBenchmarksOnlyBuild'], 'False')
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(variables.isMainRepository, true)
     )
   dependsOn: [package_linux, generate_variables, merge_commit_id]
@@ -2354,6 +2354,7 @@ stages:
 
     variables:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
+      isProfilerChanged: $[eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')]
 
     pool:
       name: azure-linux-scale-set-2
@@ -2376,32 +2377,32 @@ stages:
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
-    - template: steps/run-in-docker.yml
-      condition: eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'],'True')
-      parameters:
-        build: true
-        baseImage: $(baseImage)
-        useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "BuildProfilerSamples"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+    - ${{ if eq(variables['IsProfilerChanged'], true) }}:
+      - template: steps/run-in-docker.yml
+        parameters:
+          build: true
+          baseImage: $(baseImage)
+          useNativeSdkVersion: $(useNativeSdkVersion)
+          command: "BuildProfilerSamples"
+          apiKey: $(DD_LOGGER_DD_API_KEY)
 
-    - template: steps/run-in-docker.yml
-      condition: eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'],'True')
-      parameters:
-        baseImage: $(baseImage)
-        useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "BuildAndRunProfilerCpuLimitTests"
-        extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+    - ${{ if eq(variables['IsProfilerChanged'],'True') }} :
+      - template: steps/run-in-docker.yml
+        parameters:
+          baseImage: $(baseImage)
+          useNativeSdkVersion: $(useNativeSdkVersion)
+          command: "BuildAndRunProfilerCpuLimitTests"
+          extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
+          apiKey: $(DD_LOGGER_DD_API_KEY)
 
-    - template: steps/run-in-docker.yml
-      condition: eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'],'True')
-      parameters:
-        baseImage: $(baseImage)
-        useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "BuildAndRunProfilerCpuLimitTests"
-        extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+    - ${{ if eq(variables['IsProfilerChanged'],'True') }} :
+      - template: steps/run-in-docker.yml
+        parameters:
+          baseImage: $(baseImage)
+          useNativeSdkVersion: $(useNativeSdkVersion)
+          command: "BuildAndRunProfilerCpuLimitTests"
+          extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
+          apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DockerCompose@0
       displayName: docker-compose run --no-deps ProfilerIntegrationTests
