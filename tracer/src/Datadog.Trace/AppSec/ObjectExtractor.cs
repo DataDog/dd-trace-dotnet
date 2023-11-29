@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec
@@ -67,11 +68,11 @@ namespace Datadog.Trace.AppSec
 
             if (!TypeToExtractorMap.TryGetValue(bodyType, out var fieldExtractors))
             {
-                var fields =
-                    bodyType
-                       .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
-                       .Where(x => x.IsPrivate && x.Name.EndsWith("__BackingField"))
-                       .ToArray();
+                var fields = bodyType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
+                if (!bodyType.GetTypeInfo().IsAnonymous())
+                {
+                    fields = fields.Where(x => x.IsPrivate && x.Name.EndsWith("__BackingField")).ToArray();
+                }
 
                 fieldExtractors = new FieldExtractor[fields.Length];
                 for (var i = 0; i < fields.Length; i++)
