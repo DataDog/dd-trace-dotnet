@@ -1225,12 +1225,16 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    # the job can be skipped if it's profiler only change
+    isProfilerOnlyChanged: $[ eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isProfilerOnlyChanged'], 'True')]
+
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Win]
 
   - job: Win
+    condition: eq(variables.isProfilerOnlyChanged, false)
     pool:
       name: azure-windows-scale-set
     timeoutInMinutes: 60 #default value
@@ -1775,12 +1779,16 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    # the job can be skipped if it's profiler only change
+    isProfilerOnlyChanged: $[ eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isProfilerOnlyChanged'], 'True')]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Test, DockerTest]
+      allowSkipped: ${{ eq(variables.isProfilerOnlyChanged, true) }}
 
   - job: Test
+    condition: eq(variables.isProfilerOnlyChanged, false)
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
@@ -1863,6 +1871,7 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
   - job: DockerTest
+    condition: eq(variables.shouldSkipJob, false)
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
@@ -1968,6 +1977,7 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
   - job: Serverless
+    condition: eq(variables.shouldSkipJob, false)
     timeoutInMinutes: 60
 
     variables:
@@ -2261,13 +2271,18 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    runTestsWithTracerOnly: $[$(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'])]
+    # this stage is run only when there are profiler or tracer changes (since there is shared features. ex: Code Hotspots)
+    shouldSkipJob: $[ and(eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False'))]
+    runTestsWithTracerOnly: $[ eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isProfilerChanged'], 'False') ]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Win]
+      allowSkipped: ${{ eq(variables.shouldSkipJob, true) }}
 
   - job: Win
+    condition: eq(variables.shouldSkipJob, false)
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
@@ -2322,24 +2337,66 @@ stages:
         testResultsFiles: profiler/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+- stage: foo_test
+  dependsOn: [generate_variables, merge_commit_id]
+  variables:
+    changesInTracer: true
+    changesInProfiler: true
+    changesInTracer2: false
+    changesInProfiler2: false
+    isTracerChanged: $[ eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')]
+    isProfilerChanged: $[ eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')]
+
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Test1, Test2]
+      allowSkipped: ${{ variables.changesInTracer }}
+
+  - job: Test1
+    pool:
+      name: azure-linux-scale-set-2
+    condition: eq(variables['isTracerChanged'], true)
+    steps:
+    - script: echo 'hello'
+
+  - job: Test2
+    pool:
+      name: azure-linux-scale-set-2
+    condition: eq(variables['isProfilerChanged'], true)
+    steps:
+    - script: echo 'world'
+
+  - job: Print
+    pool:
+      name: azure-linux-scale-set-2
+    steps:
+    - script: echo '$(isProfilerChanged) $(isTracerChanged)'
+    
+
 - stage: profiler_integration_tests_linux
   condition: >
     and(
       succeeded(),
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      eq(variables.isMainRepository, true)
+      eq(variables['isBenchmarksOnlyBuild'], 'False')
     )
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    runTestsWithTracerOnly: $[$(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'])]
+    # this stage is run only when there are profiler or tracer changes (since there is shared features. ex: Code Hotspots)
+    shouldSkipJob: $[ and(eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False'))]
+    # if there are only tracer changes, just run the tests that requires the tracer
+    runTestsWithTracerOnly: $[ eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Test]
+      allowSkipped: ${{ eq(variables.shouldSkipJob, true) }}
 
   - job: Test
+    condition: eq(variables.shouldSkipJob, false)
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
@@ -2354,7 +2411,6 @@ stages:
 
     variables:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
-      isProfilerChanged: $[eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')]
 
     pool:
       name: azure-linux-scale-set-2
@@ -2377,16 +2433,15 @@ stages:
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
-    - ${{ if eq(variables['IsProfilerChanged'], true) }}:
-      - template: steps/run-in-docker.yml
-        parameters:
-          build: true
-          baseImage: $(baseImage)
-          useNativeSdkVersion: $(useNativeSdkVersion)
-          command: "BuildProfilerSamples"
-          apiKey: $(DD_LOGGER_DD_API_KEY)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
+        command: "BuildProfilerSamples"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
-    - ${{ if eq(variables['IsProfilerChanged'],'True') }} :
+    - ${{ if eq(variables.runTestsWithTracerOnly, false) }} :
       - template: steps/run-in-docker.yml
         parameters:
           baseImage: $(baseImage)
@@ -2395,7 +2450,7 @@ stages:
           extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
           apiKey: $(DD_LOGGER_DD_API_KEY)
 
-    - ${{ if eq(variables['IsProfilerChanged'],'True') }} :
+    - ${{ if eq(variables.runTestsWithTracerOnly, false) }} :
       - template: steps/run-in-docker.yml
         parameters:
           baseImage: $(baseImage)
@@ -2586,14 +2641,18 @@ stages:
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     TestAllPackageVersions: true
     IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
-    baseImage: debian
-
+    baseImage: debian 
+    # the job can be skipped if it's profiler only change
+    isProfilerOnlyChanged: $[ eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isProfilerOnlyChanged'], 'True')]
+  
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
         jobs: [Test, DockerTest]
+        allowSkipped: ${{ eq(variables.isProfilerOnlyChanged, true) }}
 
     - job: Test
+      condition: eq(variables.isProfilerOnlyChanged, false)
       timeoutInMinutes: 60 #default value
       strategy:
         matrix:
@@ -2672,6 +2731,7 @@ stages:
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - job: DockerTest
+      condition: eq(variables.isProfilerOnlyChanged, false)
       timeoutInMinutes: 60 #default value
       strategy:
         matrix:

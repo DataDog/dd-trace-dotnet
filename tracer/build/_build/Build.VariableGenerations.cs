@@ -60,6 +60,8 @@ partial class Build : NukeBuild
                     "tracer/build/_build/Build.Profiler.Steps.cs",
                 }, new string[] { });
 
+                GenerateProfilerOnlyChangesConditionVariable();
+
                 void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters, string[] exclusionFilters)
                 {
                     const string baseBranch = "origin/master";
@@ -92,6 +94,24 @@ partial class Build : NukeBuild
                     Logger.Information($"{variableName} - {isChanged}");
 
                     var variableValue = isChanged.ToString();
+                    EnvironmentInfo.SetVariable(variableName, variableValue);
+                    AzurePipelines.Instance.SetOutputVariable(variableName, variableValue);
+                }
+
+                void GenerateProfilerOnlyChangesConditionVariable()
+                {
+                    var isTracerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isTracerChanged") ?? "false");
+                    var isDebuggerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isDebuggerChanged") ?? "false");
+                    var isProfilerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isProfilerChanged") ?? "false");
+                    var isAppSecChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isAppSec") ?? "false");
+
+                    var isProfilerOnlyChanged = isProfilerChanged && !(isTracerChanged || isDebuggerChanged || isAppSecChanged);
+
+                    var variableName = "isProfilerOnlyChanged";
+
+                    Logger.Information($"{variableName} - {isProfilerOnlyChanged}");
+
+                    var variableValue = isProfilerOnlyChanged.ToString();
                     EnvironmentInfo.SetVariable(variableName, variableValue);
                     AzurePipelines.Instance.SetOutputVariable(variableName, variableValue);
                 }

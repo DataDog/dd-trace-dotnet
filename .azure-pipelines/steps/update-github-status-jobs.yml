@@ -33,7 +33,8 @@ jobs:
         succeeded(),
         and(
           eq('${{ parameters.allowSkipped }}', true),
-          not(failed())
+          not(failed()),
+          not(canceled())
         )
       )
     steps:
@@ -57,7 +58,8 @@ jobs:
         succeeded(),
         and(
           eq('${{ parameters.allowSkipped }}', true),
-          not(failed())
+          not(failed()),
+          not(canceled())
         )
       ))
     steps:
