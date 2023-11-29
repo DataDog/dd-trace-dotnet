@@ -275,7 +275,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 #endif
 
-        private static void SetLegacyResourceNames(BeforeActionStruct typedArg, Span span)
+        private static string GetLegacyResourceName(BeforeActionStruct typedArg)
         {
             ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
             HttpRequest request = typedArg.HttpContext.Request;
@@ -290,25 +290,27 @@ namespace Datadog.Trace.DiagnosticListeners
                 routeTemplate = $"{controllerName}/{actionName}";
             }
 
-            string resourceName = $"{httpMethod} {routeTemplate}";
-
-            // override the parent's resource name with the MVC route template
-            span.ResourceName = resourceName;
+            return $"{httpMethod} {routeTemplate}";
         }
 
-        private static Span StartMvcCoreSpan(Tracer tracer, Span parentSpan, BeforeActionStruct typedArg, HttpContext httpContext, HttpRequest request)
+        private static Span StartMvcCoreSpan(
+            Tracer tracer,
+            AspNetCoreHttpRequestHandler.RequestTrackingFeature trackingFeature,
+            BeforeActionStruct typedArg,
+            HttpContext httpContext,
+            HttpRequest request)
         {
             // Create a child span for the MVC action
             var mvcSpanTags = new AspNetCoreMvcTags();
-            var mvcScope = tracer.StartActiveInternal(MvcOperationName, parentSpan.Context, tags: mvcSpanTags);
+            var mvcScope = tracer.StartActiveInternal(MvcOperationName, tags: mvcSpanTags);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             var span = mvcScope.Span;
             span.Type = SpanTypes.Web;
 
-            // This is only called with new route names, so parent tags are always AspNetCoreEndpointTags
-            var parentTags = (AspNetCoreEndpointTags)parentSpan.Tags;
+            // StartMvcCoreSpan is only called with new route names, so parent tags are always AspNetCoreEndpointTags
+            var rootSpan = trackingFeature.RootScope.Span;
+            var rootSpanTags = (AspNetCoreEndpointTags)rootSpan.Tags;
 
-            var trackingFeature = httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>();
             var isUsingEndpointRouting = trackingFeature.IsUsingEndpointRouting;
 
             var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
@@ -376,7 +378,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         actionName: actionName,
                         expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled);
 
-                    resourceName = $"{parentTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    resourceName = $"{rootSpanTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
                     aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
                 }
@@ -385,9 +387,9 @@ namespace Datadog.Trace.DiagnosticListeners
             // mirror the parent if we couldn't extract a route for some reason
             // (and the parent is not using the placeholder resource name)
             span.ResourceName = resourceName
-                             ?? (string.IsNullOrEmpty(parentSpan.ResourceName)
+                             ?? (string.IsNullOrEmpty(rootSpan.ResourceName)
                                      ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request)
-                                     : parentSpan.ResourceName);
+                                     : rootSpan.ResourceName);
 
             mvcSpanTags.AspNetCoreAction = actionName;
             mvcSpanTags.AspNetCoreController = controllerName;
@@ -399,9 +401,9 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 // If we're using endpoint routing or this is a pipeline re-execution,
                 // these will already be set correctly
-                parentTags.AspNetCoreRoute = aspNetRoute;
-                parentSpan.ResourceName = span.ResourceName;
-                parentTags.HttpRoute = aspNetRoute;
+                rootSpanTags.AspNetCoreRoute = aspNetRoute;
+                rootSpan.ResourceName = span.ResourceName;
+                rootSpanTags.HttpRoute = aspNetRoute;
             }
 
             return span;
@@ -447,19 +449,16 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            Span span = tracer.InternalActiveScope?.Span;
-
-            if (span != null)
+            if (arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg)
+             && typedArg.HttpContext is { } httpContext
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
             {
-                var tags = span.Tags as AspNetCoreEndpointTags;
-                if (tags is null || !arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg))
+                if (rootSpan.Tags is not AspNetCoreEndpointTags tags)
                 {
-                    // Shouldn't happen in normal execution
+                    // customer is using legacy resource names
                     return;
                 }
 
-                HttpContext httpContext = typedArg.HttpContext;
-                var trackingFeature = httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>();
                 var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
                 if (isFirstExecution)
                 {
@@ -556,16 +555,16 @@ namespace Datadog.Trace.DiagnosticListeners
                 trackingFeature.ResourceName = resourceName;
                 if (isFirstExecution)
                 {
-                    span.ResourceName = resourceName;
+                    rootSpan.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
                     tags.HttpRoute = normalizedRoute;
                 }
 
-                CurrentSecurity.CheckPathParams(httpContext, span, routeValues);
+                CurrentSecurity.CheckPathParams(httpContext, rootSpan, routeValues);
 
                 if (Iast.Iast.Instance.Settings.Enabled)
                 {
-                    span.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
+                    rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
                 }
             }
         }
@@ -584,11 +583,10 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            Span parentSpan = tracer.InternalActiveScope?.Span;
-
-            if (parentSpan != null && arg.TryDuckCast<BeforeActionStruct>(out var typedArg))
+            if (arg.TryDuckCast<BeforeActionStruct>(out var typedArg)
+             && typedArg.HttpContext is { } httpContext
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
             {
-                HttpContext httpContext = typedArg.HttpContext;
                 HttpRequest request = httpContext.Request;
 
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
@@ -598,19 +596,23 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
                     {
-                        SetLegacyResourceNames(typedArg, parentSpan);
+                        // override the parent's resource name with the simplified MVC route template
+                        rootSpan.ResourceName = GetLegacyResourceName(typedArg);
                     }
                     else
                     {
-                        span = StartMvcCoreSpan(tracer, parentSpan, typedArg, httpContext, request);
+                        span = StartMvcCoreSpan(tracer, trackingFeature, typedArg, httpContext, request);
                     }
                 }
 
-                CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+                if (span is not null)
+                {
+                    CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+                }
 
                 if (shouldUseIast)
                 {
-                    parentSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
+                    rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
             }
         }
@@ -664,10 +666,13 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var scope = tracer.InternalActiveScope;
-            var httpContext = scope is not null ? arg.DuckCast<HttpRequestInStopStruct>().HttpContext : null;
+            if (arg.DuckCast<HttpRequestInStopStruct>().HttpContext is { } httpContext
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope: { } rootScope })
+            {
+                AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, rootScope, httpContext);
+            }
 
-            AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, scope, httpContext);
+            // If we don't have a scope, no need to call Stop pipeline
         }
 
         private void OnHostingUnhandledException(object arg)
@@ -679,12 +684,14 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var span = tracer.InternalActiveScope?.Span;
-
-            if (span != null && arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct))
+            if (arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct)
+             && unhandledStruct.HttpContext is { } httpContext
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan })
             {
-                AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, CurrentSecurity, span, unhandledStruct.HttpContext, unhandledStruct.Exception);
+                AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, CurrentSecurity, rootSpan, httpContext, unhandledStruct.Exception);
             }
+
+            // If we don't have a span, no need to call Handle exception
         }
 
         [DuckCopy]
