@@ -29,6 +29,7 @@ using (Tracer.Instance.StartActive($"Manual-{++count}.Initial"))
 {
     await SendHttpRequest("Initial");
 }
+await Tracer.Instance.ForceFlushAsync();
 
 // Reconfigure the tracer
 var settings = TracerSettings.FromDefaultSources();
@@ -44,6 +45,7 @@ using (Tracer.Instance.StartActive($"Manual-{++count}.Reconfigured"))
 {
     await SendHttpRequest("Reconfigured");
 }
+await Tracer.Instance.ForceFlushAsync();
 
 // reconfigure with Http disabled
 settings = TracerSettings.FromDefaultSources();
@@ -65,6 +67,7 @@ using (Tracer.Instance.StartActive($"Manual-{++count}.HttpDisabled"))
 {
     await SendHttpRequest("HttpDisabled");
 }
+await Tracer.Instance.ForceFlushAsync();
 
 // go back to the defaults
 Tracer.Configure(TracerSettings.FromDefaultSources());
@@ -73,6 +76,7 @@ using (Tracer.Instance.StartActive($"Manual-{++count}.DefaultsReinstated"))
 {
     await SendHttpRequest("DefaultsReinstated");
 }
+await Tracer.Instance.ForceFlushAsync();
 
 // nested manual + extensions
 using (var s1 = Tracer.Instance.StartActive($"Manual-{++count}.Ext.Outer"))
