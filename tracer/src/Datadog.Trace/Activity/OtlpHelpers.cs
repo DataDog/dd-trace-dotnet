@@ -26,8 +26,6 @@ namespace Datadog.Trace.Activity
         internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span)
             where TInner : IActivity
         {
-            var activity5 = activity as IActivity5;
-
             AgentConvertSpan(activity, span);
         }
 
@@ -61,7 +59,8 @@ namespace Datadog.Trace.Activity
             }
 
             // Fixup "version" tag
-            var tracer = span.Context.TraceContext.Tracer;
+            // Fallback to static instance if no tracer associated with the trace
+            var tracer = span.Context.TraceContext?.Tracer ?? Tracer.Instance;
             if (tracer.Settings.ServiceVersionInternal is null
              && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
             {
