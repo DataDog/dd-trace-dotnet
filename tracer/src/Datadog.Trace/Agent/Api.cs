@@ -160,7 +160,7 @@ namespace Datadog.Trace.Agent
                     if (isFinalTry || success == SendResult.Failed_DontRetry)
                     {
                         // stop retrying
-                        _log.Warning(exception, "An error occurred while sending data to the agent at {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.", _apiRequestFactory.Info(endpoint));
+                        _log.Error(exception, "An error occurred while sending data to the agent at {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.", _apiRequestFactory.Info(endpoint));
                         return false;
                     }
                     else if (_log.IsEnabled(LogEventLevel.Debug))
