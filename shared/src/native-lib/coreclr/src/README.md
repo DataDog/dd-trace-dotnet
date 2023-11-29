@@ -26,3 +26,5 @@ in `pal.h`, add the definition of g_arm64_atomics_present after Processor-specif
 // the machine
 extern bool g_arm64_atomics_present;
 #endif
+
+in `shared/src/native-lib/coreclr/src/pal/inc/rt/specstrings.h` (l.317) commented `#define __bound` to fix linux compilation

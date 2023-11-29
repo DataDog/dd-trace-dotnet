@@ -4,10 +4,10 @@ include(GoogleTest)
 # ******************************************************
 # Compiler options
 # ******************************************************
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # Sets compiler options
-add_compile_options(-Wc++17-extensions)
+add_compile_options(-Wc++20-extensions)
 
 if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
     add_compile_options(-DDD_ALPINE)
@@ -60,7 +60,7 @@ target_link_libraries(${TEST_EXECUTABLE_NAME}
   -static-libgcc
   -static-libstdc++
   -ldl
-  -Wc++17-extensions
+  -Wc++20-extensions
 )
 
 gtest_discover_tests(${TEST_EXECUTABLE_NAME})

@@ -12,6 +12,7 @@ using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using DatadogDebugger.Util;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
@@ -28,90 +29,22 @@ namespace Datadog.Trace.Debugger.Snapshots
             _maxDepth = maxDepth;
         }
 
-        public static SnapshotSlicer Create(DebuggerSettings settings, int maxSnapshotSize = 1 * 1024 * 1024)
+        public static SnapshotSlicer Create(DebuggerSettings settings, int maxSnapshotSize = 1024 * 1024)
         {
             return new SnapshotSlicer(settings.MaximumDepthOfMembersToCopy, maxSnapshotSize);
         }
 
         public string SliceIfNeeded(string probeId, string snapshot)
         {
-            var payloadSize = Encoding.UTF8.GetByteCount(snapshot);
-            if (payloadSize < _maxSnapshotSize)
-            {
-                return snapshot;
-            }
-
             try
             {
-                return SliceSnapshot(snapshot, probeId, payloadSize);
+                return SnapshotPruner.Prune(snapshot, _maxSnapshotSize, _maxDepth);
             }
             catch (Exception e)
             {
                 Log.Warning(e, "Failed to fit snapshot with probe id {ProbeId} due to exception", probeId);
                 return snapshot;
             }
-        }
-
-        private string SliceSnapshot(string snapshot, string probeId, int payloadSize)
-        {
-            var maxDepth = _maxDepth;
-            var maxFieldDepth = 0;
-
-            while (maxDepth > 0 && payloadSize >= _maxSnapshotSize)
-            {
-                Log.Information<string, int>("Trying to slice snapshot with probe id {ProbeId} by removing {MaxDepth} `field` depth property", probeId, maxDepth);
-
-                var fieldDepth = 0;
-                var skipFields = false;
-                var stringBuilder = StringBuilderCache.Acquire(payloadSize);
-
-                using var jsonReader = new JsonTextReader(new StringReader(snapshot));
-                using var jsonWriter = new JsonTextWriter(new StringWriter(stringBuilder));
-
-                while (jsonReader.Read())
-                {
-                    if (jsonReader.TokenType == JsonToken.PropertyName)
-                    {
-                        if (jsonReader.Value?.ToString() == "fields")
-                        {
-                            fieldDepth++;
-
-                            if (fieldDepth == maxDepth)
-                            {
-                                skipFields = true;
-                            }
-
-                            maxFieldDepth = Math.Max(maxFieldDepth, fieldDepth);
-                        }
-                    }
-
-                    if (skipFields)
-                    {
-                        jsonReader.Skip();
-                        skipFields = false;
-                        fieldDepth--;
-                    }
-                    else
-                    {
-                        jsonWriter.WriteToken(jsonReader, false);
-                    }
-                }
-
-                snapshot = StringBuilderCache.GetStringAndRelease(stringBuilder);
-                payloadSize = Encoding.UTF8.GetByteCount(snapshot);
-                maxDepth = Math.Min(maxFieldDepth, maxDepth - 1);
-            }
-
-#pragma warning disable DDLOG004 // Message templates should be constant - It's constant enough!
-            Log.Information<string, int>(
-                payloadSize >= _maxSnapshotSize
-                    ? "Failed to fit snapshot with probe id {ProbeId} size to the {MaxSnapshotSize}"
-                    : "Succeed to fit snapshot with probe id {ProbeId} size to the {MaxSnapshotSize}",
-                probeId,
-                _maxSnapshotSize);
-#pragma warning restore DDLOG004 // Message templates should be constant
-
-            return snapshot;
         }
     }
 }

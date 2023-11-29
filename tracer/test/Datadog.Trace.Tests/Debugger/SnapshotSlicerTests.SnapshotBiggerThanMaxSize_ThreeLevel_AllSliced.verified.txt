@@ -1,8 +1,11 @@
-﻿{
+{
   entry: {},
   return: {
     locals: {
       local0: {
+        fields: {
+          pruned: true
+        },
         type: VeryComplexClass,
         value: VeryComplexClass
       }

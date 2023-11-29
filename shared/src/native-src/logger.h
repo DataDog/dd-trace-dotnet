@@ -3,6 +3,7 @@
 #include <memory>
 #include <regex>
 #include <sstream>
+#include <type_traits>
 
 #include <spdlog/sinks/null_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -152,6 +153,7 @@ std::string Logger::GetLogPath(const std::string& file_name_suffix)
     return log_path.string();
 }
 
+#ifdef MACOS
 template <class T>
 void WriteToStream(std::ostringstream& oss, T const& x)
 {
@@ -164,6 +166,70 @@ void WriteToStream(std::ostringstream& oss, T const& x)
         oss << x;
     }
 }
+#else
+
+// On Debian buster, we only have libstdc++ 8 which does not have a definition for the std::same_as concept
+// and std::remove_cvref_t struct.
+// In that case, when running on Windows or using a libstdc++ >= 10, we just alias the std::same_as and std::remove_cvref_t symbols,
+// Otherwise, we just implement them.
+#if defined(_WINDOWS) || (defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE >= 10 )
+
+template <class T, class U>
+concept same_as = std::same_as<T, U>;
+
+template <class T>
+using remove_cvref_t = typename std::remove_cvref_t<T>;
+
+#else
+
+template<class T>
+struct remove_cvref
+{
+    typedef std::remove_cv_t<std::remove_reference_t<T>> type;
+};
+
+template< class T >
+using remove_cvref_t = typename remove_cvref<T>::type;
+
+namespace detail
+{
+    template< class T, class U >
+    concept SameHelper = std::is_same_v<T, U>;
+}
+
+template< class T, class U >
+concept same_as = detail::SameHelper<T, U> && detail::SameHelper<U, T>;
+
+#endif
+
+template <class T>
+concept IsWstring = same_as<T, ::shared::WSTRING> ||
+                    // check if it's WCHAR[N] or WCHAR*
+                    same_as<remove_cvref_t<std::remove_pointer_t<std::decay_t<T>>>, WCHAR>;
+
+template <IsWstring T>
+void  WriteToStream(std::ostringstream& oss, T const& x)
+{
+    if constexpr (std::is_same_v<T, ::shared::WSTRING>)
+    {
+        oss << ::shared::ToString(x);
+    }
+    else if constexpr (std::is_array_v<T>)
+    {
+        oss << ::shared::ToString(x, std::extent_v<T>);
+    }
+    else
+    {
+        oss << ::shared::ToString(x);
+    }
+}
+
+template <class T>
+void WriteToStream(std::ostringstream& oss, T const& x)
+{
+    oss << x;
+}
+#endif
 
 template <typename... Args>
 static std::string LogToString(Args const&... args)

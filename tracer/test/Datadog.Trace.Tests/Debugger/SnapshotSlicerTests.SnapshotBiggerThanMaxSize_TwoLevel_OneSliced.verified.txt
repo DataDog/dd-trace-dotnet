@@ -1,4 +1,4 @@
-﻿{
+{
   entry: {},
   return: {
     locals: {
@@ -9,6 +9,11 @@
             type: VeryComplexClass
           },
           ComplexClass: {
+            fields: {
+              SimpleClass: {
+                pruned: true
+              }
+            },
             type: ComplexClass,
             value: ComplexClass
           }
