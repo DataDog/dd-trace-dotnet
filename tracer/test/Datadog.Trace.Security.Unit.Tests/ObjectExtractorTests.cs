@@ -17,19 +17,10 @@ namespace Datadog.Trace.Security.Unit.Tests
     {
         private readonly string[] _fieldsAsStrings =
         {
-            nameof(TestVarietyPoco.SByteValue),
-            nameof(TestVarietyPoco.IntPtrValue),
-            nameof(TestVarietyPoco.UIntPtrValue),
-            nameof(TestVarietyPoco.CharValue),
-            nameof(TestVarietyPoco.GuidValue),
-            nameof(TestVarietyPoco.EnumValue),
-            nameof(TestVarietyPoco.DateTimeValue),
-            nameof(TestVarietyPoco.DateTimeOffsetValue),
-            nameof(TestVarietyPoco.TimeSpanValue),
-            #if NET6_0_OR_GREATER
-            nameof(TestVarietyPoco.TimeOnlyValue),
-            nameof(TestVarietyPoco.DateOnlyValue)
-            #endif
+            nameof(TestVarietyPoco.SByteValue), nameof(TestVarietyPoco.IntPtrValue), nameof(TestVarietyPoco.UIntPtrValue), nameof(TestVarietyPoco.CharValue), nameof(TestVarietyPoco.GuidValue), nameof(TestVarietyPoco.EnumValue), nameof(TestVarietyPoco.DateTimeValue), nameof(TestVarietyPoco.DateTimeOffsetValue), nameof(TestVarietyPoco.TimeSpanValue),
+#if NET6_0_OR_GREATER
+            nameof(TestVarietyPoco.TimeOnlyValue), nameof(TestVarietyPoco.DateOnlyValue)
+#endif
         };
 
         [Fact]
@@ -130,11 +121,47 @@ namespace Datadog.Trace.Security.Unit.Tests
             var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
-
             Assert.Equal(target.Dog1, result[nameof(target.Dog1)]?.ToString());
             Assert.Equal(target.Dog2, result[nameof(target.Dog2)]?.ToString());
             result[nameof(target.Id)].Should().BeOfType<int>();
             target.Id.Should().Be((int)result[nameof(target.Id)]);
+        }
+
+        [Fact]
+        public void TestAnonymousTypeEmpty()
+        {
+            var target = new { };
+
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void TestAnonymousTypeNested()
+        {
+            var target = new { Name = "Outer", Dog = new { Name = "Inner" }, Cat = new { } };
+
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+            Assert.NotNull(result);
+            result.Should().HaveCount(3);
+            result.Should().HaveElementAt(0, new KeyValuePair<string, object>("Name", "Outer"));
+            result.ElementAt(1).Key.Should().Be("Dog");
+            result.ElementAt(1).Value.Should().BeEquivalentTo(new Dictionary<string, object> { { "Name", "Inner" } });
+            result.ElementAt(2).Key.Should().Be("Cat");
+            result.ElementAt(2).Value.Should().BeEquivalentTo(new Dictionary<string, object>(0));
+        }
+
+        [Fact]
+        public void TestAnonymousTypeArray()
+        {
+            var target = new[] { new { Name = "Anon1" }, new { Name = "Anon2" }, new { Name = "Anon1" } };
+            var result = ObjectExtractor.Extract(target) as List<object>;
+            result.Should().NotBeNull();
+            result.Should().HaveCount(3);
+            result!.ElementAt(0).Should().BeEquivalentTo(new Dictionary<string, object> { { "Name", "Anon1" } });
+            result.ElementAt(1).Should().BeEquivalentTo(new Dictionary<string, object> { { "Name", "Anon2" } });
+            result.ElementAt(2).Should().BeEquivalentTo(new Dictionary<string, object>(0));
         }
 
         [Fact]
