@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -14,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsmqCommon));
 
-        internal static Scope CreateScope<TMessageQueue>(Tracer tracer, string command, string spanKind, TMessageQueue messageQueue, bool? messagePartofTransaction = null)
+        internal static Scope? CreateScope<TMessageQueue>(Tracer tracer, string command, string spanKind, TMessageQueue messageQueue, bool? isMessagePartOfTransaction = null)
             where TMessageQueue : IMessageQueue
         {
             if (!tracer.Settings.IsIntegrationEnabled(MsmqConstants.IntegrationId))
@@ -23,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
@@ -32,12 +34,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
                 MsmqTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateMsmqTags(spanKind);
 
                 tags.Command = command;
-                tags.IsTransactionalQueue = messageQueue.Transactional.ToString();
-                tags.Host = messageQueue.MachineName;
-                tags.Path = messageQueue.Path;
-                if (messagePartofTransaction.HasValue)
+                try
                 {
-                    tags.MessageWithTransaction = messagePartofTransaction.ToString();
+                    tags.Path = messageQueue.Path;
+                    tags.Host = messageQueue.MachineName;
+                    tags.IsTransactionalQueue = messageQueue.Transactional.ToString();
+                }
+                catch
+                {
+                    // Depending on the permissions available, messageQueue.Transactional may throw
+                    // a MessageQueueException. The Path and machine name are apparently fraught
+                    // with potential issues too, so playing it safe and swallowing any issues here
+                    // We could consider diving into the internals to fish out the value, but not
+                    // worth it IMO, especially as that would effectively bypass a "security" feature
+                }
+
+                if (isMessagePartOfTransaction.HasValue)
+                {
+                    tags.MessageWithTransaction = isMessagePartOfTransaction.ToString();
                 }
 
                 scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
