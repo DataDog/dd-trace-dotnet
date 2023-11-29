@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
@@ -10,6 +11,6 @@ namespace Datadog.Trace.Tagging
     internal partial class AspNetCoreEndpointTags : AspNetCoreTags
     {
         [Tag(Trace.Tags.AspNetCoreEndpoint)]
-        public string AspNetCoreEndpoint { get; set; }
+        public string? AspNetCoreEndpoint { get; set; }
     }
 }

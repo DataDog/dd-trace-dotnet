@@ -106,6 +106,10 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsOptional("aspnet_core.endpoint")
                 .IsOptional("aspnet_core.route")
+                .IsOptional("aspnet_core.action")
+                .IsOptional("aspnet_core.area")
+                .IsOptional("aspnet_core.controller")
+                .IsOptional("aspnet_core.page")
                 .IsOptional("http.client_ip")
                 .IsOptional("network.client.ip")
                 .IsPresent("http.method")
