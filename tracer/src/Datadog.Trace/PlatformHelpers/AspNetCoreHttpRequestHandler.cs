@@ -138,18 +138,19 @@ namespace Datadog.Trace.PlatformHelpers
             return scope;
         }
 
-        public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope scope, HttpContext httpContext)
+        public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope rootScope, HttpContext httpContext)
         {
-            if (scope != null)
+            if (rootScope != null)
             {
                 // We may need to update the resource name if none of the routing/mvc events updated it.
                 // If we had an unhandled exception, the status code will already be updated correctly,
                 // but if the span was manually marked as an error, we still need to record the status code
-                var span = scope.Span;
 
-                // WARNING: This code assumes that the active span at the _end_ of the request is the same
-                // as the span at the _start_ of the request. That's "expected" in normal operation
-                // but if a customer isn't disposing a span somewhere, this will not necessarily be true.
+                // WARNING: This code assumes that the rootSpan passed in is the aspnetcore.request
+                // root span. In "normal" operation, this will be the same span returned by
+                // Tracer.Instance.ActiveScope, but if a customer is not disposing a span somewhere,
+                // that will not necessarily be true, so make sure you use the RequestTrackingFeature.
+                var span = rootScope.Span;
                 var isMissingHttpStatusCode = !span.HasHttpStatusCode();
 
                 if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
@@ -177,16 +178,17 @@ namespace Datadog.Trace.PlatformHelpers
                     new SecurityCoordinator.HttpTransport(httpContext).DisposeAdditiveContext();
                 }
 
-                scope.Dispose();
+                rootScope.Dispose();
             }
         }
 
-        public void HandleAspNetCoreException(Tracer tracer, Security security, Span span, HttpContext httpContext, Exception exception)
+        public void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception)
         {
-            // WARNING: This code assumes that the active span at the _end_ of the request is the same
-            // as the span at the _start_ of the request. That's "expected" in normal operation
-            // but if a customer isn't disposing a span somewhere, this will not necessarily be true.
-            if (span != null && httpContext is not null && exception is not null)
+            // WARNING: This code assumes that the rootSpan passed in is the aspnetcore.request
+            // root span. In "normal" operation, this will be the same span returned by
+            // Tracer.Instance.ActiveScope, but if a customer is not disposing a span somewhere,
+            // that will not necessarily be true, so make sure you use the RequestTrackingFeature.
+            if (rootSpan != null && httpContext is not null && exception is not null)
             {
                 var statusCode = 500;
 
@@ -196,12 +198,12 @@ namespace Datadog.Trace.PlatformHelpers
                 }
 
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
-                span.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
+                rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
 
                 if (exception is not BlockException)
                 {
-                    span.SetException(exception);
-                    security.CheckAndBlock(httpContext, span);
+                    rootSpan.SetException(exception);
+                    security.CheckAndBlock(httpContext, rootSpan);
                 }
             }
         }

@@ -666,10 +666,13 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var scope = tracer.InternalActiveScope;
-            var httpContext = scope is not null ? arg.DuckCast<HttpRequestInStopStruct>().HttpContext : null;
+            if (arg.DuckCast<HttpRequestInStopStruct>().HttpContext is { } httpContext
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope: { } rootScope })
+            {
+                AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, rootScope, httpContext);
+            }
 
-            AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, scope, httpContext);
+            // If we don't have a scope, no need to call Stop pipeline
         }
 
         private void OnHostingUnhandledException(object arg)
@@ -681,12 +684,14 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var span = tracer.InternalActiveScope?.Span;
-
-            if (span != null && arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct))
+            if (arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct)
+             && unhandledStruct.HttpContext is { } httpContext
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan })
             {
-                AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, CurrentSecurity, span, unhandledStruct.HttpContext, unhandledStruct.Exception);
+                AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, CurrentSecurity, rootSpan, httpContext, unhandledStruct.Exception);
             }
+
+            // If we don't have a span, no need to call Handle exception
         }
 
         [DuckCopy]
