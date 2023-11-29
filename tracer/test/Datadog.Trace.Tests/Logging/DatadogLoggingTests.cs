@@ -7,10 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Configuration;
+using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Util;
@@ -362,6 +364,46 @@ namespace Datadog.Trace.Tests.Logging
             logger.Debug(ex, "Just a debug");
             logger.Information(ex, "Just an info");
             logger.Warning(ex, "Just a warning");
+            collector.GetLogs().Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void RedactedErrorLogs_ExcludesSpecificMessages(bool withException)
+        {
+            var collector = new RedactedErrorLogCollector();
+
+            var config = new DatadogLoggingConfiguration(
+                rateLimit: 0,
+                file: null,
+                errorLogging: new RedactedErrorLoggingConfiguration(collector));
+
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
+
+            logger.Should().NotBeNull();
+
+            // These errors should not be written
+            if (withException)
+            {
+                logger.Error(new Exception(), Api.FailedToSendMessageTemplate, "http://localhost:8126");
+            }
+            else
+            {
+                logger.Error(Api.FailedToSendMessageTemplate, "http://localhost:8126");
+            }
+
+#if NETFRAMEWORK
+            if (withException)
+            {
+                logger.Error(new Exception(), PerformanceCountersListener.InsufficientPermissionsMessageTemplate);
+            }
+            else
+            {
+                logger.Error(PerformanceCountersListener.InsufficientPermissionsMessageTemplate);
+            }
+#endif
+
             collector.GetLogs().Should().BeNull();
         }
 
