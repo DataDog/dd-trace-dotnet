@@ -308,7 +308,7 @@ namespace Datadog.Trace.DiagnosticListeners
             span.Type = SpanTypes.Web;
 
             // StartMvcCoreSpan is only called with new route names, so parent tags are always AspNetCoreEndpointTags
-            var rootSpan = trackingFeature.RootSpan;
+            var rootSpan = trackingFeature.RootScope.Span;
             var rootSpanTags = (AspNetCoreEndpointTags)rootSpan.Tags;
 
             var isUsingEndpointRouting = trackingFeature.IsUsingEndpointRouting;
@@ -451,7 +451,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootSpan: { } rootSpan } trackingFeature)
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
             {
                 if (rootSpan.Tags is not AspNetCoreEndpointTags tags)
                 {
@@ -585,7 +585,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<BeforeActionStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootSpan: { } rootSpan } trackingFeature)
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
             {
                 HttpRequest request = httpContext.Request;
 

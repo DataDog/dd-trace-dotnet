@@ -116,7 +116,7 @@ namespace Datadog.Trace.PlatformHelpers
             AddHeaderTagsToSpan(scope.Span, request, tracer);
 
             var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
-            httpContext.Features.Set(new RequestTrackingFeature(originalPath, scope.Span));
+            httpContext.Features.Set(new RequestTrackingFeature(originalPath, scope));
 
             if (tracer.Settings.IpHeaderEnabled || security.Enabled)
             {
@@ -211,10 +211,10 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         internal class RequestTrackingFeature
         {
-            public RequestTrackingFeature(PathString originalPath, Span rootAspNetCoreSpan)
+            public RequestTrackingFeature(PathString originalPath, Scope rootAspNetCoreScope)
             {
                 OriginalPath = originalPath;
-                RootSpan = rootAspNetCoreSpan;
+                RootScope = rootAspNetCoreScope;
             }
 
             /// <summary>
@@ -243,9 +243,9 @@ namespace Datadog.Trace.PlatformHelpers
             public PathString OriginalPath { get; }
 
             /// <summary>
-            /// Gets the root ASP.NET Core span
+            /// Gets the root ASP.NET Core Scope
             /// </summary>
-            public Span RootSpan { get; }
+            public Scope RootScope { get; }
 
             public bool MatchesOriginalPath(HttpRequest request)
             {
