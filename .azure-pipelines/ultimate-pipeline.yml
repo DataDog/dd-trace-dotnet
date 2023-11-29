@@ -94,10 +94,10 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 8.0.100-rc.2.23502.2
+  dotnetCoreSdkLatestVersion: 8.0.100
   # This is required until we're out of rc.
   # After GA we can do a find and replace and get rid of this
-  dotnetCoreSdkLatestVersionShort: 8.0.100-rc.2
+  dotnetCoreSdkLatestVersionShort: 8.0.100
   nativeBuildDotnetSdkVersion: 7.0.306
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
@@ -2600,8 +2600,8 @@ stages:
             publishTargetFramework: net5.0
           net6_0:
             publishTargetFramework: net6.0
-          net7_0:
-            publishTargetFramework: net7.0
+          net8_0:
+            publishTargetFramework: net8.0
       workspace:
         clean: all
       pool:
@@ -3053,7 +3053,7 @@ stages:
         BenchmarkAgent7:
           agent: "BenchmarkAgent7"
 
-    timeoutInMinutes: 45
+    timeoutInMinutes: 150
     pool:
       name: $(agent)
 

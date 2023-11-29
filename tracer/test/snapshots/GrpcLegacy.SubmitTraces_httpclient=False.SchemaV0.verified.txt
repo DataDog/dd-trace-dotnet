@@ -2,7 +2,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: SendBothStreamingRequest,
+    Name: internal,
     Resource: SendBothStreamingRequest,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -15,9 +15,7 @@
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -52,8 +50,7 @@
       servermeta: other-server-value,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -88,9 +85,7 @@
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -102,7 +97,7 @@
   {
     TraceId: Id_5,
     SpanId: Id_6,
-    Name: SendClientStreamingRequest,
+    Name: internal,
     Resource: SendClientStreamingRequest,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -115,9 +110,7 @@
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -152,8 +145,7 @@
       servermeta: other-server-value,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -188,9 +180,7 @@
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -202,7 +192,7 @@
   {
     TraceId: Id_9,
     SpanId: Id_10,
-    Name: SendErrors_Cancelled,
+    Name: internal,
     Resource: SendErrors_Cancelled,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -215,9 +205,7 @@
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -258,8 +246,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -296,9 +283,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -310,7 +295,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_13,
     SpanId: Id_14,
-    Name: SendErrors_DataLoss,
+    Name: internal,
     Resource: SendErrors_DataLoss,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -323,9 +308,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -366,8 +349,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -404,9 +386,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -418,7 +398,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_17,
     SpanId: Id_18,
-    Name: SendErrors_NotFound,
+    Name: internal,
     Resource: SendErrors_NotFound,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -431,9 +411,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -474,8 +452,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -512,9 +489,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -526,7 +501,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_21,
     SpanId: Id_22,
-    Name: SendErrors_Throw,
+    Name: internal,
     Resource: SendErrors_Throw,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -539,9 +514,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -582,8 +555,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -620,9 +592,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -634,7 +604,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_25,
     SpanId: Id_26,
-    Name: SendErrorsAsync_Cancelled,
+    Name: internal,
     Resource: SendErrorsAsync_Cancelled,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -647,9 +617,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -690,8 +658,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -728,9 +695,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -742,7 +707,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_29,
     SpanId: Id_30,
-    Name: SendErrorsAsync_DataLoss,
+    Name: internal,
     Resource: SendErrorsAsync_DataLoss,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -755,9 +720,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -798,8 +761,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -836,9 +798,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -850,7 +810,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_33,
     SpanId: Id_34,
-    Name: SendErrorsAsync_NotFound,
+    Name: internal,
     Resource: SendErrorsAsync_NotFound,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -863,9 +823,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -906,8 +864,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -944,9 +901,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -958,7 +913,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_37,
     SpanId: Id_38,
-    Name: SendErrorsAsync_Throw,
+    Name: internal,
     Resource: SendErrorsAsync_Throw,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -971,9 +926,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1014,8 +967,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1052,9 +1004,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1066,7 +1016,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_41,
     SpanId: Id_42,
-    Name: SendServerStreamingRequest,
+    Name: internal,
     Resource: SendServerStreamingRequest,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -1079,9 +1029,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1116,8 +1064,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1152,9 +1099,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1166,7 +1111,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_45,
     SpanId: Id_46,
-    Name: SendUnaryRequest,
+    Name: internal,
     Resource: SendUnaryRequest,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -1179,9 +1124,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1216,8 +1159,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1252,9 +1194,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1266,7 +1206,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_49,
     SpanId: Id_50,
-    Name: SendUnaryRequestAsync,
+    Name: internal,
     Resource: SendUnaryRequestAsync,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -1279,9 +1219,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1316,8 +1254,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1352,9 +1289,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1366,7 +1301,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_53,
     SpanId: Id_54,
-    Name: SendVerySlowRequest,
+    Name: internal,
     Resource: SendVerySlowRequest,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -1379,9 +1314,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1417,8 +1350,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1455,9 +1387,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1469,7 +1399,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_57,
     SpanId: Id_58,
-    Name: SendVerySlowRequestAsync,
+    Name: internal,
     Resource: SendVerySlowRequestAsync,
     Service: Samples.GrpcLegacy,
     Type: custom,
@@ -1482,9 +1412,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       span.kind: internal,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1520,8 +1448,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1558,9 +1485,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       servermeta: other-server-value,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,

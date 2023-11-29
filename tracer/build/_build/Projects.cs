@@ -50,5 +50,7 @@ public static class FileNames
 
     public const string LoaderConf = "loader.conf";
     public const string CreateLogPathScript = "createLogPath.sh";
+    public const string AfterInstallScript = "after-install.sh";
+    public const string AfterRemoveScript = "after-remove.sh";
 
 }

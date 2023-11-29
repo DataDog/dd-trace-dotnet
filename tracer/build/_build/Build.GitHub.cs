@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BenchmarkComparison;
@@ -361,12 +362,24 @@ partial class Build
        .Unlisted()
        .After(UpdateVersion)
        .Requires(() => Version)
-       .Executes(() =>
+       .Executes(async () =>
         {
             Console.WriteLine("Using version to " + FullVersion);
             Console.WriteLine("::set-output name=version::" + Version);
             Console.WriteLine("::set-output name=full_version::" + FullVersion);
             Console.WriteLine("::set-output name=isprerelease::" + (IsPrerelease ? "true" : "false"));
+            Console.WriteLine("::set-output name=lib_waf_version::" + LibDdwafVersion);
+
+            var rulesPath = Solution.GetProject(Projects.DatadogTrace)!.Directory / "AppSec" / "Waf" / "ConfigFiles" / "rule-set.json";
+            await using var rules = File.OpenRead(rulesPath);
+            using var doc = await JsonDocument.ParseAsync(rules, new JsonDocumentOptions { AllowTrailingCommas = true });
+            var rulesVersion = doc.RootElement.GetProperty("metadata").GetProperty("rules_version").GetString();
+            if (string.IsNullOrEmpty(rulesVersion))
+            {
+                throw new Exception($"There was an error reading the metadata.rules_version element from {rulesPath}");
+            }
+
+            Console.WriteLine("::set-output name=waf_rules_version::" + rulesVersion);
         });
 
     Target CalculateNextVersion => _ => _
@@ -441,6 +454,7 @@ partial class Build
                 "tracer/src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj",
                 "tracer/src/Datadog.Trace.BenchmarkDotNet/Datadog.Trace.BenchmarkDotNet.csproj",
                 "tracer/src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
+                "tracer/src/Datadog.Trace.Tools.dd_dotnet/Datadog.Trace.Tools.dd_dotnet.csproj",
                 "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
                 "tracer/src/Datadog.Trace/Datadog.Trace.csproj",
                 "tracer/src/Datadog.Trace/TracerConstants.cs",

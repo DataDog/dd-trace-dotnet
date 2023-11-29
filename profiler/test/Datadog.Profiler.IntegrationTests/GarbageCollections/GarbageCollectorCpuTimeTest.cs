@@ -146,7 +146,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStack));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net45" })]
+        [TestAppFact("Samples.Computer01", new[] { "net462" })]
         public void CheckFeatureIsDisabledIfDotNetFramework(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);

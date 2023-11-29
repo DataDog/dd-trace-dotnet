@@ -19,7 +19,6 @@
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
       _dd.peer.service.source: out.host
     },
     Metrics: {
@@ -50,7 +49,6 @@
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
       _dd.peer.service.source: out.host
     },
     Metrics: {
@@ -87,7 +85,6 @@
       topicname: MyTopic,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
       _dd.peer.service.source: topicname
     },
     Metrics: {

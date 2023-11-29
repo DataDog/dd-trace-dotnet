@@ -3,10 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
@@ -32,12 +35,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 
         internal static CallTargetState OnMethodBegin<TTarget, TMessage, TDefaultValue, TProcessor, TServerEndPoint>(TTarget instance, TMessage message, TDefaultValue defaultValue, TProcessor resultProcessor, TServerEndPoint serverEndPoint)
             where TTarget : IRedisBase
-            where TMessage : IMessageData
+            where TMessage : IMessageData, IDuckType
         {
-            string rawCommand = message.CommandAndKey ?? "COMMAND";
-            StackExchangeRedisHelper.HostAndPort hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Multiplexer.Configuration);
+            if (message.Instance is null)
+            {
+                return CallTargetState.GetDefault();
+            }
 
-            Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, IntegrationName, hostAndPort.Host, hostAndPort.Port, rawCommand, StackExchangeRedisHelper.GetDb(message.Db));
+            string rawCommand = message.CommandAndKey ?? "COMMAND";
+            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Multiplexer.Configuration);
+
+            var scope = RedisHelper.CreateScope(
+                Tracer.Instance,
+                IntegrationId,
+                IntegrationName,
+                hostAndPort.Host,
+                hostAndPort.Port,
+                rawCommand,
+                StackExchangeRedisHelper.GetDb(message.Db));
+
             if (scope is not null)
             {
                 return new CallTargetState(scope);

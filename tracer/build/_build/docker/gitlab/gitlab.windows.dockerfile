@@ -30,9 +30,9 @@ RUN powershell -Command .\install_wix.ps1 -Version $ENV:WIX_VERSION -Sha256 $ENV
 
 # Install .NET 8
 # To find these links, visit https://dotnet.microsoft.com/en-us/download, click the Windows, x64 installer, and grab the download url + SHA512 hash
-ENV DOTNET_VERSION="8.0.100-rc.2.23502.2" \
-    DOTNET_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/92e8b771-8624-48a6-9ffc-9fda1f301fb4/85b45cdf39b2a773fbf8d5d71c3d4774/dotnet-sdk-8.0.100-rc.2.23502.2-win-x64.exe" \
-    DOTNET_SHA512="f4c4ebdaa684b2f7cee1b0034749dcde2a6c8b9a5e45fe4b6f1ff4c918367b6e59d23ec1f70a2db3a7ec9867f85507615aa0467a35406b08ed925ec5abf4b49a"
+ENV DOTNET_VERSION="8.0.100" \
+    DOTNET_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/93961dfb-d1e0-49c8-9230-abcba1ebab5a/811ed1eb63d7652325727720edda26a8/dotnet-sdk-8.0.100-win-x64.exe" \
+    DOTNET_SHA512="248acec95b381e5302255310fb9396267fd74a4a2dc2c3a5989031969cb31f8270cbd14bda1bc0352ac90f8138bddad1a58e4af1e56cc4a1613b1cf2854b518e"
 
 COPY install_dotnet.ps1 .
 RUN powershell -Command .\install_dotnet.ps1  -Version $ENV:DOTNET_VERSION -Sha512 $ENV:DOTNET_SHA512 $ENV:DOTNET_DOWNLOAD_URL

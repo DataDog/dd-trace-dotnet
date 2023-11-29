@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net46</TargetFrameworks>
+    <TargetFrameworks>net462</TargetFrameworks>
     <Platforms>AnyCPU</Platforms>
     <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
     <AssemblyName>Datadog.Demos.NoOpWcfService</AssemblyName>

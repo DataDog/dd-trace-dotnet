@@ -6,15 +6,16 @@
 #include "Exporter.h"
 #include "ExporterBuilder.h"
 #include "Profile.h"
+#include "ProfilerMockedInterface.h"
 #include "Tags.h"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
 
 namespace libdatadog {
 
-Profile CreateEmptyProfile()
+Profile CreateEmptyProfile(std::unique_ptr<IConfiguration> const& configuration)
 {
-    return Profile({{"cpu", "nanosecond"}}, "RealTime", "Nanoseconds", "my app");
+    return Profile(configuration.get(), {{"cpu", "nanosecond"}}, "RealTime", "Nanoseconds", "my app");
 }
 
 TEST(ExporterTest, EnsureCrashOnDebug)
@@ -98,7 +99,8 @@ TEST(ExporterTest, CheckFileCreatedWithFileExporter)
 
     ASSERT_NE(exporter, nullptr);
 
-    auto profile = CreateEmptyProfile();
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    auto profile = CreateEmptyProfile(configuration);
 
     auto tags = Tags();
     ASSERT_NO_FATAL_FAILURE(exporter->Send(&profile, std::move(tags), {}, std::string())) << "sending the profile crashed";

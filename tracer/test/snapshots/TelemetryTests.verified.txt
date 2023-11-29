@@ -1,8 +1,8 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: GetAsync,
+    Name: internal,
     Resource: GetAsync,
     Service: Samples.Telemetry,
     Type: custom,
@@ -16,9 +16,7 @@
       span.kind: internal,
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -56,7 +54,7 @@
   {
     TraceId: Id_4,
     SpanId: Id_5,
-    Name: HttpListener.ReceivedRequest,
+    Name: internal,
     Resource: HttpListener.ReceivedRequest,
     Service: Samples.Telemetry,
     Type: custom,
@@ -70,9 +68,7 @@
       span.kind: internal,
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,

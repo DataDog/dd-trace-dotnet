@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -23,7 +23,6 @@
   "vulnerabilities": [
     {
       "type": "PATH_TRAVERSAL",
-      
       "evidence": {
         "valueParts": [
           {
@@ -41,8 +40,7 @@
       "value": "nonexisting.txt"
     }
   ]
-},
-      _dd.p.dm: -0
+}
     },
     Metrics: {
       process_id: 0,

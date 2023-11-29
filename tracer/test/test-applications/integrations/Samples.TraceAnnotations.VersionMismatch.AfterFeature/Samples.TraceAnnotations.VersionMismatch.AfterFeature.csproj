@@ -6,7 +6,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Datadog.Trace" Version="2.5.0" />
+    <PackageReference Include="Datadog.Trace" Version="2.41.0" />
     <PackageReference Include="NewRelic.Agent.Api" Version="9.7.1" />
   </ItemGroup>
 

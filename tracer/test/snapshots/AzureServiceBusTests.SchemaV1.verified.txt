@@ -1,8 +1,8 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: SendMessageToProcessorAsync,
+    Name: internal,
     Resource: SendMessageToProcessorAsync,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -18,8 +18,8 @@
       service.version: 1.0.0,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -32,7 +32,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -51,13 +51,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: ServiceBusSender.Send,
+    Name: servicebus.publish,
     Resource: ServiceBusSender.Send,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -77,13 +79,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_5,
     SpanId: Id_6,
-    Name: ServiceBusReceiver.Receive,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Receive,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -101,8 +105,8 @@
       otel.trace_id: Guid_4,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -115,7 +119,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_7,
-    Name: ServiceBusProcessor.ProcessMessage,
+    Name: servicebus.process,
     Resource: ServiceBusProcessor.ProcessMessage,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -133,8 +137,8 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -146,7 +150,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_8,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -165,13 +169,15 @@
       otel.trace_id: Guid_1,
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_9,
     SpanId: Id_10,
-    Name: FirstSessionId - Producer,
+    Name: internal,
     Resource: FirstSessionId - Producer,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -187,8 +193,8 @@
       service.version: 1.0.0,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -201,7 +207,7 @@
   {
     TraceId: Id_9,
     SpanId: Id_11,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -220,13 +226,15 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_9,
     SpanId: Id_12,
-    Name: ServiceBusSender.Send,
+    Name: servicebus.publish,
     Resource: ServiceBusSender.Send,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -246,13 +254,15 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: client,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_9,
     SpanId: Id_13,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -271,13 +281,15 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_9,
     SpanId: Id_14,
-    Name: ServiceBusSender.Send,
+    Name: servicebus.publish,
     Resource: ServiceBusSender.Send,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -297,13 +309,15 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: client,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_15,
     SpanId: Id_16,
-    Name: SecondSessionId - Producer,
+    Name: internal,
     Resource: SecondSessionId - Producer,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -319,8 +333,8 @@
       service.version: 1.0.0,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -333,7 +347,7 @@
   {
     TraceId: Id_15,
     SpanId: Id_17,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -352,13 +366,15 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_15,
     SpanId: Id_18,
-    Name: ServiceBusSender.Send,
+    Name: servicebus.publish,
     Resource: ServiceBusSender.Send,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -378,13 +394,15 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: client,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_19,
     SpanId: Id_20,
-    Name: ProcessorSessionId - Producer,
+    Name: internal,
     Resource: ProcessorSessionId - Producer,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -400,8 +418,8 @@
       service.version: 1.0.0,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -414,7 +432,7 @@
   {
     TraceId: Id_19,
     SpanId: Id_21,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -433,13 +451,15 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_19,
     SpanId: Id_22,
-    Name: ServiceBusSender.Send,
+    Name: servicebus.publish,
     Resource: ServiceBusSender.Send,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -459,13 +479,15 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: client,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_23,
     SpanId: Id_24,
-    Name: ServiceBusReceiver.Receive,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Receive,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -483,8 +505,8 @@
       otel.trace_id: Guid_8,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       messaging.batch.message_count: 2.0,
@@ -498,7 +520,7 @@
   {
     TraceId: Id_25,
     SpanId: Id_26,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -517,8 +539,8 @@
       peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -532,7 +554,7 @@
   {
     TraceId: Id_27,
     SpanId: Id_28,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -551,8 +573,8 @@
       peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -566,7 +588,7 @@
   {
     TraceId: Id_29,
     SpanId: Id_30,
-    Name: ServiceBusSessionReceiver.RenewSessionLock,
+    Name: client.request,
     Resource: ServiceBusSessionReceiver.RenewSessionLock,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -584,8 +606,8 @@
       peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -599,7 +621,7 @@
   {
     TraceId: Id_31,
     SpanId: Id_32,
-    Name: ServiceBusSessionReceiver.SetSessionState,
+    Name: client.request,
     Resource: ServiceBusSessionReceiver.SetSessionState,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -617,8 +639,8 @@
       peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -632,7 +654,7 @@
   {
     TraceId: Id_33,
     SpanId: Id_34,
-    Name: ServiceBusSessionReceiver.GetSessionState,
+    Name: client.request,
     Resource: ServiceBusSessionReceiver.GetSessionState,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -650,8 +672,8 @@
       peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -665,7 +687,7 @@
   {
     TraceId: Id_35,
     SpanId: Id_36,
-    Name: ServiceBusReceiver.Receive,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Receive,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -683,8 +705,8 @@
       otel.trace_id: Guid_14,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -697,7 +719,7 @@
   {
     TraceId: Id_37,
     SpanId: Id_38,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -716,8 +738,8 @@
       peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -731,7 +753,7 @@
   {
     TraceId: Id_39,
     SpanId: Id_40,
-    Name: ServiceBusReceiver.Receive,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Receive,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -749,8 +771,8 @@
       otel.trace_id: Guid_16,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -763,7 +785,7 @@
   {
     TraceId: Id_19,
     SpanId: Id_41,
-    Name: ServiceBusSessionProcessor.ProcessSessionMessage,
+    Name: servicebus.process,
     Resource: ServiceBusSessionProcessor.ProcessSessionMessage,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -781,8 +803,8 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_7,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -794,7 +816,7 @@
   {
     TraceId: Id_19,
     SpanId: Id_42,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -813,13 +835,15 @@
       otel.trace_id: Guid_7,
       peer.service: samples-azureservicebus-queue-session,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_43,
     SpanId: Id_44,
-    Name: TestSenderSchedulingAsync,
+    Name: internal,
     Resource: TestSenderSchedulingAsync,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -835,8 +859,8 @@
       service.version: 1.0.0,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -849,7 +873,7 @@
   {
     TraceId: Id_43,
     SpanId: Id_45,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -868,13 +892,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_43,
     SpanId: Id_46,
-    Name: ServiceBusSender.Schedule,
+    Name: servicebus.publish,
     Resource: ServiceBusSender.Schedule,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -894,13 +920,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_43,
     SpanId: Id_47,
-    Name: ServiceBusSender.Cancel,
+    Name: client.request,
     Resource: ServiceBusSender.Cancel,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -919,13 +947,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_43,
     SpanId: Id_48,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -944,13 +974,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_43,
     SpanId: Id_49,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -969,13 +1001,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_43,
     SpanId: Id_50,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -994,13 +1028,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_43,
     SpanId: Id_51,
-    Name: ServiceBusSender.Schedule,
+    Name: servicebus.publish,
     Resource: ServiceBusSender.Schedule,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1020,6 +1056,8 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1029,7 +1067,7 @@
   {
     TraceId: Id_43,
     SpanId: Id_52,
-    Name: ServiceBusSender.Cancel,
+    Name: client.request,
     Resource: ServiceBusSender.Cancel,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1048,13 +1086,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_53,
     SpanId: Id_54,
-    Name: SendIndividualMessageAsync,
+    Name: internal,
     Resource: SendIndividualMessageAsync,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -1070,8 +1110,8 @@
       service.version: 1.0.0,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1084,7 +1124,7 @@
   {
     TraceId: Id_53,
     SpanId: Id_55,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -1103,13 +1143,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_53,
     SpanId: Id_56,
-    Name: ServiceBusSender.Send,
+    Name: servicebus.publish,
     Resource: ServiceBusSender.Send,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1129,13 +1171,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_57,
     SpanId: Id_58,
-    Name: ServiceBusReceiver.Peek,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Peek,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1153,8 +1197,8 @@
       otel.trace_id: Guid_19,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1167,7 +1211,7 @@
   {
     TraceId: Id_59,
     SpanId: Id_60,
-    Name: ServiceBusReceiver.Receive,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Receive,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1185,8 +1229,8 @@
       otel.trace_id: Guid_20,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1199,7 +1243,7 @@
   {
     TraceId: Id_61,
     SpanId: Id_62,
-    Name: ServiceBusReceiver.RenewMessageLock,
+    Name: client.request,
     Resource: ServiceBusReceiver.RenewMessageLock,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1217,8 +1261,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1232,7 +1276,7 @@
   {
     TraceId: Id_63,
     SpanId: Id_64,
-    Name: ServiceBusReceiver.Abandon,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Abandon,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1251,8 +1295,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1266,7 +1310,7 @@
   {
     TraceId: Id_65,
     SpanId: Id_66,
-    Name: ServiceBusReceiver.Receive,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Receive,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1284,8 +1328,8 @@
       otel.trace_id: Guid_23,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1298,7 +1342,7 @@
   {
     TraceId: Id_67,
     SpanId: Id_68,
-    Name: ServiceBusReceiver.Defer,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Defer,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1317,8 +1361,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1332,7 +1376,7 @@
   {
     TraceId: Id_69,
     SpanId: Id_70,
-    Name: ServiceBusReceiver.ReceiveDeferred,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.ReceiveDeferred,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1350,8 +1394,8 @@
       otel.trace_id: Guid_25,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1364,7 +1408,7 @@
   {
     TraceId: Id_71,
     SpanId: Id_72,
-    Name: ServiceBusReceiver.DeadLetter,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.DeadLetter,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1383,8 +1427,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1398,7 +1442,7 @@
   {
     TraceId: Id_73,
     SpanId: Id_74,
-    Name: ServiceBusReceiver.Receive,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Receive,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1416,8 +1460,8 @@
       otel.trace_id: Guid_27,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1430,7 +1474,7 @@
   {
     TraceId: Id_75,
     SpanId: Id_76,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1449,8 +1493,8 @@
       peer.service: samples-azureservicebus-queue/$deadletterqueue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1464,7 +1508,7 @@
   {
     TraceId: Id_77,
     SpanId: Id_78,
-    Name: SendBatchMessagesAsync - IEnumerable_ServiceBusMessage,
+    Name: internal,
     Resource: SendBatchMessagesAsync - IEnumerable_ServiceBusMessage,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -1480,8 +1524,8 @@
       service.version: 1.0.0,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1494,7 +1538,7 @@
   {
     TraceId: Id_77,
     SpanId: Id_79,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -1513,13 +1557,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_77,
     SpanId: Id_80,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -1538,13 +1584,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_77,
     SpanId: Id_81,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -1563,13 +1611,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_77,
     SpanId: Id_82,
-    Name: ServiceBusSender.Send,
+    Name: servicebus.publish,
     Resource: ServiceBusSender.Send,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1589,6 +1639,8 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1598,7 +1650,7 @@
   {
     TraceId: Id_83,
     SpanId: Id_84,
-    Name: SendBatchMessagesAsync - ServiceBusMessageBatch,
+    Name: internal,
     Resource: SendBatchMessagesAsync - ServiceBusMessageBatch,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -1614,8 +1666,8 @@
       service.version: 1.0.0,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1628,7 +1680,7 @@
   {
     TraceId: Id_83,
     SpanId: Id_85,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -1647,13 +1699,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_83,
     SpanId: Id_86,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -1672,13 +1726,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_83,
     SpanId: Id_87,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -1697,13 +1753,15 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_83,
     SpanId: Id_88,
-    Name: ServiceBusSender.Send,
+    Name: servicebus.publish,
     Resource: ServiceBusSender.Send,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1723,6 +1781,8 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1732,7 +1792,7 @@
   {
     TraceId: Id_89,
     SpanId: Id_90,
-    Name: ServiceBusReceiver.Peek,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Peek,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1750,8 +1810,8 @@
       otel.trace_id: Guid_31,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       messaging.batch.message_count: 3.0,
@@ -1765,7 +1825,7 @@
   {
     TraceId: Id_91,
     SpanId: Id_92,
-    Name: ServiceBusReceiver.Receive,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Receive,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1783,8 +1843,8 @@
       otel.trace_id: Guid_32,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       messaging.batch.message_count: 3.0,
@@ -1798,7 +1858,7 @@
   {
     TraceId: Id_93,
     SpanId: Id_94,
-    Name: ServiceBusReceiver.Defer,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Defer,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1817,8 +1877,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1832,7 +1892,7 @@
   {
     TraceId: Id_95,
     SpanId: Id_96,
-    Name: ServiceBusReceiver.Defer,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Defer,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1851,8 +1911,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1866,7 +1926,7 @@
   {
     TraceId: Id_97,
     SpanId: Id_98,
-    Name: ServiceBusReceiver.Defer,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Defer,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1885,8 +1945,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1900,7 +1960,7 @@
   {
     TraceId: Id_99,
     SpanId: Id_100,
-    Name: ServiceBusReceiver.ReceiveDeferred,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.ReceiveDeferred,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1918,8 +1978,8 @@
       otel.trace_id: Guid_36,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       messaging.batch.message_count: 3.0,
@@ -1933,7 +1993,7 @@
   {
     TraceId: Id_101,
     SpanId: Id_102,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1952,8 +2012,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1967,7 +2027,7 @@
   {
     TraceId: Id_103,
     SpanId: Id_104,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -1986,8 +2046,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2001,7 +2061,7 @@
   {
     TraceId: Id_105,
     SpanId: Id_106,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2020,8 +2080,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2035,7 +2095,7 @@
   {
     TraceId: Id_107,
     SpanId: Id_108,
-    Name: ServiceBusReceiver.Receive,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Receive,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2053,8 +2113,8 @@
       otel.trace_id: Guid_40,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -2067,7 +2127,7 @@
   {
     TraceId: Id_109,
     SpanId: Id_110,
-    Name: ServiceBusReceiver.Receive,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Receive,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2085,8 +2145,8 @@
       otel.trace_id: Guid_41,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -2099,7 +2159,7 @@
   {
     TraceId: Id_111,
     SpanId: Id_112,
-    Name: ServiceBusReceiver.Receive,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Receive,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2117,8 +2177,8 @@
       otel.trace_id: Guid_42,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -2131,7 +2191,7 @@
   {
     TraceId: Id_113,
     SpanId: Id_114,
-    Name: ServiceBusReceiver.Defer,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Defer,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2150,8 +2210,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2165,7 +2225,7 @@
   {
     TraceId: Id_115,
     SpanId: Id_116,
-    Name: ServiceBusReceiver.Defer,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Defer,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2184,8 +2244,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2199,7 +2259,7 @@
   {
     TraceId: Id_117,
     SpanId: Id_118,
-    Name: ServiceBusReceiver.Defer,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Defer,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2218,8 +2278,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2233,7 +2293,7 @@
   {
     TraceId: Id_119,
     SpanId: Id_120,
-    Name: ServiceBusReceiver.ReceiveDeferred,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.ReceiveDeferred,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2251,8 +2311,8 @@
       otel.trace_id: Guid_46,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       messaging.batch.message_count: 3.0,
@@ -2266,7 +2326,7 @@
   {
     TraceId: Id_121,
     SpanId: Id_122,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2285,8 +2345,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2300,7 +2360,7 @@
   {
     TraceId: Id_123,
     SpanId: Id_124,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2319,8 +2379,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2334,7 +2394,7 @@
   {
     TraceId: Id_125,
     SpanId: Id_126,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2353,8 +2413,8 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2368,7 +2428,7 @@
   {
     TraceId: Id_127,
     SpanId: Id_128,
-    Name: SendMessageToTopicAsync,
+    Name: internal,
     Resource: SendMessageToTopicAsync,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -2384,8 +2444,8 @@
       service.version: 1.0.0,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -2398,7 +2458,7 @@
   {
     TraceId: Id_127,
     SpanId: Id_129,
-    Name: Message,
+    Name: producer,
     Resource: Message,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -2417,13 +2477,15 @@
       peer.service: samples-azureservicebus-topic,
       span.kind: producer,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_127,
     SpanId: Id_130,
-    Name: ServiceBusSender.Send,
+    Name: servicebus.publish,
     Resource: ServiceBusSender.Send,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2443,13 +2505,15 @@
       peer.service: samples-azureservicebus-topic,
       span.kind: client,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_131,
     SpanId: Id_132,
-    Name: ServiceBusReceiver.Receive,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Receive,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2467,8 +2531,8 @@
       otel.trace_id: Guid_51,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -2481,7 +2545,7 @@
   {
     TraceId: Id_127,
     SpanId: Id_133,
-    Name: ServiceBusProcessor.ProcessMessage,
+    Name: servicebus.process,
     Resource: ServiceBusProcessor.ProcessMessage,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -2499,8 +2563,8 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_50,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -2512,7 +2576,7 @@
   {
     TraceId: Id_127,
     SpanId: Id_134,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2531,13 +2595,15 @@
       otel.trace_id: Guid_50,
       peer.service: samples-azureservicebus-topic/Subscriptions/subscription1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_135,
     SpanId: Id_136,
-    Name: ServiceBusReceiver.Receive,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Receive,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2555,8 +2621,8 @@
       otel.trace_id: Guid_52,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -2569,7 +2635,7 @@
   {
     TraceId: Id_127,
     SpanId: Id_137,
-    Name: ServiceBusProcessor.ProcessMessage,
+    Name: servicebus.process,
     Resource: ServiceBusProcessor.ProcessMessage,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -2587,8 +2653,8 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_50,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -2600,7 +2666,7 @@
   {
     TraceId: Id_127,
     SpanId: Id_138,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2619,13 +2685,15 @@
       otel.trace_id: Guid_50,
       peer.service: samples-azureservicebus-topic/Subscriptions/subscription2,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
   {
     TraceId: Id_139,
     SpanId: Id_140,
-    Name: ServiceBusReceiver.Receive,
+    Name: servicebus.receive,
     Resource: ServiceBusReceiver.Receive,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2643,8 +2711,8 @@
       otel.trace_id: Guid_53,
       runtime-id: Guid_2,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -2657,7 +2725,7 @@
   {
     TraceId: Id_127,
     SpanId: Id_141,
-    Name: ServiceBusProcessor.ProcessMessage,
+    Name: servicebus.process,
     Resource: ServiceBusProcessor.ProcessMessage,
     Service: Samples.AzureServiceBus,
     Type: custom,
@@ -2675,8 +2743,8 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_50,
       span.kind: consumer,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -2688,7 +2756,7 @@
   {
     TraceId: Id_127,
     SpanId: Id_142,
-    Name: ServiceBusReceiver.Complete,
+    Name: servicebus.settle,
     Resource: ServiceBusReceiver.Complete,
     Service: Samples.AzureServiceBus,
     Type: http,
@@ -2707,6 +2775,8 @@
       otel.trace_id: Guid_50,
       peer.service: samples-azureservicebus-topic/Subscriptions/subscription3,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   }

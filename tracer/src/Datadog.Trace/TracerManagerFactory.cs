@@ -147,7 +147,7 @@ namespace Datadog.Trace
             telemetry.RecordProfilerSettings(profiler);
             telemetry.ProductChanged(TelemetryProductType.Profiler, enabled: profiler.Status.IsProfilerReady, error: null);
 
-            SpanContextPropagator.Instance = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract);
+            SpanContextPropagator.Instance = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly);
 
             dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName);
 
@@ -201,7 +201,7 @@ namespace Datadog.Trace
 
         protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)
         {
-            return new GitMetadataTagsProvider(settings, scopeManager);
+            return new GitMetadataTagsProvider(settings, scopeManager, TelemetryFactory.Config);
         }
 
         /// <summary>

@@ -28,7 +28,6 @@
   "vulnerabilities": [
     {
       "type": "PATH_TRAVERSAL",
-      
       "evidence": {
         "valueParts": [
           {
@@ -46,14 +45,14 @@
       "value": "nonexisting.txt"
     }
   ]
-},
-      _dd.p.dm: -0
+}
     },
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.iast.telemetry.executed.propagation: 1.0,
       _dd.iast.telemetry.executed.sink.path_traversal: 1.0,
+      _dd.iast.telemetry.executed.sink.xcontenttype_header_missing: 1.0,
       _dd.iast.telemetry.executed.source.http_request_cookie_name: 1.0,
       _dd.iast.telemetry.executed.source.http_request_cookie_value: 1.0,
       _dd.iast.telemetry.executed.source.http_request_header: 1.0,

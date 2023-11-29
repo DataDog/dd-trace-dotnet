@@ -123,9 +123,11 @@ namespace Datadog.Trace.Configuration
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
             DelayWcfInstrumentationEnabled = settings.DelayWcfInstrumentationEnabled;
+            WcfWebHttpResourceNamesEnabled = settings.WcfWebHttpResourceNamesEnabled;
             WcfObfuscationEnabled = settings.WcfObfuscationEnabled;
             PropagationStyleInject = settings.PropagationStyleInject;
             PropagationStyleExtract = settings.PropagationStyleExtract;
+            PropagationExtractFirstOnly = settings.PropagationExtractFirstOnly;
             TraceMethods = settings.TraceMethods;
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
             OpenTelemetryLegacyOperationNameEnabled = settings.OpenTelemetryLegacyOperationNameEnabled;
@@ -184,6 +186,23 @@ namespace Datadog.Trace.Configuration
             // but we can't send it to the static collector, as this settings object may never be "activated"
             Telemetry = new ConfigurationTelemetry();
             settings.CollectTelemetry(Telemetry);
+
+            // Record the final disabled settings values in the telemetry, we can't quite get this information
+            // through the IntegrationTelemetryCollector currently so record it here instead
+            StringBuilder? sb = null;
+
+            foreach (var setting in IntegrationsInternal.Settings)
+            {
+                if (setting.EnabledInternal == false)
+                {
+                    sb ??= StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                    sb.Append(setting.IntegrationNameInternal);
+                    sb.Append(';');
+                }
+            }
+
+            var value = sb is null ? null : StringBuilderCache.GetStringAndRelease(sb);
+            Telemetry.Record(ConfigurationKeys.DisabledIntegrations, value, recordValue: true, ConfigurationOrigins.Calculated);
         }
 
         /// <summary>
@@ -448,6 +467,12 @@ namespace Datadog.Trace.Configuration
         internal bool DelayWcfInstrumentationEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether to enable improved template-based resource names
+        /// when using WCF Web HTTP.
+        /// </summary>
+        internal bool WcfWebHttpResourceNamesEnabled { get; }
+
+        /// <summary>
         /// Gets a value indicating whether to obfuscate the <c>LocalPath</c> of a WCF request that goes
         /// into the <c>resourceName</c> of a span.
         /// </summary>
@@ -462,6 +487,12 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the extraction propagation style.
         /// </summary>
         internal string[] PropagationStyleExtract { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the propagation should only try
+        /// extract the first header.
+        /// </summary>
+        internal bool PropagationExtractFirstOnly { get; }
 
         /// <summary>
         /// Gets a value indicating the trace methods configuration.

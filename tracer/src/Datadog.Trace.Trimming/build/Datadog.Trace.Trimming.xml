@@ -517,6 +517,7 @@
       <type fullname="System.Diagnostics.DebuggerHiddenAttribute" />
       <type fullname="System.Diagnostics.DebuggerStepThroughAttribute" />
       <type fullname="System.Diagnostics.DebuggerTypeProxyAttribute" />
+      <type fullname="System.Diagnostics.StackTraceHiddenAttribute" />
       <type fullname="System.Diagnostics.Stopwatch" />
       <type fullname="System.Double" />
       <type fullname="System.EntryPointNotFoundException" />
@@ -665,6 +666,7 @@
       <type fullname="System.Reflection.TypeAttributes" />
       <type fullname="System.Reflection.TypeInfo" />
       <type fullname="System.ResolveEventArgs" />
+      <type fullname="System.Runtime.CompilerServices.AsyncIteratorStateMachineAttribute" />
       <type fullname="System.Runtime.CompilerServices.AsyncStateMachineAttribute" />
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1" />

@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using System.IO;
 using System.Linq;
 using System.Text;
+using Datadog.Trace.Logging.Internal;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Telemetry.DTOs;
@@ -23,10 +23,10 @@ public class RedactedErrorLogCollectorTests
     {
         var collector = new RedactedErrorLogCollector();
         var messagesToSend = RedactedErrorLogCollector.MaximumQueueSize * 2;
-        while (messagesToSend > 0)
+        for (var i = messagesToSend; i > 0; i--)
         {
-            collector.EnqueueLog(new("Something", TelemetryLogLevel.WARN, DateTimeOffset.UtcNow));
-            messagesToSend--;
+            // Make messages unique to avoid de-duplication
+            collector.EnqueueLog(new($"Something {i}", TelemetryLogLevel.WARN, DateTimeOffset.UtcNow));
         }
 
         var logs = collector.GetLogs();
@@ -40,21 +40,19 @@ public class RedactedErrorLogCollectorTests
         var collector = new RedactedErrorLogCollector();
         var threshold = RedactedErrorLogCollector.QueueSizeTrigger;
         var task = collector.WaitForLogsAsync();
-        var messages = 0;
-        while (messages < threshold)
+        for (var i = 0; i < threshold; i++)
         {
-            collector.EnqueueLog(new("Something", TelemetryLogLevel.WARN, DateTimeOffset.UtcNow));
-            messages++;
+            // make the messages unique to avoid de-duplication
+            collector.EnqueueLog(new($"Something {i}", TelemetryLogLevel.WARN, DateTimeOffset.UtcNow));
             task.IsCompleted.Should().BeFalse();
         }
 
         // sending one more message should complete the task
         // and should remain completed subsequently
-        messages = 0;
-        while (messages < 100)
+        for (var i = 0; i < 100; i++)
         {
-            collector.EnqueueLog(new("Something", TelemetryLogLevel.WARN, DateTimeOffset.UtcNow));
-            messages++;
+            // make the messages unique to avoid de-duplication
+            collector.EnqueueLog(new($"Something {i + threshold}", TelemetryLogLevel.WARN, DateTimeOffset.UtcNow));
             task.IsCompleted.Should().BeTrue();
         }
     }
@@ -119,7 +117,8 @@ public class RedactedErrorLogCollectorTests
         var collector = new RedactedErrorLogCollector();
 
         // using a big string to make sure we don't exceed queue size
-        var log = new LogMessageData(RandomString(10_000), TelemetryLogLevel.WARN, DateTimeOffset.UtcNow);
+        var randomString = RandomString(10_000);
+        var log = new LogMessageData(randomString + "_", TelemetryLogLevel.WARN, DateTimeOffset.UtcNow);
         var logSize = log.GetApproximateSerializationSize();
         var logsPerBatch = RedactedErrorLogCollector.MaximumBatchSizeBytes / logSize;
 
@@ -130,7 +129,8 @@ public class RedactedErrorLogCollectorTests
 
         for (var i = 0; i < logsToSend; i++)
         {
-            collector.EnqueueLog(log);
+            // using a different log each time to avoid de-duplication
+            collector.EnqueueLog(new LogMessageData(randomString + i, TelemetryLogLevel.WARN, DateTimeOffset.UtcNow));
         }
 
         var logs = collector.GetLogs();
@@ -153,6 +153,229 @@ public class RedactedErrorLogCollectorTests
 
         var logs = collector.GetLogs();
         logs.Should().BeNull();
+    }
+
+    [Fact]
+    public void WhenDeDupeEnabled_OnlySendsSingleLog()
+    {
+        var collector = new RedactedErrorLogCollector();
+        const string message = "This is my message";
+
+        // Add multiple identical messages
+        const int count = 5;
+        for (var i = 0; i < count; i++)
+        {
+            collector.EnqueueLog(new LogMessageData(message, TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow));
+        }
+
+        var logs = collector.GetLogs();
+
+        var log = logs.Should()
+            .NotBeNull()
+            .And.ContainSingle()
+            .Which.Should()
+            .ContainSingle()
+            .Subject;
+        log.Message.Should().Be(message);
+        log.Count.Should().Be(count);
+    }
+
+    [Fact]
+    public void WhenDeDupeEnabled_AndIncludesExceptionFromSameLocation_OnlySendsSingleLog()
+    {
+        const string message = "This is my message";
+        var collector = new RedactedErrorLogCollector();
+
+        // Add multiple identical messages with exception from same location
+        const int count = 5;
+        for (var i = 0; i < count; i++)
+        {
+            var ex = GetException1();
+            collector.EnqueueLog(new LogMessageData(message, TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow)
+            {
+                StackTrace = ExceptionRedactor.Redact(ex)
+            });
+        }
+
+        var logs = collector.GetLogs();
+
+        var log = logs.Should()
+                      .NotBeNull()
+                      .And.ContainSingle()
+                      .Which.Should()
+                      .ContainSingle()
+                      .Subject;
+        log.Message.Should().Be(message);
+        log.Count.Should().Be(count);
+
+        Exception GetException1()
+        {
+            try
+            {
+                throw new Exception(nameof(GetException1));
+            }
+            catch (Exception ex)
+            {
+                return ex;
+            }
+        }
+    }
+
+    [Fact]
+    public void WhenDeDupeEnabled_AndIncludesExceptionFromDifferentLocation_SendsDifferentLog()
+    {
+        const string message = "This is my message";
+        var collector = new RedactedErrorLogCollector();
+
+        // Add multiple identical messages with exception from same location
+        const int count = 5;
+        for (var i = 0; i < count; i++)
+        {
+            var ex = GetException1();
+            collector.EnqueueLog(new LogMessageData(message, TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow)
+            {
+                StackTrace = ExceptionRedactor.Redact(ex)
+            });
+        }
+
+        // Add multiple identical messages with exception from different location
+        for (var i = 0; i < count; i++)
+        {
+            var ex = GetException2();
+            collector.EnqueueLog(new LogMessageData(message, TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow)
+            {
+                StackTrace = ExceptionRedactor.Redact(ex)
+            });
+        }
+
+        var batch = collector.GetLogs()
+                             .Should()
+                             .HaveCount(1)
+                             .And.ContainSingle()
+                             .Subject;
+
+        batch.Should().HaveCount(2);
+        batch[0].Message.Should().Be("This is my message");
+        batch[0].Count.Should().Be(count);
+        batch[1].Message.Should().Be("This is my message");
+        batch[1].Count.Should().Be(count);
+
+        Exception GetException1()
+        {
+            try
+            {
+                throw new Exception(nameof(GetException1));
+            }
+            catch (Exception ex)
+            {
+                return ex;
+            }
+        }
+
+        Exception GetException2()
+        {
+            try
+            {
+                throw new Exception(nameof(GetException1));
+            }
+            catch (Exception ex)
+            {
+                return ex;
+            }
+        }
+    }
+
+    [Fact]
+    public void WhenDeDupeEnabled_AndSendsBatchInBetween_SendsSingleLogPerBatch()
+    {
+        const string message = "This is my message";
+        var collector = new RedactedErrorLogCollector();
+
+        // Add multiple identical messages
+        const int count = 5;
+        for (var i = 0; i < count; i++)
+        {
+            collector.EnqueueLog(new LogMessageData(message, TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow));
+        }
+
+        var firstBatch = collector.GetLogs();
+
+        // Add multiple identical messages
+        for (var i = 0; i < count; i++)
+        {
+            collector.EnqueueLog(new LogMessageData(message, TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow));
+        }
+
+        var secondBatch = collector.GetLogs();
+        var thirdBatch = collector.GetLogs();
+
+        var log = firstBatch.Should()
+                  .NotBeNull()
+                  .And.ContainSingle()
+                  .Which.Should()
+                  .ContainSingle()
+                  .Subject;
+        log.Message.Should().Be(message);
+        log.Count.Should().Be(count);
+
+        log = secondBatch.Should()
+                   .NotBeNull()
+                   .And.ContainSingle()
+                   .Which.Should()
+                   .ContainSingle()
+                   .Subject;
+        log.Message.Should().Be(message);
+        log.Count.Should().Be(count);
+
+        thirdBatch.Should().BeNull();
+    }
+
+    [Fact]
+    public void WhenDeDupeEnabled_AndOverfills_GroupsAllIntoSingleBatch()
+    {
+        const string message = "This is my message";
+        var collector = new RedactedErrorLogCollector();
+        var messagesToSend = RedactedErrorLogCollector.MaximumQueueSize * 2;
+
+        // Add too many identical messages
+        for (var i = 0; i < messagesToSend; i++)
+        {
+            collector.EnqueueLog(new LogMessageData(message, TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow));
+        }
+
+        var logs = collector.GetLogs();
+        collector.GetLogs().Should().BeNull();
+
+        var log = logs.Should()
+                      .NotBeNull()
+                      .And.ContainSingle()
+                      .Subject.Should()
+                      .ContainSingle()
+                      .Subject;
+        log.Message.Should().Be(message);
+        log.Count.Should().Be(messagesToSend);
+    }
+
+    [Fact]
+    public void WhenDeDupeEnabled_AndUniqueMessages_DoesNotSetCount()
+    {
+        var collector = new RedactedErrorLogCollector();
+        var messagesToSend = RedactedErrorLogCollector.MaximumQueueSize * 2;
+        for (var i = messagesToSend; i > 0; i--)
+        {
+            // Make messages unique to avoid de-duplication
+            collector.EnqueueLog(new($"Something {i}", TelemetryLogLevel.WARN, DateTimeOffset.UtcNow));
+        }
+
+        var logs = collector.GetLogs();
+        logs.Should()
+            .NotBeNull()
+            .And.ContainSingle()
+            .Subject
+            .Should()
+            .HaveCount(RedactedErrorLogCollector.MaximumQueueSize)
+            .And
+            .OnlyContain(x => x.Count == null);
     }
 
     private static string RandomString(int length)

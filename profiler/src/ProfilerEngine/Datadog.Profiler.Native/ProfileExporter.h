@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "IConfiguration.h"
 #include "IExporter.h"
 #include "IUpscaleProvider.h"
 #include "MetricsRegistry.h"
@@ -26,12 +25,13 @@ class IEnabledProfilers;
 class IAllocationsRecorder;
 class IProcessSamplesProvider;
 class IMetadataProvider;
+class IConfiguration;
 
 namespace libdatadog {
 class Exporter;
 class Profile;
 class Tags;
-} // namespace libatadog
+} // namespace libdatadog
 
 class ProfileExporter : public IExporter
 {
@@ -129,6 +129,7 @@ private:
     std::vector<ISamplesProvider*> _processSamplesProviders;
     IMetadataProvider* _metadataProvider;
     std::unique_ptr<libdatadog::Exporter> _exporter;
+    IConfiguration* _configuration;
 
 public: // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

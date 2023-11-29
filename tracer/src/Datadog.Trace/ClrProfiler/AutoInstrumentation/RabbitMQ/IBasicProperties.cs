@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
@@ -16,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// Gets or sets the headers of the message
         /// </summary>
         /// <returns>Message headers</returns>
-        IDictionary<string, object> Headers { get; set; }
+        IDictionary<string, object>? Headers { get; set; }
 
         /// <summary>
         /// Gets the delivery mode of the message

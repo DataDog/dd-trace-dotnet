@@ -28,6 +28,22 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
         : base(iisFixture, output, classicMode: false, enableIast: true)
     {
     }
+
+    [SkippableTheory]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [InlineData("text/html", 200, "nosniff")]
+    [InlineData("text/html;charset=UTF-8", 200, "")]
+    [InlineData("application/xhtml%2Bxml", 200, "")]
+    [InlineData("text/plain", 200, "")]
+    [InlineData("text/html", 200, "dummyvalue")]
+    [InlineData("text/html", 500, "")]
+    public async Task TestIastXContentTypeHeaderMissing(string contentType, int returnCode, string xContentTypeHeaderValue)
+    {
+        var testName = "Security." + nameof(AspNetMvc5) + ".Integrated.enableIast=true";
+        await TestXContentVulnerability(contentType, returnCode, xContentTypeHeaderValue, testName);
+    }
 }
 
 [Collection("IisTests")]
@@ -36,6 +52,18 @@ public class AspNetMvc5IntegratedWithoutIast : AspNetMvc5IastTests
     public AspNetMvc5IntegratedWithoutIast(IisFixture iisFixture, ITestOutputHelper output)
         : base(iisFixture, output, classicMode: false, enableIast: false)
     {
+    }
+
+    [SkippableTheory]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [InlineData("text/html", 200, "dummyvalue")]
+
+    public async Task TestIastXContentTypeHeaderMissing(string contentType, int returnCode, string xContentTypeHeaderValue)
+    {
+        var testName = "Security." + nameof(AspNetMvc5) + ".Classic.enableIast=true";
+        await TestXContentVulnerability(contentType, returnCode, xContentTypeHeaderValue, testName);
     }
 }
 
@@ -329,6 +357,39 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/Tbv?name=name&value=value", null)]
+    public async Task TestIastTrustBoundaryViolationRequest(string test, string url, string body)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var filename = _enableIast ? "Iast.TrustBoundaryViolation.AspNetMvc5.IastEnabled" : "Iast.TrustBoundaryViolation.AspNetMvc5.IastDisabled";
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    protected async Task TestXContentVulnerability(string contentType, int returnCode, string xContentTypeHeaderValue, string testName)
+    {
+        var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
+            (string.IsNullOrEmpty(xContentTypeHeaderValue) ? string.Empty : "&xContentTypeHeaderValue=" + xContentTypeHeaderValue);
+        var url = "/Iast/XContentTypeHeaderMissing" + queryParams;
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing(scrubHash: false);
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName($"{testName}.path={sanitisedUrl}")
+                          .DisableRequireUniquePrefix();
     }
 
     protected override string GetTestName() => _testName;

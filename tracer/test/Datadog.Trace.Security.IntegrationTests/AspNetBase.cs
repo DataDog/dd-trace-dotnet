@@ -136,7 +136,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                                 target.Tags[Tags.AppSecJson] = orderedAppSecJson;
                             }
 
-                            return VerifyHelper.ScrubStackTraceForErrors(target, target.Tags);
+                            return VerifyHelper.ScrubTags(target, target.Tags);
                         });
                 });
             settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");

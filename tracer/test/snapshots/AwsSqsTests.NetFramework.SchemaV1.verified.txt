@@ -9,7 +9,6 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -129,7 +128,7 @@
     TraceId: Id_1,
     SpanId: Id_8,
     Name: http.client.request,
-    Resource: POST localhost:00000/?/MyAsyncSQSQueue,
+    Resource: POST localhost:00000/,
     Service: Samples.AWS.SQS,
     Type: http,
     ParentId: Id_2,
@@ -138,7 +137,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
@@ -149,7 +148,7 @@
     TraceId: Id_1,
     SpanId: Id_9,
     Name: http.client.request,
-    Resource: POST localhost:00000/?/MyAsyncSQSQueue2,
+    Resource: POST localhost:00000/,
     Service: Samples.AWS.SQS,
     Type: http,
     ParentId: Id_2,
@@ -158,7 +157,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/,
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
@@ -183,7 +182,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -205,7 +204,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -227,7 +226,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -249,7 +248,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -271,7 +270,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -293,7 +292,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -315,7 +314,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -337,7 +336,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -359,7 +358,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -381,7 +380,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -403,7 +402,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -425,7 +424,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -447,7 +446,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -469,7 +468,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -491,7 +490,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -513,7 +512,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -535,7 +534,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -557,7 +556,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -579,7 +578,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -601,7 +600,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -623,7 +622,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -645,7 +644,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -667,7 +666,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -689,7 +688,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -711,7 +710,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -733,7 +732,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -747,7 +746,6 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -867,7 +865,7 @@
     TraceId: Id_36,
     SpanId: Id_43,
     Name: http.client.request,
-    Resource: POST localhost:00000/?/MySyncSQSQueue,
+    Resource: POST localhost:00000/,
     Service: Samples.AWS.SQS,
     Type: http,
     ParentId: Id_37,
@@ -876,7 +874,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
@@ -887,7 +885,7 @@
     TraceId: Id_36,
     SpanId: Id_44,
     Name: http.client.request,
-    Resource: POST localhost:00000/?/MySyncSQSQueue2,
+    Resource: POST localhost:00000/,
     Service: Samples.AWS.SQS,
     Type: http,
     ParentId: Id_37,
@@ -896,7 +894,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      http.url: http://localhost:00000/,
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
@@ -921,7 +919,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -943,7 +941,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -965,7 +963,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -987,7 +985,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1009,7 +1007,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1031,7 +1029,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1053,7 +1051,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1075,7 +1073,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1097,7 +1095,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1119,7 +1117,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1141,7 +1139,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1163,7 +1161,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1185,7 +1183,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1207,7 +1205,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1229,7 +1227,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1251,7 +1249,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1273,7 +1271,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1295,7 +1293,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1317,7 +1315,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1339,7 +1337,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1361,7 +1359,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1383,7 +1381,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1405,7 +1403,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1427,7 +1425,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1449,7 +1447,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   },
@@ -1471,7 +1469,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      http.url: http://localhost:00000/,
       span.kind: client
     }
   }

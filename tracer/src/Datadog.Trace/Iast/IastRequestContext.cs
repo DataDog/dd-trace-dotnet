@@ -331,13 +331,13 @@ internal class IastRequestContext
     private void AddCookieData(string name, string value)
     {
         _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.CookieValue), name, value));
-        _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.CookieName), name, null));
+        _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.CookieName), name, name));
     }
 
     private void AddHeaderData(string name, string value)
     {
         _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RequestHeaderValue), name, value));
-        _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.RequestHeaderName), name, null));
+        _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.RequestHeaderName), name, name));
     }
 
     internal void OnExecutedSinkTelemetry(IastInstrumentedSinks sink)

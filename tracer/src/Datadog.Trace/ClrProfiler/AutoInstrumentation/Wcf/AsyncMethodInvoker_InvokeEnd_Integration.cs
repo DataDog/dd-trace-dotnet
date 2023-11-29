@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            var operationContext = WcfCommon.GetCurrentOperationContext();
+            var operationContext = WcfCommon.GetCurrentOperationContext?.Invoke();
 
             if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
             {

@@ -80,11 +80,12 @@ ProfileExporter::ProfileExporter(
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
     _metadataProvider{metadataProvider},
-    _allocationsRecorder{allocationsRecorder}
+    _allocationsRecorder{allocationsRecorder},
+    _configuration{configuration}
 {
-    _exporter = CreateExporter(configuration, CreateTags(configuration, runtimeInfo, enabledProfilers));
-    _outputPath = CreatePprofOutputPath(configuration);
-    _metricsFileFolder = configuration->GetProfilesOutputDirectory();
+    _exporter = CreateExporter(_configuration, CreateTags(_configuration, runtimeInfo, enabledProfilers));
+    _outputPath = CreatePprofOutputPath(_configuration);
+    _metricsFileFolder = _configuration->GetProfilesOutputDirectory();
 }
 
 ProfileExporter::~ProfileExporter()
@@ -145,7 +146,7 @@ std::unique_ptr<libdatadog::Exporter> ProfileExporter::CreateExporter(IConfigura
 
 std::unique_ptr<libdatadog::Profile> ProfileExporter::CreateProfile(std::string serviceName)
 {
-    return std::make_unique<libdatadog::Profile>(_sampleTypeDefinitions, ProfilePeriodType, ProfilePeriodUnit, std::move(serviceName));
+    return std::make_unique<libdatadog::Profile>(_configuration, _sampleTypeDefinitions, ProfilePeriodType, ProfilePeriodUnit, std::move(serviceName));
 }
 
 void ProfileExporter::RegisterUpscaleProvider(IUpscaleProvider* provider)

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
@@ -69,13 +70,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.UseFileName($"{nameof(AwsSqsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
+                var suffix = GetSnapshotSuffix(packageVersion);
+
+                settings.UseFileName($"{nameof(AwsSqsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}{suffix}");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_sqs");
                 settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_sqs");
                 settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_sqs");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: aws_sqs");
                 settings.AddSimpleScrubber("peer.service: localstack", "peer.service: aws_sqs");
                 settings.AddSimpleScrubber("peer.service: localstack_arm64", "peer.service: aws_sqs");
+                settings.AddSimpleScrubber("aws.queue.url: localstack_arm64", "peer.service: aws_sqs");
+                settings.AddRegexScrubber(new Regex(@"sqs\..+\.localhost.*\.localstack.*\.cloud:4566"), "localhost:00000");
+
                 if (!string.IsNullOrWhiteSpace(host))
                 {
                     settings.AddSimpleScrubber(host, "localhost:00000");
@@ -90,6 +96,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 await VerifyHelper.VerifySpans(spans, settings);
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.AwsSqs);
+
+                static string GetSnapshotSuffix(string packageVersion)
+                    => packageVersion switch
+                    {
+                        null or "" => ".pre3_7_300",
+                        { } v when new Version(v) < new Version("3.7.300.6") => ".pre3_7_300",
+                        _ => string.Empty
+                    };
             }
         }
     }

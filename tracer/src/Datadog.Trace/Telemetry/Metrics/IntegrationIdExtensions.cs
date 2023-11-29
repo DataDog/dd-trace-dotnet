@@ -64,6 +64,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.Ssrf => MetricTags.IntegrationName.Ssrf,
             IntegrationId.Ldap => MetricTags.IntegrationName.Ldap,
             IntegrationId.HardcodedSecret => MetricTags.IntegrationName.HardcodedSecret,
+            IntegrationId.TrustBoundaryViolation => MetricTags.IntegrationName.TrustBoundaryViolation,
             IntegrationId.AwsKinesis => MetricTags.IntegrationName.AwsKinesis,
             IntegrationId.AzureServiceBus => MetricTags.IntegrationName.AzureServiceBus,
             IntegrationId.SystemRandom => MetricTags.IntegrationName.SystemRandom,

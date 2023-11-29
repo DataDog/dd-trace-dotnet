@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                        spans,
                                        settings,
                                        s => s
-                                           .OrderBy(x => VerifyHelper.GetRootSpanName(x, spans))
+                                           .OrderBy(x => VerifyHelper.GetRootSpanResourceName(x, spans))
                                            .ThenBy(x => VerifyHelper.GetSpanDepth(x, spans))
                                            .ThenBy(x => x.Name)
                                            .ThenBy(x => x.Resource)

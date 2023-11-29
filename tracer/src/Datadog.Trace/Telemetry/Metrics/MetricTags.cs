@@ -209,6 +209,7 @@ internal static class MetricTags
         [Description("integration_name:ssrf")]Ssrf,
         [Description("integration_name:ldap")]Ldap,
         [Description("integration_name:hardcodedsecret")]HardcodedSecret,
+        [Description("integration_name:trustboundaryviolation")] TrustBoundaryViolation,
         [Description("integration_name:awskinesis")]AwsKinesis,
         [Description("integration_name:azureservicebus")]AzureServiceBus,
         [Description("integration_name:systemrandom")] SystemRandom,
@@ -271,6 +272,8 @@ internal static class MetricTags
         [Description("vulnerability_type:no_samesite_cookie")] NoSameSiteCookie = 11,
         [Description("vulnerability_type:weak_randomness")] WeakRandomness = 12,
         [Description("vulnerability_type:hardcoded_secret")] HardcodedSecret = 13,
+        [Description("vulnerability_type:xcontenttype_header_missing")] XContentTypeHeaderMissing = 14,
+        [Description("vulnerability_type:trust_boundary_violation")] TrustBoundaryViolation = 15,
     }
 
     public enum CIVisibilityTestFramework

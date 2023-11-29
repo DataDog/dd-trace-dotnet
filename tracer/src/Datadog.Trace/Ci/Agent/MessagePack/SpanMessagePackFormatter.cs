@@ -216,9 +216,9 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset = tagWriter.Offset;
             count += tagWriter.Count;
 
-            // TODO: for each trace tag, determine if it should be added to the local root,
-            // to the first span in the chunk, or to all orphan spans.
-            // For now, we add them to the local root which is correct in most cases.
+            // Write trace tags
+            // NOTE: this formatter for CI Visibility doesn't know if the span is "first in chunk" or "chunk orphan",
+            // so we add the trace tags to the local root span only.
             if (span.IsRootSpan && traceContext?.Tags is { Count: > 0 } traceTags)
             {
                 var traceTagWriter = new TraceTagWriter(this, tagProcessors, bytes, offset);
