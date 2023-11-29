@@ -6,9 +6,12 @@
 #include "IContentionListener.h"
 #include "IAllocationsListener.h"
 #include "IGCSuspensionsListener.h"
+#include "Log.h"
 
 #include "Windows.h"
 
+#include <memory>
+#include <sstream>
 #include <string>
 
 const std::string NamedPipePrefix = "\\\\.\\pipe\\DD_ETW_CLIENT_";
@@ -171,12 +174,9 @@ void EtwEventsManager::AttachAllocationCallstack(ThreadInfo* pThreadInfo, uint16
     AttachCallstack(pThreadInfo->AllocationCallStack, userDataLength, pUserData);
 }
 
-
 void EtwEventsManager::OnStop()
 {
-    // TODO: add some logs
 }
-
 
 void EtwEventsManager::Register(IGarbageCollectionsListener* pGarbageCollectionsListener)
 {
@@ -188,13 +188,147 @@ bool EtwEventsManager::Start()
 {
     DWORD pid = ::GetCurrentProcessId();
 
-    // TODO: start the server named pipe
+    // start the server part to receive proxied ETW events
+    std::stringstream buffer;
+    buffer << NamedPipePrefix;
+    buffer << pid;
+    std::string pipeName = buffer.str();
+    Log::Info("Exposing ", pipeName);
 
-    // TODO: contact the Agent named pipe
+    // create the client part to send the registration command
+    bool showMessages = true;
+    auto handler = std::make_unique<EtwEventsHandler>(showMessages, this);
+    _IpcServer = IpcServer::StartAsync(
+        showMessages,
+        pipeName,
+        handler.get(),
+        (1 << 16) + sizeof(IpcHeader),
+        sizeof(SuccessResponse),
+        16,
+        500);
+    if (_IpcServer == nullptr)
+    {
+        Log::Error("Error creating the Named Pipe server to receive CLR events...");
+        return false;
+    }
+
+    // create the client part to send the registration command
+    pipeName = NamedPipeAgent;
+    Log::Info("Contacting ", pipeName, "...");
+
+    _IpcClient = IpcClient::Connect(showMessages, pipeName, 500);
+    if (_IpcClient == nullptr)
+    {
+        Log::Error("Impossible to connect to the Datadog Agent named pipe...");
+        return false;
+    }
+
+    // register our process ID to the Datadog Agent
+    SendRegistrationCommand(true);
 
     return true;
 }
 
 void EtwEventsManager::Stop()
 {
+    // unregister our process ID to the Datadog Agent
+    if (SendRegistrationCommand(false))
+    {
+        Log::Info("Unregistered from the Datadog Agent");
+    }
+    else
+    {
+        Log::Warn("Fail to unregister from the Datadog Agent...");
+    }
+
+    if (_IpcClient->Disconnect())
+    {
+        Log::Info("Disconnected from the Datadog Agent named pipe");
+    }
+    else
+    {
+        Log::Warn("Failed to disconnect from the Datadog Agent named pipe...");
+    }
+
+    // stop listening to incoming ETW events
+    _IpcServer->Stop();
 }
+
+void LogLastError(const char* msg, DWORD error = ::GetLastError())
+{
+    Log::Error(msg, " (", error, ")");
+}
+
+bool EtwEventsManager::SendRegistrationCommand(bool add)
+{
+    if (_IpcClient == nullptr)
+    {
+        return false;
+    }
+    auto pClient = _IpcClient.get();
+    DWORD pid = ::GetCurrentProcessId();
+
+    RegistrationProcessMessage message;
+    if (add)
+    {
+        SetupRegisterCommand(message, pid);
+    }
+    else
+    {
+        SetupUnregisterCommand(message, pid);
+    }
+
+    auto code = pClient->Send(&message, sizeof(message));
+    if (code != NamedPipesCode::Success)
+    {
+        LogLastError("Failed to write to pipe", code);
+        return false;
+    }
+
+    IpcHeader response;
+    code = pClient->Read(&response, sizeof(response));
+    if (code == NamedPipesCode::Success)
+    {
+        if (add)
+        {
+            Log::Info("Registered with the Agent");
+        }
+        else
+        {
+            Log::Info("Unregistered from the Agent");
+        }
+
+        return true;
+    }
+
+    if (code == NamedPipesCode::NotConnected)
+    {
+        // expected after unregistration (i.e. !add) because the pipe will be closed by the Agent
+        if (add)
+        {
+            Log::Warn("Agent named pipe is no more connected");
+        }
+    }
+    else if (code == NamedPipesCode::Broken)
+    {
+        // expected when the Agent crashes
+        Log::Error("Agent named pipe is broken...");
+    }
+    else
+    {
+        LogLastError("Failed to read result", code);
+    }
+
+    if (add)
+    {
+        Log::Warn("Registration with the Agent failed...");
+    }
+    else
+    {
+        Log::Warn("Unregistration from the Agent failed...");
+    }
+
+    return false;
+}
+
+

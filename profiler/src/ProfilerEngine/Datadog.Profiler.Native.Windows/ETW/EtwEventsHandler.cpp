@@ -66,11 +66,6 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
         // check the message based on the expected command
         if (message->CommandId == Commands::ClrEvents)
         {
-            //if (_showMessages)
-            //{
-            //    std::cout << "Event received: " << message->Size << " == " << readSize << " bytes\n";
-            //}
-
             if (message->Size > readSize)
             {
                 if (_showMessages)

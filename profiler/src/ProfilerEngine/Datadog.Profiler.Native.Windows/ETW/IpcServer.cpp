@@ -10,6 +10,10 @@
 
 IpcServer::IpcServer()
 {
+    _showMessages = false;
+    _pHandler = nullptr;
+    _serverCount = 0;
+    _stopRequested.store(false);
 }
 
 IpcServer::~IpcServer()
@@ -31,7 +35,7 @@ IpcServer::IpcServer(bool showMessages,
     _maxInstances = maxInstances;
     _timeoutMS = timeoutMS;
     _pHandler = pHandler;
-
+    _showMessages = showMessages;
     _serverCount = 0;
 }
 
@@ -73,8 +77,9 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
 {
     IpcServer* pThis = reinterpret_cast<IpcServer*>(context);
 
-    // TODO: there is no timeout on ConnectNamedPipe
+    // There is no timeout on ConnectNamedPipe()
     // so we would need to use the overlapped version to support _stopRequested :^(
+    // Instead, the server will stop when the named pipe is closed
     std::string errorMessage;
     auto emptySA = MakeNoSecurityAttributes(errorMessage);
     if (emptySA == nullptr)
@@ -86,7 +91,6 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
 
     while (!pThis->_stopRequested.load())
     {
-
         HANDLE hNamedPipe =
             ::CreateNamedPipeA(
                 pThis->_portName.c_str(),

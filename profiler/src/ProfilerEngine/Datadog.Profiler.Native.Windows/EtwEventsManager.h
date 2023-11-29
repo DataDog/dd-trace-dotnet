@@ -89,8 +89,9 @@ private:
     void AttachContentionCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData);
     void AttachAllocationCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData);
     void AttachCallstack(std::vector<uintptr_t>& stack, uint16_t userDataLength, const uint8_t* pUserData);
+    bool SendRegistrationCommand(bool add);
 
-private:
+ private:
     IAllocationsListener* _pAllocationListener;
     IContentionListener* _pContentionListener;
     IGCSuspensionsListener* _pGCSuspensionsListener;
@@ -100,6 +101,8 @@ private:
 
     // responsible for receiving ETW events from the Windows Agent
     std::unique_ptr<EtwEventsHandler>_eventsHandler;
+    std::unique_ptr<IpcServer> _IpcServer; // used to connect to the Windows Agent and register our process ID
+    std::unique_ptr<IpcClient> _IpcClient; // used to receive ETW events from the Windows Agent
 
 private:
     // Each ClrStackWalk event is received at some point AFTER its sibling CLR event.
