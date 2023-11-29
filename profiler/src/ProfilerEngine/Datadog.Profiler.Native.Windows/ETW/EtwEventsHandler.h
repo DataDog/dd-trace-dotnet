@@ -13,12 +13,13 @@
 #include "Protocol.h"
 #include "INamedPipeHandler.h"
 #include "IEtwEventsReceiver.h"
+#include "IIpcLogger.h"
 
 class EtwEventsHandler : public INamedPipeHandler
 {
 public:
     EtwEventsHandler();
-    EtwEventsHandler(bool showMessages, IEtwEventsReceiver* pClrEventsReceiver);
+    EtwEventsHandler(IIpcLogger* logger, IEtwEventsReceiver* pClrEventsReceiver);
     ~EtwEventsHandler();
     void Stop();
 
@@ -35,4 +36,5 @@ private:
     std::atomic<bool> _stopRequested = false;
     bool _showMessages;
     IEtwEventsReceiver* _pReceiver;
+    IIpcLogger* _logger;
 };

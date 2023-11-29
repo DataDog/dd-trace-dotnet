@@ -131,6 +131,7 @@
     <ClCompile Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.cpp" />
     <ClCompile Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.cpp" />
     <ClCompile Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.cpp" />
+    <ClCompile Include="..\ConsoleLogger.cpp" />
     <ClCompile Include="dd-prof-etw-collector.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -139,6 +140,7 @@
     <ClInclude Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.h" />
     <ClInclude Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.h" />
     <ClInclude Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\Protocol.h" />
+    <ClInclude Include="..\ConsoleLogger.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -15,6 +15,7 @@
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.h"
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\EtwEventsHandler.h"
 #include "EtwEventDumper.h"
+#include "..\ConsoleLogger.h"
 
 void ShowHelp()
 {
@@ -174,15 +175,15 @@ int main(int argc, char* argv[])
     std::cout << "Exposing " << pipeName << "\n";
 
     EtwEventDumper eventDumper;
-    bool showMessages = true;
-    auto handler = std::make_unique<EtwEventsHandler>(showMessages, &eventDumper);
+    std::unique_ptr<ConsoleLogger> logger = std::make_unique<ConsoleLogger>();
+    auto handler = std::make_unique<EtwEventsHandler>(logger.get(), &eventDumper);
     auto server = IpcServer::StartAsync(
-        showMessages,
+        logger.get(),
         pipeName,
         handler.get(),
         (1 << 16) + sizeof(IpcHeader),
         sizeof(SuccessResponse),
-        16,
+        1,
         500
         );
     if (server == nullptr)
@@ -196,7 +197,7 @@ int main(int argc, char* argv[])
     pipeName += pipe;
     std::cout << "Contacting " << pipeName << "...\n";
 
-    auto client = IpcClient::Connect(showMessages, pipeName, 500);
+    auto client = IpcClient::Connect(logger.get(), pipeName, 500);
     if (client == nullptr)
     {
         std::cout << "Impossible to connect to the ETW server...\n";

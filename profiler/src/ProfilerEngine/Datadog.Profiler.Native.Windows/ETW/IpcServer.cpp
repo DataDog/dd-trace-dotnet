@@ -5,6 +5,7 @@
 #include "IpcServer.h"
 #include "..\SecurityDescriptorHelpers.h"
 #include <iostream>
+#include <sstream>
 #include <memory>
 
 
@@ -14,6 +15,7 @@ IpcServer::IpcServer()
     _pHandler = nullptr;
     _serverCount = 0;
     _stopRequested.store(false);
+    _pLogger = nullptr;
 }
 
 IpcServer::~IpcServer()
@@ -21,7 +23,7 @@ IpcServer::~IpcServer()
     Stop();
 }
 
-IpcServer::IpcServer(bool showMessages,
+IpcServer::IpcServer(IIpcLogger* pLogger,
                      const std::string& portName,
                      INamedPipeHandler* pHandler,
                      uint32_t inBufferSize,
@@ -35,12 +37,12 @@ IpcServer::IpcServer(bool showMessages,
     _maxInstances = maxInstances;
     _timeoutMS = timeoutMS;
     _pHandler = pHandler;
-    _showMessages = showMessages;
     _serverCount = 0;
+    _pLogger = pLogger;
 }
 
 std::unique_ptr<IpcServer> IpcServer::StartAsync(
-    bool showMessages,
+    IIpcLogger* pLogger,
     const std::string& portName,
     INamedPipeHandler* pHandler,
     uint32_t inBufferSize,
@@ -55,7 +57,7 @@ std::unique_ptr<IpcServer> IpcServer::StartAsync(
     }
 
     auto server = std::make_unique<IpcServer>(
-        showMessages, portName, pHandler, inBufferSize, outBufferSize, maxInstances, timeoutMS
+        pLogger, portName, pHandler, inBufferSize, outBufferSize, maxInstances, timeoutMS
         );
 
     // let a threadpool thread process the command; allowing the server to process more incoming commands
@@ -99,7 +101,7 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
                 pThis->_maxInstances,
                 pThis->_outBufferSize,
                 pThis->_inBufferSize,
-                0,
+                pThis->_timeoutMS,
                 emptySA.get()
                 );
 
@@ -108,18 +110,22 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
         if (hNamedPipe == INVALID_HANDLE_VALUE)
         {
             pThis->ShowLastError("Failed to create named pipe...");
-            if (pThis->_showMessages)
+            if (pThis->_pLogger != nullptr)
             {
-                std::cout << "--> for server #" << pThis->_serverCount << "...\n";
+                std::stringstream builder;
+                builder << "--> for server #" << pThis->_serverCount << "...";
+                pThis->_pLogger->Error(builder.str());
             }
 
             pThis->_pHandler->OnStartError();
             return;
         }
 
-        if (pThis->_showMessages)
+        if (pThis->_pHandler != nullptr)
         {
-            std::cout << "Listening to server #" << pThis->_serverCount << "...\n";
+            std::stringstream builder;
+            builder << "Listening to server #" << pThis->_serverCount << "...";
+            pThis->_pLogger->Info(builder.str());
         }
 
         if (!::ConnectNamedPipe(hNamedPipe, nullptr) && ::GetLastError() != ERROR_PIPE_CONNECTED)
@@ -164,8 +170,10 @@ void CALLBACK IpcServer::ConnectCallback(PTP_CALLBACK_INSTANCE instance, PVOID c
 
 void IpcServer::ShowLastError(const char* message, uint32_t lastError)
 {
-    if (_showMessages)
+    if (_pLogger != nullptr)
     {
-        std::cout << message << " (" << lastError << ")\n";
+        std::stringstream builder;
+        builder << message << " (" << lastError << ")";
+        _pLogger->Error(builder.str());
     }
 }

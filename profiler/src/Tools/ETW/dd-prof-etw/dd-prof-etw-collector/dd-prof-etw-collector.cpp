@@ -12,6 +12,8 @@
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\Protocol.h"
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.h"
 
+#include "..\ConsoleLogger.h"
+
 
 bool ParseCommandLine(int argc, char* argv[], char*& pipe)
 {
@@ -76,8 +78,8 @@ void SendClrEvents(PTP_CALLBACK_INSTANCE instance, PVOID context)
     sBuffer << pid;
     std::string pipeName = sBuffer.str();
 
-    bool showMessages = true;
-    auto client = IpcClient::Connect(showMessages, pipeName, 500);
+    std::unique_ptr<ConsoleLogger> logger = std::make_unique<ConsoleLogger>();
+    auto client = IpcClient::Connect(logger.get(), pipeName, 500);
     if (client == nullptr)
     {
         std::cout << "Impossible to connect to the profiled application on " << pipeName << "\n";

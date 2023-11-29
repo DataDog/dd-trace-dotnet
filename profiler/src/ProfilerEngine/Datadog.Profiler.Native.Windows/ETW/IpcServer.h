@@ -10,13 +10,14 @@
 #include <windows.h>
 
 #include "INamedPipeHandler.h"
+#include "IIpcLogger.h"
 
 
 class IpcServer
 {
 public:
     IpcServer();
-    IpcServer(bool showMessages,
+    IpcServer(IIpcLogger* pLogger,
               const std::string& portName,
               INamedPipeHandler* pHandler,
               uint32_t inBufferSize,
@@ -26,7 +27,7 @@ public:
     ~IpcServer();
 
     static std::unique_ptr<IpcServer> StartAsync(
-        bool showMessages,
+        IIpcLogger* pLogger,
         const std::string& portName,
         INamedPipeHandler* pHandler,
         uint32_t inBufferSize,
@@ -48,6 +49,7 @@ private:
     uint32_t _maxInstances;
     uint32_t _timeoutMS;
     INamedPipeHandler* _pHandler;
+    IIpcLogger* _pLogger;
 
     uint32_t _serverCount;
     std::atomic<bool> _stopRequested = false;

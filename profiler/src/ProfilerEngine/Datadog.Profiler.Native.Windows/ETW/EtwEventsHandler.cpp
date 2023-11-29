@@ -5,9 +5,9 @@
 #include "Protocol.h"
 #include "IpcClient.h"
 #include "../../Datadog.Profiler.Native/ClrEventsParser.h"
-#include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 
 EtwEventsHandler::EtwEventsHandler()
@@ -17,9 +17,9 @@ EtwEventsHandler::EtwEventsHandler()
 {
 }
 
-EtwEventsHandler::EtwEventsHandler(bool showMessages, IEtwEventsReceiver* pClrEventsReceiver)
+EtwEventsHandler::EtwEventsHandler(IIpcLogger* logger, IEtwEventsReceiver* pClrEventsReceiver)
     :
-    _showMessages {showMessages},
+    _logger {logger},
     _pReceiver {pClrEventsReceiver}
 {
 }
@@ -56,10 +56,7 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
         readSize = 0;
         if (!ReadEvents(hPipe, buffer.get(), bufferSize, readSize))
         {
-            if (_showMessages)
-            {
-                std::cout << "Stop reading events\n";
-            }
+            _logger->Warn("Stop reading events");
             break;
         }
 
@@ -68,10 +65,9 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
         {
             if (message->Size > readSize)
             {
-                if (_showMessages)
-                {
-                    std::cout << "Invalid format: read size " << readSize << " bytes is smaller than supposed message size " << message->Size + sizeof(IpcHeader) << "\n";
-                }
+                std::stringstream builder;
+                builder << "Invalid format: read size " << readSize << " bytes is smaller than supposed message size " << message->Size + sizeof(IpcHeader);
+                _logger->Error(builder.str());
 
                 // TODO: maybe we should stop the communication???
                 continue;
@@ -92,7 +88,6 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
             if ((keyword == KEYWORD_GC) && (id == EVENT_ALLOCATION_TICK))
             {
                 // TODO: set a breakpoint here to check the content of the payload where the type name should be visible
-                std::cout << "\n";
             }
 
             if (_pReceiver != nullptr)
@@ -105,10 +100,9 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
         }
         else
         {
-            if (_showMessages)
-            {
-                std::cout << "Invalid command (" << message->CommandId << ")...\n";
-            }
+            std::stringstream builder;
+            builder << "Invalid command (" << message->CommandId << ")...";
+            _logger->Error(builder.str());
 
             // fire and forget so no need to answer
             //WriteErrorResponse(hPipe);
@@ -137,10 +131,7 @@ bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSi
                 totalReadSize += readSize;
                 if (totalReadSize == bufferSize)
                 {
-                    if (_showMessages)
-                    {
-                        std::cout << "Read buffer was too small...\n";
-                    }
+                    _logger->Error("Named pipe read buffer was too small...");
                     return false;
                 }
 
@@ -150,17 +141,13 @@ bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSi
             {
                 if (lastError == ERROR_BROKEN_PIPE)
                 {
-                    if (_showMessages)
-                    {
-                        std::cout << "Disconnected client...\n";
-                    }
+                    _logger->Warn("Disconnected named pipe client...");
                 }
                 else
                 {
-                    if (_showMessages)
-                    {
-                        std::cout << "Error reading from pipe (" << lastError << ")...\n ";
-                    }
+                    std::stringstream builder;
+                    builder << "Error reading from named pipe (" << lastError << ")...";
+                    _logger->Error(builder.str());
                 }
                 return false;
             }
@@ -169,10 +156,7 @@ bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSi
         {
             if (!IsMessageValid(pMessage))
             {
-                if (_showMessages)
-                {
-                    std::cout << "Invalid Magic signature...\n";
-                }
+                _logger->Error("Invalid Magic signature in message from Agent...");
 
                 // fire and forget
                 // WriteErrorResponse(hPipe);
@@ -184,5 +168,6 @@ bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSi
     }
 
     // too big for the buffer
+    _logger->Error("Named pipe read buffer was too small...");
     return false;
 }

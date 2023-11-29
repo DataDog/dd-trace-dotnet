@@ -9,6 +9,7 @@
 #include "ETW/IpcClient.h"
 #include "ETW/IpcServer.h"
 #include "ETW/EtwEventsHandler.h"
+#include "ETW/ProfilerLogger.h"
 
 #include <memory>
 
@@ -98,6 +99,9 @@ private:
 
     // when no call stacks are needed and same payload format between Framework and Core (such as GC events)
     std::unique_ptr<ClrEventsParser> _parser;
+
+    // injected logger
+    std::unique_ptr<ProfilerLogger> _logger;
 
     // responsible for receiving ETW events from the Windows Agent
     std::unique_ptr<EtwEventsHandler>_eventsHandler;

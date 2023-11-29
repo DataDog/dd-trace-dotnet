@@ -16,6 +16,8 @@
 
 const std::string NamedPipePrefix = "\\\\.\\pipe\\DD_ETW_CLIENT_";
 const std::string NamedPipeAgent = "\\\\.\\pipe\\DD_ETW_DISPATCHER";
+const uint32_t MaxInstances = 1;
+const uint32_t TimeoutMS = 500;
 
 
 EtwEventsManager::EtwEventsManager(
@@ -31,6 +33,7 @@ EtwEventsManager::EtwEventsManager(
         nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
         nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
         pGCSuspensionsListener);
+    _logger = std::make_unique<ProfilerLogger>();
 }
 
 void EtwEventsManager::OnEvent(
@@ -196,16 +199,15 @@ bool EtwEventsManager::Start()
     Log::Info("Exposing ", pipeName);
 
     // create the client part to send the registration command
-    bool showMessages = true;
-    auto handler = std::make_unique<EtwEventsHandler>(showMessages, this);
+    auto handler = std::make_unique<EtwEventsHandler>(_logger.get(), this);
     _IpcServer = IpcServer::StartAsync(
-        showMessages,
+        _logger.get(),
         pipeName,
         handler.get(),
-        (1 << 16) + sizeof(IpcHeader),
-        sizeof(SuccessResponse),
-        16,
-        500);
+        (1 << 16) + sizeof(IpcHeader),  // in buffer size = 64K + header
+        sizeof(SuccessResponse),        // out buffer contains only the response
+        MaxInstances,                   // max number of instances (1 = the Agent)
+        TimeoutMS);
     if (_IpcServer == nullptr)
     {
         Log::Error("Error creating the Named Pipe server to receive CLR events...");
@@ -216,7 +218,7 @@ bool EtwEventsManager::Start()
     pipeName = NamedPipeAgent;
     Log::Info("Contacting ", pipeName, "...");
 
-    _IpcClient = IpcClient::Connect(showMessages, pipeName, 500);
+    _IpcClient = IpcClient::Connect(_logger.get(), pipeName, TimeoutMS);
     if (_IpcClient == nullptr)
     {
         Log::Error("Impossible to connect to the Datadog Agent named pipe...");

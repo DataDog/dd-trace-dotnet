@@ -3,17 +3,17 @@
 
 #include "IpcClient.h"
 #include <iostream>
-
+#include <sstream>
 
 IpcClient::IpcClient()
 {
-    _showMessages = false;
+    _pLogger = nullptr;
     _hPipe = nullptr;
 }
 
-IpcClient::IpcClient(bool showMessages, HANDLE hPipe)
+IpcClient::IpcClient(IIpcLogger* pLogger, HANDLE hPipe)
 {
-    _showMessages = showMessages;
+    _pLogger = pLogger;
     _hPipe = hPipe;
 }
 
@@ -35,20 +35,22 @@ bool IpcClient::Disconnect()
 }
 
 
-std::unique_ptr<IpcClient> IpcClient::Connect(bool showMessages, const std::string& portName, uint32_t timeoutMS)
+std::unique_ptr<IpcClient> IpcClient::Connect(IIpcLogger* pLogger, const std::string& portName, uint32_t timeoutMS)
 {
-    HANDLE hPipe = GetEndPoint(showMessages, portName, timeoutMS);
+    HANDLE hPipe = GetEndPoint(pLogger, portName, timeoutMS);
     if (hPipe == INVALID_HANDLE_VALUE)
     {
-        if (showMessages)
+        if (pLogger != nullptr)
         {
             DWORD lastError = ::GetLastError();
-            std::cout << "Impossible to connect to " << portName << " (" << lastError << ")\n";
+            std::ostringstream builder;
+            builder << "Impossible to connect to " << portName << " (" << lastError << ")";
+            pLogger->Error(builder.str());
         }
         return nullptr;
     }
 
-    return std::make_unique<IpcClient>(showMessages, hPipe);
+    return std::make_unique<IpcClient>(pLogger, hPipe);
  }
 
 uint32_t IpcClient::Send(PVOID pBuffer, uint32_t bufferSize)
@@ -95,14 +97,15 @@ uint32_t IpcClient::Read(PVOID pBuffer, uint32_t bufferSize)
     }
 }
 
-HANDLE IpcClient::GetEndPoint(bool showMessages, const std::string& portName, uint16_t timeoutMS)
+HANDLE IpcClient::GetEndPoint(IIpcLogger* pLogger, const std::string& portName, uint16_t timeoutMS)
 {
     bool success = ::WaitNamedPipeA(portName.c_str(), timeoutMS);
     if (!success)
     {
-        if (showMessages)
+        if (pLogger != nullptr)
         {
-            std::cout << "Timeout when trying to connect to" << portName << "...\n";
+            std::ostringstream builder;
+            builder << "Timeout when trying to connect to" << portName << "...";
         }
     }
 
@@ -120,9 +123,11 @@ HANDLE IpcClient::GetEndPoint(bool showMessages, const std::string& portName, ui
 
 uint32_t IpcClient::ShowLastError(const char* message, uint32_t lastError)
 {
-    if (_showMessages)
+    if (_pLogger != nullptr)
     {
-        std::cout << message << " (" << lastError << ")\n";
+        std::ostringstream builder;
+        builder << message << " (" << lastError << ")";
+        _pLogger->Error(builder.str());
     }
 
     return lastError;
