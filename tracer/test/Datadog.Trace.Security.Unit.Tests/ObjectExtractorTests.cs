@@ -17,9 +17,18 @@ namespace Datadog.Trace.Security.Unit.Tests
     {
         private readonly string[] _fieldsAsStrings =
         {
-            nameof(TestVarietyPoco.SByteValue), nameof(TestVarietyPoco.IntPtrValue), nameof(TestVarietyPoco.UIntPtrValue), nameof(TestVarietyPoco.CharValue), nameof(TestVarietyPoco.GuidValue), nameof(TestVarietyPoco.EnumValue), nameof(TestVarietyPoco.DateTimeValue), nameof(TestVarietyPoco.DateTimeOffsetValue), nameof(TestVarietyPoco.TimeSpanValue),
+            nameof(TestVarietyPoco.SByteValue),
+            nameof(TestVarietyPoco.IntPtrValue),
+            nameof(TestVarietyPoco.UIntPtrValue),
+            nameof(TestVarietyPoco.CharValue),
+            nameof(TestVarietyPoco.GuidValue),
+            nameof(TestVarietyPoco.EnumValue),
+            nameof(TestVarietyPoco.DateTimeValue),
+            nameof(TestVarietyPoco.DateTimeOffsetValue),
+            nameof(TestVarietyPoco.TimeSpanValue),
 #if NET6_0_OR_GREATER
-            nameof(TestVarietyPoco.TimeOnlyValue), nameof(TestVarietyPoco.DateOnlyValue)
+            nameof(TestVarietyPoco.TimeOnlyValue),
+            nameof(TestVarietyPoco.DateOnlyValue)
 #endif
         };
 
