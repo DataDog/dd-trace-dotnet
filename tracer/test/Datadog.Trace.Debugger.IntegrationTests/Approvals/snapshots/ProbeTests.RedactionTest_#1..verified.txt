@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -24,11 +24,11 @@
             },
             "locals": {
               "_Pass_WoRD_": {
-                "notCapturedReason": "redactedByIndentifier",
+                "notCapturedReason": "redactedIdent",
                 "type": "String"
               },
               "_SeC_ReT": {
-                "notCapturedReason": "redactedByIndentifier",
+                "notCapturedReason": "redactedIdent",
                 "type": "String"
               },
               "a": {
@@ -38,11 +38,11 @@
                     "type": "String"
                   },
                   "PassWord": {
-                    "notCapturedReason": "redactedByIndentifier",
+                    "notCapturedReason": "redactedIdent",
                     "type": "String"
                   },
                   "RedactMe": {
-                    "notCapturedReason": "redactedByIndentifier",
+                    "notCapturedReason": "redactedIdent",
                     "type": "String"
                   }
                 },
@@ -50,8 +50,30 @@
                 "value": "OuterClass"
               },
               "b": {
-                "notCapturedReason": "redactedByIndentifier",
+                "notCapturedReason": "redactedIdent",
                 "type": "OuterClass"
+              },
+              "iamok": {
+                "fields": {
+                  "Name": {
+                    "type": "String",
+                    "value": "You should see me IAmOkType"
+                  }
+                },
+                "type": "IAmOkType",
+                "value": "IAmOkType"
+              },
+              "redactedTypeA": {
+                "notCapturedReason": "redactedType",
+                "type": "RedactMeTypeA"
+              },
+              "redactedTypeB": {
+                "notCapturedReason": "redactedType",
+                "type": "RedactMeTypeB"
+              },
+              "redactedTypeC": {
+                "notCapturedReason": "redactedType",
+                "type": "AnotherRedactMeTypeB"
               }
             }
           }

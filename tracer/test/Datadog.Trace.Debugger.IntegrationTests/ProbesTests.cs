@@ -111,6 +111,7 @@ public class ProbesTests : TestHelper
         };
 
         SetEnvironmentVariable(ConfigurationKeys.Debugger.RedactedIdentifiers, "RedactMe,b");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.RedactedTypes, "Samples.Probes.TestRuns.SmokeTests.RedactMeType*,Samples.Probes.TestRuns.SmokeTests.AnotherRedactMeTypeB");
 
         await RunSingleTestWithApprovals(testDescription, expectedNumberOfSnapshots, probes);
     }
