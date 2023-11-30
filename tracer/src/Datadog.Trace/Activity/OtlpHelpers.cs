@@ -26,8 +26,6 @@ namespace Datadog.Trace.Activity
         internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span)
             where TInner : IActivity
         {
-            var activity5 = activity as IActivity5;
-
             AgentConvertSpan(activity, span);
         }
 
@@ -61,8 +59,10 @@ namespace Datadog.Trace.Activity
             }
 
             // Fixup "version" tag
-            if (Tracer.Instance.Settings.ServiceVersionInternal is null
-                && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
+            // Fallback to static instance if no tracer associated with the trace
+            var tracer = span.Context.TraceContext?.Tracer ?? Tracer.Instance;
+            if (tracer.Settings.ServiceVersionInternal is null
+             && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
             {
                 span.SetTag(Tags.Version, otelServiceVersion);
             }
@@ -96,7 +96,7 @@ namespace Datadog.Trace.Activity
 
             // Later: Support config 'span_name_as_resource_name'
             // Later: Support config 'span_name_remappings'
-            if (Tracer.Instance.Settings.OpenTelemetryLegacyOperationNameEnabled && activity5 is not null && string.IsNullOrEmpty(span.OperationName))
+            if (tracer.Settings.OpenTelemetryLegacyOperationNameEnabled && activity5 is not null && string.IsNullOrEmpty(span.OperationName))
             {
                 span.OperationName = activity5.Source.Name switch
                 {

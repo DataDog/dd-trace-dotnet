@@ -20,10 +20,10 @@ using Logger = Serilog.Log;
 partial class Build
 {
     Target SignDlls => _ => _
-       .Description("Sign the dlls produced by building the Tracer, Profiler, and Monitoring home directory")
+       .Description("Sign the dlls produced by building the Tracer, Profiler, and Monitoring home directory, as well as the dd-dotnet exes")
        .Unlisted()
        .Requires(() => IsWin)
-       .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader, CreateRootDescriptorsFile)
+       .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader, CreateRootDescriptorsFile, BuildDdDotnet, CopyDdDotnet)
        .Before(PackNuGet, BuildMsi, ZipMonitoringHome)
        .Executes(() =>
         {
@@ -34,7 +34,11 @@ partial class Build
             var homeDlls = MonitoringHomeDirectory.GlobFiles("**/Datadog*.dll");
             var waf = MonitoringHomeDirectory.GlobFiles("**/ddwaf.dll");
 
-            var dlls = homeDlls.Concat(dllsInBin).Concat(waf);
+            var ddDotnet = MonitoringHomeDirectory.GlobFiles("**/*.exe")
+                                                  .Concat(ArtifactsDirectory.GlobFiles("**/*.exe"))
+                                                  .Concat(MonitoringHomeDirectory.GlobFiles("**/dd-dotnet"))
+                                                  .Concat(ArtifactsDirectory.GlobFiles("**/dd-dotnet"));
+            var dlls = homeDlls.Concat(dllsInBin).Concat(waf).Concat(ddDotnet);
             SignFiles(dlls.ToList());
         });
 

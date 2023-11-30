@@ -38,6 +38,11 @@ namespace Datadog.Trace.ExtensionMethods
         public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetTraceSamplingPriority);
+            SetTraceSamplingPriorityInternal(span, samplingPriority);
+        }
+
+        internal static void SetTraceSamplingPriorityInternal(this ISpan span, SamplingPriority samplingPriority)
+        {
             if (span == null) { ThrowHelper.ThrowArgumentNullException(nameof(span)); }
 
             if (span.Context is SpanContext { TraceContext: { } traceContext })
