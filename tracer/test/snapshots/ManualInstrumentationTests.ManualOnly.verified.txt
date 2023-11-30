@@ -67,6 +67,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       Updated-key: Updated Value,
+      version: updated-version,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
@@ -89,6 +90,7 @@
       env: updated-env,
       language: dotnet,
       Updated-key: Updated Value,
+      version: updated-version,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
