@@ -21,12 +21,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class Elasticsearch6Tests : TracingIntegrationTest
     {
         private const string ServiceName = "Samples.Elasticsearch";
+        private ITestOutputHelper _output;
 
         public Elasticsearch6Tests(ITestOutputHelper output)
             : base("Elasticsearch", output)
         {
             SetServiceName(ServiceName);
             SetServiceVersion("1.0.0");
+            _output = output;
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -46,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-elasticsearch" : ServiceName;
 
-            using var telemetry = this.ConfigureTelemetry();
+            using var telemetry = this.ConfigureTelemetry(_output);
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {

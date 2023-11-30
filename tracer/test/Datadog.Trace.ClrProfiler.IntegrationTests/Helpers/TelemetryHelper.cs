@@ -12,15 +12,16 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     internal static class TelemetryHelper
     {
-        public static MockTelemetryAgent ConfigureTelemetry(this TestHelper helper)
+        public static MockTelemetryAgent ConfigureTelemetry(this TestHelper helper, ITestOutputHelper output = null)
         {
             int telemetryPort = TcpPortProvider.GetOpenPort();
-            var telemetry = new MockTelemetryAgent(telemetryPort);
+            var telemetry = new MockTelemetryAgent(telemetryPort) { Output = output };
 
             helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "true");
             helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED", "true");

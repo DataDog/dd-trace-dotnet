@@ -36,10 +36,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private const string ErrorProducerResourceName = "Produce Topic INVALID-TOPIC";
 
+        private ITestOutputHelper _output;
+
         public KafkaTests(ITestOutputHelper output)
             : base("Kafka", output)
         {
             SetServiceVersion("1.0.0");
+            _output = output;
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -67,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-kafka" : EnvironmentHelper.FullSampleName;
 
-            using var telemetry = this.ConfigureTelemetry();
+            using var telemetry = this.ConfigureTelemetry(_output);
             using var agent = EnvironmentHelper.GetMockAgent();
             using var processResult = RunSampleAndWaitForExit(agent, arguments: topic, packageVersion: packageVersion);
 

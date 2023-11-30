@@ -19,6 +19,7 @@ using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -88,6 +89,8 @@ namespace Datadog.Trace.TestHelpers
         public ConcurrentStack<TelemetryData> Telemetry { get; } = new();
 
         public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+
+        public ITestOutputHelper Output { get; set; }
 
         /// <summary>
         /// Wait for the telemetry condition to be satisfied.
@@ -188,24 +191,44 @@ namespace Datadog.Trace.TestHelpers
                     var ctx = _listener.GetContext();
                     HandleHttpRequest(ctx);
                 }
-                catch (HttpListenerException)
+                catch (HttpListenerException e)
                 {
                     // listener was stopped,
                     // ignore to let the loop end and the method return
+                    TryLog($"[Telemetry.HandleHttpRequests]Error processing request: {e}");
                 }
-                catch (ObjectDisposedException)
+                catch (ObjectDisposedException e)
                 {
                     // the response has been already disposed.
+                    TryLog($"[Telemetry.HandleHttpRequests]Error processing request: {e}");
                 }
-                catch (InvalidOperationException)
+                catch (InvalidOperationException e)
                 {
                     // this can occur when setting Response.ContentLength64, with the framework claiming that the response has already been submitted
                     // for now ignore, and we'll see if this introduces downstream issues
+                    TryLog($"[Telemetry.HandleHttpRequests]Error processing request: {e}");
                 }
-                catch (Exception) when (!_listener.IsListening)
+                catch (Exception e) when (!_listener.IsListening)
                 {
                     // we don't care about any exception when listener is stopped
+                    TryLog($"[Telemetry.HandleHttpRequests]Error processing request: {e}");
                 }
+                catch (Exception e)
+                {
+                    TryLog($"[Telemetry.HandleHttpRequests]Error processing request: {e}");
+                }
+            }
+        }
+
+        private void TryLog(string message)
+        {
+            try
+            {
+                Output?.WriteLine(message);
+            }
+            catch (Exception)
+            {
+                // ignored
             }
         }
 
