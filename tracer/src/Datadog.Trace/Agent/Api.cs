@@ -25,6 +25,7 @@ namespace Datadog.Trace.Agent
     {
         private const string TracesPath = "/v0.4/traces";
         private const string StatsPath = "/v0.6/stats";
+        internal const string FailedToSendMessageTemplate = "An error occurred while sending data to the agent at {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.";
 
         private static readonly IDatadogLogger StaticLog = DatadogLogging.GetLoggerFor<Api>();
 
@@ -160,7 +161,7 @@ namespace Datadog.Trace.Agent
                     if (isFinalTry || success == SendResult.Failed_DontRetry)
                     {
                         // stop retrying
-                        _log.Error(exception, "An error occurred while sending data to the agent at {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.", _apiRequestFactory.Info(endpoint));
+                        _log.Error(exception, FailedToSendMessageTemplate, _apiRequestFactory.Info(endpoint));
                         return false;
                     }
                     else if (_log.IsEnabled(LogEventLevel.Debug))
