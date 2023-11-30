@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -641,15 +641,13 @@
     Type: custom,
     Tags: {
       attribute-bool: true,
-      attribute-boolArray: [false,true,false],
-      attribute-boolArrayEmpty: [],
-      attribute-doubleArray: [4.1,5.0,6.0],
-      attribute-doubleArrayEmpty: [],
-      attribute-intArray: [1,2,3],
-      attribute-intArrayEmpty: [],
+      attribute-boolArray.0: false,
+      attribute-boolArray.1: true,
+      attribute-boolArray.2: false,
       attribute-string: "str,
-      attribute-stringArray: ["\"str1\"","str2","str3"],
-      attribute-stringArrayEmpty: [],
+      attribute-stringArray.0: "str1",
+      attribute-stringArray.1: str2,
+      attribute-stringArray.2: str3,
       env: integration_tests,
       language: dotnet,
       otel.library.name: MyServiceName,
@@ -669,7 +667,13 @@
     },
     Metrics: {
       attribute-double: 2.0,
+      attribute-doubleArray.0: 4.1,
+      attribute-doubleArray.1: 5.0,
+      attribute-doubleArray.2: 6.0,
       attribute-int: 1.0,
+      attribute-intArray.0: 1.0,
+      attribute-intArray.1: 2.0,
+      attribute-intArray.2: 3.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
