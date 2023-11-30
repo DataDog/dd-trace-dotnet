@@ -45,7 +45,11 @@ namespace Datadog.Trace
         public void Inject<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_Inject);
+            InjectInternal(carrier, setter, context);
+        }
 
+        internal static void InjectInternal<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context)
+        {
             if (context is SpanContext spanContext)
             {
                 SpanContextPropagator.Instance.Inject(spanContext, carrier, setter);
