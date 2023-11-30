@@ -212,7 +212,7 @@ namespace Datadog.Trace.Activity
                 _ => SpanKinds.Internal,
             };
 
-        internal static void SetTagObject(Span span, string key, object? value)
+        internal static void SetTagObject(Span span, string key, object? value, bool allowUnrolling = true)
         {
             if (value is null)
             {
@@ -262,7 +262,22 @@ namespace Datadog.Trace.Activity
                     span.SetMetric(key, d);
                     break;
                 case IEnumerable enumerable:
-                    AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(enumerable));
+                    if (allowUnrolling)
+                    {
+                        var index = 0;
+                        foreach (var element in (enumerable))
+                        {
+                            // we are only supporting a single level of unrolling
+                            SetTagObject(span, $"{key}.{index}", element, allowUnrolling: false);
+                            index++;
+                        }
+                    }
+                    else
+                    {
+                        // we've already unrolled once, don't do it again for IEnumerable values
+                        AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(value));
+                    }
+
                     break;
                 default:
                     AgentSetOtlpTag(span, key, value.ToString());

@@ -18,7 +18,14 @@ public class ActivityTagsTests
 {
     public enum TagKind
     {
+        /// <summary>
+        /// Tag should be found in meta
+        /// </summary>
         Meta,
+
+        /// <summary>
+        /// Tag should be found in metrics
+        /// </summary>
         Metric,
     }
 
@@ -45,12 +52,14 @@ public class ActivityTagsTests
     public static IEnumerable<object[]> ArrayTagData =>
         new List<object[]>()
         {
-            // key, value, expected_string_value (all will be in meta due to string nature)
-            new object[] { "char[]_val", new[] { 'c', 'd' }, "[\"c\",\"d\"]" },
-            new object[] { "string[]_val", new[] { "val1", "val2" }, "[\"val1\",\"val2\"]" },
-            new object[] { "bool[]_val", new[] { true, false }, "[true,false]" },
-            new object[] { "double[]_val", new[] { -5.0, 5.0 }, "[-5.0,5.0]" },
+            // key, value, location, expected_dot_notation_dict
+            new object[] { "char[]_val", new[] { 'c', 'd' }, TagKind.Meta, new Dictionary<string, object> { { "char[]_val.0", "c" }, { "char[]_val.1", "d" } } },
+            new object[] { "string[]_val", new[] { "val1", "val2" }, TagKind.Meta, new Dictionary<string, object> { { "string[]_val.0", "val1" }, { "string[]_val.1", "val2" } } },
+            new object[] { "bool[]_val", new[] { true, false }, TagKind.Meta, new Dictionary<string, object> { { "bool[]_val.0", "true" }, { "bool[]_val.1", "false" } } },
+            new object[] { "double[]_val", new[] { -5.0, 5.0 }, TagKind.Metric, new Dictionary<string, object> { { "double[]_val.0", -5.0 }, { "double[]_val.1", 5.0 } } },
         };
+
+    // TODO what about an array of object that contains string and numeric objects?
 
     [Theory]
     [MemberData(nameof(TagData))]
@@ -81,7 +90,7 @@ public class ActivityTagsTests
 
     [Theory]
     [MemberData(nameof(ArrayTagData))]
-    public void ArrayedTags_ShouldBe_PlacedInMeta(string tagKey, object tagValue, string expectedValue)
+    public void ArrayedTags_ShouldBe_PlacedInMeta(string tagKey, object tagValue, TagKind expectedTagKind, Dictionary<string, object> expectedTagValues)
     {
         var activityMock = new Mock<IActivity5>();
         activityMock.Setup(x => x.Kind).Returns(ActivityKind.Producer);
@@ -93,6 +102,19 @@ public class ActivityTagsTests
         var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
         OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
-        span.GetTag(tagKey).Should().BeEquivalentTo(expectedValue);
+        foreach (var keyValue in expectedTagValues)
+        {
+            switch (expectedTagKind)
+            {
+                case TagKind.Meta:
+                    span.GetTag(keyValue.Key).Should().BeEquivalentTo(keyValue.Value.ToString());
+                    break;
+                case TagKind.Metric:
+                    span.GetMetric(keyValue.Key).Should().Be(double.Parse(keyValue.Value.ToString()!));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(expectedTagKind), expectedTagKind, null);
+            }
+        }
     }
 }
