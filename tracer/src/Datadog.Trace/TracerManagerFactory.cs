@@ -307,7 +307,13 @@ namespace Datadog.Trace
 #endif
                     case MetricsTransportType.UDP:
                     default:
-                        config.StatsdServerName = settings.ExporterInternal.AgentUriInternal.DnsSafeHost;
+                        // If the customer has enabled UDS traces but _not_ UDS metrics, then the AgentUri will have
+                        // the UDS path set for it, and the DnsSafeHost returns "". Ideally, we would expose
+                        // a TracesAgentUri and MetricsAgentUri or something like that instead. This workaround
+                        // is a horrible hack, but I can't bear to touch ExporterSettings until it's had an
+                        // extensive tidy up, so this should do for now
+                        var traceHostname = settings.ExporterInternal.AgentUriInternal.DnsSafeHost;
+                        config.StatsdServerName = string.IsNullOrEmpty(traceHostname) ? "127.0.0.1" : traceHostname;
                         config.StatsdPort = settings.ExporterInternal.DogStatsdPortInternal;
                         break;
                 }
