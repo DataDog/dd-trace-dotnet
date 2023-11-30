@@ -167,6 +167,7 @@ namespace Datadog.Trace.Tests
         {
             // UDP Datagrams over UDP are not supported on Windows
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
             var tracesPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             var metricsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
@@ -193,6 +194,8 @@ namespace Datadog.Trace.Tests
         [SkippableFact]
         public void CanCreateDogStatsD_UDS_FallsBackToUdp_FromTraceAgentSettings()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
             var tracesPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             using var udsAgent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(tracesPath, null) { UseDogstatsD = false });
             using var udpAgent = MockTracerAgent.Create(_output, useStatsd: true);
