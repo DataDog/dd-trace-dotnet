@@ -599,6 +599,11 @@ namespace Datadog.Trace
         internal const string IastEnabled = "_dd.iast.enabled";
 
         /// <summary>
+        /// Indicates at the end of a request if profiling is enabled
+        /// </summary>
+        internal const string ProfilingEnabled = "_dd.profiling.enabled";
+
+        /// <summary>
         /// The ip as reported by the framework.
         /// </summary>
         internal const string NetworkClientIp = "network.client.ip";

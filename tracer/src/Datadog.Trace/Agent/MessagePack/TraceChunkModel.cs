@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -56,6 +57,8 @@ internal readonly struct TraceChunkModel
 
     public readonly ImmutableAzureAppServiceSettings? AzureAppServiceSettings = null;
 
+    public readonly bool IsProfilingEnabled = false;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="TraceChunkModel"/> struct.
     /// </summary>
@@ -92,6 +95,8 @@ internal readonly struct TraceChunkModel
                 GitRepositoryUrl = gitMetadata.RepositoryUrl;
                 GitCommitSha = gitMetadata.CommitSha;
             }
+
+            IsProfilingEnabled = Profiler.Instance.Status.IsProfilerReady;
         }
     }
 

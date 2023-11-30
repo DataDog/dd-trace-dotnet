@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
@@ -55,6 +56,8 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
 
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
+
+        private readonly byte[] _profilingEnabledBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.ProfilingEnabled);
 
         // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
@@ -399,6 +402,14 @@ namespace Datadog.Trace.Agent.MessagePack
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteTypeTagNameBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                 }
+            }
+
+            // add "__dd.profiling.enabled" tag to service-entry (aka top-level) spans
+            if (span.IsTopLevel)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _profilingEnabledBytes);
+                offset += MessagePackBinary.WriteInt32(ref bytes, offset, model.TraceChunk.IsProfilingEnabled ? 1 : 0);
             }
 
             if (count > 0)
