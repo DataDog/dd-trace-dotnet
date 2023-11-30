@@ -2716,8 +2716,14 @@ partial class Build
         {
             foreach (var dump in GlobFiles(TempDirectory, "coredump*", "*.dmp"))
             {
+                Logger.Information("Moving file '{Dump}' to '{Root}'", dump, root / "dumps");
+
                 MoveFileToDirectory(dump, root / "dumps", FileExistsPolicy.Overwrite);
             }
+        }
+        else
+        {
+            Logger.Warning("TempDirectory '{TempDirectory}' does not exist, skipping dump copy", TempDirectory);
         }
 
         foreach (var file in Directory.EnumerateFiles(TracerDirectory, "*.dmp", SearchOption.AllDirectories))

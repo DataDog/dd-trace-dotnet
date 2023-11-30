@@ -95,7 +95,7 @@ public abstract class ConsoleTestHelper : ToolTestHelper
         }
 
         // Try to capture a memory dump before giving up
-        if (MemoryDumpHelper.CaptureMemoryDump(helper.Process))
+        if (MemoryDumpHelper.CaptureMemoryDump(helper.Process, new Progress<string>(Output.WriteLine)))
         {
             Output.WriteLine("Successfully captured a memory dump");
         }
