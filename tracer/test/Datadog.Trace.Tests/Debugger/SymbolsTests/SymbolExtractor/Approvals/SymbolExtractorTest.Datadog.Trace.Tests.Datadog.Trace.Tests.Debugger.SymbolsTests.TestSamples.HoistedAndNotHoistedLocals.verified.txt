@@ -25,7 +25,7 @@
           "symbols": [
             {
               "name": "_service",
-              "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals/IService",
+              "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals+IService",
               "symbol_type": "field",
               "line": 0,
               "language_specifics": {
@@ -53,7 +53,7 @@
               "symbols": [
                 {
                   "name": "service",
-                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals/IService",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals+IService",
                   "symbol_type": "arg",
                   "line": 0
                 }
@@ -69,7 +69,7 @@
                 "access_modifiers": [
                   "sanitized"
                 ],
-                "return_type": "System.Threading.Tasks.Task`1<Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person>",
+                "return_type": "System.Threading.Tasks.Task`1<Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+Person>",
                 "start_column": 999,
                 "end_column": 999
               },
@@ -124,7 +124,7 @@
                       "symbols": [
                         {
                           "name": "person",
-                          "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
+                          "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+Person",
                           "symbol_type": "local",
                           "line": 0
                         },
@@ -136,7 +136,7 @@
                         },
                         {
                           "name": "address",
-                          "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Address",
+                          "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+Address",
                           "symbol_type": "local",
                           "line": 0
                         }
@@ -155,7 +155,7 @@
                 "access_modifiers": [
                   "sanitized"
                 ],
-                "return_type": "System.Threading.Tasks.Task`1<Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person>"
+                "return_type": "System.Threading.Tasks.Task`1<Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+Person>"
               },
               "symbols": [
                 {
@@ -166,7 +166,7 @@
                 },
                 {
                   "name": "address",
-                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Address",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+Address",
                   "symbol_type": "arg",
                   "line": 0
                 }
@@ -182,7 +182,7 @@
                 "access_modifiers": [
                   "sanitized"
                 ],
-                "return_type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
+                "return_type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+Person",
                 "start_column": 999,
                 "end_column": 999
               },
@@ -197,7 +197,7 @@
             },
             {
               "scope_type": "class",
-              "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals/Service",
+              "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals+Service",
               "start_line": 0,
               "end_line": 0,
               "language_specifics": {
@@ -208,7 +208,7 @@
                   "System.Object"
                 ],
                 "interfaces": [
-                  "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals/IService"
+                  "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals+IService"
                 ],
                 "pdb_exist": true
               },
@@ -230,7 +230,7 @@
                   "symbols": [
                     {
                       "name": "person",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+Person",
                       "symbol_type": "arg",
                       "line": 0
                     },

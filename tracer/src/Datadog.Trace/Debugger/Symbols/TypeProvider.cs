@@ -9,7 +9,6 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
-    // very simple implementation of type provider
     internal sealed class TypeProvider : ISignatureTypeProvider<string, int>
     {
         private readonly bool _includeResScope;
@@ -31,29 +30,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
         public string GetPrimitiveType(PrimitiveTypeCode typeCode)
         {
-            return typeCode switch
-            {
-                PrimitiveTypeCode.Void => "System.Void",
-                PrimitiveTypeCode.Boolean => "System.Bool",
-                PrimitiveTypeCode.Char => "System.Char",
-                PrimitiveTypeCode.SByte => "System.SByte",
-                PrimitiveTypeCode.Byte => "System.Byte",
-                PrimitiveTypeCode.Int16 => "System.Int16",
-                PrimitiveTypeCode.UInt16 => "System.UInt16",
-                PrimitiveTypeCode.Int32 => "System.Int32",
-                PrimitiveTypeCode.UInt32 => "System.UInt32",
-                PrimitiveTypeCode.Int64 => "System.Int64",
-                PrimitiveTypeCode.UInt64 => "System.UInt64",
-                PrimitiveTypeCode.Single => "System.Single",
-                PrimitiveTypeCode.Double => "System.Double",
-                PrimitiveTypeCode.String => "System.String",
-                // ReSharper disable once StringLiteralTypo
-                PrimitiveTypeCode.TypedReference => "typedref",
-                PrimitiveTypeCode.IntPtr => "System.IntPtr",
-                PrimitiveTypeCode.UIntPtr => "System.UIntPtr",
-                PrimitiveTypeCode.Object => "System.Object",
-                _ => "UNKNOWN"
-            };
+            return DecodePrimitiveType(typeCode);
         }
 
         public string GetGenericInstantiation(string genericType, ImmutableArray<string> typeArguments)
@@ -199,7 +176,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     return "[" + reader.GetString(assemblyReference.Name) + "]" + name;
 
                 case HandleKind.TypeReference:
-                    return ParseTypeReference(reader, (TypeReferenceHandle)scope, true) + "/" + name;
+                    return ParseTypeReference(reader, (TypeReferenceHandle)scope, true) + "+" + name;
 
                 default:
                     return name;
@@ -219,7 +196,61 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             var enclosing = ParseTypeDefinition(reader, typeDef.GetDeclaringType());
-            return $"{enclosing}/{name}";
+            return $"{enclosing}+{name}";
+        }
+
+        internal static string DecodePrimitiveType(PrimitiveTypeCode typeCode)
+        {
+            return typeCode switch
+            {
+                PrimitiveTypeCode.Void => "System.Void",
+                PrimitiveTypeCode.Boolean => "System.Bool",
+                PrimitiveTypeCode.Char => "System.Char",
+                PrimitiveTypeCode.SByte => "System.SByte",
+                PrimitiveTypeCode.Byte => "System.Byte",
+                PrimitiveTypeCode.Int16 => "System.Int16",
+                PrimitiveTypeCode.UInt16 => "System.UInt16",
+                PrimitiveTypeCode.Int32 => "System.Int32",
+                PrimitiveTypeCode.UInt32 => "System.UInt32",
+                PrimitiveTypeCode.Int64 => "System.Int64",
+                PrimitiveTypeCode.UInt64 => "System.UInt64",
+                PrimitiveTypeCode.Single => "System.Single",
+                PrimitiveTypeCode.Double => "System.Double",
+                PrimitiveTypeCode.String => "System.String",
+                // ReSharper disable once StringLiteralTypo
+                PrimitiveTypeCode.TypedReference => "typedref",
+                PrimitiveTypeCode.IntPtr => "System.IntPtr",
+                PrimitiveTypeCode.UIntPtr => "System.UIntPtr",
+                PrimitiveTypeCode.Object => "System.Object",
+                _ => "UNKNOWN"
+            };
+        }
+
+        internal static PrimitiveTypeCode EncodePrimitiveType(string type)
+        {
+            return type switch
+            {
+                "System.Void" => PrimitiveTypeCode.Void,
+                "System.Bool" => PrimitiveTypeCode.Boolean,
+                "System.Char" => PrimitiveTypeCode.Char,
+                "System.SByte" => PrimitiveTypeCode.SByte,
+                "System.Byte" => PrimitiveTypeCode.Byte,
+                "System.Int16" => PrimitiveTypeCode.Int16,
+                "System.UInt16" => PrimitiveTypeCode.UInt16,
+                "System.Int32" => PrimitiveTypeCode.Int32,
+                "System.UInt32" => PrimitiveTypeCode.UInt32,
+                "System.Int64" => PrimitiveTypeCode.Int64,
+                "System.UInt64" => PrimitiveTypeCode.UInt64,
+                "System.Single" => PrimitiveTypeCode.Single,
+                "System.Double" => PrimitiveTypeCode.Double,
+                "System.String" => PrimitiveTypeCode.String,
+                // ReSharper disable once StringLiteralTypo
+                "System.typedref" => PrimitiveTypeCode.TypedReference,
+                "System.IntPtr" => PrimitiveTypeCode.IntPtr,
+                "System.UIntPtr" => PrimitiveTypeCode.UIntPtr,
+                "System.Object" => PrimitiveTypeCode.Object,
+                _ => PrimitiveTypeCode.Object
+            };
         }
     }
 }

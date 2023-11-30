@@ -6,10 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss;
@@ -24,21 +24,16 @@ namespace Datadog.Trace.Pdb
     {
         private readonly ModuleDefMD? _dnlibModule;
 
-        internal SymbolReader? DnlibPdbReader { get; }
+        private SymbolReader? DnlibPdbReader { get; }
 
-        internal MethodDef? GetMethodDefDnlib(uint methodRid)
+        private MethodDef? GetMethodDefDnlib(uint methodRid)
         {
             return _dnlibModule?.ResolveMethod(methodRid);
         }
 
-        internal TypeDef? GetTypeDefDnlib(uint typeRid)
+        private List<SymbolScope>? GetAllScopes(uint rowId, bool searchMoveNext)
         {
-            return _dnlibModule?.ResolveTypeDef(typeRid);
-        }
-
-        internal List<SymbolScope>? GetAllScopes(uint rowId)
-        {
-            var method = GetSymbolMethodDnlib(rowId);
+            var method = GetSymbolMethodDnlib(rowId, searchMoveNext);
             if (method == null)
             {
                 return null;
@@ -64,9 +59,9 @@ namespace Datadog.Trace.Pdb
             }
         }
 
-        private string[]? GetLocalVariableNamesDnlib(int methodRid, int localVariablesCount)
+        private string[]? GetLocalVariableNamesDnlib(int methodRid, int localVariablesCount, bool searchMoveNext)
         {
-            if (GetSymbolMethodDnlib((uint)methodRid) is not { } symbolMethod)
+            if (GetSymbolMethodDnlib((uint)methodRid, searchMoveNext) is not { } symbolMethod)
             {
                 return null;
             }
@@ -94,18 +89,17 @@ namespace Datadog.Trace.Pdb
             return localNames;
         }
 
-        private SymbolMethod? GetSymbolMethodDnlib(uint rowId)
+        private SymbolMethod? GetSymbolMethodDnlib(uint rowId, bool searchMoveNext)
         {
             var mdMethod = GetMethodDefDnlib(rowId);
-            return GetSymbolMethodOfAsyncMethodDnlib(mdMethod) ?? DnlibPdbReader?.GetMethod(mdMethod, version: 1);
+            return searchMoveNext ? (GetSymbolMethodOfAsyncMethodDnlib(mdMethod) ?? DnlibPdbReader?.GetMethod(mdMethod, version: 1)) : DnlibPdbReader?.GetMethod(mdMethod, version: 1);
         }
 
         private SymbolMethod? GetSymbolMethodOfAsyncMethodDnlib(MethodDef? mdMethod)
         {
             // Determine if the given mdMethod is a kickoff of a state machine(aka an async method)
             // The first step is to check if the method is decorated with the attribute `AsyncStateMachine`
-            var stateMachineAttributeFullName = typeof(AsyncStateMachineAttribute).FullName;
-            var stateMachineAttributeOfMdMethod = mdMethod?.CustomAttributes?.FirstOrDefault(ca => ca.TypeFullName == stateMachineAttributeFullName);
+            var stateMachineAttributeOfMdMethod = mdMethod?.CustomAttributes?.FirstOrDefault(ca => ca.TypeFullName == AsyncStateMachineAttribute);
             // Grab the generated inner type state machine from the argument given by the compiler to the AsyncStateMachineAttribute
             var stateMachineInnerTypeTypeDefOrRefSig = (stateMachineAttributeOfMdMethod?.ConstructorArguments.FirstOrDefault().Value as TypeDefOrRefSig);
             // Grab the MoveNext from inside the stateMachine and from there the corresponding debugInfo
@@ -120,28 +114,28 @@ namespace Datadog.Trace.Pdb
             return DnlibPdbReader?.GetMethod(breakpointMethod.Value.BreakpointMethod, version: 1);
         }
 
-        private List<LocalScope>? GetLocalSymbolsDnlib(int rowId, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogSequencePoint> sequencePoints)
+        private ImmutableArray<LocalScope>? GetLocalSymbolsDnlib(int rowId, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogSequencePoint> sequencePoints, bool searchMoveNext)
         {
-            List<LocalScope>? localScopes = null;
+            ImmutableArray<LocalScope>.Builder? localScopes = null;
             var method = GetMethodDefDnlib((uint)rowId);
             if (method!.Body is not { Variables.Count: > 0 })
             {
-                return localScopes;
+                return null;
             }
 
             var methodLocals = method.Body.Variables;
-            var allMethodScopes = GetAllScopes(method.MDToken.Rid);
+            var allMethodScopes = GetAllScopes(method.MDToken.Rid, searchMoveNext);
             if (allMethodScopes == null)
             {
-                return localScopes;
+                return null;
             }
 
-            localScopes = new List<LocalScope>();
+            localScopes = new ImmutableArray<LocalScope>.Builder();
 
             for (var k = 0; k < allMethodScopes.Count; k++)
             {
                 var datadogScop = new LocalScope();
-                datadogScop.Locals = new List<DatadogLocal>();
+                var scopeLocals = new ImmutableArray<DatadogLocal>.Builder();
                 var currentScope = allMethodScopes[k];
                 DatadogSequencePoint sequencePointForScope = default;
                 for (var l = 0; l < currentScope.Locals.Count; l++)
@@ -187,7 +181,7 @@ namespace Datadog.Trace.Pdb
                     }
 
                     datadogScop.SequencePoint = sequencePointForScope;
-                    datadogScop.Locals.Add(
+                    scopeLocals.Add(
                         new DatadogLocal
                         {
                             Name = localSymbol.Name,
@@ -196,10 +190,11 @@ namespace Datadog.Trace.Pdb
                         });
                 }
 
+                datadogScop.Locals = scopeLocals.ToImmutable();
                 localScopes.Add(datadogScop);
             }
 
-            return localScopes;
+            return localScopes.ToImmutable();
         }
 
         private CustomDebugInfoAsyncAndClosure GetAsyncAndClosureCustomDebugInfoDnlib(int methodRid)
@@ -244,11 +239,10 @@ namespace Datadog.Trace.Pdb
             return sourceLink == null ? null : Encoding.UTF8.GetString(sourceLink.FileBlob);
         }
 
-        private IMemoryOwner<DatadogSequencePoint>? GetMethodSequencePointsDnlib(int rowId, out int count)
+        private IMemoryOwner<DatadogSequencePoint>? GetMethodSequencePointsDnlib(int rowId, bool searchMoveNext, out int count)
         {
             count = 0;
-            var mdMethod = GetMethodDefDnlib((uint)rowId);
-            var symbolMethod = GetSymbolMethodOfAsyncMethodDnlib(mdMethod) ?? DnlibPdbReader?.GetMethod(mdMethod, version: 1);
+            var symbolMethod = GetSymbolMethodDnlib((uint)rowId, searchMoveNext);
             if (symbolMethod == null)
             {
                 return null;

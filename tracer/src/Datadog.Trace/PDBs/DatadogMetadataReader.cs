@@ -8,10 +8,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
@@ -27,6 +29,7 @@ namespace Datadog.Trace.Pdb
         private const int RidMask = 0x00FFFFFF;
         private const string Unknown = "UNKNOWN";
         private const string CompilerGeneratedAttribute = "System.Runtime.CompilerServices.CompilerGeneratedAttribute";
+        protected const string AsyncStateMachineAttribute = "System.Runtime.CompilerServices.AsyncStateMachineAttribute";
         private const int UnknownLocalLine = int.MaxValue;
         private static readonly Guid SourceLink = new("CC110556-A091-4D38-9FEC-25AB9A351A6A");
         private static readonly Guid EncLambdaAndClosureMap = new("A643004C-0240-496F-A783-30D64F4979DE");
@@ -196,9 +199,9 @@ namespace Datadog.Trace.Pdb
             return null;
         }
 
-        internal DatadogSequencePoint[]? GetMethodSequencePoints(int rowId)
+        internal DatadogSequencePoint[]? GetMethodSequencePoints(int rowId, bool searchMoveNext = true)
         {
-            using var memory = GetMethodSequencePointsAsMemoryOwner(rowId, out var count);
+            using var memory = GetMethodSequencePointsAsMemoryOwner(rowId, searchMoveNext, out var count);
             if (count == 0 || memory == null)
             {
                 return null;
@@ -208,58 +211,131 @@ namespace Datadog.Trace.Pdb
             return asSpan.Slice(0, count).ToArray();
         }
 
-        internal IMemoryOwner<DatadogSequencePoint>? GetMethodSequencePointsAsMemoryOwner(int rowId, out int count)
+        internal IMemoryOwner<DatadogSequencePoint>? GetMethodSequencePointsAsMemoryOwner(int rowId, bool searchMoveNext, out int count)
         {
             count = 0;
             if (_isDnlibPdbReader)
             {
-                return GetMethodSequencePointsDnlib(rowId, out count);
+                return GetMethodSequencePointsDnlib(rowId, searchMoveNext, out count);
             }
 
             if (PdbReader != null)
             {
                 var methodDef = GetMethodDef(rowId);
-                if (!methodDef.Handle.IsNil)
+                if (methodDef.Handle.IsNil)
                 {
-                    MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDef.Handle.ToDebugInformationHandle());
-                    if (methodDebugInformation.SequencePointsBlob.IsNil)
+                    return null;
+                }
+
+                MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDef.Handle.ToDebugInformationHandle());
+                if (methodDebugInformation.SequencePointsBlob.IsNil && searchMoveNext)
+                {
+                    var moveNext = GetMoveNextMethod(methodDef);
+                    if (moveNext.IsNil)
                     {
                         return null;
                     }
 
-                    var memory = ArrayMemoryPool<DatadogSequencePoint>.Shared.Rent();
-                    var sequencePoints = memory.Memory.Span;
-                    foreach (var sp in methodDebugInformation.GetSequencePoints())
+                    methodDebugInformation = PdbReader.GetMethodDebugInformation(moveNext.ToDebugInformationHandle());
+                    if (methodDebugInformation.SequencePointsBlob.IsNil)
                     {
-                        if (sp.IsHidden)
-                        {
-                            continue;
-                        }
+                        return null;
+                    }
+                }
 
-                        if (count >= sequencePoints.Length)
-                        {
-                            memory = EnlargeBuffer(memory, count);
-                            sequencePoints = memory.Memory.Span;
-                        }
-
-                        sequencePoints[count] = new DatadogSequencePoint
-                        {
-                            StartLine = sp.StartLine,
-                            EndLine = sp.EndLine,
-                            StartColumn = sp.StartColumn,
-                            EndColumn = sp.EndColumn,
-                            Offset = sp.Offset,
-                            IsHidden = sp.IsHidden,
-                            URL = GetDocumentName(sp.Document)
-                        };
-                        count++;
+                var memory = ArrayMemoryPool<DatadogSequencePoint>.Shared.Rent();
+                var sequencePoints = memory.Memory.Span;
+                foreach (var sp in methodDebugInformation.GetSequencePoints())
+                {
+                    if (sp.IsHidden)
+                    {
+                        continue;
                     }
 
-                    return memory;
+                    if (count >= sequencePoints.Length)
+                    {
+                        memory = EnlargeBuffer(memory, count);
+                        sequencePoints = memory.Memory.Span;
+                    }
+
+                    sequencePoints[count] = new DatadogSequencePoint
+                    {
+                        StartLine = sp.StartLine,
+                        EndLine = sp.EndLine,
+                        StartColumn = sp.StartColumn,
+                        EndColumn = sp.EndColumn,
+                        Offset = sp.Offset,
+                        IsHidden = sp.IsHidden,
+                        URL = GetDocumentName(sp.Document)
+                    };
+                    count++;
                 }
+
+                return memory;
             }
 
             return null;
+        }
+
+        private MethodDefinitionHandle GetMoveNextMethod(MethodDefinition methodDef)
+        {
+            if (methodDef.GetDeclaringType().IsNil)
+            {
+                return default;
+            }
+
+            TypeDefinitionHandle nestedTypeHandle = default;
+            var enclosingType = MetadataReader.GetTypeDefinition(methodDef.GetDeclaringType());
+            var provider = new AsyncStateMachineAttributeTypeProvider();
+            foreach (var attributeHandle in MetadataReader.GetCustomAttributes(methodDef.Handle))
+            {
+                if (attributeHandle.IsNil)
+                {
+                    continue;
+                }
+
+                var att = MetadataReader.GetCustomAttribute(attributeHandle);
+                var attributeTypeName = MetadataReader.GetMemberReference((MemberReferenceHandle)att.Constructor).Parent.FullName(MetadataReader);
+                if (attributeTypeName != AsyncStateMachineAttribute)
+                {
+                    continue;
+                }
+
+                var decoded = att.DecodeValue(provider);
+                if (decoded.FixedArguments.Length != 1)
+                {
+                    continue;
+                }
+
+                var fixedArgValue = decoded.FixedArguments[0].Value;
+                if (fixedArgValue == null)
+                {
+                    return default;
+                }
+
+                foreach (var handle in enclosingType.GetNestedTypes())
+                {
+                    if (fixedArgValue.Equals(handle.FullName(MetadataReader)))
+                    {
+                        nestedTypeHandle = handle;
+                        break;
+                    }
+                }
+
+                if (nestedTypeHandle != default)
+                {
+                    break;
+                }
+            }
+
+            if (nestedTypeHandle == default)
+            {
+                return default;
+            }
+
+            var generatedType = MetadataReader.GetTypeDefinition(nestedTypeHandle);
+            var moveNext = generatedType.GetMethods().FirstOrDefault(handle => MetadataReader.GetString(MetadataReader.GetMethodDefinition(handle).Name) == "MoveNext");
+            return moveNext;
         }
 
         /// <summary>
@@ -300,6 +376,7 @@ namespace Datadog.Trace.Pdb
 
             if (PdbReader != null)
             {
+                const int methodDefTablePrefix = 0x06000000;
                 foreach (MethodDefinitionHandle methodDefinitionHandle in MetadataReader.MethodDefinitions)
                 {
                     MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDefinitionHandle);
@@ -316,7 +393,7 @@ namespace Datadog.Trace.Pdb
                             (column.HasValue == false || (sequencePoint.StartColumn <= column && sequencePoint.EndColumn >= column)))
                         {
                             byteCodeOffset = sequencePoint.Offset;
-                            return methodDefinitionHandle.RowId;
+                            return methodDefTablePrefix | methodDefinitionHandle.RowId;
                         }
                     }
                 }
@@ -372,24 +449,29 @@ namespace Datadog.Trace.Pdb
             return docs;
         }
 
-        internal string[]? GetLocalVariableNames(int methodToken, int localVariablesCount)
+        internal string[]? GetLocalVariableNames(int methodToken, int localVariablesCount, bool searchMoveNext)
         {
             if (_isDnlibPdbReader)
             {
-                return GetLocalVariableNamesDnlib(methodToken & RidMask, localVariablesCount);
+                return GetLocalVariableNamesDnlib(methodToken & RidMask, localVariablesCount, searchMoveNext);
             }
 
             if (PdbReader != null)
             {
-                return GetLocalVariableNames(methodToken & RidMask);
+                return GetLocalVariableNames(methodToken & RidMask, searchMoveNext);
             }
 
             return null;
         }
 
-        private string[]? GetLocalVariableNames(int rowId)
+        private string[]? GetLocalVariableNames(int rowId, bool searchMoveNext)
         {
-            var method = MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(rowId));
+            if (PdbReader == null)
+            {
+                return null;
+            }
+
+            var method = GetMethodDef(rowId);
             int localsCount = 0;
             var methodLocalsCount = GetLocalVariablesCount(method);
             if (methodLocalsCount == 0)
@@ -397,30 +479,47 @@ namespace Datadog.Trace.Pdb
                 return null;
             }
 
-            var names = ArrayPool<string>.Shared.Rent(methodLocalsCount);
+            using var memory = ArrayMemoryPool<string>.Shared.Rent(methodLocalsCount);
+            var names = memory.Memory.Span;
+
             var signature = GetLocalSignature(method);
             if (signature == null)
             {
                 return null;
             }
 
-            foreach (var scopeHandle in MetadataReader.GetLocalScopes(method.Handle.ToDebugInformationHandle()))
+            foreach (var scopeHandle in PdbReader.GetLocalScopes(method.Handle.ToDebugInformationHandle()))
             {
-                var localScope = MetadataReader.GetLocalScope(scopeHandle);
+                var localScope = PdbReader.GetLocalScope(scopeHandle);
                 foreach (var localVarHandle in localScope.GetLocalVariables())
                 {
-                    var local = MetadataReader.GetLocalVariable(localVarHandle);
-                    if (local.Index > methodLocalsCount || string.IsNullOrEmpty(MetadataReader.GetString(local.Name)))
+                    var local = PdbReader.GetLocalVariable(localVarHandle);
+                    if (local.Index > methodLocalsCount || local.Attributes.HasFlag(LocalVariableAttributes.DebuggerHidden))
                     {
                         continue;
                     }
 
-                    names[localsCount] = MetadataReader.GetString(local.Name);
+                    var localNAme = PdbReader.GetString(local.Name);
+                    if (string.IsNullOrEmpty(localNAme))
+                    {
+                        continue;
+                    }
+
+                    names[local.Index] = localNAme;
                     localsCount++;
                 }
             }
 
-            return names;
+            if (localsCount == 0 && searchMoveNext)
+            {
+                var moveNext = GetMoveNextMethod(method);
+                if (!moveNext.IsNil)
+                {
+                    return GetLocalVariableNames(moveNext.RowId, false);
+                }
+            }
+
+            return names.Slice(0, methodLocalsCount).ToArray();
         }
 
         internal CustomDebugInfoAsyncAndClosure GetAsyncAndClosureCustomDebugInfo(int methodRid)
@@ -434,7 +533,7 @@ namespace Datadog.Trace.Pdb
             if (PdbReader != null)
             {
                 var methodHandle = MethodDefinitionHandle.FromRowId(methodRid);
-                if (methodHandle.IsNil || PdbReader == null)
+                if (methodHandle.IsNil)
                 {
                     return default;
                 }
@@ -481,7 +580,7 @@ namespace Datadog.Trace.Pdb
 
             if (PdbReader != null)
             {
-                var method = MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(methodRid));
+                var method = GetMethodDef(methodRid);
                 var attributes = method.GetCustomAttributes();
                 return IsCompilerGeneratedAttributeDefine(attributes);
             }
@@ -571,14 +670,14 @@ namespace Datadog.Trace.Pdb
             return MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(methodRid));
         }
 
-        internal List<LocalScope>? GetLocalSymbols(int rowId, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogSequencePoint> sequencePoints)
+        internal ImmutableArray<LocalScope>? GetLocalSymbols(int rowId, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogSequencePoint> sequencePoints, bool searchMoveNext)
         {
             if (_isDnlibPdbReader)
             {
-                return GetLocalSymbolsDnlib(rowId, sequencePoints);
+                return GetLocalSymbolsDnlib(rowId, sequencePoints, searchMoveNext);
             }
 
-            List<LocalScope>? localScopes = null;
+            ImmutableArray<LocalScope>.Builder? localScopes = default;
             if (PdbReader != null)
             {
                 MethodDefinition method = GetMethodDef(rowId);
@@ -595,7 +694,7 @@ namespace Datadog.Trace.Pdb
                 }
 
                 var localTypes = signature.Value.DecodeLocalSignature(new TypeProvider(false), 0);
-                localScopes = new List<LocalScope>();
+                localScopes = new ImmutableArray<LocalScope>.Builder();
 
                 foreach (var scopeHandle in PdbReader.GetLocalScopes(method.Handle.ToDebugInformationHandle()))
                 {
@@ -608,7 +707,7 @@ namespace Datadog.Trace.Pdb
                     }
 
                     var datadogScop = new LocalScope();
-                    datadogScop.Locals = new List<DatadogLocal>();
+                    var scopeLocals = new ImmutableArray<DatadogLocal>.Builder();
                     DatadogSequencePoint sequencePointForScope = default;
                     foreach (var localVarHandle in locals)
                     {
@@ -644,7 +743,7 @@ namespace Datadog.Trace.Pdb
                         }
 
                         datadogScop.SequencePoint = sequencePointForScope;
-                        datadogScop.Locals.Add(new DatadogLocal
+                        scopeLocals.Add(new DatadogLocal
                         {
                             Name = localName,
                             Type = localTypes[local.Index],
@@ -690,27 +789,32 @@ namespace Datadog.Trace.Pdb
                             }
                         }
 
-                        var datadogLocal = new DatadogLocal
+                        scopeLocals.Add(new DatadogLocal
                         {
                             Name = constantName,
                             Type = constantType,
                             Index = -1,
                             Line = sequencePointForScope == default ? UnknownLocalLine : sequencePointForScope.StartLine
-                        };
-
-                        datadogScop.Locals.Add(datadogLocal);
+                        });
                     }
 
+                    datadogScop.Locals = scopeLocals.ToImmutable();
                     localScopes.Add(datadogScop);
+                }
+
+                if (localScopes.Count == 0 && searchMoveNext)
+                {
+                    var moveNext = GetMoveNextMethod(method);
+                    return GetLocalSymbols(moveNext.RowId, sequencePoints, false);
                 }
             }
 
-            return localScopes;
+            return localScopes?.ToImmutable();
         }
 
         internal bool HasMethodBody(int methodRid)
         {
-            var method = MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(methodRid));
+            var method = GetMethodDef(methodRid);
             if (method.RelativeVirtualAddress == 0)
             {
                 // Method has no RVA (typically abstract or extern method)
@@ -723,7 +827,7 @@ namespace Datadog.Trace.Pdb
 
         internal bool HasSequencePoints(int methodRid)
         {
-            return GetMethodSequencePoints(methodRid)?.Length > 0;
+            return GetMethodSequencePoints(methodRid, false)?.Length > 0;
         }
 
         public void Dispose()
@@ -772,7 +876,7 @@ namespace Datadog.Trace.Pdb
         internal struct LocalScope
         {
             internal DatadogSequencePoint SequencePoint;
-            internal List<DatadogLocal> Locals;
+            internal ImmutableArray<DatadogLocal> Locals;
         }
     }
 }

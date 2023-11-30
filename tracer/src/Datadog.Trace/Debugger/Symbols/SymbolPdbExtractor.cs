@@ -28,7 +28,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
     protected override Model.Scope CreateMethodScope(TypeDefinition type, MethodDefinition method)
     {
         var methodScope = base.CreateMethodScope(type, method);
-        using var memory = DatadogMetadataReader.GetMethodSequencePointsAsMemoryOwner(method.Handle.RowId, out var count);
+        using var memory = DatadogMetadataReader.GetMethodSequencePointsAsMemoryOwner(method.Handle.RowId, false, out var count);
         if (memory == null || count == 0)
         {
             return methodScope;
@@ -109,7 +109,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
         string? methodName;
         if (cdi.StateMachineHoistedLocal && method.Handle.RowId == cdi.StateMachineKickoffMethodRid)
         {
-            var kickoffDef = MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(cdi.StateMachineKickoffMethodRid));
+            var kickoffDef = DatadogMetadataReader.GetMethodDef(cdi.StateMachineKickoffMethodRid);
             methodName = MetadataReader.GetString(kickoffDef.Name);
         }
         else
@@ -146,7 +146,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
             using var localsMemory = ArrayMemoryPool<Model.Symbol>.Shared.Rent();
             var localIndex = 0;
             var localSymbols = localsMemory.Memory.Span;
-            var fields = MetadataReader.GetTypeDefinition(MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(rowId)).GetDeclaringType()).GetFields();
+            var fields = MetadataReader.GetTypeDefinition(DatadogMetadataReader.GetMethodDef(rowId).GetDeclaringType()).GetFields();
             foreach (var fieldHandle in fields)
             {
                 var field = MetadataReader.GetFieldDefinition(fieldHandle);
@@ -201,13 +201,13 @@ internal class SymbolPdbExtractor : SymbolExtractor
             scopes.Add(scope);
         }
 
-        var localScopes = DatadogMetadataReader.GetLocalSymbols(rowId, sequencePoints);
-        if (localScopes is not { Count: > 0 })
+        var localScopes = DatadogMetadataReader.GetLocalSymbols(rowId, sequencePoints, false);
+        if (localScopes is not { Length: > 0 })
         {
             return scopes?.ToArray();
         }
 
-        scopes ??= new List<Model.Scope>(localScopes.Count);
+        scopes ??= new List<Model.Scope>(localScopes.Value.Length);
         foreach (var localScope in localScopes)
         {
             var scope = new Model.Scope();
@@ -222,7 +222,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
                     var cdi = DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(rowId);
                     if (cdi.EncLambdaAndClosureMap || cdi.LocalSlot)
                     {
-                        var nestedTypes = MetadataReader.GetTypeDefinition(MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(rowId)).GetDeclaringType()).GetNestedTypes();
+                        var nestedTypes = MetadataReader.GetTypeDefinition(DatadogMetadataReader.GetMethodDef(rowId).GetDeclaringType()).GetNestedTypes();
                         for (int i = 0; i < nestedTypes.Length; i++)
                         {
                             var nestedHandle = nestedTypes[i];

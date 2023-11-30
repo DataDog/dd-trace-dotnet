@@ -85,7 +85,7 @@ namespace UpdateVendors
             Add(
                 libraryName: "System.Collections.Immutable",
                 version: "1.0.0",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/heads/main.zip",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
                 pathToSrc: new[] { "dotnet-vendored-code-main", "System.Reflection.Metadata", "System.Collections.Immutable" },
                 transform: filePath =>
                 {
@@ -95,7 +95,7 @@ namespace UpdateVendors
             Add(
                 libraryName: "System.Memory",
                 version: "1.0.0",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/heads/main.zip",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
                 pathToSrc: new[] { "dotnet-vendored-code-main", "System.Reflection.Metadata", "System.Memory" },
                 transform: filePath =>
                 {
@@ -105,7 +105,7 @@ namespace UpdateVendors
             Add(
                 libraryName: "System.Private.CoreLib",
                 version: "1.0.0",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/heads/main.zip",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
                 pathToSrc: new[] { "dotnet-vendored-code-main", "System.Reflection.Metadata", "System.Private.CoreLib" },
                 transform: filePath =>
                 {
@@ -118,7 +118,7 @@ namespace UpdateVendors
             Add(
                 libraryName: "System.Reflection.Metadata",
                 version: "1.0.0",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/heads/main.zip",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
                 pathToSrc: new[] { "dotnet-vendored-code-main", "System.Reflection.Metadata", "System.Reflection.Metadata" },
                 transform: filePath =>
                 {
@@ -130,7 +130,7 @@ namespace UpdateVendors
             Add(
                 libraryName: "System.Runtime.CompilerServices.Unsafe",
                 version: "1.0.0",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/heads/main.zip",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
                 pathToSrc: new[] { "dotnet-vendored-code-main", "System.Reflection.Metadata", "System.Runtime.CompilerServices.Unsafe" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma));
         }
