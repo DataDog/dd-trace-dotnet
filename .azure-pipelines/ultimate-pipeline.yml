@@ -1232,6 +1232,8 @@ stages:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Win]
+      ${{ if eq(variables.isProfilerOnlyChanged, true) }}:
+        allowSkipped: true
 
   - job: Win
     condition: eq(variables.isProfilerOnlyChanged, false)
@@ -1785,7 +1787,8 @@ stages:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Test, DockerTest]
-      allowSkipped: ${{ eq(variables.isProfilerOnlyChanged, true) }}
+      ${{ if eq(variables.isProfilerOnlyChanged, true) }}:
+        allowSkipped: true
 
   - job: Test
     condition: eq(variables.isProfilerOnlyChanged, false)
@@ -2344,14 +2347,13 @@ stages:
     changesInProfiler: true
     changesInTracer2: false
     changesInProfiler2: false
-    isTracerChanged: $[ eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')]
-    isProfilerChanged: $[ eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')]
+    isTracerChanged: $[ eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsTracerChanged'], 'True')]
+    isProfilerChanged: $[ eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'], 'True')]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Test1, Test2]
-      allowSkipped: ${{ variables.changesInTracer }}
 
   - job: Test1
     pool:
@@ -2366,6 +2368,10 @@ stages:
     condition: eq(variables['isProfilerChanged'], true)
     steps:
     - script: echo 'world'
+    - ${{ if eq(variables.changesInTracer, true) }}:
+      - script: echo "Oh my god"
+    - ${{ if eq(variables.isProfilerChanged, true) }}:
+      - script: echo "Oh my god, back to back"
 
   - job: Print
     pool:
@@ -2649,7 +2655,8 @@ stages:
     - template: steps/update-github-status-jobs.yml
       parameters:
         jobs: [Test, DockerTest]
-        allowSkipped: ${{ eq(variables.isProfilerOnlyChanged, true) }}
+        #${{ if eq(variables.isProfilerOnlyChanged, true) }}:
+        allowSkipped: true
 
     - job: Test
       condition: eq(variables.isProfilerOnlyChanged, false)

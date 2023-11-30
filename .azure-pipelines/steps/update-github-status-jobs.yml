@@ -32,7 +32,7 @@ jobs:
       or(
         succeeded(),
         and(
-          eq('${{ parameters.allowSkipped }}', true),
+          eq('${{ variables.isProfilerChanged }}', true),
           not(failed()),
           not(canceled())
         )
@@ -57,7 +57,7 @@ jobs:
       not(or(
         succeeded(),
         and(
-          eq('${{ parameters.allowSkipped }}', true),
+          eq('${{ variables.isProfilerChanged }}', true),
           not(failed()),
           not(canceled())
         )
