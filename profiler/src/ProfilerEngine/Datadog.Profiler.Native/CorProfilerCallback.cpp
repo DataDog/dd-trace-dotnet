@@ -293,7 +293,7 @@ bool CorProfilerCallback::InitializeServices()
         }
         // TODO: register any provider that needs to get notified when GCs start and end
     }
-    else if (_pRuntimeInfo->IsDotnetFramework())
+    else if ((_pRuntimeInfo->IsDotnetFramework()) && (_pConfiguration->IsEtwEnabled()))
     // deal with event-based profilers in .NET Framework
     {
         // check for allocations profiling only (without heap profiling)
@@ -499,6 +499,29 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
             _pSamplesCollector->Register(_pStopTheWorldProvider);
+            _pSamplesCollector->Register(_pGarbageCollectionProvider);
+        }
+    }
+    // CLR events-based providers for .NET Framework
+    else if (_pEtwEventsManager != nullptr)
+    {
+        if (_pAllocationsProvider != nullptr)
+        {
+            _pSamplesCollector->Register(_pAllocationsProvider);
+        }
+
+        if (_pContentionProvider != nullptr)
+        {
+            _pSamplesCollector->Register(_pContentionProvider);
+        }
+
+        if (_pStopTheWorldProvider != nullptr)
+        {
+            _pSamplesCollector->Register(_pStopTheWorldProvider);
+        }
+
+        if (_pGarbageCollectionProvider != nullptr)
+        {
             _pSamplesCollector->Register(_pGarbageCollectionProvider);
         }
     }
@@ -1053,10 +1076,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             if (_pConfiguration->IsHeapProfilingEnabled())
             {
                 Log::Warn("Live Heap profiling is not supported by .NET Framework (.NET 7+ is required)");
-            }
-            if (_pConfiguration->IsAllocationProfilingEnabled())
-            {
-                Log::Warn("Allocation profiling is not supported by .NET Framework (.NET 5+ is required)");
             }
         }
         else

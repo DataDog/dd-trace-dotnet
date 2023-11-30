@@ -183,7 +183,7 @@ int main(int argc, char* argv[])
         handler.get(),
         (1 << 16) + sizeof(IpcHeader),
         sizeof(SuccessResponse),
-        1,
+        2,
         500
         );
     if (server == nullptr)

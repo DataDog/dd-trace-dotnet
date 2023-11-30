@@ -16,7 +16,7 @@
 
 const std::string NamedPipePrefix = "\\\\.\\pipe\\DD_ETW_CLIENT_";
 const std::string NamedPipeAgent = "\\\\.\\pipe\\DD_ETW_DISPATCHER";
-const uint32_t MaxInstances = 1;
+const uint32_t MaxInstances = 2;
 const uint32_t TimeoutMS = 500;
 
 
@@ -156,7 +156,8 @@ void EtwEventsManager::AttachCallstack(std::vector<uintptr_t>& stack, uint16_t u
     }
 
     StackWalkPayload* pPayload = (StackWalkPayload*)pUserData;
-    if (userDataLength < pPayload->FrameCount * sizeof(uintptr_t) + sizeof(StackWalkPayload))
+    //                    size of all frames                      + payload size             - size of the first frame not counted twice
+    if (userDataLength < pPayload->FrameCount * sizeof(uintptr_t) + sizeof(StackWalkPayload) - sizeof(uintptr_t))
     {
         return;
     }
@@ -199,14 +200,14 @@ bool EtwEventsManager::Start()
     Log::Info("Exposing ", pipeName);
 
     // create the client part to send the registration command
-    auto handler = std::make_unique<EtwEventsHandler>(_logger.get(), this);
+    _eventsHandler = std::make_unique<EtwEventsHandler>(_logger.get(), this);
     _IpcServer = IpcServer::StartAsync(
         _logger.get(),
         pipeName,
-        handler.get(),
+        _eventsHandler.get(),
         (1 << 16) + sizeof(IpcHeader),  // in buffer size = 64K + header
         sizeof(SuccessResponse),        // out buffer contains only the response
-        MaxInstances,                   // max number of instances (1 = the Agent)
+        MaxInstances,                   // max number of instances (2 = the Agent + one pending)
         TimeoutMS);
     if (_IpcServer == nullptr)
     {
