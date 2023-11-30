@@ -179,26 +179,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 batchingOptions);
         }
 
-        public static string StringifyGlobalTags(IReadOnlyDictionary<string, string> globalTags)
-        {
-            if (globalTags.Count == 0)
-            {
-                return string.Empty;
-            }
-
-            var sb = new StringBuilder();
-            foreach (var tagPair in globalTags)
-            {
-                sb.Append(tagPair.Key)
-                  .Append(':')
-                  .Append(tagPair.Value)
-                  .Append(',');
-            }
-
-            // remove final joiner
-            return sb.ToString(startIndex: 0, length: sb.Length - 1);
-        }
-
         public static ImmutableDirectLogSubmissionSettings CreateNullSettings()
         {
             var emptyList = new List<string>(0);

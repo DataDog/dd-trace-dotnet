@@ -16,7 +16,7 @@ namespace Datadog.Trace.TestHelpers
     internal class LogSettingsHelper
     {
         public static LogFormatter GetFormatter() => new(
-            new ImmutableTracerSettings(new TracerSettings()),
+            new ImmutableTracerSettings(new TracerSettings(null, Configuration.Telemetry.NullConfigurationTelemetry.Instance)),
             GetValidSettings(),
             aasSettings: null,
             serviceName: "MyTestService",

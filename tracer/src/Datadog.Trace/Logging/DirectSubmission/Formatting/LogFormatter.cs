@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -52,7 +53,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 
             var globalTags = directLogSettings.GlobalTags is { Count: > 0 } ? directLogSettings.GlobalTags : settings.GlobalTagsInternal;
 
-            Tags = EnrichTagsWithAasMetadata(ImmutableDirectLogSubmissionSettings.StringifyGlobalTags(globalTags), aasSettings);
+            Tags = EnrichTagsWithAasMetadata(StringifyGlobalTags(globalTags), aasSettings);
             _env = string.IsNullOrEmpty(env) ? null : env;
             _version = string.IsNullOrEmpty(version) ? null : version;
         }
@@ -60,6 +61,26 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         internal delegate LogPropertyRenderingDetails FormatDelegate<T>(JsonTextWriter writer, in T state);
 
         internal string? Tags { get; private set; }
+
+        private static string StringifyGlobalTags(IReadOnlyDictionary<string, string> globalTags)
+        {
+            if (globalTags.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var sb = new StringBuilder();
+            foreach (var tagPair in globalTags)
+            {
+                sb.Append(tagPair.Key)
+                  .Append(':')
+                  .Append(tagPair.Value)
+                  .Append(',');
+            }
+
+            // remove final joiner
+            return sb.ToString(startIndex: 0, length: sb.Length - 1);
+        }
 
         private string? EnrichTagsWithAasMetadata(string globalTags, ImmutableAzureAppServiceSettings? aasSettings)
         {
