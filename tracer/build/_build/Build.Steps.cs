@@ -2712,23 +2712,27 @@ partial class Build
 
     private void CopyDumpsTo(AbsolutePath root)
     {
+        var dumpFolder = root / "dumps";
+
         if (Directory.Exists(TempDirectory))
         {
             foreach (var dump in GlobFiles(TempDirectory, "coredump*", "*.dmp"))
             {
-                Logger.Information("Moving file '{Dump}' to '{Root}'", dump, root / "dumps");
+                Logger.Information("Moving file '{Dump}' to '{Root}'", dump, dumpFolder);
 
-                MoveFileToDirectory(dump, root / "dumps", FileExistsPolicy.Overwrite);
+                MoveFileToDirectory(dump, dumpFolder, FileExistsPolicy.Overwrite);
             }
-        }
-        else
-        {
-            Logger.Warning("TempDirectory '{TempDirectory}' does not exist, skipping dump copy", TempDirectory);
         }
 
         foreach (var file in Directory.EnumerateFiles(TracerDirectory, "*.dmp", SearchOption.AllDirectories))
         {
-            CopyFileToDirectory(file, root, FileExistsPolicy.OverwriteIfNewer);
+            if (Path.GetDirectoryName(file) == dumpFolder)
+            {
+                // The dump is already in the right location
+                continue;
+            }
+
+            CopyFileToDirectory(file, dumpFolder, FileExistsPolicy.OverwriteIfNewer);
         }
     }
 
