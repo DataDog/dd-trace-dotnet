@@ -45,6 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-elasticsearch" : ServiceName;
 

@@ -67,6 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var topic = $"sample-topic-{TestPrefix}-{packageVersion}".Replace('.', '-');
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-kafka" : EnvironmentHelper.FullSampleName;
 
