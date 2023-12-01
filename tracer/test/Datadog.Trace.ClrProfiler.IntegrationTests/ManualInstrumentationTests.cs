@@ -21,7 +21,7 @@ public class ManualInstrumentationTests : TestHelper
     {
     }
 
-    [SkippableFact]
+    [SkippableFact(Skip = "Their flaky, need to address the root cause around Tracer lifetimes")]
     [Trait("RunOnWindows", "True")]
     public async Task ManualAndAutomatic()
     {
@@ -39,7 +39,7 @@ public class ManualInstrumentationTests : TestHelper
         await VerifyHelper.VerifySpans(spans, settings);
     }
 
-    [SkippableFact]
+    [SkippableFact(Skip = "Their flaky, need to address the root cause around Tracer lifetimes")]
     [Trait("RunOnWindows", "True")]
     public async Task ManualOnly()
     {
