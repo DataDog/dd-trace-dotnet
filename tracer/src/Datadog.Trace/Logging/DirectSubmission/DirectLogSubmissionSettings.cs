@@ -64,7 +64,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
                                                   validator: null);
 
             var globalTags = config
-                            .WithKeys(ConfigurationKeys.DirectLogSubmission.GlobalTags, ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                            .WithKeys(ConfigurationKeys.DirectLogSubmission.GlobalTags)
                             .AsDictionary();
 
             DirectLogSubmissionGlobalTags = globalTags?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
