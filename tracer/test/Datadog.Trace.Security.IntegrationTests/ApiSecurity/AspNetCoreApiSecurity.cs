@@ -49,6 +49,7 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
     [Trait("RunOnWindows", "True")]
     [InlineData("/dataapi/model", """{"property":"dummy_rule", "property2":"test2", "property3": 2, "property4": 3}""", HttpStatusCode.Forbidden, true)]
     [InlineData("/dataapi/model", """{"property":"test", "property2":"test2", "property3": 2, "property4": 2}""", HttpStatusCode.OK, false)]
+    [InlineData("/dataapi/empty-model", """{"property":"test", "property2":"test2", "property3": 2, "property4": 2}""", HttpStatusCode.NoContent, false)]
     public async Task TestApiSecurityScan(string url, string body, HttpStatusCode expectedStatusCode, bool containsAttack)
     {
         await TryStartApp();
