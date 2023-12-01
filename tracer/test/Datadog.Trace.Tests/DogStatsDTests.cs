@@ -110,13 +110,15 @@ namespace Datadog.Trace.Tests
             */
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData(null, null, null)] // Should default to udp
         [InlineData("http://127.0.0.1:1234", null, null)]
         [InlineData(null, "127.0.0.1", null)]
         [InlineData(null, "127.0.0.1", "1234")]
         public void CanCreateDogStatsD_UDP_FromTraceAgentSettings(string agentUri, string agentHost, string port)
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
             var settings = new TracerSettings(new NameValueConfigurationSource(new()
             {
                 { ConfigurationKeys.AgentUri, agentUri },
@@ -139,9 +141,12 @@ namespace Datadog.Trace.Tests
                      .And.BeOfType<DogStatsdService>();
         }
 
-        [Fact]
+        [SkippableFact]
         public void CanCreateDogStatsD_NamedPipes_FromTraceAgentSettings()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+            SkipOn.Platform(SkipOn.PlatformValue.Linux);
+
             using var agent = MockTracerAgent.Create(_output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = true });
 
             var settings = new TracerSettings(new NameValueConfigurationSource(new()
