@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -157,6 +158,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var fileId = Guid.NewGuid().ToString();
 
             var request = await agent.SetupRcmAndWait(Output, new[] { ((object)new { lib_config = config }, DynamicConfigurationManager.ProductName, fileId) });
+
+            // Validate capabilities
+            var capabilities = new BitArray(request.Client.Capabilities);
+
+            capabilities[12].Should().BeTrue(); // APM_TRACING_SAMPLE_RATE
+            capabilities[13].Should().BeTrue(); // APM_TRACING_LOGS_INJECTION
+            capabilities[14].Should().BeTrue(); // APM_TRACING_HTTP_HEADER_TAGS
+            capabilities[15].Should().BeTrue(); // APM_TRACING_CUSTOM_TAGS
 
             request.Client.State.ConfigStates.Should().ContainSingle(f => f.Id == fileId)
                .Subject.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
