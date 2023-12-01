@@ -382,7 +382,11 @@ bool CorProfilerCallback::InitializeServices()
     }
 
     // compute enabled profilers based on configuration and receivable CLR events
-    _pEnabledProfilers = std::make_unique<EnabledProfilers>(_pConfiguration.get(), _pCorProfilerInfoEvents != nullptr, _pLiveObjectsProvider != nullptr);
+    _pEnabledProfilers = std::make_unique<EnabledProfilers>(
+        _pConfiguration.get(),
+        _pCorProfilerInfoEvents != nullptr    // .NET 5+ CLR events-based profilers
+            || _pEtwEventsManager != nullptr, // .NET Framework CLR events-based profilers
+        _pLiveObjectsProvider != nullptr);
 
     // disable profilers if the connection with the agent failed
     if (_pRuntimeInfo->IsDotnetFramework())
