@@ -213,7 +213,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static void UpdateSpanWithMvc(
             Tracer tracer,
-            AspNetCoreHttpRequestHandler.RequestTrackingFeature trackingFeature,
+            SingleSpanTrackingFeature trackingFeature,
             AspNetCoreDiagnosticObserver.BeforeActionStruct typedArg,
             HttpContext httpContext,
             HttpRequest request)
@@ -337,7 +337,13 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
-                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, httpContext, resourceName: string.Empty, new AspNetCoreSingleSpanTags());
+                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(
+                        tracer,
+                        CurrentSecurity,
+                        httpContext,
+                        resourceName: string.Empty,
+                        new AspNetCoreSingleSpanTags(),
+                        static (path, scope) => new SingleSpanTrackingFeature(path, scope));
                     if (shouldSecure)
                     {
                         CoreHttpContextStore.Instance.Set(httpContext);
@@ -357,7 +363,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<AspNetCoreDiagnosticObserver.HttpRequestInEndpointMatchedStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
+             && httpContext.Features.Get<SingleSpanTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
             {
                 if (rootSpan.Tags is not AspNetCoreSingleSpanTags tags)
                 {
@@ -427,7 +433,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 // Have to pass this value through to the MVC span, as not available there
                 var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
-                trackingFeature.Route = normalizedRoute;
 
                 var request = httpContext.Request.DuckCast<AspNetCoreDiagnosticObserver.HttpRequestStruct>();
                 RouteValueDictionary routeValues = request.RouteValues;
@@ -456,12 +461,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 var resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
-                // NOTE: We could store the controller/action/area tags in the tracking context
-                // But instead we re-extract them in the MVC endpoint as these are MVC
-                // constructs. this is likely marginally less efficient, but simplifies the
-                // already complex logic in the MVC handler
-                // Overwrite the route in the parent span
-                trackingFeature.ResourceName = resourceName;
                 if (isFirstExecution)
                 {
                     rootSpan.ResourceName = resourceName;
@@ -500,7 +499,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<AspNetCoreDiagnosticObserver.BeforeActionStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
+             && httpContext.Features.Get<SingleSpanTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
             {
                 HttpRequest request = httpContext.Request;
 
@@ -572,7 +571,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             if (arg.DuckCast<AspNetCoreDiagnosticObserver.HttpRequestInStopStruct>().HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope: { } rootScope })
+             && httpContext.Features.Get<SingleSpanTrackingFeature>() is { RootScope: { } rootScope })
             {
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, rootScope, httpContext);
             }
@@ -591,12 +590,58 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<AspNetCoreDiagnosticObserver.UnhandledExceptionStruct>(out var unhandledStruct)
              && unhandledStruct.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan })
+             && httpContext.Features.Get<SingleSpanTrackingFeature>() is { RootScope.Span: { } rootSpan })
             {
                 AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, CurrentSecurity, rootSpan, httpContext, unhandledStruct.Exception);
             }
 
             // If we don't have a span, no need to call Handle exception
+        }
+
+        /// <summary>
+        /// Holds state that we want to pass between diagnostic source events
+        /// </summary>
+        internal class SingleSpanTrackingFeature
+        {
+            public SingleSpanTrackingFeature(PathString originalPath, Scope rootAspNetCoreScope)
+            {
+                OriginalPath = originalPath;
+                RootScope = rootAspNetCoreScope;
+            }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether the pipeline using endpoint routing
+            /// </summary>
+            public bool IsUsingEndpointRouting { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether this is the first pipeline execution
+            /// </summary>
+            public bool IsFirstPipelineExecution { get; set; } = true;
+
+            /// <summary>
+            /// Gets a value indicating the original combined Path and PathBase
+            /// </summary>
+            public PathString OriginalPath { get; }
+
+            /// <summary>
+            /// Gets the root ASP.NET Core Scope
+            /// </summary>
+            public Scope RootScope { get; }
+
+            public bool MatchesOriginalPath(HttpRequest request)
+            {
+                if (!request.PathBase.HasValue)
+                {
+                    return OriginalPath.Equals(request.Path, StringComparison.OrdinalIgnoreCase);
+                }
+
+                return OriginalPath.StartsWithSegments(
+                           request.PathBase,
+                           StringComparison.OrdinalIgnoreCase,
+                           out var remaining)
+                    && remaining.Equals(request.Path, StringComparison.OrdinalIgnoreCase);
+            }
         }
     }
 }

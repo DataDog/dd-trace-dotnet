@@ -100,11 +100,11 @@ namespace Datadog.Trace.PlatformHelpers
         {
             var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
             var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
-            return StartAspNetCorePipelineScope(tracer, security, httpContext, resourceName, tags);
+            return StartAspNetCorePipelineScope(tracer, security, httpContext, resourceName, tags, static (path, scope) => new RequestTrackingFeature(path, scope));
         }
 
-        public Scope StartAspNetCorePipelineScope<T>(Tracer tracer, Security security, HttpContext httpContext, string resourceName, T tags)
-            where T : WebTags
+        public Scope StartAspNetCorePipelineScope<TTags, TFeature>(Tracer tracer, Security security, HttpContext httpContext, string resourceName, TTags tags, Func<string, Scope, TFeature> createTrackingFeature)
+            where TTags : WebTags
         {
             var request = httpContext.Request;
             string host = request.Host.Value;
@@ -121,7 +121,7 @@ namespace Datadog.Trace.PlatformHelpers
             AddHeaderTagsToSpan(scope.Span, request, tracer);
 
             var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
-            httpContext.Features.Set(new RequestTrackingFeature(originalPath, scope));
+            httpContext.Features.Set(createTrackingFeature(originalPath, scope));
 
             if (tracer.Settings.IpHeaderEnabled || security.Enabled)
             {
