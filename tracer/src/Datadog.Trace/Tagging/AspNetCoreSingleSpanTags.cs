@@ -24,6 +24,18 @@ internal partial class AspNetCoreSingleSpanTags : WebTags
     [Tag(Trace.Tags.AspNetCoreEndpoint)]
     public string? AspNetCoreEndpoint { get; set; }
 
+    [Tag(Trace.Tags.AspNetCoreController)]
+    public string? AspNetCoreController { get; set; }
+
+    [Tag(Trace.Tags.AspNetCoreAction)]
+    public string? AspNetCoreAction { get; set; }
+
+    [Tag(Trace.Tags.AspNetCoreArea)]
+    public string? AspNetCoreArea { get; set; }
+
+    [Tag(Trace.Tags.AspNetCorePage)]
+    public string? AspNetCorePage { get; set; }
+
     // TODO: Additional executed endpoints e.g. multiple pipeline executions
     // Error paths etc
 }
