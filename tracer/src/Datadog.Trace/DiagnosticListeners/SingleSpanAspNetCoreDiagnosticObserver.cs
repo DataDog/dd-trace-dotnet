@@ -40,8 +40,9 @@ namespace Datadog.Trace.DiagnosticListeners
         private const string HttpRequestInOperationName = "aspnet_core.request";
         private const string MvcOperationName = "aspnet_core_mvc.request";
 
+#if NETCOREAPP
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
-
+#endif
         private static readonly Type EndpointFeatureType =
             Assembly.GetAssembly(typeof(RouteValueDictionary))
                    ?.GetType("Microsoft.AspNetCore.Http.Features.IEndpointFeature", throwOnError: false);
@@ -75,10 +76,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private Security CurrentSecurity => _security ?? Security.Instance;
 
-#if NETCOREAPP
         protected override void OnNext(string eventName, object arg)
         {
+#if NETCOREAPP
             var lastChar = eventName[^1];
+#else
+            var lastChar = eventName[eventName.Length - 1];
+#endif
 
             if (lastChar == 't')
             {
@@ -86,7 +90,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     OnHostingHttpRequestInStart(arg);
                 }
+#if NETCOREAPP
                 else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Start"))
+#else
+                else if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Start")
+#endif
                 {
                     _hostingHttpRequestInStartEventKey = eventName;
                     OnHostingHttpRequestInStart(arg);
@@ -113,7 +121,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     OnHostingUnhandledException(arg);
                     return;
                 }
-
+#if NETCOREAPP
                 var suffix = eventName.AsSpan().Slice(PrefixLength);
 
                 if (suffix.SequenceEqual("Mvc.BeforeAction"))
@@ -137,79 +145,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     OnHostingUnhandledException(arg);
                 }
 
-                return;
-            }
-
-            if (lastChar == 'p')
-            {
-                if (ReferenceEquals(eventName, _hostingHttpRequestInStopEventKey))
-                {
-                    OnHostingHttpRequestInStop(arg);
-                }
-                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Stop"))
-                {
-                    _hostingHttpRequestInStopEventKey = eventName;
-                    OnHostingHttpRequestInStop(arg);
-                }
-
-                return;
-            }
-
-            if (lastChar == 'd')
-            {
-                if (ReferenceEquals(eventName, _routingEndpointMatchedKey))
-                {
-                    OnRoutingEndpointMatched(arg);
-                }
-                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Routing.EndpointMatched"))
-                {
-                    _routingEndpointMatchedKey = eventName;
-                    OnRoutingEndpointMatched(arg);
-                }
-
-                return;
-            }
-        }
-
 #else
-        protected override void OnNext(string eventName, object arg)
-        {
-            var lastChar = eventName[eventName.Length - 1];
-
-            if (lastChar == 't')
-            {
-                if (ReferenceEquals(eventName, _hostingHttpRequestInStartEventKey))
-                {
-                    OnHostingHttpRequestInStart(arg);
-                }
-                else if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Start")
-                {
-                    _hostingHttpRequestInStartEventKey = eventName;
-                    OnHostingHttpRequestInStart(arg);
-                }
-
-                return;
-            }
-
-            if (lastChar == 'n')
-            {
-                if (ReferenceEquals(eventName, _mvcBeforeActionEventKey))
-                {
-                    OnMvcBeforeAction(arg);
-                    return;
-                }
-                else if (ReferenceEquals(eventName, _mvcAfterActionEventKey))
-                {
-                    OnMvcAfterAction(arg);
-                    return;
-                }
-                else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
-                         ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
-                {
-                    OnHostingUnhandledException(arg);
-                    return;
-                }
-
                 switch (eventName)
                 {
                     case "Microsoft.AspNetCore.Mvc.BeforeAction":
@@ -231,6 +167,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         OnHostingUnhandledException(arg);
                         break;
                 }
+#endif
 
                 return;
             }
@@ -241,7 +178,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     OnHostingHttpRequestInStop(arg);
                 }
+#if NETCOREAPP
+                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Stop"))
+#else
                 else if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop")
+#endif
                 {
                     _hostingHttpRequestInStopEventKey = eventName;
                     OnHostingHttpRequestInStop(arg);
@@ -256,7 +197,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     OnRoutingEndpointMatched(arg);
                 }
+#if NETCOREAPP
+                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Routing.EndpointMatched"))
+#else
                 else if (eventName == "Microsoft.AspNetCore.Routing.EndpointMatched")
+#endif
                 {
                     _routingEndpointMatchedKey = eventName;
                     OnRoutingEndpointMatched(arg);
@@ -265,7 +210,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
         }
-#endif
 
         private static string GetLegacyResourceName(BeforeActionStruct typedArg)
         {
