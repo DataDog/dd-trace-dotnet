@@ -83,6 +83,19 @@ namespace Datadog.Trace.Configuration
             _telemetry = telemetry;
             var config = new ConfigurationBuilder(source, _telemetry);
 
+            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
+            IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
+
+            LambdaMetadata = LambdaMetadata.Create();
+
+            IsRunningInAzureAppService = ImmutableAzureAppServiceSettings.GetIsAzureAppService(source, telemetry);
+            IsRunningInAzureFunctionsConsumptionPlan = ImmutableAzureAppServiceSettings.GetIsFunctionsAppConsumptionPlan(source, telemetry);
+
+            if (IsRunningInAzureAppService)
+            {
+                AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
+            }
+
             EnvironmentInternal = config
                          .WithKeys(ConfigurationKeys.Environment)
                          .AsString();
@@ -110,6 +123,11 @@ namespace Datadog.Trace.Configuration
             TraceEnabledInternal = config
                           .WithKeys(ConfigurationKeys.TraceEnabled)
                           .AsBool(defaultValue: true);
+
+            if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
+            {
+                TraceEnabledInternal = false;
+            }
 
             var disabledIntegrationNames = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
                                                                .AsString()
@@ -206,9 +224,13 @@ namespace Datadog.Trace.Configuration
                              .WithKeys(ConfigurationKeys.BufferSize)
                              .AsInt32(defaultValue: 1024 * 1024 * 10); // 10MB
 
+            // If Lambda/GCP we don't wanat to have a flush interval. The serverless integration
+            // manually calls flush and waits for the result before ending execution.
+            // This can artificially increase the execution time of functions
+            var defaultTraceBatchInterval = LambdaMetadata.IsRunningInLambda || IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan ? 0 : 100;
             TraceBatchInterval = config
                                 .WithKeys(ConfigurationKeys.SerializationBatchInterval)
-                                .AsInt32(defaultValue: 100);
+                                .AsInt32(defaultTraceBatchInterval);
 
             RouteTemplateResourceNamesEnabled = config
                                                .WithKeys(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
@@ -318,25 +340,6 @@ namespace Datadog.Trace.Configuration
             IsRareSamplerEnabled = config
                                   .WithKeys(ConfigurationKeys.RareSamplerEnabled)
                                   .AsBool(false);
-
-            IsRunningInAzureAppService = ImmutableAzureAppServiceSettings.GetIsAzureAppService(source, telemetry);
-
-            IsRunningInAzureFunctionsConsumptionPlan = ImmutableAzureAppServiceSettings.GetIsFunctionsAppConsumptionPlan(source, telemetry);
-
-            if (IsRunningInAzureAppService)
-            {
-                AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
-                if (AzureAppServiceMetadata.IsUnsafeToTrace)
-                {
-                    TraceEnabledInternal = false;
-                }
-            }
-
-            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
-
-            IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
-
-            LambdaMetadata = LambdaMetadata.Create();
 
             StatsComputationEnabledInternal = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)

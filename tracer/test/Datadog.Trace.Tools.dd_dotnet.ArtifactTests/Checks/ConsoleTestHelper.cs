@@ -87,15 +87,14 @@ public abstract class ConsoleTestHelper : ToolTestHelper
             return helper;
         }
 
-        helper.Dispose();
-
         if (completed == helper.Task)
         {
+            helper.Dispose();
             throw new Exception("The target process unexpectedly exited");
         }
 
         // Try to capture a memory dump before giving up
-        if (MemoryDumpHelper.CaptureMemoryDump(helper.Process))
+        if (MemoryDumpHelper.CaptureMemoryDump(helper.Process, new Progress<string>(Output.WriteLine)))
         {
             Output.WriteLine("Successfully captured a memory dump");
         }
@@ -103,6 +102,8 @@ public abstract class ConsoleTestHelper : ToolTestHelper
         {
             Output.WriteLine("Failed to capture a memory dump");
         }
+
+        helper.Dispose();
 
         throw new TimeoutException("Timeout when waiting for the target process to start");
     }
