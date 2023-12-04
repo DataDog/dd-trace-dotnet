@@ -79,11 +79,11 @@ bool CheckTraceObjectHeader(TraceObjectHeader& header)
 const uint32_t BLOCK_SIZE = 4*1024;
 const uint32_t MAX_BLOCK_SIZE = 100*1024;  // max buffer size sent by CLR
 
-EventPipeSession::EventPipeSession(int pid, IIpcEndpoint* pEndpoint, uint64_t sessionId)
+EventPipeSession::EventPipeSession(int pid, GcDumpState* pGcDump, IIpcEndpoint* pEndpoint, uint64_t sessionId)
     :
     _pid(pid),
     _metadataParser(_metadata),
-    _eventParser(_metadata),
+    _eventParser(_metadata, pGcDump),
     _stackParser(_stacks32, _stacks64),
     _sequencePointParser(_stacks32, _stacks64),
     _pEndpoint(pEndpoint),

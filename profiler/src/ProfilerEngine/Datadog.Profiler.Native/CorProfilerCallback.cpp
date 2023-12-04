@@ -1884,6 +1884,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
     //    return S_OK;
     //}
 
+    //// TODO: simulate .gcdump after each AllocationTick
+    //if ((_pGcDumpProvider != nullptr) && (eventId == AllocationTick))
+    //{
+    //    _pGcDumpProvider->Trigger();
+    //}
+
     if (_pClrEventsParser != nullptr)
     {
         _pClrEventsParser->ParseEvent(

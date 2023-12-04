@@ -8,11 +8,15 @@ public:
     GcDumpSession(int pid);
 
     bool TriggerDump();
-    void StopDump(); // TODO: should be automatic but how to notify the caller that the "gcdump" is over?
+    inline GcDumpState* GetGcDumpState() { return &_gcDumpState; }
+
+private:
+    void Cleanup();
 
 private:
     int _pid;
     DiagnosticsClient* _pClient;
     EventPipeSession* _pSession;
     HANDLE _hListenerThread;
+    GcDumpState _gcDumpState;
 };

@@ -6,6 +6,7 @@
 #include <windows.h>
 
 #include "NettraceFormat.h"
+#include "..\GcDumpState.h"
 
 
 class EventCacheMetadata
@@ -31,6 +32,30 @@ enum EventIDs : uint32_t
     ExceptionThrown = 80,
     ContentionStart = 81,
     ContentionStop = 91,
+
+    // .gcdump events
+    GCStart = 1,
+    GCEnd = 2,
+    // GCRestartEEEnd = 3,
+    // GCHeapStats = 4,
+    // GCCreateSegment = 5,
+    // GCFreeSegment = 6,
+    // GCRestartEEBegin = 7,
+    // GCSuspendEEEnd = 8,
+    // GCSuspendEEBegin = 9,
+    // GCCreateConcurrentThread = 11,
+    // GCCTerminateConcurrentThread = 12,
+    // GCFinalizersEnd = 13,
+    // GCFinalizersBegin = 14,
+    BulkType = 15,
+    GCBulkRootEdge = 16,
+    GCBulkRootConditionalWeakTableElementEdge = 17,
+    GCBulkNode = 18,
+    GCBulkEdge = 19,
+    // FinalizeObject = 29,
+    // PinObjectAtGCTime = 33,
+    // GCTriggered = 35,
+    GCBulkRootStaticVar = 38,
 };
 
 
@@ -115,7 +140,7 @@ class EventParser : public EventParserBase
 {
 // TODO: probably pass a IEventListener interface that contains OnException, OnAllocationTick,...
 public:
-    EventParser(std::unordered_map<uint32_t, EventCacheMetadata>& metadata);
+    EventParser(std::unordered_map<uint32_t, EventCacheMetadata>& metadata, GcDumpState* pGcDump);
 
 protected:
     virtual bool OnParseBlob(EventBlobHeader& header, bool isCompressed, DWORD& blobSize);
@@ -129,6 +154,20 @@ private:
     bool OnExceptionThrown(DWORD payloadSize, EventCacheMetadata& metadataDef);
     bool OnAllocationTick(DWORD payloadSize, EventCacheMetadata& metadataDef);
     bool OnContentionStop(uint64_t threadId, DWORD payloadSize, EventCacheMetadata& metadataDef);
+
+    // for gcdump
+    bool OnGcStart(DWORD payloadSize, EventCacheMetadata& metadataDef);
+    bool OnGcEnd(DWORD payloadSize, EventCacheMetadata& metadataDef);
+    bool OnBulkType(DWORD payloadSize, EventCacheMetadata& metadataDef);
+    bool OnBulkNode(DWORD payloadSize, EventCacheMetadata& metadataDef);
+    bool OnBulkEdge(DWORD payloadSize, EventCacheMetadata& metadataDef);
+
+// helpers
+private:
+    std::string ToString(const wchar_t* str);
+
+private:
+    GcDumpState* _pGcDump;
 };
 
 

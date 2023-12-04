@@ -24,7 +24,8 @@ public:
     // EVENTPIPE
     // The Stop command to cancel the receiving of CLR events (hence returning from EventPipeSession::Listen())
     //
-    EventPipeSession* OpenEventPipeSession(uint64_t keywords, EventVerbosityLevel verbosity);
+    // TODO: could be interesting to have an overload only with GcDumpState
+    EventPipeSession* OpenEventPipeSession(GcDumpState* pGcDump, uint64_t keywords, EventVerbosityLevel verbosity);
     bool StopEventPipeSession(uint64_t sessionId);
 
     // DUMP

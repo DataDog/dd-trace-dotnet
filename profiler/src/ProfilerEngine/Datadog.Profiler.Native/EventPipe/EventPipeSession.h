@@ -18,12 +18,12 @@ public:
 };
 
 
-// TODO: define an interface IIEventPipeSession because it will propably
+// TODO: define an interface IIEventPipeSession because it will probably
 //       be used by the profilers pipeline. Maybe just mocking IIpcEndPoint could be enough
 class EventPipeSession
 {
 public:
-    EventPipeSession(int pid, IIpcEndpoint* pEndpoint, uint64_t sessionId);
+    EventPipeSession(int pid, GcDumpState* pGcDump, IIpcEndpoint* pEndpoint, uint64_t sessionId);
     ~EventPipeSession();
 
     bool Listen();

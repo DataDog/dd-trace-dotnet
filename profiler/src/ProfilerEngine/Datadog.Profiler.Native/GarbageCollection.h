@@ -5,29 +5,31 @@
 
 #include <cstdint>
 
-enum GCReason
-{
-    AllocSmall,
-    Induced,
-    LowMemory,
-    Empty,
-    AllocLarge,
-    OutOfSpaceSOH,
-    OutOfSpaceLOH,
-    InducedNotForced,
-    Internal,
-    InducedLowMemory,
-    InducedCompacting,
-    LowMemoryHost,
-    PMFullGC,
-    LowMemoryHostBlocking
-};
 
+// from ClrTraceEventParser.cs
 enum GCType
 {
-    NonConcurrentGC,
-    BackgroundGC,
-    ForegroundGC
+    NonConcurrentGC = 0, // A 'blocking' GC.
+    BackgroundGC = 1,    // A Gen 2 GC happening while code continues to run
+    ForegroundGC = 2,    // A Gen 0 or Gen 1 blocking GC which is happening when a Background GC is in progress.
+};
+
+enum GCReason
+{
+    AllocSmall = 0,
+    Induced = 1,
+    LowMemory = 2,
+    Empty = 3,
+    AllocLarge = 4,
+    OutOfSpaceSOH = 5,
+    OutOfSpaceLOH = 6,
+    InducedNotForced = 7,
+    Internal = 8,
+    InducedLowMemory = 9,
+    InducedCompacting = 10,
+    LowMemoryHost = 11,
+    PMFullGC = 12,
+    LowMemoryHostBlocking = 13
 };
 
 enum GCGlobalMechanisms

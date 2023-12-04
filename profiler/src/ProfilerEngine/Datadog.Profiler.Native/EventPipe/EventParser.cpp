@@ -3,10 +3,10 @@
 #include "DiagnosticsProtocol.h"
 #include "BlockParser.h"
 
-
-EventParser::EventParser(std::unordered_map<uint32_t, EventCacheMetadata>& metadata)
+EventParser::EventParser(std::unordered_map<uint32_t, EventCacheMetadata>& metadata, GcDumpState* pGcDump)
     :
-    EventParserBase(metadata)
+    EventParserBase(metadata),
+    _pGcDump(pGcDump)
 {
 }
 
@@ -77,6 +77,44 @@ bool EventParser::OnParseBlob(EventBlobHeader& header, bool isCompressed, DWORD&
             }
             break;
 
+        // events related to .gcdump generation
+        case EventIDs::GCStart:
+            if (!OnGcStart(header.PayloadSize, metadataDef))
+            {
+                return false;
+            }
+            break;
+
+        case EventIDs::GCEnd:
+            if (!OnGcEnd(header.PayloadSize, metadataDef))
+            {
+                return false;
+            }
+            // TODO: this is just for .gcdump POC = stop after the first GC
+            return false;
+            //break;
+
+        case EventIDs::BulkType:
+            if (!OnBulkType(header.PayloadSize, metadataDef))
+            {
+                return false;
+            }
+            break;
+
+        case EventIDs::GCBulkNode:
+            if (!OnBulkNode(header.PayloadSize, metadataDef))
+            {
+                return false;
+            }
+            break;
+
+        case EventIDs::GCBulkEdge:
+            if (!OnBulkEdge(header.PayloadSize, metadataDef))
+            {
+                return false;
+            }
+            break;
+
         default:  // skip events we are not interested in
         {
             std::cout << "Event = " << metadataDef.EventId << "\n";
@@ -88,6 +126,399 @@ bool EventParser::OnParseBlob(EventBlobHeader& header, bool isCompressed, DWORD&
 
     return true;
 }
+
+// from clrEtwAll.man
+//  Count                   UInt32  incrementing collection count (starting at 0)
+//  Depth                   UInt32  generation (0, 1, or 2)
+//  Reason                  UInt32  see GCReason enumeration
+//  Type                    UInt32  see GCType enumeration
+//  ClrInstanceID           UInt16  Unique ID for the instance of CLR or CoreCLR.
+//  ClientSequenceNumber    UInt64  ?
+//
+bool EventParser::OnGcStart(DWORD payloadSize, EventCacheMetadata& metadataDef)
+{
+    DWORD readBytesCount = 0;
+    DWORD size = 0;
+    std::cout << "\nGC Start:\n";
+
+    uint32_t index = 0;
+    if (!ReadDWord(index))
+    {
+        std::cout << "Error while reading count\n";
+        return false;
+    }
+    readBytesCount += sizeof(index);
+    std::cout << "   Count         = #" << index << "\n";
+
+    uint32_t generation;
+    if (!ReadDWord(generation))
+    {
+        std::cout << "Error while reading depth\n";
+        return false;
+    }
+    readBytesCount += sizeof(generation);
+    std::cout << "   Depth         = " << generation << "\n";
+
+    GCReason reason;
+    uint32_t dword = 0;
+    if (!ReadDWord(dword))
+    {
+        std::cout << "Error while reading reason\n";
+        return false;
+    }
+    readBytesCount += sizeof(dword);
+    std::cout << "   Reason        = " << dword << "\n";
+    reason = (GCReason)dword;
+
+    GCType type;
+    if (!ReadDWord(dword))
+    {
+        std::cout << "Error while reading type\n";
+        return false;
+    }
+    readBytesCount += sizeof(dword);
+    std::cout << "   Type          = " << dword << "\n";
+    type = (GCType)dword;
+
+    uint16_t word = 0;
+    if (!ReadWord(word))
+    {
+        std::cout << "Error while reading CLR instance ID\n";
+        return false;
+    }
+    readBytesCount += sizeof(word);
+    std::cout << "   CLR ID        = " << word << "\n";
+
+    if (metadataDef.Version >= 2)
+    {
+        uint64_t ulong = 0;
+        if (!ReadLong(ulong))
+        {
+            std::cout << "Error while reading client sequence number\n";
+            return false;
+        }
+        readBytesCount += sizeof(ulong);
+        std::cout << "   client sequence " << ulong << "\n";
+    }
+
+    if (_pGcDump != nullptr)
+    {
+        _pGcDump->OnGcStart(index, generation, reason, type);
+    }
+
+    // skip the rest of the payload
+    return SkipBytes(payloadSize - readBytesCount);
+}
+
+//
+// Count            UInt32  collection count (matching GCStart count)
+// Depth            UInt32  collected generation
+// ClrInstanceID    UInt16  Unique ID for the instance of CLR or CoreCLR.
+//
+bool EventParser::OnGcEnd(DWORD payloadSize, EventCacheMetadata& metadataDef)
+{
+    DWORD readBytesCount = 0;
+    DWORD size = 0;
+    std::cout << "\nGC End:\n";
+
+    uint32_t index = 0;
+    if (!ReadDWord(index))
+    {
+        std::cout << "Error while reading count\n";
+        return false;
+    }
+    readBytesCount += sizeof(index);
+    std::cout << "   Count         = #" << index << "\n";
+
+    uint32_t generation;
+    if (!ReadDWord(generation))
+    {
+        std::cout << "Error while reading depth\n";
+        return false;
+    }
+    readBytesCount += sizeof(generation);
+    std::cout << "   Depth         = " << generation << "\n";
+
+    uint16_t word = 0;
+    if (!ReadWord(word))
+    {
+        std::cout << "Error while reading CLR instance ID\n";
+        return false;
+    }
+    readBytesCount += sizeof(word);
+    std::cout << "   CLR ID        = " << word << "\n";
+
+    if (_pGcDump != nullptr)
+    {
+        _pGcDump->OnGcEnd(index, generation);
+    }
+
+    // skip the rest of the payload
+    return SkipBytes(payloadSize - readBytesCount);
+}
+
+// Count           UInt32
+// ClrInstanceID   UInt16
+// --> array of
+//      TypeID          UInt64
+//      ModuleID        UInt64
+//      TypeNameID      UInt32
+//      Flags           UInt32
+//      CorElementType  UInt8
+//      Name            UnicodeString
+//      TypeParameterCount  UInt32
+//      --> array of
+//          TypeParameters  UInt64
+//
+bool EventParser::OnBulkType(DWORD payloadSize, EventCacheMetadata& metadataDef)
+{
+    DWORD readBytesCount = 0;
+    DWORD size = 0;
+    std::cout << "\nBulk Type:\n";
+
+    uint32_t dword = 0;
+    if (!ReadDWord(dword))
+    {
+        std::cout << "Error while reading count\n";
+        return false;
+    }
+    readBytesCount += sizeof(dword);
+    std::cout << "   Count         = " << dword << "\n";
+
+    uint16_t word = 0;
+    if (!ReadWord(word))
+    {
+        std::cout << "Error while reading CLR instance ID\n";
+        return false;
+    }
+    readBytesCount += sizeof(word);
+    std::cout << "   CLR ID        = " << word << "\n";
+
+    uint32_t count = dword;
+    for (size_t i = 0; i < count; i++)
+    {
+        uint64_t id;
+        uint32_t nameId;
+        bool isArray;
+        bool isGeneric;
+
+        uint64_t ulong = 0;
+        if (!ReadLong(ulong))
+        {
+            std::cout << "Error while reading type ID\n";
+            return false;
+        }
+        readBytesCount += sizeof(ulong);
+        std::cout << "      TypeID    = 0x" << std::hex << ulong << std::dec << "\n";
+        id = ulong;
+
+        if (!ReadLong(ulong))
+        {
+            std::cout << "Error while reading module ID\n";
+            return false;
+        }
+        readBytesCount += sizeof(ulong);
+        std::cout << "      ModuleID  = 0x" << std::hex << ulong << std::dec << "\n";
+
+        uint32_t dword;
+        if (!ReadDWord(dword))
+        {
+            std::cout << "Error while reading type name ID\n";
+            return false;
+        }
+        readBytesCount += sizeof(dword);
+        std::cout << "      Name ID   = 0x" << std::hex << dword << std::dec << "\n";
+        nameId = dword;
+
+        if (!ReadDWord(dword))
+        {
+            std::cout << "Error while reading flags\n";
+            return false;
+        }
+        readBytesCount += sizeof(dword);
+        std::cout << "      Flags     = 0x" << std::hex << dword << std::dec << "\n";
+        isArray = ((dword & 0x8) == 0x8);
+
+        uint8_t byte;
+        if (!ReadByte(byte))
+        {
+            std::cout << "Error while reading Cor element type\n";
+            return false;
+        }
+        readBytesCount += sizeof(byte);
+        std::cout << "      Element   = 0x" << std::hex << dword << std::dec << "\n";
+        isArray = ((dword & 0x8) == 0x8);
+
+        std::wstring strBuffer;
+        strBuffer.reserve(256);
+        if (!ReadWString(strBuffer, size))
+        {
+            std::cout << "Error while reading type name\n";
+            return false;
+        }
+        readBytesCount += size;
+        if (strBuffer.empty())
+            std::wcout << L"      Type      = ''\n";
+        else
+            std::wcout << L"      Type      = " << strBuffer.c_str() << L"\n";
+        std::string name = ToString(strBuffer.c_str());
+
+        if (!ReadDWord(dword))
+        {
+            std::cout << "Error while reading generics count\n";
+            return false;
+        }
+        readBytesCount += sizeof(dword);
+        std::cout << "      #generics = " << dword << "\n";
+        isGeneric = (dword > 0);
+
+        // skip generics parameters if any
+        for (size_t i = 0; i < dword; i++)
+        {
+            if (!ReadLong(ulong))
+            {
+                std::cout << "Error while reading generic parameter\n";
+                return false;
+            }
+            readBytesCount += sizeof(ulong);
+        }
+
+        if (_pGcDump != nullptr)
+        {
+            _pGcDump->OnTypeMapping(id, nameId, name);
+        }
+
+        std::cout << "\n";
+    }
+
+    // skip the rest of the payload
+    return SkipBytes(payloadSize - readBytesCount);
+}
+
+//
+// Index         UInt32
+// Count         UInt32
+// ClrInstanceID UInt16
+// --> array of
+//  Address   Pointer
+//  Size      UInt64
+//  TypeID    UInt64
+//  EdgeCount UInt64
+//
+bool EventParser::OnBulkNode(DWORD payloadSize, EventCacheMetadata& metadataDef)
+{
+    DWORD readBytesCount = 0;
+    DWORD size = 0;
+    std::cout << "\nBulk Node:\n";
+
+    uint32_t dword = 0;
+    if (!ReadDWord(dword))
+    {
+        std::cout << "Error while reading Index\n";
+        return false;
+    }
+    readBytesCount += sizeof(dword);
+    std::cout << "   Index         = " << dword << "\n";
+
+    if (!ReadDWord(dword))
+    {
+        std::cout << "Error while reading count\n";
+        return false;
+    }
+    readBytesCount += sizeof(dword);
+    std::cout << "   Count         = " << dword << "\n";
+
+    uint16_t word = 0;
+    if (!ReadWord(word))
+    {
+        std::cout << "Error while reading CLR instance ID\n";
+        return false;
+    }
+    readBytesCount += sizeof(word);
+    std::cout << "   CLR ID        = " << word << "\n";
+
+    uint32_t count = dword;
+    for (size_t i = 0; i < count; i++)
+    {
+        uint64_t address = 0;
+        uint64_t size = 0;
+        uint64_t typeId = 0;
+        uint64_t edgeCount = 0;
+
+        uint64_t ulong = 0;
+        if (_is64Bit)
+        {
+            if (!ReadLong(ulong))
+            {
+                std::cout << "Error while reading address\n";
+                return false;
+            }
+            readBytesCount += sizeof(ulong);
+            // std::cout << "      Address    = 0x" << std::hex << ulong << std::dec << "\n";
+            address = ulong;
+        }
+        else
+        {
+            if (!ReadDWord(dword))
+            {
+                std::cout << "Error while reading address\n";
+                return false;
+            }
+            readBytesCount += sizeof(dword);
+            // std::cout << "      Address    = 0x" << std::hex << dword << std::dec << "\n";
+            address = dword;
+        }
+
+        if (!ReadLong(ulong))
+        {
+            std::cout << "Error while reading size\n";
+            return false;
+        }
+        readBytesCount += sizeof(ulong);
+        // std::cout << "      Size       = " << ulong << "\n";
+        size = ulong;
+
+        if (!ReadLong(ulong))
+        {
+            std::cout << "Error while reading type id\n";
+            return false;
+        }
+        readBytesCount += sizeof(ulong);
+        // std::cout << "      Type ID    = 0x" << std::hex << ulong << std::dec << "\n";
+        typeId = ulong;
+
+        if (!ReadLong(ulong))
+        {
+            std::cout << "Error while reading edge count\n";
+            return false;
+        }
+        readBytesCount += sizeof(ulong);
+        // std::cout << "      Edges      = " << ulong << "\n";
+
+        if (_pGcDump != nullptr)
+        {
+            _pGcDump->AddLiveObject(address, typeId, size);
+        }
+
+        // std::cout << "\n";
+    }
+
+    return SkipBytes(payloadSize - readBytesCount);
+}
+
+//
+// Index         UInt32
+// Count         UInt32
+// ClrInstanceID UInt16
+// --> array of
+//  Value              Pointer
+//  ReferencingFieldID UInt32
+//
+bool EventParser::OnBulkEdge(DWORD payloadSize, EventCacheMetadata& metadataDef)
+{
+    return SkipBytes(payloadSize);
+}
+
 
 
 // from https://docs.microsoft.com/en-us/dotnet/framework/performance/garbage-collection-etw-events#gcallocationtick_v3-event
@@ -334,6 +765,14 @@ bool EventParser::OnExceptionThrown(DWORD payloadSize, EventCacheMetadata& metad
     return SkipBytes(payloadSize - readBytesCount);
 }
 
+
+std::string EventParser::ToString(const wchar_t* wstr)
+{
+    int size = WideCharToMultiByte(CP_ACP, 0, wstr, -1, NULL, 0, NULL, NULL);
+    char* str = (char*)alloca(size);
+    size = WideCharToMultiByte(CP_ACP, 0, wstr, -1, str, size, NULL, NULL);
+    return std::string(str);
+}
 
 
 void DumpBlobHeader(EventBlobHeader& header)

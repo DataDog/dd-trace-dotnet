@@ -52,13 +52,13 @@ bool DiagnosticsClient::GetProcessInfo(ProcessInfoRequest& request)
 }
 
 
-EventPipeSession* DiagnosticsClient::OpenEventPipeSession(uint64_t keywords, EventVerbosityLevel verbosity)
+EventPipeSession* DiagnosticsClient::OpenEventPipeSession(GcDumpState* pGcDump, uint64_t keywords, EventVerbosityLevel verbosity)
 {
     EventPipeStartRequest request;
     if (!request.Process(_pEndpoint, keywords, verbosity))
         return nullptr;
 
-    auto session = new EventPipeSession(_pid, _pEndpoint, request.SessionId);
+    auto session = new EventPipeSession(_pid, pGcDump, _pEndpoint, request.SessionId);
     return session;
 }
 

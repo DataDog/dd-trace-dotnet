@@ -16,7 +16,43 @@ DWORD WINAPI ListenToGCDumpEvents(void* pParam)
     return 0;
 }
 
-void GcDumpSession::StopDump()
+bool GcDumpSession::TriggerDump()
+{
+    if (_pClient != nullptr)
+    {
+        return false;
+    }
+
+    _pClient = DiagnosticsClient::Create(_pid, nullptr);
+    if (_pClient == nullptr)
+    {
+        return false;
+    }
+
+    _gcDumpState.Clear();
+    _pSession = _pClient->OpenEventPipeSession(
+        &_gcDumpState,
+        EventKeyword::gc | EventKeyword::gcheapcollect | EventKeyword::gcheapdump | EventKeyword::type | EventKeyword::gcheapandtypenames,
+        EventVerbosityLevel::Verbose);
+    if (_pSession == nullptr)
+    {
+        delete _pClient;
+        return false;
+    }
+
+    DWORD tid = 0;
+    _hListenerThread = ::CreateThread(nullptr, 0, ListenToGCDumpEvents, _pSession, 0, &tid);
+
+    // wait for the first GC corresponding to the .gcdump
+    // TODO: add timeout
+    ::WaitForSingleObject(_hListenerThread, INFINITE);
+
+    Cleanup();
+
+    return true;
+}
+
+void GcDumpSession::Cleanup()
 {
     if (_pSession == nullptr)
     {
@@ -33,32 +69,4 @@ void GcDumpSession::StopDump()
 
     delete _pClient;
     _pClient = nullptr;
-}
-
-bool GcDumpSession::TriggerDump()
-{
-    if (_pClient != nullptr)
-    {
-        return false;
-    }
-
-    _pClient = DiagnosticsClient::Create(_pid, nullptr);
-    if (_pClient == nullptr)
-    {
-        return false;
-    }
-
-    _pSession = _pClient->OpenEventPipeSession(
-        EventKeyword::gc | EventKeyword::gcheapcollect | EventKeyword::gcheapdump | EventKeyword::type | EventKeyword::gcheapandtypenames,
-        EventVerbosityLevel::Verbose);
-    if (_pSession == nullptr)
-    {
-        delete _pClient;
-        return false;
-    }
-
-    DWORD tid = 0;
-    _hListenerThread = ::CreateThread(nullptr, 0, ListenToGCDumpEvents, _pSession, 0, &tid);
-
-    return true;
 }

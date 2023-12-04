@@ -11,6 +11,14 @@ GcDumpState::GcDumpState() :
     _collectionIndex = 0;
 }
 
+void GcDumpState::Clear()
+{
+    _types.clear();
+    _isStarted = false;
+    _hasEnded = false;
+    _collectionIndex = 0;
+}
+
 void GcDumpState::DumpHeap()
 {
     // iterate on _types and dump the instances count + size
