@@ -16,10 +16,28 @@ using FluentAssertions.Execution;
 using Xunit;
 using Xunit.Abstractions;
 
+// ReSharper disable InconsistentNaming
+#pragma warning disable SA1402 // File may only contain a single type
+
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    // ReSharper disable once InconsistentNaming
-    public class ILoggerTests : LogsInjectionTestBase
+    public class ILoggerTests : ILoggerTestsBase
+    {
+        public ILoggerTests(ITestOutputHelper output)
+            : base(output, "LogsInjection.ILogger")
+        {
+        }
+    }
+
+    public class ILoggerExtendedLoggerTests : ILoggerTestsBase
+    {
+        public ILoggerExtendedLoggerTests(ITestOutputHelper output)
+            : base(output, "LogsInjection.ILogger.ExtendedLogger")
+        {
+        }
+    }
+
+    public class ILoggerTestsBase : LogsInjectionTestBase
     {
         private readonly LogFileTest[] _logFiles =
         {
@@ -32,8 +50,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             },
         };
 
-        public ILoggerTests(ITestOutputHelper output)
-            : base(output, "LogsInjection.ILogger")
+        public ILoggerTestsBase(ITestOutputHelper output, string sampleName)
+            : base(output, sampleName)
         {
             SetServiceVersion("1.0.0");
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
