@@ -116,6 +116,11 @@
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/8.0.0 -->
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
 
+    <!-- Integration: Microsoft.Extensions.Telemetry -->
+    <!-- Assembly: Microsoft.Extensions.Telemetry -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Telemetry/8.0.0 -->
+    <PackageReference Include="Microsoft.Extensions.Telemetry" Version="8.0.0" />
+
     <!-- Integration: Confluent.Kafka -->
     <!-- Assembly: Confluent.Kafka -->
     <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.3.0 -->

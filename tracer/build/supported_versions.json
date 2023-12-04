@@ -607,6 +607,23 @@
     ]
   },
   {
+    "integrationName": "ILogger",
+    "assemblyName": "Microsoft.Extensions.Telemetry",
+    "minAssemblyVersionInclusive": "8.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.Extensions.Telemetry",
+        "minVersionAvailableInclusive": "8.0.0",
+        "minVersionSupportedInclusive": "8.0.0",
+        "minVersionTestedInclusive": "8.0.0",
+        "maxVersionSupportedInclusive": "8.0.0",
+        "maxVersionAvailableInclusive": "8.0.0",
+        "maxVersionTestedInclusive": "8.0.0"
+      }
+    ]
+  },
+  {
     "integrationName": "Kafka",
     "assemblyName": "Confluent.Kafka",
     "minAssemblyVersionInclusive": "1.4.0",
