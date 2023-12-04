@@ -7,6 +7,7 @@
 #include "IAllocationsListener.h"
 #include "IGCSuspensionsListener.h"
 #include "Log.h"
+#include "OpSysTools.h"
 
 #include "Windows.h"
 
@@ -70,7 +71,7 @@ void EtwEventsManager::OnEvent(
         if (id == EVENT_CONTENTION_START)
         {
             auto pThreadInfo = GetOrCreate(tid);
-            pThreadInfo->ContentionStartTimestamp = timestamp;
+            pThreadInfo->ContentionStartTimestamp = OpSysTools::ConvertTicks(timestamp);
             pThreadInfo->LastEventId = EventId::ContentionStart;
         }
         else if (id == EVENT_CONTENTION_STOP)
@@ -81,10 +82,11 @@ void EtwEventsManager::OnEvent(
                 pThreadInfo->ClearLastEventId();
                 if (pThreadInfo->ContentionStartTimestamp != 0)
                 {
-                    auto duration = timestamp - pThreadInfo->ContentionStartTimestamp;
+                    auto ticks = OpSysTools::ConvertTicks(timestamp);
+                    auto duration = ticks - pThreadInfo->ContentionStartTimestamp;
                     pThreadInfo->ContentionStartTimestamp = 0;
 
-                    _pContentionListener->OnContention(timestamp, tid, duration, pThreadInfo->ContentionCallStack);
+                    _pContentionListener->OnContention(ticks, tid, duration, pThreadInfo->ContentionCallStack);
                 }
             }
             else
