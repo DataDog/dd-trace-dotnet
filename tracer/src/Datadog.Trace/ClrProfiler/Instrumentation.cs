@@ -432,12 +432,16 @@ namespace Datadog.Trace.ClrProfiler
         {
             var observers = new List<DiagnosticObserver>();
 
-            if (Tracer.Instance.Settings.AzureAppServiceMetadata?.IsFunctionsApp is not true)
+            var settings = Tracer.Instance.Settings;
+            if (settings.AzureAppServiceMetadata?.IsFunctionsApp is not true)
             {
                 // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for Azure Functions.
                 // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal
                 // This is because user code is loaded within the functions host in a separate context
-                observers.Add(new AspNetCoreDiagnosticObserver());
+                DiagnosticObserver observer = settings.SingleWebSpanEnabled
+                                                            ? new SingleSpanAspNetCoreDiagnosticObserver()
+                                                            : new AspNetCoreDiagnosticObserver();
+                observers.Add(observer);
             }
 
             var diagnosticManager = new DiagnosticManager(observers);
