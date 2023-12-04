@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -45,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
                 return CallTargetState.GetDefault();
             }
 
-            var scope = AwsDynamoDbCommon.CreateScope(Tracer.Instance, Operation, out AwsDynamoDbTags tags);
+            var scope = AwsDynamoDbCommon.CreateScope(Tracer.Instance, Operation, out AwsDynamoDbTags? tags);
             AwsDynamoDbCommon.TagBatchRequest(request, tags, scope);
 
             return new CallTargetState(scope);
@@ -61,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">CallTarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TReturn>(returnValue);

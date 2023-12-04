@@ -3,6 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #if NET6_0_OR_GREATER
+
+#nullable enable
+
 using System;
 using System.Globalization;
 using System.Net;
@@ -35,7 +38,7 @@ internal class LambdaRequestBuilder : ILambdaExtensionRequest
         return request;
     }
 
-    WebRequest ILambdaExtensionRequest.GetEndInvocationRequest(Scope scope, bool isError)
+    WebRequest ILambdaExtensionRequest.GetEndInvocationRequest(Scope? scope, bool isError)
     {
         var request = WebRequest.Create(Uri + EndInvocationPath);
         request.Method = "POST";

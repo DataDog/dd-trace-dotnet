@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,7 +31,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
 
             var record = request.Records[0].DuckCast<IContainsData>();
-            InjectTraceIntoData(record, context);
+            if (record is not null)
+            {
+                InjectTraceIntoData(record, context);
+            }
         }
 
         public static void InjectTraceIntoData<TRecordRequest>(TRecordRequest record, SpanContext context)
@@ -72,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
         }
 
-        internal static Dictionary<string, object> ParseDataObject(MemoryStream dataStream)
+        internal static Dictionary<string, object>? ParseDataObject(MemoryStream dataStream)
         {
             try
             {
@@ -86,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             return null;
         }
 
-        public static Dictionary<string, object> MemoryStreamToDictionary(MemoryStream stream)
+        public static Dictionary<string, object>? MemoryStreamToDictionary(MemoryStream stream)
         {
             // Convert the MemoryStream to a string
             var streamReader = new StreamReader(stream);

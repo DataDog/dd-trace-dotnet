@@ -3,6 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #if NET6_0_OR_GREATER
+
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -22,7 +25,7 @@ internal abstract class LambdaCommon
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
-    internal static Scope CreatePlaceholderScope(Tracer tracer, string traceId, string samplingPriority)
+    internal static Scope CreatePlaceholderScope(Tracer tracer, string? traceId, string? samplingPriority)
     {
         Span span;
 
@@ -54,7 +57,7 @@ internal abstract class LambdaCommon
         return tracer.TracerManager.ScopeManager.Activate(span, false);
     }
 
-    internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
+    internal static Scope? SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string>? context)
     {
         var request = requestBuilder.GetStartInvocationRequest();
         WriteRequestPayload(request, data);
@@ -70,7 +73,7 @@ internal abstract class LambdaCommon
         return null;
     }
 
-    internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
+    internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope? scope, bool isError, string data)
     {
         var request = requestBuilder.GetEndInvocationRequest(scope, isError);
         WriteRequestPayload(request, data);
@@ -80,7 +83,7 @@ internal abstract class LambdaCommon
         }
     }
 
-    internal static async Task EndInvocationAsync(string returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
+    internal static async Task EndInvocationAsync(string returnValue, Exception? exception, Scope? scope, ILambdaExtensionRequest requestBuilder)
     {
         try
         {
@@ -121,7 +124,7 @@ internal abstract class LambdaCommon
         dataStream.Close();
     }
 
-    private static void WriteRequestHeaders(WebRequest request, IDictionary<string, string> context)
+    private static void WriteRequestHeaders(WebRequest request, IDictionary<string, string>? context)
     {
         if (context != null)
         {
@@ -132,7 +135,7 @@ internal abstract class LambdaCommon
         }
     }
 
-    internal static void Log(string message, Exception ex = null, bool debug = true)
+    internal static void Log(string message, Exception? ex = null, bool debug = true)
     {
         if (!debug || EnvironmentHelpers.GetEnvironmentVariable(LogLevelEnvName)?.ToLower() == "debug")
         {
