@@ -1,0 +1,37 @@
+name: Verify nullability file changes have been persisted
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify_files_without_nullability:
+    runs-on: windows-latest
+
+    steps:
+      - name: Support longpaths
+        run: git config --system core.longpaths true
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '8.0.100'
+
+      - name: "Removing existing missing-nullability-files.csv"
+        run: Get-ChildItem –Path ".\tracer\missing-nullability-files.csv" | Remove-Item
+
+      - name: "Regenerating missing-nullability-files.csv"
+        run: .\tracer\build.ps1 BuildTracerHome CreateMissingNullabilityFile
+
+      - name: "Verify no changes in missing-nullability-files.csv"
+        run: |
+          git diff --quiet -- .\tracer
+          if ($LASTEXITCODE -eq 1) {
+            git diff -- .\tracer
+            Write-Error "Found changes in missing-nullability-files.csv. Build the solution locally and ensure you have committed the Datadog.Trace.Trimming.xml changes."
+            Exit 1
+          } else {
+            echo "No changes found to generated files"
+          }

@@ -2165,6 +2165,44 @@ partial class Build
             }
         });
 
+    Target CreateMissingNullabilityFile => _ => _
+        .Description("Create missing-nullability-files.csv file for tracking nullability in the repo")
+        .Executes(() =>
+        {
+            var include = TracerDirectory.GlobFiles("src/Datadog.Trace/**/*.cs");
+            var exclude = TracerDirectory.GlobFiles(
+                "src/Datadog.Trace/obj/**",
+                "src/Datadog.Trace/Generated/**",
+                "src/Datadog.Trace/Vendors/**"
+            );
+
+            var sourceFiles = include.Except(exclude);
+
+            var sb = new StringBuilder();
+            foreach (var file in sourceFiles)
+            {
+                bool missingNullability = true;
+
+                foreach (var line in File.ReadLines(file))
+                {
+                    if (line.Contains("#nullable enable"))
+                    {
+                        missingNullability = false;
+                        break;        
+                    }
+                }
+
+                if (missingNullability)
+                {
+                    sb.AppendLine(TracerDirectory.GetUnixRelativePathTo(file));
+                }
+            }
+
+            var csvFilePath = TracerDirectory / "missing-nullability-files.csv";
+            File.WriteAllText(csvFilePath, sb.ToString());
+            Serilog.Log.Information("File saved: {File}", csvFilePath);
+        });
+
     Target CreateRootDescriptorsFile => _ => _
        .Description("Create RootDescriptors.xml file")
        .DependsOn(CompileManagedSrc)
