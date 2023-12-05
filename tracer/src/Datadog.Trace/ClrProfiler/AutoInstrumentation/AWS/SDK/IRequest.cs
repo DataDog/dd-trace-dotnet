@@ -17,12 +17,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         /// <summary>
         /// Gets the service endpoint
         /// </summary>
-        Uri? Endpoint { get; }
+        Uri Endpoint { get; }
 
         /// <summary>
         /// Gets the HTTP method
         /// </summary>
-        string? HttpMethod { get; }
+        string HttpMethod { get; }
 
         /// <summary>
         /// Gets the resource path

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -23,8 +25,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         static CachedMessageHeadersHelper()
         {
             // Initialize delegate for creating a MessageAttributeValue object
-            var messageAttributeValueType = typeof(TMarkerType).Assembly.GetType("Amazon.SimpleNotificationService.Model.MessageAttributeValue");
-            var messageAttributeValueCtor = messageAttributeValueType.GetConstructor(System.Type.EmptyTypes);
+            var messageAttributeValueType = typeof(TMarkerType).Assembly.GetType("Amazon.SimpleNotificationService.Model.MessageAttributeValue")!;
+            var messageAttributeValueCtor = messageAttributeValueType.GetConstructor(System.Type.EmptyTypes)!;
 
             DynamicMethod createMessageAttributeValueMethod = new DynamicMethod(
                 $"SnsCachedMessageHeadersHelpers",
@@ -38,11 +40,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             messageAttributeIL.Emit(OpCodes.Dup);
             messageAttributeIL.Emit(OpCodes.Ldstr, StringDataType);
-            messageAttributeIL.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("DataType").GetSetMethod());
+            messageAttributeIL.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("DataType")!.GetSetMethod()!);
 
             messageAttributeIL.Emit(OpCodes.Dup);
             messageAttributeIL.Emit(OpCodes.Ldarg_0);
-            messageAttributeIL.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("BinaryValue").GetSetMethod());
+            messageAttributeIL.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("BinaryValue")!.GetSetMethod()!);
 
             messageAttributeIL.Emit(OpCodes.Ret);
 
@@ -51,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             // Initialize delegate for creating a Dictionary<string, MessageAttributeValue> object
             var genericDictType = typeof(Dictionary<,>);
             var constructedDictType = genericDictType.MakeGenericType(new Type[] { typeof(string), messageAttributeValueType });
-            ConstructorInfo dictionaryCtor = constructedDictType.GetConstructor(System.Type.EmptyTypes);
+            ConstructorInfo dictionaryCtor = constructedDictType.GetConstructor(System.Type.EmptyTypes)!;
 
             DynamicMethod createDictMethod = new DynamicMethod(
                 $"SnsCachedMessageHeadersHelpers",

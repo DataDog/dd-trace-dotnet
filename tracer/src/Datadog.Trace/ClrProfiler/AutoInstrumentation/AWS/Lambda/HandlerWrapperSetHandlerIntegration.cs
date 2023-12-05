@@ -4,6 +4,9 @@
 // </copyright>
 
 #if NET6_0_OR_GREATER
+
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -66,11 +69,11 @@ public class HandlerWrapperSetHandlerIntegration
     {
         public bool PreserveAsyncContext => false;
 
-        public object OnDelegateBegin<TArg1>(object sender, ref TArg1 arg)
+        public object OnDelegateBegin<TArg1>(object? sender, ref TArg1 arg)
         {
             LambdaCommon.Log("DelegateWrapper Running OnDelegateBegin");
 
-            Scope scope;
+            Scope? scope;
             var proxyInstance = arg.DuckCast<IInvocationRequest>();
             if (proxyInstance == null)
             {
@@ -87,19 +90,19 @@ public class HandlerWrapperSetHandlerIntegration
             return new CallTargetState(scope);
         }
 
-        public void OnException(object sender, Exception ex)
+        public void OnException(object? sender, Exception ex)
         {
             LambdaCommon.Log("OnDelegateBegin could not send payload to the extension", ex, false);
         }
 
-        public TReturn OnDelegateEnd<TReturn>(object sender, TReturn returnValue, Exception exception, object state)
+        public TReturn OnDelegateEnd<TReturn>(object? sender, TReturn returnValue, Exception? exception, object? state)
         {
             // Needed in order to make this Async1Callbacks work with Func1Wrapper, which expects IReturnCallback
             return returnValue;
         }
 
         /// <inheritdoc/>
-        public async Task<TInnerReturn> OnDelegateEndAsync<TInnerReturn>(object sender, TInnerReturn returnValue, Exception exception, object state)
+        public async Task<TInnerReturn> OnDelegateEndAsync<TInnerReturn>(object? sender, TInnerReturn returnValue, Exception? exception, object? state)
         {
             LambdaCommon.Log("DelegateWrapper Running OnDelegateEndAsync");
             try

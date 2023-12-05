@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -23,8 +25,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         static CachedMessageHeadersHelper()
         {
             // Initialize delegate for creating a MessageAttributeValue object
-            var messageAttributeValueType = typeof(TMarkerType).Assembly.GetType("Amazon.SQS.Model.MessageAttributeValue");
-            var messageAttributeValueCtor = messageAttributeValueType.GetConstructor(System.Type.EmptyTypes);
+            var messageAttributeValueType = typeof(TMarkerType).Assembly.GetType("Amazon.SQS.Model.MessageAttributeValue")!;
+            var messageAttributeValueCtor = messageAttributeValueType.GetConstructor(System.Type.EmptyTypes)!;
 
             DynamicMethod createMessageAttributeValueMethod = new DynamicMethod(
                 $"KafkaCachedMessageHeadersHelpers",
@@ -38,11 +40,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             messageAttributeIL.Emit(OpCodes.Dup);
             messageAttributeIL.Emit(OpCodes.Ldstr, StringDataType);
-            messageAttributeIL.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("DataType").GetSetMethod());
+            messageAttributeIL.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("DataType")!.GetSetMethod()!);
 
             messageAttributeIL.Emit(OpCodes.Dup);
             messageAttributeIL.Emit(OpCodes.Ldarg_0);
-            messageAttributeIL.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("StringValue").GetSetMethod());
+            messageAttributeIL.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("StringValue")!.GetSetMethod()!);
 
             messageAttributeIL.Emit(OpCodes.Ret);
 

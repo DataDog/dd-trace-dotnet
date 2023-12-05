@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<TResponseContext> OnMethodEnd<TTarget, TResponseContext>(TTarget instance, TResponseContext responseContext, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<TResponseContext> OnMethodEnd<TTarget, TResponseContext>(TTarget instance, TResponseContext responseContext, Exception? exception, in CallTargetState state)
             where TResponseContext : IResponseContext, IDuckType
         {
             if (state.Scope?.Span.Tags is AwsSdkTags tags)
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 if (state.State is IExecutionContext { RequestContext.Request: { } request })
                 {
                     var uri = request.Endpoint;
-                    var absolutePath = uri?.AbsolutePath;
+                    var absolutePath = uri.AbsolutePath;
                     var path = request.ResourcePath switch
                     {
                         null => absolutePath,
