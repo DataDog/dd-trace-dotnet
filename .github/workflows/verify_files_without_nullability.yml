@@ -30,7 +30,7 @@ jobs:
           git diff --quiet -- .\tracer
           if ($LASTEXITCODE -eq 1) {
             git diff -- .\tracer
-            Write-Error "Found changes in missing-nullability-files.csv. Build the solution locally and ensure you have committed the Datadog.Trace.Trimming.xml changes."
+            Write-Error "Found changes in missing-nullability-files.csv. Build the solution locally and ensure you have committed the missing-nullability-files.csv changes."
             Exit 1
           } else {
             echo "No changes found to generated files"
