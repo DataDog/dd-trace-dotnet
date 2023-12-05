@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using Datadog.Trace.SourceGenerators;
 
@@ -24,13 +26,13 @@ namespace Datadog.Trace.Tagging
 #pragma warning disable CS0618 // Duplicate of QueueName
         [Tag(Trace.Tags.AwsQueueName)]
 #pragma warning restore CS0618
-        public string AwsQueueName => QueueName;
+        public string? AwsQueueName => QueueName;
 
         [Tag(Trace.Tags.QueueName)]
-        public string QueueName { get; set; }
+        public string? QueueName { get; set; }
 
         [Tag(Trace.Tags.AwsQueueUrl)]
-        public string QueueUrl { get; set; }
+        public string? QueueUrl { get; set; }
 
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
@@ -38,7 +40,7 @@ namespace Datadog.Trace.Tagging
 
     internal partial class AwsSqsV1Tags : AwsSqsTags
     {
-        private string _peerServiceOverride = null;
+        private string? _peerServiceOverride = null;
 
         // For the sake of unit tests, define a default constructor
         // though the AWS SQS integration should use the constructor that takes a spanKind
@@ -60,7 +62,7 @@ namespace Datadog.Trace.Tagging
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
         [Tag(Trace.Tags.PeerService)]
-        public string PeerService
+        public string? PeerService
         {
             get
             {
@@ -75,7 +77,7 @@ namespace Datadog.Trace.Tagging
         }
 
         [Tag(Trace.Tags.PeerServiceSource)]
-        public string PeerServiceSource
+        public string? PeerServiceSource
         {
             get
             {

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using Datadog.Trace.SourceGenerators;
 
@@ -23,7 +25,7 @@ namespace Datadog.Trace.Tagging
         }
 
         [Tag(Trace.Tags.StreamName)]
-        public string StreamName { get; set; }
+        public string? StreamName { get; set; }
 
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
@@ -31,7 +33,7 @@ namespace Datadog.Trace.Tagging
 
     internal partial class AwsKinesisV1Tags : AwsKinesisTags
     {
-        private string _peerServiceOverride = null;
+        private string? _peerServiceOverride = null;
 
         // For the sake of unit tests, define a default constructor
         // though the AWS Kinesis integration should use the constructor that takes a spanKind
@@ -53,7 +55,7 @@ namespace Datadog.Trace.Tagging
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
         [Tag(Trace.Tags.PeerService)]
-        public string PeerService
+        public string? PeerService
         {
             get
             {
@@ -68,7 +70,7 @@ namespace Datadog.Trace.Tagging
         }
 
         [Tag(Trace.Tags.PeerServiceSource)]
-        public string PeerServiceSource
+        public string? PeerServiceSource
         {
             get
             {

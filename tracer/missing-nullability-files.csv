@@ -229,11 +229,6 @@ src/Datadog.Trace/Tagging/AspNetCoreEndpointTags.cs
 src/Datadog.Trace/Tagging/AspNetCoreMvcTags.cs
 src/Datadog.Trace/Tagging/AspNetCoreTags.cs
 src/Datadog.Trace/Tagging/AspNetTags.cs
-src/Datadog.Trace/Tagging/AwsDynamoDbTags.cs
-src/Datadog.Trace/Tagging/AwsKinesisTags.cs
-src/Datadog.Trace/Tagging/AwsSdkTags.cs
-src/Datadog.Trace/Tagging/AwsSnsTags.cs
-src/Datadog.Trace/Tagging/AwsSqsTags.cs
 src/Datadog.Trace/Tagging/AzureFunctionsTags.cs
 src/Datadog.Trace/Tagging/AzureServiceBusTags.cs
 src/Datadog.Trace/Tagging/CommonTags.cs
