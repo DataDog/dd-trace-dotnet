@@ -256,7 +256,11 @@ internal readonly partial struct SecurityCoordinator
     {
         if (tryToReportSchema)
         {
-            _security.ApiSecurity.TryTellWafToAnalyzeSchema(args);
+            var isApiSecurityProcessed = _security.ApiSecurity.TryTellWafToAnalyzeSchema(args);
+            if (isApiSecurityProcessed)
+            {
+                _localRootSpan.Context.TraceContext.MarkApiSecurity();
+            }
         }
 
         var result = RunWaf(args);
