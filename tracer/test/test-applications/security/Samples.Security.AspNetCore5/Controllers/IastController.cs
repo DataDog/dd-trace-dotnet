@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.DirectoryServices;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -610,6 +611,55 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content("StrictTransportSecurityMissing");
             }
+        }
+
+        // We should exclude some headers to prevent false positives:
+        // location: it is already reported in UNVALIDATED_REDIRECT vulnerability detection.
+        // Sec-WebSocket-Location, Sec-WebSocket-Accept, Upgrade, Connection: Usually the framework gets info from request
+        // access-control-allow-origin: when the header is access-control-allow-origin and the source of the tainted range is the request header origin 
+        // set-cookie: We should ignore set-cookie header if the source of all the tainted ranges are cookies
+        // Headers could store sensitive information, we should redact whole <header_value> if:
+        // <header_name> matches with this RegExp
+        // <header_value> matches with  this RegExp
+        // We should redact the sensitive information from the evidence when:
+        // Tainted range is considered sensitive value
+
+        [HttpGet("HeaderInjection")]
+        [Route("HeaderInjection")]
+        public ActionResult HeaderInjection(bool UseValueFromOriginHeader = false)
+        {
+            string defaultHeaderName = "defaultName";
+            string defaultHeaderValue = "defaultValue";
+
+            string Combine(string name1, string name2, string defaultValue)
+            {
+                var null1 = string.IsNullOrWhiteSpace(name1);
+                var null2 = string.IsNullOrWhiteSpace(name2);
+
+                if (null1 && null2)
+                {
+                    return defaultValue;
+                }
+                if (!null1 && !null2) 
+                { 
+                    return name1 + name2;
+                }
+                else
+                {
+                    return null1 ? name2 : name1;
+                }
+            }
+
+            var originValue = Request.Headers["origin"];
+            var headerValue = Request.Headers["value"];
+            var cookieValue = Request.Cookies["value"];
+            var headerName = Request.Headers["name"];
+            var cookieName = Request.Cookies["name"];
+
+            var returnedName = Combine(headerName, cookieName, defaultHeaderName);
+            var returnedValue = UseValueFromOriginHeader ? originValue.ToString() : Combine(headerValue, cookieValue, defaultHeaderValue);
+            Response.Headers.Add(returnedName, returnedValue);
+            return Content($"returned header {returnedName},{returnedValue}");
         }
     }
 }

@@ -507,5 +507,42 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content($"Redirected param:{param}\n");
         }
 
+
+        [Route("HeaderInjection")]
+        public ActionResult HeaderInjection(bool UseValueFromOriginHeader = false)
+        {
+            string defaultHeaderName = "defaultName";
+            string defaultHeaderValue = "defaultValue";
+
+            string Combine(string name1, string name2, string defaultValue)
+            {
+                var null1 = string.IsNullOrWhiteSpace(name1);
+                var null2 = string.IsNullOrWhiteSpace(name2);
+
+                if (null1 && null2)
+                {
+                    return defaultValue;
+                }
+                if (!null1 && !null2)
+                {
+                    return name1 + name2;
+                }
+                else
+                {
+                    return null1 ? name2 : name1;
+                }
+            }
+
+            var originValue = Request.Headers["origin"];
+            var headerValue = Request.Headers["value"];
+            var cookieValue = Request.Cookies["value"].Value;
+            var headerName = Request.Headers["name"];
+            var cookieName = Request.Cookies["name"].Value;
+
+            var returnedName = Combine(headerName, cookieName, defaultHeaderName);
+            var returnedValue = UseValueFromOriginHeader ? originValue.ToString() : Combine(headerValue, cookieValue, defaultHeaderValue);
+            Response.Headers.Add(returnedName, returnedValue);
+            return Content($"returned header {returnedName},{returnedValue}");
+        }
     }
 }

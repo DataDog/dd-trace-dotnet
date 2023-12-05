@@ -21,6 +21,17 @@
         document.cookie = cookie2;
         return fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin' });
     }
+
+    window.GetCookieHeaderData = function (cookie, headerName, headerValue, headerName2, headerValue2, url) {
+        document.cookie = cookie;
+        let headers = {
+            'Content-Type': 'application/json',
+            [headerName]: headerValue,
+            [headerName2]: headerValue2
+        };
+        return fetch(url, { method: 'GET', headers: headers, credentials: 'same-origin' });
+    }
+
 </script>
 
 <div class="container">
@@ -82,6 +93,7 @@
 
     <div><a href="javascript:GetCookieData('file=value1','argumentLine=value2','/Iast/ExecuteCommandFromCookie')">GET /ExecuteCommandFromCookie</a></div>
 
+    <div><a href="javascript:GetCookieHeaderData('file=value1', 'name', 'myName', 'value', 'myValue', '/Iast/HeaderInjection')">GET /HeaderInjection</a></div>
 
     <div>
         <p>
