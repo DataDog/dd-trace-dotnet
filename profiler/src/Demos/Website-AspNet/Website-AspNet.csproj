@@ -131,7 +131,6 @@
     <Compile Include="SelfInvoker.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
     <None Include="Properties\PublishProfiles\IISProfile.pubxml" />
