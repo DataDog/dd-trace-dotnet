@@ -160,6 +160,9 @@
     <Compile Include="..\Samples.Security.AspNetMvc5\Models\MiscModel.cs">
       <Link>Models\MiscModel.cs</Link>
     </Compile>
+    <Compile Include="..\Samples.Security.AspNetMvc5\Models\ApiSecurityModel.cs">
+      <Link>Models\ApiSecurityModel.cs</Link>
+    </Compile>
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\IastController.cs" />
