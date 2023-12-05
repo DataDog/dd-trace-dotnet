@@ -10,9 +10,11 @@ using System.ComponentModel;
 using System.Threading;
 using System.Web;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
@@ -26,8 +28,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MethodName = "ExecuteAsync",
         ReturnTypeName = ClrNames.HttpResponseMessageTask,
         ParameterTypeNames = new[] { HttpControllerContextTypeName, DictionaryTypeName, ClrNames.CancellationToken },
-        MinimumVersion = Major5Minor1,
-        MaximumVersion = Major5MinorX,
+        MinimumVersion = "5.1",
+        MaximumVersion = "5",
         IntegrationName = IntegrationName,
         InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
     // ReSharper disable once InconsistentNaming
@@ -38,8 +40,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private const string SystemWebHttpAssemblyName = "System.Web.Http";
         private const string HttpControllerContextTypeName = "System.Web.Http.Controllers.HttpControllerContext";
         private const string DictionaryTypeName = "System.Collections.Generic.IDictionary`2[System.String,System.Object]";
-        private const string Major5Minor1 = "5.1";
-        private const string Major5MinorX = "5";
 
         private const string IntegrationName = nameof(IntegrationId.AspNetWebApi2);
 
@@ -63,12 +63,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 Log.Debug("Starting {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
                 controllerContext.MonitorBodyAndPathParams(parameters, AspNetWebApi2Integration.HttpContextKey);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (BlockException.GetBlockException(ex) is null)
             {
                 Log.Error(ex, "Error instrumenting method {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
             }
 
             return CallTargetState.GetDefault();
+        }
+
+        internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
+        {
+            var security = Security.Instance;
+            if (security.Enabled)
+            {
+                if (response.TryDuckCast<IJsonResultWebApi>(out var actionResult))
+                {
+                    var responseObject = actionResult.Content;
+                    if (responseObject is not null)
+                    {
+                        var context = HttpContext.Current;
+                        var scope = SharedItems.TryPeekScope(context, AspNetWebApi2Integration.HttpContextKey);
+                        var securityTransport = new SecurityCoordinator(security, context, scope.Span);
+                        if (!securityTransport.IsBlocked)
+                        {
+                            var inputData = new Dictionary<string, object> { { AddressesConstants.ResponseBody, ObjectExtractor.Extract(responseObject) } };
+                            securityTransport.CheckAndBlock(inputData);
+                        }
+                    }
+                }
+            }
+
+            return response;
         }
     }
 }
