@@ -23,7 +23,6 @@ using FluentAssertions;
 using VerifyTests;
 using VerifyXunit;
 using Xunit.Abstractions;
-using static System.Net.WebRequestMethods;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
