@@ -587,6 +587,71 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
     }
+
+    // We should exclude some headers to prevent false positives:
+    // location: it is already reported in UNVALIDATED_REDIRECT vulnerability detection.
+    // Sec-WebSocket-Location, Sec-WebSocket-Accept, Upgrade, Connection: Usually the framework gets info from request
+    // access-control-allow-origin: when the header is access-control-allow-origin and the source of the tainted range is the request header origin
+    // set-cookie: We should ignore set-cookie header if the source of all the tainted ranges are cookies
+    // Headers could store sensitive information, we should redact whole <header_value> if:
+    // <header_name> matches with this RegExp
+    // <header_value> matches with  this RegExp
+    // We should redact the sensitive information from the evidence when:
+    // Tainted range is considered sensitive value
+
+    [Trait("Category", "EndToEnd")]
+    [SkippableTheory]
+    [Trait("RunOnWindows", "True")]
+    [InlineData(new string[] { "value", "vulnerableValue" }, null)]
+    [InlineData(new string[] { "name", "vulnerableValue" }, null)]
+    [InlineData(new string[] { "value", "secret_redacted" }, null)]
+    [InlineData(new string[] { "name", "redacted:bearer" }, null)]
+    [InlineData(new string[] { "name", "location", "value", "URVulnerableOnly" }, null)]
+    [InlineData(new string[] { "name", "Sec-WebSocket-Accept", "value", "notVulnerable" }, null)]
+    [InlineData(new string[] { "name", "access-control-allow-origin", "value", "Vulnerable" }, null)]
+    [InlineData(new string[] { "name", "access-control-allow-origin", "origin", "NotVulnerable" }, null, true)]
+    [InlineData(new string[] { "name", "set-cookie", "value", "Vulnerable" }, null)]
+    [InlineData(null, new string[] { "name", "set-cookie", "value", "NotVulnerable" })]
+    public async Task TestIastHeaderInjectionRequest(string[] headers, string[] cookies, bool useValueFromOriginHeader = false)
+    {
+        var filename = "Iast.HeaderInjection.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = $"/Iast/HeaderInjection?useValueFromOriginHeader={useValueFromOriginHeader}";
+        IncludeAllHttpSpans = true;
+
+        Dictionary<string, string> headersDic = new();
+        Dictionary<string, string> cookiesDic = new();
+
+        if (headers != null)
+        {
+            for (int i = 0; i < headers.Length; i = i + 2)
+            {
+                headersDic.Add(headers[i], headers[i + 1]);
+            }
+        }
+
+        if (cookies != null)
+        {
+            for (int i = 0; i < cookies.Length; i = i + 2)
+            {
+                cookiesDic.Add(cookies[i], cookies[i + 1]);
+            }
+        }
+
+        AddCookies(cookiesDic);
+        AddHeaders(headersDic);
+
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, 1, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
 }
 
 public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
