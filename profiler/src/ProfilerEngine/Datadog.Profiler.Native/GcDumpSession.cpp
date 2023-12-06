@@ -5,13 +5,18 @@ GcDumpSession::GcDumpSession(int pid)
     _pid = pid;
     _pClient = nullptr;
     _hListenerThread = nullptr;
+    _pSession = nullptr;
 }
 
-DWORD WINAPI ListenToGCDumpEvents(void* pParam)
+GcDumpSession::~GcDumpSession()
 {
-    EventPipeSession* pSession = static_cast<EventPipeSession*>(pParam);
+    Cleanup();
+}
 
-    pSession->Listen();
+DWORD WINAPI GcDumpSession::ListenToGCDumpEvents(void* pParam)
+{
+    GcDumpSession* pThis = static_cast<GcDumpSession*>(pParam);
+    pThis->_pSession->Listen();
 
     return 0;
 }
@@ -37,16 +42,17 @@ bool GcDumpSession::TriggerDump()
     if (_pSession == nullptr)
     {
         delete _pClient;
+        _pClient = nullptr;
         return false;
     }
 
     DWORD tid = 0;
-    _hListenerThread = ::CreateThread(nullptr, 0, ListenToGCDumpEvents, _pSession, 0, &tid);
+    _hListenerThread = ::CreateThread(nullptr, 0, ListenToGCDumpEvents, this, 0, &tid);
 
-    // wait for the first GC corresponding to the .gcdump
-    // TODO: add timeout
-    ::WaitForSingleObject(_hListenerThread, INFINITE);
+    // wait for the end of the first GC corresponding to the .gcdump
+    ::WaitForSingleObject(_gcDumpState._hEventStop, INFINITE);
 
+    // TODO: check that stopping in the same thread is safe
     Cleanup();
 
     return true;
@@ -64,6 +70,7 @@ void GcDumpSession::Cleanup()
     delete _pSession;
     _pSession = nullptr;
 
+    ::WaitForSingleObject(_hListenerThread, INFINITE);
     ::CloseHandle(_hListenerThread);
     _hListenerThread = nullptr;
 

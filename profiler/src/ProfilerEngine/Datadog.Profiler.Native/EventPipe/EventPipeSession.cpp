@@ -128,12 +128,13 @@ bool EventPipeSession::Listen()
         return false;
 
     // read one "object" after the other
-    // until the EventPipe gets deconnected
+    // until the EventPipe gets disconnected
     // after the Stop command has been processed
+    // or the gcdump has ended
     while (ReadNextObject())
     {
-        std::cout << "------------------------------------------------\n";
-        std::cout << "\n________________________________________________\n";
+        //std::cout << "------------------------------------------------\n";
+        //std::cout << "\n________________________________________________\n";
     }
 
     return _stopRequested;
@@ -147,7 +148,7 @@ bool EventPipeSession::Stop()
     if (_pid == -1)
         return true;
 
-    // it is neeeded to use a different ipc connection to stop the Session
+    // it is needed to use a different ipc connection to stop the Session
     DiagnosticsClient* pStopClient = DiagnosticsClient::Create(_pid, nullptr);
     pStopClient->StopEventPipeSession(SessionId);
     delete pStopClient;
@@ -405,8 +406,8 @@ bool EventPipeSession::ExtractBlock(const char* blockName, uint32_t& blockSize, 
         std::cout << "Error while extracting " << blockName << " block: 0x" << std::hex << Error << std::dec << "\n";
         return false;
     }
-    std::cout << "\n" << blockName << " block (" << blockSize << " bytes)\n";
-    DumpBuffer(_pBlock, blockSize);
+    //std::cout << "\n" << blockName << " block (" << blockSize << " bytes)\n";
+    //DumpBuffer(_pBlock, blockSize);
 
     return true;
 }
@@ -427,8 +428,8 @@ bool EventPipeSession::SkipBlock(const char* blockName)
         std::cout << "Error while reading " << blockName << " block: 0x" << std::hex << Error << std::dec << "\n";
         return false;
     }
-    std::cout << "\n" << blockName << " block (" << blockSize << " bytes)\n";
-    DumpBuffer(pBuffer, blockSize);
+    //std::cout << "\n" << blockName << " block (" << blockSize << " bytes)\n";
+    //DumpBuffer(pBuffer, blockSize);
     delete[] pBuffer;
 
     return true;
@@ -441,8 +442,8 @@ bool EventPipeSession::SkipBytes(DWORD byteCount)
     auto success = Read(pBuffer, byteCount);
     if (success)
     {
-        std::cout << "skip " << byteCount << " bytes\n";
-        DumpBuffer(pBuffer, byteCount);
+        //std::cout << "skip " << byteCount << " bytes\n";
+        //DumpBuffer(pBuffer, byteCount);
     }
 
     return success;

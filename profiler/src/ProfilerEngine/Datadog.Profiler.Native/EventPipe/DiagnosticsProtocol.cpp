@@ -357,6 +357,9 @@ bool EventPipeStopRequest::Process(IIpcEndpoint* pEndpoint, uint64_t sessionId)
     }
     delete pMessage;
 
+    // TODO: it looks like the CLR is not sending a response to the Stop message
+    //return true;
+
     // check the response
     IpcHeader response = {};
     DWORD bytesReadCount = 0;

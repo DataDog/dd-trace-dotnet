@@ -65,8 +65,8 @@ bool EventParserBase::OnParse()
     }
 
     // TODO: for debug, continue if we fail to parse the block
-    return true;
-    //return false;
+    //return true;
+    return false;
 
 }
 

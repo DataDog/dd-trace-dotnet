@@ -45,7 +45,7 @@ bool MetadataParser::OnParseBlob(EventBlobHeader& header, bool isCompressed, DWO
     }
 
     // TODO: uncomment to show blob header
-    DumpBlobHeader(header);
+    //DumpBlobHeader(header);
 
     // keep track of the only read bytes in the payload
     DWORD readBytesCount = 0;
@@ -119,7 +119,7 @@ bool MetadataParser::OnParseBlob(EventBlobHeader& header, bool isCompressed, DWO
     }
     readBytesCount += sizeof(metadataDef.Level);
 
-    DumpMetadataDefinition(metadataDef);
+    //DumpMetadataDefinition(metadataDef);
 
     // skip remaining payload
     SkipBytes(header.PayloadSize - readBytesCount);

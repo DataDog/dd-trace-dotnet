@@ -534,14 +534,14 @@ std::list<std::shared_ptr<Sample>> LibddprofExporter::GetProcessSamples()
     return samples;
 }
 
-IGcDumpProvider::gcdump_t LibddprofExporter::GetGcDump()
+bool LibddprofExporter::GetGcDump(IGcDumpProvider::gcdump_t& gcDump)
 {
     if (_gcDumpProvider == nullptr)
     {
-        return {};  // empty gc dump
+        return false;  // empty gc dump
     }
 
-    return _gcDumpProvider->Get();
+    return _gcDumpProvider->Get(gcDump);
 }
 
 void LibddprofExporter::AddProcessSamples(ddog_prof_Profile* profile, std::list<std::shared_ptr<Sample>> const& samples)
@@ -597,7 +597,8 @@ bool LibddprofExporter::Export()
 
     // Process-level samples
     auto processSamples = GetProcessSamples();
-    auto gcDump = GetGcDump();
+    IGcDumpProvider::gcdump_t gcDump;
+    auto gcDumpSuccess = GetGcDump(gcDump);
 
     for (auto& runtimeId : keys)
     {
@@ -820,6 +821,11 @@ std::string LibddprofExporter::CreateMetadata(const IGcDumpProvider::gcdump_t& g
     builder << "[";
     for (auto const& [type, count, size] : gcDump)
     {
+        if (count == 0)
+        {
+            continue;
+        }
+
         currentType++;
 
         builder << "{";

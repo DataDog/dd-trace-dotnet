@@ -153,7 +153,7 @@ private:
     std::string CreateMetadata(const IGcDumpProvider::gcdump_t& gcDump) const;
     std::vector<UpscalingInfo> GetUpscalingInfos();
     std::list<std::shared_ptr<Sample>> GetProcessSamples();
-    IGcDumpProvider::gcdump_t GetGcDump();
+    bool GetGcDump(IGcDumpProvider::gcdump_t& gcDump);
     std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
 
     static tags CommonTags;

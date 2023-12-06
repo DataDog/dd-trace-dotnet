@@ -41,6 +41,7 @@ DiagnosticsClient::~DiagnosticsClient()
     if (_pEndpoint != nullptr)
     {
         _pEndpoint->Close();
+        delete _pEndpoint;
         _pEndpoint = nullptr;
     }
 }

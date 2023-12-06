@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <stdint.h>
 
+#include "Windows.h"
+
 #include "LiveObject.h"
 #include "TypeInfo.h"
 #include "GarbageCollection.h"
@@ -15,6 +17,8 @@ class GcDumpState
 {
 public:
     GcDumpState();
+    ~GcDumpState();
+
     void DumpHeap();
     void Clear();
 
@@ -27,6 +31,7 @@ public:
 public:
     //                 typeId    Name + list of instances
     std::unordered_map<uint64_t, TypeInfo> _types;
+    HANDLE _hEventStop;
 
 private:
     bool _isStarted;

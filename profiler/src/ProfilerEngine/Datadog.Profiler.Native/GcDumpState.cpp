@@ -1,5 +1,7 @@
 #include "GcDumpState.h"
 
+#include "Windows.h"
+
 #include <iomanip>
 #include <iostream>
 
@@ -9,11 +11,33 @@ GcDumpState::GcDumpState() :
     _isStarted = false;
     _hasEnded = false;
     _collectionIndex = 0;
+    _hEventStop = ::CreateEvent(nullptr, FALSE, FALSE, nullptr);
+}
+
+GcDumpState::~GcDumpState()
+{
+    ::CloseHandle(_hEventStop);
+    _hEventStop = nullptr;
 }
 
 void GcDumpState::Clear()
 {
+    // BUG: the types are not sent after the first gcdump  :^(
     _types.clear();
+
+    // keep the type ID but clear the instances
+    //for (auto& type : _types)
+    //{
+    //    auto typeInfo = type.second;
+    //    uint64_t instancesCount = typeInfo._instances.size();
+    //    for (size_t i = 0; i < instancesCount; i++)
+    //    {
+    //        typeInfo._instances.clear();
+    //    }
+    //}
+
+    ::ResetEvent(_hEventStop);
+
     _isStarted = false;
     _hasEnded = false;
     _collectionIndex = 0;
@@ -61,6 +85,8 @@ void GcDumpState::OnGcEnd(uint32_t index, uint32_t generation)
     {
         _isStarted = false;
         _hasEnded = true;
+
+        ::SetEvent(_hEventStop);
 
         DumpHeap();
     }

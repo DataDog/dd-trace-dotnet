@@ -1,17 +1,20 @@
 #pragma once
 
 #include "EventPipe/DiagnosticsClient.h"
+#include "Windows.h"
 
 class GcDumpSession
 {
 public:
     GcDumpSession(int pid);
+    ~GcDumpSession();
 
     bool TriggerDump();
-    inline GcDumpState* GetGcDumpState() { return &_gcDumpState; }
+    inline const GcDumpState& GetGcDumpState() { return _gcDumpState; }
 
 private:
     void Cleanup();
+    static DWORD WINAPI ListenToGCDumpEvents(void* pParam);
 
 private:
     int _pid;

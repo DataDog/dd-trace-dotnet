@@ -31,7 +31,7 @@ bool EventParser::OnParseBlob(EventBlobHeader& header, bool isCompressed, DWORD&
     }
 
     // TODO: uncomment to show blob header
-    DumpBlobHeader(header);
+    //DumpBlobHeader(header);
 
     auto& metadataDef = _metadata[header.MetadataId];
     if (metadataDef.MetadataId == 0)
@@ -47,8 +47,8 @@ bool EventParser::OnParseBlob(EventBlobHeader& header, bool isCompressed, DWORD&
             return false;
         }
 
-        std::cout << "Event blob\n";
-        DumpBuffer(pBuffer, header.PayloadSize);
+        //std::cout << "Event blob\n";
+        //DumpBuffer(pBuffer, header.PayloadSize);
         delete[] pBuffer;
     }
 
@@ -90,9 +90,7 @@ bool EventParser::OnParseBlob(EventBlobHeader& header, bool isCompressed, DWORD&
             {
                 return false;
             }
-            // TODO: this is just for .gcdump POC = stop after the first GC
-            return false;
-            //break;
+            break;
 
         case EventIDs::BulkType:
             if (!OnBulkType(header.PayloadSize, metadataDef))
@@ -283,7 +281,7 @@ bool EventParser::OnBulkType(DWORD payloadSize, EventCacheMetadata& metadataDef)
         return false;
     }
     readBytesCount += sizeof(dword);
-    std::cout << "   Count         = " << dword << "\n";
+    //std::cout << "   Count         = " << dword << "\n";
 
     uint16_t word = 0;
     if (!ReadWord(word))
@@ -292,7 +290,7 @@ bool EventParser::OnBulkType(DWORD payloadSize, EventCacheMetadata& metadataDef)
         return false;
     }
     readBytesCount += sizeof(word);
-    std::cout << "   CLR ID        = " << word << "\n";
+    //std::cout << "   CLR ID        = " << word << "\n";
 
     uint32_t count = dword;
     for (size_t i = 0; i < count; i++)
@@ -309,7 +307,7 @@ bool EventParser::OnBulkType(DWORD payloadSize, EventCacheMetadata& metadataDef)
             return false;
         }
         readBytesCount += sizeof(ulong);
-        std::cout << "      TypeID    = 0x" << std::hex << ulong << std::dec << "\n";
+        //std::cout << "      TypeID    = 0x" << std::hex << ulong << std::dec << "\n";
         id = ulong;
 
         if (!ReadLong(ulong))
@@ -318,7 +316,7 @@ bool EventParser::OnBulkType(DWORD payloadSize, EventCacheMetadata& metadataDef)
             return false;
         }
         readBytesCount += sizeof(ulong);
-        std::cout << "      ModuleID  = 0x" << std::hex << ulong << std::dec << "\n";
+        //std::cout << "      ModuleID  = 0x" << std::hex << ulong << std::dec << "\n";
 
         uint32_t dword;
         if (!ReadDWord(dword))
@@ -327,7 +325,7 @@ bool EventParser::OnBulkType(DWORD payloadSize, EventCacheMetadata& metadataDef)
             return false;
         }
         readBytesCount += sizeof(dword);
-        std::cout << "      Name ID   = 0x" << std::hex << dword << std::dec << "\n";
+        //std::cout << "      Name ID   = 0x" << std::hex << dword << std::dec << "\n";
         nameId = dword;
 
         if (!ReadDWord(dword))
@@ -336,7 +334,7 @@ bool EventParser::OnBulkType(DWORD payloadSize, EventCacheMetadata& metadataDef)
             return false;
         }
         readBytesCount += sizeof(dword);
-        std::cout << "      Flags     = 0x" << std::hex << dword << std::dec << "\n";
+        //std::cout << "      Flags     = 0x" << std::hex << dword << std::dec << "\n";
         isArray = ((dword & 0x8) == 0x8);
 
         uint8_t byte;
@@ -346,7 +344,7 @@ bool EventParser::OnBulkType(DWORD payloadSize, EventCacheMetadata& metadataDef)
             return false;
         }
         readBytesCount += sizeof(byte);
-        std::cout << "      Element   = 0x" << std::hex << dword << std::dec << "\n";
+        //std::cout << "      Element   = 0x" << std::hex << dword << std::dec << "\n";
         isArray = ((dword & 0x8) == 0x8);
 
         std::wstring strBuffer;
@@ -357,10 +355,10 @@ bool EventParser::OnBulkType(DWORD payloadSize, EventCacheMetadata& metadataDef)
             return false;
         }
         readBytesCount += size;
-        if (strBuffer.empty())
-            std::wcout << L"      Type      = ''\n";
-        else
-            std::wcout << L"      Type      = " << strBuffer.c_str() << L"\n";
+        //if (strBuffer.empty())
+        //    std::wcout << L"      Type      = ''\n";
+        //else
+        //    std::wcout << L"      Type      = " << strBuffer.c_str() << L"\n";
         std::string name = ToString(strBuffer.c_str());
 
         if (!ReadDWord(dword))
@@ -369,7 +367,7 @@ bool EventParser::OnBulkType(DWORD payloadSize, EventCacheMetadata& metadataDef)
             return false;
         }
         readBytesCount += sizeof(dword);
-        std::cout << "      #generics = " << dword << "\n";
+        //std::cout << "      #generics = " << dword << "\n";
         isGeneric = (dword > 0);
 
         // skip generics parameters if any
@@ -388,7 +386,7 @@ bool EventParser::OnBulkType(DWORD payloadSize, EventCacheMetadata& metadataDef)
             _pGcDump->OnTypeMapping(id, nameId, name);
         }
 
-        std::cout << "\n";
+        //std::cout << "\n";
     }
 
     // skip the rest of the payload
@@ -409,7 +407,7 @@ bool EventParser::OnBulkNode(DWORD payloadSize, EventCacheMetadata& metadataDef)
 {
     DWORD readBytesCount = 0;
     DWORD size = 0;
-    std::cout << "\nBulk Node:\n";
+    //std::cout << "\nBulk Node:\n";
 
     uint32_t dword = 0;
     if (!ReadDWord(dword))
@@ -418,7 +416,7 @@ bool EventParser::OnBulkNode(DWORD payloadSize, EventCacheMetadata& metadataDef)
         return false;
     }
     readBytesCount += sizeof(dword);
-    std::cout << "   Index         = " << dword << "\n";
+    //std::cout << "   Index         = " << dword << "\n";
 
     if (!ReadDWord(dword))
     {
@@ -426,7 +424,7 @@ bool EventParser::OnBulkNode(DWORD payloadSize, EventCacheMetadata& metadataDef)
         return false;
     }
     readBytesCount += sizeof(dword);
-    std::cout << "   Count         = " << dword << "\n";
+    //std::cout << "   Count         = " << dword << "\n";
 
     uint16_t word = 0;
     if (!ReadWord(word))
@@ -435,7 +433,7 @@ bool EventParser::OnBulkNode(DWORD payloadSize, EventCacheMetadata& metadataDef)
         return false;
     }
     readBytesCount += sizeof(word);
-    std::cout << "   CLR ID        = " << word << "\n";
+    //std::cout << "   CLR ID        = " << word << "\n";
 
     uint32_t count = dword;
     for (size_t i = 0; i < count; i++)

@@ -13,6 +13,5 @@ public:
 public:
     virtual ~IGcDumpProvider() = default;
 
-    virtual gcdump_t Get() = 0;
-    virtual void Trigger() = 0;
+    virtual bool Get(gcdump_t& gcDump) = 0;
 };
