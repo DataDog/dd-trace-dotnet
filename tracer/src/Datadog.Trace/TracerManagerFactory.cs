@@ -48,6 +48,7 @@ namespace Datadog.Trace
         internal TracerManager CreateTracerManager(ImmutableTracerSettings settings, TracerManager previous)
         {
             // TODO: If relevant settings have not changed, continue using existing statsd/agent writer/runtime metrics etc
+            // If reusing the runtime metrics/statsd, need to propagate the new value of DD_TAGS from dynamic config
             var tracer = CreateTracerManager(
                 settings,
                 agentWriter: null,
@@ -127,6 +128,7 @@ namespace Datadog.Trace
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, scopeManager);
             logSubmissionManager = DirectLogSubmissionManager.Create(
                 logSubmissionManager,
+                settings,
                 settings.LogSubmissionSettings,
                 settings.AzureAppServiceMetadata,
                 defaultServiceName,
