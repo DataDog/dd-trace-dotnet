@@ -10,6 +10,8 @@
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <!-- Stop NuGet from complaining about vulnerable packages -->
     <NuGetAudit>false</NuGetAudit>
+	
+	<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
   </PropertyGroup>
 
   <ItemGroup>

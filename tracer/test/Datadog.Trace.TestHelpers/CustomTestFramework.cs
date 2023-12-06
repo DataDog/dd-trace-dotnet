@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers.Containers;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using Xunit;
 using Xunit.Abstractions;
@@ -140,6 +141,28 @@ namespace Datadog.Trace.TestHelpers
 
                 var tasks = new List<Task<RunSummary>>();
 
+                var containerFixtures = collections
+                    .SelectMany(c => c.TestCases)
+                    .Select(t => t.Method.ToRuntimeMethod().DeclaringType)
+                    .Where(t => t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IClassFixture<>)))
+                    .ToList();
+
+                foreach (var type in containerFixtures)
+                {
+                    // Retrieve all the types of container fixtures
+                    var fixtureTypes = type.GetInterfaces()
+                        .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IClassFixture<>))
+                        .Select(i => i.GetGenericArguments()[0])
+                        .Where(t => typeof(ContainerFixture).IsAssignableFrom(t))
+                        .ToList();
+
+                    foreach (var fixtureType in fixtureTypes)
+                    {
+                        var fixture = (ContainerFixture)Activator.CreateInstance(fixtureType);
+                        await fixture!.InitializeAsync();
+                    }
+                }
+
                 foreach (var test in collections.Where(t => !t.DisableParallelization))
                 {
                     tasks.Add(runner.RunAsync(async () => await RunTestCollectionAsync(messageBus, test.Collection, test.TestCases, cancellationTokenSource)));
@@ -157,6 +180,8 @@ namespace Datadog.Trace.TestHelpers
                 {
                     summary.Aggregate(await RunTestCollectionAsync(messageBus, test.Collection, test.TestCases, cancellationTokenSource));
                 }
+
+                await ContainersRegistry.DisposeAll();
 
                 return summary;
             }
