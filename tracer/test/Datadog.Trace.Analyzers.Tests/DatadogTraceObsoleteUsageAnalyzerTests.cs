@@ -7,8 +7,9 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
-using Verifier = Datadog.Trace.Analyzers.Test.VerifierWithDatadogTraceReference<
-    Datadog.Trace.Analyzers.DatadogTraceObsoleteUsageAnalyzer>;
+using Verifier = Datadog.Trace.Analyzers.Tests.VerifierWithDatadogTraceReference<
+    Datadog.Trace.Analyzers.DatadogTraceObsoleteUsageAnalyzer,
+    Datadog.Trace.Analyzers.DatadogTraceObsoleteUsageAnalyzerCodeFixProvider>;
 
 namespace Datadog.Trace.Analyzers.Tests;
 
@@ -46,7 +47,7 @@ public class DatadogTraceObsoleteUsageAnalyzerTests
 
         var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Warning)
            .WithLocation(0);
-        await Verifier.VerifyAnalyzerAsync(code, expected);
+        await Verifier.VerifyCodeFixAsync(code, expected, fixedCode);
     }
 
     private static string GetSampleCode(string testFragment)
