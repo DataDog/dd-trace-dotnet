@@ -5,6 +5,7 @@
     <IsPackable>true</IsPackable>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <DevelopmentDependency>true</DevelopmentDependency>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
