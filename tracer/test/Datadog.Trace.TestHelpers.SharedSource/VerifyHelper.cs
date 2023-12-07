@@ -145,6 +145,11 @@ namespace Datadog.Trace.TestHelpers
             settings.AddScrubber(builder => ReplaceRegex(builder, regex, replacement));
         }
 
+        public static void AddRegexScrubber(this VerifySettings settings, Regex regex, MatchEvaluator evaluator)
+        {
+            settings.AddScrubber(builder => ReplaceRegex(builder, regex, evaluator));
+        }
+
         public static void AddSimpleScrubber(this VerifySettings settings, string oldValue, string newValue)
         {
             settings.AddScrubber(builder => ReplaceSimple(builder, oldValue, newValue));
@@ -188,6 +193,20 @@ namespace Datadog.Trace.TestHelpers
         {
             var value = builder.ToString();
             var result = regex.Replace(value, replacement);
+
+            if (value.Equals(result, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            builder.Clear();
+            builder.Append(result);
+        }
+
+        private static void ReplaceRegex(StringBuilder builder, Regex regex, MatchEvaluator evaluator)
+        {
+            var value = builder.ToString();
+            var result = regex.Replace(value, evaluator);
 
             if (value.Equals(result, StringComparison.Ordinal))
             {

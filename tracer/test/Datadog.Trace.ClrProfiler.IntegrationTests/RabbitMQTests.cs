@@ -10,8 +10,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using FluentAssertions.Execution;
 using VerifyXunit;
 using Xunit;
@@ -21,12 +21,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [UsesVerify]
     [Trait("RequiresDockerDependency", "true")]
-    public class RabbitMQTests : TracingIntegrationTest
+    public class RabbitMQTests : TracingIntegrationTest, IClassFixture<RabbitMqFixture>
     {
-        public RabbitMQTests(ITestOutputHelper output)
+        private readonly RabbitMqFixture _rabbitMqFixture;
+
+        public RabbitMQTests(ITestOutputHelper output, RabbitMqFixture rabbitMqFixture)
             : base("RabbitMQ", output)
         {
+            _rabbitMqFixture = rabbitMqFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(rabbitMqFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -78,8 +82,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // We generate a new queue name for the "default" queue with each run
                 settings.AddScrubber(QueueScrubber.ReplaceRabbitMqQueues);
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: rabbitmq");
+                settings.AddSimpleScrubber($"out.host: {_rabbitMqFixture.Hostname}", "out.host: rabbitmq");
                 settings.AddSimpleScrubber("out.host: rabbitmq_arm64", "out.host: rabbitmq");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: rabbitmq");
+                settings.AddSimpleScrubber($"peer.service: {_rabbitMqFixture.Hostname}", "peer.service: rabbitmq");
                 settings.AddSimpleScrubber("peer.service: rabbitmq_arm64", "peer.service: rabbitmq");
 
                 var filename = $"{nameof(RabbitMQTests)}.{GetPackageVersionSuffix(packageVersion)}";

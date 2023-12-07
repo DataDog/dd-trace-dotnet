@@ -6,25 +6,30 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Testcontainers.RabbitMq;
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
 
 namespace Datadog.Trace.TestHelpers.Containers;
 
 public class RabbitMqFixture : ContainerFixture
 {
-    protected RabbitMqContainer Container => GetResource<RabbitMqContainer>("container");
+    public string Hostname => Container.Hostname;
+
+    protected IContainer Container => GetResource<IContainer>("container");
 
     public override IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables()
     {
         yield return new("RABBITMQ_HOST", Container.Hostname);
-        yield return new("RABBITMQ_PORT", Container.GetMappedPublicPort(RabbitMqBuilder.RabbitMqPort).ToString());
+        yield return new("RABBITMQ_PORT", Container.GetMappedPublicPort(5672).ToString());
     }
 
     protected override async Task InitializeResources(Action<string, object> registerResource)
     {
-        var container = new RabbitMqBuilder()
-            .WithUsername("guest")
-            .WithPassword("guest")
+        var container = new ContainerBuilder()
+            .WithImage("rabbitmq:3-management")
+            .WithName("rabbitmq")
+            .WithPortBinding(5672, true)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Server startup complete"))
             .Build();
 
         await container.StartAsync();

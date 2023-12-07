@@ -42,7 +42,13 @@ namespace Samples.Npgsql
             if (connectionString == null)
             {
                 var host = Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "localhost";
-                connectionString = $"Host={host};Username=postgres;Password=postgres;Database=postgres";
+
+                if (!int.TryParse(Environment.GetEnvironmentVariable("POSTGRES_PORT"), out var port))
+                {
+                    port = 5432;
+                }
+
+                connectionString = $"Host={host};Port={port};Username=postgres;Password=postgres;Database=postgres";
             }
 
             var connection = Activator.CreateInstance(connectionType, connectionString) as DbConnection;

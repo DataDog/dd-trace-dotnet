@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -18,12 +19,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class NpgsqlCommandTests : TracingIntegrationTest
+    public class NpgsqlCommandTests : TracingIntegrationTest, IClassFixture<PostgreSqlFixture>
     {
-        public NpgsqlCommandTests(ITestOutputHelper output)
+        private readonly PostgreSqlFixture _postgreSqlFixture;
+
+        public NpgsqlCommandTests(ITestOutputHelper output, PostgreSqlFixture postgreSqlFixture)
             : base("Npgsql", output)
         {
+            _postgreSqlFixture = postgreSqlFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(postgreSqlFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -78,6 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("Npgsql-Test-[a-zA-Z0-9]{32}"), "Npgsql-Test-GUID");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: postgres");
+            settings.AddSimpleScrubber($"out.host: {_postgreSqlFixture.Hostname}", "out.host: postgres");
             settings.AddSimpleScrubber("out.host: postgres_arm64", "out.host: postgres");
 
             var fileName = nameof(NpgsqlCommandTests);

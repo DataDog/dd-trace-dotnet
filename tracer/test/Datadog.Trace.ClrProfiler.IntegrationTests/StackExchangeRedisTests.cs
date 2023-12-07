@@ -6,10 +6,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -21,12 +23,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [Collection(nameof(StackExchangeRedisTestCollection))]
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class StackExchangeRedisTests : TracingIntegrationTest
+    public class StackExchangeRedisTests : TracingIntegrationTest, IClassFixture<StackExchangeRedisFixture>
     {
-        public StackExchangeRedisTests(ITestOutputHelper output)
+        private readonly StackExchangeRedisFixture _stackExchangeRedisFixture;
+
+        public StackExchangeRedisTests(ITestOutputHelper output, StackExchangeRedisFixture stackExchangeRedisFixture)
             : base("StackExchange.Redis", output)
         {
+            _stackExchangeRedisFixture = stackExchangeRedisFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(stackExchangeRedisFixture);
         }
 
         private enum PackageVersion
@@ -97,8 +103,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 else
                 {
                     settings.AddSimpleScrubber($"out.host: {host}", "out.host: stackexchangeredis");
+                    settings.AddSimpleScrubber($"out.host: {_stackExchangeRedisFixture.Hostname}", "out.host: stackexchangeredis");
                     settings.AddSimpleScrubber($"peer.service: {host}", "peer.service: stackexchangeredis");
+                    settings.AddSimpleScrubber($"peer.service: {_stackExchangeRedisFixture.Hostname}", "peer.service: stackexchangeredis");
                     settings.AddSimpleScrubber($"out.port: {port}", "out.port: 6379");
+                    settings.AddSimpleScrubber($"out.port: {_stackExchangeRedisFixture.Port}", "out.port: 6379");
+
+                    /*
+                     * Scrubs:
+                     *      out.host: stackexchangeredis-replica,
+                     *      out.port: 6379,
+                     *      peer.service: stackexchangeredis-replica,
+                     * (The peer.service line is optional)
+                    */
+                    settings.AddRegexScrubber(
+                        new Regex($@"(^\s*)(out\.host:\s*{Regex.Escape(_stackExchangeRedisFixture.ReplicaHostname)},)(\s*)(out\.port:\s*{_stackExchangeRedisFixture.ReplicaPort},)(\s*)(peer\.service:\s*{Regex.Escape(_stackExchangeRedisFixture.ReplicaHostname)},)?", RegexOptions.Multiline),
+                        m =>
+                        {
+                            var peerServiceReplacement = m.Groups[6].Success ? $"{m.Groups[5].Value}peer.service: stackexchangeredis-replica," : m.Groups[5].Value;
+                            return $"{m.Groups[1].Value}out.host: stackexchangeredis-replica,{m.Groups[3].Value}out.port: 6379,{peerServiceReplacement}";
+                        });
                 }
 
                 await VerifyHelper.VerifySpans(

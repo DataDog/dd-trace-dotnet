@@ -9,8 +9,6 @@
     <PackageReference Include="Testcontainers" Version="3.6.0" />
     <PackageReference Include="Testcontainers.Kafka" Version="3.6.0" />
     <PackageReference Include="Testcontainers.LocalStack" Version="3.6.0" />
-    <PackageReference Include="Testcontainers.PostgreSql" Version="3.6.0" />
-    <PackageReference Include="Testcontainers.RabbitMq" Version="3.6.0" />
   </ItemGroup>
 
   <ItemGroup>

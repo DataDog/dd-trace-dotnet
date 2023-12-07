@@ -19,11 +19,6 @@ namespace Samples.RabbitMQ
         private static readonly string routingKey = "test-routing-key";
         private static readonly string queueName = "test-queue-name";
 
-        private static string Host()
-        {
-            return Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
-        }
-
         public static void Main(string[] args)
         {
             // Test a derived type for the sync consumer from the library
@@ -61,7 +56,7 @@ namespace Samples.RabbitMQ
             string messagePrefix = $"Program.PublishAndGetDefault(useDefaultQueue: {useDefaultQueue})";
 
             // Configure and send to RabbitMQ queue
-            var factory = new ConnectionFactory() { HostName = Host() };
+            var factory = CreateConnectionFactory();
             
             using (var connection = factory.CreateConnection())
             using (var channel = connection.CreateModel())
@@ -126,7 +121,7 @@ namespace Samples.RabbitMQ
         private static void Send()
         {
             // Configure and send to RabbitMQ queue
-            var factory = new ConnectionFactory() { HostName = Host() };
+            var factory = CreateConnectionFactory();
             using(var connection = factory.CreateConnection())
             using(var channel = connection.CreateModel())
             {
@@ -166,7 +161,7 @@ namespace Samples.RabbitMQ
             _sendFinished.WaitOne();
 
             // Configure and listen to RabbitMQ queue
-            var factory = new ConnectionFactory() { HostName = Host() };
+            var factory = CreateConnectionFactory();
 #if RABBITMQ_5_0
             factory.DispatchConsumersAsync = isAsyncConsumer;
 #endif
@@ -299,6 +294,20 @@ namespace Samples.RabbitMQ
 
                 return Enumerable.Empty<string>();
             }
+        }
+
+        private static ConnectionFactory CreateConnectionFactory()
+        {
+            if (!int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var port))
+            {
+                port = 5672;
+            }
+
+            return new ConnectionFactory
+            {
+                HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost",
+                Port = port
+            };
         }
 
         enum ConsumerType
