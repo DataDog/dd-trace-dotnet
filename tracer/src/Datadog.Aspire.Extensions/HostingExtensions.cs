@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
 namespace Datadog.Aspire.Extensions;
@@ -68,6 +69,22 @@ public static class HostingExtensions
 
                         options.Endpoint = new Uri(datadogOtlpEndpoint + path);
                         options.Protocol = (OtlpExportProtocol)protocol;
+                    });
+                });
+
+                builder.Services.ConfigureOpenTelemetryMeterProvider(metrics =>
+                {
+                    metrics.AddOtlpExporter((exporterOptions, metricReaderOptions) =>
+                    {
+                        var path = protocol == OtlpExportProtocol.HttpProtobuf ? "/v1/metrics" : string.Empty;
+
+                        exporterOptions.Endpoint = new Uri(datadogOtlpEndpoint + path);
+                        exporterOptions.Protocol = (OtlpExportProtocol)protocol;
+
+                        // Set the default metric export interval to match the Datadog .NET SDK.
+                        // Datadog recommends setting the OTEL_METRIC_EXPORT_INTERVAL to 10000
+                        // to match the default Datadog metric export interval for viewing integration metric graph
+                        metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 10000;
                     });
                 });
 
