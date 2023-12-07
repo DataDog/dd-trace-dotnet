@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Trace;
 
 namespace Datadog.Aspire.Extensions;
@@ -26,50 +29,59 @@ public static class HostingExtensions
 
         if (useOtlpExporter)
         {
-            builder.Services.ConfigureOpenTelemetryTracerProvider(tracing =>
+            var otlpEndpointURL = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+            if (otlpEndpointURL is not null)
             {
-                var otlpEndpointURL = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
-                if (otlpEndpointURL is not null)
+                if (protocol is null)
                 {
-                    if (protocol is null)
+                    var envProtocol = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]?.ToLowerInvariant();
+                    protocol = envProtocol switch
                     {
-                        var envProtocol = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]?.ToLowerInvariant();
-                        protocol = envProtocol switch
-                        {
-                            "grpc" => OtlpExportProtocol.Grpc,
-                            "http/protobuf" => OtlpExportProtocol.HttpProtobuf,
-                            _ => OtlpExportProtocol.Grpc,
-                        };
-                    }
+                        "grpc" => OtlpExportProtocol.Grpc,
+                        "http/protobuf" => OtlpExportProtocol.HttpProtobuf,
+                        _ => OtlpExportProtocol.Grpc,
+                    };
+                }
 
-                    if (port is null)
+                if (port is null)
+                {
+                    port = protocol switch
                     {
-                        port = protocol switch
-                        {
-                            OtlpExportProtocol.Grpc => "4317",
-                            OtlpExportProtocol.HttpProtobuf => "4318",
-                            _ => "4317",
-                        };
-                    }
+                        OtlpExportProtocol.Grpc => "4317",
+                        OtlpExportProtocol.HttpProtobuf => "4318",
+                        _ => "4317",
+                    };
+                }
 
-                    // Add another OTLP exporter to send to Datadog.
-                    // Use the host specified in the OTEL_EXPORTER_OTLP_ENDPOINT URL
-                    // because Aspire should have now resolved the host name,
-                    // for either container-based deployments or process-based deployments
-                    var portIndex = otlpEndpointURL.LastIndexOf(':');
-                    var datadogOtlpEndpoint = $"{otlpEndpointURL.Substring(startIndex: 0, length: portIndex)}:{port}";
+                // Add another OTLP exporter to send to Datadog.
+                // Use the host specified in the OTEL_EXPORTER_OTLP_ENDPOINT URL
+                // because Aspire should have now resolved the host name,
+                // for either container-based deployments or process-based deployments
+                var portIndex = otlpEndpointURL.LastIndexOf(':');
+                var datadogOtlpEndpoint = $"{otlpEndpointURL.Substring(startIndex: 0, length: portIndex)}:{port}";
 
+                builder.Services.Configure<OpenTelemetryLoggerOptions>(logging =>
+                {
+                    logging.AddOtlpExporter(options =>
+                    {
+                        var path = protocol == OtlpExportProtocol.HttpProtobuf ? "/v1/logs" : string.Empty;
+
+                        options.Endpoint = new Uri(datadogOtlpEndpoint + path);
+                        options.Protocol = (OtlpExportProtocol)protocol;
+                    });
+                });
+
+                builder.Services.ConfigureOpenTelemetryTracerProvider(tracing =>
+                {
                     tracing.AddOtlpExporter(options =>
                     {
                         var path = protocol == OtlpExportProtocol.HttpProtobuf ? "/v1/traces" : string.Empty;
 
                         options.Endpoint = new Uri(datadogOtlpEndpoint + path);
-                        options.Protocol = protocol == OtlpExportProtocol.HttpProtobuf
-                                            ? OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf
-                                            : OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                        options.Protocol = (OtlpExportProtocol)protocol;
                     });
-                }
-            });
+                });
+            }
         }
 
         return builder;
