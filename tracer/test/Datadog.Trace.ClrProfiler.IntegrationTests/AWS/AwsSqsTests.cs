@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -20,11 +21,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class AwsSqsTests : TracingIntegrationTest
+    public class AwsSqsTests : TracingIntegrationTest, IClassFixture<LocalStackFixture>
     {
-        public AwsSqsTests(ITestOutputHelper output)
+        public AwsSqsTests(ITestOutputHelper output, LocalStackFixture localStackFixture)
             : base("AWS.SQS", output)
         {
+            ConfigureContainers(localStackFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()

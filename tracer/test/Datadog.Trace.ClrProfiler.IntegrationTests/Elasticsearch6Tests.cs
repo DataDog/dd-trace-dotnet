@@ -8,8 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -18,15 +18,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class Elasticsearch6Tests : TracingIntegrationTest
+    public class Elasticsearch6Tests : TracingIntegrationTest, IClassFixture<ElasticSearchV6Fixture>
     {
         private const string ServiceName = "Samples.Elasticsearch";
 
-        public Elasticsearch6Tests(ITestOutputHelper output)
+        private readonly ElasticSearchV6Fixture _elasticSearchFixture;
+
+        public Elasticsearch6Tests(ITestOutputHelper output, ElasticSearchV6Fixture elasticSearchV6Fixture)
             : base("Elasticsearch", output)
         {
+            _elasticSearchFixture = elasticSearchV6Fixture;
             SetServiceName(ServiceName);
             SetServiceVersion("1.0.0");
+            ConfigureContainers(elasticSearchV6Fixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -171,9 +175,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 // normalise between running directly against localhost and against elasticsearch containers
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: elasticsearch");
+                settings.AddSimpleScrubber($"out.host: {_elasticSearchFixture.Hostname}", "out.host: elasticsearch");
                 settings.AddSimpleScrubber("out.host: elasticsearch6", "out.host: elasticsearch");
                 settings.AddSimpleScrubber("out.host: elasticsearch7_arm64", "out.host: elasticsearch");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: elasticsearch");
+                settings.AddSimpleScrubber($"peer.service: {_elasticSearchFixture.Hostname}", "peer.service: elasticsearch");
                 settings.AddSimpleScrubber("peer.service: elasticsearch6", "peer.service: elasticsearch");
                 settings.AddSimpleScrubber("peer.service: elasticsearch7_arm64", "peer.service: elasticsearch");
                 if (!string.IsNullOrWhiteSpace(host))

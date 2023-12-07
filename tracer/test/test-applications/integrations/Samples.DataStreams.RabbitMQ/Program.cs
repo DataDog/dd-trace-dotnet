@@ -22,12 +22,13 @@ namespace Samples.DataStreams.RabbitMQ
         private static readonly string DirectRoutingKey = nameof(DirectRoutingKey);
         private static readonly string Message = nameof(Message);
         private static readonly string Host = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+        private static readonly int Port = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var port) ? port : 5672;
         
         public static async Task Main(string[] args)
         {
             await SampleHelpers.WaitForDiscoveryService();
 
-            var factory = new ConnectionFactory() { HostName = Host };
+            var factory = new ConnectionFactory() { HostName = Host, Port = Port };
             using var connection = factory.CreateConnection();
             using var model = connection.CreateModel();
 

@@ -158,8 +158,15 @@ namespace Datadog.Trace.TestHelpers
 
                     foreach (var fixtureType in fixtureTypes)
                     {
-                        var fixture = (ContainerFixture)Activator.CreateInstance(fixtureType);
-                        await fixture!.InitializeAsync();
+                        try
+                        {
+                            var fixture = (ContainerFixture)Activator.CreateInstance(fixtureType);
+                            await fixture!.InitializeAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"ERROR: {fixtureType.Name} ({ex.Message})"));
+                        }
                     }
                 }
 

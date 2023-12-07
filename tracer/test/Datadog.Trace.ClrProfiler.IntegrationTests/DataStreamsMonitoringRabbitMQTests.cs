@@ -9,10 +9,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using ICSharpCode.Decompiler.Util;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,12 +21,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 [UsesVerify]
 [Trait("RequiresDockerDependency", "true")]
-public class DataStreamsMonitoringRabbitMQTests : TestHelper
+public class DataStreamsMonitoringRabbitMQTests : TestHelper, IClassFixture<RabbitMqFixture>
 {
-    public DataStreamsMonitoringRabbitMQTests(ITestOutputHelper output)
+    public DataStreamsMonitoringRabbitMQTests(ITestOutputHelper output, RabbitMqFixture rabbitMqFixture)
         : base("DataStreams.RabbitMQ", output)
     {
         SetServiceVersion("1.0.0");
+        ConfigureContainers(rabbitMqFixture);
     }
 
     [SkippableTheory]

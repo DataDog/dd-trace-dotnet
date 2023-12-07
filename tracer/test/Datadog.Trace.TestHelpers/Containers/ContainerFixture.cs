@@ -5,29 +5,38 @@
 
 #nullable enable
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Containers;
 using Xunit;
 
 namespace Datadog.Trace.TestHelpers.Containers;
 
 public abstract class ContainerFixture : IAsyncLifetime
 {
-    public abstract string Name { get; }
-
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    // Technically, the property CAN be null. But in practice, InitializeAsync will always be called before the property is accessed.
-    public IContainer Container { get; private set; }
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    private IReadOnlyDictionary<string, object>? _resources;
 
     public async Task InitializeAsync()
     {
-        Container = await ContainersRegistry.GetOrAdd(Name, InitializeContainer);
+        _resources = await ContainersRegistry.GetOrAdd(GetType(), InitializeResources);
     }
 
     // Do not implement, the ContainesRegistry is responsible for disposing the containers
     public Task DisposeAsync() => Task.CompletedTask;
 
-    protected abstract Task<IContainer> InitializeContainer(ContainerBuilder builder);
+    public virtual IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables() => Enumerable.Empty<KeyValuePair<string, string>>();
+
+    protected abstract Task InitializeResources(Action<string, object> registerResource);
+
+    protected T GetResource<T>(string key) => (T)_resources![key];
+
+    private async Task<IReadOnlyDictionary<string, object>> InitializeResources()
+    {
+        var resources = new Dictionary<string, object>();
+
+        await InitializeResources(resources.Add).ConfigureAwait(false);
+
+        return resources;
+    }
 }

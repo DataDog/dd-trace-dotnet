@@ -7,30 +7,29 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Containers;
 
 namespace Datadog.Trace.TestHelpers.Containers;
 
 public static class ContainersRegistry
 {
-    private static readonly ConcurrentDictionary<string, Task<IContainer>> Containers = new();
+    private static readonly ConcurrentDictionary<Type, Task<IReadOnlyDictionary<string, object>>> Resources = new();
 
-    public static async Task<IContainer> GetOrAdd(string name, Func<ContainerBuilder, Task<IContainer>> createContainer)
+    public static async Task<IReadOnlyDictionary<string, object>> GetOrAdd(Type type, Func<Task<IReadOnlyDictionary<string, object>>> createResources)
     {
-        if (!Containers.TryGetValue(name, out var task))
+        if (!Resources.TryGetValue(type, out var task))
         {
-            var tcs = new TaskCompletionSource<IContainer>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var tcs = new TaskCompletionSource<IReadOnlyDictionary<string, object>>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            task = Containers.GetOrAdd(name, tcs.Task);
+            task = Resources.GetOrAdd(type, tcs.Task);
 
             if (task == tcs.Task)
             {
                 try
                 {
-                    var container = await createContainer(CreateBuilder()).ConfigureAwait(false);
-                    tcs.SetResult(container);
+                    var resources = await createResources().ConfigureAwait(false);
+                    tcs.SetResult(resources);
                 }
                 catch (Exception ex)
                 {
@@ -44,17 +43,30 @@ public static class ContainersRegistry
 
     public static async Task DisposeAll()
     {
-        foreach (var container in Containers.Values)
+        foreach (var resourceGroup in Resources.Values)
         {
-            await (await container).DisposeAsync();
+            try
+            {
+                var resources = await resourceGroup.ConfigureAwait(false);
+
+                foreach (var resource in resources.Values)
+                {
+                    if (resource is IAsyncDisposable asyncDisposable)
+                    {
+                        await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                    }
+                    else if (resource is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                }
+            }
+            catch
+            {
+                // Exceptions are expected here, if the container failed to initialize
+            }
         }
 
-        Containers.Clear();
-    }
-
-    private static ContainerBuilder CreateBuilder()
-    {
-        // If something needs to be added to all containers, do it here
-        return new ContainerBuilder();
+        Resources.Clear();
     }
 }
