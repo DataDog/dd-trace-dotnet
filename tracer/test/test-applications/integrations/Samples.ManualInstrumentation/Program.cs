@@ -34,7 +34,6 @@ await Tracer.Instance.ForceFlushAsync();
 // Reconfigure the tracer
 var settings = TracerSettings.FromDefaultSources();
 settings.ServiceName = "updated-name";
-settings.ServiceVersion = "updated-version";
 settings.Environment = "updated-env";
 settings.GlobalTags = new Dictionary<string, string> { { "Updated-key", "Updated Value" } };
 Tracer.Configure(settings);
