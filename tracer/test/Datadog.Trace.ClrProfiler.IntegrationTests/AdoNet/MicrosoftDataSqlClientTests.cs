@@ -8,18 +8,20 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class MicrosoftDataSqlClientTests : TracingIntegrationTest
+    public class MicrosoftDataSqlClientTests : TracingIntegrationTest, IClassFixture<SqlServerFixture>
     {
-        public MicrosoftDataSqlClientTests(ITestOutputHelper output)
+        public MicrosoftDataSqlClientTests(ITestOutputHelper output, SqlServerFixture sqlServerFixture)
             : base("Microsoft.Data.SqlClient", output)
         {
             SetServiceVersion("1.0.0");
+            ConfigureContainers(sqlServerFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()

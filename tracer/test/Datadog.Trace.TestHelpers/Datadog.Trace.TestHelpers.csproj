@@ -9,6 +9,7 @@
     <PackageReference Include="Testcontainers" Version="3.6.0" />
     <PackageReference Include="Testcontainers.Kafka" Version="3.6.0" />
     <PackageReference Include="Testcontainers.LocalStack" Version="3.6.0" />
+    <PackageReference Include="Testcontainers.MsSql" Version="3.6.0" />
   </ItemGroup>
 
   <ItemGroup>
