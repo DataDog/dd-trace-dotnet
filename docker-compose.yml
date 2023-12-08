@@ -1,5 +1,65 @@
 version: '3.4'
 services:
+  # ARM64 dependencies
+  localstack_arm64:
+    image: localstack/localstack
+    environment:
+      - SERVICES=sns,sqs,kinesis,dynamodb
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+      - DEFAULT_REGION=us-east-1
+    ports:
+      - "4566:4566"
+    volumes:
+      - "./tracer/build_data/localstack:/tmp"
+
+  elasticsearch7_arm64:
+    image: elasticsearch:7.10.1
+    ports:
+    - "9200"
+    - "9300"
+    environment:
+    - discovery.type=single-node
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+  mongo_arm64:
+    image: mongo:4.0.9
+    ports:
+      - "27017"
+    command: mongod
+
+  mysql_arm64:
+    image: mysql/mysql-server:8.0
+    environment:
+    - MYSQL_DATABASE=world
+    - MYSQL_ROOT_PASSWORD=mysqldb
+    - MYSQL_USER=mysqldb
+    - MYSQL_PASSWORD=mysqldb
+    ports:
+    - "3306"
+
+  postgres_arm64:
+    image: postgres:10.5-alpine
+    environment:
+    - POSTGRES_PASSWORD=postgres
+    - POSTGRES_USER=postgres
+    - POSTGRES_DB=postgres
+    ports:
+    - "5432"
+
+  rabbitmq_arm64:
+    image: rabbitmq:3-management
+    command: rabbitmq-server
+    ports:
+      - "5672"
+      - "15672"
+
+  servicestackredis_arm64:
+    image: redis:4-alpine
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "6379"
+
   sqledge_arm64:
     image: mcr.microsoft.com/azure-sql-edge:latest
     ports:
@@ -8,10 +68,254 @@ services:
     - ACCEPT_EULA=Y
     - SA_PASSWORD=Strong!Passw0rd
 
+  stackexchangeredis_arm64:
+    image: redis:4-alpine
+    hostname: stackexchangeredis_arm64
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "6379"
+
+  stackexchangeredis_arm64-replica:
+    image: redis:4-alpine
+    hostname: stackexchangeredis_arm64-replica
+    command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis_arm64 6379
+    ports:
+    - "127.0.0.1:6390:6379"
+
+  stackexchangeredis_arm64-single:
+    image: redis:4-alpine
+    hostname: stackexchangeredis_arm64-single
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "127.0.0.1:6391:6379"
+
+# Dependencies
+  localstack:
+    image: localstack/localstack
+    environment:
+      - SERVICES=sns,sqs,kinesis,dynamodb
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+      - DEFAULT_REGION=us-east-1
+    ports:
+      - "4566:4566"
+    volumes:
+      - "./.localstack:/tmp"
+
+  aerospike:
+    # pinning to a known good version because latest version (6.3.0.5 at time of issue)
+    # causes 'Server memory error' and flake
+    image: aerospike/aerospike-server:6.2.0.6
+    ports:
+    - "127.0.0.1:3000:3000"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    command: rabbitmq-server
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+
+  servicestackredis:
+    image: redis:4-alpine
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "127.0.0.1:6379:6379"
+
+  stackexchangeredis:
+    image: redis:4-alpine
+    hostname: stackexchangeredis
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "127.0.0.1:6389:6379"
+
+  stackexchangeredis-replica:
+    image: redis:4-alpine
+    hostname: stackexchangeredis-replica
+    command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis 6379
+    ports:
+    - "127.0.0.1:6390:6379"
+
+  stackexchangeredis-single:
+    image: redis:4-alpine
+    hostname: stackexchangeredis-single
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "127.0.0.1:6391:6379"
+
+  mongo:
+    image: mongo:4.0.9
+    ports:
+      - "127.0.0.1:27017:27017"
+    command: mongod
+
+  couchbase:
+    image: bentonam/couchbase-docker:community-5.0.1
+    ports:
+      - "8091-8094:8091-8094"
+      - "11210:11210"
+
+  elasticsearch7:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
+    ports:
+    - "127.0.0.1:9210:9200"
+    - "127.0.0.1:9310:9300"
+    environment:
+    - discovery.type=single-node
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+  elasticsearch6:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
+    ports:
+    - "127.0.0.1:9200:9200"
+    - "127.0.0.1:9300:9300"
+    environment:
+    - discovery.type=single-node
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+  elasticsearch5:
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.6.16
+    ports:
+    - "127.0.0.1:9205:9200"
+    - "127.0.0.1:9305:9300"
+    environment:
+    - discovery.type=single-node
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+  postgres:
+    image: postgres:10.5-alpine
+    environment:
+    - POSTGRES_PASSWORD=postgres
+    - POSTGRES_USER=postgres
+    - POSTGRES_DB=postgres
+    ports:
+    - "127.0.0.1:5432:5432"
+
+  mysql:
+    image: mysql/mysql-server:8.0
+    environment:
+    - MYSQL_DATABASE=world
+    - MYSQL_ROOT_PASSWORD=mysqldb
+    - MYSQL_USER=mysqldb
+    - MYSQL_PASSWORD=mysqldb
+    ports:
+    - "127.0.0.1:3307:3306"
+
+  mysql57:
+    image: mysql/mysql-server:5.7
+    environment:
+    - MYSQL_DATABASE=world
+    - MYSQL_ROOT_PASSWORD=mysqldb
+    - MYSQL_USER=mysqldb
+    - MYSQL_PASSWORD=mysqldb
+    ports:
+    - "127.0.0.1:3407:3306"
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:latest
+    ports:
+    - "127.0.0.1:1433:1433"
+    environment:
+    - ACCEPT_EULA=Y
+    - SA_PASSWORD=Strong!Passw0rd
+
   wcfservice:
     image: mcr.microsoft.com/dotnet/framework/wcf:4.8
     ports:
     - "127.0.0.1:8585:8585"
+
+  # See https://github.com/confluentinc/cp-all-in-one/blob/6.1.1-post/cp-all-in-one/docker-compose.yml
+  # For original definitions
+  kafka-zookeeper:
+    image: confluentinc/cp-zookeeper:6.1.1
+    hostname: kafka-zookeeper
+    container_name: kafka-zookeeper
+    ports:
+      - "2181:2181"
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka-broker:
+    image: confluentinc/cp-server:6.1.1
+    hostname: kafka-broker
+    container_name: kafka-broker
+    depends_on:
+      - kafka-zookeeper
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    restart: unless-stopped
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'kafka-zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://kafka-schema-registry:8081
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka-broker:29092
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'true'
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+
+  kafka-schema-registry:
+    image: confluentinc/cp-schema-registry:6.1.1
+    hostname: kafka-schema-registry
+    container_name: kafka-schema-registry
+    depends_on:
+      - kafka-broker
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: kafka-schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka-broker:29092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+
+  kafka-control-center:
+    image: confluentinc/cp-enterprise-control-center:6.1.1
+    hostname: kafka-control-center
+    container_name: kafka-control-center
+    depends_on:
+      - kafka-broker
+      - kafka-schema-registry
+    ports:
+      - "9021:9021"
+    restart: unless-stopped
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka-broker:29092'
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://kafka-schema-registry:8081"
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      PORT: 9021
+
+  kafka-rest-proxy:
+    image: confluentinc/cp-kafka-rest:6.1.1
+    depends_on:
+      - kafka-broker
+      - kafka-schema-registry
+    ports:
+      - 8082:8082
+    hostname: kafka-rest-proxy
+    container_name: kafka-rest-proxy
+    restart: unless-stopped
+    environment:
+      KAFKA_REST_HOST_NAME: kafka-rest-proxy
+      KAFKA_REST_BOOTSTRAP_SERVERS: 'kafka-broker:29092'
+      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
+      KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://kafka-schema-registry:8081'
 
   openldap:
     image: osixia/openldap:latest
@@ -143,7 +447,6 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - IncludeAllTestFrameworks
-      - AWS_SDK_HOST=localstack:4566
       - CONTAINER_HOSTNAME=http://integrationtests
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
