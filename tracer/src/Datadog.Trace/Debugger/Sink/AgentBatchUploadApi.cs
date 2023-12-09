@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Sink
@@ -21,15 +22,28 @@ namespace Datadog.Trace.Debugger.Sink
         private readonly IApiRequestFactory _apiRequestFactory;
         private string? _endpoint = null;
 
-        private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+        private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, ImmutableTracerSettings immutableTracerSettings)
         {
             _apiRequestFactory = apiRequestFactory;
-            discoveryService.SubscribeToChanges(c => _endpoint = c.DebuggerEndpoint);
+            discoveryService.SubscribeToChanges(c => _endpoint = c.DebuggerEndpoint + "?ddtags=" + FormatDDTags(immutableTracerSettings.GlobalTagsInternal));
         }
 
-        public static AgentBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+        private string FormatDDTags(IReadOnlyDictionary<String,String> globalTagsInternal)
         {
-            return new AgentBatchUploadApi(apiRequestFactory, discoveryService);
+            var sb = new StringBuilder();
+            foreach (var tag in globalTagsInternal)
+            {
+                sb.Append(tag.Key);
+                sb.Append(":");
+                sb.Append(tag.Value);
+                sb.Append(",");
+            }
+            return sb.ToString();
+        }
+
+        public static AgentBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, ImmutableTracerSettings immutableTracerSettings)
+        {
+            return new AgentBatchUploadApi(apiRequestFactory, discoveryService, immutableTracerSettings);
         }
 
         public async Task<bool> SendBatchAsync(ArraySegment<byte> snapshots)
