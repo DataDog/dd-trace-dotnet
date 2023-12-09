@@ -5,6 +5,8 @@
 
 #nullable enable
 using System;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -28,7 +30,7 @@ namespace Datadog.Trace.Debugger.Sink
             discoveryService.SubscribeToChanges(c => _endpoint = c.DebuggerEndpoint + "?ddtags=" + FormatDDTags(immutableTracerSettings.GlobalTagsInternal));
         }
 
-        private string FormatDDTags(IReadOnlyDictionary<String,String> globalTagsInternal)
+        private string FormatDDTags(IReadOnlyDictionary<string, string> globalTagsInternal)
         {
             var sb = new StringBuilder();
             foreach (var tag in globalTagsInternal)
@@ -38,6 +40,7 @@ namespace Datadog.Trace.Debugger.Sink
                 sb.Append(tag.Value);
                 sb.Append(",");
             }
+
             return sb.ToString();
         }
 
