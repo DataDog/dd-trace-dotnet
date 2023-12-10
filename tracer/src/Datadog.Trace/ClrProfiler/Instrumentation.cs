@@ -464,7 +464,7 @@ namespace Datadog.Trace.ClrProfiler
 
                     if (isDiscoverySuccessful)
                     {
-                        var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, tracer.Settings, serviceName, tracer.TracerManager.Telemetry);
+                        var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, tracer.Settings, serviceName, tracer.TracerManager.Telemetry, ((IDatadogTracer)tracer).GitMetadataTagsProvider);
 
                         Log.Debug("Initializing live debugger.");
 

@@ -6,12 +6,15 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -22,31 +25,62 @@ namespace Datadog.Trace.Debugger.Sink
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentBatchUploadApi>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
+        private readonly ImmutableTracerSettings _immutableTracerSettings;
+        private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider;
         private string? _endpoint = null;
 
-        private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, ImmutableTracerSettings immutableTracerSettings)
+        private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, ImmutableTracerSettings immutableTracerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
             _apiRequestFactory = apiRequestFactory;
-            discoveryService.SubscribeToChanges(c => _endpoint = c.DebuggerEndpoint + "?ddtags=" + FormatDDTags(immutableTracerSettings.GlobalTagsInternal));
+            _immutableTracerSettings = immutableTracerSettings;
+            _gitMetadataTagsProvider = gitMetadataTagsProvider;
+            discoveryService.SubscribeToChanges(c =>
+            {
+                _endpoint = c.DebuggerEndpoint;
+            });
         }
 
-        private string FormatDDTags(IReadOnlyDictionary<string, string> globalTagsInternal)
+        private static Uri AddDDTagsToUri(Uri debuggerEndpoint, IEnumerable<KeyValuePair<string, string>> tagsToAdd)
         {
             var sb = new StringBuilder();
-            foreach (var tag in globalTagsInternal)
+            sb.Append(debuggerEndpoint);
+            if (tagsToAdd.Any())
             {
-                sb.Append(tag.Key);
-                sb.Append(":");
-                sb.Append(tag.Value);
-                sb.Append(",");
+                sb.Append("?ddtags=");
+                bool isFirstItem = true;
+                foreach (var tag in tagsToAdd)
+                {
+                    if (isFirstItem)
+                    {
+                        isFirstItem = false;
+                    }
+                    else
+                    {
+                        sb.Append(",");
+                    }
+
+                    sb.Append(WebUtility.UrlEncode(tag.Key));
+                    sb.Append(":");
+                    sb.Append(WebUtility.UrlEncode(tag.Value));
+                }
             }
 
-            return sb.ToString();
+            return new Uri(sb.ToString());
         }
 
-        public static AgentBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, ImmutableTracerSettings immutableTracerSettings)
+        private IEnumerable<KeyValuePair<string, string>> GetGitTags(IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
-            return new AgentBatchUploadApi(apiRequestFactory, discoveryService, immutableTracerSettings);
+            // HACK - this doesn't work because git metadata may be obtained late, and then we're fucked.
+            if (gitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata) && !gitMetadata.IsEmpty)
+            {
+                yield return new KeyValuePair<string, string>(CommonTags.GitCommit, gitMetadata.CommitSha);
+                yield return new KeyValuePair<string, string>(CommonTags.GitRepository, gitMetadata.RepositoryUrl);
+            }
+        }
+
+        public static AgentBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, ImmutableTracerSettings immutableTracerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+        {
+            return new AgentBatchUploadApi(apiRequestFactory, discoveryService, immutableTracerSettings, gitMetadataTagsProvider);
         }
 
         public async Task<bool> SendBatchAsync(ArraySegment<byte> snapshots)
@@ -58,6 +92,7 @@ namespace Datadog.Trace.Debugger.Sink
             }
 
             var uri = _apiRequestFactory.GetEndpoint(endpoint);
+            uri = AddDDTagsToUri(uri, _immutableTracerSettings.GlobalTagsInternal.Concat(GetGitTags(_gitMetadataTagsProvider)));
             var request = _apiRequestFactory.Create(uri);
 
             using var response = await request.PostAsync(snapshots, MimeTypes.Json).ConfigureAwait(false);
