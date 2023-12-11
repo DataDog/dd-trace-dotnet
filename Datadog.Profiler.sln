@@ -115,6 +115,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PPDB", "shared\src\native-l
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ParallelCountSites", "profiler\src\Demos\Samples.ParallelCountSites\Samples.ParallelCountSites.csproj", "{C035C748-A864-4BBF-B214-3E5A621355F9}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GcDump", "profiler\src\Tools\GcDump\GcDump.vcxproj", "{7224135D-A4A8-4EFC-B441-59891FCF478B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -395,6 +397,18 @@ Global
 		{C035C748-A864-4BBF-B214-3E5A621355F9}.Release|x64.Build.0 = Release|x64
 		{C035C748-A864-4BBF-B214-3E5A621355F9}.Release|x86.ActiveCfg = Release|x86
 		{C035C748-A864-4BBF-B214-3E5A621355F9}.Release|x86.Build.0 = Release|x86
+		{7224135D-A4A8-4EFC-B441-59891FCF478B}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{7224135D-A4A8-4EFC-B441-59891FCF478B}.Debug|Any CPU.Build.0 = Debug|x64
+		{7224135D-A4A8-4EFC-B441-59891FCF478B}.Debug|x64.ActiveCfg = Debug|x64
+		{7224135D-A4A8-4EFC-B441-59891FCF478B}.Debug|x64.Build.0 = Debug|x64
+		{7224135D-A4A8-4EFC-B441-59891FCF478B}.Debug|x86.ActiveCfg = Debug|Win32
+		{7224135D-A4A8-4EFC-B441-59891FCF478B}.Debug|x86.Build.0 = Debug|Win32
+		{7224135D-A4A8-4EFC-B441-59891FCF478B}.Release|Any CPU.ActiveCfg = Release|x64
+		{7224135D-A4A8-4EFC-B441-59891FCF478B}.Release|Any CPU.Build.0 = Release|x64
+		{7224135D-A4A8-4EFC-B441-59891FCF478B}.Release|x64.ActiveCfg = Release|x64
+		{7224135D-A4A8-4EFC-B441-59891FCF478B}.Release|x64.Build.0 = Release|x64
+		{7224135D-A4A8-4EFC-B441-59891FCF478B}.Release|x86.ActiveCfg = Release|Win32
+		{7224135D-A4A8-4EFC-B441-59891FCF478B}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -434,6 +448,7 @@ Global
 		{30516F61-8371-4506-9369-DB4BE0DE4837} = {D2476213-2D12-43A8-966C-BCFCE098FD63}
 		{4B18A9EC-94FA-4098-A48D-83ED25E076D7} = {26D13B93-529A-4A73-824D-885CAF1DC0C0}
 		{C035C748-A864-4BBF-B214-3E5A621355F9} = {D2476213-2D12-43A8-966C-BCFCE098FD63}
+		{7224135D-A4A8-4EFC-B441-59891FCF478B} = {D2476213-2D12-43A8-966C-BCFCE098FD63}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {917C242A-028D-42FD-BA47-E7317B6A36B4}
