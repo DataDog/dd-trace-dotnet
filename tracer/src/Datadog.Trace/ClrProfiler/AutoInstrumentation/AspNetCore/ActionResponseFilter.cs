@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if !NETFRAMEWORK
 
 using Datadog.Trace.AppSec;
@@ -21,9 +23,11 @@ internal class ActionResponseFilter : IActionFilter
     public void OnActionExecuted(ActionExecutedContext context)
     {
         var security = Security.Instance;
-        if (security.Enabled && context.Result.TryDuckCast<ObjectResult>(out var result))
+        if (security.Enabled
+            && context.Result.TryDuckCast<ObjectResult>(out var result)
+            && result.Value is not null
+            && Tracer.Instance.ActiveScope.Span is Span currentSpan)
         {
-            var currentSpan = Tracer.Instance.ActiveScope.Span as Span;
             security.CheckBody(context.HttpContext, currentSpan, result.Value, response: true);
         }
     }

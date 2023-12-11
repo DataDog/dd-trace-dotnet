@@ -1,4 +1,4 @@
-﻿// <copyright file="ImmutableDirectLogSubmissionSettingsTests.cs" company="Datadog">
+// <copyright file="ImmutableDirectLogSubmissionSettingsTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -148,7 +148,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             logSettings.ApiKey.Should().Be(apiKey);
             logSettings.Host.Should().Be(hostName);
             logSettings.IntakeUrl?.ToString().Should().Be("http://localhost:1234/");
-            logSettings.GlobalTags.Should().BeOneOf("someothertag:someothervalue,sometag:value", "sometag:value,someothertag:someothervalue");
+            logSettings.GlobalTags.Should().BeEquivalentTo(new KeyValuePair<string, string>[] { new("someothertag", "someothervalue"), new("sometag", "value") });
             logSettings.IsEnabled.Should().BeTrue();
             logSettings.MinimumLevel.Should().Be(DirectSubmissionLogLevel.Information);
             logSettings.Source.Should().Be("csharp");

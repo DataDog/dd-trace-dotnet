@@ -47,7 +47,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
         public async Task DetectRuntime()
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-            using var helper = await StartConsole(enableProfiler: false, ("crash", "1"));
+            using var helper = await StartConsole(enableProfiler: false);
 
             var (standardOutput, errorOutput, _) = await RunTool($"check process {helper.Process.Id}");
 

@@ -28,6 +28,8 @@ namespace Datadog.Trace.Configuration
 
         public IReadOnlyDictionary<string, string>? ServiceNameMappings { get; init; }
 
+        public IReadOnlyDictionary<string, string>? GlobalTags { get; init; }
+
         public bool Equals(ImmutableDynamicSettings? other)
         {
             if (ReferenceEquals(null, other))
@@ -48,7 +50,8 @@ namespace Datadog.Trace.Configuration
              && SpanSamplingRules == other.SpanSamplingRules
              && LogsInjectionEnabled == other.LogsInjectionEnabled
              && AreEqual(HeaderTags, other.HeaderTags)
-             && AreEqual(ServiceNameMappings, other.ServiceNameMappings);
+             && AreEqual(ServiceNameMappings, other.ServiceNameMappings)
+             && AreEqual(GlobalTags, other.GlobalTags);
         }
 
         public override bool Equals(object? obj)
