@@ -281,7 +281,7 @@ bool EventParser::OnBulkType(DWORD payloadSize, EventCacheMetadata& metadataDef)
         return false;
     }
     readBytesCount += sizeof(dword);
-    //std::cout << "   Count         = " << dword << "\n";
+    std::cout << "   Count         = " << dword << "\n";
 
     uint16_t word = 0;
     if (!ReadWord(word))
