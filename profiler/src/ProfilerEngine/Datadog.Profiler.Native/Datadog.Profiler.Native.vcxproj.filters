@@ -376,7 +376,7 @@
     <ClInclude Include="TypeInfo.h">
       <Filter>GCDump</Filter>
     </ClInclude>
-    <ClInclude Include="GcDumpSession.h">
+    <ClInclude Include="GcDump.h">
       <Filter>GCDump</Filter>
     </ClInclude>
     <ClInclude Include="IGcDumpProvider.h">
@@ -597,7 +597,7 @@
     <ClCompile Include="TypeInfo.cpp">
       <Filter>GCDump</Filter>
     </ClCompile>
-    <ClCompile Include="GcDumpSession.cpp">
+    <ClCompile Include="GcDump.cpp">
       <Filter>GCDump</Filter>
     </ClCompile>
     <ClCompile Include="GcDumpProvider.cpp">

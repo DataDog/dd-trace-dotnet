@@ -13,6 +13,8 @@
 #include "TypeInfo.h"
 #include "GarbageCollection.h"
 
+// TODO: this fixes the padding problem too
+// #pragma pack(1)
 class GcDumpState
 {
 public:
@@ -36,5 +38,6 @@ public:
 private:
     bool _isStarted;
     bool _hasEnded;
+    uint16_t padding;  // this is needed to fix the stack corruption problem
     uint32_t _collectionIndex;
 };

@@ -1,27 +1,29 @@
-#include "GcDumpSession.h"
+#include "GcDump.h"
 
-GcDumpSession::GcDumpSession(int pid)
+GcDump::GcDump(int pid)
 {
     _pid = pid;
     _pClient = nullptr;
-    _hListenerThread = nullptr;
     _pSession = nullptr;
+    _hListenerThread = nullptr;
 }
 
-GcDumpSession::~GcDumpSession()
+GcDump::~GcDump()
 {
+    std::cout << "GcDump::~GcDump()" << std::endl;
+
     Cleanup();
 }
 
-DWORD WINAPI GcDumpSession::ListenToGCDumpEvents(void* pParam)
+DWORD WINAPI GcDump::ListenToGCDumpEvents(void* pParam)
 {
-    GcDumpSession* pThis = static_cast<GcDumpSession*>(pParam);
+    GcDump* pThis = static_cast<GcDump*>(pParam);
     pThis->_pSession->Listen();
 
     return 0;
 }
 
-bool GcDumpSession::TriggerDump()
+bool GcDump::TriggerDump()
 {
     if (_pClient != nullptr)
     {
@@ -58,7 +60,7 @@ bool GcDumpSession::TriggerDump()
     return true;
 }
 
-void GcDumpSession::Cleanup()
+void GcDump::Cleanup()
 {
     if (_pSession == nullptr)
     {

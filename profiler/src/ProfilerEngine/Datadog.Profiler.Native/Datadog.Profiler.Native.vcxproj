@@ -55,6 +55,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -62,6 +63,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -170,7 +172,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>BIT64;_DEBUG;DATADOGAUTOINSTRUMENTATIONPROFILERNATIVEWINDOWS_EXPORTS;_WINDOWS;_USRDLL;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>BIT64;_DEBUG;DATADOGAUTOINSTRUMENTATIONPROFILERNATIVEWINDOWS_EXPORTS;_WINDOWS;_USRDLL;NOMINMAX;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -252,7 +254,7 @@
     <ClInclude Include="GCBaseRawSample.h" />
     <ClInclude Include="GarbageCollectionProvider.h" />
     <ClInclude Include="GcDumpProvider.h" />
-    <ClInclude Include="GcDumpSession.h" />
+    <ClInclude Include="GcDump.h" />
     <ClInclude Include="GcDumpState.h" />
     <ClInclude Include="GCThreadsCpuProvider.h" />
     <ClInclude Include="IAllocationsRecorder.h" />
@@ -387,7 +389,7 @@
     <ClCompile Include="FrameStore.cpp" />
     <ClCompile Include="GarbageCollectionProvider.cpp" />
     <ClCompile Include="GcDumpProvider.cpp" />
-    <ClCompile Include="GcDumpSession.cpp" />
+    <ClCompile Include="GcDump.cpp" />
     <ClCompile Include="GcDumpState.cpp" />
     <ClCompile Include="GCThreadsCpuProvider.cpp" />
     <ClCompile Include="LiveObject.cpp" />

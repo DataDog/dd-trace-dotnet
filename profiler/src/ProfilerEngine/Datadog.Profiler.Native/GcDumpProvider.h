@@ -1,7 +1,7 @@
 #pragma once
 
 #include "IGcDumpProvider.h"
-#include "GcDumpSession.h"
+#include "GcDump.h"
 
 #include <memory>
 

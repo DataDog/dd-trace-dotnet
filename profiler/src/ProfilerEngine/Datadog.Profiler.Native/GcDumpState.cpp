@@ -5,7 +5,8 @@
 #include <iomanip>
 #include <iostream>
 
-GcDumpState::GcDumpState() :
+GcDumpState::GcDumpState()
+    :
     _types(1024)
 {
     _isStarted = false;
@@ -16,25 +17,33 @@ GcDumpState::GcDumpState() :
 
 GcDumpState::~GcDumpState()
 {
-    ::CloseHandle(_hEventStop);
-    _hEventStop = nullptr;
+    if (_hEventStop != nullptr)
+    {
+        if (!::CloseHandle(_hEventStop))
+        {
+            std::cout << "Failed to close Stop event handle (0x"
+                      << std::hex << ::GetLastError()
+                      << ")" << std::endl;
+        }
+        _hEventStop = nullptr;
+    }
 }
 
 void GcDumpState::Clear()
 {
     // BUG: the types are not sent after the first gcdump  :^(
-    _types.clear();
+    //_types.clear();
 
     // keep the type ID but clear the instances
-    //for (auto& type : _types)
-    //{
-    //    auto typeInfo = type.second;
-    //    uint64_t instancesCount = typeInfo._instances.size();
-    //    for (size_t i = 0; i < instancesCount; i++)
-    //    {
-    //        typeInfo._instances.clear();
-    //    }
-    //}
+    for (auto& type : _types)
+    {
+        auto typeInfo = type.second;
+        uint64_t instancesCount = typeInfo._instances.size();
+        for (size_t i = 0; i < instancesCount; i++)
+        {
+            typeInfo._instances.clear();
+        }
+    }
 
     ::ResetEvent(_hEventStop);
 

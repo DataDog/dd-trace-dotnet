@@ -3,11 +3,11 @@
 #include "EventPipe/DiagnosticsClient.h"
 #include "Windows.h"
 
-class GcDumpSession
+class GcDump
 {
 public:
-    GcDumpSession(int pid);
-    ~GcDumpSession();
+    GcDump(int pid);
+    ~GcDump();
 
     bool TriggerDump();
     inline const GcDumpState& GetGcDumpState() { return _gcDumpState; }
