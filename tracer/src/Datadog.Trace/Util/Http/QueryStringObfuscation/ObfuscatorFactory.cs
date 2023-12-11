@@ -25,7 +25,7 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Exception occured when create query string obfuscator");
+                Log.Error(ex, "Exception occurred creating query string obfuscator");
                 return new RedactAllObfuscator();
             }
         }
