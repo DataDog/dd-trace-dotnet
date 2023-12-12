@@ -35,25 +35,32 @@ internal static class ReturnedHeadersAnalyzer
     internal static void Analyze(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string protocol)
 #endif
     {
-        if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
+        try
         {
-            return;
+            if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
+            {
+                return;
+            }
+
+            IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
+            IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.HstsHeaderMissing);
+            string contentTypeValue = responseHeaders[ContentType];
+            string contentOptionValue = responseHeaders[XContentTypeOptions];
+            string strictTransportSecurityValue = responseHeaders[StrictTransportSecurity];
+            string xForwardedProtoValue = responseHeaders[XForwardedProto];
+
+            if (!IsHtmlResponse(contentTypeValue))
+            {
+                return;
+            }
+
+            LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
+            LaunchStrictTransportSecurity(integrationId, serviceName, strictTransportSecurityValue, xForwardedProtoValue, protocol);
         }
-
-        IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
-        IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.HstsHeaderMissing);
-        string contentTypeValue = responseHeaders[ContentType];
-        string contentOptionValue = responseHeaders[XContentTypeOptions];
-        string strictTransportSecurityValue = responseHeaders[StrictTransportSecurity];
-        string xForwardedProtoValue = responseHeaders[XForwardedProto];
-
-        if (!IsHtmlResponse(contentTypeValue))
+        catch (Exception error)
         {
-            return;
+            Log.Error(error, $"{nameof(ReturnedHeadersAnalyzer)} exception");
         }
-
-        LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
-        LaunchStrictTransportSecurity(integrationId, serviceName, strictTransportSecurityValue, xForwardedProtoValue, protocol);
     }
 
     private static void LaunchXContentTypeOptionsVulnerability(IntegrationId integrationId, string serviceName, string contentTypeValue, string contentOptionValue)
