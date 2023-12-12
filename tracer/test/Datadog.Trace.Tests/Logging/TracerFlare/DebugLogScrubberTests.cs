@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tests.Logging.TracerFlare;
 
 public class DebugLogScrubberTests
 {
-    [Theory]
+    [Theory(Skip = "These rely on the scrubber parsing the YAML which we don't want to do")]
     [InlineData("conf.yaml", "conf_scrubbed.yaml")]
     [InlineData("conf_multiline.yaml", "conf_multiline_scrubbed.yaml")]
     [InlineData("datadog.yaml", "datadog_scrubbed.yaml")]
@@ -29,14 +29,13 @@ public class DebugLogScrubberTests
         AssertScrubbed(source, expected);
     }
 
-    [Fact]
+    [Fact(Skip = "These rely on the scrubber parsing the JSON which we don't want to do")]
     public void ShouldScrub_Json()
     {
         var source = GetData("config.json");
         var expected = GetData("config_scrubbed.json");
 
-        var scrubber = new DebugLogScrubber();
-        var actual = scrubber.ScrubString(source);
+        var actual = DebugLogScrubber.ScrubString(source);
 
         // actual should be valid json
         // using system.text.json where available as it's more strict
@@ -292,7 +291,7 @@ public class DebugLogScrubberTests
     private static void AssertScrubbed(string source, string expected)
     {
         var scrubber = new DebugLogScrubber();
-        var actual = scrubber.ScrubString(source);
+        var actual = DebugLogScrubber.ScrubString(source);
 
         // ignore changes in line endings
         Normalise(actual).Should().Be(Normalise(expected));
