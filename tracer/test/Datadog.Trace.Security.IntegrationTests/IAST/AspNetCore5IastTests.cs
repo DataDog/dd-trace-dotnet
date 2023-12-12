@@ -221,7 +221,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
             (string.IsNullOrEmpty(xForwardedProto) ? string.Empty : "&xForwardedProto=" + xForwardedProto);
         var filename = "Iast.StrictTransportSecurity.AspNetCore5." + contentType.Replace("/", string.Empty) +
             "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(hstsHeaderValue) ? "empty" : hstsHeaderValue)
-            + (string.IsNullOrEmpty(xForwardedProto) ? "empty" : xForwardedProto);
+            + "." + (string.IsNullOrEmpty(xForwardedProto) ? "empty" : xForwardedProto);
         var url = "/Iast/StrictTransportSecurity" + queryParams;
         IncludeAllHttpSpans = true;
         await TryStartApp();
