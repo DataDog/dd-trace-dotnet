@@ -1,0 +1,15 @@
+dd_url: https://app.datadoghq.com
+
+api_key: "***************************aaaaa"
+
+proxy: http://user:********@host:port
+
+
+
+
+
+
+dogstatsd_port : 8125
+
+
+log_level: info

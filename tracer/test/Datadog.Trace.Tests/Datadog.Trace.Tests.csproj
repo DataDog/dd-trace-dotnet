@@ -62,4 +62,9 @@
     <None Remove="Telemetry\Metrics\*.json" />
     <EmbeddedResource Include="Telemetry\Metrics\*.json" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Logging\TracerFlare\Sources\*.*" />
+    <EmbeddedResource Include="Logging\TracerFlare\Sources\*.*" />
+  </ItemGroup>
 </Project>
