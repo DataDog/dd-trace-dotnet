@@ -14,9 +14,14 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
 
         internal static ObfuscatorBase GetObfuscator(double timeoutInMs, string pattern, IDatadogLogger logger, bool reportQueryString = true)
         {
-            if (string.IsNullOrEmpty(pattern) || !reportQueryString)
+            if (string.IsNullOrEmpty(pattern))
             {
                 return new NullObfuscator();
+            }
+
+            if (!reportQueryString)
+            {
+                return new RedactAllObfuscator();
             }
 
             try
