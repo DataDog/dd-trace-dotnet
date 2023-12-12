@@ -227,7 +227,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = _enableIast ? "Iast.SqlInjection.AspNetMvc5.IastEnabled" : "Iast.SqlInjection.AspNetMvc5.IastDisabled";
+        var filename = GetFileName("SqlInjection");
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
@@ -245,7 +245,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = _enableIast ? "Iast.PathTraversal.AspNetMvc5.IastEnabled" : "Iast.PathTraversal.AspNetMvc5.IastDisabled";
+        var filename = GetFileName("PathTraversal");
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
@@ -264,7 +264,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
         AddHeaders(new Dictionary<string, string>() { { "file", "file.txt" }, { "argumentLine", "arg1" } });
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = _enableIast ? "Iast.ExecuteCommandFromHeader.AspNetMvc5.IastEnabled" : "Iast.ExecuteCommandFromHeader.AspNetMvc5.IastDisabled";
+        var filename = GetFileName("ExecuteCommandFromHeader");
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
@@ -282,7 +282,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = _enableIast ? "Iast.CommandInjection.AspNetMvc5.IastEnabled" : "Iast.CommandInjection.AspNetMvc5.IastDisabled";
+        var filename = GetFileName("CommandInjection");
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
@@ -300,7 +300,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = _enableIast ? "Iast.SSRF.AspNetMvc5.IastEnabled" : "Iast.SSRF.AspNetMvc5.IastDisabled";
+        var filename = GetFileName("SSRF");
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
@@ -318,7 +318,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = _enableIast ? "Iast.WeakRandomness.AspNetMvc5.IastEnabled" : "Iast.WeakRandomness.AspNetMvc5.IastDisabled";
+        var filename = GetFileName("WeakRandomness");
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
@@ -337,7 +337,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
         var spans = await SendRequestsAsync(_iisFixture.Agent, url, body, 1, 1, string.Empty, "application/json", null);
-        var filename = _enableIast ? "Iast.RequestBodyTest.AspNetMvc5.IastEnabled" : "Iast.RequestBodyTest.AspNetMvc5.IastDisabled";
+        var filename = GetFileName("RequestBodyTest");
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
@@ -356,7 +356,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = _enableIast ? "Iast.Ldap.AspNetMvc5.IastEnabled" : "Iast.Ldap.AspNetMvc5.IastDisabled";
+        var filename = GetFileName("Ldap");
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
@@ -375,7 +375,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, null);
         AddCookies(new Dictionary<string, string>() { { "file", "file.txt" }, { "argumentLine", "arg1" } });
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = _enableIast ? "Iast.CookieTainting.AspNetMvc5.IastEnabled" : "Iast.CookieTainting.AspNetMvc5.IastDisabled";
+        var filename = GetFileName("CookieTainting");
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
@@ -387,13 +387,31 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/Tbv?name=name&value=value", null)]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/TrustBoundaryViolation?name=name&value=value", null)]
     public async Task TestIastTrustBoundaryViolationRequest(string test, string url, string body)
     {
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = _enableIast ? "Iast.TrustBoundaryViolation.AspNetMvc5.IastEnabled" : "Iast.TrustBoundaryViolation.AspNetMvc5.IastDisabled";
+        var filename = GetFileName("TrustBoundaryViolation");
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/UnvalidatedRedirect?param=value", null)]
+    public async Task TestIastUnvalidatedRedirectRequest(string test, string url, string body)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var filename = GetFileName("UnvalidatedRedirect");
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
@@ -436,5 +454,10 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     }
 
     protected override string GetTestName() => _testName;
+
+    private string GetFileName(string testName)
+    {
+        return $"Iast.{testName}.AspNetMvc5" + (_enableIast ? ".IastEnabled" : ".IastDisabled");
+    }
 }
 #endif

@@ -133,6 +133,8 @@
   "DD_HarcodedSecret_",
   "DD_TRACE_TrustBoundaryViolation_",
   "DD_TrustBoundaryViolation_",
+  "DD_TRACE_UnvalidatedRedirect_",
+  "DD_UnvalidatedRedirect_",
   "DD_TRACE_IbmMq_",
   "DD_IbmMq_",
   "DD_TRACE_Remoting_",

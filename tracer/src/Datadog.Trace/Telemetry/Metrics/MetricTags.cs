@@ -209,13 +209,14 @@ internal static class MetricTags
         [Description("integration_name:ssrf")]Ssrf,
         [Description("integration_name:ldap")]Ldap,
         [Description("integration_name:hardcodedsecret")]HardcodedSecret,
-        [Description("integration_name:trustboundaryviolation")] TrustBoundaryViolation,
         [Description("integration_name:awskinesis")]AwsKinesis,
         [Description("integration_name:azureservicebus")]AzureServiceBus,
         [Description("integration_name:systemrandom")] SystemRandom,
         [Description("integration_name:awsdynamodb")]AwsDynamoDb,
         [Description("integration_name:ibmmq")]IbmMq,
         [Description("integration_name:remoting")]Remoting,
+        [Description("integration_name:trustboundaryviolation")] TrustBoundaryViolation,
+        [Description("integration_name:unvalidatedredirect")] UnvalidatedRedirect,
     }
 
     public enum InstrumentationError
