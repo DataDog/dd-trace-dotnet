@@ -66,6 +66,14 @@ namespace Datadog.Trace.Debugger
                                   Enumerable.Empty<string>();
 
             RedactedIdentifiers = new HashSet<string>(redactedIdentifiers, StringComparer.OrdinalIgnoreCase);
+
+            var redactedTypes = config
+                                     .WithKeys(ConfigurationKeys.Debugger.RedactedTypes)
+                                     .AsString()?
+                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                      Enumerable.Empty<string>();
+
+            RedactedTypes = new HashSet<string>(redactedTypes, StringComparer.OrdinalIgnoreCase);
         }
 
         public bool Enabled { get; }
@@ -81,6 +89,8 @@ namespace Datadog.Trace.Debugger
         public int UploadFlushIntervalMilliseconds { get; }
 
         public HashSet<string> RedactedIdentifiers { get; }
+
+        public HashSet<string> RedactedTypes { get; }
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {

@@ -19,6 +19,14 @@ namespace Samples.Probes.TestRuns.SmokeTests
             Echo(a, _Pass_WoRD_, _SeC_ReT);
             var b = Echo(a, _Pass_WoRD_, _SeC_ReT);
             Echo(b, _Pass_WoRD_, _SeC_ReT);
+            var redactedTypeA = new RedactMeTypeA();
+            Echo(redactedTypeA, _Pass_WoRD_, _SeC_ReT);
+            var redactedTypeB = new RedactMeTypeB();
+            Echo(redactedTypeB, _Pass_WoRD_, _SeC_ReT);
+            var redactedTypeC = new AnotherRedactMeTypeB();
+            Echo(redactedTypeC, _Pass_WoRD_, _SeC_ReT);
+            var iamok = new IAmOkType();
+            Echo(iamok, _Pass_WoRD_, _SeC_ReT);
         }
 
         public T Echo<T>(T a, string str1, string str2)
@@ -32,5 +40,25 @@ namespace Samples.Probes.TestRuns.SmokeTests
         public string Id { get; set; }
         public string PassWord { get; set; }
         public string RedactMe { get; set; }
+    }
+
+    class RedactMeTypeA
+    {
+        public string Name = $"You should not see me {nameof(RedactMeTypeA)}";
+    }
+
+    class RedactMeTypeB
+    {
+        public string Name = $"You should not see me {nameof(RedactMeTypeB)}";
+    }
+
+    class AnotherRedactMeTypeB
+    {
+        public string Name = $"You should not see me {nameof(AnotherRedactMeTypeB)}";
+    }
+
+    class IAmOkType
+    {
+        public string Name = $"You should see me {nameof(IAmOkType)}";
     }
 }
