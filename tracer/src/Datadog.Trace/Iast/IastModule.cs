@@ -44,7 +44,7 @@ internal static class IastModule
 
     internal static string OnUnvalidatedRedirect(string evidence)
     {
-        if (OnUnvalidatedRedirect(evidence, IntegrationId.UnvalidatedRedirect) != null)
+        if (OnUnvalidatedRedirect(evidence, IntegrationId.UnvalidatedRedirect).VulnerabilityAdded)
         {
             return new string(evidence.ToCharArray());
         }
@@ -52,7 +52,7 @@ internal static class IastModule
         return evidence;
     }
 
-    internal static Scope? OnUnvalidatedRedirect(string evidence, IntegrationId integrationId)
+    internal static IastModuleResponse OnUnvalidatedRedirect(string evidence, IntegrationId integrationId)
     {
         bool HasInvalidOrigin(TaintedObject tainted)
         {
@@ -78,11 +78,11 @@ internal static class IastModule
         catch (Exception ex)
         {
             Log.Error(ex, "Error while checking for Unvalidated Redirect.");
-            return null;
+            return IastModuleResponse.Empty;
         }
     }
 
-    internal static Scope? OnTrustBoundaryViolation(string name)
+    internal static IastModuleResponse OnTrustBoundaryViolation(string name)
     {
         try
         {
@@ -92,11 +92,11 @@ internal static class IastModule
         catch (Exception ex)
         {
             Log.Error(ex, "Error while checking for TrustBoundaryViolation.");
-            return null;
+            return IastModuleResponse.Empty;
         }
     }
 
-    internal static Scope? OnLdapInjection(string evidence)
+    internal static IastModuleResponse OnLdapInjection(string evidence)
     {
         try
         {
@@ -106,11 +106,11 @@ internal static class IastModule
         catch (Exception ex)
         {
             Log.Error(ex, "Error while checking for ldap injection.");
-            return null;
+            return IastModuleResponse.Empty;
         }
     }
 
-    internal static Scope? OnSSRF(string evidence)
+    internal static IastModuleResponse OnSSRF(string evidence)
     {
         try
         {
@@ -120,11 +120,11 @@ internal static class IastModule
         catch (Exception ex)
         {
             Log.Error(ex, "Error while checking for SSRF.");
-            return null;
+            return IastModuleResponse.Empty;
         }
     }
 
-    internal static Scope? OnWeakRandomness(string evidence)
+    internal static IastModuleResponse OnWeakRandomness(string evidence)
     {
         try
         {
@@ -134,11 +134,11 @@ internal static class IastModule
         catch (Exception ex)
         {
             Log.Error(ex, "Error while checking for WeakRandomness.");
-            return null;
+            return IastModuleResponse.Empty;
         }
     }
 
-    public static Scope? OnPathTraversal(string evidence)
+    public static IastModuleResponse OnPathTraversal(string evidence)
     {
         try
         {
@@ -148,11 +148,11 @@ internal static class IastModule
         catch (Exception ex)
         {
             Log.Error(ex, "Error while checking for path traversal.");
-            return null;
+            return IastModuleResponse.Empty;
         }
     }
 
-    public static Scope? OnSqlQuery(string query, IntegrationId integrationId)
+    public static IastModuleResponse OnSqlQuery(string query, IntegrationId integrationId)
     {
         try
         {
@@ -162,22 +162,22 @@ internal static class IastModule
         catch (Exception ex)
         {
             Log.Error(ex, "Error while checking for Sql injection.");
-            return null;
+            return IastModuleResponse.Empty;
         }
     }
 
-    public static Scope? OnCommandInjection(string file, string argumentLine, Collection<string> argumentList, IntegrationId integrationId)
+    public static IastModuleResponse OnCommandInjection(string file, string argumentLine, Collection<string> argumentList, IntegrationId integrationId)
     {
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.CommandInjection);
             var evidence = BuildCommandInjectionEvidence(file, argumentLine, argumentList);
-            return string.IsNullOrEmpty(evidence) ? null : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, (t) => true);
+            return string.IsNullOrEmpty(evidence) ? IastModuleResponse.Empty : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, (t) => true);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error while checking for command injection.");
-            return null;
+            return IastModuleResponse.Empty;
         }
     }
 
@@ -213,21 +213,21 @@ internal static class IastModule
         }
     }
 
-    public static Scope? OnInsecureCookie(IntegrationId integrationId, string cookieName)
+    public static IastModuleResponse OnInsecureCookie(IntegrationId integrationId, string cookieName)
     {
         OnExecutedSinkTelemetry(IastInstrumentedSinks.InsecureCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
         return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.InsecureCookie, (VulnerabilityTypeName.InsecureCookie.ToString() + ":" + cookieName).GetStaticHashCode());
     }
 
-    public static Scope? OnNoHttpOnlyCookie(IntegrationId integrationId, string cookieName)
+    public static IastModuleResponse OnNoHttpOnlyCookie(IntegrationId integrationId, string cookieName)
     {
         OnExecutedSinkTelemetry(IastInstrumentedSinks.NoHttpOnlyCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
         return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoHttpOnlyCookie, (VulnerabilityTypeName.NoHttpOnlyCookie.ToString() + ":" + cookieName).GetStaticHashCode());
     }
 
-    public static Scope? OnNoSamesiteCookie(IntegrationId integrationId, string cookieName)
+    public static IastModuleResponse OnNoSamesiteCookie(IntegrationId integrationId, string cookieName)
     {
         OnExecutedSinkTelemetry(IastInstrumentedSinks.NoSameSiteCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
@@ -237,34 +237,34 @@ internal static class IastModule
     public static void OnHardcodedSecret(Vulnerability vulnerability)
     {
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerability)?.Dispose();
+        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose();
     }
 
     public static void OnHardcodedSecret(List<Vulnerability> vulnerabilities)
     {
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerabilities)?.Dispose();
+        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerabilities).SingleSpan?.Dispose();
     }
 
-    public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId)
+    public static IastModuleResponse OnCipherAlgorithm(Type type, IntegrationId integrationId)
     {
         OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakCipher);
         var algorithm = type.BaseType?.Name;
 
         if (algorithm is null || !InvalidCipherAlgorithm(type, algorithm))
         {
-            return null;
+            return IastModuleResponse.Empty;
         }
 
         return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakCipher, OperationNameWeakCipher);
     }
 
-    public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId)
+    public static IastModuleResponse OnHashingAlgorithm(string? algorithm, IntegrationId integrationId)
     {
         OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakHash);
         if (algorithm == null || !InvalidHashAlgorithm(algorithm))
         {
-            return null;
+            return IastModuleResponse.Empty;
         }
 
         return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakHash, OperationNameWeakHash);
@@ -313,13 +313,13 @@ internal static class IastModule
     }
 
     // This method adds web vulnerabilities, with no location, only on web environments
-    private static Scope? AddWebVulnerability(string? evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
+    private static IastModuleResponse AddWebVulnerability(string? evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
     {
         var tracer = Tracer.Instance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
-            return null;
+            return IastModuleResponse.Empty;
         }
 
         var currentSpan = (tracer.ActiveScope as Scope)?.Span;
@@ -329,7 +329,7 @@ internal static class IastModule
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
-            return null;
+            return IastModuleResponse.Empty;
         }
 
         var vulnerability = new Vulnerability(
@@ -341,10 +341,10 @@ internal static class IastModule
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
             traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
-            return null;
+            return IastModuleResponse.Vulnerable;
         }
 
-        return null;
+        return IastModuleResponse.Empty;
     }
 
     public static bool AddRequestVulnerabilitiesAllowed()
@@ -355,13 +355,13 @@ internal static class IastModule
         return isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() == true;
     }
 
-    private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Func<TaintedObject, bool>? taintValidator = null)
+    private static IastModuleResponse GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Func<TaintedObject, bool>? taintValidator = null)
     {
         var tracer = Tracer.Instance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
-            return null;
+            return IastModuleResponse.Empty;
         }
 
         var scope = tracer.ActiveScope as Scope;
@@ -372,14 +372,14 @@ internal static class IastModule
         // We do not have, for now, tainted objects in console apps, so further checking is not neccessary.
         if (!isRequest && taintValidator != null)
         {
-            return null;
+            return IastModuleResponse.Empty;
         }
 
         if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
-            return null;
+            return IastModuleResponse.Empty;
         }
 
         TaintedObject? tainted = null;
@@ -388,7 +388,7 @@ internal static class IastModule
             tainted = traceContext?.IastRequestContext?.GetTainted(evidenceValue);
             if (tainted is null || !taintValidator(tainted))
             {
-                return null;
+                return IastModuleResponse.Empty;
             }
         }
 
@@ -396,7 +396,7 @@ internal static class IastModule
 
         if (!frameInfo.IsValid)
         {
-            return null;
+            return IastModuleResponse.Empty;
         }
 
         // Sometimes we do not have the file/line but we have the method/class.
@@ -419,7 +419,7 @@ internal static class IastModule
             if (isRequest)
             {
                 traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
-                return scope;
+                return IastModuleResponse.Vulnerable;
             }
             else
             {
@@ -427,10 +427,10 @@ internal static class IastModule
             }
         }
 
-        return null;
+        return IastModuleResponse.Empty;
     }
 
-    private static Scope? AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, List<Vulnerability> vulnerabilities)
+    private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, List<Vulnerability> vulnerabilities)
     {
         // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
         var batch = GetVulnerabilityBatch();
@@ -442,7 +442,7 @@ internal static class IastModule
         return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, batch.ToJson());
     }
 
-    private static Scope? AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
+    private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
     {
         // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
         var batch = GetVulnerabilityBatch();
@@ -450,7 +450,7 @@ internal static class IastModule
         return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, batch.ToJson());
     }
 
-    private static Scope? AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, string vulnsJson)
+    private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, string vulnsJson)
     {
         var tags = new IastTags()
         {
@@ -461,7 +461,7 @@ internal static class IastModule
         var scope = tracer.StartActiveInternal(operationName, tags: tags);
         scope.Span.Type = SpanTypes.IastVulnerability;
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
-        return scope;
+        return new IastModuleResponse(scope);
     }
 
     private static string? GetMethodTypeName(StackFrame? frame)
@@ -512,13 +512,13 @@ internal static class IastModule
 
     // Evidence: If the customer application is setting the header with an invalid value, the evidence value should be the value that is set. If the header is missing, the evidence should not be sent.
     // hash('XCONTENTTYPE_HEADER_MISSING:<service-name>')
-    internal static Scope? OnXContentTypeOptionsHeaderMissing(IntegrationId integrationId, string headerValue, string serviceName)
+    internal static IastModuleResponse OnXContentTypeOptionsHeaderMissing(IntegrationId integrationId, string headerValue, string serviceName)
     {
         string? evidence = string.IsNullOrEmpty(headerValue) ? null : headerValue;
         return AddWebVulnerability(evidence, integrationId, VulnerabilityTypeName.XContentTypeHeaderMissing, (VulnerabilityTypeName.XContentTypeHeaderMissing + ":" + serviceName).GetStaticHashCode());
     }
 
-    internal static Scope? OnStrictTransportSecurityHeaderMissing(IntegrationId integrationId, string serviceName)
+    internal static IastModuleResponse OnStrictTransportSecurityHeaderMissing(IntegrationId integrationId, string serviceName)
     {
         return AddWebVulnerability(null, integrationId, VulnerabilityTypeName.HstsHeaderMissing, (VulnerabilityTypeName.HstsHeaderMissing + ":" + serviceName).GetStaticHashCode());
     }
