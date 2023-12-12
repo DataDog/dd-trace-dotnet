@@ -47,7 +47,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             {
                 var entry = request.PublishBatchRequestEntries[i].DuckCast<IContainsMessageAttributes>();
 
-                InjectHeadersIntoMessage<TBatchRequest>(entry, context);
+                if (entry != null)
+                {
+                    InjectHeadersIntoMessage<TBatchRequest>(entry, context);
+                }
             }
         }
 
