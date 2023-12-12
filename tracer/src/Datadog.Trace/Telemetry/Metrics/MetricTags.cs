@@ -254,7 +254,6 @@ internal static class MetricTags
         [Description("source_type:http.request.cookie.value")] CookieValue = 9,
         [Description("source_type:http.request.matrix.parameter")] MatrixParameter = 10,
         [Description("source_type:http.request.uri")] RequestUri = 11,
-        [Description("source_type:http.request.database")] Database = 12,
     }
 
     [EnumExtensions]

@@ -33,6 +33,7 @@ internal static class IastModule
     private const string OperationNameHardcodedSecret = "hardcoded_secret";
     private const string OperationNameTrustBoundaryViolation = "trust_boundary_violation";
     private const string OperationNameUnvalidatedRedirect = "unvalidated_redirect";
+    private const string ReferrerHeaderName = "Referrer";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
     private static IastSettings iastSettings = Iast.Instance.Settings;
@@ -56,18 +57,42 @@ internal static class IastModule
     {
         bool HasInvalidOrigin(TaintedObject tainted)
         {
-            foreach (var range in tainted.Ranges)
+            try
             {
-                if (range.Source is null) { continue; }
-                var origin = (SourceTypeName)range.Source.OriginByte;
-                if (origin == SourceTypeName.Database) { continue; }
-                if (origin == SourceTypeName.RequestPath) { continue; }
-                if (origin == SourceTypeName.RequestHeaderValue && range.Source.Name == "Host") { continue; }
+                foreach (var range in tainted.Ranges)
+                {
+                    if (range.Source is null) { continue; }
+                    var origin = (SourceTypeName)range.Source.OriginByte;
+                    // TODO: reenable when SourceTypeName.Database gets defined -> if (origin == SourceTypeName.Database) { continue; }
+                    if (origin == SourceTypeName.RequestPath) { continue; }
+                    if (origin == SourceTypeName.RequestHeaderValue && range.Source.Name == "Host") { continue; }
 
-                return true;
+                    return true;
+                }
+
+                return IsRefererHeader(tainted);
+            }
+            catch (Exception err)
+            {
+                Log.Error(err, "Error while checking for UnvalidatedRedirect tainted origins.");
             }
 
-            return false;
+            return true;
+        }
+
+        bool IsRefererHeader(TaintedObject tainted)
+        {
+            foreach (var range in tainted.Ranges)
+            {
+                if (range.Source is null) { return false; }
+                var origin = (SourceTypeName)range.Source.OriginByte;
+                if (origin != SourceTypeName.RequestHeaderValue || !ReferrerHeaderName.Equals(range.Source.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         try
