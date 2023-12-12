@@ -39,8 +39,9 @@ namespace Samples.Security.AspNetCore5.Controllers
             if (!filterContext.HttpContext.Request.Path.Value.Contains("XContentTypeHeaderMissing"))
             {
                 filterContext.HttpContext.Response.Headers.Add("X-Content-Type-Options", "nosniff");
-                base.OnResultExecuting(filterContext);
             }
+
+            base.OnResultExecuting(filterContext);
         }
     }
 
@@ -556,6 +557,35 @@ namespace Samples.Security.AspNetCore5.Controllers
             else
             {
                 return Content("XContentTypeHeaderMissing");
+            }
+        }
+
+        [HttpGet("StrictTransportSecurity")]
+        [Route("StrictTransportSecurity")]
+        public ActionResult StrictTransportSecurity(string contentType = "text/html", int returnCode = 200, string hstsHeaderValue = "", string xForwardedProto ="")
+        {
+            if (!string.IsNullOrEmpty(hstsHeaderValue))
+            {
+                Response.Headers.Add("Strict-Transport-Security", hstsHeaderValue);
+            }
+
+            if (!string.IsNullOrEmpty(xForwardedProto))
+            {
+                Response.Headers.Add("X-Forwarded-Proto", xForwardedProto);
+            }
+
+            if (returnCode != (int)HttpStatusCode.OK)
+            {
+                return StatusCode(returnCode);
+            }
+
+            if (!string.IsNullOrEmpty(contentType))
+            {
+                return Content("StrictTransportSecurityMissing", contentType);
+            }
+            else
+            {
+                return Content("StrictTransportSecurityMissing");
             }
         }
     }

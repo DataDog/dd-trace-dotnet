@@ -143,6 +143,7 @@ internal class ExecutedTelemetryHelper
             IastInstrumentedSinks.HardcodedSecret => BasicExecutedTag + SinkExecutedTag + "hardcoded_secret",
             IastInstrumentedSinks.XContentTypeHeaderMissing => BasicExecutedTag + SinkExecutedTag + "xcontenttype_header_missing",
             IastInstrumentedSinks.TrustBoundaryViolation => BasicExecutedTag + SinkExecutedTag + "trust_boundary_violation",
+            IastInstrumentedSinks.HstsHeaderMissing => BasicExecutedTag + SinkExecutedTag + "hsts_header_missing",
             IastInstrumentedSinks.None => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
             _ => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
         };

@@ -116,6 +116,44 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
+
+    // When the request is finished without the header Strict-Transport-Security or with an invalid value on it, we should detect the vulnerability and send it to the agent when these conditions happens:
+    // The connection protocol is https or the request header X-Forwarded-Proto is https
+    // The Content-Type header of the response looks like html(text/html, application/xhtml+xml)
+    // Header has a valid value when it starts with max-age followed by a positive number (>0), it can finish there or continue with a semicolon ; and more content.
+
+    [SkippableTheory]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [InlineData("text/html;charset=UTF-8", 200, "max-age=0", "https")]
+    [InlineData("text/html;charset=UTF-8", 200, "max-age=31536000", "https")]
+    [InlineData("application/xhtml%2Bxml", 200, "max-age%3D10%3Botherthings", "https")]
+    [InlineData("text/html", 500, "invalid", "https")]
+    [InlineData("text/html", 200, "invalid", "")]
+    [InlineData("text/plain", 200, "invalid", "https")]
+    [InlineData("text/html", 200, "", "https")]
+    [InlineData("application/xhtml%2Bxml", 200, "", "https")]
+    [InlineData("text/html", 200, "invalid", "https")]
+    public async Task TestStrictTransportSecurityHeaderMissing(string contentType, int returnCode, string hstsHeaderValue, string xForwardedProto)
+    {
+        var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
+            (string.IsNullOrEmpty(hstsHeaderValue) ? string.Empty : "&hstsHeaderValue=" + hstsHeaderValue) +
+            (string.IsNullOrEmpty(xForwardedProto) ? string.Empty : "&xForwardedProto=" + xForwardedProto);
+        var filename = "Iast.StrictTransportSecurity.AspNetCore2." + contentType.Replace("/", string.Empty) +
+            "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(hstsHeaderValue) ? "empty" : hstsHeaderValue)
+            + "." + (string.IsNullOrEmpty(xForwardedProto) ? "empty" : xForwardedProto);
+        var url = "/Iast/StrictTransportSecurity" + queryParams;
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing(scrubHash: false);
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 public class AspNetCore2IastTestsFullSamplingDisabled : AspNetCore2IastTestsFullSampling

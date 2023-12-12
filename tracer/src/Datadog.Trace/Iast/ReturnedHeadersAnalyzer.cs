@@ -21,15 +21,18 @@ internal static class ReturnedHeadersAnalyzer
 {
     private const string ContentType = "content-type";
     private const string XContentTypeOptions = "x-content-type-options";
+    private const string StrictTransportSecurity = "strict-transport-security";
+    private const string XForwardedProto = "x-forwarded-proto";
+    private const string MaxAgeConst = "max-age=";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ReturnedHeadersAnalyzer));
 
     // Analyze the headers. If the response is HTML, check for X-Content-Type-Options: nosniff. If it
     // is not present, report a vulnerability. When getting the headers, make sure that keys are searched taking
     // int account that can be case insensitive. Exclude vulnerability when return code is one of the ignorable.
 #if NETFRAMEWORK
-    internal static void Analyze(NameValueCollection responseHeaders, IntegrationId integrationId, string serviceName, int responseCode)
+    internal static void Analyze(NameValueCollection responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string protocol)
 #else
-    internal static void Analyze(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode)
+    internal static void Analyze(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string protocol)
 #endif
     {
         if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
@@ -38,23 +41,58 @@ internal static class ReturnedHeadersAnalyzer
         }
 
         IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
+        IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.HstsHeaderMissing);
         string contentTypeValue = responseHeaders[ContentType];
         string contentOptionValue = responseHeaders[XContentTypeOptions];
+        string strictTransportSecurityValue = responseHeaders[StrictTransportSecurity];
+        string xForwardedProtoValue = responseHeaders[XForwardedProto];
 
-        if (!IsHtmlResponse(contentTypeValue) || IsNoSniffContentOptions(contentOptionValue))
+        if (!IsHtmlResponse(contentTypeValue))
         {
             return;
         }
 
         LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
+        LaunchStrictTransportSecurity(integrationId, serviceName, strictTransportSecurityValue, xForwardedProtoValue, protocol);
     }
 
     private static void LaunchXContentTypeOptionsVulnerability(IntegrationId integrationId, string serviceName, string contentTypeValue, string contentOptionValue)
     {
-        if (!string.IsNullOrEmpty(contentTypeValue))
+        if (!string.IsNullOrEmpty(contentTypeValue) && !IsNoSniffContentOptions(contentOptionValue))
         {
             IastModule.OnXContentTypeOptionsHeaderMissing(integrationId, contentOptionValue, serviceName);
         }
+    }
+
+    private static void LaunchStrictTransportSecurity(IntegrationId integrationId, string serviceName, string strictTransportSecurityValue, string xForwardedProtoValue, string protocol)
+    {
+        if (!string.Equals(protocol, "https", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(xForwardedProtoValue, "https", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (!IsValidStrictTransportSecurityValue(strictTransportSecurityValue))
+        {
+            IastModule.OnStrictTransportSecurityHeaderMissing(integrationId, serviceName);
+        }
+    }
+
+    // Strict-Transport-Security has a valid value when it starts with max-age followed by a positive number (>0),
+    // it can finish there or continue with a semicolon ; and more content.
+    private static bool IsValidStrictTransportSecurityValue(string strictTransportSecurityValue)
+    {
+        if (string.IsNullOrEmpty(strictTransportSecurityValue) || !strictTransportSecurityValue.StartsWith(MaxAgeConst, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var index = strictTransportSecurityValue.IndexOf(';');
+
+        var maxAge = (index >= 0 ? strictTransportSecurityValue.Substring(MaxAgeConst.Length, index - MaxAgeConst.Length) :
+            strictTransportSecurityValue.Substring(MaxAgeConst.Length));
+
+        return ulong.TryParse(maxAge, out var maxAgeInt) && maxAgeInt > 0;
     }
 
     private static bool IsHtmlResponse(string contentTypeValue)

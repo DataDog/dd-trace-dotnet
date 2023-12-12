@@ -283,7 +283,7 @@ namespace Datadog.Trace.AspNet
                             {
                                 try
                                 {
-                                    ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode);
+                                    ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode, app.Context.Request.Url.Scheme);
                                 }
                                 catch (PlatformNotSupportedException ex)
                                 {
