@@ -140,7 +140,7 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
             (string.IsNullOrEmpty(xForwardedProto) ? string.Empty : "&xForwardedProto=" + xForwardedProto);
         var filename = "Iast.StrictTransportSecurity.AspNetCore2." + contentType.Replace("/", string.Empty) +
             "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(hstsHeaderValue) ? "empty" : hstsHeaderValue)
-            + (string.IsNullOrEmpty(xForwardedProto) ? "empty" : xForwardedProto);
+            + "." + (string.IsNullOrEmpty(xForwardedProto) ? "empty" : xForwardedProto);
         var url = "/Iast/StrictTransportSecurity" + queryParams;
         IncludeAllHttpSpans = true;
         await TryStartApp();
