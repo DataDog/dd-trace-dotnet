@@ -4,12 +4,14 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 #endif
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
@@ -25,6 +27,7 @@ internal static class ReturnedHeadersAnalyzer
     private const string MaxAgeConst = "max-age=";
     private const string Location = "Location";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ReturnedHeadersAnalyzer));
+    private static string[] headerInjectionExceptions = new string[] { "location", "Sec-WebSocket-Location", "Sec-WebSocket-Accept", "Upgrade", "Connection" };
 
     // Analyze the headers. If the response is HTML, check for X-Content-Type-Options: nosniff. If it
     // is not present, report a vulnerability. When getting the headers, make sure that keys are searched taking

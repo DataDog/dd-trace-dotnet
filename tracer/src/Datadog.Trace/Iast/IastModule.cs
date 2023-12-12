@@ -548,4 +548,9 @@ internal static class IastModule
     {
         return AddWebVulnerability(null, integrationId, VulnerabilityTypeName.HstsHeaderMissing, (VulnerabilityTypeName.HstsHeaderMissing + ":" + serviceName).GetStaticHashCode());
     }
+
+    internal static void OnHeaderInjection(IntegrationId integrationId, string headerName, string headerValue)
+    {
+        return AddWebVulnerability(headerName + ":" + headerValue, integrationId, VulnerabilityTypeName.HeaderInjection, ("HEADER_INJECTION:" + headerName).GetStaticHashCode());
+    }
 }
