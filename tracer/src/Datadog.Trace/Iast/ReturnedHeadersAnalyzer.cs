@@ -47,22 +47,29 @@ internal static class ReturnedHeadersAnalyzer
     internal static void AnalyzeXContentTypeOptionsVulnerability(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode)
 #endif
     {
-        IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
-
-        if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
+        try
         {
-            return;
+            IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
+
+            if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
+            {
+                return;
+            }
+
+            string contentTypeValue = responseHeaders[ContentType];
+            string contentOptionValue = responseHeaders[XContentTypeOptions];
+
+            if (!IsHtmlResponse(contentTypeValue))
+            {
+                return;
+            }
+
+            LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
         }
-
-        string contentTypeValue = responseHeaders[ContentType];
-        string contentOptionValue = responseHeaders[XContentTypeOptions];
-
-        if (!IsHtmlResponse(contentTypeValue))
+        catch (Exception error)
         {
-            return;
+            Log.Error(error, $"in Datadog.Trace.Iast.ReturnedHeadersAnalyzer.AnalyzeXContentTypeOptionsVulnerability");
         }
-
-        LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
     }
 
 #if NETFRAMEWORK
@@ -71,23 +78,30 @@ internal static class ReturnedHeadersAnalyzer
     internal static void AnalyzeStrictTransportSecurity(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string protocol)
 #endif
     {
-        IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.HstsHeaderMissing);
-
-        if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
+        try
         {
-            return;
+            IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.HstsHeaderMissing);
+
+            if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
+            {
+                return;
+            }
+
+            string contentTypeValue = responseHeaders[ContentType];
+            string strictTransportSecurityValue = responseHeaders[StrictTransportSecurity];
+            string xForwardedProtoValue = responseHeaders[XForwardedProto];
+
+            if (!IsHtmlResponse(contentTypeValue))
+            {
+                return;
+            }
+
+            LaunchStrictTransportSecurity(integrationId, serviceName, strictTransportSecurityValue, xForwardedProtoValue, protocol);
         }
-
-        string contentTypeValue = responseHeaders[ContentType];
-        string strictTransportSecurityValue = responseHeaders[StrictTransportSecurity];
-        string xForwardedProtoValue = responseHeaders[XForwardedProto];
-
-        if (!IsHtmlResponse(contentTypeValue))
+        catch (Exception error)
         {
-            return;
+            Log.Error(error, $"in Datadog.Trace.Iast.ReturnedHeadersAnalyzer.AnalyzeStrictTransportSecurity");
         }
-
-        LaunchStrictTransportSecurity(integrationId, serviceName, strictTransportSecurityValue, xForwardedProtoValue, protocol);
     }
 
     private static void LaunchXContentTypeOptionsVulnerability(IntegrationId integrationId, string serviceName, string contentTypeValue, string contentOptionValue)
