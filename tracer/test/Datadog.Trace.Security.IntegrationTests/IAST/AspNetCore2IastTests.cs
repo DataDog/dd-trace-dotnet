@@ -125,6 +125,7 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
+    [InlineData("text/html;charset=UTF-8", 200, "max-age=0", "https")]
     [InlineData("text/html;charset=UTF-8", 200, "max-age=31536000", "https")]
     [InlineData("application/xhtml%2Bxml", 200, "max-age%3D10%3Botherthings", "https")]
     [InlineData("text/html", 500, "invalid", "https")]
