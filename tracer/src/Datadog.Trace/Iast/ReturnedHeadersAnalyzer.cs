@@ -92,7 +92,7 @@ internal static class ReturnedHeadersAnalyzer
         var maxAge = (index >= 0 ? strictTransportSecurityValue.Substring(MaxAgeConst.Length, index - MaxAgeConst.Length) :
             strictTransportSecurityValue.Substring(MaxAgeConst.Length));
 
-        return (ulong.TryParse(maxAge, out var maxAgeInt));
+        return ulong.TryParse(maxAge, out var maxAgeInt) && maxAgeInt > 0;
     }
 
     private static bool IsHtmlResponse(string contentTypeValue)
