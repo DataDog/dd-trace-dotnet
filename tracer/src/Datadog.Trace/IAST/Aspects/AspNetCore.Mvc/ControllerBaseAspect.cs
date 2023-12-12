@@ -29,7 +29,6 @@ public class ControllerBaseAspect
     [AspectMethodInsertBefore("Microsoft.AspNetCore.Mvc.ControllerBase::LocalRedirectPermanentPreserveMethod(System.String)")]
     public static string Redirect(string url)
     {
-        IastModule.OnUnvalidatedRedirect(url, IntegrationId.UnvalidatedRedirect);
-        return url;
+        return IastModule.OnUnvalidatedRedirect(url);
     }
 }

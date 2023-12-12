@@ -42,6 +42,16 @@ internal static class IastModule
         EvidenceRedactorLazy = new(() => CreateRedactor(iastSettings));
     }
 
+    internal static string OnUnvalidatedRedirect(string evidence)
+    {
+        if (OnUnvalidatedRedirect(evidence, IntegrationId.UnvalidatedRedirect) != null)
+        {
+            return new string(evidence.ToCharArray());
+        }
+
+        return evidence;
+    }
+
     internal static Scope? OnUnvalidatedRedirect(string evidence, IntegrationId integrationId)
     {
         bool HasInvalidOrigin(TaintedObject tainted)
@@ -354,7 +364,8 @@ internal static class IastModule
             return null;
         }
 
-        var currentSpan = (tracer.ActiveScope as Scope)?.Span;
+        var scope = tracer.ActiveScope as Scope;
+        var currentSpan = scope?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
         var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
 
@@ -408,7 +419,7 @@ internal static class IastModule
             if (isRequest)
             {
                 traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
-                return null;
+                return scope;
             }
             else
             {

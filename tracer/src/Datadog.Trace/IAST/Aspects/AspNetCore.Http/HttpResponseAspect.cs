@@ -23,7 +23,6 @@ public class HttpResponseAspect
     [AspectMethodInsertBefore("Microsoft.AspNetCore.Http.HttpResponse::Redirect(System.String,System.Boolean)", 1)]
     public static string Redirect(string url)
     {
-        IastModule.OnUnvalidatedRedirect(url, IntegrationId.UnvalidatedRedirect);
-        return url;
+        return IastModule.OnUnvalidatedRedirect(url);
     }
 }

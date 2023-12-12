@@ -92,20 +92,6 @@
           }
         ]
       }
-    },
-    {
-      "type": "UNVALIDATED_REDIRECT",
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "Redirected?param="
-          },
-          {
-            "value": "value",
-            "source": 0
-          }
-        ]
-      }
     }
   ],
   "sources": [
