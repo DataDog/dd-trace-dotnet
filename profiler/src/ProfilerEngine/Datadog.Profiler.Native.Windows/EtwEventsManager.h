@@ -11,6 +11,8 @@
 #include "ETW/EtwEventsHandler.h"
 #include "ETW/ProfilerLogger.h"
 
+
+#include "Configuration.h"
 #include <memory>
 
 
@@ -64,7 +66,8 @@ public:
     EtwEventsManager(
         IAllocationsListener* pAllocationListener,
         IContentionListener* pContentionListener,
-        IGCSuspensionsListener* pGCSuspensionsListener
+        IGCSuspensionsListener* pGCSuspensionsListener,
+        IConfiguration* pConfiguration
         );
 
 // Inherited via IEtwEventsManager
@@ -93,9 +96,9 @@ private:
     bool SendRegistrationCommand(bool add);
 
  private:
+    bool _isDebugLogEnabled;
     IAllocationsListener* _pAllocationListener;
     IContentionListener* _pContentionListener;
-    IGCSuspensionsListener* _pGCSuspensionsListener;
 
     // when no call stacks are needed and same payload format between Framework and Core (such as GC events)
     std::unique_ptr<ClrEventsParser> _parser;

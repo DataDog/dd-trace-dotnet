@@ -43,7 +43,7 @@ public:
 
 private:
     const char* _serviceName = "ManagedThreadList";
-    static const std::uint32_t MinBufferSize;
+    static const std::uint32_t DefaultThreadListSize;
 
 private:
     // We do most operations under this lock.
@@ -56,6 +56,7 @@ private:
     // Also, threads are "directly" accessible from their CLR ThreadID via an index
     std::vector<std::shared_ptr<ManagedThreadInfo>> _threads;
     std::unordered_map<ThreadID, std::shared_ptr<ManagedThreadInfo>> _lookupByClrThreadId;
+    std::unordered_map<uint32_t, std::shared_ptr<ManagedThreadInfo>> _lookupByOsThreadId;
 
     // An iterator is just a position in the vector corresponding to the next thread to be returned by LoopNext
     // so keep track of them in a vector of positions initialized to 0

@@ -354,26 +354,17 @@ bool CorProfilerCallback::InitializeServices()
         _pEtwEventsManager = OsSpecificApi::CreateEtwEventsManager(
             _pAllocationsProvider,
             _pContentionProvider,
-            _pStopTheWorldProvider);
+            _pStopTheWorldProvider,
+            _pConfiguration.get());
 
         if (_pGarbageCollectionProvider != nullptr)
         {
             _pEtwEventsManager->Register(_pGarbageCollectionProvider);
         }
 
-        if (_pEtwEventsManager != nullptr)
-        {
-            auto success = _pEtwEventsManager->Start();
-            if (!success)
-            {
-                Log::Error("Failed to the contact Datadog Agent named pipe dedicated to profiling. Try to install the latest version for lock contention and GC profiling.");
-
-                _pEtwEventsManager->Stop();
-                _pEtwEventsManager = nullptr;
-
-                // we should not return a failure because CPU/Wall time and exception profiling will still work as expected
-            }
-        }
+        // NOTE: it is too early to ask the Agent to enable the CLR provider in the ETW session
+        //       so we can't call _pEtwEventsManager->Start() here
+        //       wait for the first thread to be created
     }
 
     if (_pConfiguration->IsAllocationRecorderEnabled() && !_pConfiguration->GetProfilesOutputDirectory().empty())
@@ -1397,6 +1388,19 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
     {
         // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
+    }
+
+    if (!_isETWStarted && (_pEtwEventsManager != nullptr))
+    {
+        _isETWStarted = true;
+        auto success = _pEtwEventsManager->Start();
+        if (!success)
+        {
+            Log::Error("Failed to the contact Datadog Agent named pipe dedicated to profiling. Try to install the latest version for lock contention and GC profiling.");
+
+            _pEtwEventsManager->Stop();
+            _pEtwEventsManager = nullptr;
+        }
     }
 
     if (_pThreadLifetimeProvider != nullptr)

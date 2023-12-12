@@ -333,9 +333,10 @@ std::string GetProcessStartTime()
 std::unique_ptr<IEtwEventsManager> CreateEtwEventsManager(
     IAllocationsListener* pAllocationListener,
     IContentionListener* pContentionListener,
-    IGCSuspensionsListener* pGCSuspensionsListener)
+    IGCSuspensionsListener* pGCSuspensionsListener,
+    IConfiguration* pConfiguration)
 {
-    auto manager = std::make_unique<EtwEventsManager>(pAllocationListener, pContentionListener, pGCSuspensionsListener);
+    auto manager = std::make_unique<EtwEventsManager>(pAllocationListener, pContentionListener, pGCSuspensionsListener, pConfiguration);
     return manager;
 }
 

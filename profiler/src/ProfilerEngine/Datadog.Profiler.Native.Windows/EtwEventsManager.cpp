@@ -24,11 +24,14 @@ const uint32_t TimeoutMS = 500;
 EtwEventsManager::EtwEventsManager(
     IAllocationsListener* pAllocationListener,
     IContentionListener* pContentionListener,
-    IGCSuspensionsListener* pGCSuspensionsListener)
+    IGCSuspensionsListener* pGCSuspensionsListener,
+    IConfiguration* pConfiguration)
     :
     _pAllocationListener(pAllocationListener),
     _pContentionListener(pContentionListener)
 {
+    _isDebugLogEnabled = pConfiguration->IsDebugLogEnabled();
+
     _threadsInfo.reserve(256);
     _parser = std::make_unique<ClrEventsParser>(
         nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
@@ -49,6 +52,11 @@ void EtwEventsManager::OnEvent(
 {
     if (keyword == KEYWORD_STACKWALK)
     {
+        if (_isDebugLogEnabled)
+        {
+            std::cout << "StackWalk" << std::endl;
+        }
+
         auto pThreadInfo = GetOrCreate(tid);
         if (pThreadInfo->LastEventWasContentionStart())
         {
@@ -70,12 +78,22 @@ void EtwEventsManager::OnEvent(
 
         if (id == EVENT_CONTENTION_START)
         {
+            if (_isDebugLogEnabled)
+            {
+                std::cout << "ContentionStart" << std::endl;
+            }
+
             auto pThreadInfo = GetOrCreate(tid);
             pThreadInfo->ContentionStartTimestamp = OpSysTools::ConvertTicks(timestamp);
             pThreadInfo->LastEventId = EventId::ContentionStart;
         }
         else if (id == EVENT_CONTENTION_STOP)
         {
+            if (_isDebugLogEnabled)
+            {
+                std::cout << "ContentionStop" << std::endl;
+            }
+
             auto pThreadInfo = Find(tid);
             if (pThreadInfo != nullptr)
             {
@@ -101,6 +119,11 @@ void EtwEventsManager::OnEvent(
 
         if (id == EVENT_ALLOCATION_TICK)
         {
+            if (_isDebugLogEnabled)
+            {
+                std::cout << "AllocationTick" << std::endl;
+            }
+
             if (_pAllocationListener == nullptr)
             {
                 return;

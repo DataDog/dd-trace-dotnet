@@ -6,14 +6,15 @@
 #include "OpSysTools.h"
 
 
-const std::uint32_t ManagedThreadList::MinBufferSize = 50;
+const std::uint32_t ManagedThreadList::DefaultThreadListSize = 50;
 
 
 ManagedThreadList::ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo) :
     _pCorProfilerInfo{pCorProfilerInfo}
 {
-    _threads.reserve(MinBufferSize);
-    _lookupByClrThreadId.reserve(MinBufferSize);
+    _threads.reserve(DefaultThreadListSize);
+    _lookupByClrThreadId.reserve(DefaultThreadListSize);
+    _lookupByOsThreadId.reserve(DefaultThreadListSize);
 
     // in case of tests, this could be null
     if (_pCorProfilerInfo != nullptr)
@@ -28,6 +29,7 @@ ManagedThreadList::~ManagedThreadList()
 
     _threads.clear();
     _lookupByClrThreadId.clear();
+    _lookupByOsThreadId.clear();
 
     ICorProfilerInfo4* pCorProfilerInfo = _pCorProfilerInfo;
     if (pCorProfilerInfo != nullptr)
@@ -130,6 +132,7 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, std::shared_ptr<M
             // remove it from the storage and index
             _threads.erase(i);
             _lookupByClrThreadId.erase(pInfo->GetClrThreadId());
+            _lookupByOsThreadId.erase(pInfo->GetOsThreadId());
 
             // iterators might need to be updated
             UpdateIterators(pos);
@@ -158,6 +161,7 @@ bool ManagedThreadList::SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, 
     }
 
     pInfo->SetOsInfo(osThreadId, osThreadHandle);
+    _lookupByOsThreadId[osThreadId] = pInfo;
 
     Log::Debug("ManagedThreadList::SetThreadOsInfo(clrThreadId: 0x", std::hex, clrThreadId,
                ", osThreadId: ", std::dec, osThreadId,
@@ -272,7 +276,24 @@ HRESULT ManagedThreadList::TryGetCurrentThreadInfo(std::shared_ptr<ManagedThread
 
 bool ManagedThreadList::TryGetThreadInfo(uint32_t osThreadId, std::shared_ptr<ManagedThreadInfo>& ppThreadInfo)
 {
-    // TODO: search by OS thread id
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
+
+    if (_threads.empty())
+    {
+        return false;
+    }
+
+    auto elem = _lookupByOsThreadId.find(osThreadId);
+    if (elem == _lookupByOsThreadId.end())
+    {
+        return false;
+    }
+    else
+    {
+        ppThreadInfo = elem->second;
+        return true;
+    }
+
     return false;
 }
 

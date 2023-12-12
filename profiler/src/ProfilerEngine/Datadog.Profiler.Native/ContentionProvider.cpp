@@ -151,6 +151,10 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
 
         // We know that we don't have any span ID nor end point details
 
+        rawSample.Timestamp = timestamp;
+        rawSample.Stack.reserve(stack.size());
+        rawSample.Stack.insert(rawSample.Stack.end(), stack.begin(), stack.end());
+
         // we need to create a fake IThreadInfo if there is no thread in ManagedThreadList with the same OS thread id
         // There is one race condition here: the contention events are received asynchronously so the event thread might be dead
         // (i.e. no more in our ManagedThreadList). In that case, we need to create a fake IThreadInfo with a profilerId = 0
@@ -160,14 +164,23 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         // The second race condition is different: the emitting thread might be dead and a new one gets created with the same OS thread id.
         // In that case, the sample will be associated to the new thread (and not the old dead one)
         //
-        rawSample.Timestamp = timestamp;
-        rawSample.Stack.reserve(stack.size());
-        rawSample.Stack.insert(rawSample.Stack.end(), stack.begin(), stack.end());
-
         std::shared_ptr<ManagedThreadInfo> threadInfo;
         if (_pManagedThreadList->TryGetThreadInfo(threadId, threadInfo))
         {
             rawSample.ThreadInfo = threadInfo;
+
+            // TODO: we need to check that threads are not jumping from one AppDomain to the other too frequently
+            // because we might be receiving this event 1 second after it has been emitted
+            // It this is the case, we should simply set the AppDomainId to -1 all the time.
+            AppDomainID appDomainId;
+            if (SUCCEEDED(_pCorProfilerInfo->GetThreadAppDomain(threadInfo->GetClrThreadId(), &appDomainId)))
+            {
+                rawSample.AppDomainId = appDomainId;
+            }
+            else
+            {
+                rawSample.AppDomainId = -1;
+            }
         }
         else  // create a fake IThreadInfo that wraps the OS thread id (no name, no profiler thread id)
         {

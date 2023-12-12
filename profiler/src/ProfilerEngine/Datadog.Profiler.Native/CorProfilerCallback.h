@@ -262,6 +262,7 @@ private :
     std::unique_ptr<ISamplesProvider> _gcThreadsCpuProvider;
     std::unique_ptr<IMetadataProvider> _pMetadataProvider;
     std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
+    bool _isETWStarted = false;
 
 private:
     static void ConfigureDebugLog();

@@ -32,6 +32,7 @@ namespace OsSpecificApi
     std::unique_ptr<IEtwEventsManager> CreateEtwEventsManager(
         IAllocationsListener* pAllocationListener,
         IContentionListener* pContentionListener,
-        IGCSuspensionsListener* pGCSuspensionsListener
+        IGCSuspensionsListener* pGCSuspensionsListener,
+        IConfiguration* pConfiguration
         );
  } // namespace OsSpecificApi
