@@ -46,6 +46,7 @@ namespace Datadog.Trace
             if (settings is not null)
             {
                 // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
+                DefaultServiceName = tracer.DefaultServiceName;
                 Environment = settings.EnvironmentInternal;
                 ServiceVersion = settings.ServiceVersionInternal;
             }
@@ -80,6 +81,8 @@ namespace Datadog.Trace
         {
             get => _samplingPriority;
         }
+
+        public string DefaultServiceName { get; set; }
 
         public string Environment { get; set; }
 
