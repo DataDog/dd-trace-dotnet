@@ -8,8 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -20,12 +20,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class ServiceStackRedisTests : TracingIntegrationTest
+    public class ServiceStackRedisTests : TracingIntegrationTest, IClassFixture<ServiceStackRedisFixture>
     {
-        public ServiceStackRedisTests(ITestOutputHelper output)
+        private readonly ServiceStackRedisFixture _redisFixture;
+
+        public ServiceStackRedisTests(ITestOutputHelper output, ServiceStackRedisFixture redisFixture)
             : base("ServiceStack.Redis", output)
         {
+            _redisFixture = redisFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(redisFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -72,8 +76,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.DisableRequireUniquePrefix();
                 settings.AddSimpleScrubber($" {TestPrefix}ServiceStack.Redis.", " ServiceStack.Redis.");
                 settings.AddSimpleScrubber($"out.host: {host}", "out.host: servicestackredis");
+                settings.AddSimpleScrubber($"out.host: {_redisFixture.Hostname}", "out.host: servicestackredis");
                 settings.AddSimpleScrubber($"peer.service: {host}", "peer.service: servicestackredis");
+                settings.AddSimpleScrubber($"peer.service: {_redisFixture.Hostname}", "peer.service: servicestackredis");
                 settings.AddSimpleScrubber($"out.port: {port}", "out.port: 6379");
+                settings.AddSimpleScrubber($"out.port: {_redisFixture.Port}", "out.port: 6379");
 
                 // The test application runs the same RunServiceStack method X number of times
                 // Use the snapshot to verify each run of RunServiceStack, instead of testing all of the application spans

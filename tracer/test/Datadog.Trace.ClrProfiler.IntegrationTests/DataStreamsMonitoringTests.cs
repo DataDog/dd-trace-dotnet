@@ -1,4 +1,4 @@
-﻿// <copyright file="DataStreamsMonitoringTests.cs" company="Datadog">
+// <copyright file="DataStreamsMonitoringTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -22,12 +23,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 [UsesVerify]
 [Collection(nameof(KafkaTests.KafkaTestsCollection))]
 [Trait("RequiresDockerDependency", "true")]
-public class DataStreamsMonitoringTests : TestHelper
+public class DataStreamsMonitoringTests : TestHelper, IClassFixture<KafkaFixture>
 {
-    public DataStreamsMonitoringTests(ITestOutputHelper output)
+    public DataStreamsMonitoringTests(ITestOutputHelper output, KafkaFixture kafkaFixture)
         : base("DataStreams.Kafka", output)
     {
         SetServiceVersion("1.0.0");
+        ConfigureContainers(kafkaFixture);
     }
 
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>

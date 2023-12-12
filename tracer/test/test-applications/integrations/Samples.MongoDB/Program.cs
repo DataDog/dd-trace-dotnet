@@ -14,10 +14,8 @@ namespace Samples.MongoDB
     public static class Program
     {
         private static readonly ActivitySourceHelper _sampleHelpers = new("Samples.MongoDB");
-        private static string Host()
-        {
-            return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
-        }
+        private static string Host() => Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
+        private static int Port() => int.TryParse(Environment.GetEnvironmentVariable("MONGO_PORT"), out var port) ? port : 27017;
 
         public static void Main(string[] args)
         {
@@ -52,7 +50,7 @@ namespace Samples.MongoDB
 
             using (var mainScope = _sampleHelpers.CreateScope("Main()"))
             {
-                var connectionString = $"mongodb://{Host()}:27017";
+                var connectionString = $"mongodb://{Host()}:{Port()}";
                 var client = new MongoClient(connectionString);
                 var database = client.GetDatabase("test-db");
                 var collection = database.GetCollection<BsonDocument>("employees");

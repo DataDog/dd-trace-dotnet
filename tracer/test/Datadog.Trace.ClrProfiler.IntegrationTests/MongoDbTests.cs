@@ -5,12 +5,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -21,15 +21,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class MongoDbTests : TracingIntegrationTest
+    public class MongoDbTests : TracingIntegrationTest, IClassFixture<MongoDbFixture>
     {
         private static readonly Regex OsRegex = new(@"""os"" : \{.*?\} ");
         private static readonly Regex ObjectIdRegex = new(@"ObjectId\("".*?""\)");
 
-        public MongoDbTests(ITestOutputHelper output)
+        private readonly MongoDbFixture _mongoDbFixture;
+
+        public MongoDbTests(ITestOutputHelper output, MongoDbFixture mongoDbFixture)
             : base("MongoDB", output)
         {
+            _mongoDbFixture = mongoDbFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(mongoDbFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -74,8 +78,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddRegexScrubber(ObjectIdRegex, @"ObjectId(""ABC123"")");
                 // normalise between running directly against localhost and against mongo container
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: mongo");
+                settings.AddSimpleScrubber($"out.host: {_mongoDbFixture.Hostname}", "out.host: mongo");
                 settings.AddSimpleScrubber("out.host: mongo_arm64", "out.host: mongo");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: mongo");
+                settings.AddSimpleScrubber($"peer.service: {_mongoDbFixture.Hostname}", "peer.service: mongo");
                 settings.AddSimpleScrubber("peer.service: mongo_arm64", "peer.service: mongo");
                 // In some package versions, aggregate queries have an ID, others don't
                 settings.AddSimpleScrubber("\"$group\" : { \"_id\" : null, \"n\"", "\"$group\" : { \"_id\" : 1, \"n\"");

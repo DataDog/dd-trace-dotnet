@@ -24,6 +24,7 @@ using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
+using Datadog.Trace.TestHelpers.Containers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -368,6 +369,17 @@ namespace Datadog.Trace.TestHelpers
         public void SetEnvironmentVariable(string key, string value)
         {
             EnvironmentHelper.CustomEnvironmentVariables[key] = value;
+        }
+
+        public void ConfigureContainers(params ContainerFixture[] containers)
+        {
+            foreach (var container in containers)
+            {
+                foreach (var variable in container.GetEnvironmentVariables())
+                {
+                    SetEnvironmentVariable(variable.Key, variable.Value);
+                }
+            }
         }
 
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)

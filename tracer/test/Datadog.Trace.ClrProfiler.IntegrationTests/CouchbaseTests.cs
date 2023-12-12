@@ -8,18 +8,20 @@ using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class CouchbaseTests : TracingIntegrationTest
+    public class CouchbaseTests : TracingIntegrationTest, IClassFixture<CouchbaseFixture>
     {
-        public CouchbaseTests(ITestOutputHelper output)
+        public CouchbaseTests(ITestOutputHelper output, CouchbaseFixture couchbaseFixture)
             : base("Couchbase", output)
         {
             SetServiceVersion("1.0.0");
+            ConfigureContainers(couchbaseFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()

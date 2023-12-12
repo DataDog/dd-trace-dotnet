@@ -447,25 +447,6 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - IncludeAllTestFrameworks
-      - MONGO_HOST=mongo
-      - SERVICESTACK_REDIS_HOST=servicestackredis:6379
-      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379,stackexchangeredis-replica:6379
-      - STACKEXCHANGE_REDIS_SINGLE_HOST=stackexchangeredis-single:6379
-      - ELASTICSEARCH7_HOST=elasticsearch7:9200
-      - ELASTICSEARCH6_HOST=elasticsearch6:9200
-      - ELASTICSEARCH5_HOST=elasticsearch5:9200
-      - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
-      - POSTGRES_HOST=postgres
-      - MYSQL_HOST=mysql
-      - MYSQL_PORT=3306
-      - MYSQL57_HOST=mysql57
-      - MYSQL57_PORT=3306
-      - RABBITMQ_HOST=rabbitmq
-      - KAFKA_BROKER_HOST=kafka-broker:29092
-      - AWS_SDK_HOST=localstack:4566
-      - AEROSPIKE_HOST=aerospike:3000
-      - COUCHBASE_HOST=couchbase
-      - COUCHBASE_PORT=8091
       - CONTAINER_HOSTNAME=http://integrationtests
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
@@ -493,25 +474,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
     hostname: integrationtests
-    depends_on:
-      - aerospike
-      - servicestackredis
-      - stackexchangeredis
-      - stackexchangeredis-replica
-      - stackexchangeredis-single
-      - elasticsearch7
-      - elasticsearch6
-      - elasticsearch5
-      - sqlserver
-      - mongo
-      - postgres
-      - mysql
-      - mysql57
-      - rabbitmq
-      - kafka-broker
-      - kafka-zookeeper
-      - localstack
-      - couchbase
 
   IntegrationTests.Debugger:
     build:

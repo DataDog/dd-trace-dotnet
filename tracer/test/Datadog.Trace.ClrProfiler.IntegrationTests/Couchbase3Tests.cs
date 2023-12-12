@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using FluentAssertions.Execution;
 using VerifyXunit;
 using Xunit;
@@ -19,12 +20,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [UsesVerify]
     [Trait("RequiresDockerDependency", "true")]
-    public class Couchbase3Tests : TracingIntegrationTest
+    public class Couchbase3Tests : TracingIntegrationTest, IClassFixture<CouchbaseFixture>
     {
-        public Couchbase3Tests(ITestOutputHelper output)
+        public Couchbase3Tests(ITestOutputHelper output, CouchbaseFixture couchbaseFixture)
             : base("Couchbase3", output)
         {
             SetServiceVersion("1.0.0");
+            ConfigureContainers(couchbaseFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -62,8 +64,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddRegexScrubber(new Regex(@"couchbase.operation.key: {.*},"), "couchbase.operation.key: obfuscated,");
                 // normalise between running directly against localhost and against couchbase container
                 settings.AddSimpleScrubber("db.couchbase.seed.nodes: localhost", "db.couchbase.seed.nodes: couchbase");
+                settings.AddSimpleScrubber("db.couchbase.seed.nodes: 127.0.0.1", "db.couchbase.seed.nodes: couchbase");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: couchbase");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: couchbase");
+                settings.AddSimpleScrubber("peer.service: 127.0.0.1", "peer.service: couchbase");
 
                 // theres' a fair amount less in 3.0.7 - fewer spans, different terminology etc
 

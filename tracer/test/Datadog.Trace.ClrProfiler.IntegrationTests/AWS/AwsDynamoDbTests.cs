@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -18,11 +19,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class AwsDynamoDbTests : TracingIntegrationTest
+    public class AwsDynamoDbTests : TracingIntegrationTest, IClassFixture<LocalStackFixture>
     {
-        public AwsDynamoDbTests(ITestOutputHelper output)
+        public AwsDynamoDbTests(ITestOutputHelper output, LocalStackFixture localStackFixture)
             : base("AWS.DynamoDBv2", output)
         {
+            ConfigureContainers(localStackFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -19,11 +20,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class AwsSnsTests : TracingIntegrationTest
+    public class AwsSnsTests : TracingIntegrationTest, IClassFixture<LocalStackFixture>
     {
-        public AwsSnsTests(ITestOutputHelper output)
+        public AwsSnsTests(ITestOutputHelper output, LocalStackFixture localStackFixture)
             : base("AWS.SimpleNotificationService", output)
         {
+            ConfigureContainers(localStackFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()

@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -19,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection(nameof(KafkaTestsCollection))]
     [Trait("RequiresDockerDependency", "true")]
-    public class KafkaTests : TracingIntegrationTest
+    public class KafkaTests : TracingIntegrationTest, IClassFixture<KafkaFixture>
     {
         private const int ExpectedSuccessProducerWithHandlerSpans = 20;
         private const int ExpectedSuccessProducerWithoutHandlerSpans = 10;
@@ -36,10 +37,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private const string ErrorProducerResourceName = "Produce Topic INVALID-TOPIC";
 
-        public KafkaTests(ITestOutputHelper output)
+        public KafkaTests(ITestOutputHelper output, KafkaFixture kafkaFixture)
             : base("Kafka", output)
         {
             SetServiceVersion("1.0.0");
+            ConfigureContainers(kafkaFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()

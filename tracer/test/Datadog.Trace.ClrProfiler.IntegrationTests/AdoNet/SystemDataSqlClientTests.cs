@@ -8,8 +8,8 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -19,12 +19,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class SystemDataSqlClientTests : TracingIntegrationTest
+    public class SystemDataSqlClientTests : TracingIntegrationTest, IClassFixture<SqlServerFixture>
     {
-        public SystemDataSqlClientTests(ITestOutputHelper output)
+        private readonly SqlServerFixture _sqlServerFixture;
+
+        public SystemDataSqlClientTests(ITestOutputHelper output, SqlServerFixture sqlServerFixture)
             : base("SqlServer", output)
         {
+            _sqlServerFixture = sqlServerFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(sqlServerFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -84,9 +88,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("System-Data-SqlClient-Test-[a-zA-Z0-9]{32}"), "System-Data-SqlClient-Test-GUID");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: sqlserver");
+            settings.AddSimpleScrubber($"out.host: {_sqlServerFixture.Hostname},{_sqlServerFixture.Port}", "out.host: sqlserver");
             settings.AddSimpleScrubber("out.host: (localdb)\\MSSQLLocalDB", "out.host: sqlserver");
             settings.AddSimpleScrubber("out.host: sqledge_arm64", "out.host: sqlserver");
             settings.AddSimpleScrubber("peer.service: localhost", "peer.service: sqlserver");
+            settings.AddSimpleScrubber($"peer.service: {_sqlServerFixture.Hostname},{_sqlServerFixture.Port}", "peer.service: sqlserver");
             settings.AddSimpleScrubber("peer.service: (localdb)\\MSSQLLocalDB", "peer.service: sqlserver");
             settings.AddSimpleScrubber("peer.service: sqledge_arm64", "peer.service: sqlserver");
 
