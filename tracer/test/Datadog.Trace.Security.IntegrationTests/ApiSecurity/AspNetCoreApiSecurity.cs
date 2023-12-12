@@ -49,6 +49,7 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
     [Trait("RunOnWindows", "True")]
     [InlineData("/dataapi/model", """{"property":"dummy_rule", "property2":"test2", "property3": 2, "property4": 3}""", HttpStatusCode.Forbidden, true)]
     [InlineData("/dataapi/model", """{"property":"test", "property2":"test2", "property3": 2, "property4": 2}""", HttpStatusCode.OK, false)]
+    [InlineData("/dataapi/empty-model", """{"property":"test", "property2":"test2", "property3": 2, "property4": 2}""", HttpStatusCode.NoContent, false)]
     public async Task TestApiSecurityScan(string url, string body, HttpStatusCode expectedStatusCode, bool containsAttack)
     {
         await TryStartApp();
@@ -58,6 +59,13 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
         var dateTime = DateTime.UtcNow;
         var result = await SubmitRequest(url, body, "application/json");
         var spans = agent.WaitForSpans(2, minDateTime: dateTime);
+#if !NET8_O_OR_GREATER
+        // Simple scrubber for the response content type in .NET 8
+        // .NET 8 doesn't add the content-length header, whereas previous versions do
+        settings.AddSimpleScrubber(
+            """_dd.appsec.s.res.headers: [{"content-length":[[[8]],{"len":1}]}],""",
+            """_dd.appsec.s.res.headers: [{}],""");
+#endif
         await VerifySpans(spans, settings);
     }
 

@@ -26,6 +26,13 @@ namespace Samples.Security.AspNetCore5
             });
         }
 
+
+        [Route("empty-model")]
+        public ActionResult<MyResponseModel> EmptyModel(MyModel model)
+        {
+            return new ActionResult<MyResponseModel>((MyResponseModel)null);
+        }
+
         [Route("array")]
         public IActionResult Array(IEnumerable<string> model)
         {

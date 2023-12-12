@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -65,7 +66,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         TraceSampleRate = .5,
                         // CustomSamplingRules = "[{\"sample_rate\":0.1}]",
                         // ServiceNameMapping = "[{\"from_key\":\"foo\", \"to_name\":\"bar\"}]",
-                        TraceHeaderTags = "[{ \"header\": \"User-Agent\", \"tag_name\": \"http.user_agent\" }]"
+                        TraceHeaderTags = "[{ \"header\": \"User-Agent\", \"tag_name\": \"http.user_agent\" }]",
+                        GlobalTags = "[\"foo1:bar1\",\"foo2:bar2\"]"
                     },
                     new Config
                     {
@@ -77,22 +79,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         TraceSampleRate = .5,
                         // CustomSamplingRules = "[{\"sample_rate\":0.1}]",
                         // ServiceNameMapping = "foo:bar",
-                        TraceHeaderTags = "User-Agent:http.user_agent"
+                        TraceHeaderTags = "User-Agent:http.user_agent",
+                        GlobalTags = "[\"foo1:bar1\",\"foo2:bar2\"]"
                     });
 
                 await UpdateAndValidateConfig(
                     agent,
                     logEntryWatcher,
-                    new Config
-                    {
-                        // RuntimeMetricsEnabled = false,
-                        // DebugLogsEnabled = false,
-                        // DataStreamsEnabled = false,
-                        LogInjectionEnabled = false,
-                        // SpanSamplingRules = string.Empty,
-                        TraceSampleRate = null,
-                        // CustomSamplingRules = string.Empty,
-                    });
+                    new Config());
             }
             finally
             {
@@ -165,6 +159,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var request = await agent.SetupRcmAndWait(Output, new[] { ((object)new { lib_config = config }, DynamicConfigurationManager.ProductName, fileId) });
 
+            // Validate capabilities
+            var capabilities = new BitArray(request.Client.Capabilities);
+
+            capabilities[12].Should().BeTrue(); // APM_TRACING_SAMPLE_RATE
+            capabilities[13].Should().BeTrue(); // APM_TRACING_LOGS_INJECTION
+            capabilities[14].Should().BeTrue(); // APM_TRACING_HTTP_HEADER_TAGS
+            capabilities[15].Should().BeTrue(); // APM_TRACING_CUSTOM_TAGS
+
             request.Client.State.ConfigStates.Should().ContainSingle(f => f.Id == fileId)
                .Subject.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
 
@@ -204,7 +206,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
             FlattenJsonArray(json["header_tags"]).Should().Be(expectedConfig.TraceHeaderTags ?? string.Empty);
             // FlattenJsonArray(json["service_mapping"]).Should().Be(expectedConfig.ServiceNameMapping ?? string.Empty);
-
+            json["tags"]?.ToString(Formatting.None).Should().Be(expectedConfig.GlobalTags ?? "[]");
             WaitForTelemetry(agent);
 
             AssertConfigurationChanged(agent.Telemetry, config);
@@ -243,6 +245,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // (ConfigurationKeys.DataStreamsMonitoring.Enabled, config.DataStreamsEnabled),
                 (ConfigurationKeys.HeaderTags, config.TraceHeaderTags == null ? string.Empty : JToken.Parse(config.TraceHeaderTags).ToString()),
                 // (ConfigurationKeys.ServiceNameMappings, config.ServiceNameMapping == null ? string.Empty : JToken.Parse(config.ServiceNameMapping).ToString())
+                (ConfigurationKeys.GlobalTags, config.GlobalTags == null ? string.Empty : JToken.Parse(config.GlobalTags).ToString())
             };
 
             var expectedCount = expectedKeys.Count(k => k.Value is not null);
@@ -345,6 +348,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             [JsonProperty("tracing_header_tags")]
             [JsonConverter(typeof(PlainJsonStringConverter))]
             public string TraceHeaderTags { get; init; }
+
+            [JsonProperty("tracing_tags")]
+            [JsonConverter(typeof(PlainJsonStringConverter))]
+            public string GlobalTags { get; init; }
 
             // [JsonProperty("tracing_service_mapping")]
             // [JsonConverter(typeof(PlainJsonStringConverter))]

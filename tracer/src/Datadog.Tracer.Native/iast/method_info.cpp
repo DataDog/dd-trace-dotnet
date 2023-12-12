@@ -116,7 +116,7 @@ namespace iast
             auto signature = GetSignature();
             if (signature != nullptr)
             {
-                fullName = signature->CharacterizeMember(_fullName, false);
+                fullName = signature->CharacterizeMember(fullName, false);
             }
             if (_fullNameCounterLock.fetch_add(1, std::memory_order_acquire) == 0)
             {

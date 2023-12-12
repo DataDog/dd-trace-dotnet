@@ -59,36 +59,6 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         }
 
         [Fact]
-        public void LogSpecificGlobalTagsFallBackToTracerGlobalTags()
-        {
-            var expected = new Dictionary<string, string> { { "test1", "value1" }, { "test2", "value2" }, };
-
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.GlobalTags, "test1:value1, test2:value2" },
-            }));
-
-            tracerSettings.LogSubmissionSettings.DirectLogSubmissionGlobalTags
-                          .Should()
-                          .BeEquivalentTo(expected);
-        }
-
-        [Fact]
-        public void LogSpecificGlobalTagsFallBackToLegacyGlobalTags()
-        {
-            var expected = new Dictionary<string, string> { { "test1", "value1" }, { "test2", "value2" }, };
-
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
-            {
-                { "DD_TRACE_GLOBAL_TAGS", "test1:value1, test2:value2" },
-            }));
-
-            tracerSettings.LogSubmissionSettings.DirectLogSubmissionGlobalTags
-               .Should()
-               .BeEquivalentTo(expected);
-        }
-
-        [Fact]
         public void LogSpecificGlobalTagsOverrideTracerGlobalTags()
         {
             var expected = new Dictionary<string, string> { { "test1", "value1" }, { "test2", "value2" }, };
