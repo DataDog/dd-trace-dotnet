@@ -7,7 +7,14 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.RegularExpressions;
+
+#if NETCOREAPP3_1_OR_GREATER
+using Regex = Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions.Regex;
+using RegexOptions = Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions.RegexOptions;
+#else
+using Regex = System.Text.RegularExpressions.Regex;
+using RegexOptions = System.Text.RegularExpressions.RegexOptions;
+#endif
 
 namespace Datadog.Trace.Logging.TracerFlare;
 
@@ -132,7 +139,14 @@ internal class DebugLogScrubber
     ];
 
     private static Regex GetRegex([StringSyntax(StringSyntaxAttribute.Regex)] string pattern, RegexOptions options = RegexOptions.Compiled)
-        => new(pattern, options, TimeSpan.FromSeconds(RegexTimeoutSeconds));
+        => new(
+            pattern,
+#if NETCOREAPP3_1_OR_GREATER
+            options | RegexOptions.NonBacktracking,
+#else
+            options,
+#endif
+            TimeSpan.FromSeconds(RegexTimeoutSeconds));
 
     private class ReplacerConfig(Regex regex, string[]? hints, string replacement)
     {
