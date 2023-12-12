@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 {
     /// <summary>
@@ -36,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         ///   T:System.ArgumentException:
         ///     The machine name is not valid, possibly because the syntax is not valid.
         /// </summary>
-        string MachineName { get; }
+        string? MachineName { get; }
 
         /// <summary>
         ///     Gets the queue's path. Setting the System.Messaging.MessageQueue.Path
@@ -51,6 +53,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         ///   T:System.ArgumentException:
         ///     The path is not valid, possibly because the syntax is not valid.
         /// </summary>
-        string Path { get; }
+        string? Path { get; }
     }
 }

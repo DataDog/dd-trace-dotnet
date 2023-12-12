@@ -15,7 +15,7 @@
                     "type": "Int32",
                     "value": "99"
                   },
-                  "Address": {
+                  "Adrs": {
                     "fields": {
                       "City": {
                         "fields": {
@@ -59,7 +59,7 @@
                             "type": "Int32",
                             "value": "31"
                           },
-                          "Address": {
+                          "Adrs": {
                             "fields": {
                               "City": {
                                 "notCapturedReason": "depth",
@@ -103,8 +103,8 @@
                         "value": "Person"
                       }
                     ],
-                    "type": "List`1",
-                    "value": "count: 1"
+                    "size": 1,
+                    "type": "List`1"
                   },
                   "Id": {
                     "type": "Guid",
@@ -136,7 +136,7 @@
                         "type": "Int32",
                         "value": "99"
                       },
-                      "Address": {
+                      "Adrs": {
                         "fields": {
                           "City": {
                             "notCapturedReason": "depth",
@@ -171,7 +171,7 @@
                                 "type": "Int32",
                                 "value": "31"
                               },
-                              "Address": {
+                              "Adrs": {
                                 "notCapturedReason": "depth",
                                 "type": "Address",
                                 "value": "Address"
@@ -197,8 +197,8 @@
                             "value": "Person"
                           }
                         ],
-                        "type": "List`1",
-                        "value": "count: 1"
+                        "size": 1,
+                        "type": "List`1"
                       },
                       "Id": {
                         "type": "Guid",
@@ -226,7 +226,7 @@
                     "type": "Int32",
                     "value": "99"
                   },
-                  "Address": {
+                  "Adrs": {
                     "fields": {
                       "City": {
                         "fields": {
@@ -270,7 +270,7 @@
                             "type": "Int32",
                             "value": "31"
                           },
-                          "Address": {
+                          "Adrs": {
                             "fields": {
                               "City": {
                                 "notCapturedReason": "depth",
@@ -314,8 +314,8 @@
                         "value": "Person"
                       }
                     ],
-                    "type": "List`1",
-                    "value": "count: 1"
+                    "size": 1,
+                    "type": "List`1"
                   },
                   "Id": {
                     "type": "Guid",
@@ -347,7 +347,7 @@
                         "type": "Int32",
                         "value": "99"
                       },
-                      "Address": {
+                      "Adrs": {
                         "fields": {
                           "City": {
                             "notCapturedReason": "depth",
@@ -382,7 +382,7 @@
                                 "type": "Int32",
                                 "value": "31"
                               },
-                              "Address": {
+                              "Adrs": {
                                 "notCapturedReason": "depth",
                                 "type": "Address",
                                 "value": "Address"
@@ -408,8 +408,8 @@
                             "value": "Person"
                           }
                         ],
-                        "type": "List`1",
-                        "value": "count: 1"
+                        "size": 1,
+                        "type": "List`1"
                       },
                       "Id": {
                         "type": "Guid",
@@ -448,7 +448,8 @@
           "location": {
             "method": "Method",
             "type": "Samples.Probes.TestRuns.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -475,7 +476,7 @@
           "lines": {
             "23": {
               "locals": {
-                "address": {
+                "adr": {
                   "fields": {
                     "City": {
                       "fields": {
@@ -543,7 +544,8 @@
             "lines": [
               23
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -570,7 +572,7 @@
           "lines": {
             "25": {
               "locals": {
-                "address": {
+                "adr": {
                   "fields": {
                     "City": {
                       "fields": {
@@ -638,7 +640,8 @@
             "lines": [
               25
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -665,7 +668,7 @@
           "lines": {
             "26": {
               "locals": {
-                "address": {
+                "adr": {
                   "fields": {
                     "City": {
                       "fields": {
@@ -733,7 +736,8 @@
             "lines": [
               26
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -760,7 +764,7 @@
           "lines": {
             "27": {
               "locals": {
-                "address": {
+                "adr": {
                   "fields": {
                     "City": {
                       "fields": {
@@ -794,8 +798,8 @@
                 },
                 "children": {
                   "elements": [],
-                  "type": "List`1",
-                  "value": "count: 0"
+                  "size": 0,
+                  "type": "List`1"
                 },
                 "person": {
                   "isNull": "true",
@@ -829,7 +833,8 @@
             "lines": [
               27
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -856,7 +861,7 @@
           "lines": {
             "28": {
               "locals": {
-                "address": {
+                "adr": {
                   "fields": {
                     "City": {
                       "fields": {
@@ -896,7 +901,7 @@
                           "type": "Int32",
                           "value": "31"
                         },
-                        "Address": {
+                        "Adrs": {
                           "fields": {
                             "City": {
                               "fields": {
@@ -949,8 +954,8 @@
                       "value": "Person"
                     }
                   ],
-                  "type": "List`1",
-                  "value": "count: 1"
+                  "size": 1,
+                  "type": "List`1"
                 },
                 "person": {
                   "isNull": "true",
@@ -984,7 +989,8 @@
             "lines": [
               28
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -1011,7 +1017,7 @@
           "lines": {
             "29": {
               "locals": {
-                "address": {
+                "adr": {
                   "fields": {
                     "City": {
                       "fields": {
@@ -1051,7 +1057,7 @@
                           "type": "Int32",
                           "value": "31"
                         },
-                        "Address": {
+                        "Adrs": {
                           "fields": {
                             "City": {
                               "fields": {
@@ -1104,8 +1110,8 @@
                       "value": "Person"
                     }
                   ],
-                  "type": "List`1",
-                  "value": "count: 1"
+                  "size": 1,
+                  "type": "List`1"
                 },
                 "person": {
                   "fields": {
@@ -1113,7 +1119,7 @@
                       "type": "Int32",
                       "value": "99"
                     },
-                    "Address": {
+                    "Adrs": {
                       "fields": {
                         "City": {
                           "fields": {
@@ -1157,7 +1163,7 @@
                               "type": "Int32",
                               "value": "31"
                             },
-                            "Address": {
+                            "Adrs": {
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
@@ -1201,8 +1207,8 @@
                           "value": "Person"
                         }
                       ],
-                      "type": "List`1",
-                      "value": "count: 1"
+                      "size": 1,
+                      "type": "List`1"
                     },
                     "Id": {
                       "type": "Guid",
@@ -1244,7 +1250,8 @@
             "lines": [
               29
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -1277,7 +1284,7 @@
                       "type": "Int32",
                       "value": "99"
                     },
-                    "Address": {
+                    "Adrs": {
                       "fields": {
                         "City": {
                           "fields": {
@@ -1321,7 +1328,7 @@
                               "type": "Int32",
                               "value": "31"
                             },
-                            "Address": {
+                            "Adrs": {
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
@@ -1365,8 +1372,8 @@
                           "value": "Person"
                         }
                       ],
-                      "type": "List`1",
-                      "value": "count: 1"
+                      "size": 1,
+                      "type": "List`1"
                     },
                     "Id": {
                       "type": "Guid",
@@ -1398,7 +1405,7 @@
                           "type": "Int32",
                           "value": "99"
                         },
-                        "Address": {
+                        "Adrs": {
                           "fields": {
                             "City": {
                               "notCapturedReason": "depth",
@@ -1433,7 +1440,7 @@
                                   "type": "Int32",
                                   "value": "31"
                                 },
-                                "Address": {
+                                "Adrs": {
                                   "notCapturedReason": "depth",
                                   "type": "Address",
                                   "value": "Address"
@@ -1459,8 +1466,8 @@
                               "value": "Person"
                             }
                           ],
-                          "type": "List`1",
-                          "value": "count: 1"
+                          "size": 1,
+                          "type": "List`1"
                         },
                         "Id": {
                           "type": "Guid",
@@ -1498,7 +1505,8 @@
             "lines": [
               45
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -1531,7 +1539,7 @@
                       "type": "Int32",
                       "value": "99"
                     },
-                    "Address": {
+                    "Adrs": {
                       "fields": {
                         "City": {
                           "fields": {
@@ -1575,7 +1583,7 @@
                               "type": "Int32",
                               "value": "31"
                             },
-                            "Address": {
+                            "Adrs": {
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
@@ -1619,8 +1627,8 @@
                           "value": "Person"
                         }
                       ],
-                      "type": "List`1",
-                      "value": "count: 1"
+                      "size": 1,
+                      "type": "List`1"
                     },
                     "Id": {
                       "type": "Guid",
@@ -1652,7 +1660,7 @@
                           "type": "Int32",
                           "value": "99"
                         },
-                        "Address": {
+                        "Adrs": {
                           "fields": {
                             "City": {
                               "notCapturedReason": "depth",
@@ -1687,7 +1695,7 @@
                                   "type": "Int32",
                                   "value": "31"
                                 },
-                                "Address": {
+                                "Adrs": {
                                   "notCapturedReason": "depth",
                                   "type": "Address",
                                   "value": "Address"
@@ -1713,8 +1721,8 @@
                               "value": "Person"
                             }
                           ],
-                          "type": "List`1",
-                          "value": "count: 1"
+                          "size": 1,
+                          "type": "List`1"
                         },
                         "Id": {
                           "type": "Guid",
@@ -1752,7 +1760,8 @@
             "lines": [
               46
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -1785,7 +1794,7 @@
                       "type": "Int32",
                       "value": "99"
                     },
-                    "Address": {
+                    "Adrs": {
                       "fields": {
                         "City": {
                           "fields": {
@@ -1829,7 +1838,7 @@
                               "type": "Int32",
                               "value": "31"
                             },
-                            "Address": {
+                            "Adrs": {
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
@@ -1873,8 +1882,8 @@
                           "value": "Person"
                         }
                       ],
-                      "type": "List`1",
-                      "value": "count: 1"
+                      "size": 1,
+                      "type": "List`1"
                     },
                     "Id": {
                       "type": "Guid",
@@ -1906,7 +1915,7 @@
                           "type": "Int32",
                           "value": "99"
                         },
-                        "Address": {
+                        "Adrs": {
                           "fields": {
                             "City": {
                               "notCapturedReason": "depth",
@@ -1941,7 +1950,7 @@
                                   "type": "Int32",
                                   "value": "31"
                                 },
-                                "Address": {
+                                "Adrs": {
                                   "notCapturedReason": "depth",
                                   "type": "Address",
                                   "value": "Address"
@@ -1967,8 +1976,8 @@
                               "value": "Person"
                             }
                           ],
-                          "type": "List`1",
-                          "value": "count: 1"
+                          "size": 1,
+                          "type": "List`1"
                         },
                         "Id": {
                           "type": "Guid",
@@ -2006,7 +2015,8 @@
             "lines": [
               47
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"

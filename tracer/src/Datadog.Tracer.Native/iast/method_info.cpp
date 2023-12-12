@@ -44,7 +44,8 @@ namespace iast
 
     //----------------------------
 
-    MemberRefInfo::MemberRefInfo(ModuleInfo* pModuleInfo, mdMemberRef memberRef)
+    MemberRefInfo::MemberRefInfo(ModuleInfo* pModuleInfo, mdMemberRef memberRef) : 
+        _fullNameCounterLock(0)
     {
         this->_module = pModuleInfo;
         this->_id = memberRef;
@@ -71,7 +72,7 @@ namespace iast
 
     TypeInfo* MemberRefInfo::GetTypeInfo()
     {
-        if (!_typeInfo) 
+        if (!_typeInfo)
         {
             _typeInfo = _module->GetTypeInfo(_typeDef);
         }
@@ -107,19 +108,33 @@ namespace iast
         return _memberName;
     }
 
-    WSTRING MemberRefInfo::GetFullName(bool includeReturnType)
+    WSTRING MemberRefInfo::GetFullName()
     {
-        if (_fullName.size() == 0 && _fullNameCounterLock.fetch_add(1, std::memory_order_acquire) == 0)
+        if (_fullName.size() == 0)
         {
-            _fullName = GetTypeName() + WStr("::") + _name;
+            auto fullName = GetTypeName() + WStr("::") + _name;
             auto signature = GetSignature();
             if (signature != nullptr)
             {
-                _fullNameWithReturnType = signature->CharacterizeMember(_fullName, true);
-                _fullName = signature->CharacterizeMember(_fullName, false);
+                fullName = signature->CharacterizeMember(fullName, false);
             }
+            if (_fullNameCounterLock.fetch_add(1, std::memory_order_acquire) == 0)
+            {
+                _fullName = fullName;
+            }
+            return fullName;
         }
-        return includeReturnType ? _fullNameWithReturnType : _fullName;
+        return _fullName;
+    }
+    WSTRING MemberRefInfo::GetFullNameWithReturnType()
+    {
+        auto res = GetFullName();
+        auto signature = GetSignature();
+        if (signature != nullptr)
+        {
+            res = signature->GetReturnTypeString() + WStr(" ") + res;
+        }
+        return res;
     }
     WSTRING MemberRefInfo::GetTypeName()
     {
@@ -184,7 +199,6 @@ namespace iast
     {
         WCHAR methodName[1024];
         ULONG methodNameLength;
-        DWORD attrs;
 
         HRESULT hr = pModuleInfo->_metadataImport->GetPropertyProps(
             propId, &_typeDef, methodName, 1024, &methodNameLength, &_methodAttributes, &_pSig, &_nSig, nullptr,
@@ -251,7 +265,7 @@ namespace iast
     WSTRING MethodInfo::GetKey(FunctionID functionId)
     {
         std::stringstream methodKeyBuilder;
-        methodKeyBuilder << shared::ToString(GetFullName(true)) << " " << shared::ToString(_module->GetModuleFullName()) << " (" << Hex(_id) << ") ";
+        methodKeyBuilder << shared::ToString(GetFullName()) << " " << shared::ToString(_module->GetModuleFullName()) << " (" << Hex(_id) << ") ";
         if (functionId > 0)
         {
             methodKeyBuilder << " Fid( " << Hex((ULONG)functionId) << " ) ";
@@ -419,7 +433,7 @@ namespace iast
 
         if (verify || dump)
         {
-            if (!_rewriter) 
+            if (!_rewriter)
             {
                 trace::Logger::Debug("MethodInfo::SetMethodIL -> No rewritter present. Creating one to verify new IL...");
                 
@@ -431,7 +445,7 @@ namespace iast
                     correct = false;
                 }
             }
-            else 
+            else
             {
                 trace::Logger::Debug("MethodInfo::SetMethodIL -> Rewritter present. Verify new IL...");
             }
@@ -464,12 +478,12 @@ namespace iast
 
             if (pFunctionControl)
             {
-                trace::Logger::Debug("MethodInfo::SetMethodIL -> ReJIT : Setting IL for ", GetFullName().c_str());
+                trace::Logger::Debug("MethodInfo::SetMethodIL -> ReJIT : Setting IL for ", GetFullName());
                 ApplyFinalInstrumentation(pFunctionControl);
             }
             else
             {
-                trace::Logger::Debug("MethodInfo::SetMethodIL ->   JIT : Setting IL for ", GetFullName().c_str());
+                trace::Logger::Debug("MethodInfo::SetMethodIL ->   JIT : Setting IL for ", GetFullName());
             }
         }
         else
@@ -554,7 +568,7 @@ namespace iast
         FreeBuffer();
     }
 
-    void MethodInfo::FreeBuffer() 
+    void MethodInfo::FreeBuffer()
     {
         _nMethodIL = 0;
         DEL_ARR(_pMethodIL);

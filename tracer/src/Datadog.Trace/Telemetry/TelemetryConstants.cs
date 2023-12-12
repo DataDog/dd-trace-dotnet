@@ -9,7 +9,6 @@ namespace Datadog.Trace.Telemetry
 {
     internal class TelemetryConstants
     {
-        public const string ApiVersionV1 = "v1";
         public const string ApiVersionV2 = "v2";
         public const string TelemetryPath = "api/v2/apmtelemetry";
         public const string TelemetryIntakePrefix = "https://instrumentation-telemetry-intake";

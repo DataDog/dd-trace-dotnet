@@ -13,11 +13,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
     internal interface IRequestData
     {
         /// <summary>
-        /// Gets the path of the request
-        /// </summary>
-        string Path { get; }
-
-        /// <summary>
         /// Gets the URI of the request
         /// </summary>
         Uri Uri { get; }
@@ -25,6 +20,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
         /// <summary>
         /// Gets the HTTP method of the request
         /// </summary>
-        string Method { get; }
+        HttpMethod Method { get; }
     }
 }

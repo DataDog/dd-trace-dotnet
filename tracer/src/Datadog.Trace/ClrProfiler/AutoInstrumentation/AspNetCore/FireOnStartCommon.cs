@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
     MethodName = "FireOnStarting",
     ReturnTypeName = ClrNames.Task,
     MinimumVersion = "2.0.0.0",
-    MaximumVersion = "7.*.*.*",
+    MaximumVersion = "8.*.*.*",
     IntegrationName = IntegrationName,
     InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
 [InstrumentMethod(
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
     MethodName = "FireOnStarting",
     ReturnTypeName = ClrNames.Task,
     MinimumVersion = "2.0.0.0",
-    MaximumVersion = "7.*.*.*",
+    MaximumVersion = "8.*.*.*",
     IntegrationName = IntegrationName,
     InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
 
@@ -65,12 +65,12 @@ public static class FireOnStartCommon
         if (security.Enabled || iastEnabled)
         {
             var responseHeaders = instance.DuckCast<HttpProtocolStruct>().ResponseHeaders;
+            var span = Tracer.Instance.InternalActiveScope?.Root?.Span;
+
             if (responseHeaders is not null)
             {
                 if (security.Enabled)
                 {
-                    var span = Tracer.Instance.InternalActiveScope?.Root?.Span;
-
                     if (span is not null)
                     {
                         SecurityCoordinatorHelpers.CheckReturnedHeaders(security, span, responseHeaders);
@@ -79,6 +79,13 @@ public static class FireOnStartCommon
 
                 if (iastEnabled && IastModule.AddRequestVulnerabilitiesAllowed())
                 {
+                    if (span is not null)
+                    {
+                        var statusCode = instance.DuckCast<HttpProtocolStruct>().StatusCode;
+                        var scheme = instance.DuckCast<HttpProtocolStruct>().Scheme;
+                        ReturnedHeadersAnalyzer.Analyze(responseHeaders, IntegrationId.AspNetCore, span.ServiceName, statusCode, scheme);
+                    }
+
                     CookieAnalyzer.AnalyzeCookies(responseHeaders, IntegrationId.AspNetCore);
                 }
             }
@@ -92,6 +99,10 @@ public static class FireOnStartCommon
     {
         [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
         public IHeaderDictionary ResponseHeaders;
+        [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+        public int StatusCode;
+        [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+        public string Scheme;
     }
 }
 

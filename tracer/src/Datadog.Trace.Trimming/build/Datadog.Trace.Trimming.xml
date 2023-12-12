@@ -1,5 +1,7 @@
 <linker>
    <assembly fullname="AerospikeClient" />
+   <assembly fullname="Amazon.Lambda.RuntimeSupport" />
+   <assembly fullname="amqmdnetstd" />
    <assembly fullname="AWSSDK.Core" />
    <assembly fullname="AWSSDK.DynamoDBv2" />
    <assembly fullname="AWSSDK.Kinesis" />
@@ -45,6 +47,12 @@
    <assembly fullname="Microsoft.AspNetCore.Mvc.Abstractions">
       <type fullname="Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor" />
       <type fullname="Microsoft.AspNetCore.Mvc.Abstractions.ParameterDescriptor" />
+      <type fullname="Microsoft.AspNetCore.Mvc.ActionContext" />
+      <type fullname="Microsoft.AspNetCore.Mvc.Filters.ActionExecutedContext" />
+      <type fullname="Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext" />
+      <type fullname="Microsoft.AspNetCore.Mvc.Filters.IActionFilter" />
+      <type fullname="Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata" />
+      <type fullname="Microsoft.AspNetCore.Mvc.IActionResult" />
       <type fullname="Microsoft.AspNetCore.Mvc.Routing.AttributeRouteInfo" />
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Mvc.Core" />
@@ -509,6 +517,7 @@
       <type fullname="System.Diagnostics.DebuggerHiddenAttribute" />
       <type fullname="System.Diagnostics.DebuggerStepThroughAttribute" />
       <type fullname="System.Diagnostics.DebuggerTypeProxyAttribute" />
+      <type fullname="System.Diagnostics.StackTraceHiddenAttribute" />
       <type fullname="System.Diagnostics.Stopwatch" />
       <type fullname="System.Double" />
       <type fullname="System.EntryPointNotFoundException" />
@@ -657,6 +666,7 @@
       <type fullname="System.Reflection.TypeAttributes" />
       <type fullname="System.Reflection.TypeInfo" />
       <type fullname="System.ResolveEventArgs" />
+      <type fullname="System.Runtime.CompilerServices.AsyncIteratorStateMachineAttribute" />
       <type fullname="System.Runtime.CompilerServices.AsyncStateMachineAttribute" />
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1" />

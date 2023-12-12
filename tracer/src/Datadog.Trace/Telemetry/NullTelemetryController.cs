@@ -32,17 +32,8 @@ namespace Datadog.Trace.Telemetry
         {
         }
 
-        public void RecordSecuritySettings(SecuritySettings settings)
-        {
-        }
-
         public void RecordProfilerSettings(Profiler profiler)
         {
-        }
-
-        public Task DisposeAsync(bool sendAppClosingTelemetry)
-        {
-            return Task.CompletedTask;
         }
 
         public void Start()
@@ -56,10 +47,6 @@ namespace Datadog.Trace.Telemetry
         public Task DisposeAsync()
         {
             return Task.CompletedTask;
-        }
-
-        public void RecordIastSettings(IastSettings settings)
-        {
         }
     }
 }

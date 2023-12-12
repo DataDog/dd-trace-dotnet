@@ -558,7 +558,7 @@ namespace Datadog.Trace.Agent
                     return;
                 }
 
-                if (hasDequeuedTraces)
+                if (hasDequeuedTraces && _batchInterval > 0)
                 {
                     Thread.Sleep(_batchInterval);
                 }

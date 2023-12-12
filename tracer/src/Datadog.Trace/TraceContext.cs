@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
@@ -26,6 +27,7 @@ namespace Datadog.Trace
         private readonly TraceClock _clock;
 
         private IastRequestContext _iastRequestContext;
+        private bool _isApiSecurity;
 
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
@@ -134,17 +136,23 @@ namespace Datadog.Trace
             {
                 Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
 
-                if (Iast.Iast.Instance.Settings.Enabled)
+                var iastInstance = Iast.Iast.Instance;
+                if (iastInstance.Settings.Enabled)
                 {
                     if (_iastRequestContext is { } iastRequestContext)
                     {
                         iastRequestContext.AddIastVulnerabilitiesToSpan(span);
-                        OverheadController.Instance.ReleaseRequest();
+                        iastInstance.OverheadController.ReleaseRequest();
                     }
                     else
                     {
                         IastRequestContext.AddIastDisabledFlagToSpan(span);
                     }
+                }
+
+                if (_isApiSecurity)
+                {
+                    Security.Instance.ApiSecurity.ReleaseRequest();
                 }
             }
 
@@ -253,6 +261,11 @@ namespace Datadog.Trace
                     CurrentTraceSettings.SpanSampler.MakeSamplingDecision(spans.Array[i + spans.Offset]);
                 }
             }
+        }
+
+        public void MarkApiSecurity()
+        {
+            _isApiSecurity = true;
         }
     }
 }

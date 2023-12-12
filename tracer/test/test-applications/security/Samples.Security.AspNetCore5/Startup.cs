@@ -36,6 +36,7 @@ namespace Samples.Security.AspNetCore5
                 DatabaseHelper.CreateAndFeedDatabase(Configuration.GetConnectionString("DefaultConnection"));
             }
 
+            services.AddSession();
             services.AddRazorPages();
             var identityBuilder = services.AddIdentity<IdentityUser, IdentityRole>(
                 o =>
@@ -50,7 +51,7 @@ namespace Samples.Security.AspNetCore5
             // sql lite provider doesnt seem to work on linux (even with EF libs) so use in memory store 
             if (Configuration.ShouldUseSqlLite())
             {
-#if NET7_0
+#if NET7_0_OR_GREATER
                 services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(Configuration.GetDefaultConnectionString()));
                 identityBuilder.AddEntityFrameworkStores<ApplicationDbContext>();
 #else
@@ -86,7 +87,8 @@ namespace Samples.Security.AspNetCore5
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
+            
+            app.UseSession();
             app.UseRouting();
 
             app.UseAuthorization();

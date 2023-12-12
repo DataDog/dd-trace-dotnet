@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data;
@@ -19,43 +20,46 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
     public class DbScopeFactoryTests
     {
-        public static IEnumerable<object[]> GetDbCommands()
-        {
-            yield return new object[] { new System.Data.SqlClient.SqlCommand(),              nameof(IntegrationId.SqlClient), DbType.SqlServer  };
-            yield return new object[] { new Microsoft.Data.SqlClient.SqlCommand(),           nameof(IntegrationId.SqlClient), DbType.SqlServer  };
-            yield return new object[] { new MySql.Data.MySqlClient.MySqlCommand(),           nameof(IntegrationId.MySql),     DbType.MySql      };
-            yield return new object[] { new MySqlConnector.MySqlCommand(),                   nameof(IntegrationId.MySql),     DbType.MySql      };
-            yield return new object[] { new Npgsql.NpgsqlCommand(),                          nameof(IntegrationId.Npgsql),    DbType.PostgreSql };
-            yield return new object[] { new Microsoft.Data.Sqlite.SqliteCommand(),           nameof(IntegrationId.Sqlite),    DbType.Sqlite     };
-            yield return new object[] { new System.Data.SQLite.SQLiteCommand(),              nameof(IntegrationId.Sqlite),    DbType.Sqlite     };
-            yield return new object[] { new Oracle.ManagedDataAccess.Client.OracleCommand(), nameof(IntegrationId.Oracle),    DbType.Oracle     };
-            yield return new object[] { new Oracle.DataAccess.Client.OracleCommand(),        nameof(IntegrationId.Oracle),    DbType.Oracle     };
-        }
+        private const string DbmCommandText = "SELECT 1";
 
-        public static TheoryData<IDbCommand> GetDbmCommandsWithText()
+        public static TheoryData<Type, string, string> GetDbCommands() => new()
+        {
+            { typeof(System.Data.SqlClient.SqlCommand),              nameof(IntegrationId.SqlClient), DbType.SqlServer  },
+            { typeof(Microsoft.Data.SqlClient.SqlCommand),           nameof(IntegrationId.SqlClient), DbType.SqlServer  },
+            { typeof(MySql.Data.MySqlClient.MySqlCommand),           nameof(IntegrationId.MySql),     DbType.MySql      },
+            { typeof(MySqlConnector.MySqlCommand),                   nameof(IntegrationId.MySql),     DbType.MySql      },
+            { typeof(Npgsql.NpgsqlCommand),                          nameof(IntegrationId.Npgsql),    DbType.PostgreSql },
+            { typeof(Microsoft.Data.Sqlite.SqliteCommand),           nameof(IntegrationId.Sqlite),    DbType.Sqlite     },
+            { typeof(System.Data.SQLite.SQLiteCommand),              nameof(IntegrationId.Sqlite),    DbType.Sqlite     },
+            { typeof(Oracle.ManagedDataAccess.Client.OracleCommand), nameof(IntegrationId.Oracle),    DbType.Oracle     },
+            { typeof(Oracle.DataAccess.Client.OracleCommand),        nameof(IntegrationId.Oracle),    DbType.Oracle     },
+        };
+
+        public static TheoryData<Type> GetDbmCommands()
             => new()
             {
-                new System.Data.SqlClient.SqlCommand { CommandText = "SELECT 1" },
-                new Microsoft.Data.SqlClient.SqlCommand { CommandText = "SELECT 1" },
-                new MySql.Data.MySqlClient.MySqlCommand { CommandText = "SELECT 1" },
-                new MySqlConnector.MySqlCommand { CommandText = "SELECT 1" },
-                new Npgsql.NpgsqlCommand { CommandText = "SELECT 1" },
+                typeof(System.Data.SqlClient.SqlCommand),
+                typeof(Microsoft.Data.SqlClient.SqlCommand),
+                typeof(MySql.Data.MySqlClient.MySqlCommand),
+                typeof(MySqlConnector.MySqlCommand),
+                typeof(Npgsql.NpgsqlCommand),
                 // We don't support SqlLite or Oracle in DBM
-                // new Microsoft.Data.Sqlite.SqliteCommand { CommandText = "SELECT 1" },
-                // new System.Data.SQLite.SQLiteCommand { CommandText = "SELECT 1" },
-                // new Oracle.ManagedDataAccess.Client.OracleCommand { CommandText = "SELECT 1" },
-                // new Oracle.DataAccess.Client.OracleCommand { CommandText = "SELECT 1" },
+                // "Microsoft.Data.Sqlite.SqliteCommand",
+                // "System.Data.SQLite.SQLiteCommand",
+                // "Oracle.ManagedDataAccess.Client.OracleCommand",
+                // "Oracle.DataAccess.Client.OracleCommand",
             };
 
         public static IEnumerable<object[]> GetEnabledDbmData()
-            => from command in GetDbmCommandsWithText()
+            => from command in GetDbmCommands()
                from dbm in new[] { "service", "full" }
                select new[] { command[0], dbm };
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
-        public void CreateDbCommandScope_ReturnsScopeForEnabledIntegration(IDbCommand command, string integrationName, string dbType)
+        public void CreateDbCommandScope_ReturnsScopeForEnabledIntegration(Type commandType, string integrationName, string dbType)
         {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
             var tracer = CreateTracerWithIntegrationEnabled(integrationName, enabled: true);
 
             // Create scope
@@ -66,8 +70,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
-        public void CreateDbCommandScope_ReturnNullForDisabledIntegration(IDbCommand command, string integrationName, string dbType)
+        public void CreateDbCommandScope_ReturnNullForDisabledIntegration(Type commandType, string integrationName, string dbType)
         {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
             // HACK: avoid analyzer warning about not using arguments
             _ = dbType;
 
@@ -80,8 +85,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
-        public void CreateDbCommandScope_ReturnNullForAdoNetDisabledIntegration(IDbCommand command, string integrationName, string dbType)
+        public void CreateDbCommandScope_ReturnNullForAdoNetDisabledIntegration(Type commandType, string integrationName, string dbType)
         {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
             // HACK: avoid analyzer warning about not using arguments
             _ = dbType;
 
@@ -97,8 +103,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
-        public void CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(IDbCommand command, string integrationName, string dbType)
+        public void CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(Type commandType, string integrationName, string dbType)
         {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
             // HACK: avoid analyzer warning about not using arguments
             _ = integrationName;
 
@@ -115,8 +122,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
-        public void CreateDbCommandScope_IgnoresReplacementServiceNameWhenNotProvided(IDbCommand command, string integrationName, string dbType)
+        public void CreateDbCommandScope_IgnoresReplacementServiceNameWhenNotProvided(Type commandType, string integrationName, string dbType)
         {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
             // HACK: avoid analyzer warning about not using arguments
             _ = dbType;
             _ = integrationName;
@@ -134,9 +142,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetEnabledDbmData))]
-        public void CreateDbCommandScope_InjectsDbmWhenEnabled(IDbCommand command, string dbmMode)
+        public void CreateDbCommandScope_InjectsDbmWhenEnabled(Type commandType, string dbmMode)
         {
-            var previousCommandData = command.CommandText;
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = DbmCommandText;
 
             var collection = new NameValueCollection
             {
@@ -150,15 +159,50 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             scope.Should().NotBeNull();
 
             // Should have injected the data
-            command.CommandText.Should().NotBe(previousCommandData);
-            command.CommandText.Should().Contain(previousCommandData);
+            command.CommandText.Should().NotBe(DbmCommandText).And.Contain(DbmCommandText);
         }
 
         [Theory]
         [MemberData(nameof(GetEnabledDbmData))]
-        public void CreateDbCommandScope_DoesNotInjectDbmIntoStoredProcedures(IDbCommand command, string dbmMode)
+        public void CreateDbCommandScope_OnlyInjectsDbmOnceWhenCommandIsReused(Type commandType, string dbmMode)
         {
-            var previousCommandData = command.CommandText;
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = DbmCommandText;
+
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.DbmPropagationMode, dbmMode }
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracer = TracerHelper.Create(tracerSettings);
+
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+            }
+
+            // Should have injected the data once
+            var injectedTest = command.CommandText.Should()
+                                     .NotBe(DbmCommandText)
+                                     .And.Contain(DbmCommandText)
+                                     .And.Subject;
+
+            // second attempt should still have the same data
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+            }
+
+            command.CommandText.Should().Be(injectedTest);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetEnabledDbmData))]
+        public void CreateDbCommandScope_DoesNotInjectDbmIntoStoredProcedures(Type commandType, string dbmMode)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = DbmCommandText;
             command.CommandType = CommandType.StoredProcedure;
 
             var collection = new NameValueCollection
@@ -173,14 +217,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             scope.Should().NotBeNull();
 
             // Should not have injected the data
-            command.CommandText.Should().Be(previousCommandData);
+            command.CommandText.Should().Be(DbmCommandText);
         }
 
         [Theory]
-        [MemberData(nameof(GetDbmCommandsWithText))]
-        public void CreateDbCommandScope_DoesNotInjectDbmWhenDisabled(IDbCommand command)
+        [MemberData(nameof(GetDbmCommands))]
+        public void CreateDbCommandScope_DoesNotInjectDbmWhenDisabled(Type commandType)
         {
-            var previousCommandData = command.CommandText;
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = DbmCommandText;
 
             var collection = new NameValueCollection
             {
@@ -194,13 +239,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             scope.Should().NotBeNull();
 
             // Should not have injected the data
-            command.CommandText.Should().Be(previousCommandData);
+            command.CommandText.Should().Be(DbmCommandText);
         }
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
-        internal void TryGetIntegrationDetails_CorrectNameGenerated(IDbCommand command, string expectedIntegrationName, string expectedDbType)
+        internal void TryGetIntegrationDetails_CorrectNameGenerated(Type commandType, string expectedIntegrationName, string expectedDbType)
         {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = DbmCommandText;
+
             bool result = DbScopeFactory.TryGetIntegrationDetails(command.GetType().FullName, out var actualIntegrationId, out var actualDbType);
             Assert.True(result);
             Assert.Equal(expectedIntegrationName, actualIntegrationId.ToString());

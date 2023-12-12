@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec
@@ -24,14 +25,19 @@ namespace Datadog.Trace.AppSec
 
         private static readonly ConcurrentDictionary<Type, FieldExtractor[]> TypeToExtractorMap = new();
 
-        private static readonly HashSet<Type> AdditionalPrimitives = new()
+        private static readonly HashSet<Type> WafProcessableTypes = new()
         {
-            typeof(string),
+            typeof(float),
+            typeof(double),
             typeof(decimal),
-            typeof(Guid),
-            typeof(DateTime),
-            typeof(DateTimeOffset),
-            typeof(TimeSpan)
+            typeof(short),
+            typeof(ushort),
+            typeof(int),
+            typeof(uint),
+            typeof(long),
+            typeof(bool),
+            typeof(byte),
+            typeof(ulong)
         };
 
         internal static object Extract(object body)
@@ -40,11 +46,6 @@ namespace Datadog.Trace.AppSec
             var item = ExtractType(body.GetType(), body, 0, visited);
 
             return item;
-        }
-
-        private static bool IsOurKindOfPrimitive(Type t)
-        {
-            return t.IsPrimitive || AdditionalPrimitives.Contains(t) || t.IsEnum;
         }
 
         private static IReadOnlyDictionary<string, object> ExtractProperties(object body, int depth, HashSet<object> visited)
@@ -65,14 +66,13 @@ namespace Datadog.Trace.AppSec
 
             depth++;
 
-            FieldExtractor[] fieldExtractors = null;
-            if (!TypeToExtractorMap.TryGetValue(bodyType, out fieldExtractors))
+            if (!TypeToExtractorMap.TryGetValue(bodyType, out var fieldExtractors))
             {
-                var fields =
-                    bodyType
-                       .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
-                       .Where(x => x.IsPrivate && x.Name.EndsWith("__BackingField"))
-                       .ToArray();
+                var fields = bodyType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
+                if (!bodyType.GetTypeInfo().IsAnonymous())
+                {
+                    fields = fields.Where(x => x.IsPrivate && x.Name.EndsWith("__BackingField")).ToArray();
+                }
 
                 fieldExtractors = new FieldExtractor[fields.Length];
                 for (var i = 0; i < fields.Length; i++)
@@ -136,9 +136,7 @@ namespace Datadog.Trace.AppSec
                     }
 
                     var item =
-                        value == null ?
-                            null :
-                            ExtractType(fieldExtractor.Type, value, depth, visited);
+                        value == null ? null : ExtractType(fieldExtractor.Type, value, depth, visited);
 
                     dict.Add(fieldExtractor.Name, item);
                 }
@@ -161,23 +159,37 @@ namespace Datadog.Trace.AppSec
 
         private static object ExtractType(Type itemType, object value, int depth, HashSet<object> visited)
         {
+            if (itemType == typeof(string))
+            {
+                return value;
+            }
+
             if (itemType.IsArray || (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(List<>)))
             {
                 return ExtractListOrArray(value, depth, visited);
             }
-            else if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+
+            if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
             {
                 return ExtractDictionary(value, itemType, depth, visited);
             }
-            else if (IsOurKindOfPrimitive(itemType))
+
+            if (WafProcessableTypes.Contains(itemType))
+            {
+                return value;
+            }
+
+            var unhandledType = itemType.IsEnum || itemType == typeof(Guid) || itemType == typeof(DateTime) || itemType == typeof(DateTimeOffset) || itemType == typeof(TimeSpan) || itemType.IsPrimitive;
+#if NET6_0_OR_GREATER
+            unhandledType = unhandledType || itemType == typeof(DateOnly) || itemType == typeof(TimeOnly);
+#endif
+            if (unhandledType)
             {
                 return value?.ToString();
             }
-            else
-            {
-                var nestedDict = ExtractProperties(value, depth, visited);
-                return nestedDict;
-            }
+
+            var nestedDict = ExtractProperties(value, depth, visited);
+            return nestedDict;
         }
 
         private static Dictionary<string, object> ExtractDictionary(object value, Type dictType, int depth, HashSet<object> visited)

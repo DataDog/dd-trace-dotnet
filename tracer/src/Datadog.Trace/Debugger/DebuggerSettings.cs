@@ -4,6 +4,9 @@
 // </copyright>
 
 #nullable enable
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
@@ -19,7 +22,7 @@ namespace Datadog.Trace.Debugger
         public const int DefaultMaxNumberOfFieldsToCopy = 20;
 
         private const int DefaultUploadBatchSize = 100;
-        private const int DefaultDiagnosticsIntervalSeconds = 5;
+        private const int DefaultDiagnosticsIntervalSeconds = 60 * 60; // 1 hour
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
 
         public DebuggerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
@@ -55,6 +58,22 @@ namespace Datadog.Trace.Debugger
                                              .WithKeys(ConfigurationKeys.Debugger.UploadFlushInterval)
                                              .AsInt32(DefaultUploadFlushIntervalMilliseconds, flushInterval => flushInterval >= 0)
                                              .Value;
+
+            var redactedIdentifiers = config
+                                 .WithKeys(ConfigurationKeys.Debugger.RedactedIdentifiers)
+                                 .AsString()?
+                                 .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                  Enumerable.Empty<string>();
+
+            RedactedIdentifiers = new HashSet<string>(redactedIdentifiers, StringComparer.OrdinalIgnoreCase);
+
+            var redactedTypes = config
+                                     .WithKeys(ConfigurationKeys.Debugger.RedactedTypes)
+                                     .AsString()?
+                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                      Enumerable.Empty<string>();
+
+            RedactedTypes = new HashSet<string>(redactedTypes, StringComparer.OrdinalIgnoreCase);
         }
 
         public bool Enabled { get; }
@@ -68,6 +87,10 @@ namespace Datadog.Trace.Debugger
         public int DiagnosticsIntervalSeconds { get; }
 
         public int UploadFlushIntervalMilliseconds { get; }
+
+        public HashSet<string> RedactedIdentifiers { get; }
+
+        public HashSet<string> RedactedTypes { get; }
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {

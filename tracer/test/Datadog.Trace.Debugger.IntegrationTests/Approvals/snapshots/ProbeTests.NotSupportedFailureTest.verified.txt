@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -46,7 +46,8 @@
           "location": {
             "method": "IAmFine",
             "type": "Samples.Probes.TestRuns.SmokeTests.NotSupportedFailureTest+NormalStruct"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -109,7 +110,8 @@
           "location": {
             "method": "IAmFine",
             "type": "Samples.Probes.TestRuns.SmokeTests.NotSupportedFailureTest"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -160,7 +162,8 @@
             "lines": [
               24
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -211,7 +214,8 @@
             "lines": [
               25
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -262,7 +266,8 @@
             "lines": [
               26
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -313,7 +318,8 @@
             "lines": [
               27
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -364,7 +370,8 @@
             "lines": [
               28
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -413,7 +420,8 @@
             "lines": [
               51
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -462,7 +470,8 @@
             "lines": [
               64
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"

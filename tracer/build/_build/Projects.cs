@@ -1,6 +1,7 @@
 public static class Projects
 {
     public const string DatadogTrace = "Datadog.Trace";
+    public const string ManagedLoader = "Datadog.Trace.ClrProfiler.Managed.Loader";
     public const string DatadogTraceAnnotations = "Datadog.Trace.Annotations";
     public const string DatadogTraceAspNet = "Datadog.Trace.AspNet";
     public const string DatadogTraceBundle = "Datadog.Trace.Bundle";
@@ -49,5 +50,7 @@ public static class FileNames
 
     public const string LoaderConf = "loader.conf";
     public const string CreateLogPathScript = "createLogPath.sh";
+    public const string AfterInstallScript = "after-install.sh";
+    public const string AfterRemoveScript = "after-remove.sh";
 
 }

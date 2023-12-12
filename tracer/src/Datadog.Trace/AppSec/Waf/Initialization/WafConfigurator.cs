@@ -87,7 +87,13 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
         private static Stream? GetRulesManifestStream()
         {
             var assembly = typeof(Waf).Assembly;
-            return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.rule-set.json");
+            return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.ConfigFiles.rule-set.json");
+        }
+
+        private static Stream? GetSchemaExtractionConfigStream()
+        {
+            var assembly = typeof(Waf).Assembly;
+            return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.ConfigFiles.apisecurity-config.json");
         }
 
         private static Stream? GetRulesFileStream(string rulesFile)
@@ -101,7 +107,21 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return File.OpenRead(rulesFile);
         }
 
-        internal static JToken? DeserializeEmbeddedRules(string? rulesFilePath)
+        internal static JToken? DeserializeSchemaExtractionConfig()
+        {
+            using var stream = GetSchemaExtractionConfigStream();
+            if (stream == null)
+            {
+                return null;
+            }
+
+            using var reader = new StreamReader(stream);
+            using var jsonReader = new JsonTextReader(reader);
+            var root = JToken.ReadFrom(jsonReader);
+            return root;
+        }
+
+        internal static JToken? DeserializeEmbeddedOrStaticRules(string? rulesFilePath)
         {
             JToken root;
             try
@@ -135,7 +155,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return root;
         }
 
-        internal InitResult ConfigureAndDispose(DdwafObjectStruct? rulesObj, string? rulesFile, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal InitResult ConfigureAndDispose(Obj? rulesObj, string? rulesFile, List<Obj> argsToDispose, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
             if (rulesObj == null)
             {
@@ -143,9 +163,9 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 return InitResult.FromUnusableRuleFile();
             }
 
+            Obj? diagnostics = null;
             var keyRegex = IntPtr.Zero;
             var valueRegex = IntPtr.Zero;
-            var diagnostics = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
 
             try
             {
@@ -154,10 +174,10 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 valueRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterValueRegex);
                 args.KeyRegex = keyRegex;
                 args.ValueRegex = valueRegex;
-                args.FreeWafFunction = IntPtr.Zero;
+                args.FreeWafFunction = _wafLibraryInvoker.ObjectFreeFuncPtr;
 
-                var rules = rulesObj.Value;
-                var wafHandle = _wafLibraryInvoker.Init(ref rules, ref args, ref diagnostics);
+                diagnostics = new Obj(_wafLibraryInvoker.ObjectMap());
+                var wafHandle = _wafLibraryInvoker.Init(rulesObj.RawPtr, ref args, diagnostics.RawPtr);
                 if (wafHandle == IntPtr.Zero)
                 {
                     Log.Warning("DDAS-0005-00: WAF initialization failed.");
@@ -202,9 +222,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     Marshal.FreeHGlobal(valueRegex);
                 }
 
-                if (diagnostics.Array != IntPtr.Zero)
+                diagnostics?.Dispose(_wafLibraryInvoker);
+                rulesObj.Dispose(_wafLibraryInvoker);
+                foreach (var arg in argsToDispose)
                 {
-                    _wafLibraryInvoker.ObjectFreePtr(ref diagnostics.Array);
+                    arg.Dispose();
                 }
             }
         }

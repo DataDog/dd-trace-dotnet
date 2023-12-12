@@ -9,39 +9,42 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal static class RcmCapabilitiesIndices
     {
-#pragma warning disable SA1203 // Constants should appear before fields
-        public const uint ReservedUInt32 = 0;
-        public static readonly BigInteger Reserved = new(ReservedUInt32);
+        public static readonly BigInteger Reserved = Create(0);
 
-        public const uint AsmActivationUInt32 = 1 << 1;
-        public static readonly BigInteger AsmActivation = new(AsmActivationUInt32);
+        public static readonly BigInteger AsmActivation = Create(1);
 
-        public const uint AsmIpBlockingUInt32 = 1 << 2;
-        public static readonly BigInteger AsmIpBlocking = new(AsmIpBlockingUInt32);
+        public static readonly BigInteger AsmIpBlocking = Create(2);
 
-        public const uint AsmDdRulesUInt32 = 1 << 3;
-        public static readonly BigInteger AsmDdRules = new(AsmDdRulesUInt32);
+        public static readonly BigInteger AsmDdRules = Create(3);
 
-        public const uint AsmExclusionsUInt32 = 1 << 4;
-        public static readonly BigInteger AsmExclusion = new(AsmExclusionsUInt32);
+        public static readonly BigInteger AsmExclusion = Create(4);
 
-        public const uint AsmRequestBlockingUInt32 = 1 << 5;
-        public static readonly BigInteger AsmRequestBlocking = new(AsmRequestBlockingUInt32);
+        public static readonly BigInteger AsmRequestBlocking = Create(5);
 
-        public const uint AsmResponseBlockingUInt32 = 1 << 6;
-        public static readonly BigInteger AsmResponseBlocking = new(AsmResponseBlockingUInt32);
+        public static readonly BigInteger AsmResponseBlocking = Create(6);
 
-        public const uint AsmUserBlockingUInt32 = 1 << 7;
-        public static readonly BigInteger AsmUserBlocking = new(AsmUserBlockingUInt32);
+        public static readonly BigInteger AsmUserBlocking = Create(7);
 
-        public const uint AsmCustomRulesUInt32 = 1 << 8;
-        public static readonly BigInteger AsmCustomRules = new(AsmCustomRulesUInt32);
+        public static readonly BigInteger AsmCustomRules = Create(8);
 
-        public const uint AsmCustomBlockingResponseUInt32 = 1 << 9;
-        public static readonly BigInteger AsmCustomBlockingResponse = new(AsmCustomBlockingResponseUInt32);
+        public static readonly BigInteger AsmCustomBlockingResponse = Create(9);
 
-        public const uint AsmTrustedIpsUInt32 = 1 << 10;
-        public static readonly BigInteger AsmTrustedIps = new(AsmTrustedIpsUInt32);
-#pragma warning restore SA1203 // Constants should appear before fields
+        public static readonly BigInteger AsmTrustedIps = Create(10);
+
+        public static readonly BigInteger AsmApiSecuritySampleRate = Create(11);
+
+        public static readonly BigInteger ApmTracingSampleRate = Create(12);
+
+        public static readonly BigInteger ApmTracingLogsInjection = Create(13);
+
+        public static readonly BigInteger ApmTracingHttpHeaderTags = Create(14);
+
+        public static readonly BigInteger ApmTracingCustomTags = Create(15);
+
+        public static readonly BigInteger AsmProcessorOverrides = Create(16);
+
+        public static readonly BigInteger AsmCustomDataScanners = Create(17);
+
+        private static BigInteger Create(int index) => new(1UL << index);
     }
 }

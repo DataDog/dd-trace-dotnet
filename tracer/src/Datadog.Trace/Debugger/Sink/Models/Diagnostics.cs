@@ -11,10 +11,12 @@ namespace Datadog.Trace.Debugger.Sink.Models
 {
     internal record Diagnostics
     {
-        public Diagnostics(string probeId, Status status)
+        public Diagnostics(string probeId, Status status, int probeVersion)
         {
             ProbeId = probeId;
             Status = status;
+            ProbeVersion = probeVersion;
+            RuntimeId = Util.RuntimeId.Get();
         }
 
         [JsonProperty("probeId")]
@@ -22,6 +24,12 @@ namespace Datadog.Trace.Debugger.Sink.Models
 
         [JsonProperty("status")]
         public Status Status { get; }
+
+        [JsonProperty("probeVersion")]
+        public int ProbeVersion { get; }
+
+        [JsonProperty("runtimeId")]
+        public string RuntimeId { get; }
 
         [JsonProperty("exception")]
         public ProbeException Exception { get; private set; }

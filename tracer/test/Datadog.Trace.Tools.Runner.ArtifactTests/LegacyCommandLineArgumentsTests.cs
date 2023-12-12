@@ -5,9 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -18,7 +16,7 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
 {
     [CollectionDefinition(nameof(LegacyCommandLineArgumentsTests), DisableParallelization = true)]
     [Collection(nameof(LegacyCommandLineArgumentsTests))]
-    public class LegacyCommandLineArgumentsTests
+    public class LegacyCommandLineArgumentsTests : RunnerTests
     {
         [Fact]
         public void InvalidArgument()
@@ -86,23 +84,6 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
             helper.ErrorOutput.Should().BeEmpty();
         }
 
-        private static string GetRunnerToolTargetFolder()
-        {
-            var folder = Environment.GetEnvironmentVariable("ToolInstallDirectory");
-
-            if (string.IsNullOrEmpty(folder))
-            {
-                folder = Path.Combine(
-                    EnvironmentTools.GetSolutionDirectory(),
-                    "tracer",
-                    "bin",
-                    "runnerTool",
-                    "installed");
-            }
-
-            return folder;
-        }
-
         private static AssertionScope StartAssertionScope(ProcessHelper processHelper)
         {
             var scope = new AssertionScope();
@@ -112,25 +93,6 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
             scope.AddReportable("Exit code", processHelper.Process.ExitCode.ToString());
 
             return scope;
-        }
-
-        private ProcessHelper StartProcess(string arguments, params (string Key, string Value)[] environmentVariables)
-        {
-            var targetFolder = GetRunnerToolTargetFolder();
-            var executable = Path.Combine(targetFolder, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dd-trace.exe" : "dd-trace");
-
-            var processStart = new ProcessStartInfo(executable, arguments)
-            {
-                RedirectStandardError = true,
-                RedirectStandardOutput = true
-            };
-
-            foreach (var (key, value) in environmentVariables)
-            {
-                processStart.EnvironmentVariables[key] = value;
-            }
-
-            return new ProcessHelper(Process.Start(processStart));
         }
     }
 }

@@ -1,19 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;net461;netcoreapp3.1;net50;net6.0;net7.0</TargetFrameworks>
     <AssemblyName>Datadog.RuntimeMetrics</AssemblyName>
     <RootNamespace>Datadog.RuntimeMetrics</RootNamespace>
-    <Platforms>AnyCPU;x64;x86</Platforms>
   </PropertyGroup>
 
-  <!-- for demo apps -->
-  <ItemGroup Condition="('$(TargetFramework)' == 'net45')">
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-  </ItemGroup>
-
   <!-- for unit tests -->
-  <ItemGroup Condition="('$(TargetFramework)' == 'net461')">
+  <ItemGroup Condition="('$(TargetFramework)' == 'net462')">
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
 </Project>

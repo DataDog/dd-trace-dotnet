@@ -27,7 +27,7 @@ namespace Datadog.Profiler.IntegrationTests.Threads
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { /*"net45", "net48",*/ "net6.0", "net7.0" })]
+        [TestAppFact("Samples.Computer01", new[] { /*"net462", "net48",*/ "net6.0", "net7.0" })]
         public void ShouldGetThreadLifetimeSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
@@ -47,7 +47,7 @@ namespace Datadog.Profiler.IntegrationTests.Threads
             Assert.True(CheckSamplesAreThreadTimeline(runner.Environment.PprofDir));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { /*"net45", "net48",*/ "net6.0", "net7.0" })]
+        [TestAppFact("Samples.Computer01", new[] { /*"net462", "net48",*/ "net6.0", "net7.0" })]
         public void ShouldNotGetThreadLifetimeSamplesByDefault(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);

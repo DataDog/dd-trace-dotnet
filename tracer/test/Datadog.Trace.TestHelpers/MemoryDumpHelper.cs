@@ -87,7 +87,7 @@ namespace Datadog.Trace.TestHelpers
             });
         }
 
-        public static bool CaptureMemoryDump(Process process)
+        public static bool CaptureMemoryDump(Process process, IProgress<string> output = null)
         {
             if (!IsAvailable)
             {
@@ -96,8 +96,8 @@ namespace Datadog.Trace.TestHelpers
 
             try
             {
-                var args = EnvironmentTools.IsWindows() ? $"-ma {process.Id} -accepteula" : process.Id.ToString();
-                return CaptureMemoryDump(args);
+                var args = EnvironmentTools.IsWindows() ? $"-ma -accepteula {process.Id} {Path.GetTempPath()}" : process.Id.ToString();
+                return CaptureMemoryDump(args, output ?? _output);
             }
             catch (Exception ex)
             {
@@ -106,9 +106,9 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private static bool CaptureMemoryDump(string args)
+        private static bool CaptureMemoryDump(string args, IProgress<string> output)
         {
-            _output?.Report($"Capturing memory dump using '{_path} {args}'");
+            output?.Report($"Capturing memory dump using '{_path} {args}'");
 
             using var dumpToolProcess = Process.Start(new ProcessStartInfo(_path, args)
             {
@@ -121,16 +121,16 @@ namespace Datadog.Trace.TestHelpers
             using var helper = new ProcessHelper(dumpToolProcess);
             dumpToolProcess.WaitForExit(30_000);
             helper.Drain();
-            _output?.Report($"[dump][stdout] {helper.StandardOutput}");
-            _output?.Report($"[dump][stderr] {helper.ErrorOutput}");
+            output?.Report($"[dump][stdout] {helper.StandardOutput}");
+            output?.Report($"[dump][stderr] {helper.ErrorOutput}");
 
             if (dumpToolProcess.ExitCode == 0)
             {
-                _output?.Report($"Memory dump successfully captured using '{_path} {args}'.");
+                output?.Report($"Memory dump successfully captured using '{_path} {args}'.");
             }
             else
             {
-                _output?.Report($"Failed to capture memory dump using '{_path} {args}'. Exit code was {dumpToolProcess.ExitCode}.");
+                output?.Report($"Failed to capture memory dump using '{_path} {args}'. Exit code was {dumpToolProcess.ExitCode}.");
             }
 
             return true;

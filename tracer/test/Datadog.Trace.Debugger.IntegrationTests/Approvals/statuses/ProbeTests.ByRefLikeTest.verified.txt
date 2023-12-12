@@ -9,6 +9,8 @@
           "type": "NO_TYPE"
         },
         "probeId": "1828a3f0-e94b-eb91-81e3-12bcf19ac41a",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
         "status": "ERROR"
       }
     },
@@ -25,6 +27,8 @@
           "type": "NO_TYPE"
         },
         "probeId": "3c5a4d30-f652-b355-51d6-9589d1d290b4",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
         "status": "ERROR"
       }
     },
@@ -41,6 +45,8 @@
           "type": "NO_TYPE"
         },
         "probeId": "86a95ec1-5bda-bd57-3f8e-e610398f9334",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
         "status": "ERROR"
       }
     },
@@ -53,6 +59,8 @@
       "diagnostics": {
         "exception": null,
         "probeId": "17c1e39c-e46c-828e-4e02-21be0f3b5358",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
         "status": "INSTALLED"
       }
     },
@@ -65,6 +73,8 @@
       "diagnostics": {
         "exception": null,
         "probeId": "3410cda1-5b13-a34e-6f84-a54adf7a0ea0",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
         "status": "INSTALLED"
       }
     },
@@ -77,6 +87,8 @@
       "diagnostics": {
         "exception": null,
         "probeId": "8286d046-9740-a3e4-95cf-ff46699c73c4",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
         "status": "INSTALLED"
       }
     },

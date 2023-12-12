@@ -40,7 +40,7 @@ public class IastInstrumentationUnitTests : TestHelper
     {
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(typeof(StringBuilder), "Append")]
     [InlineData(typeof(StringBuilder), "AppendLine", null, true)]
     [InlineData(typeof(StringBuilder), ".ctor", null, true)]
@@ -51,7 +51,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(StringBuilder), "Replace", null, true)]
     [InlineData(typeof(StringBuilder), "Remove", null, true)]
     [InlineData(typeof(StringBuilder), "CopyTo", null, true)]
-    [InlineData(typeof(StringBuilder), "AppendFormat", null, true)]
+    [InlineData(typeof(StringBuilder), "AppendFormat", new string[] { "System.StringBuilder::AppendFormat(System.IFormatProvider,System.Text.CompositeFormat,System.Object[])" }, true)]
     [InlineData(typeof(string), "Join")]
     [InlineData(typeof(string), "Copy")]
     [InlineData(typeof(string), "ToUpper")]
@@ -65,7 +65,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(string), "Trim")]
     [InlineData(typeof(string), "Substring")]
     [InlineData(typeof(string), "TrimEnd")]
-    [InlineData(typeof(string), "Format")]
+    [InlineData(typeof(string), "Format", new string[] { "System.String Format(System.IFormatProvider, System.Text.CompositeFormat, System.Object[])" })]
     [InlineData(typeof(string), "Split")]
     [InlineData(typeof(string), "Replace", new string[] { "System.String::Replace(System.String,System.String,System.StringComparison)", "System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)" })]
     [InlineData(typeof(string), "Concat", new string[] { "System.String Concat(System.Object)" })]

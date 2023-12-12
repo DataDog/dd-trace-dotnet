@@ -6,6 +6,7 @@ namespace Datadog.Trace.BenchmarkDotNet
     {
         public static readonly BenchmarkDotNet.Diagnosers.IDiagnoser Default;
         public DatadogDiagnoser() { }
+        public DatadogDiagnoser(bool enableProfiler) { }
         public System.Collections.Generic.IEnumerable<BenchmarkDotNet.Analysers.IAnalyser> Analysers { get; }
         public System.Collections.Generic.IEnumerable<BenchmarkDotNet.Exporters.IExporter> Exporters { get; }
         public System.Collections.Generic.IEnumerable<string> Ids { get; }

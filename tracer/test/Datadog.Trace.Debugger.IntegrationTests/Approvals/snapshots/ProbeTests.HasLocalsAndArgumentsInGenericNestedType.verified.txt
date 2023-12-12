@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -51,7 +51,7 @@
                         "type": "Int32",
                         "value": "30"
                       },
-                      "Address": {
+                      "Adrs": {
                         "fields": {
                           "City": {
                             "fields": {
@@ -109,7 +109,7 @@
                         "type": "Int32",
                         "value": "7"
                       },
-                      "Address": {
+                      "Adrs": {
                         "fields": {
                           "City": {
                             "fields": {
@@ -162,8 +162,8 @@
                     "value": "Person"
                   }
                 ],
-                "type": "List`1",
-                "value": "count: 2"
+                "size": 2,
+                "type": "List`1"
               },
               "genericVarToString": {
                 "type": "String",
@@ -179,7 +179,7 @@
                     "type": "Int32",
                     "value": "36"
                   },
-                  "Address": {
+                  "Adrs": {
                     "fields": {
                       "City": {
                         "fields": {
@@ -223,7 +223,7 @@
                             "type": "Int32",
                             "value": "30"
                           },
-                          "Address": {
+                          "Adrs": {
                             "fields": {
                               "City": {
                                 "notCapturedReason": "depth",
@@ -272,7 +272,7 @@
                             "type": "Int32",
                             "value": "7"
                           },
-                          "Address": {
+                          "Adrs": {
                             "fields": {
                               "City": {
                                 "notCapturedReason": "depth",
@@ -316,8 +316,8 @@
                         "value": "Person"
                       }
                     ],
-                    "type": "List`1",
-                    "value": "count: 2"
+                    "size": 2,
+                    "type": "List`1"
                   },
                   "Id": {
                     "type": "Guid",
@@ -337,7 +337,7 @@
                     "type": "Int32",
                     "value": "30"
                   },
-                  "Address": {
+                  "Adrs": {
                     "fields": {
                       "City": {
                         "fields": {
@@ -395,7 +395,7 @@
                     "type": "Int32",
                     "value": "7"
                   },
-                  "Address": {
+                  "Adrs": {
                     "fields": {
                       "City": {
                         "fields": {
@@ -458,7 +458,8 @@
           "location": {
             "method": "Method",
             "type": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndArgumentsInGenericNestedType+Test`1"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"

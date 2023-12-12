@@ -22,10 +22,12 @@ internal class BlockingMiddleware
 
     // if we add support for ASP.NET Core on .NET Framework, we can't directly reference RequestDelegate, so this would need to be written
     private readonly RequestDelegate? _next;
+    private readonly bool _startPipeline;
 
-    internal BlockingMiddleware(RequestDelegate? next = null, bool endPipeline = false)
+    internal BlockingMiddleware(RequestDelegate? next = null, bool startPipeline = false, bool endPipeline = false)
     {
         _next = next;
+        _startPipeline = startPipeline;
         _endPipeline = endPipeline;
     }
 
@@ -87,8 +89,8 @@ internal class BlockingMiddleware
                     context.Response.StatusCode = 404;
                 }
 
-                var result = securityCoordinator.Scan();
-                if (result?.ShouldBeReported is true)
+                var result = securityCoordinator.Scan(_startPipeline);
+                if (result is not null)
                 {
                     if (result.ShouldBlock)
                     {
@@ -97,13 +99,13 @@ internal class BlockingMiddleware
                         securityCoordinator.MarkBlocked();
                     }
 
-                    securityCoordinator.Report(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings, endedResponse);
+                    securityCoordinator.TryReport(result, endedResponse);
                     // security will be disposed in endrequest of diagnostic observer in any case
                 }
             }
             else
             {
-                Log.Error("No span available, can't check the request");
+                Log.Debug("No span available, can't check the request");
             }
         }
 
@@ -125,14 +127,14 @@ internal class BlockingMiddleware
                         var securityCoordinator = new SecurityCoordinator(security, context, span);
                         if (!blockException.Reported)
                         {
-                            securityCoordinator.Report(blockException.Result.Data, blockException.Result.AggregatedTotalRuntime, blockException.Result.AggregatedTotalRuntimeWithBindings, endedResponse);
+                            securityCoordinator.TryReport(blockException.Result, endedResponse);
                         }
 
                         securityCoordinator.AddResponseHeadersToSpanAndCleanup();
                     }
                     else
                     {
-                        Log.Error("No span available, can't report the request");
+                        Log.Debug("No span available, can't report the request");
                     }
                 }
             }

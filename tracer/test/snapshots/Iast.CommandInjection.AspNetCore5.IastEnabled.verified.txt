@@ -20,13 +20,14 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "COMMAND_INJECTION",
-      
       "evidence": {
         "valueParts": [
           {
@@ -56,8 +57,7 @@
       "value": "arg1"
     }
   ]
-},
-      _dd.p.dm: -0
+}
     },
     Metrics: {
       process_id: 0,
@@ -82,7 +82,9 @@
       component: aspnet_core,
       env: integration_tests,
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   }
 ]

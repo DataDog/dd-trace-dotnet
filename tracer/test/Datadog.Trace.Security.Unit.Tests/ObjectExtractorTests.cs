@@ -5,14 +5,33 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
     public class ObjectExtractorTests
     {
+        private readonly string[] _fieldsAsStrings =
+        {
+            nameof(TestVarietyPoco.SByteValue),
+            nameof(TestVarietyPoco.IntPtrValue),
+            nameof(TestVarietyPoco.UIntPtrValue),
+            nameof(TestVarietyPoco.CharValue),
+            nameof(TestVarietyPoco.GuidValue),
+            nameof(TestVarietyPoco.EnumValue),
+            nameof(TestVarietyPoco.DateTimeValue),
+            nameof(TestVarietyPoco.DateTimeOffsetValue),
+            nameof(TestVarietyPoco.TimeSpanValue),
+#if NET6_0_OR_GREATER
+            nameof(TestVarietyPoco.TimeOnlyValue),
+            nameof(TestVarietyPoco.DateOnlyValue)
+#endif
+        };
+
         [Fact]
         public void TestVarietyOfEmptyPropertyTypes()
         {
@@ -24,7 +43,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             foreach (var prop in target.GetType().GetProperties())
             {
-                Assert.Equal(prop.GetValue(target)?.ToString(), result[prop.Name]?.ToString());
+                Assert.Equal(_fieldsAsStrings.Contains(prop.Name) ? prop.GetValue(target).ToString() : prop.GetValue(target), result[prop.Name]);
             }
         }
 
@@ -32,7 +51,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestVarietyOfPropertyTypes()
         {
             var testTime = new DateTime(2022, 3, 1, 16, 0, 0);
-            var target = new TestVarietyPoco()
+            var target = new TestVarietyPoco
             {
                 BooleanValue = true,
                 ByteValue = 1,
@@ -61,17 +80,16 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             foreach (var prop in target.GetType().GetProperties())
             {
-                Assert.Equal(prop.GetValue(target)?.ToString(), result[prop.Name]?.ToString());
+                var value = prop.GetValue(target);
+                var expectedValue = _fieldsAsStrings.Contains(prop.Name) ? value.ToString() : value;
+                Assert.Equal(expectedValue, result[prop.Name]);
             }
         }
 
         [Fact]
         public void TestIndexersAreIgnored()
         {
-            var target = new TestIndexerPoco()
-            {
-                StringValue = "hello",
-            };
+            var target = new TestIndexerPoco() { StringValue = "hello", };
 
             var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
 
@@ -83,10 +101,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void TestWriteOnlyProperties()
         {
-            var target = new TestWriteOnlyPropertyPoco()
-            {
-                StringValue = "hello",
-            };
+            var target = new TestWriteOnlyPropertyPoco() { StringValue = "hello", };
 
             var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
 
@@ -98,16 +113,64 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void TestStruct()
         {
-            var target = new TestStructPoco()
-            {
-                StringValue = "hello",
-            };
+            var target = new TestStructPoco { StringValue = "hello", };
 
             var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
             Assert.Equal(target.StringValue, result[nameof(target.StringValue)]?.ToString());
+        }
+
+        [Fact]
+        public void TestAnonymousType()
+        {
+            var target = new { Dog1 = "test", Dog2 = "test2", Id = 1 };
+
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
+            Assert.Equal(target.Dog1, result[nameof(target.Dog1)]?.ToString());
+            Assert.Equal(target.Dog2, result[nameof(target.Dog2)]?.ToString());
+            result[nameof(target.Id)].Should().BeOfType<int>();
+            target.Id.Should().Be((int)result[nameof(target.Id)]);
+        }
+
+        [Fact]
+        public void TestAnonymousTypeEmpty()
+        {
+            var target = new { };
+
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void TestAnonymousTypeNested()
+        {
+            var target = new { Name = "Outer", Dog = new { Name = "Inner" }, Cat = new { } };
+
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+            Assert.NotNull(result);
+            result.Should().HaveCount(3);
+            result.Should().HaveElementAt(0, new KeyValuePair<string, object>("Name", "Outer"));
+            result.ElementAt(1).Key.Should().Be("Dog");
+            result.ElementAt(1).Value.Should().BeEquivalentTo(new Dictionary<string, object> { { "Name", "Inner" } });
+            result.ElementAt(2).Key.Should().Be("Cat");
+            result.ElementAt(2).Value.Should().BeEquivalentTo(new Dictionary<string, object>(0));
+        }
+
+        [Fact]
+        public void TestAnonymousTypeArray()
+        {
+            var target = new[] { new { Name = "Anon1" }, new { Name = "Anon2" }, new { Name = "Anon1" } };
+            var result = ObjectExtractor.Extract(target) as List<object>;
+            result.Should().NotBeNull();
+            result.Should().HaveCount(3);
+            result!.ElementAt(0).Should().BeEquivalentTo(new Dictionary<string, object> { { "Name", "Anon1" } });
+            result.ElementAt(1).Should().BeEquivalentTo(new Dictionary<string, object> { { "Name", "Anon2" } });
+            result.ElementAt(2).Should().BeEquivalentTo(new Dictionary<string, object>(0));
         }
 
         [Fact]
@@ -151,10 +214,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void TestNullList()
         {
-            var target = new TestListPoco()
-            {
-                TestList = null
-            };
+            var target = new TestListPoco() { TestList = null };
 
             var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
 
@@ -210,10 +270,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void TestNullDictionary()
         {
-            var target = new TestDictionaryPoco()
-            {
-                TestDictionary = null
-            };
+            var target = new TestDictionaryPoco() { TestDictionary = null };
 
             var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
 
@@ -272,10 +329,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestCyclicObjects()
         {
             var target = new TestNestedPropertiesPoco();
-            var linker = new TestNestedPropertiesPoco()
-            {
-                TestNestedPropertiesPocoValue = target
-            };
+            var linker = new TestNestedPropertiesPoco() { TestNestedPropertiesPocoValue = target };
 
             target.TestNestedPropertiesPocoValue = linker;
 
@@ -296,10 +350,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestCyclicList()
         {
             var target = new TestNestedListPoco();
-            var linker = new TestNestedListPoco()
-            {
-                TestList = new List<TestNestedListPoco> { target }
-            };
+            var linker = new TestNestedListPoco() { TestList = new List<TestNestedListPoco> { target } };
 
             target.TestList.Add(linker);
 
@@ -322,10 +373,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             const string linkKey = "next";
             var target = new TestNestedDictionaryPoco();
-            var linker = new TestNestedDictionaryPoco()
-            {
-                TestDictionary = new Dictionary<string, TestNestedDictionaryPoco> { { linkKey, target } }
-            };
+            var linker = new TestNestedDictionaryPoco() { TestDictionary = new Dictionary<string, TestNestedDictionaryPoco> { { linkKey, target } } };
 
             target.TestDictionary.Add(linkKey, linker);
 
@@ -410,6 +458,12 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         public DateTime DateTimeValue { get; set; }
 
+#if NET6_0_OR_GREATER
+        public DateOnly DateOnlyValue { get; set; }
+
+        public TimeOnly TimeOnlyValue { get; set; }
+
+#endif
         public DateTimeOffset DateTimeOffsetValue { get; set; }
 
         public TimeSpan TimeSpanValue { get; set; }

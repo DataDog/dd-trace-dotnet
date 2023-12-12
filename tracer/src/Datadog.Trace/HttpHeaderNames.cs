@@ -67,5 +67,23 @@ namespace Datadog.Trace
         /// Used in a serverless context only.
         /// </summary>
         internal const string InvocationError = "x-datadog-invocation-error";
+
+        /// <summary>
+        /// Contains the error.msg span tag.
+        /// Used in a serverless context only.
+        /// </summary>
+        internal const string InvocationErrorMsg = "x-datadog-invocation-error-msg";
+
+        /// <summary>
+        /// Contains the error.type span tag.
+        /// Used in a serverless context only.
+        /// </summary>
+        internal const string InvocationErrorType = "x-datadog-invocation-error-type";
+
+        /// <summary>
+        /// Contains the error.stack span tag.
+        /// Used in a serverless context only.
+        /// </summary>
+        internal const string InvocationErrorStack = "x-datadog-invocation-error-stack";
     }
 }

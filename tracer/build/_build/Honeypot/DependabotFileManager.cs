@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using GeneratePackageVersions;
 using Nuke.Common.IO;
 using PrepareRelease;
 using UpdateVendors;
@@ -32,31 +34,9 @@ namespace Honeypot
             File.WriteAllText(honeypotProject, honeypotProjTemplate);
         }
 
-        public static async Task UpdateIntegrations(AbsolutePath honeypotProject, List<InstrumentedAssembly> targets)
+        public static Task UpdateIntegrations(AbsolutePath honeypotProject, List<IntegrationMap> distinctIntegrations)
         {
             var fakeRefs = string.Empty;
-
-            var distinctIntegrations = new List<IntegrationMap>();
-
-            foreach (var tg in targets.GroupBy(t => t.TargetAssembly))
-            {
-                var maxVersionTarget =
-                    tg
-                      .OrderByDescending(a => a.TargetMaximumMajor)
-                      .ThenByDescending(a => a.TargetMaximumMinor)
-                      .ThenByDescending(a => a.TargetMaximumPatch)
-                      .First();
-                var maxVersion =
-                    new Version(
-                        maxVersionTarget.TargetMaximumMajor,
-                        maxVersionTarget.TargetMaximumMinor,
-                        maxVersionTarget.TargetMaximumPatch);
-                distinctIntegrations.Add(
-                    await IntegrationMap.Create(
-                        name: tg.Key,
-                        assemblyName: maxVersionTarget.TargetAssembly,
-                        maxVersion));
-            }
 
             foreach (var integration in distinctIntegrations)
             {
@@ -64,15 +44,64 @@ namespace Honeypot
                 {
                     fakeRefs += $@"{Environment.NewLine}    <!-- Integration: {integration.Name} -->";
                     fakeRefs += $@"{Environment.NewLine}    <!-- Assembly: {integration.AssemblyName} -->";
-                    fakeRefs += $@"{Environment.NewLine}    <!-- Latest package https://www.nuget.org/packages/{package.NugetName}/{package.LatestNuget} -->";
-                    fakeRefs += $@"{Environment.NewLine}    <PackageReference Include=""{package.NugetName}"" Version=""{package.LatestSupportedNuget}"" />{Environment.NewLine}";
+                    fakeRefs += $@"{Environment.NewLine}    <!-- Latest package https://www.nuget.org/packages/{package.NugetName}/{package.LatestVersion} -->";
+                    fakeRefs += $@"{Environment.NewLine}    <PackageReference Include=""{package.NugetName}"" Version=""{package.LatestTestedVersion ?? package.LatestSupportedVersion}"" />{Environment.NewLine}";
                 }
             }
 
             var honeypotProjTemplate = GetHoneyPotProjTemplate();
             honeypotProjTemplate = honeypotProjTemplate.Replace("##PACKAGE_REFS##", fakeRefs);
 
-            File.WriteAllText(honeypotProject, honeypotProjTemplate);
+            return File.WriteAllTextAsync(honeypotProject, honeypotProjTemplate);
+        }
+
+        public static List<(string NugetName, Version LatestTestedVersion)> GetCurrentlyTestedVersions(AbsolutePath honeypotProject)
+            => XElement.Load(honeypotProject)
+                       .Descendants("PackageReference")
+                       .Select(x => ((string)x.Attribute("Include"), new Version(((string)x.Attribute("Version"))!)))
+                       .Distinct()
+                       .ToList();
+
+        public static async Task<List<IntegrationMap>> BuildDistinctIntegrationMaps(List<InstrumentedAssembly> targets, List<PackageVersionGenerator.TestedPackage> testedVersions)
+        {
+            var distinctIntegrations = new List<IntegrationMap>();
+
+            foreach (var tg in targets.GroupBy(t => t.TargetAssembly))
+            {
+                var maxVersionTarget =
+                    tg
+                        .OrderByDescending(a => a.TargetMaximumMajor)
+                        .ThenByDescending(a => a.TargetMaximumMinor)
+                        .ThenByDescending(a => a.TargetMaximumPatch)
+                        .First();
+                var minVersionTarget =
+                    tg
+                        .OrderBy(a => a.TargetMinimumMajor)
+                        .ThenBy(a => a.TargetMinimumMinor)
+                        .ThenBy(a => a.TargetMinimumPatch)
+                        .First();
+                var minSupportedVersion =
+                    new Version(
+                        minVersionTarget.TargetMinimumMajor,
+                        minVersionTarget.TargetMinimumMinor,
+                        minVersionTarget.TargetMinimumPatch);
+                var maxSupportedVersion =
+                    new Version(
+                        maxVersionTarget.TargetMaximumMajor,
+                        maxVersionTarget.TargetMaximumMinor,
+                        maxVersionTarget.TargetMaximumPatch);
+
+                distinctIntegrations.Add(
+                    await IntegrationMap.Create(
+                        name: tg.Key,
+                        integrationId: maxVersionTarget.IntegrationName,
+                        assemblyName: maxVersionTarget.TargetAssembly,
+                        minSupportedVersion,
+                        maxSupportedVersion,
+                        testedVersions));
+            }
+
+            return distinctIntegrations;
         }
 
         private static string GetHoneyPotProjTemplate()

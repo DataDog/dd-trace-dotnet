@@ -8,12 +8,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Iast.Aspects.System.Text;
 

@@ -4,17 +4,9 @@
 // </copyright>
 #if !NETFRAMEWORK
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Abstractions;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Routing.Template;
 
 namespace Datadog.Trace
 {
@@ -27,9 +19,19 @@ namespace Datadog.Trace
         {
             var security = Security.Instance;
 
-            if (security.Enabled && CoreHttpContextStore.Instance.Get() is { } httpContext)
+            if (security.Enabled && AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable())
             {
-                security.CheckUser(httpContext, span, userId);
+                RunBlockingCheckUnsafe(security, span, userId);
+            }
+
+            // Don't inline this, so we don't load the aspnetcore types if they're not available
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            static void RunBlockingCheckUnsafe(Security security, Span span, string userId)
+            {
+                if (CoreHttpContextStore.Instance.Get() is { } httpContext)
+                {
+                    security.CheckUser(httpContext, span, userId);
+                }
             }
         }
     }

@@ -457,7 +457,7 @@ namespace Datadog.Trace
             {
                 // generate the trace id here using the 128-bit setting
                 // instead of letting the SpanContext generate it in its ctor
-                var useAllBits = Settings?.TraceId128BitGenerationEnabled ?? false;
+                var useAllBits = Settings?.TraceId128BitGenerationEnabled ?? true;
                 traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits);
             }
 

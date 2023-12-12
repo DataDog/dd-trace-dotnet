@@ -26,17 +26,7 @@ namespace Datadog.Trace.Activity
         internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span)
             where TInner : IActivity
         {
-            var activity5 = activity as IActivity5;
-
             AgentConvertSpan(activity, span);
-
-            // Additional Datadog policy: Set tag "span.kind"
-            // Since the ActivityKind can only be one of a fixed set of values, always set the tag as prescribed by Datadog practices
-            // even though the tag is not present on normal OTLP spans
-            if (activity5 is not null)
-            {
-                span.SetTag(Tags.SpanKind, GetSpanKind(activity5.Kind));
-            }
         }
 
         // See trace agent func convertSpan: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L459
@@ -69,8 +59,10 @@ namespace Datadog.Trace.Activity
             }
 
             // Fixup "version" tag
-            if (Tracer.Instance.Settings.ServiceVersionInternal is null
-                && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
+            // Fallback to static instance if no tracer associated with the trace
+            var tracer = span.Context.TraceContext?.Tracer ?? Tracer.Instance;
+            if (tracer.Settings.ServiceVersionInternal is null
+             && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
             {
                 span.SetTag(Tags.Version, otelServiceVersion);
             }
@@ -91,6 +83,30 @@ namespace Datadog.Trace.Activity
                 {
                     OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
                 }
+            }
+
+            // Additional Datadog policy: Set tag "span.kind"
+            // Since the ActivityKind can only be one of a fixed set of values, always set the tag as prescribed by Datadog practices
+            // even though the tag is not present on normal OTLP spans
+            // Note that the "span.kind" is used to help craft an OperationName for the span (if present)
+            if (activity5 is not null)
+            {
+                span.SetTag(Tags.SpanKind, GetSpanKind(activity5.Kind));
+            }
+
+            // Later: Support config 'span_name_as_resource_name'
+            // Later: Support config 'span_name_remappings'
+            if (tracer.Settings.OpenTelemetryLegacyOperationNameEnabled && activity5 is not null && string.IsNullOrEmpty(span.OperationName))
+            {
+                span.OperationName = activity5.Source.Name switch
+                {
+                    string libName when !string.IsNullOrEmpty(libName) => $"{libName}.{GetSpanKind(activity5.Kind)}",
+                    _ => $"opentelemetry.{GetSpanKind(activity5.Kind)}",
+                };
+            }
+            else
+            {
+                OperationNameMapper.MapToOperationName(span);
             }
 
             // TODO: Add container tags from attributes if the tag isn't already in the span
@@ -151,24 +167,6 @@ namespace Datadog.Trace.Activity
 
             // Map the OTEL status to error tags
             AgentStatus2Error(activity, span);
-
-            if (span.OperationName is null)
-            {
-                // Later: Support config 'span_name_as_resource_name'
-                // Later: Support config 'span_name_remappings'
-                if (Tracer.Instance.Settings.OpenTelemetryLegacyOperationNameEnabled && activity5 is not null)
-                {
-                    span.OperationName = activity5.Source.Name switch
-                    {
-                        string libName when !string.IsNullOrEmpty(libName) => $"{libName}.{GetSpanKind(activity5.Kind)}",
-                        _ => $"opentelemetry.{GetSpanKind(activity5.Kind)}",
-                    };
-                }
-                else
-                {
-                    span.OperationName = activity.OperationName;
-                }
-            }
 
             // Update Service with a reasonable default
             if (span.ServiceName is null)
@@ -278,7 +276,7 @@ namespace Datadog.Trace.Activity
             switch (key)
             {
                 case "operation.name":
-                    span.OperationName = value;
+                    span.OperationName = value?.ToLowerInvariant();
                     break;
                 case "service.name":
                     span.ServiceName = value;

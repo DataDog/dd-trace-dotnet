@@ -69,6 +69,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             ProbeInfo = new ProbeInfo(
                 probe.Id,
+                probe.Version ?? 0,
                 probeType,
                 location,
                 evaluateAt,
@@ -192,6 +193,7 @@ namespace Datadog.Trace.Debugger.Expressions
                                         if (info.IsAsyncCapture())
                                         {
                                             AddAsyncMethodArguments(snapshotCreator, ref info);
+                                            AddAsyncMethodLocals(snapshotCreator, ref info);
                                         }
 
                                         snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
@@ -427,7 +429,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
                     if (!ProbeInfo.IsFullSnapshot)
                     {
-                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ref info);
+                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
                         LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
                         break;
                     }
@@ -446,7 +448,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
                     if (!ProbeInfo.IsFullSnapshot)
                     {
-                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ref info);
+                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
                         LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
                         break;
                     }
@@ -473,7 +475,7 @@ namespace Datadog.Trace.Debugger.Expressions
                             snapshotCreator.CaptureExitMethodEndMarker(ref info);
                         }
 
-                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ref info);
+                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
                         LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
                         snapshotCreator.Stop();
                         break;
@@ -512,7 +514,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         snapshotCreator.CaptureEndLine(ref info);
                     }
 
-                    var snapshot = snapshotCreator.FinalizeLineSnapshot(ProbeInfo.ProbeId, ref info);
+                    var snapshot = snapshotCreator.FinalizeLineSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
                     LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
                     snapshotCreator.Stop();
                     break;

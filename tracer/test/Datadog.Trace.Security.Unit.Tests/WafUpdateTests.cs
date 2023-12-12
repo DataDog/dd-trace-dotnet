@@ -13,7 +13,6 @@ using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -35,7 +34,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             waf.Should().NotBeNull();
             Execute(waf, new[] { "testrule", "testrule", "none" }, false);
 
-            var result = WafConfigurator.DeserializeEmbeddedRules("remote-rules.json");
+            var result = WafConfigurator.DeserializeEmbeddedOrStaticRules("remote-rules.json");
             result.Should().NotBeNull();
             var ruleSet = RuleSet.From(result!);
             ruleSet.Should().NotBeNull();

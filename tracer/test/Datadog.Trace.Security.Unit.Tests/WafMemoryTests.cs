@@ -11,12 +11,14 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
+using YamlDotNet.Core.Tokens;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
@@ -41,8 +43,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 Execute(AddressesConstants.RequestBody, "/.adsensepostnottherenonobook", "security_scanner", "crs-913-120");
             }
 
-            var current = GetMemory(true);
-
+            var current = GetMemory();
             current.Should().BeLessThanOrEqualTo(baseline + OverheadMargin);
         }
 
@@ -66,7 +67,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 resultData.Rule.Id.Should().Be("crs-913-120");
             }
 
-            var current = GetMemory(true);
+            var current = GetMemory();
             current.Should().BeLessThanOrEqualTo(baseline + OverheadMargin);
         }
 
@@ -80,7 +81,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             bool enabled = false;
 
-            for (int x = 0; x < 200; x++)
+            for (int x = 0; x < 1000; x++)
             {
                 var ruleOverrides = new List<RuleOverride>();
                 var ruleOverride = new RuleOverride { Enabled = enabled, Id = "crs-913-120" };
@@ -96,21 +97,12 @@ namespace Datadog.Trace.Security.Unit.Tests
                 enabled = !enabled;
             }
 
-            var current = GetMemory(true);
+            var current = GetMemory();
             current.Should().BeLessThanOrEqualTo(baseline + OverheadMargin);
         }
 
-        private long GetMemory(bool disposePool = false)
+        private long GetMemory()
         {
-            if (disposePool)
-            {
-                // Size of the unmanaged pool is already MaxBytesForMaxStringLength = (WafConstants.MaxStringLength * 4) + 1 *  BlockSize = 1000
-                // > ((4096 * 4) + 1) * 1000
-                // > 16.385.000
-                // so give more margin for execution
-                Encoder.Pool.Dispose();
-            }
-
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.WaitForFullGCComplete();

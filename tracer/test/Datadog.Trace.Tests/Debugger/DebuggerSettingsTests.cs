@@ -96,7 +96,7 @@ namespace Datadog.Trace.Tests.Debugger
                 new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DiagnosticsInterval, value }, }),
                 NullConfigurationTelemetry.Instance);
 
-            settings.DiagnosticsIntervalSeconds.Should().Be(5);
+            settings.DiagnosticsIntervalSeconds.Should().Be(3600);
         }
 
         [Theory]

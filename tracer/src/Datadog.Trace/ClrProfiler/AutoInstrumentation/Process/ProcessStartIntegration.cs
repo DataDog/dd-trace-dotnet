@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
        MethodName = "Start",
        ReturnTypeName = ClrNames.Process,
        MinimumVersion = "1.0.0",
-       MaximumVersion = "7.*.*",
+       MaximumVersion = "8.*.*",
        IntegrationName = nameof(Configuration.IntegrationId.Process))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

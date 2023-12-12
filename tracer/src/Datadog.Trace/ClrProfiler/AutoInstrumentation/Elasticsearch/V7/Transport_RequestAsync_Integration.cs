@@ -3,10 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
@@ -44,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, THttpMethod, TPostData, TRequestParameters>(TTarget instance, THttpMethod method, string path, CancellationToken cancellationToken, TPostData postData, TRequestParameters requestParameters)
         {
-            var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, ElasticsearchV7Constants.IntegrationId, path, method.ToString(), requestParameters, out var tags);
+            var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, ElasticsearchV7Constants.IntegrationId, method?.ToString(), requestParameters, out var tags);
 
             return new CallTargetState(scope, tags);
         }
@@ -60,11 +63,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
-            where TResponse : IElasticsearchResponse
+            where TResponse : IElasticsearchResponse, IDuckType
         {
-            var uri = response?.ApiCall?.Uri;
-
-            if (uri != null)
+            if (response.Instance is not null && response.ApiCall?.Uri is { } uri)
             {
                 var tags = (ElasticsearchTags)state.State;
 

@@ -24,6 +24,9 @@
     <Copyright>Copyright 2017 Datadog, Inc.</Copyright>
     <Company>Datadog</Company>
     <Authors>Datadog</Authors>
+    <!-- Stop NuGet complaining about us targetting obsolete TFMs etc-->
+    <NugetAudit>false</NugetAudit>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
 
   <ItemGroup>

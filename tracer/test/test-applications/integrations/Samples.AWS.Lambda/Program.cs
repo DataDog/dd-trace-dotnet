@@ -118,6 +118,10 @@ namespace Samples.AWS.Lambda
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_GENERICBASE_COMPLEX_NESTED"));
 
+            // Toplevel Statements
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TOPLEVEL_STATEMENT"));
+            
             static async Task Post(string url)
             {
                 HttpClient client = new HttpClient();

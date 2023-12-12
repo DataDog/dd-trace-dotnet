@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -15,7 +15,7 @@
                     "type": "Int32",
                     "value": "30"
                   },
-                  "Address": {
+                  "Adrs": {
                     "fields": {
                       "City": {
                         "fields": {
@@ -87,7 +87,7 @@
                     "type": "Int32",
                     "value": "30"
                   },
-                  "Address": {
+                  "Adrs": {
                     "fields": {
                       "City": {
                         "fields": {
@@ -166,7 +166,8 @@
           "location": {
             "method": "Method",
             "type": "Samples.Probes.TestRuns.SmokeTests.GenericMethodWithArguments"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -199,7 +200,7 @@
                       "type": "Int32",
                       "value": "30"
                     },
-                    "Address": {
+                    "Adrs": {
                       "fields": {
                         "City": {
                           "fields": {
@@ -275,7 +276,8 @@
             "lines": [
               22
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"

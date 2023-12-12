@@ -1,4 +1,4 @@
-﻿// <copyright file="LogFormatterTests.cs" company="Datadog">
+// <copyright file="LogFormatterTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,6 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
-using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tests.PlatformHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -30,11 +29,13 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
         private const string Version = "1.0.0";
         private readonly JsonTextWriter _writer;
         private readonly StringBuilder _sb;
-        private readonly ImmutableDirectLogSubmissionSettings _settings;
+        private readonly ImmutableTracerSettings _tracerSettings;
+        private readonly ImmutableDirectLogSubmissionSettings _directLogSettings;
 
         public LogFormatterTests()
         {
-            _settings = ImmutableDirectLogSubmissionSettings.Create(
+            _tracerSettings = new ImmutableTracerSettings(new TracerSettings());
+            _directLogSettings = ImmutableDirectLogSubmissionSettings.Create(
                 host: Host,
                 source: Source,
                 intakeUrl: "http://localhost",
@@ -43,7 +44,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
                 globalTags: new Dictionary<string, string> { { "Key1", "Value1" }, { "Key2", "Value2" } },
                 enabledLogShippingIntegrations: new List<string> { nameof(IntegrationId.ILogger) },
                 batchingOptions: new BatchingSinkOptions(batchSizeLimit: 100, queueLimit: 1000, TimeSpan.FromSeconds(2)));
-            _settings.IsEnabled.Should().BeTrue();
+            _directLogSettings.IsEnabled.Should().BeTrue();
 
             _sb = new StringBuilder();
             _writer = LogFormatter.GetJsonWriter(_sb);
@@ -146,7 +147,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
             var aasSettings = isInAas ? GetAasSettings() : null;
 
             var formatter = new LogFormatter(
-                _settings,
+                _tracerSettings,
+                _directLogSettings,
                 aasSettings: aasSettings,
                 serviceName: Service,
                 env: Env,

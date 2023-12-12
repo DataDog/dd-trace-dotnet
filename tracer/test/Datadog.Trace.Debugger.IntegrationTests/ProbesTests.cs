@@ -82,7 +82,6 @@ public class ProbesTests : TestHelper
         new List<object[]>
         {
             new object[] { typeof(SpanDecorationArgsAndLocals) },
-            new object[] { typeof(SpanDecorationAsync) },
             new object[] { typeof(SpanDecorationTwoTags) },
             new object[] { typeof(SpanDecorationSameTags) },
             new object[] { typeof(SpanDecorationSameTagsFirstError) },
@@ -93,6 +92,28 @@ public class ProbesTests : TestHelper
     public static IEnumerable<object[]> ProbeTests()
     {
         return DebuggerTestHelper.AllTestDescriptions();
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task RedactionFromConfigurationTest()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(RedactionTest));
+        const int expectedNumberOfSnapshots = 1;
+
+        var guidGenerator = new DeterministicGuidGenerator();
+        var probeId = guidGenerator.New().ToString();
+
+        var probes = new[]
+        {
+            DebuggerTestHelper.CreateDefaultLogProbe("RedactionTest", "Run", guidGenerator: null, probeTestData: new LogMethodProbeTestDataAttribute(probeId: probeId, captureSnapshot: true))
+        };
+
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.RedactedIdentifiers, "RedactMe,b");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.RedactedTypes, "Samples.Probes.TestRuns.SmokeTests.RedactMeType*,Samples.Probes.TestRuns.SmokeTests.AnotherRedactMeTypeB");
+
+        await RunSingleTestWithApprovals(testDescription, expectedNumberOfSnapshots, probes);
     }
 
     [SkippableFact]
@@ -293,6 +314,55 @@ public class ProbesTests : TestHelper
         }
     }
 
+#if NET462
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task ModuleUnloadInNetFramework462Test()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(ModuleUnloadTest));
+        var guidGenerator = new DeterministicGuidGenerator();
+
+        var probes = new[]
+        {
+            DebuggerTestHelper.CreateLogLineProbe(typeof(Samples.Probes.Unreferenced.External.ExternalTest), new LogLineProbeTestDataAttribute(lineNumber: 11), guidGenerator),
+            DebuggerTestHelper.CreateLogLineProbe(typeof(Samples.Probes.Unreferenced.External.ExternalTest), new LogLineProbeTestDataAttribute(lineNumber: 12), guidGenerator),
+        };
+
+        var expectedNumberOfSnapshots = probes.Length;
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        SetDebuggerEnvironment(agent);
+        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        try
+        {
+            await sample.RunCodeSample();
+
+            Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
+
+            SetProbeConfiguration(agent, probes);
+
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+
+            await sample.RunCodeSample();
+
+            var statuses = await agent.WaitForProbesStatuses(probes.Length);
+            Assert.Equal(probes.Length, statuses?.Length);
+
+            await ApproveStatuses(statuses, testDescription, isMultiPhase: false, phaseNumber: 1);
+
+            var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
+            Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
+            await ApproveSnapshots(snapshots, testDescription, isMultiPhase: false, phaseNumber: 1);
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+#endif
+
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
@@ -482,7 +552,6 @@ public class ProbesTests : TestHelper
         }
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{40}"), "GUID");
         settings.AddSimpleScrubber("out.host: localhost", "out.host: debugger");
         settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: debugger");
         var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
@@ -493,7 +562,7 @@ public class ProbesTests : TestHelper
         Assert.Equal(expectedSpanCount, spans.Count);
 
         VerifierSettings.DerivePathInfo(
-            (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "..", "Approvals", "snapshots")));
+            (_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", "snapshots")));
 
         SanitizeSpanTags(spans);
 
@@ -524,7 +593,6 @@ public class ProbesTests : TestHelper
             const string spanProbeOperationName = "dd.dynamic.span";
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: debugger");
             settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: debugger");
             var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
@@ -546,7 +614,7 @@ public class ProbesTests : TestHelper
             }
 
             VerifierSettings.DerivePathInfo(
-                (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "..", "Approvals", "snapshots")));
+                (_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", "snapshots")));
 
             await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
         }
@@ -628,6 +696,11 @@ public class ProbesTests : TestHelper
     /// </summary>
     private void SkipOverTestIfNeeded(ProbeTestDescription testDescription)
     {
+        if (testDescription.TestType == typeof(LargeSnapshotTest) && !EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("Should run only on Windows. Different approvals between Windows/Linux.");
+        }
+
         if (testDescription.TestType == typeof(AsyncInstanceMethod) && !EnvironmentTools.IsWindows())
         {
             throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
@@ -700,10 +773,18 @@ public class ProbesTests : TestHelper
         settings.UseFileName($"{nameof(ProbeTests)}.{testName}");
         settings.DisableRequireUniquePrefix();
         settings.ScrubEmptyLines();
+
+        foreach (var (regexPattern, replacement) in VerifyHelper.SpanScrubbers)
+        {
+            settings.AddRegexScrubber(regexPattern, replacement);
+        }
+
+        AddRuntimeIdScrubber(settings);
+
         settings.AddScrubber(ScrubSnapshotJson);
 
         VerifierSettings.DerivePathInfo(
-            (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "Approvals", path)));
+            (_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", path)));
 
         var toVerify =
             "["
@@ -837,6 +918,12 @@ public class ProbesTests : TestHelper
                .Replace(@"\n\r", @"\n")
                .Replace(@"\r", @"\n")
                .Replace(@"\n", @"\r\n");
+    }
+
+    private void AddRuntimeIdScrubber(VerifySettings settings)
+    {
+        var runtimeIdPattern = new Regex(@"(""runtimeId"": "")[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", RegexOptions.Compiled);
+        settings.AddRegexScrubber(runtimeIdPattern, "$1scrubbed");
     }
 
     private (ProbeAttributeBase ProbeTestData, ProbeDefinition Probe)[] GetProbeConfiguration(Type testType, bool unlisted, DeterministicGuidGenerator guidGenerator)

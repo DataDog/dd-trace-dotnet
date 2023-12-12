@@ -24,6 +24,7 @@ typedef std::vector<int64_t> Values;
 typedef std::pair<std::string_view, std::string> Label;
 typedef std::list<Label> Labels;
 typedef std::pair<std::string_view, int64_t> NumericLabel;
+typedef std::pair<std::string_view, uint64_t> SpanLabel;
 typedef std::list<NumericLabel> NumericLabels;
 typedef std::vector<FrameInfoView> CallStack;
 
@@ -134,7 +135,6 @@ public:
     static const std::string ExceptionTypeLabel;
     static const std::string ExceptionMessageLabel;
     static const std::string AllocationClassLabel;
-    static const std::string EndTimestampLabel;
     static const std::string GarbageCollectionGenerationLabel;
     static const std::string GarbageCollectionNumberLabel;
     static const std::string TimelineEventTypeLabel;

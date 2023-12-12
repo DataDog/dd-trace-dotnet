@@ -1,0 +1,51 @@
+name: "Create System Test docker base images"
+on:
+  # This GitHub Action is invoked automatically from the main Azure DevOps
+  # build when building the main branch (a snapshot). It is launched from
+  # Azure DevOps instead of using a GitHub event, as it requires the assets
+  # that are created by the Azure DevOps build. The build only produces
+  # snapshots, not releases.
+  workflow_dispatch:
+    inputs:
+      azdo_build_id:
+        description: 'The specific AzDo build from which the release artifacts will be downloaded.'
+        required: true
+
+      is_release_version:
+        description: 'Is this run generating release artifacts? Set to "True" to publish `:latest` tags, otherwise generates `:latest-snapshot` tags'
+        required: true
+        default: 'False'
+
+jobs:
+  build-and-publish-base-image:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '8.0.100'
+
+    - name: "Get current version"
+      id: versions
+      run: ./tracer/build.sh OutputCurrentVersionToGitHub
+
+    - name: "Download build assets from Azure Pipelines"
+      id: assets
+      run: ./tracer/build.sh DownloadAzurePipelineFromBuild
+      env:
+        AzureDevopsBuildId: "${{ github.event.inputs.azdo_build_id }}"
+
+    - uses: ./.github/actions/create-system-test-docker-base-images
+      name: 'Create system test docker images'
+      with:
+        artifacts_path: "${{steps.assets.outputs.artifacts_path}}"
+        package_version: "${{steps.versions.outputs.version}}"
+        lib_waf_version: "${{steps.versions.outputs.lib_waf_version}}"
+        waf_rules_version: "${{steps.versions.outputs.waf_rules_version}}"
+        github_token: ${{ secrets.GITHUB_TOKEN }}

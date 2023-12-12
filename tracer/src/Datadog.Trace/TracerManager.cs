@@ -246,13 +246,6 @@ namespace Datadog.Trace
                     oldManager.Statsd?.Dispose();
                 }
 
-                var telemetryReplaced = false;
-                if (oldManager.Telemetry != newManager.Telemetry && oldManager.Telemetry is not null)
-                {
-                    telemetryReplaced = true;
-                    await oldManager.Telemetry.DisposeAsync(sendAppClosingTelemetry: false).ConfigureAwait(false);
-                }
-
                 var discoveryReplaced = false;
                 if (oldManager.DiscoveryService != newManager.DiscoveryService && oldManager.DiscoveryService is not null)
                 {
@@ -283,8 +276,8 @@ namespace Datadog.Trace
 
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Telemetry: {TelemetryReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}",
-                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, telemetryReplaced, discoveryReplaced, dataStreamsReplaced, configurationManagerReplaced, dynamicConfigurationManagerReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}",
+                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, discoveryReplaced, dataStreamsReplaced, configurationManagerReplaced, dynamicConfigurationManagerReplaced });
             }
             catch (Exception ex)
             {
@@ -443,7 +436,7 @@ namespace Datadog.Trace
                     writer.WritePropertyName("obfuscation_querystring_size");
                     writer.WriteValue(instanceSettings.QueryStringReportingSize);
 
-                    if (string.Compare(instanceSettings.ObfuscationQueryStringRegex, TracerSettings.DefaultObfuscationQueryStringRegex, StringComparison.Ordinal) != 0)
+                    if (string.Compare(instanceSettings.ObfuscationQueryStringRegex, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, StringComparison.Ordinal) != 0)
                     {
                         writer.WritePropertyName("obfuscation_querystring_regex");
                         writer.WriteValue(instanceSettings.ObfuscationQueryStringRegex);
@@ -554,6 +547,15 @@ namespace Datadog.Trace
             var security = Security.Instance;
             writer.WritePropertyName("appsec_enabled");
             writer.WriteValue(security.Settings.Enabled);
+
+            if (security.Settings.ApiSecurityEnabled)
+            {
+                writer.WritePropertyName("appsec_apisecurity_enabled");
+                writer.WriteValue(security.Settings.ApiSecurityEnabled);
+
+                writer.WritePropertyName("appsec_apisecurity_sampling");
+                writer.WriteValue(security.Settings.ApiSecuritySampling);
+            }
 
             writer.WritePropertyName("appsec_trace_rate_limit");
             writer.WriteValue(security.Settings.TraceRateLimit);

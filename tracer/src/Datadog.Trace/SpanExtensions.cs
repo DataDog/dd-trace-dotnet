@@ -31,7 +31,11 @@ namespace Datadog.Trace
         public static void SetUser(this ISpan span, UserDetails userDetails)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetUser);
+            SetUserInternal(span, userDetails);
+        }
 
+        internal static void SetUserInternal(this ISpan span, UserDetails userDetails)
+        {
             if (span is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(span));
@@ -96,7 +100,11 @@ namespace Datadog.Trace
         public static ISpan SetTag(this ISpan span, string key, double? value)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetTag);
+            return span.SetTagInternal(key, value);
+        }
 
+        internal static ISpan SetTagInternal(this ISpan span, string key, double? value)
+        {
             if (span is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(span));

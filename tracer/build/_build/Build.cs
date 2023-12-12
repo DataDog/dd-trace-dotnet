@@ -57,7 +57,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.41.0";
+    readonly string Version = "2.44.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -120,6 +120,7 @@ partial class Build : NukeBuild
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             BundleHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
+            BenchmarkHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
             EnsureCleanDirectory(MonitoringHomeDirectory);
             EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
@@ -148,19 +149,32 @@ partial class Build : NukeBuild
               TestsDirectory.GlobFiles("**/bin/*", "**/obj/*").ForEach(DeleteFile);
           });
 
-    Target BuildTracerHome => _ => _
+    Target BuildNativeTracerHome => _ => _
+        .Unlisted()   
+        .Description("Builds the native src ")
+        .After(Clean, CompileManagedLoader)
+        .DependsOn(CreateRequiredDirectories)
+        .DependsOn(CompileNativeSrc)
+        .DependsOn(BuildNativeLoader)
+        .DependsOn(PublishNativeTracer);
+                                         
+
+    Target BuildManagedTracerHome => _ => _
+        .Unlisted()   
         .Description("Builds the native and managed src, and publishes the tracer home directory")
-        .After(Clean)
+        .After(Clean, BuildNativeTracerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(Restore)
         .DependsOn(CompileManagedSrc)
         .DependsOn(PublishManagedTracer)
-        .DependsOn(CompileNativeSrc)
-        .DependsOn(PublishNativeTracer)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
-        .DependsOn(BuildNativeLoader)
         .DependsOn(CreateRootDescriptorsFile);
+
+    Target BuildTracerHome => _ => _
+        .Description("Builds the native and managed src, and publishes the tracer home directory")
+        .After(Clean)
+        .DependsOn(CompileManagedLoader, BuildNativeTracerHome, BuildManagedTracerHome);
 
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
@@ -331,13 +345,31 @@ partial class Build : NukeBuild
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
         });
 
+    Target BuildBenchmarkNuget => _ => _
+        .Unlisted()
+        .DependsOn(CreateBenchmarkIntegrationHome)
+        .After(ExtractDebugInfoLinux)
+        .Executes(() =>
+        {
+            DotNetBuild(x => x
+                .SetProjectFile(Solution.GetProject(Projects.DatadogTraceBenchmarkDotNet))
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "benchmark")
+                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
+        });
+
     Target BuildDdDotnet => _ => _
         .Unlisted()
         .Executes(() =>
         {
+            var framework = Framework ?? TargetFramework.NET8_0; 
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdDotnet))
                 .SetConfiguration(BuildConfiguration)
+                .SetFramework(framework)
                 .SetNoWarnDotNetCore3());
 
             string rid;
@@ -363,7 +395,7 @@ partial class Build : NukeBuild
 
             DotNetPublish(x => x
                 .SetProject(Solution.GetProject(Projects.DdDotnet))
-                .SetFramework("net7.0")
+                .SetFramework(framework)
                 .SetRuntime(rid)
                 .SetConfiguration(BuildConfiguration)
                 .SetOutput(publishFolder));
@@ -371,6 +403,7 @@ partial class Build : NukeBuild
             var file = IsWin ? "dd-dotnet.exe" : "dd-dotnet";
             CopyFileToDirectory(publishFolder / file, MonitoringHomeDirectory / rid, FileExistsPolicy.Overwrite);
         });
+
     Target BuildRunnerTool => _ => _
         .Unlisted()
         .DependsOn(CompileInstrumentationVerificationLibrary)
@@ -430,7 +463,7 @@ partial class Build : NukeBuild
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
                 // .EnableNoDependencies()
-                .SetFramework(TargetFramework.NETCOREAPP3_1)
+                .SetFramework(TargetFramework.NET7_0)
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
@@ -448,6 +481,7 @@ partial class Build : NukeBuild
 
     Target RunBenchmarks => _ => _
         .After(BuildTracerHome)
+        .After(BuildProfilerHome)
         .Description("Runs the Benchmarks project")
         .Executes(() =>
         {

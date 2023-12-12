@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Net.Http.Headers;
 
 namespace Samples.Security.AspNetCore5.Endpoints
 {
@@ -17,9 +18,9 @@ namespace Samples.Security.AspNetCore5.Endpoints
 
             routeBuilder.MapGet("/headers/", context =>
             {
-                context.Response.Headers.Add("content-type", "text");
-                context.Response.Headers.Add("content-length", "16");
-                context.Response.Headers.Add("content-language", "en-US");
+                context.Response.Headers["content-type"] = "text";
+                context.Response.Headers["content-length"] = "16";
+                context.Response.Headers["content-language"] = "en-US";
                 return context.Response.WriteAsync("Hello headers!\\n");
             });
         }

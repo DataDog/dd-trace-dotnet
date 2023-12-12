@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
     MinimumVersion = "2.0.0.0",
-    MaximumVersion = "7.*.*.*.*",
+    MaximumVersion = "8.*.*.*.*",
     IntegrationName = IntegrationName,
     InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
     [InstrumentMethod(
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
     MinimumVersion = "2.0.0.0",
-    MaximumVersion = "7.*.*.*.*",
+    MaximumVersion = "8.*.*.*.*",
     IntegrationName = IntegrationName,
     CallTargetIntegrationKind = CallTargetKind.Derived,
     InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
                             if (security.Enabled)
                             {
-                                bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
+                                bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, false);
                             }
 
                             if (iast.Settings.Enabled)
@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                                         object bodyExtracted = null;
                                         if (security.Enabled)
                                         {
-                                            bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
+                                            bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, false);
                                         }
 
                                         if (iast.Settings.Enabled)

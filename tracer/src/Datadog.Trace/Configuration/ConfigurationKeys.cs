@@ -359,6 +359,13 @@ namespace Datadog.Trace.Configuration
         public const string PropagationStyle = "DD_TRACE_PROPAGATION_STYLE";
 
         /// <summary>
+        /// Configuration key to configure if propagation should only extract the first header once a configure
+        /// propagator extracts a valid trace context.
+        /// </summary>
+        /// <seealso cref="TracerSettings.PropagationExtractFirstOnly"/>
+        public const string PropagationExtractFirstOnly = "DD_TRACE_PROPAGATION_EXTRACT_FIRST";
+
+        /// <summary>
         /// Configuration key for enabling automatic instrumentation on specified methods.
         /// Default value is "" (disabled).
         /// </summary>
@@ -366,7 +373,8 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for specifying a custom regex to obfuscate query strings.
-        /// Default value is in TracerSettings
+        /// Default value is in TracerSettingsConstants
+        ///  WARNING: This regex cause crashes under netcoreapp2.1 / linux / arm64, dont use on manual instrumentation in this environment
         /// </summary>
         /// <seealso cref="TracerSettings.ObfuscationQueryStringRegex"/>
         public const string ObfuscationQueryStringRegex = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP";
@@ -578,6 +586,14 @@ namespace Datadog.Trace.Configuration
             public const string DelayWcfInstrumentationEnabled = "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED";
 
             /// <summary>
+            /// Configuration key to enable or disable improved template-based resource names
+            /// when using WCF Web HTTP. Requires <see cref="DelayWcfInstrumentationEnabled"/> be set
+            /// to true. Disabled by default
+            /// </summary>
+            /// <seealso cref="TracerSettings.WcfWebHttpResourceNamesEnabled"/>
+            public const string WcfWebHttpResourceNamesEnabled = "DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED";
+
+            /// <summary>
             /// Feature flag to enable obfuscating the <c>LocalPath</c> of a WCF request that goes
             /// into the <c>resourceName</c> of a span.
             /// <para>Note: that this only applies when the WCF action is an empty string.</para>
@@ -598,12 +614,15 @@ namespace Datadog.Trace.Configuration
             public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";
 
             /// <summary>
-            /// Enables the use of the <see cref="ISpan.OperationName"/> being set to the legacy value.
-            /// This flag defaults to <see langword="false"/> and is intended to allow beta users of OpenTelemetry support
-            /// to toggle on to give them time to upgrade to the new format. This additionally requires that
-            /// the <c>ActivitySource</c> has a <c>Name</c> property which was introduced in .NET 5 and/or v5 of
-            /// <c>System.Diagnostics</c> library.
-            /// Note: This feature flag may be dropped when our OpenTelemetry support becomes generally available.
+            /// Enables the use of the <see cref="ISpan.OperationName"/> being set to the legacy value of:
+            /// <c>$"{Activity.Source.Name}.{Activity.Kind}"</c> when instrumenting OpenTelemetry Spans and Activities.
+            /// This will override the default mapping that is used to create an operation name based on
+            /// <c>Activity.Kind</c> and various tags on the <c>Activity</c>.
+            /// <para>
+            /// This flag defaults to <see langword="false"/> and is intended to allow previous beta customers
+            /// of the .NET Tracer's OpenTelemetry instrumentation (and System.Diagnostics)
+            /// to have an easier migration path.
+            /// </para>
             /// </summary>
             public const string OpenTelemetryLegacyOperationNameEnabled = "DD_TRACE_OTEL_LEGACY_OPERATION_NAME_ENABLED";
 
@@ -681,16 +700,15 @@ namespace Datadog.Trace.Configuration
             public const string MetricsEnabled = "DD_TELEMETRY_METRICS_ENABLED";
 
             /// <summary>
-            /// Configuration key for whether to enable v2 of telemetry.
-            /// <see cref="TelemetrySettings.V2Enabled"/>
-            /// </summary>
-            public const string V2Enabled = "DD_INTERNAL_TELEMETRY_V2_ENABLED";
-
-            /// <summary>
             /// Configuration key for whether to enable debug mode of telemetry.
-            /// <see cref="TelemetrySettings.V2Enabled"/>
+            /// <see cref="TelemetrySettings.DebugEnabled"/>
             /// </summary>
             public const string DebugEnabled = "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED";
+
+            /// <summary>
+            /// Configuration key for whether to enable redacted error log collection.
+            /// </summary>
+            public const string TelemetryLogsEnabled = "DD_TELEMETRY_LOG_COLLECTION_ENABLED";
         }
 
         internal static class TagPropagation

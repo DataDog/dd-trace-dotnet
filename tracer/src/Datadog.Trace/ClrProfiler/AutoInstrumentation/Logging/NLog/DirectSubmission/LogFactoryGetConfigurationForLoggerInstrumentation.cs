@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             // we don't want to do logs injection with our custom configuration that we create as there won't be any targets
             if (tracerManager.Settings.LogsInjectionEnabledInternal && configuration is not null)
             {
-                LogsInjectionHelper<TTarget>.ConfigureLogsInjection(configuration);
+                LogsInjectionHelper<TTarget>.ConfigureLogsInjectionForLoggerConfiguration(configuration);
             }
 
             // if there isn't a configuration AND we have DirectLogSubmission enabled, create a configuration
@@ -102,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("Failed to create new instance of NLog's LoggingConfiguration: {Message}", ex.Message);
+                    Log.Error(ex, "Failed to create new instance of NLog's LoggingConfiguration");
                 }
 
                 if (loggingConfigurationInstance is not null)
@@ -121,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
              && configuration is not null)
             {
                 // if configuration is not-null, we've already checked that NLog is enabled
-                var wasAdded = NLogCommon<TTarget>.AddDatadogTarget(configuration);
+                var wasAdded = NLogCommon<TTarget>.AddDatadogTargetToLoggingConfiguration(configuration);
                 if (wasAdded)
                 {
                     // Not really generating a span, but the point is it's enabled and added

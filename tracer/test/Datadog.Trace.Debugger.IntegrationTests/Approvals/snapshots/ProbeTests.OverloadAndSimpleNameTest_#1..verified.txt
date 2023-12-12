@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -58,7 +58,8 @@
           "location": {
             "method": "Method",
             "type": "Samples.Probes.TestRuns.SmokeTests.OverloadAndSimpleNameTest"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -125,7 +126,8 @@
           "location": {
             "method": "Method",
             "type": "Samples.Probes.TestRuns.SmokeTests.OverloadAndSimpleNameTest"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -157,7 +159,7 @@
                     "type": "Int32",
                     "value": "44"
                   },
-                  "Address": {
+                  "Adrs": {
                     "fields": {
                       "City": {
                         "fields": {
@@ -215,7 +217,7 @@
                     "type": "Int32",
                     "value": "58"
                   },
-                  "Address": {
+                  "Adrs": {
                     "fields": {
                       "City": {
                         "fields": {
@@ -281,7 +283,7 @@
                     "type": "Int32",
                     "value": "44"
                   },
-                  "Address": {
+                  "Adrs": {
                     "fields": {
                       "City": {
                         "fields": {
@@ -339,7 +341,7 @@
                     "type": "Int32",
                     "value": "58"
                   },
-                  "Address": {
+                  "Adrs": {
                     "fields": {
                       "City": {
                         "fields": {
@@ -403,7 +405,7 @@
                     "type": "Int32",
                     "value": "50"
                   },
-                  "Address": {
+                  "Adrs": {
                     "fields": {
                       "City": {
                         "fields": {
@@ -470,7 +472,8 @@
           "location": {
             "method": "Method",
             "type": "OuterType+OverloadAndSimpleNameTest"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -533,7 +536,8 @@
           "location": {
             "method": "Method",
             "type": "OuterType+OverloadAndSimpleNameTest"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -680,7 +684,8 @@
           "location": {
             "method": "Method",
             "type": "Spicing.Things.Up.OverloadAndSimpleNameTest"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -743,7 +748,8 @@
           "location": {
             "method": "Method",
             "type": "Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -806,7 +812,8 @@
           "location": {
             "method": "Method",
             "type": "Spicing.Things.Up.OverloadAndSimpleNameTest"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -879,7 +886,8 @@
           "location": {
             "method": "Method",
             "type": "Samples.Probes.TestRuns.SmokeTests.OverloadAndSimpleNameTest"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -942,7 +950,8 @@
           "location": {
             "method": "Method",
             "type": "Samples.Probes.TestRuns.SmokeTests.OverloadAndSimpleNameTest"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"

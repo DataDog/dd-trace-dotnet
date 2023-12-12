@@ -1,9 +1,9 @@
 #!/bin/sh
 
-TRACER_VERSION="2.41.0"
+TRACER_VERSION="2.44.0"
 
 # Get the directory of the script
-DIR=$(dirname "$0")
+DIR=$(dirname "$(readlink -f "$0")")
 
 # Check the OS
 OS_NAME="$(uname -s)"
@@ -34,13 +34,13 @@ fi
 contains_word() {
   local string="$1"
   local word="$2"
-  
+
   for token in $string; do
     if [ "$token" = "$word" ]; then
       return 0  # word found
     fi
   done
-  
+
   return 1  # word not found
 }
 

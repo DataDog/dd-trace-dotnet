@@ -8,10 +8,11 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Datadog.Demos.WcfService.Host</RootNamespace>
     <AssemblyName>Datadog.Demos.WcfService.Host</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -52,10 +53,6 @@
     <ProjectReference Include="..\..\Shared\Util\Datadog.Demos.Util.csproj">
       <Project>{b0882e91-443b-4161-ab64-07e188067d3f}</Project>
       <Name>Datadog.Demos.Util</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Library\WcfServiceLibrary.csproj">
-      <Project>{9a500962-3469-4921-b43f-6273588ff556}</Project>
-      <Name>WcfServiceLibrary</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

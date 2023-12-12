@@ -6,159 +6,276 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.DTOs;
+using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
 
-namespace Datadog.Trace.Tests.Telemetry
+namespace Datadog.Trace.Tests.Telemetry;
+
+public class TelemetryDataBuilderTests
 {
-    public class TelemetryDataBuilderTests
+    private readonly ApplicationTelemetryData _application;
+    private readonly HostTelemetryData _host;
+    private readonly string _namingSchemaVersion = "1";
+
+    public TelemetryDataBuilderTests()
     {
-        private readonly ApplicationTelemetryData _application;
-        private readonly HostTelemetryData _host;
+        _application = new ApplicationTelemetryData(
+            serviceName: "Test Service",
+            env: "integration-ci",
+            serviceVersion: "1.0.0",
+            tracerVersion: TracerConstants.AssemblyVersion,
+            languageName: "dotnet",
+            languageVersion: FrameworkDescription.Instance.ProductVersion,
+            runtimeName: FrameworkDescription.Instance.Name,
+            runtimeVersion: FrameworkDescription.Instance.ProductVersion);
+        _host = new HostTelemetryData("MY_MACHINE", "Windows", "arm64");
+    }
 
-        public TelemetryDataBuilderTests()
-        {
-            _application = new ApplicationTelemetryData(
-                serviceName: "Test Service",
-                env: "integration-ci",
-                tracerVersion: TracerConstants.AssemblyVersion,
-                languageName: "dotnet",
-                languageVersion: FrameworkDescription.Instance.ProductVersion);
-            _host = new HostTelemetryData();
-        }
+    [Fact]
+    public void WhenHasApplicationAndHostData_GeneratesAppClosingTelemetry()
+    {
+        var builder = new TelemetryDataBuilder();
 
-        [Fact]
-        public void WhenNoApplicationData_Throws()
-        {
-            var builder = new TelemetryDataBuilder();
+        var input = new TelemetryInput(null, null, null, null, null, sendAppStarted: false);
+        var result = builder.BuildTelemetryData(_application, _host, input, _namingSchemaVersion, sendAppClosing: true);
 
-            Assert.Throws<ArgumentNullException>(() => builder.BuildTelemetryData(null, _host, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => builder.BuildTelemetryData(_application, null, null, null, null));
+        result.Should().NotBeNull();
+        result.Application.Should().Be(_application);
+        result.SeqId.Should().Be(1);
+        result.Payload.Should().BeNull();
+    }
 
-            Assert.Throws<ArgumentNullException>(() => builder.BuildAppClosingTelemetryData(null, _host));
-            Assert.Throws<ArgumentNullException>(() => builder.BuildAppClosingTelemetryData(_application, null));
-        }
+    [Fact]
+    public void WhenHasApplicationAndHostData_GeneratesHeartbeatTelemetry()
+    {
+        var builder = new TelemetryDataBuilder();
 
-        [Fact]
-        public void WhenHasApplicationAndHostData_GeneratesAppClosingTelemetry()
-        {
-            var builder = new TelemetryDataBuilder();
+        var result = builder.BuildHeartbeatData(_application, _host, _namingSchemaVersion);
 
-            var result = builder.BuildAppClosingTelemetryData(_application, _host);
+        result.Should().NotBeNull();
+        result.Application.Should().Be(_application);
+        result.SeqId.Should().Be(1);
+        result.Payload.Should().BeNull();
+    }
 
-            result.Should().NotBeNull();
-            result.Application.Should().Be(_application);
-            result.SeqId.Should().Be(1);
-            result.Payload.Should().BeNull();
-        }
+    [Fact]
+    public void WhenHasApplicationAndHostData_GeneratesExtendedHeartbeatTelemetry()
+    {
+        var builder = new TelemetryDataBuilder();
 
-        [Fact]
-        public void WhenHasApplicationAndHostData_GeneratesHeartbeatTelemetry()
-        {
-            var builder = new TelemetryDataBuilder();
+        var result = builder.BuildExtendedHeartbeatData(_application, _host, null, null, null, _namingSchemaVersion);
 
-            var result = builder.BuildHeartbeatData(_application, _host);
+        result.Should().NotBeNull();
+        result.Application.Should().Be(_application);
+        result.SeqId.Should().Be(1);
+        result.Payload.Should().BeOfType<AppExtendedHeartbeatPayload>();
+    }
 
-            result.Should().NotBeNull();
-            result.Application.Should().Be(_application);
-            result.SeqId.Should().Be(1);
-            result.Payload.Should().BeNull();
-        }
+    [Fact]
+    public void ShouldGenerateIncrementingIds()
+    {
+        var builder = new TelemetryDataBuilder();
 
-        [Fact]
-        public void ShouldGenerateIncrementingIds()
-        {
-            var builder = new TelemetryDataBuilder();
+        var input = new TelemetryInput(null, null, null, null, null, sendAppStarted: true);
+        var data = builder.BuildTelemetryData(_application, _host, input, _namingSchemaVersion, sendAppClosing: false);
+        data.SeqId.Should().Be(1);
 
-            var config = Array.Empty<TelemetryValue>();
-            var data = builder.BuildTelemetryData(_application, _host, config, null, null);
-            data.Should().ContainSingle().Which.SeqId.Should().Be(1);
+        data = builder.BuildTelemetryData(_application, _host, input, _namingSchemaVersion, sendAppClosing: false);
+        data.SeqId.Should().Be(2);
 
-            data = builder.BuildTelemetryData(_application, _host, config, null, null);
-            data.Should().ContainSingle().Which.SeqId.Should().Be(2);
+        var heartbeatData = builder.BuildHeartbeatData(_application, _host, _namingSchemaVersion);
+        heartbeatData.Should().NotBeNull();
+        heartbeatData.SeqId.Should().Be(3);
+    }
 
-            var closingData = builder.BuildAppClosingTelemetryData(_application, _host);
-            closingData.Should().NotBeNull();
-            closingData.SeqId.Should().Be(3);
-
-            var heartbeatData = builder.BuildHeartbeatData(_application, _host);
-            heartbeatData.Should().NotBeNull();
-            heartbeatData.SeqId.Should().Be(4);
-        }
-
-        [Theory]
-        [MemberData(nameof(TestData.Data), MemberType = typeof(TestData))]
-        public void GeneratesExpectedRequestType(
-            bool hasConfiguration,
-            bool hasDependencies,
-            bool hasIntegrations,
-            string expectedRequests)
-        {
-            var config = hasConfiguration ? Array.Empty<TelemetryValue>() : null;
-            var dependencies = hasDependencies ? new List<DependencyTelemetryData>() : null;
-            var integrations = hasIntegrations ? new List<IntegrationTelemetryData>() : null;
-            var expected = string.IsNullOrEmpty(expectedRequests) ? Array.Empty<string>() : expectedRequests.Split(',');
-            var builder = new TelemetryDataBuilder();
-
-            var result = builder.BuildTelemetryData(_application, _host, config, dependencies, integrations);
-
-            result.Should().NotBeNull();
-            result.Select(x => x.RequestType)
-                  .ToArray()
-                  .Should().BeEquivalentTo(expected);
-
-            using var scope = new AssertionScope();
-
-            // should have incrementing IDs
-            result
-               .Select(x => x.SeqId)
-               .Should()
-               .OnlyHaveUniqueItems();
-
-            foreach (var data in result)
+    [Fact]
+    public void WhenHasApplicationAndHostData_GeneratesLogTelemetry()
+    {
+        var builder = new TelemetryDataBuilder();
+        var logs = new List<LogMessageData>
             {
-                data.Application.Should().Be(_application);
-                data.ApiVersion.Should().NotBeNullOrEmpty();
-                data.RuntimeId.Should().Be(Tracer.RuntimeId);
-                data.TracerTime.Should().BeInRange(0, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                new("This is my debug log", TelemetryLogLevel.DEBUG, DateTimeOffset.UtcNow),
+                new("This is my warn log", TelemetryLogLevel.WARN, DateTimeOffset.UtcNow),
+                new("This is my error log", TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow),
+            };
 
-                if (data.Payload is AppDependenciesLoadedPayload appDeps)
+        var result = builder.BuildLogsTelemetryData(_application, _host, logs, _namingSchemaVersion);
+
+        result.Should().NotBeNull();
+        result.Application.Should().Be(_application);
+        result.SeqId.Should().Be(1);
+        result.Payload.Should()
+              .NotBeNull()
+              .And.BeOfType<LogsPayload>()
+              .Which.Logs.Should()
+              .BeSameAs(logs);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestData.Data), MemberType = typeof(TestData))]
+    public void GeneratesExpectedRequestType(
+        bool hasConfig,
+        bool hasDeps,
+        bool hasIntegrations,
+        bool hasMetrics,
+        bool hasDistributions,
+        bool hasProducts,
+        bool hasSentAppStarted,
+        bool hasSendAppClosing,
+        string[] expectedRequests)
+    {
+        var dependencies = hasDeps ? new List<DependencyTelemetryData> { new("name") } : null;
+        var config = hasConfig ? Array.Empty<ConfigurationKeyValue>() : null;
+        var integrations = hasIntegrations ? new List<IntegrationTelemetryData>() : null;
+        var metrics = hasMetrics ? new List<MetricData>() : null;
+        var distributions = hasDistributions ? new List<DistributionMetricData>() : null;
+        var products = hasProducts ? new ProductsData() : null;
+        var input = new TelemetryInput(config, dependencies, integrations, new MetricResults(metrics, distributions), products, sendAppStarted: !hasSentAppStarted);
+        var builder = new TelemetryDataBuilder();
+
+        var result = builder.BuildTelemetryData(_application, _host, in input, _namingSchemaVersion, sendAppClosing: hasSendAppClosing);
+
+        result.Should().NotBeNull();
+        var actualRequestTypes = result.Payload is MessageBatchPayload batch
+                                     ? batch.Select(x => x.RequestType).ToArray()
+                                     : new[] { result.RequestType };
+        actualRequestTypes.Should().BeEquivalentTo(expectedRequests);
+
+        using var scope = new AssertionScope();
+
+        result.Application.Should().Be(_application);
+        result.ApiVersion.Should().Be(TelemetryConstants.ApiVersionV2);
+        result.RuntimeId.Should().Be(Tracer.RuntimeId);
+        result.TracerTime.Should().BeInRange(0, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+
+        if (result.Payload is MessageBatchPayload messageBatch)
+        {
+            result.RequestType.Should().Be(TelemetryRequestTypes.MessageBatch);
+            foreach (var batchData in messageBatch)
+            {
+                var payload = batchData.Payload;
+                var requestType = batchData.RequestType;
+                if (payload is AppDependenciesLoadedPayload depsPayload)
                 {
-                    appDeps.Dependencies.Should().BeSameAs(dependencies);
+                    requestType.Should().Be(TelemetryRequestTypes.AppDependenciesLoaded);
+                    depsPayload.Dependencies.Should().BeSameAs(dependencies);
                 }
-                else if (data.Payload is AppIntegrationsChangedPayload appIntegrations)
+                else if (payload is AppIntegrationsChangedPayload integrationsPayload)
                 {
-                    appIntegrations.Integrations.Should().BeSameAs(integrations);
+                    requestType.Should().Be(TelemetryRequestTypes.AppIntegrationsChanged);
+                    integrationsPayload.Integrations.Should().BeSameAs(integrations);
                 }
-                else if (data.Payload is AppStartedPayload appStarted)
+                else if (payload is AppProductChangePayload productsPayload)
                 {
+                    requestType.Should().Be(TelemetryRequestTypes.AppProductChanged);
+                    productsPayload.Products.Should().BeSameAs(products);
+                }
+                else if (payload is AppClientConfigurationChangedPayload configPayload)
+                {
+                    requestType.Should().Be(TelemetryRequestTypes.AppClientConfigurationChanged);
+                    configPayload.Configuration.Should().BeSameAs(config);
+                }
+                else if (payload is AppStartedPayload appStarted)
+                {
+                    requestType.Should().Be(TelemetryRequestTypes.AppStarted);
                     appStarted.Configuration.Should().BeSameAs(config);
-                    appStarted.Dependencies.Should().BeSameAs(dependencies);
-                    appStarted.Integrations.Should().BeSameAs(integrations);
+                    appStarted.Products.Should().BeSameAs(products);
+                }
+                else if (payload is GenerateMetricsPayload metricsPayload)
+                {
+                    requestType.Should().Be(TelemetryRequestTypes.GenerateMetrics);
+                    metricsPayload.Series.Should().BeSameAs(metrics);
+                }
+                else if (payload is DistributionsPayload distPayload)
+                {
+                    requestType.Should().Be(TelemetryRequestTypes.Distributions);
+                    distPayload.Series.Should().BeSameAs(distributions);
+                }
+                else if (requestType == TelemetryRequestTypes.AppHeartbeat)
+                {
+                    payload.Should().BeNull();
+                }
+                else if (requestType == TelemetryRequestTypes.AppClosing)
+                {
+                    payload.Should().BeNull();
                 }
                 else
                 {
-                    data.Payload.Should().BeNull();
+                    true.Should().BeFalse($"Unknown payload type {payload} and request type {requestType}");
                 }
             }
         }
-
-        public class TestData
+        else
         {
-            public static TheoryData<bool, bool, bool, string> Data => new()
-                // configuration, dependencies, integrations, expected request types
-                {
-                    { true, true, true, TelemetryRequestTypes.AppStarted },
-                    { true, true, false, TelemetryRequestTypes.AppStarted },
-                    { true, false, true, TelemetryRequestTypes.AppStarted },
-                    { true, false, false, TelemetryRequestTypes.AppStarted },
-                    { false, false, false, string.Empty },
-                    { false, true, false, TelemetryRequestTypes.AppDependenciesLoaded },
-                    { false, false, true, TelemetryRequestTypes.AppIntegrationsChanged },
-                    { false, true, true, $"{TelemetryRequestTypes.AppIntegrationsChanged},{TelemetryRequestTypes.AppDependenciesLoaded}" },
-                };
+            result.RequestType.Should().BeOneOf(TelemetryRequestTypes.AppHeartbeat, TelemetryRequestTypes.AppClosing);
+            result.Payload.Should().BeNull();
+        }
+    }
+
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(2_000, 1)]
+    [InlineData(2_001, 2)]
+    [InlineData(4_000, 2)]
+    [InlineData(5_000, 3)]
+    public void SplitsDependencies(int numOfDependencies, int numOfMessages)
+    {
+        var dependencies = Enumerable.Repeat(
+            new DependencyTelemetryData("Something"),
+            numOfDependencies)
+                                     .ToList();
+        var input = new TelemetryInput(null, dependencies, null, null, null, sendAppStarted: false);
+        var builder = new TelemetryDataBuilder();
+
+        var result = builder.BuildTelemetryData(_application, _host, in input, _namingSchemaVersion, sendAppClosing: false);
+
+        result.Should().NotBeNull();
+        var actualRequestTypes = result.Payload is MessageBatchPayload batch
+                                     ? batch.Select(x => x.RequestType).ToArray()
+                                     : new[] { result.RequestType };
+        actualRequestTypes
+           .Where(x => x == TelemetryRequestTypes.AppDependenciesLoaded)
+           .Should()
+           .HaveCount(numOfMessages);
+    }
+
+    public class TestData
+    {
+        // configuration, dependencies, integrations, metrics, distributions, products, hasSentAppStarted, expected request types
+        public static IEnumerable<object[]> Data()
+        {
+            var options = new[] { true, false };
+            return from hasDeps in options
+                   from hasIntegrations in options
+                   from hasConfig in options
+                   from hasMetrics in options
+                   from hasDistributions in options
+                   from hasProducts in options
+                   from hasSentAppStarted in options
+                   from hasSendAppClosing in options
+                   let potentialPayloads = new List<string>()
+                   {
+                       hasSentAppStarted ? null : TelemetryRequestTypes.AppStarted,
+                       hasDeps ? TelemetryRequestTypes.AppDependenciesLoaded : null,
+                       hasIntegrations ? TelemetryRequestTypes.AppIntegrationsChanged : null,
+                       (hasConfig && hasSentAppStarted) ? TelemetryRequestTypes.AppClientConfigurationChanged : null,
+                       (hasProducts && hasSentAppStarted) ? TelemetryRequestTypes.AppProductChanged : null,
+                       hasMetrics ? TelemetryRequestTypes.GenerateMetrics : null,
+                       hasDistributions ? TelemetryRequestTypes.Distributions : null,
+                       hasSendAppClosing ? TelemetryRequestTypes.AppClosing : null,
+                   }
+                   let heartbeat = new[] { TelemetryRequestTypes.AppHeartbeat }
+                   let payloads = potentialPayloads
+                                 .Where(x => !string.IsNullOrEmpty(x))
+                                  // we only send heartbeat _or_ app-closing
+                                 .Concat(hasSendAppClosing || !hasSentAppStarted ? Array.Empty<string>() : heartbeat)
+                                 .ToArray()
+                   select new object[] { hasConfig, hasDeps, hasIntegrations, hasMetrics, hasDistributions, hasProducts, hasSentAppStarted, hasSendAppClosing, payloads };
         }
     }
 }

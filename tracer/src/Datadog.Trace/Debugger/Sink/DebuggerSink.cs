@@ -137,9 +137,9 @@ namespace Datadog.Trace.Debugger.Sink
             _snapshotSink.Add(probeId, snapshot);
         }
 
-        public void AddProbeStatus(string probeId, Status status, Exception exception = null, string errorMessage = null)
+        public void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception exception = null, string errorMessage = null)
         {
-            _probeStatusSink.AddProbeStatus(probeId, status, exception, errorMessage);
+            _probeStatusSink.AddProbeStatus(probeId, status, probeVersion, exception, errorMessage);
         }
 
         public void Dispose()

@@ -553,6 +553,16 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void WcfWebHttpResourceNamesEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.WcfWebHttpResourceNamesEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.WcfWebHttpResourceNamesEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [MemberData(nameof(BooleanTestCases), true)]
         public void WcfObfuscationEnabled(string value, bool expected)
         {
@@ -563,7 +573,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases), TracerSettings.DefaultObfuscationQueryStringRegex, Strings.AllowEmpty)]
+        [MemberData(nameof(StringTestCases), TracerSettingsConstants.DefaultObfuscationQueryStringRegex, Strings.AllowEmpty)]
         public void ObfuscationQueryStringRegex(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ObfuscationQueryStringRegex, value));
@@ -647,7 +657,7 @@ namespace Datadog.Trace.Tests.Configuration
 
                 var settings = new TracerSettings(source);
 
-                settings.PropagationStyleInject.Should().BeEquivalentTo(isActivityListenerEnabled && !expected.Contains("tracecontext") ? expected.Concat("tracecontext") : expected);
+                settings.PropagationStyleInject.Should().BeEquivalentTo(expected);
             }
         }
 
@@ -671,7 +681,7 @@ namespace Datadog.Trace.Tests.Configuration
 
                 var settings = new TracerSettings(source);
 
-                settings.PropagationStyleExtract.Should().BeEquivalentTo(isActivityListenerEnabled && !expected.Contains("tracecontext") ? expected.Concat("tracecontext") : expected);
+                settings.PropagationStyleExtract.Should().BeEquivalentTo(expected);
             }
         }
 
@@ -798,7 +808,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), false)]
+        [MemberData(nameof(BooleanTestCases), true)]
         public void TraceId128BitGenerationEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, value));

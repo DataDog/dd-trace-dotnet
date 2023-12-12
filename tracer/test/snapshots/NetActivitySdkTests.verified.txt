@@ -1,8 +1,8 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: Ctor1,
+    Name: server.request,
     Resource: Ctor1,
     Service: Samples.NetActivitySdk,
     Type: web,
@@ -15,8 +15,8 @@
       runtime-id: Guid_2,
       span.kind: server,
       version: 1.0.0,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -29,7 +29,7 @@
   {
     TraceId: Id_3,
     SpanId: Id_4,
-    Name: Ctor2,
+    Name: server.request,
     Resource: Ctor2,
     Service: Samples.NetActivitySdk,
     Type: web,
@@ -42,8 +42,8 @@
       otel.trace_id: Guid_3,
       span.kind: server,
       version: 1.0.0,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -55,7 +55,7 @@
   {
     TraceId: Id_3,
     SpanId: Id_6,
-    Name: Ctor3,
+    Name: server.request,
     Resource: Ctor3,
     Service: Samples.NetActivitySdk,
     Type: web,
@@ -69,8 +69,8 @@
       otel.trace_id: Guid_3,
       span.kind: server,
       version: 1.0.0,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       attribute-int: 1.0,
@@ -83,7 +83,7 @@
   {
     TraceId: Id_3,
     SpanId: Id_7,
-    Name: Ctor4,
+    Name: server.request,
     Resource: Ctor4DisplayName,
     Service: Samples.NetActivitySdk,
     Type: web,
@@ -96,7 +96,9 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_3,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       attribute-int: 1.0
@@ -105,7 +107,7 @@
   {
     TraceId: Id_8,
     SpanId: Id_9,
-    Name: ErrorSpan,
+    Name: internal,
     Resource: ErrorSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -120,8 +122,8 @@
       runtime-id: Guid_2,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -134,7 +136,7 @@
   {
     TraceId: Id_8,
     SpanId: Id_10,
-    Name: OkSpan,
+    Name: internal,
     Resource: OkSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -146,13 +148,15 @@
       otel.status_code: STATUS_CODE_OK,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_8,
     SpanId: Id_11,
-    Name: UnsetStatusSpan,
+    Name: internal,
     Resource: UnsetStatusSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -164,13 +168,15 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_8,
     SpanId: Id_12,
-    Name: ParentSpan,
+    Name: internal,
     Resource: ParentSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -182,13 +188,15 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_8,
     SpanId: Id_13,
-    Name: ChildSpan,
+    Name: internal,
     Resource: ChildSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -199,13 +207,15 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_8,
     SpanId: Id_14,
-    Name: W3CParentSpan,
+    Name: internal,
     Resource: W3CParentSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -217,13 +227,15 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_8,
     SpanId: Id_15,
-    Name: W3CChildSpan,
+    Name: internal,
     Resource: W3CChildSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -234,13 +246,15 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_8,
     SpanId: Id_16,
-    Name: MiscSpan,
+    Name: internal,
     Resource: IAmMiscSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -252,13 +266,15 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_8,
     SpanId: Id_17,
-    Name: MiscSpan2,
+    Name: internal,
     Resource: MiscSpan2,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -269,13 +285,15 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_18,
     SpanId: Id_19,
-    Name: Parent-NonW3CId,
+    Name: internal,
     Resource: Parent-NonW3CId,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -286,7 +304,8 @@
       runtime-id: Guid_2,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -299,7 +318,7 @@
   {
     TraceId: Id_18,
     SpanId: Id_20,
-    Name: Child-NonW3CId,
+    Name: internal,
     Resource: Child-NonW3CId,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -309,13 +328,44 @@
       language: dotnet,
       otel.status_code: STATUS_CODE_UNSET,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_21,
     SpanId: Id_22,
-    Name: RootSpan,
+    Name: operationnameoverride,
+    Resource: ResourceNameOverride,
+    Service: ServiceNameOverride,
+    Type: SpanTypeOverride,
+    Tags: {
+      env: integration_tests,
+      http.request.method: GET,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_5,
+      runtime-id: Guid_2,
+      span.kind: server,
+      _dd.base_service: Samples.NetActivitySdk,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _dd1.sr.eausr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_24,
+    Name: internal,
     Resource: RootSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -324,12 +374,12 @@
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_5,
+      otel.trace_id: Guid_6,
       runtime-id: Guid_2,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -340,13 +390,13 @@
     }
   },
   {
-    TraceId: Id_21,
-    SpanId: Id_23,
-    Name: Saying hello!,
+    TraceId: Id_23,
+    SpanId: Id_25,
+    Name: saying hello!,
     Resource: AddTagsActivity,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_22,
+    ParentId: Id_24,
     Tags: {
       attribute-bool: true,
       attribute-boolArray: [false,true,false],
@@ -362,9 +412,11 @@
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_5,
+      otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       attribute-double: 2.0,
@@ -372,13 +424,13 @@
     }
   },
   {
-    TraceId: Id_21,
-    SpanId: Id_24,
-    Name: SetTagsActivity,
+    TraceId: Id_23,
+    SpanId: Id_26,
+    Name: internal,
     Resource: SetTagsActivity,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_22,
+    ParentId: Id_24,
     Tags: {
       attribute-bool: true,
       attribute-boolArray: [false,true,false],
@@ -394,10 +446,12 @@
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_5,
+      otel.trace_id: Guid_6,
       set-string: str,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       attribute-double: 2.0,
@@ -405,82 +459,492 @@
     }
   },
   {
-    TraceId: Id_21,
-    SpanId: Id_25,
-    Name: NameEvent,
+    TraceId: Id_23,
+    SpanId: Id_27,
+    Name: internal,
     Resource: NameEvent,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_22,
+    ParentId: Id_24,
     Tags: {
       env: integration_tests,
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_5,
+      otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
-    TraceId: Id_21,
-    SpanId: Id_26,
-    Name: AddBaggage,
+    TraceId: Id_23,
+    SpanId: Id_28,
+    Name: internal,
     Resource: AddBaggage,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_22,
+    ParentId: Id_24,
     Tags: {
       env: integration_tests,
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_5,
+      otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
-    TraceId: Id_21,
-    SpanId: Id_27,
-    Name: NameDateEvent,
-    Resource: NameDateEvent,
-    Service: Samples.NetActivitySdk,
-    Type: custom,
-    ParentId: Id_25,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      otel.library.name: Samples.NetActivitySdk,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_5,
-      span.kind: internal,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_21,
-    SpanId: Id_28,
-    Name: SetBaggage,
-    Resource: SetBaggage,
-    Service: Samples.NetActivitySdk,
-    Type: custom,
-    ParentId: Id_26,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      otel.library.name: Samples.NetActivitySdk,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_5,
-      span.kind: internal,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_21,
+    TraceId: Id_23,
     SpanId: Id_29,
-    Name: EmptyTagsEvent,
-    Resource: EmptyTagsEvent,
+    Name: http.server.request,
+    Resource: operation name should be-> http.server.request,
+    Service: Samples.NetActivitySdk,
+    Type: web,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      http.request.method: GET,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_30,
+    Name: http.client.request,
+    Resource: operation name should be-> http.client.request,
+    Service: Samples.NetActivitySdk,
+    Type: http,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      http.request.method: GET,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_31,
+    Name: redis.query,
+    Resource: operation name should be-> redis.query,
+    Service: Samples.NetActivitySdk,
+    Type: db,
+    ParentId: Id_24,
+    Tags: {
+      db.system: Redis,
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_32,
+    Name: kafka.receive,
+    Resource: operation name should be-> kafka.receive,
+    Service: Samples.NetActivitySdk,
+    Type: http,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      messaging.operation: Receive,
+      messaging.system: Kafka,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_33,
+    Name: kafka.receive,
+    Resource: operation name should be-> kafka.receive,
+    Service: Samples.NetActivitySdk,
+    Type: web,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      messaging.operation: Receive,
+      messaging.system: Kafka,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_34,
+    Name: kafka.receive,
+    Resource: operation name should be-> kafka.receive,
+    Service: Samples.NetActivitySdk,
+    Type: custom,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      messaging.operation: Receive,
+      messaging.system: Kafka,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: producer,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_35,
+    Name: kafka.receive,
+    Resource: operation name should be-> kafka.receive,
+    Service: Samples.NetActivitySdk,
+    Type: custom,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      messaging.operation: Receive,
+      messaging.system: Kafka,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: consumer,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_36,
+    Name: aws.s3.request,
+    Resource: operation name should be-> aws.s3.request,
+    Service: Samples.NetActivitySdk,
+    Type: http,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      rpc.service: S3,
+      rpc.system: aws-api,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_37,
+    Name: aws.client.request,
+    Resource: operation name should be-> aws.client.request,
+    Service: Samples.NetActivitySdk,
+    Type: http,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      rpc.system: aws-api,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_38,
+    Name: grpc.client.request,
+    Resource: operation name should be-> grpc.client.request,
+    Service: Samples.NetActivitySdk,
+    Type: http,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      rpc.system: GRPC,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_39,
+    Name: grpc.server.request,
+    Resource: operation name should be-> grpc.server.request,
+    Service: Samples.NetActivitySdk,
+    Type: web,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      rpc.system: GRPC,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_40,
+    Name: aws.my-function.invoke,
+    Resource: operation name should be-> aws.my-function.invoke,
+    Service: Samples.NetActivitySdk,
+    Type: http,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      faas.invoked_name: My-Function,
+      faas.invoked_provider: aws,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_41,
+    Name: datasource.invoke,
+    Resource: operation name should be-> datasource.invoke,
+    Service: Samples.NetActivitySdk,
+    Type: web,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      faas.trigger: Datasource,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_42,
+    Name: graphql.server.request,
+    Resource: operation name should be-> graphql.server.request,
+    Service: Samples.NetActivitySdk,
+    Type: web,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      graphql.operation.type: query,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_43,
+    Name: amqp.server.request,
+    Resource: operation name should be-> amqp.server.request,
+    Service: Samples.NetActivitySdk,
+    Type: web,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      network.protocol.name: Amqp,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_44,
+    Name: server.request,
+    Resource: operation name should be-> server.request,
+    Service: Samples.NetActivitySdk,
+    Type: web,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_45,
+    Name: amqp.client.request,
+    Resource: operation name should be-> amqp.client.request,
+    Service: Samples.NetActivitySdk,
+    Type: http,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      network.protocol.name: Amqp,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_46,
+    Name: client.request,
+    Resource: operation name should be-> client.request,
+    Service: Samples.NetActivitySdk,
+    Type: http,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_47,
+    Name: internal,
+    Resource: operation name should be-> internal,
+    Service: Samples.NetActivitySdk,
+    Type: custom,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: internal,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_48,
+    Name: consumer,
+    Resource: operation name should be-> consumer,
+    Service: Samples.NetActivitySdk,
+    Type: custom,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: consumer,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_49,
+    Name: producer,
+    Resource: operation name should be-> producer,
+    Service: Samples.NetActivitySdk,
+    Type: custom,
+    ParentId: Id_24,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: producer,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_50,
+    Name: internal,
+    Resource: NameDateEvent,
     Service: Samples.NetActivitySdk,
     Type: custom,
     ParentId: Id_27,
@@ -489,45 +953,91 @@
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_5,
+      otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
-    TraceId: Id_21,
-    SpanId: Id_30,
-    Name: TagsEvent,
+    TraceId: Id_23,
+    SpanId: Id_51,
+    Name: internal,
+    Resource: SetBaggage,
+    Service: Samples.NetActivitySdk,
+    Type: custom,
+    ParentId: Id_28,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: internal,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_52,
+    Name: internal,
+    Resource: EmptyTagsEvent,
+    Service: Samples.NetActivitySdk,
+    Type: custom,
+    ParentId: Id_50,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      span.kind: internal,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_53,
+    Name: internal,
     Resource: TagsEvent,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_29,
+    ParentId: Id_52,
     Tags: {
       env: integration_tests,
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_5,
+      otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
-    TraceId: Id_21,
-    SpanId: Id_31,
-    Name: MultipleEvents,
+    TraceId: Id_23,
+    SpanId: Id_54,
+    Name: internal,
     Resource: MultipleEvents,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_30,
+    ParentId: Id_53,
     Tags: {
       env: integration_tests,
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_5,
+      otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   }
 ]

@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
+
 using System;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
@@ -37,14 +38,14 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
             var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
-            CheckExceptionsInProfiles(exceptionSamples);
+            CheckExceptionsInProfiles(framework, exceptionSamples);
         }
 
-        private void CheckExceptionsInProfiles((string Type, string Message, long Count, StackTrace Stacktrace)[] exceptionSamples)
+        private static void CheckExceptionsInProfiles(string framework, (string Type, string Message, long Count, StackTrace Stacktrace)[] exceptionSamples)
         {
-            PlatformID os = Environment.OSVersion.Platform;
+            var os = Environment.OSVersion.Platform;
             StackTrace stack;
-            if (os == PlatformID.Unix)
+            if (os == PlatformID.Unix && framework != "net8.0")
             {
                 // BUG on Linux: invalid TKey instead of TVal
                 stack = new StackTrace(

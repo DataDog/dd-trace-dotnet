@@ -156,7 +156,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             telemetry.AssertIntegrationEnabled(IntegrationId.MySql);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+            settings.AddRegexScrubber(new Regex("MySql-Test-[a-zA-Z0-9]{32}"), "MySql-Test-GUID");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: mysql");
             settings.AddSimpleScrubber("out.host: mysql57", "out.host: mysql");
             settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: mysql");

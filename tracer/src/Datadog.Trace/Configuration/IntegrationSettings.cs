@@ -25,13 +25,14 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         [PublicApi]
         public IntegrationSettings(string integrationName, IConfigurationSource? source)
-            : this(integrationName, source, TelemetryFactory.Config)
+            : this(integrationName, source, false)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettings_Ctor);
         }
 
-        internal IntegrationSettings(string integrationName, IConfigurationSource? source, IConfigurationTelemetry telemetry)
+        internal IntegrationSettings(string integrationName, IConfigurationSource? source, bool unusedParamNotToUsePublicApi)
         {
+            // unused parameter is to give us a non-public API we can use
             if (integrationName is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(integrationName));
@@ -44,7 +45,8 @@ namespace Datadog.Trace.Configuration
                 return;
             }
 
-            var config = new ConfigurationBuilder(source, telemetry);
+            // We don't record these in telemetry, because they're blocked anyway
+            var config = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance);
             EnabledInternal = config
                      .WithKeys(
                           string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),

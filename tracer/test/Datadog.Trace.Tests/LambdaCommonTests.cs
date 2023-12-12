@@ -2,13 +2,12 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
+#if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Text;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 using Datadog.Trace.TestHelpers;
 
 using FluentAssertions;
@@ -163,7 +162,7 @@ namespace Datadog.Trace.Tests
 
         [Fact]
         [Trait("Category", "ArmUnsupported")]
-        public void TestSendEndInvocationTrue()
+        public void TestSendEndInvocationSuccess()
         {
             var tracer = TracerHelper.Create();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
@@ -177,8 +176,11 @@ namespace Datadog.Trace.Tests
             httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
 
             _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(scope, true)).Returns(httpRequest.Object);
-
-            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, scope, true, "{}").Should().Be(true);
+            var output = new StringWriter();
+            Console.SetOut(output);
+            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, scope, true, "{}");
+            httpRequest.Verify(r => r.GetResponse(), Times.Once);
+            Assert.Empty(output.ToString());
         }
 
         [Fact]
@@ -197,48 +199,12 @@ namespace Datadog.Trace.Tests
             httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
 
             _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(scope, true)).Returns(httpRequest.Object);
-
-            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, scope, true, "{}").Should().Be(false);
-        }
-
-        [Fact]
-        public void SerializeObject_WithDictionary_ParsesCorrectlyToJsonString()
-        {
-            DateTime date = new(2023, 1, 7);
-            const string jsonString = @"{ ""general"": ""kenobi"" }";
-            var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(jsonString));
-            Dictionary<string, object> dictionary = new()
-            {
-                { "date", date },
-                { "hello", "there" },
-                { "memoryStream", memoryStream }
-            };
-
-            const string expectedValue = @"{""date"":1673049600.0,""hello"":""there"",""memoryStream"":""eyAiZ2VuZXJhbCI6ICJrZW5vYmkiIH0=""}";
-            var result = LambdaCommon.SerializeObject(dictionary);
-
-            result.Should().Be(expectedValue);
-        }
-
-        [Fact]
-        public void SerializeObject_WithMemoryStream_ParsesCorrectlyToBase64String()
-        {
-            const string jsonString = @"{ ""hello"": ""there"" }";
-            const string expectedValue = "\"eyAiaGVsbG8iOiAidGhlcmUiIH0=\"";
-            var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(jsonString));
-            var result = LambdaCommon.SerializeObject(memoryStream);
-
-            result.Should().Be(expectedValue);
-        }
-
-        [Fact]
-        public void SerializeObject_WithDateTime_ParsesCorrectlyToUnixEpochSeconds()
-        {
-            DateTime date = new(2023, 1, 7);
-            const string expectedValue = "1673049600.0";
-            var result = LambdaCommon.SerializeObject(date);
-
-            result.Should().Be(expectedValue);
+            var output = new StringWriter();
+            Console.SetOut(output);
+            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, scope, true, "{}");
+            httpRequest.Verify(r => r.GetResponse(), Times.Once);
+            Assert.Contains("Extension does not send a status 200 OK", output.ToString());
         }
     }
 }
+#endif

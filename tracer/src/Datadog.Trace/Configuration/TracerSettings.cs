@@ -36,11 +36,6 @@ namespace Datadog.Trace.Configuration
         private readonly TracerSettingsSnapshot _initialSettings;
 
         /// <summary>
-        /// Default obfuscation query string regex if none specified via env DD_OBFUSCATION_QUERY_STRING_REGEXP
-        /// </summary>
-        internal const string DefaultObfuscationQueryStringRegex = @"((?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:(?:\s|%20)*(?:=|%3D)[^&]+|(?:""|%22)(?:\s|%20)*(?::|%3A)(?:\s|%20)*(?:""|%22)(?:%2[^2]|%[^2]|[^""%])+(?:""|%22))|bearer(?:\s|%20)+[a-z0-9\._\-]|token(?::|%3A)[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L](?:[\w=-]|%3D)+\.ey[I-L](?:[\w=-]|%3D)+(?:\.(?:[\w.+\/=-]|%3D|%2F|%2B)+)?|[\-]{5}BEGIN(?:[a-z\s]|%20)+PRIVATE(?:\s|%20)KEY[\-]{5}[^\-]+[\-]{5}END(?:[a-z\s]|%20)+PRIVATE(?:\s|%20)KEY|ssh-rsa(?:\s|%20)*(?:[a-z0-9\/\.+]|%2F|%5C|%2B){100,})";
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
         /// </summary>
         [PublicApi]
@@ -88,6 +83,19 @@ namespace Datadog.Trace.Configuration
             _telemetry = telemetry;
             var config = new ConfigurationBuilder(source, _telemetry);
 
+            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
+            IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
+
+            LambdaMetadata = LambdaMetadata.Create();
+
+            IsRunningInAzureAppService = ImmutableAzureAppServiceSettings.GetIsAzureAppService(source, telemetry);
+            IsRunningInAzureFunctionsConsumptionPlan = ImmutableAzureAppServiceSettings.GetIsFunctionsAppConsumptionPlan(source, telemetry);
+
+            if (IsRunningInAzureAppService)
+            {
+                AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
+            }
+
             EnvironmentInternal = config
                          .WithKeys(ConfigurationKeys.Environment)
                          .AsString();
@@ -116,6 +124,11 @@ namespace Datadog.Trace.Configuration
                           .WithKeys(ConfigurationKeys.TraceEnabled)
                           .AsBool(defaultValue: true);
 
+            if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
+            {
+                TraceEnabledInternal = false;
+            }
+
             var disabledIntegrationNames = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
                                                                .AsString()
                                                               ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
@@ -123,7 +136,7 @@ namespace Datadog.Trace.Configuration
 
             DisabledIntegrationNamesInternal = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
-            IntegrationsInternal = new IntegrationSettingsCollection(source, _telemetry);
+            IntegrationsInternal = new IntegrationSettingsCollection(source, unusedParamNotToUsePublicApi: false);
 
             ExporterInternal = new ExporterSettings(source, _telemetry);
 
@@ -211,9 +224,13 @@ namespace Datadog.Trace.Configuration
                              .WithKeys(ConfigurationKeys.BufferSize)
                              .AsInt32(defaultValue: 1024 * 1024 * 10); // 10MB
 
+            // If Lambda/GCP we don't wanat to have a flush interval. The serverless integration
+            // manually calls flush and waits for the result before ending execution.
+            // This can artificially increase the execution time of functions
+            var defaultTraceBatchInterval = LambdaMetadata.IsRunningInLambda || IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan ? 0 : 100;
             TraceBatchInterval = config
                                 .WithKeys(ConfigurationKeys.SerializationBatchInterval)
-                                .AsInt32(defaultValue: 100);
+                                .AsInt32(defaultTraceBatchInterval);
 
             RouteTemplateResourceNamesEnabled = config
                                                .WithKeys(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
@@ -231,13 +248,17 @@ namespace Datadog.Trace.Configuration
                                             .WithKeys(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             .AsBool(defaultValue: false);
 
+            WcfWebHttpResourceNamesEnabled = config
+                                            .WithKeys(ConfigurationKeys.FeatureFlags.WcfWebHttpResourceNamesEnabled)
+                                            .AsBool(defaultValue: false);
+
             WcfObfuscationEnabled = config
                                    .WithKeys(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled)
                                    .AsBool(defaultValue: true);
 
             ObfuscationQueryStringRegex = config
                                          .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
-                                         .AsString(defaultValue: DefaultObfuscationQueryStringRegex);
+                                         .AsString(defaultValue: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
 
             QueryStringReportingEnabled = config
                                          .WithKeys(ConfigurationKeys.QueryStringReportingEnabled)
@@ -277,29 +298,14 @@ namespace Datadog.Trace.Configuration
                                           validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
                                           converter: style => TrimSplitString(style, commaSeparator));
 
-            // If Activity support is enabled, we must enable the W3C Trace Context propagators.
-            // Take care to not duplicate the W3C propagator so the telemetry obtained from our settings looks okay
-            if (IsActivityListenerEnabled)
-            {
-                if (!PropagationStyleInject.Contains(ContextPropagationHeaderStyle.W3CTraceContext, StringComparer.OrdinalIgnoreCase))
-                {
-                    PropagationStyleInject = PropagationStyleInject.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
-                    // "manually" record the updated value for v2 telemetry using the "unknown" origin, as we
-                    // can't easily tell from here which was the original source (that we're modifying)
-                    telemetry.Record(ConfigurationKeys.PropagationStyleInject, string.Join(",", PropagationStyleInject), recordValue: true, ConfigurationOrigins.Unknown);
-                }
+            PropagationExtractFirstOnly = config
+                                         .WithKeys(ConfigurationKeys.PropagationExtractFirstOnly)
+                                         .AsBool(false);
 
-                if (!PropagationStyleExtract.Contains(ContextPropagationHeaderStyle.W3CTraceContext, StringComparer.OrdinalIgnoreCase))
-                {
-                    PropagationStyleExtract = PropagationStyleExtract.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
-                    // "manually" record the updated value for v2 telemetry using the "unknown" origin, as we
-                    // can't easily tell from here which was the original source (that we're modifying)
-                    telemetry.Record(ConfigurationKeys.PropagationStyleExtract, string.Join(",", PropagationStyleExtract), recordValue: true, ConfigurationOrigins.Unknown);
-                }
-            }
-            else
+            // If Activity support is enabled, we shouldn't enable the W3C Trace Context propagators.
+            if (!IsActivityListenerEnabled)
             {
-                DisabledIntegrationNamesInternal.Add(nameof(Configuration.IntegrationId.OpenTelemetry));
+                DisabledIntegrationNamesInternal.Add(nameof(IntegrationId.OpenTelemetry));
             }
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry);
@@ -335,25 +341,6 @@ namespace Datadog.Trace.Configuration
                                   .WithKeys(ConfigurationKeys.RareSamplerEnabled)
                                   .AsBool(false);
 
-            IsRunningInAzureAppService = ImmutableAzureAppServiceSettings.GetIsAzureAppService(source, telemetry);
-
-            IsRunningInAzureFunctionsConsumptionPlan = ImmutableAzureAppServiceSettings.GetIsFunctionsAppConsumptionPlan(source, telemetry);
-
-            if (IsRunningInAzureAppService)
-            {
-                AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
-                if (AzureAppServiceMetadata.IsUnsafeToTrace)
-                {
-                    TraceEnabledInternal = false;
-                }
-            }
-
-            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
-
-            IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
-
-            LambdaMetadata = LambdaMetadata.Create();
-
             StatsComputationEnabledInternal = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
                                      .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan));
@@ -377,7 +364,7 @@ namespace Datadog.Trace.Configuration
 
             TraceId128BitGenerationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled)
-                                            .AsBool(false);
+                                            .AsBool(true);
             TraceId128BitLoggingEnabled = config
                                          .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled)
                                          .AsBool(false);
@@ -675,6 +662,12 @@ namespace Datadog.Trace.Configuration
         internal bool DelayWcfInstrumentationEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether to enable improved template-based resource names
+        /// when using WCF Web HTTP.
+        /// </summary>
+        internal bool WcfWebHttpResourceNamesEnabled { get; }
+
+        /// <summary>
         /// Gets a value indicating whether to obfuscate the <c>LocalPath</c> of a WCF request that goes
         /// into the <c>resourceName</c> of a span.
         /// </summary>
@@ -683,6 +676,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating the regex to apply to obfuscate http query strings.
+        /// Warning: This regex cause crashes under netcoreapp2.1 / linux / arm64, DON'T use default value on manual instrumentation
         /// </summary>
         internal string ObfuscationQueryStringRegex { get; }
 
@@ -738,6 +732,12 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the extraction propagation style.
         /// </summary>
         internal string[] PropagationStyleExtract { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the propagation should only try
+        /// extract the first header.
+        /// </summary>
+        internal bool PropagationExtractFirstOnly { get; }
 
         /// <summary>
         /// Gets a value indicating whether runtime metrics

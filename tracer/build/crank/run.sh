@@ -8,8 +8,6 @@ echo "BUILD_SOURCEVERSION=$BUILD_SOURCEVERSION"
 echo "SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI=$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
 echo "BUILD_REPOSITORY_URI=$BUILD_REPOSITORY_URI"
 echo "DD_CIVISIBILITY_AGENTLESS_ENABLED=$DD_CIVISIBILITY_AGENTLESS_ENABLED"
-echo "DD_INTERNAL_TELEMETRY_V2_ENABLED=$DD_INTERNAL_TELEMETRY_V2_ENABLED"
-echo "DD_TELEMETRY_METRICS_ENABLED=$DD_TELEMETRY_METRICS_ENABLED"
 echo "Will run extended throughput tests: $2"
 
 repo="$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
@@ -40,28 +38,28 @@ if [ "$1" = "windows" ]; then
     
     echo "Running windows throughput tests"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline --profile windows --json baseline_windows.json $repository $commit --property name=AspNetCoreSimpleController --property scenario=baseline --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline --profile windows --json baseline_windows.json $repository $commit --property name=AspNetCoreSimpleController --property scenario=baseline --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="baseline_windows.json"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen --profile windows --json calltarget_ngen_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget_ngen --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen --profile windows --json calltarget_ngen_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget_ngen --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="calltarget_ngen_windows.json"
 
     if [ "$2" = "True" ]; then
       echo "Running throughput tests with stats enabled"
-      crank --config Samples.AspNetCoreSimpleController.yml --scenario trace_stats --profile windows --json trace_stats_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=trace_stats --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+      crank --config Samples.AspNetCoreSimpleController.yml --scenario trace_stats --profile windows --json trace_stats_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=trace_stats --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
       dd-trace --crank-import="trace_stats_windows.json"
     fi
 
     echo "Running manual instrumentation throughput tests"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile windows --json manual_only_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED 
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile windows --json manual_only_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha 
     dd-trace --crank-import="manual_only_windows.json"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_and_automatic --profile windows --json manual_and_automatic_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_and_automatic --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_and_automatic --profile windows --json manual_and_automatic_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_and_automatic --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="manual_and_automatic_windows.json"
 
     if [ "$2" = "True" ]; then
-      crank --config Samples.AspNetCoreSimpleController.yml --scenario version_conflict --profile windows --json version_conflict_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=version_conflict --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+      crank --config Samples.AspNetCoreSimpleController.yml --scenario version_conflict --profile windows --json version_conflict_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=version_conflict --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
       dd-trace --crank-import="version_conflict_windows.json"
     fi
 
@@ -76,28 +74,28 @@ elif [ "$1" = "linux" ]; then
 
     echo "Running Linux x64 throughput tests"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline --profile linux --json baseline_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=baseline --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline --profile linux --json baseline_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=baseline --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="baseline_linux.json"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen --profile linux --json calltarget_ngen_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget_ngen --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen --profile linux --json calltarget_ngen_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget_ngen --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="calltarget_ngen_linux.json"
 
     if [ "$2" = "True" ]; then
       echo "Running throughput tests with stats enabled"
-      crank --config Samples.AspNetCoreSimpleController.yml --scenario trace_stats --profile linux --json trace_stats_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=trace_stats --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+      crank --config Samples.AspNetCoreSimpleController.yml --scenario trace_stats --profile linux --json trace_stats_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=trace_stats --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
       dd-trace --crank-import="trace_stats_linux.json"
     fi
 
     echo "Running manual instrumentation throughput tests"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile linux --json manual_only_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile linux --json manual_only_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="manual_only_linux.json"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_and_automatic --profile linux --json manual_and_automatic_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_and_automatic --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_and_automatic --profile linux --json manual_and_automatic_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_and_automatic --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="manual_and_automatic_linux.json"
 
     if [ "$2" = "True" ]; then
-      crank --config Samples.AspNetCoreSimpleController.yml --scenario version_conflict --profile linux --json version_conflict_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=version_conflict --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+      crank --config Samples.AspNetCoreSimpleController.yml --scenario version_conflict --profile linux --json version_conflict_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=version_conflict --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
       dd-trace --crank-import="version_conflict_linux.json"
     fi
 
@@ -112,28 +110,28 @@ elif [ "$1" = "linux_arm64" ]; then
 
     echo "Running Linux arm64 throughput tests"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline --profile linux_arm64 --json baseline_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=baseline --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline --profile linux_arm64 --json baseline_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=baseline --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="baseline_linux_arm64.json"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen --profile linux_arm64 --json calltarget_ngen_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget_ngen --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen --profile linux_arm64 --json calltarget_ngen_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget_ngen --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="calltarget_ngen_linux_arm64.json"
 
     if [ "$2" = "True" ]; then
       echo "Running throughput tests with stats enabled"
-      crank --config Samples.AspNetCoreSimpleController.yml --scenario trace_stats --profile linux_arm64 --json trace_stats_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=trace_stats --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+      crank --config Samples.AspNetCoreSimpleController.yml --scenario trace_stats --profile linux_arm64 --json trace_stats_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=trace_stats --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
       dd-trace --crank-import="trace_stats_linux_arm64.json"
     fi
 
     echo "Running manual instrumentation throughput tests"
     
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile linux_arm64 --json manual_only_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile linux_arm64 --json manual_only_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="manual_only_linux_arm64.json"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_and_automatic --profile linux_arm64 --json manual_and_automatic_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_and_automatic --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_and_automatic --profile linux_arm64 --json manual_and_automatic_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_and_automatic --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="manual_and_automatic_linux_arm64.json"
 
     if [ "$2" = "True" ]; then
-      crank --config Samples.AspNetCoreSimpleController.yml --scenario version_conflict --profile linux_arm64 --json version_conflict_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=version_conflict --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha --variable telemetry_v2=$DD_INTERNAL_TELEMETRY_V2_ENABLED --variable enable_metrics=$DD_TELEMETRY_METRICS_ENABLED
+      crank --config Samples.AspNetCoreSimpleController.yml --scenario version_conflict --profile linux_arm64 --json version_conflict_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=version_conflict --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
       dd-trace --crank-import="version_conflict_linux_arm64.json"
     fi
 else

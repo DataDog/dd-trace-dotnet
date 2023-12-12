@@ -70,6 +70,13 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => new GrpcClientV1Tags(),
             };
 
+        public RemotingClientTags CreateRemotingClientTags()
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new RemotingClientTags(),
+                _ => new RemotingClientV1Tags(),
+            };
+
         public ServiceRemotingClientTags CreateServiceRemotingClientTags()
             => _version switch
             {

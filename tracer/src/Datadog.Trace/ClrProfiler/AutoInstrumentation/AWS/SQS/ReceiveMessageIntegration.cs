@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -45,9 +47,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 return CallTargetState.GetDefault();
             }
 
-            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out AwsSqsTags tags, spanKind: SpanKinds.Consumer);
-            tags.QueueUrl = request.QueueUrl;
-            tags.QueueName = AwsSqsCommon.GetQueueName(request.QueueUrl);
+            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out var tags, spanKind: SpanKinds.Consumer);
+            if (tags is not null && request.QueueUrl is not null)
+            {
+                tags.QueueUrl = request.QueueUrl;
+                tags.QueueName = AwsSqsCommon.GetQueueName(request.QueueUrl);
+            }
 
             return new CallTargetState(scope);
         }

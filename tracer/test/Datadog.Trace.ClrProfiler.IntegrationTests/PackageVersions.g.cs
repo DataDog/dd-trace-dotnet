@@ -30,6 +30,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> AwsKinesis => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsKinesis : PackageVersionsLatestSpecific.AwsKinesis;
 
+        public static IEnumerable<object[]> AwsLambda => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsLambda : PackageVersionsLatestSpecific.AwsLambda;
+
         public static IEnumerable<object[]> AwsSqs => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsSqs : PackageVersionsLatestSpecific.AwsSqs;
 
         public static IEnumerable<object[]> AwsSns => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsSns : PackageVersionsLatestSpecific.AwsSns;
@@ -52,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> RabbitMQ => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.RabbitMQ : PackageVersionsLatestSpecific.RabbitMQ;
 
-        public static IEnumerable<object[]>  DataStreamsRabbitMQ => IsAllMinorPackageVersions ? PackageVersionsLatestMinors. DataStreamsRabbitMQ : PackageVersionsLatestSpecific. DataStreamsRabbitMQ;
+        public static IEnumerable<object[]> DataStreamsRabbitMQ => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.DataStreamsRabbitMQ : PackageVersionsLatestSpecific.DataStreamsRabbitMQ;
 
         public static IEnumerable<object[]> SystemDataSqlClient => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.SystemDataSqlClient : PackageVersionsLatestSpecific.SystemDataSqlClient;
 

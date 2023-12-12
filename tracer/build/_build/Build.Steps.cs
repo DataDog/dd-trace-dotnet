@@ -72,6 +72,7 @@ partial class Build
     AbsolutePath TestsDirectory => TracerDirectory / "test";
     AbsolutePath BundleHomeDirectory => Solution.GetProject(Projects.DatadogTraceBundle).Directory / "home";
     AbsolutePath DatadogTraceDirectory => Solution.GetProject(Projects.DatadogTrace).Directory;
+    AbsolutePath BenchmarkHomeDirectory => Solution.GetProject(Projects.DatadogTraceBenchmarkDotNet).Directory / "home";
 
     readonly TargetFramework[] AppTrimmingTFMs = { TargetFramework.NETCOREAPP3_1, TargetFramework.NET6_0 };
 
@@ -158,7 +159,6 @@ partial class Build
         Solution.GetProject(Projects.DatadogTrace),
         Solution.GetProject(Projects.DatadogTraceOpenTracing),
         Solution.GetProject(Projects.DatadogTraceAnnotations),
-        Solution.GetProject(Projects.DatadogTraceBenchmarkDotNet),
         Solution.GetProject(Projects.DatadogTraceTrimming),
     };
 
@@ -178,8 +178,8 @@ partial class Build
 
     TargetFramework[] TestingFrameworks =>
     IncludeAllTestFrameworks || HaveIntegrationsChanged
-        ? new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, }
-        : new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET7_0, };
+        ? new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, }
+        : new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, };
 
     bool HaveIntegrationsChanged =>
         GetGitChangedFiles(baseBranch: "origin/master")
@@ -236,7 +236,7 @@ partial class Build
 
     Target CompileNativeSrcWindows => _ => _
         .Unlisted()
-        .After(CompileManagedSrc)
+        .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -261,7 +261,7 @@ partial class Build
 
     Target CompileTracerNativeSrcLinux => _ => _
         .Unlisted()
-        .After(CompileManagedSrc)
+        .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
@@ -275,7 +275,7 @@ partial class Build
 
     Target CompileNativeSrcMacOs => _ => _
         .Unlisted()
-        .After(CompileManagedSrc)
+        .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
@@ -355,13 +355,31 @@ partial class Build
         .Description("Runs CppCheck over the native tracer project")
         .DependsOn(CppCheckNativeSrcUnix);
 
+    Target CompileManagedLoader => _ => _
+        .Unlisted()
+        .Description("Compiles the managed loader (which is required by the native loader)")
+        .After(CreateRequiredDirectories)
+        .After(Restore)
+        .Executes(() =>
+        {
+            DotnetBuild(new[] { Solution.GetProject(Projects.ManagedLoader).Path }, noRestore: false, noDependencies: false);
+        });
+
     Target CompileManagedSrc => _ => _
         .Unlisted()
         .Description("Compiles the managed code in the src directory")
         .After(CreateRequiredDirectories)
         .After(Restore)
+        .After(CompileManagedLoader)
         .Executes(() =>
         {
+            // Removes previously generated files
+            // This is mostly to avoid forgetting to remove deprecated files (class name change or path change)
+            if (IsWin)
+            {
+                EnsureCleanDirectory(DatadogTraceDirectory / "Generated");
+            }
+
             var include = TracerDirectory.GlobFiles(
                 "src/**/*.csproj"
             );
@@ -370,7 +388,8 @@ partial class Build
                 "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
-                "src/Datadog.AutoInstrumentation.Generator/*.csproj"
+                "src/Datadog.AutoInstrumentation.Generator/*.csproj",
+                $"src/{Projects.ManagedLoader}/*.csproj"
             );
 
             var toBuild = include.Except(exclude);
@@ -437,13 +456,31 @@ partial class Build
 
         using (var client = new HttpClient())
         {
-            var response = await client.GetAsync(libDdwafUri);
+            var keepTrying = true;
+            var nbTries = 0;
 
-            response.EnsureSuccessStatusCode();
+            while (keepTrying)
+            {
+                nbTries++;
+                try
+                {
+                    var response = await client.GetAsync(libDdwafUri);
 
-            await using var file = File.Create(libDdwafZip);
-            await using var stream = await response.Content.ReadAsStreamAsync();
-            await stream.CopyToAsync(file);
+                    response.EnsureSuccessStatusCode();
+
+                    await using var file = File.Create(libDdwafZip);
+                    await using var stream = await response.Content.ReadAsStreamAsync();
+                    await stream.CopyToAsync(file);
+                    keepTrying = false;
+                }
+                catch (HttpRequestException)
+                {
+                    if (nbTries > 3)
+                    {
+                        throw;
+                    }
+                }
+            }
         }
 
         uncompressFolderTarget ??= LibDdwafDirectory(libddwafVersion);
@@ -505,18 +542,18 @@ partial class Build
                     // so copy both, just to be safe
                     if (IsWin)
                     {
-                        foreach (var arch in WafWindowsArchitectureFolders)
+                        foreach (var olderLibDdwafVersion in OlderLibDdwafVersions)
                         {
-                            var source = MonitoringHomeDirectory / arch;
-                            foreach (var fmk in frameworks)
+                            var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
+                            await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
+                            foreach (var arch in WafWindowsArchitectureFolders)
                             {
-                                var dest = testBinFolder / fmk / arch;
-                                CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-                                foreach (var olderLibDdwafVersion in OlderLibDdwafVersions)
+                                var oldVersionPath = oldVersionTempPath / "runtimes" / arch / "native" / "ddwaf.dll";
+                                var source = MonitoringHomeDirectory / arch;
+                                foreach (var fmk in frameworks)
                                 {
-                                    var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
-                                    var oldVersionPath = oldVersionTempPath / "runtimes" / arch / "native" / "ddwaf.dll";
-                                    await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
+                                    var dest = testBinFolder / fmk / arch;
+                                    CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                                     CopyFile(oldVersionPath, dest / $"ddwaf-{olderLibDdwafVersion}.dll", FileExistsPolicy.Overwrite);
                                 }
                             }
@@ -527,26 +564,28 @@ partial class Build
                         var (arch, _) = GetUnixArchitectureAndExtension();
                         var (archWaf, ext) = GetLibDdWafUnixArchitectureAndExtension();
 
-                        foreach (var fmk in frameworks)
+                        foreach (var olderLibDdwafVersion in OlderLibDdwafVersions)
                         {
-                            // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
-                            // This is because these tests try to load the WAF.
-                            // Loading the WAF requires using the native tracer as a proxy, which means either
-                            // - The native tracer must be loaded first, so it can rewrite the PInvoke calls
-                            // - The native tracer must be side-by-side with the running dll
-                            // As this is a managed-only unit test, the native tracer _must_ be in the root folder
-                            // For simplicity, we just copy all the native dlls there
-                            var dest = testBinFolder / fmk;
-
-                            // use the files from the monitoring native folder
-                            CopyDirectoryRecursively(MonitoringHomeDirectory / (IsOsx ? "osx" : arch), dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-                            foreach (var olderLibDdwafVersion in OlderLibDdwafVersions)
+                            var patchedArchWaf = (IsOsx && olderLibDdwafVersion != "1.10.0") ? archWaf + "-x64" : archWaf;
+                            var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
+                            var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
+                            await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
                             {
-                                var patchedArchWaf = (IsOsx && olderLibDdwafVersion != "1.10.0") ? archWaf + "-x64" : archWaf;
-                                var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
-                                var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
-                                await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
-                                CopyFile(oldVersionPath, dest / $"libddwaf-{olderLibDdwafVersion}.{ext}", FileExistsPolicy.Overwrite);
+                                foreach (var fmk in frameworks)
+                                {
+                                    // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
+                                    // This is because these tests try to load the WAF.
+                                    // Loading the WAF requires using the native tracer as a proxy, which means either
+                                    // - The native tracer must be loaded first, so it can rewrite the PInvoke calls
+                                    // - The native tracer must be side-by-side with the running dll
+                                    // As this is a managed-only unit test, the native tracer _must_ be in the root folder
+                                    // For simplicity, we just copy all the native dlls there
+                                    var dest = testBinFolder / fmk;
+
+                                    // use the files from the monitoring native folder
+                                    CopyDirectoryRecursively(MonitoringHomeDirectory / (IsOsx ? "osx" : arch), dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                                    CopyFile(oldVersionPath, dest / $"libddwaf-{olderLibDdwafVersion}.{ext}", FileExistsPolicy.Overwrite);
+                                }
                             }
                         }
                     }
@@ -692,6 +731,33 @@ partial class Build
             CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.sh", BundleHomeDirectory, FileExistsPolicy.Overwrite);
         });
 
+    Target CreateBenchmarkIntegrationHome => _ => _
+        .Unlisted()
+        .After(BuildTracerHome)
+        .After(BuildProfilerHome)
+        .After(BuildNativeLoader)
+        .Executes(() =>
+        {
+            // clean directory of everything except the text files
+            BenchmarkHomeDirectory
+               .GlobFiles("*.*")
+               .Where(filepath => Path.GetExtension(filepath) != ".txt")
+               .ForEach(DeleteFile);
+            // Copy existing files from tracer home to the Benchmark location
+            var requiredFiles = new[]
+            {
+                "Datadog.Profiler.Native.dll",
+                "Datadog.Trace.ClrProfiler.Native.dll",
+                "Datadog.Profiler.Native.so",
+                "Datadog.Trace.ClrProfiler.Native.so",
+                "loader.conf",
+            };
+            CopyDirectoryRecursively(MonitoringHomeDirectory, BenchmarkHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite, excludeFile: info =>
+            {
+                return Array.FindIndex(requiredFiles, s => s == info.Name) == -1;
+            });
+        });
+
     Target ExtractDebugInfoLinux => _ => _
         .Unlisted()
         .After(BuildProfilerHome, BuildTracerHome, BuildNativeLoader)
@@ -742,7 +808,7 @@ partial class Build
             CompressZip(SymbolsDirectory, WindowsSymbolsZip, fileMode: FileMode.Create);
         });
 
-    Target ZipMonitoringHome => _ => _       
+    Target ZipMonitoringHome => _ => _
        .DependsOn(ZipMonitoringHomeWindows)
        .DependsOn(ZipMonitoringHomeLinux)
        .DependsOn(ZipMonitoringHomeOsx);
@@ -845,6 +911,8 @@ partial class Build
                     $"-v {Version}",
                     packageType == "tar" ? "" : "--prefix /opt/datadog",
                     $"--chdir {assetsDirectory}",
+                    $"--after-install {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}",
+                    $"--after-remove {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}",
                     "createLogPath.sh",
                     "dd-dotnet.sh",
                     "netstandard2.0/",
@@ -1222,7 +1290,7 @@ partial class Build
                    .Select(x => Solution.GetProject(x))
                    .Where(x => x.Name switch
                     {
-                        "Samples.Trimming" => Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET7_0,
+                        "Samples.Trimming" => Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0),
                         _ => false,
                     });
 
@@ -1538,7 +1606,7 @@ partial class Build
        .Unlisted()
        .Executes(() =>
         {
-            // This shouldn't be necessary, but without it we get msbuild location errors on Linux/macOs :shrug: 
+            // This shouldn't be necessary, but without it we get msbuild location errors on Linux/macOs :shrug:
             ProjectModelTasks.Initialize();
         });
 
@@ -2058,21 +2126,28 @@ partial class Build
        .After(CopyDdDotnet)
        .Executes(async () =>
        {
-           var isDebugRun = await IsDebugRun();
-           var project = Solution.GetProject(Projects.DdDotnetArtifactsTests);
+           try
+           {
+               var isDebugRun = await IsDebugRun();
+               var project = Solution.GetProject(Projects.DdDotnetArtifactsTests);
 
-           DotNetTest(config => config
-                   .SetProjectFile(project)
-                   .SetConfiguration(BuildConfiguration)
-                   .SetFramework(Framework)
-                   .SetTestTargetPlatform(TargetPlatform)
-                   .EnableNoRestore()
-                   .EnableNoBuild()
-                   .SetIsDebugRun(isDebugRun)
-                   .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                   .SetLogsDirectory(TestLogsDirectory)
-                   .EnableTrxLogOutput(GetResultsDirectory(project))
-                   .WithDatadogLogger());
+               DotNetTest(config => config
+                       .SetProjectFile(project)
+                       .SetConfiguration(BuildConfiguration)
+                       .SetFramework(Framework)
+                       .SetTestTargetPlatform(TargetPlatform)
+                       .EnableNoRestore()
+                       .EnableNoBuild()
+                       .SetIsDebugRun(isDebugRun)
+                       .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                       .SetLogsDirectory(TestLogsDirectory)
+                       .EnableTrxLogOutput(GetResultsDirectory(project))
+                       .WithDatadogLogger());
+           }
+           finally
+           {
+               CopyDumpsToBuildData();
+           }
        });
 
     Target CopyServerlessArtifacts => _ => _
@@ -2082,10 +2157,12 @@ partial class Build
        .Executes(() =>
         {
 
-            var projectFile = TracerDirectory.GlobFiles("test/test-applications/integrations/*/Samples.AWS.Lambda.csproj").FirstOrDefault();
-            var target = projectFile / ".." / "bin" / "artifacts" / "monitoring-home";
-
-            CopyDirectoryRecursively(MonitoringHomeDirectory, target, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            var serverlessProjects = new List<string> { "Samples.AWS.Lambda.csproj", "Samples.Amazon.Lambda.RuntimeSupport.csproj" };
+            foreach (var target in serverlessProjects.Select(projectName => TracerDirectory.GlobFiles($"test/test-applications/integrations/*/{projectName}").FirstOrDefault())
+                                                     .Select(projectFile => projectFile / ".." / "bin" / "artifacts" / "monitoring-home"))
+            {
+                CopyDirectoryRecursively(MonitoringHomeDirectory, target, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            }
         });
 
     Target CreateRootDescriptorsFile => _ => _
@@ -2153,7 +2230,7 @@ partial class Build
 
                 // Get target assemblies from Calltarget integrations.
                 // We need to play safe and select the complete assembly and not the type due to the impossibility
-                // to extract the target types from DuckTyping proxies. 
+                // to extract the target types from DuckTyping proxies.
                 lst.AddRange(GetTargetAssembliesFromAttributes(asmDefinition));
                 return lst;
             }
@@ -2167,7 +2244,7 @@ partial class Build
                         foreach (var attr in type.CustomAttributes)
                         {
                             // Extract InstrumentMethodAttribute (CallTarget integrations)
-                            // We need to check both properties `AssemblyName` and `AssemblyNames` 
+                            // We need to check both properties `AssemblyName` and `AssemblyNames`
                             // because the actual data is embedded to the argument parameter in the assembly
                             // (doesn't work as a normally property works at runtime)
                             if (attr.AttributeType.FullName == "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute")
@@ -2629,17 +2706,27 @@ partial class Build
 
     private void CopyDumpsTo(AbsolutePath root)
     {
+        var dumpFolder = root / "dumps";
+
         if (Directory.Exists(TempDirectory))
         {
             foreach (var dump in GlobFiles(TempDirectory, "coredump*", "*.dmp"))
             {
-                MoveFileToDirectory(dump, root / "dumps", FileExistsPolicy.Overwrite);
+                Logger.Information("Moving file '{Dump}' to '{Root}'", dump, dumpFolder);
+
+                MoveFileToDirectory(dump, dumpFolder, FileExistsPolicy.Overwrite);
             }
         }
 
         foreach (var file in Directory.EnumerateFiles(TracerDirectory, "*.dmp", SearchOption.AllDirectories))
         {
-            CopyFileToDirectory(file, root, FileExistsPolicy.OverwriteIfNewer);
+            if (Path.GetDirectoryName(file) == dumpFolder)
+            {
+                // The dump is already in the right location
+                continue;
+            }
+
+            CopyFileToDirectory(file, dumpFolder, FileExistsPolicy.OverwriteIfNewer);
         }
     }
 

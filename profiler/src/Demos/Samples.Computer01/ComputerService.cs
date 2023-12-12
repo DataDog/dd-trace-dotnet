@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.ServiceProcess;
 using System.Threading.Tasks;
@@ -42,11 +43,13 @@ namespace Samples.Computer01
         private LineNumber _lineNumber;
         private NullThreadNameBugCheck _nullThreadNameBugCheck;
         private MethodsSignature _methodsSignature;
+        private SigSegvHandlerExecution _sigsegvHandler;
 
 #if NET5_0_OR_GREATER
         private OpenLdapCrash _openldapCrash;
         private SocketTimeout _socketTest;
 #endif
+        private Obfuscation _obfuscation;
 
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
@@ -160,6 +163,14 @@ namespace Samples.Computer01
                     StartSocketTimeout();
                     break;
 #endif
+                case Scenario.Obfuscation:
+                    StartObfuscation();
+                    break;
+
+                case Scenario.ForceSigSegvHandler:
+                    StartForceSigSegvHandler();
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -271,9 +282,17 @@ namespace Samples.Computer01
                     StopOpenLdapCrash();
                     break;
                 case Scenario.SocketTimeout:
-                    _socketTest.Stop();
+                    StopSocketTimeout();
                     break;
 #endif
+
+                case Scenario.Obfuscation:
+                    StopObfuscation();
+                    break;
+
+                case Scenario.ForceSigSegvHandler:
+                    StopForceSigSegvHandler();
+                    break;
             }
         }
 
@@ -393,6 +412,14 @@ namespace Samples.Computer01
                         RunSocketTimeout();
                         break;
 #endif
+                    case Scenario.ForceSigSegvHandler:
+                        RunForceSigSegvHandler();
+                        break;
+
+                    case Scenario.Obfuscation:
+                        RunObfuscation();
+                        break;
+
                     default:
                         throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
                 }
@@ -407,6 +434,18 @@ namespace Samples.Computer01
         {
             var windowsService = new WindowsService(this, timeout, scenario, parameter);
             ServiceBase.Run(windowsService);
+        }
+
+        private void RunForceSigSegvHandler()
+        {
+            var test = new SigSegvHandlerExecution();
+            test.Run();
+        }
+
+        private void RunObfuscation()
+        {
+            var test = new Obfuscation();
+            test.Run();
         }
 
         private void StartComputer()
@@ -566,6 +605,23 @@ namespace Samples.Computer01
         }
 #endif
 
+        private void StartObfuscation()
+        {
+            _obfuscation = new Obfuscation();
+            _obfuscation.Start();
+        }
+
+        private void StopForceSigSegvHandler()
+        {
+            _sigsegvHandler.Stop();
+        }
+
+        private void StartForceSigSegvHandler()
+        {
+            _sigsegvHandler = new SigSegvHandlerExecution();
+            _sigsegvHandler.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -636,11 +692,16 @@ namespace Samples.Computer01
             _linuxSignalHandler.Stop();
         }
 
-        private void StpSocketTimeout()
+        private void StopSocketTimeout()
         {
             _socketTest.Stop();
         }
 #endif
+
+        private void StopObfuscation()
+        {
+            _obfuscation.Stop();
+        }
 
         private void StopGarbageCollections()
         {

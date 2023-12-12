@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -44,11 +46,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 return CallTargetState.GetDefault();
             }
 
+            // we can't use generic constraints for this duck typing, because we need the original type
+            // for the InjectHeadersIntoMessage<TSendMessageRequest> call below
             var requestProxy = request.DuckCast<ISendMessageRequest>();
 
-            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out AwsSqsTags tags, spanKind: SpanKinds.Producer);
-            tags.QueueUrl = requestProxy.QueueUrl;
-            tags.QueueName = AwsSqsCommon.GetQueueName(requestProxy.QueueUrl);
+            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out var tags, spanKind: SpanKinds.Producer);
+            if (tags is not null && requestProxy.QueueUrl is not null)
+            {
+                tags.QueueUrl = requestProxy.QueueUrl;
+                tags.QueueName = AwsSqsCommon.GetQueueName(requestProxy.QueueUrl);
+            }
 
             if (scope?.Span.Context != null)
             {

@@ -58,15 +58,15 @@ shared::WSTRING GetMethodSpecSigName(PCCOR_SIGNATURE& pSig, const ComPtr<IMetaDa
 HRESULT GetTypeName(const ComPtr<IMetaDataImport>& metadataImport, const mdToken& token, shared::WSTRING& name)
 {
     HRESULT hr;
-    WCHAR szTypeName[name_length_limit]{};
+    WCHAR szTypeOrMethodNameName[name_length_limit]{};
     ULONG cchTypeDefActualSize;
     switch (TypeFromToken(token))
     {
         case mdtTypeDef:
         {
-            IfFailRet(metadataImport->GetTypeDefProps(token, szTypeName, name_length_limit, &cchTypeDefActualSize,
-                                                      nullptr, nullptr));
-            name = shared::WSTRING(szTypeName);
+            IfFailRet(metadataImport->GetTypeDefProps(token, szTypeOrMethodNameName, name_length_limit,
+                                                      &cchTypeDefActualSize, nullptr, nullptr));
+            name = shared::WSTRING(szTypeOrMethodNameName);
             return hr;
         }
         case mdtTypeRef:
@@ -77,12 +77,20 @@ HRESULT GetTypeName(const ComPtr<IMetaDataImport>& metadataImport, const mdToken
         {
             return GetTypeSpecName(metadataImport, token, name);
         }
+        case mdtMethodDef:
+        {
+            mdToken ptk;
+            IfFailRet(metadataImport->GetMethodProps(token, &ptk, szTypeOrMethodNameName, name_length_limit,
+                                                     &cchTypeDefActualSize, nullptr, nullptr, nullptr, nullptr,
+                                                     nullptr));
+            return GetTypeName(metadataImport, ptk, name);
+        }
         case mdtMemberRef:
         {
             mdToken ptk;
-            IfFailRet(metadataImport->GetMemberRefProps(token, &ptk, szTypeName, name_length_limit,
+            IfFailRet(metadataImport->GetMemberRefProps(token, &ptk, szTypeOrMethodNameName, name_length_limit,
                                                         &cchTypeDefActualSize, nullptr, nullptr));
-            return GetTypeRefName(metadataImport, ptk, name);
+            return GetTypeName(metadataImport, ptk, name);
         }
         case mdtMethodSpec:
         {
@@ -203,7 +211,7 @@ shared::WSTRING MemberSignature::GetMethodSigName(PCCOR_SIGNATURE& pSig, const C
     return WStr("Not Implemented");
 }
 
-HRESULT MemberSignature::GetGenericsMemberFullName(mdMethodSpec methodSpecToken, mdTypeDef parentToken,
+HRESULT MemberSignature::GetGenericsMemberFullName(mdMethodSpec methodSpecToken, mdToken parentToken,
                                                    LPCWSTR memberName, const ComPtr<IMetaDataImport>& metadataImport,
                                                    shared::WSTRING& fullName)
 {
@@ -215,7 +223,7 @@ HRESULT MemberSignature::GetGenericsMemberFullName(mdMethodSpec methodSpecToken,
     return hr;
 }
 
-HRESULT MemberSignature::GetMemberFullName(mdTypeDef token, LPCWSTR memberName,
+HRESULT MemberSignature::GetMemberFullName(mdToken token, LPCWSTR memberName,
                                            const ComPtr<IMetaDataImport>& metadataImport, shared::WSTRING& fullName)
 {
     shared::WSTRING typeName;

@@ -25,7 +25,7 @@ jobs:
 
     - uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '7.0.306'
+        dotnet-version: '8.0.100'
 
     - name: Download datadog-ci
       run: |
@@ -41,6 +41,14 @@ jobs:
         # Prefix the list here with "+" to use these queries and those in the config file.
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
         # Learn more about CodeQL language support at https://git.io/codeql-language-support
+
+    - name: Install Clang-16
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x ./llvm.sh
+        sudo ./llvm.sh 16
+        sudo ln -s -f `which clang-16` `which clang`
+        sudo ln -s -f `which clang++-16` `which clang++`
 
     - name: Build dd-trace-dotnet
       run: |
@@ -94,7 +102,7 @@ jobs:
 
     - uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '7.0.306'
+        dotnet-version: '8.0.100'
 
     - name: Download datadog-ci
       run: |
@@ -110,6 +118,14 @@ jobs:
         # Prefix the list here with "+" to use these queries and those in the config file.
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
         # Learn more about CodeQL language support at https://git.io/codeql-language-support
+
+    - name: Install Clang-16
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x ./llvm.sh
+        sudo ./llvm.sh 16
+        sudo ln -s -f `which clang-16` `which clang`
+        sudo ln -s -f `which clang++-16` `which clang++`
 
     - name: Build dd-trace-dotnet
       run: |

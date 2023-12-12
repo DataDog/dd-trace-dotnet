@@ -25,7 +25,8 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
             { ConfigurationKeys.GlobalSamplingRate, "tracing_sampling_rate" },
             // { ConfigurationKeys.CustomSamplingRules, "tracing_sampling_rules" },
             // { ConfigurationKeys.SpanSamplingRules, "span_sampling_rules" },
-            // { ConfigurationKeys.DataStreamsMonitoring.Enabled, "data_streams_enabled" }
+            // { ConfigurationKeys.DataStreamsMonitoring.Enabled, "data_streams_enabled" },
+            { ConfigurationKeys.GlobalTags, "tracing_tags" }
         };
 
         internal DynamicConfigConfigurationSource(string json, ConfigurationOrigins origin)
@@ -55,6 +56,32 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
             return ((JArray)token).ToDictionary(t => t["from_key"]!.Value<string>()!, t => t["to_name"]!.Value<string>()!);
         }
 
+        private static IDictionary<string, string> ReadGlobalTags(JToken token)
+        {
+            var result = new Dictionary<string, string>();
+
+            foreach (var item in (JArray)token)
+            {
+                var rawValue = item?.Value<string>();
+
+                if (rawValue == null)
+                {
+                    continue;
+                }
+
+                var values = rawValue.Split(':');
+
+                if (values.Length != 2 || values[0].Length == 0 || values[1].Length == 0)
+                {
+                    continue;
+                }
+
+                result[values[0]] = values[1];
+            }
+
+            return result;
+        }
+
         private protected override JToken? SelectToken(string key)
         {
             return base.SelectToken(Mapping.TryGetValue(key, out var newKey) ? newKey : key);
@@ -67,17 +94,13 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
                 mappedKey = key;
             }
 
-            if (mappedKey == "tracing_service_mapping")
+            return mappedKey switch
             {
-                return ReadServiceMapping(token);
-            }
-
-            if (mappedKey == "tracing_header_tags")
-            {
-                return ReadHeaderTags(token);
-            }
-
-            return base.ConvertToDictionary(key, token);
+                "tracing_service_mapping" => ReadServiceMapping(token),
+                "tracing_header_tags" => ReadHeaderTags(token),
+                "tracing_tags" => ReadGlobalTags(token),
+                _ => base.ConvertToDictionary(mappedKey, token)
+            };
         }
     }
 }

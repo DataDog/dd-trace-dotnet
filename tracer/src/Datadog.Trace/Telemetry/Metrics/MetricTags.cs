@@ -29,7 +29,6 @@ internal static class MetricTags
         [Description("component:traceattributes_pinvoke")] TraceAttributesPinvoke,
         [Description("component:managed")] Managed,
         [Description("component:calltarget_defs_pinvoke")] CallTargetDefsPinvoke,
-        [Description("component:serverless")] Serverless,
         [Description("component:calltarget_derived_defs_pinvoke")] CallTargetDerivedDefsPinvoke,
         [Description("component:calltarget_interface_defs_pinvoke")] CallTargetInterfaceDefsPinvoke,
         [Description("component:discovery_service")] DiscoveryService,
@@ -209,10 +208,14 @@ internal static class MetricTags
         [Description("integration_name:pathtraversal")]PathTraversal,
         [Description("integration_name:ssrf")]Ssrf,
         [Description("integration_name:ldap")]Ldap,
+        [Description("integration_name:hardcodedsecret")]HardcodedSecret,
+        [Description("integration_name:trustboundaryviolation")] TrustBoundaryViolation,
         [Description("integration_name:awskinesis")]AwsKinesis,
         [Description("integration_name:azureservicebus")]AzureServiceBus,
         [Description("integration_name:systemrandom")] SystemRandom,
         [Description("integration_name:awsdynamodb")]AwsDynamoDb,
+        [Description("integration_name:ibmmq")]IbmMq,
+        [Description("integration_name:remoting")]Remoting,
     }
 
     public enum InstrumentationError
@@ -246,9 +249,10 @@ internal static class MetricTags
         [Description("source_type:http.request.header")] RequestHeaderValue = 5,
         [Description("source_type:http.request.header.name")] RequestHeaderName = 6,
         [Description("source_type:http.request.query")] RequestQuery = 7,
-        [Description("source_type:http.cookie.name")] CookieName = 8,
-        [Description("source_type:http.cookie.value")] CookieValue = 9,
+        [Description("source_type:http.request.cookie.name")] CookieName = 8,
+        [Description("source_type:http.request.cookie.value")] CookieValue = 9,
         [Description("source_type:http.request.matrix.parameter")] MatrixParameter = 10,
+        [Description("source_type:http.request.uri")] RequestUri = 11,
     }
 
     [EnumExtensions]
@@ -267,6 +271,10 @@ internal static class MetricTags
         [Description("vulnerability_type:no_httponly_cookie")] NoHttpOnlyCookie = 10,
         [Description("vulnerability_type:no_samesite_cookie")] NoSameSiteCookie = 11,
         [Description("vulnerability_type:weak_randomness")] WeakRandomness = 12,
+        [Description("vulnerability_type:hardcoded_secret")] HardcodedSecret = 13,
+        [Description("vulnerability_type:xcontenttype_header_missing")] XContentTypeHeaderMissing = 14,
+        [Description("vulnerability_type:trust_boundary_violation")] TrustBoundaryViolation = 15,
+        [Description("vulnerability_type:hsts_header_missing")] HstsHeaderMissing = 16,
     }
 
     public enum CIVisibilityTestFramework

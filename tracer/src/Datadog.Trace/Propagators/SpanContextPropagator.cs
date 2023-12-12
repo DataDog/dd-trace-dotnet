@@ -26,9 +26,11 @@ namespace Datadog.Trace.Propagators
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
         private readonly IContextInjector[] _injectors;
         private readonly IContextExtractor[] _extractors;
+        private readonly bool _propagationExtractFirstOnly;
 
-        internal SpanContextPropagator(IEnumerable<IContextInjector>? injectors, IEnumerable<IContextExtractor>? extractors)
+        internal SpanContextPropagator(IEnumerable<IContextInjector>? injectors, IEnumerable<IContextExtractor>? extractors, bool propagationExtractFirsValue)
         {
+            _propagationExtractFirstOnly = propagationExtractFirsValue;
             _injectors = injectors?.ToArray() ?? Array.Empty<IContextInjector>();
             _extractors = extractors?.ToArray() ?? Array.Empty<IContextExtractor>();
         }
@@ -55,7 +57,8 @@ namespace Datadog.Trace.Propagators
                         {
                             DistributedContextExtractor.Instance,
                             DatadogContextPropagator.Instance
-                        });
+                        },
+                        false);
 
                     return _instance;
                 }
@@ -149,15 +152,33 @@ namespace Datadog.Trace.Propagators
         {
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
+            SpanContext? localSpanContext = null;
+
             for (var i = 0; i < _extractors.Length; i++)
             {
                 if (_extractors[i].TryExtract(carrier, carrierGetter, out var spanContext))
                 {
-                    return spanContext;
+                    if (_propagationExtractFirstOnly)
+                    {
+                        return spanContext;
+                    }
+
+                    if (localSpanContext is not null && spanContext is not null)
+                    {
+                        if (localSpanContext.RawTraceId == spanContext.RawTraceId)
+                        {
+                            localSpanContext.AdditionalW3CTraceState += spanContext.AdditionalW3CTraceState;
+                        }
+                    }
+
+                    if (localSpanContext is null)
+                    {
+                        localSpanContext = spanContext;
+                    }
                 }
             }
 
-            return null;
+            return localSpanContext;
         }
 
         /// <summary>

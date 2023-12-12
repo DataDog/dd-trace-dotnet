@@ -18,6 +18,7 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
@@ -197,9 +198,10 @@ namespace Datadog.Trace.AspNet
                     securityCoordinator.CheckAndBlock(args);
                 }
 
-                if (Iast.Iast.Instance.Settings.Enabled && OverheadController.Instance.AcquireRequest())
+                var iastInstance = Iast.Iast.Instance;
+                if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
                 {
-                    var traceContext = scope?.Span?.Context?.TraceContext;
+                    var traceContext = scope.Span?.Context?.TraceContext;
                     traceContext?.EnableIastInRequest();
                     traceContext?.IastRequestContext?.AddRequestData(httpRequest);
                 }
@@ -268,7 +270,7 @@ namespace Datadog.Trace.AspNet
                                     }
                                 }
 
-                                securityCoordinator.CheckAndBlock(args);
+                                securityCoordinator.CheckAndBlock(args, true);
                             }
 
                             securityCoordinator.AddResponseHeadersToSpanAndCleanup();
@@ -277,6 +279,24 @@ namespace Datadog.Trace.AspNet
 
                         if (Iast.Iast.Instance.Settings.Enabled && IastModule.AddRequestVulnerabilitiesAllowed())
                         {
+                            if (rootSpan is not null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
+                            {
+                                try
+                                {
+                                    ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode, app.Context.Request.Url.Scheme);
+                                }
+                                catch (PlatformNotSupportedException ex)
+                                {
+                                    // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
+                                    Log.Error(ex, "Unable to access response headers when analyzing headers. Disabling for the rest of the application lifetime.");
+                                    _canReadHttpResponseHeaders = false;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log.Error(ex, "Error analyzing HTTP response headers");
+                                }
+                            }
+
                             CookieAnalyzer.AnalyzeCookies(app.Context.Response.Cookies, IntegrationId);
                         }
 

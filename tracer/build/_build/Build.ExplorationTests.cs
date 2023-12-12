@@ -124,7 +124,9 @@ partial class Build
             x => x
                 .SetProjectFile(projectPath)
                 .SetConfiguration(BuildConfiguration)
-                .SetProcessArgumentConfigurator(arguments => arguments.Add("-consoleLoggerParameters:ErrorsOnly"))
+                .SetProcessArgumentConfigurator(arguments => arguments
+                                                            .Add("-consoleLoggerParameters:ErrorsOnly")
+                                                            .Add("-property:NuGetAudit=false"))
                 .When(Framework != null, settings => settings.SetFramework(Framework))
         );
     }

@@ -118,6 +118,7 @@ namespace Datadog.Trace.Debugger
                 _subscriptionManager.SubscribeToChanges(_subscription);
 
                 DebuggerSnapshotSerializer.SetConfig(_settings);
+                Redaction.SetConfig(_settings);
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
 
                 await StartAsync().ConfigureAwait(false);
@@ -198,22 +199,22 @@ namespace Datadog.Trace.Debugger
                             {
                                 case LiveProbeResolveStatus.Bound:
                                     lineProbes.Add(new NativeLineProbeDefinition(location.ProbeDefinition.Id, location.MVID, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
-                                    fetchProbeStatus.Add(new FetchProbeStatus(probe.Id));
+                                    fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0));
                                     break;
                                 case LiveProbeResolveStatus.Unbound:
                                     Log.Information("ProbeID {ProbeID} is unbound.", probe.Id);
                                     _unboundProbes.Add(probe);
 
-                                    fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, new ProbeStatus(probe.Id, Sink.Models.Status.RECEIVED, errorMessage: null)));
+                                    fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.RECEIVED, errorMessage: null)));
                                     break;
                                 case LiveProbeResolveStatus.Error:
-                                    fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, new ProbeStatus(probe.Id, Sink.Models.Status.ERROR, errorMessage: message)));
+                                    fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.ERROR, errorMessage: message)));
                                     break;
                             }
 
                             break;
                         case ProbeLocationType.Method:
-                            fetchProbeStatus.Add(new FetchProbeStatus(probe.Id));
+                            fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0));
                             if (probe is SpanProbe)
                             {
                                 var spanDefinition = new NativeSpanProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
@@ -227,7 +228,7 @@ namespace Datadog.Trace.Debugger
 
                             break;
                         case ProbeLocationType.Unrecognized:
-                            fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, new ProbeStatus(probe.Id, Sink.Models.Status.ERROR, errorMessage: "Unknown probe type")));
+                            fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.ERROR, errorMessage: "Unknown probe type")));
                             break;
                     }
                 }
@@ -236,7 +237,8 @@ namespace Datadog.Trace.Debugger
                 using var disposableSpanProbes = new DisposableEnumerable<NativeSpanProbeDefinition>(spanProbes);
                 DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), Array.Empty<NativeRemoveProbeRequest>());
 
-                _probeStatusPoller.AddProbes(fetchProbeStatus.ToArray());
+                var probeIds = fetchProbeStatus.Select(fp => fp.ProbeId).ToArray();
+                _probeStatusPoller.UpdateProbes(probeIds, fetchProbeStatus.ToArray());
 
                 foreach (var probe in addedProbes.Where(probe => probe is not SpanProbe))
                 {
@@ -360,7 +362,7 @@ namespace Datadog.Trace.Debugger
                     // Update probe statuses
 
                     var probeIds = noLongerUnboundProbes.Select(p => p.Id).ToArray();
-                    var newProbeStatuses = noLongerUnboundProbes.Select(p => new FetchProbeStatus(p.Id)).ToArray();
+                    var newProbeStatuses = noLongerUnboundProbes.Select(p => new FetchProbeStatus(p.Id, p.Version ?? 0)).ToArray();
 
                     _probeStatusPoller.UpdateProbes(probeIds, newProbeStatuses);
                 }
@@ -445,9 +447,9 @@ namespace Datadog.Trace.Debugger
             _debuggerSink.AddBlockedProbeStatus(probeId);
         }
 
-        internal void AddErrorProbeStatus(string probeId, Exception exception = null, string errorMessage = null)
+        internal void AddErrorProbeStatus(string probeId, int probeVersion = 0, Exception exception = null, string errorMessage = null)
         {
-            _debuggerSink.AddErrorProbeStatus(probeId, exception, errorMessage);
+            _debuggerSink.AddErrorProbeStatus(probeId, probeVersion, exception, errorMessage);
         }
 
         internal void SendMetrics(MetricKind metricKind, string metricName, double value)

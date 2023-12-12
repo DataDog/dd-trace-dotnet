@@ -49,33 +49,38 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
             return null;
         }
 
-        public int GetWorkerProcess()
+        public ApplicationPool? GetApplicationPool()
         {
-            using var applicationPool = GetApplicationPool();
+            var applicationPoolName = _application.GetStringProperty("applicationPool");
 
-            if (applicationPool != null)
+            using var applicationPoolsSection = _appHostAdminManager.GetAdminSection("system.applicationHost/applicationPools", "MACHINE/WEBROOT/APPHOST");
+
+            using var collection = applicationPoolsSection.Collection();
+            var count = collection.Count();
+
+            for (int i = 0; i < count; i++)
             {
-                using var workerProcesses = applicationPool.GetElementByName("workerProcesses");
-                var workerProcessesCollection = workerProcesses.Collection();
+                IAppHostElement? item = null;
 
-                if (workerProcessesCollection.Count() > 0)
+                try
                 {
-                    using var workerProcess = workerProcessesCollection.GetItem(0);
+                    item = collection.GetItem(i);
 
-                    if (int.TryParse(workerProcess.GetStringProperty("processId"), out var pid))
+                    if (item.GetStringProperty("name") == applicationPoolName)
                     {
-                        return pid;
+                        return new ApplicationPool(item);
                     }
+
+                    item.Dispose();
+                }
+                catch
+                {
+                    item?.Dispose();
+                    throw;
                 }
             }
 
-            return default;
-        }
-
-        public string? GetManagedRuntimeVersion()
-        {
-            using var applicationPool = GetApplicationPool();
-            return applicationPool?.GetStringProperty("managedRuntimeVersion");
+            return null;
         }
 
         public IReadOnlyDictionary<string, string> GetAppSettings()
@@ -96,40 +101,6 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
             }
 
             return result;
-        }
-
-        private IAppHostElement? GetApplicationPool()
-        {
-            var applicationPoolName = _application.GetStringProperty("applicationPool");
-
-            using var applicationPoolsSection = _appHostAdminManager.GetAdminSection("system.applicationHost/applicationPools", "MACHINE/WEBROOT/APPHOST");
-
-            using var collection = applicationPoolsSection.Collection();
-            var count = collection.Count();
-
-            for (int i = 0; i < count; i++)
-            {
-                IAppHostElement? item = null;
-
-                try
-                {
-                    item = collection.GetItem(i);
-
-                    if (item.GetStringProperty("name") == applicationPoolName)
-                    {
-                        return item;
-                    }
-
-                    item.Dispose();
-                }
-                catch
-                {
-                    item?.Dispose();
-                    throw;
-                }
-            }
-
-            return null;
         }
     }
 }

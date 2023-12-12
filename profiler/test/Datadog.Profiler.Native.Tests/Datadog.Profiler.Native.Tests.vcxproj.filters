@@ -39,7 +39,7 @@
     <ClCompile Include="ProfilerMockedInterface.cpp">
       <Filter>Helpers</Filter>
     </ClCompile>
-    <ClCompile Include="LibddprofExporterTest.cpp">
+    <ClCompile Include="ProfileExporterTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="ConfigurationTest.cpp">
@@ -130,6 +130,18 @@
     </ClCompile>
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\WindowsThreadInfo.cpp">
       <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="ProfileTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="TagsTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="ExporterTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="ErrorCodeTest.cpp">
+      <Filter>Tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -35,7 +35,9 @@ namespace Samples.Computer01
         NullThreadNameBug,
         MethodSignature,
         OpenLdapCrash,
-        SocketTimeout
+        SocketTimeout,
+        ForceSigSegvHandler,
+        Obfuscation
     }
 
     public class Program
@@ -66,6 +68,10 @@ namespace Samples.Computer01
             // 18: call stack on functions to check line number(s)
             // 19: set thread names to null and empty (validate bug fix)
             // 20: trigger exceptions with different method signatures in the callstack
+            // 21: validate fix for OpenLDAP
+            // 22: check socket timeout (linux)
+            // 23: sigsegv handling validation
+            // 24: use an obfuscated library
             //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--service] [--iterations <number of iterations to execute>] " +

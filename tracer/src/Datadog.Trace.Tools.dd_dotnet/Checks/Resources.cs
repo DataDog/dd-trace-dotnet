@@ -6,7 +6,6 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -22,16 +21,27 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string NativeTracerNotLoaded = "The native tracer library is not loaded into the process";
         public const string TracerNotLoaded = "Tracer is not loaded into the process";
         public const string AgentDetectionFailed = "Could not detect the agent version. It may be running with a version older than 7.27.0.";
-        public const string IisProcess = "The target process is an IIS process. The detection of the configuration might be incomplete, it's recommended to use dd-trace check iis <site name> instead.";
+        public const string IisProcess = "The target process is an IIS process. The detection of the configuration might be incomplete, please use dd-trace check iis <site name> instead.";
         public const string MissingGac = "The Datadog.Trace assembly could not be found in the GAC. Make sure the tracer has been properly installed with the MSI.";
         public const string NoWorkerProcess = "No worker process found, to perform additional checks make sure the application is active";
-        public const string GetProcessError = "Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.";
         public const string IisNoIssue = "No issue found with the IIS site.";
-        public const string IisMixedRuntimes = "The application pool is configured to host both .NET Framework and .NET Core runtimes. When hosting .NET Core, it's recommended to set '.NET CLR Version' to 'No managed code' to prevent conflicts.";
+        public const string IisMixedRuntimes = "The application pool is configured to host both .NET Framework and .NET Core runtimes. When hosting .NET Core, it's recommended to set '.NET CLR Version' to 'No managed code' to prevent conflict: https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/?view=aspnetcore-3.1#create-the-iis-site:~:text=CLR%20version%20to-,No%20Managed%20Code,-%3A";
         public const string OutOfProcess = "Detected ASP.NET Core hosted out of proces. Trying to find the application process.";
         public const string AspNetCoreProcessNotFound = "Could not find the ASP.NET Core applicative process.";
         public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
         public const string IisExpressWorkerProcess = "Cannot detect the worker process when using IIS Express. Use the --workerProcess option to manually provide it.";
+        public const string IisNotFound = "Could not find IIS. Make sure IIS is properly installed and enable, and run the tool from an elevated prompt.";
+
+        public const string TracingWithBundleProfilerPath = "Check failing with Datadog.Trace.Bundle Nuget, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
+        public const string TracingWithInstallerWindowsNetFramework = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
+        public const string TracingWithInstallerWindowsNetCore = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=windows#install-the-tracer";
+        public const string TracingWithInstallerLinux = "Installer related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core?tab=linux#install-the-tracer";
+        public const string TraceProgramNotFound = "Unable to find Datadog .NET Tracer program, make sure the tracer has been properly installed with the MSI.";
+
+        public const string TraceEnabledNotSet = "DD_TRACE_ENABLED is not set, the default value is true.";
+        public const string SetupChecks = "---- STARTING TRACER SETUP CHECKS -----";
+        public const string ConfigurationChecks = "---- CONFIGURATION CHECKS -----";
+        public const string DdAgentChecks = "---- DATADOG AGENT CHECKS -----";
 
         public const string ContinuousProfilerEnabled = "DD_PROFILING_ENABLED is set.";
         public const string ContinuousProfilerDisabled = "The continuous profiler is explicitly disabled through DD_PROFILING_ENABLED.";
@@ -41,7 +51,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public const string LdPreloadNotSet = "The environment variable LD_PRELOAD is not set. Check the Datadog .NET Profiler documentation to set it properly.";
 
-        public static string TracerNotEnabled(string value) => $"The value for DD_TRACE_ENABLED is set to {value}, to enable automatic tracing set it to true.";
+        private static int _checkNumber = 1;
+
+        public static void ResetChecks() => _checkNumber = 1;
+
+        public static string GetProcessError(string error) => $"Could not fetch information about target process: {error}. Make sure to run the command from an elevated prompt, and check that the pid is correct.";
+
+        public static string TracerNotEnabled(string value) => $"Tracing is explicitly disabled through DD_TRACE_ENABLED with a value of {value}, to enable automatic tracing set it to true.";
 
         public static string ApiWrapperNotFound(string path) => $"The environment variable LD_PRELOAD is set to '{path}' but the file could not be found. Check the Datadog .NET Profiler documentation to set it properly.";
 
@@ -51,9 +67,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static string TracerVersion(string version) => $"The tracer version {version} is loaded into the process.";
 
-        public static string EnvironmentVariableNotSet(string environmentVariable) => $"The environment variable {environmentVariable} is not set";
+        public static string EnvironmentVariableNotSet(string environmentVariable) => $"The environment variable {environmentVariable} is not set.";
 
-        public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist";
+        public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist.";
+
+        public static string TracerHomeFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' and the directory was found correctly.";
 
         public static string WrongEnvironmentVariableFormat(string key, string expectedValue, string? actualValue) => $"The environment variable {key} should be set to '{expectedValue}' (current value: {EscapeOrNotSet(actualValue)})";
 
@@ -71,11 +89,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static string SuspiciousRegistryKey(string parentKey, string key) => $@"The registry key HKEY_LOCAL_MACHINE\{parentKey}\{key} is defined and could prevent the tracer from working properly. Please check that all external profilers have been uninstalled properly.";
 
-        public static string MissingRegistryKey(string key) => $@"The registry key {key} is missing. Make sure the tracer has been properly installed with the MSI.";
+        public static string MissingRegistryKey(string key) => $@"The registry key {key} is missing. If using the MSI, make sure the installation was completed correctly try to repair/reinstall it.";
 
         public static string MissingProfilerRegistry(string key, string path) => $@"The registry key {key} was set to path '{path}' but the file is missing or you don't have sufficient permission. Try reinstalling the tracer with the MSI and check the permissions.";
 
         public static string MissingProfilerEnvironment(string key, string path) => $@"The environment variable {key} is set to {path} but the file is missing or you don't have sufficient permission.";
+
+        public static string CorrectlySetupEnvironment(string key, string value) => $@"The environment variable {key} is set to the correct value of {value}.";
 
         public static string GacVersionFormat(string version) => $"Found Datadog.Trace version {version} in the GAC";
 
@@ -93,7 +113,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static string CouldNotFindIisApplication(string site, string application) => $"Could not find IIS application \"{site}{application}\". ";
 
-        public static string IisManagerInitializationError(string error) => $"Could not initialize IIS manager: {error}. Try to run the tool in administrator mode.";
+        public static string IisManagerInitializationError(string error) => $"Could not initialize IIS manager: {error} Try to run the tool in administrator mode.";
+
+        public static string IisWorkerProcessError(string error) => $"Could not detect the worker process: {error} Note that you must run the tool from an elevated prompt.";
 
         public static string ListAllIisApplications(IEnumerable<string> availableApplications)
         {
@@ -103,7 +125,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             foreach (var app in availableApplications)
             {
-                sb.AppendLine($" - {app}");
+                sb.AppendLine($" {app}");
             }
 
             sb.AppendLine();
@@ -123,7 +145,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             // The ordering is not required but makes the output consistent for tests
             foreach (var version in versions.OrderBy(v => v))
             {
-                sb.AppendLine($"- {version}");
+                sb.AppendLine($"{version}");
             }
 
             return sb.ToString();
@@ -136,6 +158,30 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             return $"The environment variable {environmentVariable} was set to '{actualProfiler}' but it should point to '{expectedProfiler}'";
         }
+
+        public static string TracerProgramFound(string tracerProgramName) => $"{tracerProgramName} found in the installed programs.";
+
+        public static string WrongTracerArchitecture(string tracerArchitecture) => $"Found {tracerArchitecture} installed but the current process is 64 Bit, make sure to install the 64-bit tracer instead.";
+
+        public static string AppPoolCheckFindings(string appPool) => $"Initial check run did not pass, surfacing the incorrect configuration on the {appPool} AppPool:";
+
+        public static string WrongLinuxFolder(string expected, string found) => $"Unable to find expected {expected} folder, found {found} instead, make sure to use the correct installer.";
+
+        public static string UnsupportedLinuxArchitecture(string osArchitecture) => $"The Linux architecture: {osArchitecture} is not supported by the tracer, check: https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-core/#supported-processor-architectures ";
+
+        public static string ErrorCheckingLinuxDirectory(string error) => $"Error trying to check the Linux installer directory: {error}";
+
+        public static string EnvVarCheck(string envVar) => $"{_checkNumber++}. Checking {envVar} and related configuration value:";
+
+        public static string ModuleCheck() => $"{_checkNumber++}. Checking Modules Needed so the Tracer Loads:";
+
+        public static string TracerCheck() => $"{_checkNumber++}. Checking if process tracing configuration matches Installer or Bundler:";
+
+        public static string TraceEnabledCheck() => $"{_checkNumber++}. Checking if tracing is disabled using DD_TRACE_ENABLED.";
+
+        public static string ContinuousProfilerCheck() => $"{_checkNumber++}. Checking if profiling is enabled using DD_PROFILING_ENABLED.";
+
+        public static string CorrectLinuxDirectoryFound(string path) => $"Found the expected path {path} based on the current OS Architecture.";
 
         private static string EscapeOrNotSet(string? str) => str == null ? "not set" : $"'{str}'";
     }

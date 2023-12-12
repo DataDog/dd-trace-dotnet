@@ -17,7 +17,7 @@ class IManagedThreadList;
 class Windows32BitStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    Windows32BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo);
+    Windows32BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, IConfiguration const* configuration);
     ~Windows32BitStackFramesCollector() override;
 
     void OnDeadlock() override;

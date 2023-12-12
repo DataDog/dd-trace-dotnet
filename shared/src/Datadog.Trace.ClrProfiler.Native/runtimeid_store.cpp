@@ -13,7 +13,22 @@ RuntimeIdStore::RuntimeIdStore() : RuntimeIdStore(IsRunningOnIIS())
 RuntimeIdStore::RuntimeIdStore(bool isIis) :
     m_isIis{isIis}
 {
-    m_process_runtime_id = ::shared::GenerateRuntimeId();
+    if (isIis)
+    {
+        m_process_runtime_id = ::shared::GenerateRuntimeId();
+    }
+    else
+    {
+        const auto internalRuntimeId = ::shared::GetEnvironmentValue(EnvironmentVariables::InternalRuntimeId);
+        if (internalRuntimeId.empty())
+        {
+            m_process_runtime_id = ::shared::GenerateRuntimeId();
+        }
+        else
+        {
+            m_process_runtime_id = ::shared::ToString(internalRuntimeId);
+        }
+    }
 }
 
 const std::string& RuntimeIdStore::Get(AppDomainID app_domain)

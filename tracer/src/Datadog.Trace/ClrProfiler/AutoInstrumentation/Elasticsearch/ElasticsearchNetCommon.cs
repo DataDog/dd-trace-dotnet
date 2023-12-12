@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Threading;
 using Datadog.Trace.Configuration;
@@ -16,12 +18,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
         public const string DatabaseType = "elasticsearch";
         public const string ComponentValue = "elasticsearch-net";
 
-        public static readonly Type CancellationTokenType = typeof(CancellationToken);
-        public static readonly Type RequestPipelineType = Type.GetType("Elasticsearch.Net.IRequestPipeline, Elasticsearch.Net");
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ElasticsearchNetCommon));
 
-        public static Scope CreateScope<T>(Tracer tracer, IntegrationId integrationId, RequestPipelineStruct pipeline, T requestData)
+        public static Scope? CreateScope<T>(Tracer tracer, IntegrationId integrationId, RequestPipelineStruct pipeline, T requestData)
             where T : IRequestData
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId))
@@ -30,17 +29,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
                 return null;
             }
 
-            var pathAndQuery = requestData.Path;
-            string method = requestData.Method;
+            string method = requestData.Method.ToString();
             var url = requestData.Uri?.ToString();
 
-            var scope = CreateScope(tracer, integrationId, pathAndQuery, method, pipeline.RequestParameters, out var tags);
-            tags.Url = url;
-            tags.Host = HttpRequestUtils.GetNormalizedHost(requestData.Uri?.Host);
+            var scope = CreateScope(tracer, integrationId, method, pipeline.RequestParameters, out var tags);
+            if (tags is not null)
+            {
+                tags.Url = url;
+                tags.Host = HttpRequestUtils.GetNormalizedHost(requestData.Uri?.Host);
+            }
+
             return scope;
         }
 
-        public static Scope CreateScope(Tracer tracer, IntegrationId integrationId, string path, string method, object requestParameters, out ElasticsearchTags tags)
+        public static Scope? CreateScope(Tracer tracer, IntegrationId integrationId, string? method, object? requestParameters, out ElasticsearchTags? tags)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId))
             {
@@ -49,19 +51,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
                 return null;
             }
 
-            string requestName = requestParameters?.GetType().Name.Replace("RequestParameters", string.Empty);
+            var requestName = requestParameters?.GetType().Name.Replace("RequestParameters", string.Empty);
 
-            string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
-            string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+            var operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
+            var serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
             tags = tracer.CurrentTraceSettings.Schema.Database.CreateElasticsearchTags();
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
                 scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
-                span.ResourceName = requestName ?? path ?? string.Empty;
+                span.ResourceName = requestName ?? string.Empty;
                 span.Type = DatabaseType;
                 tags.Action = requestName;
                 tags.Method = method;

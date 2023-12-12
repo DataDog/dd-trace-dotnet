@@ -51,7 +51,9 @@ public class DataStreamsMonitoringTransportTests
     {
         using var agent = Create((TracesTransportType)transport);
 
-        var bucketDurationMs = 100; // 100 ms
+        // We don't want to trigger a flush based on the timer, only based on the disposal of the writer
+        // That ensures we only get a single payload
+        var bucketDurationMs = (int)TimeSpan.FromMinutes(60).TotalMilliseconds;
         var tracerSettings = new TracerSettings { Exporter = GetExporterSettings(agent) };
         var api = new DataStreamsApi(
             DataStreamsTransportStrategy.GetAgentIntakeFactory(tracerSettings.Build().Exporter));
@@ -75,14 +77,23 @@ public class DataStreamsMonitoringTransportTests
 
         var result = agent.WaitForDataStreams(1);
 
-        var payload = result.Should().ContainSingle().Subject;
-        payload.Env.Should().Be("env");
-        payload.Service.Should().Be("service");
-        var headers = agent.DataStreamsRequestHeaders.Should().ContainSingle().Subject;
-        headers.AllKeys.ToDictionary(x => x, x => headers[x])
-               .Should()
-               .ContainKey("Content-Encoding", "gzip");
-        payload.Stats.Should().ContainSingle(s => s.Backlogs != null);
+        // we can't guarantee only having a single payload due to race conditions in the flushing code
+        result.Should().OnlyContain(payload => payload.Env == "env");
+        result.Should().OnlyContain(payload => payload.Service == "service");
+        agent.DataStreamsRequestHeaders
+             .Should()
+             .OnlyContain(
+                  headers => headers.AllKeys.Contains("Content-Encoding")
+                          && headers["Content-Encoding"] == "gzip");
+
+        // should only have a single backlog across all payloads, but we don't know which payload it will be in
+        result
+           .SelectMany(x => x.Stats)
+           .Where(x => x.Backlogs is not null)
+           .Should()
+           .ContainSingle()
+           .Which.Backlogs.Should()
+           .ContainSingle();
     }
 
     private StatsPoint CreateStatsPoint(long timestamp = 0)

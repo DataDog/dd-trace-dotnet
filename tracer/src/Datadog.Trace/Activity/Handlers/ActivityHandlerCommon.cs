@@ -24,7 +24,18 @@ namespace Datadog.Trace.Activity.Handlers
         internal static readonly ConcurrentDictionary<string, ActivityMapping> ActivityMappingById = new();
         private static readonly IntegrationId IntegrationId = IntegrationId.OpenTelemetry;
 
-        public static void ActivityStarted<T>(string sourceName, T activity, ITags? tags, out ActivityMapping activityMapping)
+        /// <summary>
+        /// Handles when a new Activity is started to map it to a new <see cref="Span"/>/<see cref="Scope"/>.
+        /// </summary>
+        /// <param name="sourceName">The name of the Activity source</param>
+        /// <param name="activity">The Activity object</param>
+        /// <param name="tags">
+        /// The tags that will be associated with the <see cref="Span"/>.
+        /// <see cref="OpenTelemetryTags"/> is used for mapping the operation name.
+        /// </param>
+        /// <param name="activityMapping">The mapping of Activity to its <see cref="Scope"/>.</param>
+        /// <typeparam name="T">The <see cref="IActivity"/>.</typeparam>
+        public static void ActivityStarted<T>(string sourceName, T activity, OpenTelemetryTags? tags, out ActivityMapping activityMapping)
             where T : IActivity
         {
             Tracer.Instance.TracerManager.Telemetry.IntegrationRunning(IntegrationId);

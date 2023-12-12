@@ -2,7 +2,6 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -10,6 +9,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Tools.dd_dotnet.Checks.Windows;
+using Datadog.Trace.Tools.Shared;
+using Datadog.Trace.Tools.Shared.Windows;
 using Spectre.Console;
 using static Datadog.Trace.Tools.dd_dotnet.Checks.Resources;
 
@@ -24,7 +26,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         {
             bool ok = true;
             var runtime = process.DotnetRuntime;
-            Version? nativeTracerVersion = null;
+
+            AnsiConsole.WriteLine();
+            AnsiConsole.WriteLine(SetupChecks);
 
             if (runtime == ProcessInfo.Runtime.NetFx)
             {
@@ -40,33 +44,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 runtime = ProcessInfo.Runtime.NetFx;
             }
 
-            bool isContinuousProfilerEnabled;
-
-            if (process.EnvironmentVariables.TryGetValue("DD_PROFILING_ENABLED", out var profilingEnabled))
-            {
-                if (ParseBooleanConfigurationValue(profilingEnabled))
-                {
-                    AnsiConsole.WriteLine(ContinuousProfilerEnabled);
-                    isContinuousProfilerEnabled = true;
-                }
-                else
-                {
-                    AnsiConsole.WriteLine(ContinuousProfilerDisabled);
-                    isContinuousProfilerEnabled = false;
-                }
-            }
-            else
-            {
-                AnsiConsole.WriteLine(ContinuousProfilerNotSet);
-                isContinuousProfilerEnabled = false;
-            }
-
+            AnsiConsole.WriteLine(ModuleCheck());
             var loaderModule = FindLoader(process);
             var nativeTracerModule = FindNativeTracerModule(process, loaderModule != null);
 
             if (loaderModule == null)
             {
-                AnsiConsole.WriteLine(LoaderNotLoaded);
+                Utils.WriteWarning(LoaderNotLoaded);
             }
 
             if (nativeTracerModule == null)
@@ -80,18 +64,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 // .so modules don't have version metadata
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    if (!Version.TryParse(FileVersionInfo.GetVersionInfo(nativeTracerModule).FileVersion, out nativeTracerVersion))
+                    if (!Version.TryParse(FileVersionInfo.GetVersionInfo(nativeTracerModule).FileVersion, out var nativeTracerVersion))
                     {
                         nativeTracerVersion = null;
                     }
 
-                    AnsiConsole.WriteLine(ProfilerVersion(nativeTracerVersion != null ? $"{nativeTracerVersion}" : "{empty}"));
+                    Utils.WriteSuccess(ProfilerVersion(nativeTracerVersion != null ? $"{nativeTracerVersion}" : "{empty}"));
                 }
-            }
-
-            if (isContinuousProfilerEnabled)
-            {
-                ok &= CheckContinousProfiler(process, loaderModule);
             }
 
             var tracerModules = FindTracerModules(process).ToArray();
@@ -104,7 +83,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             else if (tracerModules.Length == 1)
             {
                 var version = FileVersionInfo.GetVersionInfo(tracerModules[0]);
-                AnsiConsole.WriteLine(TracerVersion(version.FileVersion ?? "{empty}"));
+                Utils.WriteSuccess(TracerVersion(version.FileVersion ?? "{empty}"));
             }
             else if (tracerModules.Length > 1)
             {
@@ -133,12 +112,18 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 }
             }
 
+            AnsiConsole.WriteLine(EnvVarCheck("DD_DOTNET_TRACER_HOME"));
+
             if (process.EnvironmentVariables.TryGetValue("DD_DOTNET_TRACER_HOME", out var tracerHome))
             {
                 if (!Directory.Exists(tracerHome))
                 {
                     Utils.WriteWarning(TracerHomeNotFoundFormat(tracerHome));
                     ok = false;
+                }
+                else
+                {
+                    Utils.WriteSuccess(TracerHomeFoundFormat(tracerHome));
                 }
             }
             else
@@ -147,7 +132,19 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 ok = false;
             }
 
+            string corProfilerPathKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
+            string corProfilerPathKey32 = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32";
+            string corProfilerPathKey64 = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64";
+
+            AnsiConsole.WriteLine(EnvVarCheck(corProfilerPathKey));
+
+            ok &= CheckProfilerPath(process, corProfilerPathKey, requiredOnLinux: true);
+            ok &= CheckProfilerPath(process, corProfilerPathKey32, requiredOnLinux: false);
+            ok &= CheckProfilerPath(process, corProfilerPathKey64, requiredOnLinux: false);
+
             string corProfilerKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER" : "COR_PROFILER";
+
+            AnsiConsole.WriteLine(EnvVarCheck(corProfilerKey));
 
             process.EnvironmentVariables.TryGetValue(corProfilerKey, out var corProfiler);
 
@@ -156,8 +153,14 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 Utils.WriteWarning(WrongEnvironmentVariableFormat(corProfilerKey, Utils.Profilerid, corProfiler));
                 ok = false;
             }
+            else
+            {
+                Utils.WriteSuccess(CorrectlySetupEnvironment(corProfilerKey, Utils.Profilerid));
+            }
 
             string corEnableKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_ENABLE_PROFILING" : "COR_ENABLE_PROFILING";
+
+            AnsiConsole.WriteLine(EnvVarCheck(corEnableKey));
 
             process.EnvironmentVariables.TryGetValue(corEnableKey, out var corEnable);
 
@@ -166,35 +169,99 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 Utils.WriteError(WrongEnvironmentVariableFormat(corEnableKey, "1", corEnable));
                 ok = false;
             }
-
-            ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH", requiredOnLinux: true);
-            ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32", requiredOnLinux: false);
-            ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64", requiredOnLinux: false);
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            else
             {
-                if (!CheckRegistry(registryService, nativeTracerVersion))
+                Utils.WriteSuccess(CorrectlySetupEnvironment(corEnableKey, "1"));
+            }
+
+            process.EnvironmentVariables.TryGetValue(corProfilerPathKey, out var corProfilerPathValue);
+            process.EnvironmentVariables.TryGetValue(corProfilerPathKey32, out var corProfilerPathValue32);
+            process.EnvironmentVariables.TryGetValue(corProfilerPathKey64, out var corProfilerPathValue64);
+
+            string?[] valuesToCheck = { corProfilerPathValue, corProfilerPathValue32, corProfilerPathValue64 };
+            var isTracingUsingBundle = TracingWithBundle(valuesToCheck, process.Id);
+
+            if (!ok && isTracingUsingBundle)
+            {
+                AnsiConsole.WriteLine(TracerCheck());
+                Utils.WriteWarning(TracingWithBundleProfilerPath);
+            }
+            else if (!ok)
+            {
+                AnsiConsole.WriteLine(TracerCheck());
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    ok = false;
+                    AnsiConsole.WriteLine(runtime == ProcessInfo.Runtime.NetCore ? TracingWithInstallerWindowsNetCore : TracingWithInstallerWindowsNetFramework);
+
+                    if (!CheckRegistry(CheckWindowsInstallation(process.Id, registryService), registryService))
+                    {
+                        ok = false;
+                    }
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    AnsiConsole.WriteLine(TracingWithInstallerLinux);
+                    CheckLinuxInstallation("/opt/datadog/");
                 }
             }
 
-            if (process.EnvironmentVariables.TryGetValue("DD_TRACE_ENABLED", out var traceEnabledValue))
+            // Running non-blocker checks after confirming setup was done correctly
+            if (ok)
             {
-                if (!ParseBooleanConfigurationValue(traceEnabledValue))
+                ResetChecks();
+                AnsiConsole.WriteLine();
+                AnsiConsole.WriteLine(ConfigurationChecks);
+                AnsiConsole.WriteLine(TraceEnabledCheck());
+
+                if (process.EnvironmentVariables.TryGetValue("DD_TRACE_ENABLED", out var traceEnabledValue))
                 {
-                    Utils.WriteError(TracerNotEnabled(traceEnabledValue));
+                    if (!ParseBooleanConfigurationValue(traceEnabledValue))
+                    {
+                        Utils.WriteError(TracerNotEnabled(traceEnabledValue));
+                    }
+                }
+                else
+                {
+                    Utils.WriteInfo(TraceEnabledNotSet);
+                }
+
+                AnsiConsole.WriteLine(ContinuousProfilerCheck());
+                bool isContinuousProfilerEnabled;
+
+                if (process.EnvironmentVariables.TryGetValue("DD_PROFILING_ENABLED", out var profilingEnabled))
+                {
+                    if (ParseBooleanConfigurationValue(profilingEnabled))
+                    {
+                        Utils.WriteSuccess(ContinuousProfilerEnabled);
+                        isContinuousProfilerEnabled = true;
+                    }
+                    else
+                    {
+                        Utils.WriteInfo(ContinuousProfilerDisabled);
+                        isContinuousProfilerEnabled = false;
+                    }
+                }
+                else
+                {
+                    Utils.WriteInfo(ContinuousProfilerNotSet);
+                    isContinuousProfilerEnabled = false;
+                }
+
+                if (isContinuousProfilerEnabled)
+                {
+                    ok &= CheckContinuousProfiler(process, loaderModule);
                 }
             }
 
             return ok;
         }
 
-        internal static bool CheckContinousProfiler(ProcessInfo process, string? loaderModule)
+        internal static bool CheckContinuousProfiler(ProcessInfo process, string? loaderModule)
         {
             bool ok = true;
 
-            var continuousProfilerModule = FindContinousProfilerModule(process);
+            var continuousProfilerModule = FindContinuousProfilerModule(process);
 
             if (continuousProfilerModule == null)
             {
@@ -235,18 +302,31 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             return ok;
         }
 
-        internal static bool CheckRegistry(IRegistryService? registry = null, Version? tracerVersion = null)
+        internal static bool CheckRegistry(string? tracerProgramVersion, IRegistryService? registry = null)
         {
-            registry ??= new Windows.RegistryService();
+            registry ??= new RegistryService();
 
             try
             {
                 bool ok = true;
 
                 // Check that the profiler is properly registered
-                if (tracerVersion == null || tracerVersion < new Version("2.14.0.0"))
+                if (tracerProgramVersion is null)
                 {
                     ok &= CheckClsid(registry, ClsidKey);
+                    ok &= CheckClsid(registry, Clsid32Key);
+                }
+                else if (RuntimeInformation.OSArchitecture is Architecture.X64)
+                {
+                    ok &= CheckClsid(registry, ClsidKey);
+
+                    if (new Version(tracerProgramVersion) < new Version("2.14.0.0"))
+                    {
+                        ok &= CheckClsid(registry, Clsid32Key);
+                    }
+                }
+                else if (RuntimeInformation.OSArchitecture is Architecture.X86)
+                {
                     ok &= CheckClsid(registry, Clsid32Key);
                 }
 
@@ -290,7 +370,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             }
         }
 
-        private static bool CheckProfilerPath(ProcessInfo process, string key, bool requiredOnLinux)
+        internal static bool CheckProfilerPath(ProcessInfo process, string key, bool requiredOnLinux)
         {
             bool ok = true;
 
@@ -306,6 +386,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 {
                     Utils.WriteError(MissingProfilerEnvironment(key, profilerPath));
                     ok = false;
+                }
+                else
+                {
+                    Utils.WriteSuccess(CorrectlySetupEnvironment(key, profilerPath));
                 }
             }
             else if (requiredOnLinux)
@@ -345,7 +429,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             return true;
         }
 
-        private static bool IsExpectedProfilerFile(string fullPath)
+        internal static bool IsExpectedProfilerFile(string fullPath)
         {
             var fileName = Path.GetFileName(fullPath);
 
@@ -394,7 +478,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             return null;
         }
 
-        private static string? FindContinousProfilerModule(ProcessInfo process)
+        private static string? FindContinuousProfilerModule(ProcessInfo process)
         {
             foreach (var module in process.Modules)
             {
@@ -458,6 +542,143 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 or "Y"
                 or "y"
                 or "1";
+        }
+
+        private static bool TracingWithBundle(string?[] profilerPathValues, int processId)
+        {
+            Process process = Process.GetProcessById(processId);
+
+            // Get the file path of the main module (the .exe file)
+            string? filePath = process.MainModule?.FileName;
+            string? directoryPath = Path.GetDirectoryName(filePath);
+
+            string[] expectedEndingsForBundleSetup =
+            {
+                "/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so",
+                "/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                "/datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
+                "\\datadog\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+                "\\datadog\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll"
+            };
+
+            foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
+            {
+                foreach (var profilerPath in profilerPathValues)
+                {
+                    if (profilerPath is not null && profilerPath.Equals(directoryPath + bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static string? CheckWindowsInstallation(int processId, IRegistryService? registryService = null)
+        {
+            const string datadog64BitProgram = "Datadog .NET Tracer 64-bit";
+            const string datadog32BitProgram = "Datadog .NET Tracer 32-bit";
+            const string uninstallKey64Bit = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
+            const string uninstallKey32Bit = @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall";
+
+            if (GetLocalMachineSubKeyVersion(uninstallKey64Bit, datadog64BitProgram, out var tracerVersion, registryService))
+            {
+                Utils.WriteSuccess(TracerProgramFound(datadog64BitProgram));
+                return tracerVersion;
+            }
+
+            if (GetLocalMachineSubKeyVersion(uninstallKey32Bit, datadog32BitProgram, out tracerVersion, registryService))
+            {
+                Utils.WriteSuccess(TracerProgramFound(datadog32BitProgram));
+                var processBitness = ProcessEnvironmentWindows.GetProcessBitness(Process.GetProcessById(processId));
+
+                if (processBitness is 64)
+                {
+                    Utils.WriteError(WrongTracerArchitecture(datadog32BitProgram));
+                }
+
+                return tracerVersion;
+            }
+
+            Utils.WriteError(TraceProgramNotFound);
+            return null;
+        }
+
+        private static bool GetLocalMachineSubKeyVersion(string uninstallKey, string datadogProgramName, out string? tracerVersion, IRegistryService? registryService = null)
+        {
+            registryService ??= new Windows.RegistryService();
+
+            tracerVersion = null;
+            var versionFound = false;
+
+            foreach (var subKeyName in registryService.GetLocalMachineKeyNames(uninstallKey))
+            {
+                var subKeyDisplayName = registryService.GetLocalMachineKeyNameValue(uninstallKey, subKeyName, "DisplayName");
+
+                if (subKeyDisplayName == datadogProgramName)
+                {
+                    var versionMajor = registryService.GetLocalMachineKeyNameValue(uninstallKey, subKeyName, "VersionMajor");
+                    var versionMinor = registryService.GetLocalMachineKeyNameValue(uninstallKey, subKeyName, "VersionMinor");
+
+                    if (!string.IsNullOrEmpty(versionMajor) && !string.IsNullOrEmpty(versionMinor))
+                    {
+                        tracerVersion = $"{versionMajor}.{versionMinor}";
+                        versionFound = true;
+                    }
+                }
+            }
+
+            return versionFound;
+        }
+
+        internal static void CheckLinuxInstallation(string installDirectory)
+        {
+            string archFolder;
+            var osArchitecture = RuntimeInformation.OSArchitecture;
+
+            if (osArchitecture == Architecture.X64)
+            {
+                archFolder = Utils.IsAlpine() ? "linux-musl-x64" : "linux-x64";
+            }
+            else if (osArchitecture == Architecture.Arm64)
+            {
+                archFolder = "linux-arm64";
+            }
+            else
+            {
+                Utils.WriteError(UnsupportedLinuxArchitecture(osArchitecture.ToString()));
+                return;
+            }
+
+            try
+            {
+                var joinedPath = Path.Join(installDirectory, archFolder);
+
+                if (Directory.Exists(joinedPath))
+                {
+                    Utils.WriteSuccess(CorrectLinuxDirectoryFound(joinedPath));
+                }
+                else
+                {
+                    string[] directories = Directory.GetDirectories(installDirectory);
+
+                    // Iterate through directories and filter based on the starting string
+                    foreach (string directory in directories)
+                    {
+                        DirectoryInfo dirInfo = new DirectoryInfo(directory);
+                        if (dirInfo.Name.StartsWith("linux-", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Utils.WriteError(WrongLinuxFolder(archFolder, dirInfo.Name));
+                            return;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteError(ErrorCheckingLinuxDirectory(ex.Message));
+            }
         }
     }
 }

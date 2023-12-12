@@ -59,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         {
                             // Remove decision maker tag (not used by the backend for civisibility)
                             targetSpan.Tags.Remove(Tags.Propagated.DecisionMaker);
+                            targetSpan.Tags.Remove(Tags.Propagated.TraceIdUpper);
 
                             // Remove git metadata added by the apm agent writer.
                             targetSpan.Tags.Remove(Tags.GitCommitSha);

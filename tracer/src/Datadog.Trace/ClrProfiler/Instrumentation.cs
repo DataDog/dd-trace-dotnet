@@ -135,8 +135,6 @@ namespace Datadog.Trace.ClrProfiler
                 sw.Restart();
 
                 InitializeTracer(sw);
-
-                InitializeServerless(sw, Tracer.Instance.Settings.LambdaMetadata);
             }
 
 #if NETSTANDARD2_0 || NETCOREAPP3_1
@@ -215,8 +213,6 @@ namespace Datadog.Trace.ClrProfiler
             InitializeInstrumentationsLegacy(InstrumentationCategory.Tracing, sw);
 
             InitializeTracer(sw);
-
-            InitializeServerless(sw, Tracer.Instance.Settings.LambdaMetadata);
 
             InitializeAppSecLegacy(sw);
 
@@ -399,24 +395,6 @@ namespace Datadog.Trace.ClrProfiler
                 }
 
                 TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.TraceMethodsPinvoke, sw.ElapsedMilliseconds);
-                sw.Restart();
-            }
-        }
-
-        private static void InitializeServerless(Stopwatch sw, LambdaMetadata metadata)
-        {
-            try
-            {
-                Serverless.InitIfNeeded(metadata);
-            }
-            catch (Exception ex)
-            {
-                Serverless.Error("Error while loading Serverless definitions", ex);
-            }
-
-            if (sw != null)
-            {
-                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Serverless, sw.ElapsedMilliseconds);
                 sw.Restart();
             }
         }

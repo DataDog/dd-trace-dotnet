@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Net;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
@@ -30,12 +32,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MongoDbIntegration));
 
-        internal static Scope CreateScope<TConnection>(object wireProtocol, TConnection connection)
+        internal static Scope? CreateScope<TConnection>(object? wireProtocol, TConnection connection)
             where TConnection : IConnection
         {
             var tracer = Tracer.Instance;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (wireProtocol is null || !tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -47,14 +49,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 return null;
             }
 
-            string collectionName = null;
-            string query = null;
-            string resourceName = null;
-            string databaseName = null;
+            string? collectionName = null;
+            string? query = null;
+            string? resourceName = null;
+            string? databaseName = null;
 
             if (wireProtocol.TryDuckCast<IWireProtocolWithDatabaseNamespaceStruct>(out var protocolWithDatabaseNamespace))
             {
-                databaseName = protocolWithDatabaseNamespace.DatabaseNamespace.DatabaseName;
+                databaseName = protocolWithDatabaseNamespace.DatabaseNamespace?.DatabaseName;
             }
 
             if (wireProtocol.TryDuckCast<IWireProtocolWithCommandStruct>(out var protocolWithCommand)
@@ -65,16 +67,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                     // the name of the first element in the command BsonDocument will be the operation type (insert, delete, find, etc)
                     // and its value is the collection name
                     var firstElement = protocolWithCommand.Command.GetElement(0);
-                    string mongoOperationName = firstElement.Name;
+                    var mongoOperationName = firstElement.Name;
 
-                    if (mongoOperationName == "isMaster" || mongoOperationName == "hello")
+                    if (mongoOperationName is "isMaster" or "hello")
                     {
                         return null;
                     }
 
                     resourceName = $"{mongoOperationName ?? "operation"} {databaseName ?? "database"}";
                     collectionName = firstElement.Value?.ToString();
-                    query = BsonSerializationHelper.ToShortString(((IDuckType)protocolWithCommand.Command).Instance);
+                    query = BsonSerializationHelper.ToShortString(protocolWithCommand.Command.Instance);
                 }
                 catch (Exception ex)
                 {
@@ -82,25 +84,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 }
             }
 
-            string host = null;
-            string port = null;
+            string? host = null;
+            string? port = null;
 
-            if (connection.EndPoint is IPEndPoint ipEndPoint)
+            if (connection.Instance is not null)
             {
-                host = ipEndPoint.Address.ToString();
-                port = ipEndPoint.Port.ToString();
-            }
-            else if (connection.EndPoint is DnsEndPoint dnsEndPoint)
-            {
-                host = dnsEndPoint.Host;
-                port = dnsEndPoint.Port.ToString();
+                if (connection.EndPoint is IPEndPoint ipEndPoint)
+                {
+                    host = ipEndPoint.Address.ToString();
+                    port = ipEndPoint.Port.ToString();
+                }
+                else if (connection.EndPoint is DnsEndPoint dnsEndPoint)
+                {
+                    host = dnsEndPoint.Host;
+                    port = dnsEndPoint.Port.ToString();
+                }
             }
 
             var operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
             var serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
             var tags = tracer.CurrentTraceSettings.Schema.Database.CreateMongoDbTags();
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
@@ -126,7 +131,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             return scope;
         }
 
-        private static Scope GetActiveMongoDbScope(Tracer tracer)
+        private static Scope? GetActiveMongoDbScope(Tracer tracer)
         {
             var scope = tracer.InternalActiveScope;
 
