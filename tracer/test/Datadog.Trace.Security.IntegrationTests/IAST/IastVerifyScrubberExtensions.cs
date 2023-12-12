@@ -19,17 +19,6 @@ namespace Datadog.Trace.Security.IntegrationTests.IAST
         private static readonly (Regex RegexPattern, string Replacement) RequestTaintedRegex = (new Regex(@"_dd.iast.telemetry.request.tainted:(\s)*([1-9])(\d*).?(\d*),"), "_dd.iast.telemetry.request.tainted:,");
         private static readonly (Regex RegexPattern, string Replacement) TelemetryExecutedSinks = (new Regex(@"_dd\.iast\.telemetry\.executed\.sink\.weak_.+: .{3},"), string.Empty);
 
-        /*
-             TraceId: Id_1,
-            SpanId: Id_3,
-            Name: aspnet_core_mvc.request,
-            Resource: GET /iast/redirected,
-            Service: Samples.Security.AspNetCore5,
-            Type: web,
-            ParentId: Id_2,
-
-         */
-
         public static VerifySettings AddIastScrubbing(this VerifySettings settings, bool scrubHash = true)
         {
             var scrubbers = new List<(Regex RegexPattern, string Replacement)>();

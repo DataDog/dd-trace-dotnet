@@ -36,6 +36,7 @@ internal static class IastModule
     private const string ReferrerHeaderName = "Referrer";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
+    private static readonly Func<TaintedObject, bool> Always = (x) => true;
     private static IastSettings iastSettings = Iast.Instance.Settings;
 
     static IastModule()
@@ -112,7 +113,7 @@ internal static class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.TrustBoundaryViolation);
-            return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeName.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, (t) => true);
+            return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeName.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, Always);
         }
         catch (Exception ex)
         {
@@ -126,7 +127,7 @@ internal static class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.LdapInjection);
-            return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeName.LdapInjection, OperationNameLdapInjection, (t) => true);
+            return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeName.LdapInjection, OperationNameLdapInjection, Always);
         }
         catch (Exception ex)
         {
@@ -140,7 +141,7 @@ internal static class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.Ssrf);
-            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeName.Ssrf, OperationNameSsrf, (t) => true);
+            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeName.Ssrf, OperationNameSsrf, Always);
         }
         catch (Exception ex)
         {
@@ -168,7 +169,7 @@ internal static class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.PathTraversal);
-            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeName.PathTraversal, OperationNamePathTraversal, (t) => true);
+            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeName.PathTraversal, OperationNamePathTraversal, Always);
         }
         catch (Exception ex)
         {
@@ -182,7 +183,7 @@ internal static class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.SqlInjection);
-            return GetScope(query, integrationId, VulnerabilityTypeName.SqlInjection, OperationNameSqlInjection, (t) => true);
+            return GetScope(query, integrationId, VulnerabilityTypeName.SqlInjection, OperationNameSqlInjection, Always);
         }
         catch (Exception ex)
         {
@@ -197,7 +198,7 @@ internal static class IastModule
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.CommandInjection);
             var evidence = BuildCommandInjectionEvidence(file, argumentLine, argumentList);
-            return string.IsNullOrEmpty(evidence) ? IastModuleResponse.Empty : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, (t) => true);
+            return string.IsNullOrEmpty(evidence) ? IastModuleResponse.Empty : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, Always);
         }
         catch (Exception ex)
         {
