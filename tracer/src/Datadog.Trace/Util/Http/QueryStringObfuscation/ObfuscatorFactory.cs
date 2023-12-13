@@ -10,9 +10,29 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
 {
     internal class ObfuscatorFactory
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ObfuscatorFactory>();
+
         internal static ObfuscatorBase GetObfuscator(double timeoutInMs, string pattern, IDatadogLogger logger, bool reportQueryString = true)
-            => string.IsNullOrEmpty(pattern) || !reportQueryString
-                   ? new NullObfuscator()
-                   : new Obfuscator(pattern, TimeSpan.FromMilliseconds(timeoutInMs), logger ?? DatadogLogging.GetLoggerFor(typeof(QueryStringManager)));
+        {
+            if (string.IsNullOrEmpty(pattern))
+            {
+                return new NullObfuscator();
+            }
+
+            if (!reportQueryString)
+            {
+                return new RedactAllObfuscator();
+            }
+
+            try
+            {
+                return new Obfuscator(pattern, TimeSpan.FromMilliseconds(timeoutInMs), logger ?? DatadogLogging.GetLoggerFor(typeof(QueryStringManager)));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Exception occurred creating query string obfuscator");
+                return new RedactAllObfuscator();
+            }
+        }
     }
 }
