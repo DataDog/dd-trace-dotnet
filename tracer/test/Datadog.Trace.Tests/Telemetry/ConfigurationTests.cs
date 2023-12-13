@@ -70,27 +70,10 @@ public class ConfigurationTests
         // we know that we generally store config keys in `ConfigurationKeys` so examine all those
         var configKeyStrings = GetConfigurationKeyStrings();
 
-        // we know we generate all these
-        var integrationSettingFormatKeys = new[]
-        {
-            "DD_TRACE_{0}_ENABLED",
-            "DD_TRACE_{0}_ANALYTICS_ENABLED",
-            "DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE",
-            "DD_{0}_ENABLED",
-            "DD_{0}_ANALYTICS_ENABLED",
-            "DD_{0}_ANALYTICS_SAMPLE_RATE"
-        };
-
-        var integrationSettings =
-            from integrationId in IntegrationIdExtensions.GetNames()
-            from formatKey in integrationSettingFormatKeys
-            select string.Format(formatKey, integrationId);
-
         var allPotentialConfigKeys = assemblyStrings
                                     .Where(x => (x.StartsWith("DD_") || x.StartsWith("_DD") || x.StartsWith("DATADOG_")) && !x.Contains(" "))
                                     .Concat(configKeyStrings)
                                     .Where(x => !x.Contains("{0}")) // exclude the format string ones
-                                    .Concat(integrationSettings)
                                     .Distinct()
                                     .Where(x => !ExcludedKeys.Contains(x))
                                     .ToList();
