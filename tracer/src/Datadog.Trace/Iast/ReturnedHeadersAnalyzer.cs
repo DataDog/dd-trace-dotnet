@@ -41,6 +41,120 @@ internal static class ReturnedHeadersAnalyzer
         AnalyzeXContentTypeOptionsVulnerability(responseHeaders, integrationId, serviceName, responseCode);
         AnalyzeStrictTransportSecurity(responseHeaders, integrationId, serviceName, responseCode, protocol);
         AnalyzeUnvalidatedRedirect(responseHeaders, integrationId);
+        AnalyzeHeaderInjectionVulnerability(responseHeaders, integrationId);
+    }
+
+#if NETFRAMEWORK
+    private static void AnalyzeHeaderInjectionVulnerability(NameValueCollection responseHeaders, IntegrationId integrationId)
+#else
+    private static void AnalyzeHeaderInjectionVulnerability(IHeaderDictionary responseHeaders, IntegrationId integrationId)
+#endif
+    {
+        try
+        {
+            var tracer = Tracer.Instance;
+            var currentSpan = (tracer.ActiveScope as Scope)?.Span;
+            var traceContext = currentSpan?.Context?.TraceContext;
+
+#if NETFRAMEWORK
+            foreach (var headerKey in responseHeaders.AllKeys)
+#else
+            foreach (var headerKey in responseHeaders.Keys)
+#endif
+            {
+                var headerValue = responseHeaders[headerKey];
+
+                foreach (var excludeType in headerInjectionExceptions)
+                {
+                    if (excludeType.Equals((string)headerKey, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+                }
+
+                var taintedValue = traceContext?.IastRequestContext?.GetTainted(headerValue);
+                var taintedHeader = traceContext?.IastRequestContext?.GetTainted(headerKey);
+
+                if (taintedValue is null && taintedHeader is null)
+                {
+                    continue;
+                }
+
+                if (headerKey.Equals("set-cookie", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (OnlyCookieValueSources(taintedValue))
+                    {
+                        continue;
+                    }
+                }
+
+                if (headerKey.Equals("access-control-allow-origin", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (ComesFromOriginHeader(taintedValue))
+                    {
+                        continue;
+                    }
+                }
+
+                if (IsPropagationHeader(headerKey, taintedValue))
+                {
+                    continue;
+                }
+
+                IastModule.OnHeaderInjection(integrationId, (string)headerKey, headerValue);
+            }
+        }
+        catch (Exception error)
+        {
+            Log.Error(error, $"Error in {nameof(ReturnedHeadersAnalyzer)}.{nameof(AnalyzeHeaderInjectionVulnerability)}");
+        }
+    }
+
+    private static bool OnlyCookieValueSources(TaintedObject? taintedValue)
+    {
+        if (taintedValue is null)
+        {
+            return true;
+        }
+
+        foreach (var range in taintedValue.Ranges)
+        {
+            if (range.Source is not null && range.Source.OriginByte != (byte)SourceTypeName.CookieValue)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool IsPropagationHeader(string headerName, TaintedObject? taintedHeaderValue)
+    {
+        return (
+            taintedHeaderValue is not null &&
+            taintedHeaderValue.Ranges.Length == 1 &&
+            taintedHeaderValue.Ranges[0].Source is not null &&
+            taintedHeaderValue.Ranges[0].Source!.OriginByte == (byte)SourceTypeName.RequestHeaderValue &&
+            taintedHeaderValue.Ranges[0].Source!.Name == headerName);
+    }
+
+    private static bool ComesFromOriginHeader(TaintedObject? taintedValue)
+    {
+        if (taintedValue is null)
+        {
+            return true;
+        }
+
+        foreach (var range in taintedValue.Ranges)
+        {
+            if (range.Source is not null && (range.Source.OriginByte != (byte)SourceTypeName.RequestHeaderValue
+                || range.Source.Name?.Equals("origin", StringComparison.OrdinalIgnoreCase) == false))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
 #if NETFRAMEWORK
