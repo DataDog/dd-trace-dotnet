@@ -25,6 +25,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private const string SupportedDataStreamsEndpoint = "v0.1/pipeline_stats";
         private const string SupportedEventPlatformProxyEndpoint = "evp_proxy/v2";
         private const string SupportedTelemetryProxyEndpoint = "telemetry/proxy";
+        private const string SupportedTracerFlareEndpoint = "tracer_flare/v1";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiscoveryService>();
         private readonly IApiRequestFactory _apiRequestFactory;
@@ -66,7 +67,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 SupportedStatsEndpoint,
                 SupportedDataStreamsEndpoint,
                 SupportedEventPlatformProxyEndpoint,
-                SupportedTelemetryProxyEndpoint
+                SupportedTelemetryProxyEndpoint,
+                SupportedTracerFlareEndpoint,
             };
 
         public static DiscoveryService Create(ImmutableExporterSettings exporterSettings)
@@ -217,6 +219,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             string? dataStreamsMonitoringEndpoint = null;
             string? eventPlatformProxyEndpoint = null;
             string? telemetryProxyEndpoint = null;
+            string? tracerFlareEndpoint = null;
 
             if (discoveredEndpoints is { Length: > 0 })
             {
@@ -253,6 +256,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
                     {
                         telemetryProxyEndpoint = endpoint;
                     }
+                    else if (endpoint.Equals(SupportedTracerFlareEndpoint, StringComparison.OrdinalIgnoreCase))
+                    {
+                        tracerFlareEndpoint = endpoint;
+                    }
                 }
             }
 
@@ -266,6 +273,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 dataStreamsMonitoringEndpoint: dataStreamsMonitoringEndpoint,
                 eventPlatformProxyEndpoint: eventPlatformProxyEndpoint,
                 telemetryProxyEndpoint: telemetryProxyEndpoint,
+                tracerFlareEndpoint: tracerFlareEndpoint,
                 clientDropP0: clientDropP0);
 
             // AgentConfiguration is a record, so this compares by value
