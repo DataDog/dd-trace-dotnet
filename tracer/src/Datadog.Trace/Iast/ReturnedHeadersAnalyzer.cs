@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Net;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -62,7 +63,10 @@ internal static class ReturnedHeadersAnalyzer
             foreach (var headerKey in responseHeaders.Keys)
 #endif
             {
-                var headerValue = responseHeaders[headerKey];
+                if (string.IsNullOrWhiteSpace(headerKey))
+                {
+                    continue;
+                }
 
                 foreach (var excludeType in headerInjectionExceptions)
                 {
@@ -72,10 +76,17 @@ internal static class ReturnedHeadersAnalyzer
                     }
                 }
 
-                var taintedValue = traceContext?.IastRequestContext?.GetTainted(headerValue);
-                var taintedHeader = traceContext?.IastRequestContext?.GetTainted(headerKey);
+                var headerValue = responseHeaders[headerKey];
 
-                if (taintedValue is null && taintedHeader is null)
+                if (string.IsNullOrWhiteSpace(headerValue))
+                {
+                    continue;
+                }
+
+                // For now, we only analyze the header injection vulnerability when the header value is tainted (not name).
+                var taintedValue = traceContext?.IastRequestContext?.GetTainted(headerValue);
+
+                if (taintedValue is null || taintedValue.Ranges.Count() == 0)
                 {
                     continue;
                 }
@@ -101,7 +112,7 @@ internal static class ReturnedHeadersAnalyzer
                     continue;
                 }
 
-                IastModule.OnHeaderInjection(integrationId, (string)headerKey, headerValue);
+                IastModule.OnHeaderInjection(integrationId, headerKey, headerValue);
             }
         }
         catch (Exception error)
@@ -110,13 +121,8 @@ internal static class ReturnedHeadersAnalyzer
         }
     }
 
-    private static bool OnlyCookieValueSources(TaintedObject? taintedValue)
+    private static bool OnlyCookieValueSources(TaintedObject taintedValue)
     {
-        if (taintedValue is null)
-        {
-            return true;
-        }
-
         foreach (var range in taintedValue.Ranges)
         {
             if (range.Source is not null && range.Source.OriginByte != (byte)SourceTypeName.CookieValue)
@@ -128,23 +134,17 @@ internal static class ReturnedHeadersAnalyzer
         return true;
     }
 
-    private static bool IsPropagationHeader(string headerName, TaintedObject? taintedHeaderValue)
+    private static bool IsPropagationHeader(string headerName, TaintedObject taintedValue)
     {
         return (
-            taintedHeaderValue is not null &&
-            taintedHeaderValue.Ranges.Length == 1 &&
-            taintedHeaderValue.Ranges[0].Source is not null &&
-            taintedHeaderValue.Ranges[0].Source!.OriginByte == (byte)SourceTypeName.RequestHeaderValue &&
-            taintedHeaderValue.Ranges[0].Source!.Name == headerName);
+            taintedValue.Ranges.Length == 1 &&
+            taintedValue.Ranges[0].Source is not null &&
+            taintedValue.Ranges[0].Source!.OriginByte == (byte)SourceTypeName.RequestHeaderValue &&
+            taintedValue.Ranges[0].Source!.Name == headerName);
     }
 
-    private static bool ComesFromOriginHeader(TaintedObject? taintedValue)
+    private static bool ComesFromOriginHeader(TaintedObject taintedValue)
     {
-        if (taintedValue is null)
-        {
-            return true;
-        }
-
         foreach (var range in taintedValue.Ranges)
         {
             if (range.Source is not null && (range.Source.OriginByte != (byte)SourceTypeName.RequestHeaderValue

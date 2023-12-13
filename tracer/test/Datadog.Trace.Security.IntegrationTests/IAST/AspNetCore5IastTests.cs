@@ -593,6 +593,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     // Sec-WebSocket-Location, Sec-WebSocket-Accept, Upgrade, Connection: Usually the framework gets info from request
     // access-control-allow-origin: when the header is access-control-allow-origin and the source of the tainted range is the request header origin
     // set-cookie: We should ignore set-cookie header if the source of all the tainted ranges are cookies
+    // We should exclude the injection when the tainted string only has one range which comes from a request header with the same name that the header that we are checking in the response.
     // Headers could store sensitive information, we should redact whole <header_value> if:
     // <header_name> matches with this RegExp
     // <header_value> matches with  this RegExp
@@ -603,9 +604,9 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [SkippableTheory]
     [Trait("RunOnWindows", "True")]
     [InlineData(new string[] { "value", "vulnerableValue" }, null)]
-    [InlineData(new string[] { "name", "vulnerableValue" }, null)]
+    [InlineData(new string[] { "name", "notvulnerable" }, null)]
+    [InlineData(new string[] { "name", "notvulnerableName", "value", "notVulnerableValue" }, null)]
     [InlineData(new string[] { "value", "secret_redacted" }, null)]
-    [InlineData(new string[] { "name", "redacted:bearer" }, null)]
     [InlineData(new string[] { "name", "location", "value", "URVulnerableOnly" }, null)]
     [InlineData(new string[] { "name", "Sec-WebSocket-Accept", "value", "notVulnerable" }, null)]
     [InlineData(new string[] { "name", "access-control-allow-origin", "value", "Vulnerable" }, null)]
