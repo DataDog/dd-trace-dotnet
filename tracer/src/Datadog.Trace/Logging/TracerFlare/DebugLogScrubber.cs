@@ -85,38 +85,36 @@ internal class DebugLogScrubber
 #pragma warning disable SA1010 // Opening Square brackets should be preceded by a space
     private static ReplacerConfig[] CreateReplacers() =>
     [
-        // We don't want to have to operate line by line _and_ on the whole file, so
-        // we make all these regexes multi-line and prepend ^.*? to give a non-greedy match to the start of a line
         // yaml comments
-        new(GetRegex(@"^\s*#.*$(\r\n|\n)?"), null, string.Empty),
+        new(GetRegex(@"^\s*#.*$(\r\n|\n)?", options: RegexOptions.Compiled | RegexOptions.Multiline), null, string.Empty),
         // hinted API Key
-        new(GetRegex(@"^.*?(api_?key=)\b[a-zA-Z0-9]+([a-zA-Z0-9]{5})\b"), ["api_key", "apikey"], "$1***************************$2"),
+        new(GetRegex(@"(api_?key=)\b[a-zA-Z0-9]+([a-zA-Z0-9]{5})\b"), ["api_key", "apikey"], "$1***************************$2"),
         // hinted App Key
-        new(GetRegex(@"^.*?(ap(?:p|plication)_?key=)\b[a-zA-Z0-9]+([a-zA-Z0-9]{5})\b"), ["app_key", "appkey", "application_key"], "$1***********************************$2"),
+        new(GetRegex(@"(ap(?:p|plication)_?key=)\b[a-zA-Z0-9]+([a-zA-Z0-9]{5})\b"), ["app_key", "appkey", "application_key"], "$1***********************************$2"),
         // Bearer token
-        new(GetRegex(@"^.*?\bBearer [a-fA-F0-9]{59}([a-fA-F0-9]{5})\b"), ["Bearer"], "Bearer ***********************************************************$1"),
+        new(GetRegex(@"\bBearer [a-fA-F0-9]{59}([a-fA-F0-9]{5})\b"), ["Bearer"], "Bearer ***********************************************************$1"),
         // api key YAML
-        new(GetRegex(@"^.*?(\-|\:|,|\[|\{)(\s+)?\b[a-fA-F0-9]{27}([a-fA-F0-9]{5})\b"), null, "$1$2\"***************************$3\""),
+        new(GetRegex(@"(\-|\:|,|\[|\{)(\s+)?\b[a-fA-F0-9]{27}([a-fA-F0-9]{5})\b"), null, "$1$2\"***************************$3\""),
         // apiKey
-        new(GetRegex(@"^.*?\b[a-fA-F0-9]{27}([a-fA-F0-9]{5})\b"), null, "***************************$1"),
+        new(GetRegex(@"\b[a-fA-F0-9]{27}([a-fA-F0-9]{5})\b"), null, "***************************$1"),
         // app key yaml
-        new(GetRegex(@"^.*?(\-|\:|,|\[|\{)(\s+)?\b[a-fA-F0-9]{35}([a-fA-F0-9]{5})\b"), null, "$1$2\"***********************************$3\""),
+        new(GetRegex(@"(\-|\:|,|\[|\{)(\s+)?\b[a-fA-F0-9]{35}([a-fA-F0-9]{5})\b"), null, "$1$2\"***********************************$3\""),
         // app key
-        new(GetRegex(@"^.*?\b[a-fA-F0-9]{35}([a-fA-F0-9]{5})\b"), null, "***********************************$1"),
+        new(GetRegex(@"\b[a-fA-F0-9]{35}([a-fA-F0-9]{5})\b"), null, "***********************************$1"),
         // rc app key
-        new(GetRegex(@"^.*?\bDDRCM_[A-Z0-9]+([A-Z0-9]{5})\b"), null, "***********************************$1"),
+        new(GetRegex(@"\bDDRCM_[A-Z0-9]+([A-Z0-9]{5})\b"), null, "***********************************$1"),
         // URI Generic Syntax
         // https://tools.ietf.org/html/rfc3986
-        new(GetRegex(@"^.*?(?i)([a-z][a-z0-9+-.]+://|\b)([^:]+):([^\s|""]+)@"), null, "$1$2:********@"),
+        new(GetRegex(@"(?i)([a-z][a-z0-9+-.]+://|\b)([^:]+):([^\s|""]+)@"), null, "$1$2:********@"),
         // YAML replacers - these are _meant_ to "decode" yaml and treat it as a data object
         // but given we don't expect to actually have any yaml or json in the logs that needs
         // redacting, these follow a more simplistic approach, _based_ on the originals
         // yaml key password
-        new(GetRegex(@"^.*?(\s*(\w|_)*(pass(word)?|pwd)(\w|_)*\s*:).+"), ["pass", "pwd"], "$1 \"********\""),
+        new(GetRegex(@"(\s*(\w|_)*(pass(word)?|pwd)(\w|_)*\s*:).+"), ["pass", "pwd"], "$1 \"********\""),
         // yaml token
-        new(GetRegex(@"(^\s*(\w|_)*token\s*:).+"), ["token"], "$1 \"********\""),
+        new(GetRegex(@"(^\s*(\w|_)*token\s*:).+", options: RegexOptions.Compiled | RegexOptions.Multiline), ["token"], "$1 \"********\""),
         // yaml snmp
-        new(GetRegex(@"^.*?(\s*(community_string|authKey|privKey|community|authentication_key|privacy_key)\s*:).+"), ["community_string", "authKey", "privKey", "community", "authentication_key", "privacy_key"], "$1 \"********\""),
+        new(GetRegex(@"(\s*(community_string|authKey|privKey|community|authentication_key|privacy_key)\s*:).+"), ["community_string", "authKey", "privKey", "community", "authentication_key", "privacy_key"], "$1 \"********\""),
         // yaml apikey - this _only_ works on YAML, so excluded as we don't want to decode
         // yaml appkey - this _only_ works on YAML, so excluded as we don't want to decode
 
@@ -129,7 +127,7 @@ internal class DebugLogScrubber
         //  key: [
         //   [a, b, c],
         //   def]
-        new(GetRegex(@"^.*?(\s*(community_strings)\s*:)\s*(?:\n(?:\s+-\s+.*)*|\[(?:\n?.*?)*?\])"), ["community_strings"], "$1 \"********\""),
+        new(GetRegex(@"(\s*(community_strings)\s*:)\s*(?:\n(?:\s+-\s+.*)*|\[(?:\n?.*?)*?\])"), ["community_strings"], "$1 \"********\""),
         /*                                 -------------------------      ---------------  -------------
                                                       match key(s)            |                |
                                                                               match multiple   match anything
@@ -137,16 +135,16 @@ internal class DebugLogScrubber
                                                                               with `-` */
         // cert - Try to match as accurately as possible. RFC 7468's ABNF
         // But ignores backreferences
-        new(GetRegex(@"^.*?-----BEGIN (?:.*)-----[A-Za-z0-9=\+\/\s]*-----END (?:.*)-----"), ["BEGIN"], "********"),
+        new(GetRegex(@"-----BEGIN (?:.*)-----[A-Za-z0-9=\+\/\s]*-----END (?:.*)-----"), ["BEGIN"], "********"),
     ];
 
-    private static Regex GetRegex([StringSyntax(StringSyntaxAttribute.Regex)] string pattern)
+    private static Regex GetRegex([StringSyntax(StringSyntaxAttribute.Regex)] string pattern, RegexOptions options = RegexOptions.Compiled)
         => new(
             pattern,
 #if NETCOREAPP3_1_OR_GREATER
-            RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.NonBacktracking,
+            options | RegexOptions.NonBacktracking,
 #else
-            RegexOptions.Compiled | RegexOptions.Multiline,
+            options,
 #endif
             TimeSpan.FromSeconds(RegexTimeoutSeconds));
 
