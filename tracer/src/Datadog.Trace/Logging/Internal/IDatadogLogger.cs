@@ -11,6 +11,8 @@ namespace Datadog.Trace.Logging
 {
     internal interface IDatadogLogger
     {
+        public string FileLogDirectory { get; }
+
         bool IsEnabled(LogEventLevel level);
 
         void Debug(string messageTemplate, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
