@@ -8,8 +8,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement;
 internal static class RcmProducts
 {
     public const string LiveDebugging = "LIVE_DEBUGGING";
+
     public const string Asm = "ASM";
     public const string AsmFeatures = "ASM_FEATURES";
     public const string AsmDd = "ASM_DD";
     public const string AsmData = "ASM_DATA";
+
+    public const string TracerFlareInitiated = "AGENT_CONF";
+    public const string TracerFlareRequested = "AGENT_TASK";
 }
