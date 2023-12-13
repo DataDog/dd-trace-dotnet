@@ -169,7 +169,7 @@
     <!-- Integration: nunit.framework -->
     <!-- Assembly: nunit.framework -->
     <!-- Latest package https://www.nuget.org/packages/NUnit/4.0.1 -->
-    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit" Version="4.0.1" />
 
     <!-- Integration: OpenTelemetry -->
     <!-- Assembly: OpenTelemetry -->
