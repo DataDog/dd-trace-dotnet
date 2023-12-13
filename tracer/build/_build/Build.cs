@@ -169,6 +169,7 @@ partial class Build : NukeBuild
         .DependsOn(PublishManagedTracer)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
+        .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateRootDescriptorsFile);
 
     Target BuildTracerHome => _ => _
