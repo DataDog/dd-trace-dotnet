@@ -22,13 +22,16 @@ namespace Datadog.Trace.Logging
         private readonly ILogRateLimiter _rateLimiter;
         private ILogger _logger;
 
-        public DatadogSerilogLogger(ILogger logger, ILogRateLimiter rateLimiter)
+        public DatadogSerilogLogger(ILogger logger, ILogRateLimiter rateLimiter, string? fileLogDirectory)
         {
             _logger = logger;
             _rateLimiter = rateLimiter;
+            FileLogDirectory = fileLogDirectory;
         }
 
-        public static DatadogSerilogLogger NullLogger { get; } = new(SilentLogger.Instance, new NullLogRateLimiter());
+        public static DatadogSerilogLogger NullLogger { get; } = new(SilentLogger.Instance, new NullLogRateLimiter(), null);
+
+        public string? FileLogDirectory { get; }
 
         public bool IsEnabled(LogEventLevel level) => _logger.IsEnabled(level);
 
