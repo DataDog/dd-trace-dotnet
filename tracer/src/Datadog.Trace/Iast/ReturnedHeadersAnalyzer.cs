@@ -147,37 +147,6 @@ internal static class ReturnedHeadersAnalyzer
         return ulong.TryParse(maxAge, out var maxAgeInt) && maxAgeInt > 0;
     }
 
-    private static void LaunchStrictTransportSecurity(IntegrationId integrationId, string serviceName, string strictTransportSecurityValue, string xForwardedProtoValue, string protocol)
-    {
-        if (!string.Equals(protocol, "https", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(xForwardedProtoValue, "https", StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        if (!IsValidStrictTransportSecurityValue(strictTransportSecurityValue))
-        {
-            IastModule.OnStrictTransportSecurityHeaderMissing(integrationId, serviceName);
-        }
-    }
-
-    // Strict-Transport-Security has a valid value when it starts with max-age followed by a positive number (>0),
-    // it can finish there or continue with a semicolon ; and more content.
-    private static bool IsValidStrictTransportSecurityValue(string strictTransportSecurityValue)
-    {
-        if (string.IsNullOrEmpty(strictTransportSecurityValue) || !strictTransportSecurityValue.StartsWith(MaxAgeConst, StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        var index = strictTransportSecurityValue.IndexOf(';');
-
-        var maxAge = (index >= 0 ? strictTransportSecurityValue.Substring(MaxAgeConst.Length, index - MaxAgeConst.Length) :
-            strictTransportSecurityValue.Substring(MaxAgeConst.Length));
-
-        return (ulong.TryParse(maxAge, out var maxAgeInt));
-    }
-
     private static bool IsHtmlResponse(string contentTypeValue)
     {
         if (string.IsNullOrEmpty(contentTypeValue))

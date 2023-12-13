@@ -551,6 +551,6 @@ internal static class IastModule
 
     internal static void OnHeaderInjection(IntegrationId integrationId, string headerName, string headerValue)
     {
-        return AddWebVulnerability(headerName + ":" + headerValue, integrationId, VulnerabilityTypeName.HeaderInjection, ("HEADER_INJECTION:" + headerName).GetStaticHashCode());
+        AddWebVulnerability(headerName + ":" + headerValue, integrationId, VulnerabilityTypeName.HeaderInjection, ("HEADER_INJECTION:" + headerName).GetStaticHashCode());
     }
 }
