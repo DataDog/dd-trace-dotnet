@@ -37,6 +37,7 @@
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />
+    <Reference Include="System.IO.Compression" />
   </ItemGroup>
 
   <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">

@@ -7,6 +7,8 @@
 
 using System;
 using System.IO;
+using System.IO.Compression;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace.Logging.TracerFlare;
 
@@ -47,6 +49,46 @@ internal static class DebugLogReader
             }
 
             return false;
+        }
+    }
+
+    public static async Task WriteDebugLogArchiveToStream(Stream writeTo, string logDirectory)
+    {
+        try
+        {
+            using var archive = new ZipArchive(writeTo, ZipArchiveMode.Create, true);
+
+            // Only sending .log files to avoid the risk of sending files we don't want.
+            // Also not recurrsing, in-case they have a weird log setup
+            // Grabbing all the filenames once, as we could be creating more in the background, and don't
+            // want to run into any modified enumerable issues etc
+            var filesToUpload = Directory.GetFiles(logDirectory, "*.log", SearchOption.TopDirectoryOnly);
+            if (filesToUpload.Length == 0)
+            {
+                // no files to upload
+                return;
+            }
+
+            foreach (var filePath in filesToUpload)
+            {
+                try
+                {
+                    var filename = Path.GetFileName(filePath);
+                    var entry = archive.CreateEntry(filename);
+                    using var entryStream = entry.Open();
+                    // Have to allow FileShare.ReadWrite as the logger will already have it open for writing
+                    using var file = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    await file.CopyToAsync(entryStream).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Error recording file {Filename} in tracer flare zip", filePath);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Error creating sanitized debug log stream for tracer flare");
         }
     }
 }
