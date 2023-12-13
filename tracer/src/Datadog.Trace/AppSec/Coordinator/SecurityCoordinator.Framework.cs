@@ -203,7 +203,10 @@ internal readonly partial struct SecurityCoordinator
         var formData = new Dictionary<string, object>(_context.Request.Form.Keys.Count);
         foreach (string key in _context.Request.Form.Keys)
         {
-            formData.Add(key, _context.Request.Form[key]);
+            // key could be null, but it's not a valid key in a dictionary
+            // Using [] instead of Add to avoid potential duplicate key
+            // but it does mean there's a (tiny) chance of overwriting the key
+            formData[key ?? string.Empty] = _context.Request.Form[key];
         }
 
         return formData;
