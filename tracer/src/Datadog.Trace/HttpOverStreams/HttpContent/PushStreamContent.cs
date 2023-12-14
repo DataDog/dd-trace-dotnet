@@ -62,7 +62,7 @@ internal class PushStreamContent : IHttpContent
             : base(innerStream)
         {
             Contract.Assert(serializeToStreamTask != null);
-            _serializeToStreamTask = serializeToStreamTask;
+            _serializeToStreamTask = serializeToStreamTask!;
         }
 
         [SuppressMessage(
