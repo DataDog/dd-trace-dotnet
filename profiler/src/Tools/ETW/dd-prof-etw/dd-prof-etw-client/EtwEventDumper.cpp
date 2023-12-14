@@ -177,6 +177,7 @@ void EtwEventDumper::OnEvent(
     if (BuildClrEvent(name, tid, version, id, keyword, level))
     {
         std::cout
+            << std::setw(16) << std::setfill('0') << timestamp
             << " (0x" << std::setw(8) << std::setfill(' ') << std::hex << keyword << std::dec << ", " << (uint16_t)level << ")"
             << " " << std::setw(4) << std::setfill(' ') << id << " | "
             << std::setw(6) << std::setfill(' ') << tid << " | " << name

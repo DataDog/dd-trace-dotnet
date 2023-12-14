@@ -40,6 +40,34 @@ EtwEventsManager::EtwEventsManager(
     _logger = std::make_unique<ProfilerLogger>();
 }
 
+
+uint64_t TimestampToEpochNS(uint64_t eventTimestamp)
+{
+    // the event timestamp is in 100ns units since 1601-01-01 in UTC
+    FILETIME ft;
+    ft.dwLowDateTime = eventTimestamp & 0xFFFFFFFF;
+    ft.dwHighDateTime = eventTimestamp >> 32;
+
+    // convert into system time
+    SYSTEMTIME st;
+    ::FileTimeToSystemTime(&ft, &st);
+
+    // take GMT shift into account
+    ::SystemTimeToTzSpecificLocalTime(nullptr, &st, &st);
+
+    // convert in epoch time
+    tm t = {0};
+    t.tm_year = st.wYear - 1900;
+    t.tm_mon = st.wMonth - 1;
+    t.tm_mday = st.wDay;
+    t.tm_hour = st.wHour;
+    t.tm_min = st.wMinute;
+    t.tm_sec = st.wSecond;
+    time_t timeSinceEpoch = mktime(&t);
+
+    return timeSinceEpoch * 1000'000'000;
+}
+
 void EtwEventsManager::OnEvent(
     uint64_t timestamp,
     uint32_t tid,
@@ -84,7 +112,7 @@ void EtwEventsManager::OnEvent(
             }
 
             auto pThreadInfo = GetOrCreate(tid);
-            pThreadInfo->ContentionStartTimestamp = OpSysTools::ConvertTicks(timestamp);
+            pThreadInfo->ContentionStartTimestamp = TimestampToEpochNS(timestamp);
             pThreadInfo->LastEventId = EventId::ContentionStart;
         }
         else if (id == EVENT_CONTENTION_STOP)
@@ -100,7 +128,7 @@ void EtwEventsManager::OnEvent(
                 pThreadInfo->ClearLastEventId();
                 if (pThreadInfo->ContentionStartTimestamp != 0)
                 {
-                    auto ticks = OpSysTools::ConvertTicks(timestamp);
+                    auto ticks = TimestampToEpochNS(timestamp);
                     auto duration = ticks - pThreadInfo->ContentionStartTimestamp;
                     pThreadInfo->ContentionStartTimestamp = 0;
 
