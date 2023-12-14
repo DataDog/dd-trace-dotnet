@@ -12,12 +12,14 @@
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
       http.url: http://localhost:00000/Health/params/appscan_fingerprint?&q=help,
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       span.kind: server,
       _dd.origin: appsec
     }
@@ -74,12 +76,14 @@
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
       http.url: http://localhost:00000/Health/params/appscan_fingerprint?&q=help,
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       span.kind: server,
       _dd.origin: appsec
     }
@@ -136,12 +140,14 @@
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
       http.url: http://localhost:00000/Health/params/appscan_fingerprint?&q=help,
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       span.kind: server,
       _dd.origin: appsec
     }
@@ -198,12 +204,14 @@
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
       http.url: http://localhost:00000/Health/params/appscan_fingerprint?&q=help,
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       span.kind: server,
       _dd.origin: appsec
     }
@@ -260,12 +268,14 @@
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
       http.url: http://localhost:00000/Health/params/appscan_fingerprint?&q=help,
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       span.kind: server,
       _dd.origin: appsec
     }
