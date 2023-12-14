@@ -196,7 +196,7 @@ internal class PushStreamContent : HttpContent
 #if !NETSTANDARD1_3 // BeginX and EndX not supported on Streams in netstandard1.3
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state)
         {
-            return _innerStream.BeginRead(buffer, offset, count, callback, state);
+            return _innerStream.BeginRead(buffer, offset, count, callback!, state);
         }
 
         public override int EndRead(IAsyncResult asyncResult)
