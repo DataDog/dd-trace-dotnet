@@ -51,6 +51,7 @@ namespace Honeypot
             NugetPackages.Add("System.Net.Http.WinHttpHandler", new [] { "System.Net.Http.WinHttpHandler" });
             NugetPackages.Add("Microsoft.Extensions.Logging.Abstractions", new [] { "Microsoft.Extensions.Logging.Abstractions" });
             NugetPackages.Add("Microsoft.Extensions.Logging", new [] { "Microsoft.Extensions.Logging" });
+            NugetPackages.Add("Microsoft.Extensions.Telemetry", new [] { "Microsoft.Extensions.Telemetry" });
             NugetPackages.Add("Confluent.Kafka", new [] { "Confluent.Kafka" });
             NugetPackages.Add("MongoDB.Driver.Core", new [] { "MongoDB.Driver.Core", "MongoDB.Driver" });
             NugetPackages.Add("Microsoft.VisualStudio.TestPlatform.TestFramework", new [] { "Microsoft.VisualStudio.TestPlatform" });

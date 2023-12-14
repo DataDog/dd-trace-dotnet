@@ -487,6 +487,20 @@
     }]
   },
   {
+    "IntegrationName": "ILogger",
+    "SampleProjectName": "LogsInjection.ILogger.ExtendedLogger",
+    "NugetPackageSearchName": "Microsoft.Extensions.Telemetry",
+    "MinVersion": "8.0.0",
+    "MaxVersionExclusive": "9.0.0",
+    "SpecificVersions": [
+      "8.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "8.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
+    }]
+  },
+  {
     "IntegrationName": "Aerospike",
     "SampleProjectName": "Samples.Aerospike",
     "NugetPackageSearchName": "Aerospike.Client",
