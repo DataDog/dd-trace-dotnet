@@ -10,6 +10,10 @@
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <!-- Stop NuGet from complaining about vulnerable packages -->
     <NuGetAudit>false</NuGetAudit>
+
+    <!-- WebClient is obsolete -->
+    <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
+    <NoWarn>SYSLIB0014;NU1902;NU1903</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
