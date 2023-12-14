@@ -27,6 +27,7 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using HttpMultipartParser;
 using MessagePack; // use nuget MessagePack to deserialize
 using Xunit.Abstractions;
 
@@ -78,6 +79,8 @@ namespace Datadog.Trace.TestHelpers
         public IImmutableList<MockDataStreamsPayload> DataStreams { get; private set; } = ImmutableList<MockDataStreamsPayload>.Empty;
 
         public IImmutableList<NameValueCollection> TraceRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+
+        public IImmutableList<(Dictionary<string, string> Headers, MultipartFormDataParser Form)> TracerFlareRequests { get; private set; } = ImmutableList<(Dictionary<string, string> Headers, MultipartFormDataParser Form)>.Empty;
 
         public IImmutableList<string> Snapshots { get; private set; } = ImmutableList<string>.Empty;
 
@@ -513,6 +516,11 @@ namespace Datadog.Trace.TestHelpers
                 HandleEvpProxyPayload(request);
                 response = "{}";
             }
+            else if (request.PathAndQuery.StartsWith("/tracer_flare/v1"))
+            {
+                HandleTracerFlarePayload(request);
+                response = "{}";
+            }
             else
             {
                 HandlePotentialTraces(request);
@@ -775,6 +783,38 @@ namespace Datadog.Trace.TestHelpers
                     }
 
                     EventPlatformProxyPayloadReceived?.Invoke(this, new EventArgs<EvpProxyPayload>(new EvpProxyPayload(request.PathAndQuery, headerCollection, json)));
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+        }
+
+        private void HandleTracerFlarePayload(MockHttpParser.MockHttpRequest request)
+        {
+            // we don't send content length header in the request, so just deserialize into bytes
+            if (ShouldDeserializeTraces)
+            {
+                try
+                {
+                    var formData = MultipartFormDataParser.Parse(request.Body.Stream);
+                    var headerCollection = new Dictionary<string, string>();
+                    foreach (var header in request.Headers)
+                    {
+                        headerCollection.Add(header.Name, header.Value);
+                    }
+
+                    TracerFlareRequests = TracerFlareRequests.Add((headerCollection, formData));
                 }
                 catch (Exception ex)
                 {
