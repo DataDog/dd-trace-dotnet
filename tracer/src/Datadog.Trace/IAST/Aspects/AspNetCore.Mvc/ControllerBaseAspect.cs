@@ -6,6 +6,8 @@
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 
+#nullable enable
+
 namespace Datadog.Trace.Iast.Aspects.AspNetCore.Mvc;
 
 /// <summary> ControllerBaseAspect class aspect </summary>
@@ -27,7 +29,7 @@ public class ControllerBaseAspect
     [AspectMethodInsertBefore("Microsoft.AspNetCore.Mvc.ControllerBase::LocalRedirectPermanent(System.String)")]
     [AspectMethodInsertBefore("Microsoft.AspNetCore.Mvc.ControllerBase::LocalRedirectPreserveMethod(System.String)")]
     [AspectMethodInsertBefore("Microsoft.AspNetCore.Mvc.ControllerBase::LocalRedirectPermanentPreserveMethod(System.String)")]
-    public static string Redirect(string url)
+    public static string? Redirect(string? url)
     {
         return IastModule.OnUnvalidatedRedirect(url);
     }

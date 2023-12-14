@@ -6,6 +6,8 @@
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 
+#nullable enable
+
 namespace Datadog.Trace.Iast.Aspects.System.Web;
 
 /// <summary> HttpControllerAspect class aspect </summary>
@@ -21,7 +23,7 @@ public class HttpControllerAspect
     /// <returns> The target url </returns>
     [AspectMethodInsertBefore("System.Web.Mvc.Controller::Redirect(System.String)")]
     [AspectMethodInsertBefore("System.Web.Mvc.Controller::RedirectPermanent(System.String)")]
-    public static string Redirect(string url)
+    public static string? Redirect(string? url)
     {
         return IastModule.OnUnvalidatedRedirect(url);
     }
