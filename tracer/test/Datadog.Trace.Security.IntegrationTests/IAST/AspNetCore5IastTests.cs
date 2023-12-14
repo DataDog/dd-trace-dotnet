@@ -603,20 +603,21 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [Trait("Category", "EndToEnd")]
     [SkippableTheory]
     [Trait("RunOnWindows", "True")]
-    [InlineData(new string[] { "value", "vulnerableValue" }, null)]
-    [InlineData(new string[] { "name", "notvulnerable" }, null)]
-    [InlineData(new string[] { "name", "notvulnerableName", "value", "notVulnerableValue" }, null)]
-    [InlineData(new string[] { "value", "secret_redacted" }, null)]
-    [InlineData(new string[] { "name", "location", "value", "URVulnerableOnly" }, null)]
-    [InlineData(new string[] { "name", "Sec-WebSocket-Accept", "value", "notVulnerable" }, null)]
-    [InlineData(new string[] { "name", "access-control-allow-origin", "value", "Vulnerable" }, null)]
-    [InlineData(new string[] { "name", "access-control-allow-origin", "origin", "NotVulnerable" }, null, true)]
-    [InlineData(new string[] { "name", "set-cookie", "value", "Vulnerable" }, null)]
-    [InlineData(null, new string[] { "name", "set-cookie", "value", "NotVulnerable" })]
-    public async Task TestIastHeaderInjectionRequest(string[] headers, string[] cookies, bool useValueFromOriginHeader = false)
+    [InlineData("Vuln.SensitiveName", new string[] { "name", "private_token" }, new string[] { "value", "VulnerableRedacted" })]
+    [InlineData("Vuln.NoSensitive", new string[] { "value", "vulnerable" }, null)]
+    [InlineData("Vuln.SensitiveValue", new string[] { "value", "secret_redacted" }, new string[] { "value", "moreText" })]
+    [InlineData("NoVuln.Propagation", new string[] { "propagation", "noVulnValue" }, null)]
+    [InlineData("VulnPropagation.NoSensitive", new string[] { "name", "Name", "value", "value" }, new string[] { "value", "moreText" })]
+    [InlineData("NoVuln.ExcludedHeader", new string[] { "name", "Sec-WebSocket-Accept" }, new string[] { "value", "moreText" })]
+    [InlineData("Vulnerable.Origin", new string[] { "name", "access-control-allow-origin", "value", "Vulnerable" }, null)]
+    [InlineData("NotVulnerable.Origin", new string[] { "name", "access-control-allow-origin", "origin", "NotVulnerable" }, null, true)] // Not vulnerable
+    [InlineData("Vulnerable.Cookie", new string[] { "name", "set-cookie", "value", "Vulnerable" }, null)]
+    [InlineData("NotVulnerable.Cookie", null, new string[] { "name", "set-cookie", "value", "NotVulnerable" })]
+    public async Task TestIastHeaderInjectionRequest(string testCase, string[] headers, string[] cookies, bool useValueFromOriginHeader = false)
     {
         var filename = "Iast.HeaderInjection.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        filename += "." + testCase;
         var url = $"/Iast/HeaderInjection?useValueFromOriginHeader={useValueFromOriginHeader}";
         IncludeAllHttpSpans = true;
 

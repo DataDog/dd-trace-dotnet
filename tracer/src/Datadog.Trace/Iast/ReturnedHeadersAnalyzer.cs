@@ -68,15 +68,22 @@ internal static class ReturnedHeadersAnalyzer
                     continue;
                 }
 
+                bool isHeaderInjectionException = false;
                 foreach (var excludeType in headerInjectionExceptions)
                 {
                     if (excludeType.Equals((string)headerKey, StringComparison.OrdinalIgnoreCase))
                     {
+                        isHeaderInjectionException = true;
                         continue;
                     }
                 }
 
-                var headerValue = responseHeaders[headerKey];
+                if (isHeaderInjectionException)
+                {
+                    continue;
+                }
+
+                string headerValue = responseHeaders[headerKey];
 
                 if (string.IsNullOrWhiteSpace(headerValue))
                 {
@@ -140,7 +147,8 @@ internal static class ReturnedHeadersAnalyzer
             taintedValue.Ranges.Length == 1 &&
             taintedValue.Ranges[0].Source is not null &&
             taintedValue.Ranges[0].Source!.OriginByte == (byte)SourceTypeName.RequestHeaderValue &&
-            taintedValue.Ranges[0].Source!.Name == headerName);
+            taintedValue.Ranges[0].Source!.Name is not null &&
+            taintedValue.Ranges[0].Source!.Name!.Equals(headerName, StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool ComesFromOriginHeader(TaintedObject taintedValue)
@@ -226,8 +234,6 @@ internal static class ReturnedHeadersAnalyzer
         {
             IastModule.OnXContentTypeOptionsHeaderMissing(integrationId, contentOptionValue, serviceName);
         }
-
-        LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
     }
 
     private static void LaunchStrictTransportSecurity(IntegrationId integrationId, string serviceName, string strictTransportSecurityValue, string xForwardedProtoValue, string protocol)
