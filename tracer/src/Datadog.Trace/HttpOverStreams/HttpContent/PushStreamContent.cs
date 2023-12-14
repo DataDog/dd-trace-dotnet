@@ -17,7 +17,7 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent;
 /// <summary>
 /// Provides an <see cref="HttpContent"/> implementation that exposes an output <see cref="Stream"/>
 /// which can be written to directly. The ability to push data to the output stream differs from the
-/// <see cref="System.Net.Http.StreamContent"/> where data is pulled and not pushed.
+/// StreamContent where data is pulled and not pushed.
 /// </summary>
 internal class PushStreamContent : IHttpContent
 {
