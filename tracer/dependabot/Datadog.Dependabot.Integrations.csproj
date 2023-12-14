@@ -18,8 +18,8 @@
 
     <!-- Integration: AerospikeClient -->
     <!-- Assembly: AerospikeClient -->
-    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/6.2.0 -->
-    <PackageReference Include="Aerospike.Client" Version="6.2.0" />
+    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/7.0.0 -->
+    <PackageReference Include="Aerospike.Client" Version="7.0.0" />
 
     <!-- Integration: System.Web.Mvc -->
     <!-- Assembly: System.Web.Mvc -->
