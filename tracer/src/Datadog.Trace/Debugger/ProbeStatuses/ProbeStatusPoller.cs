@@ -20,7 +20,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
         private readonly ProbeStatusSink _probeStatusSink;
         private readonly TimeSpan _shortPeriod = TimeSpan.FromSeconds(10);
-        private readonly TimeSpan _longPeriod = TimeSpan.FromSeconds(60);
+        private readonly TimeSpan _longPeriod = TimeSpan.FromMinutes(60);
         private readonly HashSet<FetchProbeStatus> _probes = new();
         private readonly object _locker = new object();
         private Timer _pollerTimer;
@@ -132,7 +132,8 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
             foreach (var probeStatus in probeStatuses)
             {
-                _probeStatusSink.AddProbeStatus(probeStatus.ProbeId, probeStatus.Status, errorMessage: probeStatus.ErrorMessage);
+                var probeVersion = _probes.SingleOrDefault(p => p.ProbeId == probeStatus.ProbeId)?.ProbeVersion ?? 0;
+                _probeStatusSink.AddProbeStatus(probeStatus.ProbeId, probeStatus.Status, probeVersion, errorMessage: probeStatus.ErrorMessage);
             }
         }
 

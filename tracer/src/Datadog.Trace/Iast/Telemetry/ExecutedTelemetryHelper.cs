@@ -128,19 +128,22 @@ internal class ExecutedTelemetryHelper
     private string GetExecutedSinkTag(IastInstrumentedSinks vulnerability)
         => vulnerability switch
         {
-            IastInstrumentedSinks.LdapInjection => BasicExecutedTag + SinkExecutedTag + "ldap_injection",
+            IastInstrumentedSinks.WeakCipher => BasicExecutedTag + SinkExecutedTag + "weak_cipher",
+            IastInstrumentedSinks.WeakHash => BasicExecutedTag + SinkExecutedTag + "weak_hash",
             IastInstrumentedSinks.SqlInjection => BasicExecutedTag + SinkExecutedTag + "sql_injection",
             IastInstrumentedSinks.CommandInjection => BasicExecutedTag + SinkExecutedTag + "command_injection",
+            IastInstrumentedSinks.PathTraversal => BasicExecutedTag + SinkExecutedTag + "path_traversal",
+            IastInstrumentedSinks.LdapInjection => BasicExecutedTag + SinkExecutedTag + "ldap_injection",
+            IastInstrumentedSinks.Ssrf => BasicExecutedTag + SinkExecutedTag + "ssrf",
+            IastInstrumentedSinks.UnvalidatedRedirect => BasicExecutedTag + SinkExecutedTag + "unvalidated_redirect",
             IastInstrumentedSinks.InsecureCookie => BasicExecutedTag + SinkExecutedTag + "insecure_cookie",
             IastInstrumentedSinks.NoHttpOnlyCookie=> BasicExecutedTag + SinkExecutedTag + "no_http_only_cookie",
             IastInstrumentedSinks.NoSameSiteCookie => BasicExecutedTag + SinkExecutedTag + "no_samesite_cookie",
-            IastInstrumentedSinks.WeakCipher => BasicExecutedTag + SinkExecutedTag + "weak_cipher",
-            IastInstrumentedSinks.WeakHash => BasicExecutedTag + SinkExecutedTag + "weak_hash",
-            IastInstrumentedSinks.PathTraversal => BasicExecutedTag + SinkExecutedTag + "path_traversal",
-            IastInstrumentedSinks.Ssrf => BasicExecutedTag + SinkExecutedTag + "ssrf",
-            IastInstrumentedSinks.UnvalidatedRedirect => BasicExecutedTag + SinkExecutedTag + "unvalidated_redirect",
             IastInstrumentedSinks.WeakRandomness => BasicExecutedTag + SinkExecutedTag + "weak_randomness",
             IastInstrumentedSinks.HardcodedSecret => BasicExecutedTag + SinkExecutedTag + "hardcoded_secret",
+            IastInstrumentedSinks.XContentTypeHeaderMissing => BasicExecutedTag + SinkExecutedTag + "xcontenttype_header_missing",
+            IastInstrumentedSinks.TrustBoundaryViolation => BasicExecutedTag + SinkExecutedTag + "trust_boundary_violation",
+            IastInstrumentedSinks.HstsHeaderMissing => BasicExecutedTag + SinkExecutedTag + "hsts_header_missing",
             IastInstrumentedSinks.None => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
             _ => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
         };

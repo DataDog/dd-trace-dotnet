@@ -3,6 +3,7 @@
 
 #pragma once
 #include <memory>
+#include <string>
 
 // forward declarations
 class IProfile;

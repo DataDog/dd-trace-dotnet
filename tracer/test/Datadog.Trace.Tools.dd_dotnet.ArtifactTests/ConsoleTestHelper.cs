@@ -89,19 +89,30 @@ public abstract class ConsoleTestHelper : ToolTestHelper
         var completed = await Task.WhenAny(
                             helper.Task,
                             startedTask.Task,
-                            Task.Delay(TimeSpan.FromSeconds(10)));
+                            Task.Delay(TimeSpan.FromSeconds(30)));
 
         if (completed == startedTask.Task)
         {
             return helper;
         }
 
-        helper.Dispose();
-
         if (completed == helper.Task)
         {
+            helper.Dispose();
             throw new Exception("The target process unexpectedly exited");
         }
+
+        // Try to capture a memory dump before giving up
+        if (MemoryDumpHelper.CaptureMemoryDump(helper.Process, new Progress<string>(Output.WriteLine)))
+        {
+            Output.WriteLine("Successfully captured a memory dump");
+        }
+        else
+        {
+            Output.WriteLine("Failed to capture a memory dump");
+        }
+
+        helper.Dispose();
 
         throw new TimeoutException("Timeout when waiting for the target process to start");
     }

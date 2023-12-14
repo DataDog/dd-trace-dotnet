@@ -1,0 +1,125 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet.request,
+    Resource: GET /iast/trustboundaryviolation,
+    Service: sample,
+    Type: web,
+    Tags: {
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
+      http.status_code: 200,
+      http.url: http://localhost:00000/Iast/TrustBoundaryViolation?name=name&value=value,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.iast.enabled: 1,
+      _dd.iast.json:
+{
+  "vulnerabilities": [
+    {
+      "type": "TRUST_BOUNDARY_VIOLATION",
+      "evidence": {
+        "valueParts": [
+          {
+            "value": "name",
+            "source": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "TRUST_BOUNDARY_VIOLATION",
+      "evidence": {
+        "valueParts": [
+          {
+            "value": "value",
+            "source": 1
+          }
+        ]
+      }
+    },
+    {
+      "type": "TRUST_BOUNDARY_VIOLATION",
+      "evidence": {
+        "valueParts": [
+          {
+            "value": "name",
+            "source": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "TRUST_BOUNDARY_VIOLATION",
+      "evidence": {
+        "valueParts": [
+          {
+            "value": "value",
+            "source": 1
+          }
+        ]
+      }
+    },
+    {
+      "type": "NO_SAMESITE_COOKIE",
+      "evidence": {
+        "value": "ASP.NET_SessionId"
+      }
+    },
+    {
+      "type": "INSECURE_COOKIE",
+      "evidence": {
+        "value": "ASP.NET_SessionId"
+      }
+    }
+  ],
+  "sources": [
+    {
+      "origin": "http.request.parameter",
+      "name": "name",
+      "value": "name"
+    },
+    {
+      "origin": "http.request.parameter",
+      "name": "value",
+      "value": "value"
+    }
+  ]
+}
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet-mvc.request,
+    Resource: GET /iast/trustboundaryviolation,
+    Service: sample,
+    Type: web,
+    ParentId: Id_2,
+    Tags: {
+      aspnet.action: trustboundaryviolation,
+      aspnet.controller: iast,
+      aspnet.route: {controller}/{action}/{id},
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Iast/TrustBoundaryViolation?name=name&value=value,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      span.kind: server
+    }
+  }
+]

@@ -213,6 +213,10 @@ internal static class MetricTags
         [Description("integration_name:azureservicebus")]AzureServiceBus,
         [Description("integration_name:systemrandom")] SystemRandom,
         [Description("integration_name:awsdynamodb")]AwsDynamoDb,
+        [Description("integration_name:ibmmq")]IbmMq,
+        [Description("integration_name:remoting")]Remoting,
+        [Description("integration_name:trustboundaryviolation")] TrustBoundaryViolation,
+        [Description("integration_name:unvalidatedredirect")] UnvalidatedRedirect,
     }
 
     public enum InstrumentationError
@@ -269,6 +273,9 @@ internal static class MetricTags
         [Description("vulnerability_type:no_samesite_cookie")] NoSameSiteCookie = 11,
         [Description("vulnerability_type:weak_randomness")] WeakRandomness = 12,
         [Description("vulnerability_type:hardcoded_secret")] HardcodedSecret = 13,
+        [Description("vulnerability_type:xcontenttype_header_missing")] XContentTypeHeaderMissing = 14,
+        [Description("vulnerability_type:trust_boundary_violation")] TrustBoundaryViolation = 15,
+        [Description("vulnerability_type:hsts_header_missing")] HstsHeaderMissing = 16,
     }
 
     public enum CIVisibilityTestFramework

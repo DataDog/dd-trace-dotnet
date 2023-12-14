@@ -385,7 +385,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -404,7 +403,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_2,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -423,7 +421,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_3,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -442,7 +439,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_4,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -461,7 +457,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_5,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -480,7 +475,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_6,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -499,7 +493,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_7,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -518,7 +511,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_8,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -537,7 +529,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_9,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -610,7 +601,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_13,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -629,7 +619,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_14,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -666,7 +655,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_16,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -685,7 +673,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_17,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -704,7 +691,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_18,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -723,7 +709,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_19,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -742,7 +727,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_20,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -761,7 +745,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_21,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -780,7 +763,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_22,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -799,7 +781,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_23,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -818,7 +799,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_24,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -837,7 +817,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_25,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -856,7 +835,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_26,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -929,7 +907,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_30,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -948,7 +925,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_31,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -967,7 +943,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_32,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -986,7 +961,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_33,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1005,7 +979,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_34,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1024,7 +997,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_35,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1043,7 +1015,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_36,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1062,7 +1033,6 @@
     Tags: {
       language: dotnet,
       runtime-id: Guid_37,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,

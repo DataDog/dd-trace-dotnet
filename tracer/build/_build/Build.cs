@@ -57,7 +57,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.42.0";
+    readonly string Version = "2.44.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -169,6 +169,7 @@ partial class Build : NukeBuild
         .DependsOn(PublishManagedTracer)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
+        .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateRootDescriptorsFile);
 
     Target BuildTracerHome => _ => _
@@ -463,7 +464,7 @@ partial class Build : NukeBuild
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
                 // .EnableNoDependencies()
-                .SetFramework(TargetFramework.NETCOREAPP3_1)
+                .SetFramework(TargetFramework.NET7_0)
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")

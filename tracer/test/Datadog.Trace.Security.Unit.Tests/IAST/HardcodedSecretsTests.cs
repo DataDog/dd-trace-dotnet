@@ -3,15 +3,22 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Iast;
+using System;
 using Datadog.Trace.Iast.Analyzers;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests.IAST;
 
-public class HardcodedSecretsTests
+public class HardcodedSecretsTests : IClassFixture<HardcodedSecretsTests.HardcodedSecretsFixture>
 {
+    private readonly HardcodedSecretsAnalyzer _analyzer;
+
+    public HardcodedSecretsTests(HardcodedSecretsFixture fixture)
+    {
+        _analyzer = fixture.Analyzer;
+    }
+
     [Theory]
     [InlineData("private-key", "-----BEGIN OPENSSH PRIVATE KEY-----\r\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\r\nQyNTUxOQAAACA8YWKYztuuvxUIMomc3zv0OdXCT57Cc2cRYu3TMbX9XAAAAJDiKO3C4ijt\r\nwgAAAAtzc2gtZWQyNTUxOQAAACA8YWKYztuuvxUIMomc3zv0OdXCT57Cc2cRYu3TMbX9XA\r\nAAAECzmj8DGxg5YHtBK4AmBttMXDQHsPAaCyYHQjJ4YujRBTxhYpjO266/FQgyiZzfO/Q5\r\n1cJPnsJzZxFi7dMxtf1cAAAADHJvb3RAZGV2aG9zdAE=\r\n-----END OPENSSH PRIVATE KEY-----\r\n")]
     [InlineData("aws-access-token", @"A3T43DROGX[[DD_SECRET]]R2PGF4BI5T")]
@@ -104,6 +111,14 @@ public class HardcodedSecretsTests
     public void GivenAHardcodedSecretString_WhenAnalysed_ResultIsEspected(string rule, string secret)
     {
         var realSecret = secret.Replace("[[DD_SECRET]]", string.Empty);
-        Assert.Equal(rule, HardcodedSecretsAnalyzer.CheckSecret(realSecret));
+        _analyzer.CheckSecret(realSecret).Should().Be(rule);
+    }
+
+    public class HardcodedSecretsFixture : IDisposable
+    {
+        // We use a stupidly-big timeout here to avoid flake
+        internal HardcodedSecretsAnalyzer Analyzer { get; } = new(TimeSpan.FromMinutes(5));
+
+        public void Dispose() => Analyzer.Dispose();
     }
 }

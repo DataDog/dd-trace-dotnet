@@ -12,6 +12,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Helpers;
 
 namespace Datadog.Trace.Debugger.Snapshots
@@ -71,6 +72,9 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             typeof(SecureString),
         };
+
+        private static readonly Trie TypeTrie = new();
+        private static readonly HashSet<string> RedactedTypes = new();
 
         private static HashSet<string> _redactKeywords = new()
         {
@@ -246,7 +250,27 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return false;
             }
 
-            return DeniedTypes.Any(deniedType => deniedType == type || (type.IsGenericType && deniedType == type.GetGenericTypeDefinition()));
+            var shouldRedact = DeniedTypes.Any(deniedType => deniedType == type || (type.IsGenericType && deniedType == type.GetGenericTypeDefinition()));
+
+            if (shouldRedact)
+            {
+                return true;
+            }
+
+            var typeFullName = type.FullName;
+
+            if (string.IsNullOrEmpty(typeFullName))
+            {
+                return false;
+            }
+
+            if (TypeTrie.HasMatchingPrefix(typeFullName))
+            {
+                var stringStartsWith = TypeTrie.GetStringStartingWith(typeFullName);
+                return string.IsNullOrEmpty(stringStartsWith) || stringStartsWith.Length == typeFullName.Length;
+            }
+
+            return RedactedTypes.Contains(typeFullName);
         }
 
         public static bool IsRedactedKeyword(string name)
@@ -262,17 +286,20 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         public static bool ShouldRedact(string name, Type type, out RedactionReason redactionReason)
         {
-            var redactedByIdentifier = IsRedactedKeyword(name);
-            var redactedByType = IsRedactedType(type);
-            var shouldRedact = redactedByIdentifier | redactedByType;
-
-            redactionReason = RedactionReason.None;
-            if (shouldRedact)
+            if (IsRedactedKeyword(name))
             {
-                redactionReason = redactedByIdentifier ? RedactionReason.Identifier : RedactionReason.Type;
+                redactionReason = RedactionReason.Identifier;
+                return true;
             }
 
-            return shouldRedact;
+            if (IsRedactedType(type))
+            {
+                redactionReason = RedactionReason.Type;
+                return true;
+            }
+
+            redactionReason = RedactionReason.None;
+            return false;
         }
 
         private static string Normalize(string name)
@@ -311,6 +338,19 @@ namespace Datadog.Trace.Debugger.Snapshots
             foreach (var identifier in settings.RedactedIdentifiers)
             {
                 _redactKeywords.Add(Normalize(identifier.Trim()));
+            }
+
+            foreach (var type in settings.RedactedTypes)
+            {
+                if (type.EndsWith("*"))
+                {
+                    var newTypeName = type.Substring(0, type.Length - 1);
+                    TypeTrie.Insert(newTypeName);
+                }
+                else
+                {
+                    RedactedTypes.Add(type);
+                }
             }
         }
     }

@@ -51,7 +51,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(StringBuilder), "Replace", null, true)]
     [InlineData(typeof(StringBuilder), "Remove", null, true)]
     [InlineData(typeof(StringBuilder), "CopyTo", null, true)]
-    [InlineData(typeof(StringBuilder), "AppendFormat", null, true)]
+    [InlineData(typeof(StringBuilder), "AppendFormat", new string[] { "System.StringBuilder::AppendFormat(System.IFormatProvider,System.Text.CompositeFormat,System.Object[])" }, true)]
     [InlineData(typeof(string), "Join")]
     [InlineData(typeof(string), "Copy")]
     [InlineData(typeof(string), "ToUpper")]
@@ -65,7 +65,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(string), "Trim")]
     [InlineData(typeof(string), "Substring")]
     [InlineData(typeof(string), "TrimEnd")]
-    [InlineData(typeof(string), "Format")]
+    [InlineData(typeof(string), "Format", new string[] { "System.String Format(System.IFormatProvider, System.Text.CompositeFormat, System.Object[])" })]
     [InlineData(typeof(string), "Split")]
     [InlineData(typeof(string), "Replace", new string[] { "System.String::Replace(System.String,System.String,System.StringComparison)", "System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)" })]
     [InlineData(typeof(string), "Concat", new string[] { "System.String Concat(System.Object)" })]
@@ -88,14 +88,6 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestMethodsAspectCover(Type typeToCheck, string methodToCheck, string[] overloadsToExclude = null, bool excludeParameterlessMethods = false)
     {
-#if NET8_0
-        if ((typeToCheck == typeof(StringBuilder) && methodToCheck == "AppendFormat")
-            || (typeToCheck == typeof(string) && methodToCheck == "Format"))
-        {
-            throw new SkipException("FIXME: Failing in .NET 8 only currently due to new overload");
-        }
-
-#endif
         TestMethodOverloads(typeToCheck, methodToCheck, overloadsToExclude?.ToList(), excludeParameterlessMethods);
     }
 

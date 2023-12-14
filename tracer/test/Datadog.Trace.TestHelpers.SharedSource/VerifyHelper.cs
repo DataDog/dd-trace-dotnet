@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using VerifyTests;
 using VerifyXunit;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.TestHelpers
 {
     public static class VerifyHelper
     {
+        internal static readonly RegexOptions RegOptions = RegexOptions.IgnoreCase | RegexOptions.Compiled;
+
         internal static readonly IEnumerable<(Regex RegexPattern, string Replacement)> SpanScrubbers = new List<(Regex RegexPattern, string Replacement)>
         {
             (new(@"localhost\:\d+", RegOptions), "localhost:00000"),
@@ -30,8 +33,6 @@ namespace Datadog.Trace.TestHelpers
             (new(@"git.commit.sha: [0-9a-f]{40}", RegOptions), "git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb"),
             (new(@"_dd\.p\.tid: [0-9a-f]{16}", RegOptions), "_dd.p.tid: 1234567890abcdef"),
         };
-
-        private static readonly RegexOptions RegOptions = RegexOptions.IgnoreCase | RegexOptions.Compiled;
 
         /// <summary>
         /// With <see cref="Verify"/>, parameters are used as part of the filename.
@@ -74,7 +75,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 _.IgnoreMember<MockSpan>(s => s.Duration);
                 _.IgnoreMember<MockSpan>(s => s.Start);
-                _.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, ScrubStackTraceForErrors);
+                _.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, ScrubTags);
             });
 
             foreach (var (regexPattern, replacement) in scrubbers ?? SpanScrubbers)
@@ -83,6 +84,7 @@ namespace Datadog.Trace.TestHelpers
             }
 
             settings.ScrubInlineGuids();
+            settings.ScrubEmptyLines();
             return settings;
         }
 
@@ -94,7 +96,7 @@ namespace Datadog.Trace.TestHelpers
             // Ensure a static ordering for the spans
             var orderedSpans = orderSpans?.Invoke(spans) ??
                                spans
-                                  .OrderBy(x => GetRootSpanName(x, spans))
+                                  .OrderBy(x => GetRootSpanResourceName(x, spans))
                                   .ThenBy(x => GetSpanDepth(x, spans))
                                   .ThenBy(x => x.Start)
                                   .ThenBy(x => x.Duration);
@@ -102,7 +104,7 @@ namespace Datadog.Trace.TestHelpers
             return Verifier.Verify(orderedSpans, settings);
         }
 
-        public static string GetRootSpanName(MockSpan span, IReadOnlyCollection<MockSpan> allSpans)
+        public static string GetRootSpanResourceName(MockSpan span, IReadOnlyCollection<MockSpan> allSpans)
         {
             while (span.ParentId is not null)
             {
@@ -143,18 +145,26 @@ namespace Datadog.Trace.TestHelpers
             settings.AddScrubber(builder => ReplaceRegex(builder, regex, replacement));
         }
 
+        public static void AddRegexScrubber(this VerifySettings settings, (Regex RegexPattern, string Replacement) scrubber)
+        {
+            settings.AddScrubber(builder => ReplaceRegex(builder, scrubber.RegexPattern, scrubber.Replacement));
+        }
+
         public static void AddSimpleScrubber(this VerifySettings settings, string oldValue, string newValue)
         {
             settings.AddScrubber(builder => ReplaceSimple(builder, oldValue, newValue));
         }
 
-        public static Dictionary<string, string> ScrubStackTraceForErrors(
-            MockSpan span, Dictionary<string, string> tags)
+        public static Dictionary<string, string> ScrubTags(MockSpan span, Dictionary<string, string> tags)
         {
             return tags
+                  // remove propagated tags because their positions in the snapshots are not stable
+                  // with our span ordering. correct position (first span in every trace chunk) is covered by other tests.
+                  .Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
                   .Select(
                        kvp => kvp.Key switch
                        {
+                           // scrub stack trace for errors
                            Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, ScrubStackTrace(kvp.Value)),
                            _ => kvp
                        })

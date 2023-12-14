@@ -14,6 +14,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.DTOs;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -224,6 +225,7 @@ namespace Datadog.Trace.TestHelpers
                     { TelemetryRequestTypes.AppProductChanged, CreateSerializer<AppProductChangePayload>() },
                     { TelemetryRequestTypes.GenerateMetrics, CreateSerializer<GenerateMetricsPayload>() },
                     { TelemetryRequestTypes.Distributions, CreateSerializer<DistributionsPayload>() },
+                    { TelemetryRequestTypes.RedactedErrorLogs, CreateSerializer<LogsPayload>() },
                     { TelemetryRequestTypes.AppExtendedHeartbeat, CreateSerializer<AppExtendedHeartbeatPayload>() },
                     { TelemetryRequestTypes.AppClosing, CreateNullPayloadSerializer() },
                     { TelemetryRequestTypes.AppHeartbeat, CreateNullPayloadSerializer() },
@@ -372,13 +374,13 @@ namespace Datadog.Trace.TestHelpers
                 var contractResolver = (DefaultContractResolver)serializer.ContractResolver;
                 var name = jo[contractResolver.GetResolvedPropertyName(nameof(ConfigurationKeyValue.Name))]?.ToString();
                 var jToken = jo[contractResolver.GetResolvedPropertyName(nameof(ConfigurationKeyValue.Value))];
-                object value = jToken.Type switch
+                object value = jToken?.Type switch
                 {
                     JTokenType.Null => null,
                     JTokenType.Boolean => jToken.Value<bool>(),
                     JTokenType.Integer => jToken.Value<int>(),
                     JTokenType.Float => jToken.Value<double>(),
-                    _ => jToken.ToString()
+                    _ => jToken?.ToString()
                 };
 
                 var origin = jo[contractResolver.GetResolvedPropertyName(nameof(ConfigurationKeyValue.Origin))]?.ToString();

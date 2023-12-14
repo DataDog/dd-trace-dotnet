@@ -69,7 +69,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         jsonWriter.WritePropertyName(variableName);
                     }
 
-                    var notCapturedReason = redactionReason == RedactionReason.Identifier ? NotCapturedReason.redactedByIndentifier : NotCapturedReason.redactedByType;
+                    var notCapturedReason = redactionReason == RedactionReason.Identifier ? NotCapturedReason.redactedIdent : NotCapturedReason.redactedType;
 
                     jsonWriter.WriteStartObject();
                     jsonWriter.WritePropertyName("type");

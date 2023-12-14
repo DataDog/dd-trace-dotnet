@@ -1,4 +1,4 @@
-﻿FROM alpine:3.14 as base
+﻿FROM gleocadie/alpine-clang16 as base
 ARG DOTNETSDK_VERSION
 
 ENV \
@@ -37,7 +37,6 @@ RUN apk update \
         icu-libs \
         \
         # our dependencies
-        clang \
         cmake \
         git \
         bash \

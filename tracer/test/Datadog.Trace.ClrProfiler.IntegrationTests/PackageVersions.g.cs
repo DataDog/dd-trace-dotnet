@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> RabbitMQ => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.RabbitMQ : PackageVersionsLatestSpecific.RabbitMQ;
 
-        public static IEnumerable<object[]>  DataStreamsRabbitMQ => IsAllMinorPackageVersions ? PackageVersionsLatestMinors. DataStreamsRabbitMQ : PackageVersionsLatestSpecific. DataStreamsRabbitMQ;
+        public static IEnumerable<object[]> DataStreamsRabbitMQ => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.DataStreamsRabbitMQ : PackageVersionsLatestSpecific.DataStreamsRabbitMQ;
 
         public static IEnumerable<object[]> SystemDataSqlClient => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.SystemDataSqlClient : PackageVersionsLatestSpecific.SystemDataSqlClient;
 
@@ -85,6 +85,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> NLog => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.NLog : PackageVersionsLatestSpecific.NLog;
 
         public static IEnumerable<object[]> log4net => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.log4net : PackageVersionsLatestSpecific.log4net;
+
+        public static IEnumerable<object[]> ILogger => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.ILogger : PackageVersionsLatestSpecific.ILogger;
 
         public static IEnumerable<object[]> Aerospike => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Aerospike : PackageVersionsLatestSpecific.Aerospike;
 

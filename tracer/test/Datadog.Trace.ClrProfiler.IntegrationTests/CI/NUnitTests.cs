@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -74,19 +75,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                      .ToList();
 
                         // Check the span count
-                        Assert.Equal(ExpectedSpanCount, spans.Count);
+                        spans.Should().HaveCount(ExpectedSpanCount);
 
                         foreach (var targetSpan in spans.ToArray())
                         {
                             // Remove decision maker tag (not used by the backend for civisibility)
                             targetSpan.Tags.Remove(Tags.Propagated.DecisionMaker);
+                            targetSpan.Tags.Remove(Tags.Propagated.TraceIdUpper);
 
                             // Remove git metadata added by the apm agent writer.
                             targetSpan.Tags.Remove(Tags.GitCommitSha);
                             targetSpan.Tags.Remove(Tags.GitRepositoryUrl);
 
                             // check the name
-                            Assert.Equal("nunit.test", targetSpan.Name);
+                            targetSpan.Name.Should().Be("nunit.test");
 
                             // check the CIEnvironmentValues decoration.
                             CheckCIEnvironmentValuesDecoration(targetSpan);
@@ -106,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                             // check the test framework
                             AssertTargetSpanContains(targetSpan, TestTags.Framework, "NUnit");
-                            Assert.True(targetSpan.Tags.Remove(TestTags.FrameworkVersion));
+                            targetSpan.Tags.Remove(TestTags.FrameworkVersion).Should().BeTrue();
 
                             // check the version
                             AssertTargetSpanEqual(targetSpan, "version", "1.0.0");
@@ -242,7 +244,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             }
 
                             // check remaining tag (only the name)
-                            Assert.Single(targetSpan.Tags);
+                            targetSpan.Tags.Should().ContainSingle();
 
                             spans.Remove(targetSpan);
                         }
@@ -298,26 +300,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         private static string AssertTargetSpanAnyOf(MockSpan targetSpan, string key, params string[] values)
         {
             string actualValue = targetSpan.Tags[key];
-            Assert.Contains(actualValue, values);
+            values.Should().Contain(actualValue);
             targetSpan.Tags.Remove(key);
             return actualValue;
         }
 
         private static void AssertTargetSpanEqual(MockSpan targetSpan, string key, string value)
         {
-            Assert.Equal(value, targetSpan.Tags[key]);
+            targetSpan.Tags[key].Should().Be(value);
             targetSpan.Tags.Remove(key);
         }
 
         private static void AssertTargetSpanExists(MockSpan targetSpan, string key)
         {
-            Assert.True(targetSpan.Tags.ContainsKey(key));
+            targetSpan.Tags.Should().ContainKey(key);
             targetSpan.Tags.Remove(key);
         }
 
         private static void AssertTargetSpanContains(MockSpan targetSpan, string key, string value)
         {
-            Assert.Contains(value, targetSpan.Tags[key]);
+            targetSpan.Tags[key].Should().Contain(value);
             targetSpan.Tags.Remove(key);
         }
 
@@ -351,9 +353,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             void AssertEqual(string key)
             {
-                if (span.GetTag(key) is not null)
+                if (span.GetTag(key) is { } tagValue)
                 {
-                    Assert.Equal(span.GetTag(key), targetSpan.Tags[key]);
+                    targetSpan.Tags[key].Should().Be(tagValue);
                     targetSpan.Tags.Remove(key);
                 }
             }
@@ -419,7 +421,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusFail);
 
             // Check the span error flag
-            Assert.Equal(1, targetSpan.Error);
+            targetSpan.Error.Should().Be(1);
 
             // Check the error type
             AssertTargetSpanEqual(targetSpan, Tags.ErrorType, typeof(DivideByZeroException).FullName);
@@ -437,7 +439,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusFail);
 
             // Check the span error flag
-            Assert.Equal(1, targetTest.Error);
+            targetTest.Error.Should().Be(1);
 
             // Check the error type
             AssertTargetSpanAnyOf(targetTest, Tags.ErrorType, "SetUpException", "Exception");

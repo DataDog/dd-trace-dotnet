@@ -15,8 +15,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             depth,
             fieldCount,
             timeout,
-            redactedByIndentifier,
-            redactedByType
+            redactedIdent,
+            redactedType
         }
     }
 }

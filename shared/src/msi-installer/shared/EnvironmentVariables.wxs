@@ -12,12 +12,18 @@
   
         <Environment Id="COR_PROFILER_PATH_32" Name="COR_PROFILER_PATH_32" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x86\Datadog.Trace.ClrProfiler.Native.dll" Part="all" />
         <Environment Id="CORECLR_PROFILER_PATH_32" Name="CORECLR_PROFILER_PATH_32" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x86\Datadog.Trace.ClrProfiler.Native.dll" Part="all" />
-  
-        <?if $(var.Win64) = yes ?>
+        <?if $(var.Win64) = yes ?>         
           <Environment Id="COR_PROFILER_PATH_64" Name="COR_PROFILER_PATH_64" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x64\Datadog.Trace.ClrProfiler.Native.dll" Part="all" />
           <Environment Id="CORECLR_PROFILER_PATH_64" Name="CORECLR_PROFILER_PATH_64" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x64\Datadog.Trace.ClrProfiler.Native.dll" Part="all" />
         <?endif ?>
       </Component>
+      <?if $(var.Win64) = yes ?>
+      <Component Id="EnvironmentVariablePath" Guid="{5804E0CA-7126-4774-A715-42AE37B9E421}" Win64="$(var.Win64)">
+        <Condition>PATHSHORTCUT = 1</Condition>
+        <CreateFolder/>
+        <Environment Id="PATH" Name="PATH" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x64" Part="last" />        
+      </Component>
+      <?endif ?>
     </ComponentGroup>
   
     <ComponentGroup Id="Shared.EnvironmentVariables.IIS" Directory="INSTALLFOLDER">

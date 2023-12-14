@@ -111,6 +111,7 @@ public class ProbesTests : TestHelper
         };
 
         SetEnvironmentVariable(ConfigurationKeys.Debugger.RedactedIdentifiers, "RedactMe,b");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.RedactedTypes, "Samples.Probes.TestRuns.SmokeTests.RedactMeType*,Samples.Probes.TestRuns.SmokeTests.AnotherRedactMeTypeB");
 
         await RunSingleTestWithApprovals(testDescription, expectedNumberOfSnapshots, probes);
     }
@@ -561,7 +562,7 @@ public class ProbesTests : TestHelper
         Assert.Equal(expectedSpanCount, spans.Count);
 
         VerifierSettings.DerivePathInfo(
-            (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "..", "Approvals", "snapshots")));
+            (_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", "snapshots")));
 
         SanitizeSpanTags(spans);
 
@@ -613,7 +614,7 @@ public class ProbesTests : TestHelper
             }
 
             VerifierSettings.DerivePathInfo(
-                (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "..", "Approvals", "snapshots")));
+                (_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", "snapshots")));
 
             await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
         }
@@ -695,6 +696,11 @@ public class ProbesTests : TestHelper
     /// </summary>
     private void SkipOverTestIfNeeded(ProbeTestDescription testDescription)
     {
+        if (testDescription.TestType == typeof(LargeSnapshotTest) && !EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("Should run only on Windows. Different approvals between Windows/Linux.");
+        }
+
         if (testDescription.TestType == typeof(AsyncInstanceMethod) && !EnvironmentTools.IsWindows())
         {
             throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
@@ -773,10 +779,12 @@ public class ProbesTests : TestHelper
             settings.AddRegexScrubber(regexPattern, replacement);
         }
 
+        AddRuntimeIdScrubber(settings);
+
         settings.AddScrubber(ScrubSnapshotJson);
 
         VerifierSettings.DerivePathInfo(
-            (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "Approvals", path)));
+            (_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", path)));
 
         var toVerify =
             "["
@@ -910,6 +918,12 @@ public class ProbesTests : TestHelper
                .Replace(@"\n\r", @"\n")
                .Replace(@"\r", @"\n")
                .Replace(@"\n", @"\r\n");
+    }
+
+    private void AddRuntimeIdScrubber(VerifySettings settings)
+    {
+        var runtimeIdPattern = new Regex(@"(""runtimeId"": "")[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", RegexOptions.Compiled);
+        settings.AddRegexScrubber(runtimeIdPattern, "$1scrubbed");
     }
 
     private (ProbeAttributeBase ProbeTestData, ProbeDefinition Probe)[] GetProbeConfiguration(Type testType, bool unlisted, DeterministicGuidGenerator guidGenerator)

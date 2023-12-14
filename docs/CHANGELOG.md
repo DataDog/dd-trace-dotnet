@@ -11,6 +11,175 @@
 
 
 
+
+
+## [Release 2.43.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.43.0)
+
+## Summary
+
+- [Tracing] Add support for WCF Web HTTP
+- [Tracing] Add support for Npgqsl v8.0.0 and ServiceStack.Redis v8.0.0
+- [Serverless] Remove up to 100ms latency in AWS Lambda when flushing traces
+
+- [IAST] Trust boundary violation vulnerability detection
+
+
+## Changes
+### Tracer
+* Add support for WCF Web HTTP `UriTemplate`s in WCF integration (#4903)
+* [DBM] Don't inject DBM attributes into `IDbCommand` twice (#4909)
+* Add support for Npgqsl 8.0.0 (#4910)
+* Add support for ServiceStack.Redis 8.0.0 (#4911)
+* Don't send some error logs to telemetry (#4934)
+* Tiny cleanup of static `Tracer` instance usages (#4936)
+* Set default batch interval in serverless scenarios (#4946)
+
+### ASM
+* [ASM] Handle anonymous types when extracting object (#4865)
+* [IAST] Trust Boundary Violation vulnerability implementation (#4896)
+* [ASM] Downgrade middleware log if no current span found (#4932)
+
+### Continuous Profiler
+* [Profiler] Update managed projects to net462 (#4683)
+* [Profiler] Bump libdatadog to 5.0.0 (#4719)
+
+### Dynamic Instrumentation
+* [Dynamic Instrumentation] Improved snapshot pruning algorithm (#4893)
+
+### Fixes
+* Handle exception in MSMQ integration (#4931)
+* Add manual+automatic instrumentation tests + fix `SetUser` bug (#4938)
+* Fix recheck interval in DiscoveryService (#4907)
+* Add null reference checks to SNS integration (#4917)
+* Add null reference checks to elasticsearch7 integration (#4918)
+* Fix ASP.NET Core DiagnosticObserver bugs (#4920)
+* Add null reference checks to StackExchange.Redis integration  (#4921)
+* Add null reference checks to RabbitMq integration (#4922)
+* Fix bugs with DogStatsD when using named pipes or UDS (#4933)
+* Wire up the DD_TRACE_BATCH_INTERVAL setting (#4940)
+* [ASM] Add null check for content body before running security checks (#4950)
+
+### Build / Test
+* [Profiler] Adjust profiler tests for .NET 8 (#4908)
+* [IAST] Added StringAspects.Concat() micro benchmark (#4713)
+* Compile native code with C++20 (#4054)
+* Reinstate version mismatch tests (#4879)
+* [Test Package Versions Bump] Updating package versions (#4882)
+* Remove pre-.NET8 workaround for MacOS in CI (#4888)
+* [CI] Make sure all Linux images use Clang 16.0.6 (#4894)
+* Attempt to add ignore various C++ warnings/errors (#4898)
+* Make the agent check less verbose (#4905)
+* Fix memory dumps on artifact tests (#4906)
+* Fix AWS SQS test snapshots (#4913)
+* Increase timeout benchmarks (#4919)
+* Fix `dd_dotnet` version (#4923)
+* [Tests] Ignore UDS telemetry test on windows (#4926)
+* Sign `dd-dotnet.exe` that we package in MSI (#4939)
+* Enable diagnostic messages in dd-dotnet artifact tests (#4944)
+* Skip flaky manual instrumentation tests (#4949)
+
+
+[Changes since 2.42.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.42.0...v2.43.0)
+
+
+## [Release 2.42.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.42.0)
+
+## Summary
+
+- [Tracer] Update support for W3C interoperability (default propagation, enable 128-bits by default, improve operation names)
+- [Tracer] Bundle dd-dotnet tool with installers, for easier onboarding and diagnostics
+- [ASM] Support full URL request tainting, HTTP header tainting, X-Content-Type misconfiguration, and hardcoded secret detection
+- [ASM] Fix potential native memory management bug
+- [DSM] - Add support for IBM MQ
+- [Tracer] Add support for .NET 8 GA
+- [Tracer] Add support for .NET Remoting
+
+## Changes
+
+### Tracer
+* [Tracer] add propagated (`_dd.p.*`) trace tags to the correct spans (#4332)
+* Create a better `OperationName` for `Activity`/`OpenTelemetry` (#4700)
+* [Tracer] Enable 128 bits by default (#4827)
+* [Tracer] Updates Default W3C tracecontext Propagation AIT-8606 (#4859)
+* [Tracer] .NET Remoting instrumentation (#4829)
+
+### CI Visibility
+* Add support for NUnit 3.14.0 (#4825)
+
+### ASM
+* [ASM] Api security foundation for dotnet core  (#4654)
+* [ASM][IAST] Hardcoded secrets (#4666)
+* [ASM] Taint full url of a request in IAST (#4789)
+* [ASM] Enable IAST coverage tests NET8 (#4801)
+* [ASM] unknown type to encode: log debug instead of warning (#4809)
+* [ASM] Add IAST header tainting integration tests (#4814)
+* [ASM] X-Content-Type header missing vulnerability (#4836)
+* [ASM] Add the vale of the cookie/header name in source (#4856)
+* Revert "[ASM] New marshalling system for Waf.Run calls to improve spe… (#4891)
+
+### Continuous Profiler
+* [Profiler] Refactoring to better wrap libdatadog (#4763)
+* [Profiler] Add a scenario with obfuscation (#4788)
+* [Profiler] Skip LinuxOnly Tests in VS Test explorer (#4803)
+* [Profiler] Adjust Linux smoke test to avoid flakiness (#4842)
+* [Profiler/CI] Align Cppcheck commandline linux/windows (#4854)
+* [Profiler] Fix compilation warnings (#4855)
+* [Profiler] Fix code hotspot feature tests (#4890)
+
+### Debugger
+* Dudik/instrumentation verification fixes (#4612)
+* [Dynamic Instrumentaiton] Enriched probe status uploads with version and runtime id (#4853)
+
+### Data Streams Monitoring
+* [DSM] - Initial IBM MQ support (#4776)
+
+### Fixes
+* Stop pushing to the reliability environment (#4810)
+* Tiny fix for crashing if `DD_PROFILER_ENABLED` is not set (#4849)
+* Fix `NullReferenceException` in SQS integration (#4860)
+
+### Build / Test
+* Build standalone trimmed version for net7.0 (#4727)
+* [Test Package Versions Bump] Updating package versions (#4806)
+* Fix flaky DSM transport test (#4826)
+* Properly read the installed tracer version in dd-dotnet (#4828)
+* Fix `config_norm_rules.json` and `config_prefix_block_list.json` (#4830)
+* [CI] Rerun waf download If it times out (#4838)
+* [Test] Add propagator injection unit tests using 128-bit trace-ids (#4840)
+* Try enabling crash dumps in artifact tests (#4841)
+* Try to fix flake in hardcoded secrets test (#4843)
+* Try to fix the pipeline monitor (#4844)
+* [Test Package Versions Bump] Updating package versions (#4846)
+* [CI] Delete previously generated files on Windows (#4848)
+* Update xunit testing to latest (#4850)
+* [Build] Update deb/rpm packaging with arm64 variant (APMON-377) (#4857)
+* Re-instate the building of the system-test docker images (#4858)
+* Add dd-dotnet to path on Windows (#4863)
+* Handle ctrl+c in dd-dotnet (#4864)
+* Add dd-dotnet to path on Linux (#4866)
+* Update to .NET 8 GA release (#4869)
+* Fix system-test snapshot image creation (#4871)
+* Actually, really, definitely, fix the system-tests docker image (#4874)
+* Run ARM64 integration tests against .NET 8 (#4875)
+* Add testing for Microsoft.Data.Sqlite (#4881)
+* Fix the system-test docker images once and for all (#4883)
+* [ASM] Fix snapshot (#4886)
+* Fix localstack not starting issue (#4895)
+
+### Miscellaneous
+* Add full null checking to MongoDB and AWS.SDK integrations (#4815)
+* Update source generator to record the "instrumented assemblies" (#4832)
+* Add redacted-error-log telemetry collector and sinks (#4833)
+* Add redaction of telemetry error logs (#4834)
+* Add de-duplication of telemetry logs (#4835)
+* Stop recording individual integration telemetry (#4872)
+* Record duplicate log count in log-message data (#4885)
+* Improve `HostMetadata.OsVersion` value (#4819)
+
+
+[Changes since 2.41.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.41.0...v2.42.0)
+
+
 ## [Release 2.41.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.41.0)
 
 ## Summary
@@ -103,7 +272,8 @@
 * Delete Telemetry V1 implementation (#4750)
 * Rename TelemetryV2 to Telemetry (#4751)
 
-[Changes since 2.40.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.40.0...v2.41.0)
+[Changes since 2.40.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.40.0...v2.41.0)
+
 
 ## [Release 2.40.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.40.0)
 
@@ -131,7 +301,8 @@ Fixes a possible application crash when using ASM. This issue was introduced in 
 * Fix various GitHub Actions (#4716)
 
 
-[Changes since 2.39.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.39.0...v2.40.0)
+[Changes since 2.39.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.39.0...v2.40.0)
+
 
 ## [Release 2.39.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.39.0)
 
@@ -232,7 +403,8 @@ Fixes a possible application crash when using ASM. This issue was introduced in 
 * Try to fix GitLab flake (#4709)
 
 
-[Changes since 2.38.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.38.0...v2.39.0)
+[Changes since 2.38.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.38.0...v2.39.0)
+
 
 ## [Release 2.38.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.38.0)
 
@@ -322,7 +494,8 @@ This release mainly contains:
 * Enable v2 telemetry by default (#4638)
 
 
-[Changes since 2.37.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.37.0...v2.38.0)
+[Changes since 2.37.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.37.0...v2.38.0)
+
 
 ## [Release 2.37.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.37.0)
 
@@ -367,7 +540,8 @@ This release mainly contains:
 * Migrate from Spectre.Console.Cli to System.CommandLine (#4395)
 
 
-[Changes since 2.36.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.36.0...v2.37.0)
+[Changes since 2.36.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.36.0...v2.37.0)
+
 
 ## [Release 2.36.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.36.0)
 
@@ -447,7 +621,8 @@ This release:
 * [Tracer] Explicit cases where configuration telemetry isn't recorded (#4464)
 
 
-[Changes since 2.35.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.35.0...v2.36.0)
+[Changes since 2.35.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.35.0...v2.36.0)
+
 
 ## [Release 2.35.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.35.0)
 
@@ -483,7 +658,8 @@ This release mainly contains the last details of the preparatory work for the ne
 * Fix flaky rabbitmq datastreams test (#4457)
 
 
-[Changes since 2.34.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.34.0...v2.35.0)
+[Changes since 2.34.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.34.0...v2.35.0)
+
 
 ## [Release 2.34.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.34.0)
 
@@ -579,7 +755,8 @@ This release mainly contains the last details of the preparatory work for the ne
 * [Builds] Update Reports comments to be updates (#4425)
 
 
-[Changes since 2.33.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.33.0...v2.34.0)
+[Changes since 2.33.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.33.0...v2.34.0)
+
 
 ## [Release 2.33.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.33.0)
 
@@ -667,7 +844,8 @@ This release mainly contains the last details of the preparatory work for the ne
 * [Release] Move git tag creation back to before creating the release (#4339)
 
 
-[Changes since 2.32.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.32.0...v2.33.0)
+[Changes since 2.32.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.32.0...v2.33.0)
+
 
 ## [Release 2.32.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.32.0)
 
@@ -765,7 +943,8 @@ This release mainly contains the last details of the preparatory work for the ne
 
 
 
-[Changes since 2.31.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.31.0...v2.32.0)
+[Changes since 2.31.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.31.0...v2.32.0)
+
 
 ## [Release 2.31.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.31.0)
 
@@ -843,7 +1022,8 @@ This release mainly contains the last details of the preparatory work for the ne
 * OSX Improvements (#4193)
 
 
-[Changes since 2.30.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.30.0...v2.31.0)
+[Changes since 2.30.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.30.0...v2.31.0)
+
 
 ## [Release 2.30.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.30.0)
 

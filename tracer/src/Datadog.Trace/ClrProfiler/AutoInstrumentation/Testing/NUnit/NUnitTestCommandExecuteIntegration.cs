@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
     ReturnTypeName = "NUnit.Framework.Internal.TestResult",
     ParameterTypeNames = new[] { "NUnit.Framework.Internal.TestExecutionContext" },
     MinimumVersion = "3.0.0",
-    MaximumVersion = "3.*.*",
+    MaximumVersion = "4.*.*",
     CallTargetIntegrationKind = CallTargetKind.Derived,
     IntegrationName = NUnitIntegration.IntegrationName)]
 [Browsable(false)]

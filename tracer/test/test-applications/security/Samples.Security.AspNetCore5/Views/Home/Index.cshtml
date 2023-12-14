@@ -94,6 +94,12 @@
 
     <div><a href="/Iast/WeakRandomness">GET /Iast/WeakRandomness</a></div>
 
+	<div><a href="/Iast/TBV?name=name&value=value">GET /Iast/TrustBoundaryViolation</a></div>
+
+    <div><a href="/Iast/StrictTransportSecurity?contentType=text/html&returnCode=200&hstsHeaderValue=max-age=-10;value&xForwardedProto=https">GET /Iast/HstsHeader?contentType=text/html&returnCode=200&hstsHeaderValue=invalid&xForwardedProto=https</a></div>
+
+	<div><a href="/Iast/UnvalidatedRedirect?param=value">GET /Iast/UnvalidatedRedirect</a></div>
+
     <div>
         @Html.Raw(Context.Request.Query["q"])
     </div>

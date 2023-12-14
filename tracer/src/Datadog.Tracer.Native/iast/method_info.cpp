@@ -72,7 +72,7 @@ namespace iast
 
     TypeInfo* MemberRefInfo::GetTypeInfo()
     {
-        if (!_typeInfo) 
+        if (!_typeInfo)
         {
             _typeInfo = _module->GetTypeInfo(_typeDef);
         }
@@ -116,7 +116,7 @@ namespace iast
             auto signature = GetSignature();
             if (signature != nullptr)
             {
-                fullName = signature->CharacterizeMember(_fullName, false);
+                fullName = signature->CharacterizeMember(fullName, false);
             }
             if (_fullNameCounterLock.fetch_add(1, std::memory_order_acquire) == 0)
             {
@@ -433,7 +433,7 @@ namespace iast
 
         if (verify || dump)
         {
-            if (!_rewriter) 
+            if (!_rewriter)
             {
                 trace::Logger::Debug("MethodInfo::SetMethodIL -> No rewritter present. Creating one to verify new IL...");
                 
@@ -445,7 +445,7 @@ namespace iast
                     correct = false;
                 }
             }
-            else 
+            else
             {
                 trace::Logger::Debug("MethodInfo::SetMethodIL -> Rewritter present. Verify new IL...");
             }
@@ -478,12 +478,12 @@ namespace iast
 
             if (pFunctionControl)
             {
-                trace::Logger::Debug("MethodInfo::SetMethodIL -> ReJIT : Setting IL for ", GetFullName().c_str());
+                trace::Logger::Debug("MethodInfo::SetMethodIL -> ReJIT : Setting IL for ", GetFullName());
                 ApplyFinalInstrumentation(pFunctionControl);
             }
             else
             {
-                trace::Logger::Debug("MethodInfo::SetMethodIL ->   JIT : Setting IL for ", GetFullName().c_str());
+                trace::Logger::Debug("MethodInfo::SetMethodIL ->   JIT : Setting IL for ", GetFullName());
             }
         }
         else
@@ -568,7 +568,7 @@ namespace iast
         FreeBuffer();
     }
 
-    void MethodInfo::FreeBuffer() 
+    void MethodInfo::FreeBuffer()
     {
         _nMethodIL = 0;
         DEL_ARR(_pMethodIL);

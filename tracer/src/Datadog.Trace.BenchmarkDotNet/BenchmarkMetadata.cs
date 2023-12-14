@@ -26,7 +26,7 @@ internal static class BenchmarkMetadata
         var value = MetadataByBenchmark.GetOrAdd(key, @case => new());
         if (value.TraceId is null)
         {
-            var useAllBits = CIVisibility.Settings.TracerSettings?.TraceId128BitGenerationEnabled ?? false;
+            var useAllBits = CIVisibility.Settings.TracerSettings?.TraceId128BitGenerationEnabled ?? true;
             value.TraceId = RandomIdGenerator.Shared.NextTraceId(useAllBits);
             value.SpanId = RandomIdGenerator.Shared.NextSpanId(useAllBits);
         }

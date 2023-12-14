@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -30,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.RabbitMQ;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RabbitMQIntegration));
 
-        internal static Scope CreateScope(Tracer tracer, out RabbitMQTags tags, string command, string spanKind, string host = null, ISpanContext parentContext = null, DateTimeOffset? startTime = null, string queue = null, string exchange = null, string routingKey = null)
+        internal static Scope? CreateScope(Tracer tracer, out RabbitMQTags? tags, string command, string spanKind, string? host = null, ISpanContext? parentContext = null, DateTimeOffset? startTime = null, string? queue = null, string? exchange = null, string? routingKey = null)
         {
             tags = null;
 
@@ -40,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
@@ -90,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             };
         }
 
-        internal static long GetHeadersSize(IDictionary<string, object> headers)
+        internal static long GetHeadersSize(IDictionary<string, object>? headers)
         {
             if (headers == null)
             {
@@ -107,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             return size;
         }
 
-        internal static void SetDataStreamsCheckpointOnProduce(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object> headers, int messageSize)
+        internal static void SetDataStreamsCheckpointOnProduce(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object>? headers, int messageSize)
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
             if (dataStreamsManager == null || headers == null || !dataStreamsManager.IsEnabled)
@@ -131,7 +133,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             }
         }
 
-        internal static void SetDataStreamsCheckpointOnConsume(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object> headers, int messageSize, long messageTimestamp)
+        internal static void SetDataStreamsCheckpointOnConsume(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object>? headers, int messageSize, long messageTimestamp)
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
             if (dataStreamsManager == null || headers == null || !dataStreamsManager.IsEnabled)
@@ -158,9 +160,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             }
         }
 
-        internal static CallTargetState BasicDeliver_OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, TBasicProperties basicProperties, TBody body)
+        internal static CallTargetState BasicDeliver_OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, bool redelivered, string? exchange, string? routingKey, TBasicProperties basicProperties, TBody body)
             where TBasicProperties : IBasicProperties
-            where TBody : IBody // ReadOnlyMemory<byte> body in 6.0.0
+            where TBody : IBody, IDuckType // ReadOnlyMemory<byte> body in 6.0.0
         {
             if (IsActiveScopeRabbitMQ(Tracer.Instance))
             {
@@ -170,14 +172,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 return CallTargetState.GetDefault();
             }
 
-            string queue = null;
+            string? queue = null;
 
-            if (QueueHelper.TryGetQueue(instance, out var queueInner))
+            // instance can't be null because these are called from instance methods
+            if (QueueHelper.TryGetQueue(instance!, out var queueInner))
             {
                 queue = queueInner;
             }
 
-            SpanContext propagatedContext = null;
+            SpanContext? propagatedContext = null;
 
             // try to extract propagated context values from headers
             if (basicProperties?.Headers != null)
@@ -192,24 +195,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 }
             }
 
-            var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out RabbitMQTags tags, "basic.deliver", parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, exchange: exchange, routingKey: routingKey);
-            if (tags != null)
+            var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out var tags, "basic.deliver", parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, exchange: exchange, routingKey: routingKey);
+            if (scope is not null && tags != null)
             {
-                tags.MessageSize = body?.Length.ToString() ?? "0";
+                if (body.Instance is not null)
+                {
+                    tags.MessageSize = body.Length.ToString() ?? "0";
+                }
+
+                var timeInQueue = basicProperties != null && basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0;
+                RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(
+                    Tracer.Instance,
+                    scope.Span,
+                    tags,
+                    basicProperties?.Headers,
+                    body?.Length ?? 0,
+                    timeInQueue);
             }
 
-            var timeInQueue = basicProperties != null && basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0;
-            RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(
-                Tracer.Instance,
-                scope.Span,
-                tags,
-                basicProperties?.Headers,
-                body?.Length ?? 0,
-                timeInQueue);
             return new CallTargetState(scope);
         }
 
-        internal static bool IsActiveScopeRabbitMQ(Tracer tracer)
+        private static bool IsActiveScopeRabbitMQ(Tracer tracer)
         {
             var scope = tracer.InternalActiveScope;
             var parent = scope?.Span;

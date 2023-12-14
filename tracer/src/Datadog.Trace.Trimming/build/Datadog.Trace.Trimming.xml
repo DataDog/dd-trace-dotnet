@@ -1,6 +1,7 @@
 <linker>
    <assembly fullname="AerospikeClient" />
    <assembly fullname="Amazon.Lambda.RuntimeSupport" />
+   <assembly fullname="amqmdnetstd" />
    <assembly fullname="AWSSDK.Core" />
    <assembly fullname="AWSSDK.DynamoDBv2" />
    <assembly fullname="AWSSDK.Kinesis" />
@@ -85,6 +86,7 @@
       <type fullname="Microsoft.Extensions.Primitives.StringValues" />
       <type fullname="Microsoft.Extensions.Primitives.StringValues/Enumerator" />
    </assembly>
+   <assembly fullname="Microsoft.Extensions.Telemetry" />
    <assembly fullname="Microsoft.Net.Http.Headers">
       <type fullname="Microsoft.Net.Http.Headers.SameSiteMode" />
       <type fullname="Microsoft.Net.Http.Headers.SetCookieHeaderValue" />
@@ -516,6 +518,7 @@
       <type fullname="System.Diagnostics.DebuggerHiddenAttribute" />
       <type fullname="System.Diagnostics.DebuggerStepThroughAttribute" />
       <type fullname="System.Diagnostics.DebuggerTypeProxyAttribute" />
+      <type fullname="System.Diagnostics.StackTraceHiddenAttribute" />
       <type fullname="System.Diagnostics.Stopwatch" />
       <type fullname="System.Double" />
       <type fullname="System.EntryPointNotFoundException" />
@@ -664,6 +667,7 @@
       <type fullname="System.Reflection.TypeAttributes" />
       <type fullname="System.Reflection.TypeInfo" />
       <type fullname="System.ResolveEventArgs" />
+      <type fullname="System.Runtime.CompilerServices.AsyncIteratorStateMachineAttribute" />
       <type fullname="System.Runtime.CompilerServices.AsyncStateMachineAttribute" />
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1" />

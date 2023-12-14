@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -15,8 +15,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -43,8 +42,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -71,8 +69,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -99,8 +96,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -127,8 +123,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -155,8 +150,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -183,8 +177,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -211,8 +204,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -245,8 +237,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -279,8 +270,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -313,8 +303,7 @@ StackExchange.Redis.RedisServerException: ERR unknown command `DDCUSTOM`, with a
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -347,8 +336,7 @@ StackExchange.Redis.RedisServerException: ERR no such key
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -381,8 +369,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -409,8 +396,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -437,8 +423,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -465,8 +450,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -493,8 +477,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -521,8 +504,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -549,8 +531,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -577,8 +558,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -605,8 +585,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -633,8 +612,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -661,8 +639,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -689,8 +666,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -717,8 +693,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -745,8 +720,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -773,8 +747,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -801,8 +774,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -829,8 +801,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -857,8 +828,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -885,8 +855,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -913,8 +882,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -941,8 +909,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -969,8 +936,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -997,8 +963,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1025,8 +990,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1059,8 +1023,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1087,8 +1050,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1115,8 +1077,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1143,8 +1104,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1171,8 +1131,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1199,8 +1158,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1227,8 +1185,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1255,8 +1212,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1283,8 +1239,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1311,8 +1266,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1339,8 +1293,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1367,8 +1320,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1395,8 +1347,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1423,8 +1374,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1451,8 +1401,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1479,8 +1428,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1507,8 +1455,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1535,8 +1482,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1563,8 +1509,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1591,8 +1536,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1619,8 +1563,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1647,8 +1590,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1675,8 +1617,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1703,8 +1644,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1731,8 +1671,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1759,8 +1698,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1787,8 +1725,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1815,8 +1752,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1843,8 +1779,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1877,8 +1812,7 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1905,8 +1839,7 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1933,8 +1866,7 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1961,8 +1893,7 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1995,8 +1926,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2023,8 +1953,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2051,8 +1980,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2079,8 +2007,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2107,8 +2034,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2135,8 +2061,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2163,8 +2088,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2191,8 +2115,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2219,8 +2142,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2247,8 +2169,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2275,8 +2196,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2303,8 +2223,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2331,8 +2250,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2359,8 +2277,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2387,8 +2304,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2415,8 +2331,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2443,8 +2358,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2471,8 +2385,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2499,8 +2412,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2527,8 +2439,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2555,8 +2466,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2583,8 +2493,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2617,8 +2526,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2651,8 +2559,7 @@ StackExchange.Redis.RedisServerException: ERR source and destination objects are
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2685,8 +2592,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2713,8 +2619,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2741,8 +2646,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2769,8 +2673,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2797,8 +2700,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2825,8 +2727,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2853,8 +2754,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2881,8 +2781,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2909,8 +2808,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2937,8 +2835,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2965,8 +2862,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2993,8 +2889,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -3020,8 +2915,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -3047,8 +2941,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -3074,8 +2967,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -3101,8 +2993,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -3128,8 +3019,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3156,8 +3046,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3184,8 +3073,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3212,8 +3100,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -3239,8 +3126,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -3266,8 +3152,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3294,8 +3179,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3328,8 +3212,7 @@ StackExchange.Redis.RedisServerException: ERR no such key
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3362,8 +3245,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3396,8 +3278,7 @@ StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum a
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3430,8 +3311,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3458,8 +3338,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3486,8 +3365,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3514,8 +3392,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3542,8 +3419,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3570,8 +3446,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3598,8 +3473,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3626,8 +3500,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3654,8 +3527,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3682,8 +3554,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3710,8 +3581,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3738,8 +3608,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3766,8 +3635,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3794,8 +3662,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3822,8 +3689,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3850,8 +3716,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3878,8 +3743,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3906,8 +3770,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3934,8 +3797,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3962,8 +3824,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3990,8 +3851,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4018,8 +3878,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4046,8 +3905,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4074,8 +3932,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4102,8 +3959,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4130,8 +3986,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4158,8 +4013,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4186,8 +4040,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4214,8 +4067,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4242,8 +4094,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4270,8 +4121,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4298,8 +4148,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4326,8 +4175,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4354,8 +4202,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4382,8 +4229,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4410,8 +4256,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4438,8 +4283,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4466,8 +4310,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4494,8 +4337,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4522,8 +4364,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4550,8 +4391,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4578,8 +4418,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4606,8 +4445,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4634,8 +4472,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4662,8 +4499,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4690,8 +4526,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4718,8 +4553,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4746,8 +4580,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4774,8 +4607,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4802,8 +4634,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4830,8 +4661,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4858,8 +4688,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4886,8 +4715,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4914,8 +4742,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4942,8 +4769,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4970,8 +4796,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4998,8 +4823,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5026,8 +4850,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5054,8 +4877,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5082,8 +4904,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5110,8 +4931,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5138,8 +4958,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5166,8 +4985,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5194,8 +5012,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5222,8 +5039,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5250,8 +5066,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5278,8 +5093,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5306,8 +5120,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5334,8 +5147,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5362,8 +5174,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5390,8 +5201,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5418,8 +5228,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5446,8 +5255,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5474,8 +5282,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5502,8 +5309,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5530,8 +5336,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5558,8 +5363,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5586,8 +5390,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5614,8 +5417,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5642,8 +5444,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5670,8 +5471,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5698,8 +5498,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5726,8 +5525,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5754,8 +5552,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       db.redis.database_index: 1.0,

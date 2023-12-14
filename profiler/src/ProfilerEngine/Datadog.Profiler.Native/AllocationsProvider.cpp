@@ -58,7 +58,7 @@ AllocationsProvider::AllocationsProvider(
     IConfiguration* pConfiguration,
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry) :
-    CollectorBase<RawAllocationSample>("AllocationsProvider", std::move(valueTypes), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
+    CollectorBase<RawAllocationSample>("AllocationsProvider", std::move(valueTypes), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),

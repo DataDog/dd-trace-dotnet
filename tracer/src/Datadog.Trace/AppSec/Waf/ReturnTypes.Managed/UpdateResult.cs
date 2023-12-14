@@ -6,25 +6,24 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
     internal class UpdateResult
     {
-        internal UpdateResult(DdwafObjectStruct? diagObject, bool success, bool unusableRules = false)
+        internal UpdateResult(Obj? diagObject, bool success, bool unusableRules = false)
         {
             if (diagObject != null)
             {
-                var reportedDiag = DiagnosticResultUtils.ExtractReportedDiagnostics(diagObject.Value, false);
+                var reportedDiag = DiagnosticResultUtils.ExtractReportedDiagnostics(diagObject, false);
 
                 FailedToLoadRules = reportedDiag.FailedCount;
                 LoadedRules = reportedDiag.LoadedCount;
                 Errors = reportedDiag.Errors;
                 RuleFileVersion = reportedDiag.RulesetVersion;
 
-                if (Errors is { Count: > 0 })
+                if (Errors != null && Errors.Count > 0)
                 {
                     HasErrors = true;
                     ErrorMessage = JsonConvert.SerializeObject(Errors);
@@ -54,8 +53,8 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal string? RuleFileVersion { get; }
 
-        public static UpdateResult FromUnusableRules() => new(null, false, true);
+        public static UpdateResult FromUnusableRules() => new UpdateResult(null, false, true);
 
-        public static UpdateResult FromFailed() => new(null, false);
+        public static UpdateResult FromFailed() => new UpdateResult(null, false);
     }
 }

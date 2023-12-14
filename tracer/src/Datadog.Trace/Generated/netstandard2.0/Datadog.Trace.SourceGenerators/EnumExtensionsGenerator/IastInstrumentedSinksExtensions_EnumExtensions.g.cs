@@ -17,7 +17,7 @@ internal static partial class IastInstrumentedSinksExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 14;
+    public const int Length = 17;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks"/> value.
@@ -44,6 +44,9 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSameSiteCookie => "vulnerability_type:no_samesite_cookie",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakRandomness => "vulnerability_type:weak_randomness",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HardcodedSecret => "vulnerability_type:hardcoded_secret",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing => "vulnerability_type:xcontenttype_header_missing",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation => "vulnerability_type:trust_boundary_violation",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing => "vulnerability_type:hsts_header_missing",
             _ => value.ToString(),
         };
 
@@ -71,6 +74,9 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSameSiteCookie,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakRandomness,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HardcodedSecret,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing,
         };
 
     /// <summary>
@@ -98,6 +104,9 @@ internal static partial class IastInstrumentedSinksExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSameSiteCookie),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakRandomness),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HardcodedSecret),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing),
         };
 
     /// <summary>
@@ -125,5 +134,8 @@ internal static partial class IastInstrumentedSinksExtensions
             "vulnerability_type:no_samesite_cookie",
             "vulnerability_type:weak_randomness",
             "vulnerability_type:hardcoded_secret",
+            "vulnerability_type:xcontenttype_header_missing",
+            "vulnerability_type:trust_boundary_violation",
+            "vulnerability_type:hsts_header_missing",
         };
 }

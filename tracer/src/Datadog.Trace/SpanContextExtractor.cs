@@ -31,11 +31,21 @@ namespace Datadog.Trace
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_Ctor);
         }
 
+        internal SpanContextExtractor(bool unusedParamNotToUsePublicApi)
+        {
+            // unused parameter is to give us a non-public API we can use
+        }
+
         /// <inheritdoc />
         [PublicApi]
         public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_Extract);
+            return ExtractInternal(carrier, getter);
+        }
+
+        internal static ISpanContext? ExtractInternal<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
+        {
             var spanContext = SpanContextPropagator.Instance.Extract(carrier, getter);
             if (spanContext is not null
              && Tracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm

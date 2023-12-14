@@ -6,7 +6,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
@@ -15,15 +14,15 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 
 internal static class DiagnosticResultUtils
 {
-    internal static ReportedDiagnostics ExtractReportedDiagnostics(DdwafObjectStruct diagObject, bool noRuleDiagnoticsIsError)
+    internal static ReportedDiagnostics ExtractReportedDiagnostics(Obj diagObject, bool noRuleDiagnoticsIsError)
     {
         ushort failedCount = 0;
         ushort loadedCount = 0;
-        var rulesetVersion = string.Empty;
+        string rulesetVersion = string.Empty;
         IReadOnlyDictionary<string, object>? errors = null;
         try
         {
-            if (diagObject.Type == DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID)
+            if (diagObject.ArgsType == ObjType.Invalid)
             {
                 errors = new Dictionary<string, object> { { "diagnostics-error", "Waf didn't provide a valid diagnostics object at initialization, most likely due to an older waf version < 1.11.0" } };
                 return new ReportedDiagnostics { FailedCount = failedCount, LoadedCount = loadedCount, RulesetVersion = rulesetVersion, Errors = errors };

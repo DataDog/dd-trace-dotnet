@@ -314,7 +314,7 @@ __ANNOTATION(SAL_failureDefault(enum __SAL_failureKind));
 #define __deallocate(kind)                  _Pre_ __notnull __post_invalid
 #define __deallocate_opt(kind)              _Pre_ __maybenull __post_invalid
 #endif
-#define __bound                             __inner_bound
+//#define __bound                             __inner_bound
 #define __range(lb,ub)                      __inner_range(lb,ub)
 #define __in_bound                          _Pre_ __inner_bound
 #define __out_bound                         _Post_ __inner_bound

@@ -2,12 +2,12 @@ include(GoogleTest)
 # ******************************************************
 # Compiler options
 # ******************************************************
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # Sets compiler options
-add_compile_options(-std=c++17 -fms-extensions)
+add_compile_options(-std=c++20 -fms-extensions)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
-add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wc++17-extensions)
+add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wc++20-extensions)
 
 if(ISLINUX)
     add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
@@ -59,7 +59,7 @@ target_link_libraries(${TEST_EXECUTABLE_NAME}
   -static-libgcc
   -static-libstdc++
   -lstdc++fs
-  -Wc++17-extensions
+  -Wc++20-extensions
 )
 
 gtest_discover_tests(${TEST_EXECUTABLE_NAME})

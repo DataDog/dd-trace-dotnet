@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.Iast;
@@ -19,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     internal static class DbScopeFactory
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
+        private static bool _dbCommandCachingLogged = false;
 
         private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
@@ -68,14 +70,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled
                     && command.CommandType != CommandType.StoredProcedure)
                 {
-                    var propagatedCommand = DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, scope.Span, integrationId, out var traceParentInjected);
-
-                    if (propagatedCommand != string.Empty)
+                    var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix);
+                    if (alreadyInjected)
                     {
-                        command.CommandText = $"{propagatedCommand} {commandText}";
-                        if (traceParentInjected)
+                        // The command text is already injected, so they're probably caching the SqlCommand
+                        // that's not a problem if they're using 'service' mode, but it _is_ a problem for 'full' mode
+                        // There's not a lot we can do about it (we don't want to start parsing commandText), so just
+                        // report it for now
+                        if (!Volatile.Read(ref _dbCommandCachingLogged)
+                            && tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Service)
                         {
-                            tags.DbmTraceInjected = "true";
+                            _dbCommandCachingLogged = true;
+                            var spanContext = scope.Span.Context;
+                            Log.Warning(
+                                "The {CommandType} IDbCommand instance already contains DBM information. Caching of the command objects is not supported with full DBM mode. [s_id: {SpanId}, t_id: {TraceId}]",
+                                command.CommandType,
+                                spanContext.RawSpanId,
+                                spanContext.RawTraceId);
+                        }
+                    }
+                    else
+                    {
+                        var propagatedCommand = DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, scope.Span, integrationId, out var traceParentInjected);
+                        if (!string.IsNullOrEmpty(propagatedCommand))
+                        {
+                            command.CommandText = $"{propagatedCommand} {commandText}";
+                            if (traceParentInjected)
+                            {
+                                tags.DbmTraceInjected = "true";
+                            }
                         }
                     }
                 }

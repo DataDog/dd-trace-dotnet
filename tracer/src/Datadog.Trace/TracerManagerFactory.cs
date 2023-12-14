@@ -48,6 +48,7 @@ namespace Datadog.Trace
         internal TracerManager CreateTracerManager(ImmutableTracerSettings settings, TracerManager previous)
         {
             // TODO: If relevant settings have not changed, continue using existing statsd/agent writer/runtime metrics etc
+            // If reusing the runtime metrics/statsd, need to propagate the new value of DD_TAGS from dynamic config
             var tracer = CreateTracerManager(
                 settings,
                 agentWriter: null,
@@ -127,6 +128,7 @@ namespace Datadog.Trace
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, scopeManager);
             logSubmissionManager = DirectLogSubmissionManager.Create(
                 logSubmissionManager,
+                settings,
                 settings.LogSubmissionSettings,
                 settings.AzureAppServiceMetadata,
                 defaultServiceName,
@@ -147,7 +149,7 @@ namespace Datadog.Trace
             telemetry.RecordProfilerSettings(profiler);
             telemetry.ProductChanged(TelemetryProductType.Profiler, enabled: profiler.Status.IsProfilerReady, error: null);
 
-            SpanContextPropagator.Instance = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract);
+            SpanContextPropagator.Instance = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly);
 
             dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName);
 
@@ -201,7 +203,7 @@ namespace Datadog.Trace
 
         protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)
         {
-            return new GitMetadataTagsProvider(settings, scopeManager);
+            return new GitMetadataTagsProvider(settings, scopeManager, TelemetryFactory.Config);
         }
 
         /// <summary>
@@ -271,7 +273,7 @@ namespace Datadog.Trace
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize);
+            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval);
         }
 
         protected virtual IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
@@ -296,10 +298,8 @@ namespace Datadog.Trace
                 switch (settings.ExporterInternal.MetricsTransport)
                 {
                     case MetricsTransportType.NamedPipe:
-                        // Environment variables for windows named pipes are not explicitly passed to statsd.
-                        // They are retrieved within the vendored code, so there is nothing to pass.
-                        // Passing anything through StatsdConfig may cause bugs when windows named pipes should be used.
                         Log.Information("Using windows named pipes for metrics transport.");
+                        config.PipeName = settings.ExporterInternal.MetricsPipeNameInternal;
                         break;
 #if NETCOREAPP3_1_OR_GREATER
                     case MetricsTransportType.UDS:
@@ -309,7 +309,13 @@ namespace Datadog.Trace
 #endif
                     case MetricsTransportType.UDP:
                     default:
-                        config.StatsdServerName = settings.ExporterInternal.AgentUriInternal.DnsSafeHost;
+                        // If the customer has enabled UDS traces but _not_ UDS metrics, then the AgentUri will have
+                        // the UDS path set for it, and the DnsSafeHost returns "". Ideally, we would expose
+                        // a TracesAgentUri and MetricsAgentUri or something like that instead. This workaround
+                        // is a horrible hack, but I can't bear to touch ExporterSettings until it's had an
+                        // extensive tidy up, so this should do for now
+                        var traceHostname = settings.ExporterInternal.AgentUriInternal.DnsSafeHost;
+                        config.StatsdServerName = string.IsNullOrEmpty(traceHostname) ? "127.0.0.1" : traceHostname;
                         config.StatsdPort = settings.ExporterInternal.DogStatsdPortInternal;
                         break;
                 }

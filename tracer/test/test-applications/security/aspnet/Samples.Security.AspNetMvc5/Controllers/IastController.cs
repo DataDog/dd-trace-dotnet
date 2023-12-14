@@ -28,6 +28,20 @@ namespace Samples.Security.AspNetCore5.Controllers
         public QueryData InnerQuery { get; set; }
     }
 
+    public class XContentTypeOptionsAttribute : ActionFilterAttribute
+    {
+        public override void OnResultExecuting(ResultExecutingContext filterContext)
+        {
+            if (!filterContext.HttpContext.Request.Path.Contains("XContentTypeHeaderMissing"))
+            {
+                filterContext.HttpContext.Response.AddHeader("X-Content-Type-Options", "nosniff");
+            }
+
+            base.OnResultExecuting(filterContext);
+        }
+    }
+
+    [XContentTypeOptionsAttribute]
     [Route("[controller]")]
     public class IastController : Controller
     {
@@ -319,6 +333,64 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content("Sending AllVulnerabilitiesCookie");
         }
 
+        [Route("XContentTypeHeaderMissing")]
+        public ActionResult XContentTypeHeaderMissing(string contentType = "text/html", int returnCode = 200, string xContentTypeHeaderValue = "")
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(xContentTypeHeaderValue))
+                {
+                    Response.AddHeader("X-Content-Type-Options", xContentTypeHeaderValue);
+                }
+
+                if (returnCode != (int)HttpStatusCode.OK)
+                {
+                    return new HttpStatusCodeResult(returnCode);
+                }
+
+                if (!string.IsNullOrEmpty(contentType))
+                {
+                    return Content("XContentTypeHeaderMissing", contentType);
+                }
+                else
+                {
+                    return Content("XContentTypeHeaderMissing");
+                }
+            }
+            catch(Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+        }
+
+        [Route("StrictTransportSecurity")]
+        public ActionResult StrictTransportSecurity(string contentType = "text/html", int returnCode = 200, string hstsHeaderValue = "", string xForwardedProto = "")
+        {
+            if (!string.IsNullOrEmpty(hstsHeaderValue))
+            {
+                Response.Headers.Add("Strict-Transport-Security", hstsHeaderValue);
+            }
+
+            if (!string.IsNullOrEmpty(xForwardedProto))
+            {
+                Response.Headers.Add("X-Forwarded-Proto", xForwardedProto);
+            }
+
+            if (returnCode != (int)HttpStatusCode.OK)
+            {
+                return new HttpStatusCodeResult(returnCode);
+            }
+
+            if (!string.IsNullOrEmpty(contentType))
+            {
+                return Content("StrictTransportSecurityMissing", contentType);
+            }
+            else
+            {
+                return Content("StrictTransportSecurityMissing");
+            }
+        }
+
         private HttpCookie GetDefaultCookie(string key, string value)
         {
             var cookie = new HttpCookie(key, value);
@@ -393,5 +465,47 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             return Content("Random number: " + (new Random()).Next().ToString() , "text/html");
         }
+
+        [Route("TrustBoundaryViolation")]
+        public ActionResult TrustBoundaryViolation(string name, string value)
+        {
+            string result = string.Empty;
+            try
+            {
+                if (HttpContext.Session == null)
+                {
+                    result = "No session";
+                }
+                else
+                {
+                    HttpContext.Session.Add("String", "Value");
+                    HttpContext.Session.Add("Object", this);
+                    HttpContext.Session.Add(name, value);
+                    HttpContext.Session["nameKey"] = name;
+                    HttpContext.Session["valueKey"] = value;
+                    result = "Request parameters added to session";
+                }
+            }
+            catch (Exception err)
+            {
+                result = "Error in request. " + err.ToString();
+            }
+
+            return Content(result, "text/html");
+        }
+
+        [Route("UnvalidatedRedirect")]
+        public ActionResult UnvalidatedRedirect(string param)
+        {
+            var location = $"Redirected?param={param}";
+            return Redirect(location);
+        }
+
+        [Route("Redirected")]
+        public ActionResult Redirected(string param)
+        {
+            return Content($"Redirected param:{param}\n");
+        }
+
     }
 }

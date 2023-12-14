@@ -373,6 +373,13 @@ partial class Build
         .After(CompileManagedLoader)
         .Executes(() =>
         {
+            // Removes previously generated files
+            // This is mostly to avoid forgetting to remove deprecated files (class name change or path change)
+            if (IsWin)
+            {
+                EnsureCleanDirectory(DatadogTraceDirectory / "Generated");
+            }
+
             var include = TracerDirectory.GlobFiles(
                 "src/**/*.csproj"
             );
@@ -527,13 +534,7 @@ partial class Build
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
                     var testDir = project.Directory;
-
-                    // FIXME: This is a hack for the .NET 8 RC2 on macos, where it's
-                    // failing to load MSBuild, so can't get the target frameworks here
-                    // so hardcoding to use the default test frameworks for now
-                    var frameworks = IsOsx
-                        ? TestingFrameworks.Select(x => (string) x).ToArray()
-                        : project.GetTargetFrameworks();
+                    var frameworks = project.GetTargetFrameworks();
 
                     var testBinFolder = testDir / "bin" / BuildConfiguration;
 
@@ -910,6 +911,8 @@ partial class Build
                     $"-v {Version}",
                     packageType == "tar" ? "" : "--prefix /opt/datadog",
                     $"--chdir {assetsDirectory}",
+                    $"--after-install {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}",
+                    $"--after-remove {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}",
                     "createLogPath.sh",
                     "dd-dotnet.sh",
                     "netstandard2.0/",
@@ -2123,21 +2126,28 @@ partial class Build
        .After(CopyDdDotnet)
        .Executes(async () =>
        {
-           var isDebugRun = await IsDebugRun();
-           var project = Solution.GetProject(Projects.DdDotnetArtifactsTests);
+           try
+           {
+               var isDebugRun = await IsDebugRun();
+               var project = Solution.GetProject(Projects.DdDotnetArtifactsTests);
 
-           DotNetTest(config => config
-                   .SetProjectFile(project)
-                   .SetConfiguration(BuildConfiguration)
-                   .SetFramework(Framework)
-                   .SetTestTargetPlatform(TargetPlatform)
-                   .EnableNoRestore()
-                   .EnableNoBuild()
-                   .SetIsDebugRun(isDebugRun)
-                   .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                   .SetLogsDirectory(TestLogsDirectory)
-                   .EnableTrxLogOutput(GetResultsDirectory(project))
-                   .WithDatadogLogger());
+               DotNetTest(config => config
+                       .SetProjectFile(project)
+                       .SetConfiguration(BuildConfiguration)
+                       .SetFramework(Framework)
+                       .SetTestTargetPlatform(TargetPlatform)
+                       .EnableNoRestore()
+                       .EnableNoBuild()
+                       .SetIsDebugRun(isDebugRun)
+                       .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                       .SetLogsDirectory(TestLogsDirectory)
+                       .EnableTrxLogOutput(GetResultsDirectory(project))
+                       .WithDatadogLogger());
+           }
+           finally
+           {
+               CopyDumpsToBuildData();
+           }
        });
 
     Target CopyServerlessArtifacts => _ => _
@@ -2153,6 +2163,44 @@ partial class Build
             {
                 CopyDirectoryRecursively(MonitoringHomeDirectory, target, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
             }
+        });
+
+    Target CreateMissingNullabilityFile => _ => _
+        .Description("Create missing-nullability-files.csv file for tracking nullability in the repo")
+        .Executes(() =>
+        {
+            var include = TracerDirectory.GlobFiles("src/Datadog.Trace/**/*.cs");
+            var exclude = TracerDirectory.GlobFiles(
+                "src/Datadog.Trace/obj/**",
+                "src/Datadog.Trace/Generated/**",
+                "src/Datadog.Trace/Vendors/**"
+            );
+
+            var sourceFiles = include.Except(exclude);
+
+            var sb = new StringBuilder();
+            foreach (var file in sourceFiles)
+            {
+                bool missingNullability = true;
+
+                foreach (var line in File.ReadLines(file))
+                {
+                    if (line.Contains("#nullable enable"))
+                    {
+                        missingNullability = false;
+                        break;        
+                    }
+                }
+
+                if (missingNullability)
+                {
+                    sb.AppendLine(TracerDirectory.GetUnixRelativePathTo(file));
+                }
+            }
+
+            var csvFilePath = TracerDirectory / "missing-nullability-files.csv";
+            File.WriteAllText(csvFilePath, sb.ToString());
+            Serilog.Log.Information("File saved: {File}", csvFilePath);
         });
 
     Target CreateRootDescriptorsFile => _ => _
@@ -2696,17 +2744,27 @@ partial class Build
 
     private void CopyDumpsTo(AbsolutePath root)
     {
+        var dumpFolder = root / "dumps";
+
         if (Directory.Exists(TempDirectory))
         {
             foreach (var dump in GlobFiles(TempDirectory, "coredump*", "*.dmp"))
             {
-                MoveFileToDirectory(dump, root / "dumps", FileExistsPolicy.Overwrite);
+                Logger.Information("Moving file '{Dump}' to '{Root}'", dump, dumpFolder);
+
+                MoveFileToDirectory(dump, dumpFolder, FileExistsPolicy.Overwrite);
             }
         }
 
         foreach (var file in Directory.EnumerateFiles(TracerDirectory, "*.dmp", SearchOption.AllDirectories))
         {
-            CopyFileToDirectory(file, root, FileExistsPolicy.OverwriteIfNewer);
+            if (Path.GetDirectoryName(file) == dumpFolder)
+            {
+                // The dump is already in the right location
+                continue;
+            }
+
+            CopyFileToDirectory(file, dumpFolder, FileExistsPolicy.OverwriteIfNewer);
         }
     }
 

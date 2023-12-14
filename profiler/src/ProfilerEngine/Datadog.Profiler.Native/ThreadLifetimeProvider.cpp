@@ -18,7 +18,7 @@ ThreadLifetimeProvider::ThreadLifetimeProvider(
     CollectorBase<RawThreadLifetimeSample>(
         "ThreadLifetimeProvider",
         valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions),
-        pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
+        pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
 {
 }
 

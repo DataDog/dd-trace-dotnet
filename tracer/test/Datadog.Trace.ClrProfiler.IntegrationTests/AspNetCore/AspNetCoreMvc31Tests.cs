@@ -40,6 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected AspNetCoreMvc31Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames)
             : base("AspNetCoreMvc31", fixture, output, enableRouteTemplateResourceNames)
         {
+            SetEnvironmentVariable("ADD_EXTRA_MIDDLEWARE", "1");
             _testName = GetTestName(nameof(AspNetCoreMvc31Tests));
         }
 

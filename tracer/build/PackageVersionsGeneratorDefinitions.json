@@ -191,12 +191,13 @@
     "SampleProjectName": "Samples.Npgsql",
     "NugetPackageSearchName": "Npgsql",
     "MinVersion": "4.0.0",
-    "MaxVersionExclusive": "8.0.0",
+    "MaxVersionExclusive": "9.0.0",
     "SpecificVersions": [
       "4.*.*",
       "5.*.*",
       "6.*.*",
-      "7.*.*"
+      "7.*.*",
+      "8.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "6.0.0",
@@ -217,7 +218,7 @@
     ]
   },
   {
-    "IntegrationName": " DataStreamsRabbitMQ",
+    "IntegrationName": "DataStreamsRabbitMQ",
     "SampleProjectName": "Samples.DataStreams.RabbitMQ",
     "NugetPackageSearchName": "RabbitMQ.Client",
     "MinVersion": "3.6.9",
@@ -286,11 +287,12 @@
     "SampleProjectName": "Samples.ServiceStack.Redis",
     "NugetPackageSearchName": "ServiceStack.Redis",
     "MinVersion": "4.0.48",
-    "MaxVersionExclusive": "7.0.0",
+    "MaxVersionExclusive": "9.0.0",
     "SpecificVersions": [
       "4.*.*",
       "5.*.*",
-      "6.*.*"
+      "6.*.*",
+      "8.*.*"
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "5.0.0",
@@ -334,13 +336,14 @@
     "SampleProjectName": "Samples.Microsoft.Data.Sqlite",
     "NugetPackageSearchName": "Microsoft.Data.Sqlite",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "8.0.0",
+    "MaxVersionExclusive": "9.0.0",
     "SpecificVersions": [
       "2.*.*",
       "3.*.*",
       "5.*.*",
       "6.*.*",
-      "7.*.*"
+      "7.*.*",
+      "8.*.*"
     ],
     "VersionConditions": [
       {
@@ -377,11 +380,18 @@
     "SampleProjectName": "Samples.NUnitTests",
     "NugetPackageSearchName": "NUnit",
     "MinVersion": "3.6.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
     "SpecificVersions": [
       "3.6.*",
       "3.10.*",
-      "3.*.*"
+      "3.*.*",
+      "4.*.*"
+    ],
+    "VersionConditions": [
+      {
+        "MinVersion": "4.0.0",
+        "ExcludeTargetFrameworks": [ "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
+      }
     ]
   },
   {
@@ -438,6 +448,9 @@
     "VersionConditions": [{
       "MaxVersionExclusive": "2.0.0",
       "IncludeOnlyTargetFrameworks": ["net462"]
+    },{
+      "MinVersion": "3.1.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
     }]
   },
   {
@@ -471,6 +484,20 @@
     "VersionConditions": [{
       "MaxVersionExclusive": "2.0.6",
       "IncludeOnlyTargetFrameworks": ["net462"]
+    }]
+  },
+  {
+    "IntegrationName": "ILogger",
+    "SampleProjectName": "LogsInjection.ILogger.ExtendedLogger",
+    "NugetPackageSearchName": "Microsoft.Extensions.Telemetry",
+    "MinVersion": "8.0.0",
+    "MaxVersionExclusive": "9.0.0",
+    "SpecificVersions": [
+      "8.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "8.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
     }]
   },
   {

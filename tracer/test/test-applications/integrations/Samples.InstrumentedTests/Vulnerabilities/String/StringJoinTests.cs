@@ -249,8 +249,18 @@ public class StringJoinTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Join(",", new ClassForStringTest(taintedValue)), () => String.Join(",", new ClassForStringTest(taintedValue)));
     }
 
-
 #if !NET462
+
+    [Fact]
+    public void GivenATaintedStringInList_WhenCallingJoinWithChar_ResultIsTainted10()
+    {
+        var objectList = new List<object> { TaintedObject, UntaintedObject, OtherTaintedObject };
+        AssertTaintedFormatWithOriginalCallCheck(
+            ":+-TaintedObject-+: UntaintedObject :+-OtherTaintedObject-+:",
+            string.Join(' ', objectList),
+            () => string.Join(' ', objectList));
+    }
+
     [Fact]
     public void GivenATaintedStringInNestedMethodObject_WhenCallingJoinWithChar_ResultIsTainted6()
     {

@@ -315,11 +315,8 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
         {
             static IEnumerable<(string Type, long Count, long Size, StackTrace Stacktrace, long Time)> GetAllocationSamples(string directory)
             {
-                foreach (var file in Directory.EnumerateFiles(directory, "*.pprof", SearchOption.AllDirectories))
+                foreach (var profile in SamplesHelper.GetProfiles(directory))
                 {
-                    using var stream = File.OpenRead(file);
-                    var profile = Profile.Parser.ParseFrom(stream);
-
                     foreach (var sample in profile.Sample)
                     {
                         var count = sample.Value[0];

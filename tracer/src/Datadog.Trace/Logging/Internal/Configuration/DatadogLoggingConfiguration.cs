@@ -10,10 +10,12 @@ internal readonly struct DatadogLoggingConfiguration
 {
     public readonly int RateLimit;
     public readonly FileLoggingConfiguration? File;
+    public readonly RedactedErrorLoggingConfiguration? ErrorLogging;
 
-    public DatadogLoggingConfiguration(int rateLimit, FileLoggingConfiguration? file)
+    public DatadogLoggingConfiguration(int rateLimit, FileLoggingConfiguration? file, RedactedErrorLoggingConfiguration? errorLogging)
     {
         RateLimit = rateLimit;
         File = file;
+        ErrorLogging = errorLogging;
     }
 }

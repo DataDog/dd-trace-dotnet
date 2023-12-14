@@ -25,6 +25,7 @@ namespace Honeypot
             NugetPackages.Add("System.Messaging", new string[] { });
             NugetPackages.Add("System", new string[] { });
             NugetPackages.Add("System.Diagnostics.Process", new string[] { });
+            NugetPackages.Add("System.Runtime.Remoting", new string[] {  });
             NugetPackages.Add("System.Security.Cryptography", new string[] { });
             NugetPackages.Add("System.Security.Cryptography.Primitives", new string[] { });
 
@@ -50,6 +51,7 @@ namespace Honeypot
             NugetPackages.Add("System.Net.Http.WinHttpHandler", new [] { "System.Net.Http.WinHttpHandler" });
             NugetPackages.Add("Microsoft.Extensions.Logging.Abstractions", new [] { "Microsoft.Extensions.Logging.Abstractions" });
             NugetPackages.Add("Microsoft.Extensions.Logging", new [] { "Microsoft.Extensions.Logging" });
+            NugetPackages.Add("Microsoft.Extensions.Telemetry", new [] { "Microsoft.Extensions.Telemetry" });
             NugetPackages.Add("Confluent.Kafka", new [] { "Confluent.Kafka" });
             NugetPackages.Add("MongoDB.Driver.Core", new [] { "MongoDB.Driver.Core", "MongoDB.Driver" });
             NugetPackages.Add("Microsoft.VisualStudio.TestPlatform.TestFramework", new [] { "Microsoft.VisualStudio.TestPlatform" });
@@ -93,6 +95,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Server.IIS", new[] { "Microsoft.AspNetCore.Server.IIS" });
             NugetPackages.Add("Microsoft.AspNetCore.Server.Kestrel.Core", new string[] { "Microsoft.AspNetCore.Server.Kestrel.Core" });
             NugetPackages.Add("Azure.Messaging.ServiceBus", new string[] { "Azure.Messaging.ServiceBus" });
+            NugetPackages.Add("amqmdnetstd", new [] { "IBMMQDotnetClient" });
         }
 
         private IntegrationMap()

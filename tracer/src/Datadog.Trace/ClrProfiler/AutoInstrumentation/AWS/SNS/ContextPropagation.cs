@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -27,8 +29,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             sb.Append('}');
 
             var resultString = Util.StringBuilderCache.GetStringAndRelease(sb);
-            byte[] bytes = Encoding.UTF8.GetBytes(resultString);
-            MemoryStream stream = new MemoryStream(bytes);
+            var bytes = Encoding.UTF8.GetBytes(resultString);
+            var stream = new MemoryStream(bytes);
             messageAttributes[SnsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(stream);
         }
 
@@ -43,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             {
                 // In .NET Fx and Net Core 2.1, removing an element while iterating on keys throws.
 #if !NETCOREAPP2_1_OR_GREATER
-                List<string> attributesToRemove = null;
+                List<string>? attributesToRemove = null;
 #endif
                 // Make sure we do not propagate any other datadog header here in the rare cases where users would have added them manually
                 foreach (var attribute in carrier.MessageAttributes.Keys)

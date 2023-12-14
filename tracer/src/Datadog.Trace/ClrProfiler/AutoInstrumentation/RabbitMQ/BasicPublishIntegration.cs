@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -31,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     {
         private const string Command = "basic.publish";
 
-        private static readonly string[] DeliveryModeStrings = { null, "1", "2" };
+        private static readonly string?[] DeliveryModeStrings = { null, "1", "2" };
 
         /// <summary>
         /// OnMethodBegin callback
@@ -51,23 +53,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             where TBody : IBody, IDuckType // Versions < 6.0.0: TBody is byte[] // Versions >= 6.0.0: TBody is ReadOnlyMemory<byte>
             where TTarget : IModelBase
         {
-            var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out RabbitMQTags tags, Command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey, host: instance?.Session.Connection.Endpoint.HostName);
-            Tracer.Instance.CurrentTraceSettings.Schema.RemapPeerService(tags);
+            var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out var tags, Command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey, host: instance?.Session?.Connection?.Endpoint?.HostName);
 
-            if (scope != null)
+            // Tags is not null if span is not null, but keep analysis happy, as there's no attribute for that
+            if (scope != null && tags is not null)
             {
+                Tracer.Instance.CurrentTraceSettings.Schema.RemapPeerService(tags);
+
                 string exchangeDisplayName = string.IsNullOrEmpty(exchange) ? "<default>" : exchange;
                 string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-") ? "<generated>" : routingKey;
                 scope.Span.ResourceName = $"{Command} {exchangeDisplayName} -> {routingKeyDisplayName}";
 
-                if (tags != null)
-                {
-                    tags.MessageSize = body.Instance != null ? body.Length.ToString() : "0";
-                }
+                tags.MessageSize = body.Instance != null ? body.Length.ToString() : "0";
 
                 if (basicProperties.Instance != null)
                 {
-                    if (tags != null && basicProperties.IsDeliveryModePresent())
+                    if (basicProperties.IsDeliveryModePresent())
                     {
                         tags.DeliveryMode = DeliveryModeStrings[0x3 & basicProperties.DeliveryMode];
                     }

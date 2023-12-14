@@ -54,7 +54,8 @@ namespace Datadog.Trace.Tests.Propagators
         {
             Propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
                 new[] { ContextPropagationHeaderStyle.Datadog },
-                new[] { ContextPropagationHeaderStyle.Datadog });
+                new[] { ContextPropagationHeaderStyle.Datadog },
+                false);
         }
 
         public static TheoryData<string> GetInvalidIds() => new()
