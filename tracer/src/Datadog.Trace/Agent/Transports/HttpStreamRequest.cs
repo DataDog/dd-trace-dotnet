@@ -41,6 +41,9 @@ namespace Datadog.Trace.Agent.Transports
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
             => (await SendAsync(WebRequestMethods.Http.Post, contentType, new BufferContent(bytes), contentEncoding).ConfigureAwait(false)).Item1;
 
+        public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding)
+            => (await SendAsync(WebRequestMethods.Http.Post, contentType, new HttpOverStreams.HttpContent.PushStreamContent(writeToRequestStream), contentEncoding).ConfigureAwait(false)).Item1;
+
         private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType, IHttpContent content, string contentEncoding)
         {
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())

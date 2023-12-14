@@ -123,6 +123,15 @@ namespace Benchmarks.Trace
                 return new FakeApiResponse();
             }
 
+            public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding)
+            {
+                using (var requestStream = Stream.Null)
+                {
+                    await writeToRequestStream(requestStream).ConfigureAwait(false);
+                }
+
+                return new FakeApiResponse();
+            }
         }
 
         private class FakeApiResponse : IApiResponse

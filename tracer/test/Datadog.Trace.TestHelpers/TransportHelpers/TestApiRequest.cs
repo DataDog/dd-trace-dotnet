@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 
@@ -56,5 +57,14 @@ internal class TestApiRequest : IApiRequest
         Responses.Add(response);
 
         return Task.FromResult((IApiResponse)response);
+    }
+
+    public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding)
+    {
+        using (var ms = new MemoryStream())
+        {
+            await writeToRequestStream(ms);
+            return await PostAsync(new ArraySegment<byte>(ms.ToArray()), contentType, contentEncoding);
+        }
     }
 }

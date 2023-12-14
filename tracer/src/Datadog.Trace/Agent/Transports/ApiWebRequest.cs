@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,21 +35,11 @@ namespace Datadog.Trace.Agent.Transports
             _request.Headers.Add(name, value);
         }
 
-        public async Task<IApiResponse> GetAsync()
+        public Task<IApiResponse> GetAsync()
         {
             ResetRequest(method: "GET", contentType: null, contentEncoding: null);
 
-            try
-            {
-                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
-                return new ApiWebResponse(httpWebResponse);
-            }
-            catch (WebException exception)
-                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
-            {
-                // If the exception is caused by an error status code, swallow the exception and let the caller handle the result
-                return new ApiWebResponse((HttpWebResponse)exception.Response);
-            }
+            return FinishAndGetResponse();
         }
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
@@ -63,17 +54,19 @@ namespace Datadog.Trace.Agent.Transports
                 await requestStream.WriteAsync(bytes.Array, bytes.Offset, bytes.Count).ConfigureAwait(false);
             }
 
-            try
+            return await FinishAndGetResponse().ConfigureAwait(false);
+        }
+
+        public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding)
+        {
+            ResetRequest(method: "POST", contentType, contentEncoding);
+
+            using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
-                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
-                return new ApiWebResponse(httpWebResponse);
+                await writeToRequestStream(requestStream).ConfigureAwait(false);
             }
-            catch (WebException exception)
-                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
-            {
-                // If the exception is caused by an error status code, ignore it and let the caller handle the result
-                return new ApiWebResponse((HttpWebResponse)exception.Response);
-            }
+
+            return await FinishAndGetResponse().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -167,17 +160,7 @@ namespace Datadog.Trace.Agent.Transports
                 }
             }
 
-            try
-            {
-                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
-                return new ApiWebResponse(httpWebResponse);
-            }
-            catch (WebException exception)
-                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
-            {
-                // If the exception is caused by an error status code, ignore it and let the caller handle the result
-                return new ApiWebResponse((HttpWebResponse)exception.Response);
-            }
+            return await FinishAndGetResponse().ConfigureAwait(false);
         }
 
         private void ResetRequest(string method, string contentType, string contentEncoding)
@@ -191,6 +174,21 @@ namespace Datadog.Trace.Agent.Transports
             else
             {
                 _request.Headers.Set(HttpRequestHeader.ContentEncoding, contentEncoding);
+            }
+        }
+
+        private async Task<IApiResponse> FinishAndGetResponse()
+        {
+            try
+            {
+                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
+                return new ApiWebResponse(httpWebResponse);
+            }
+            catch (WebException exception)
+                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
+            {
+                // If the exception is caused by an error status code, ignore it and let the caller handle the result
+                return new ApiWebResponse((HttpWebResponse)exception.Response);
             }
         }
     }
