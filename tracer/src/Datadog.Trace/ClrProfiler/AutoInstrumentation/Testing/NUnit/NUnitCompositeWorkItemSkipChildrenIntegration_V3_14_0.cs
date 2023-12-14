@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = new[] { ClrNames.Ignore, "NUnit.Framework.Interfaces.ResultState", ClrNames.String, ClrNames.String },
     MinimumVersion = "3.14.0",
-    MaximumVersion = "3.*.*",
+    MaximumVersion = "4.*.*",
     IntegrationName = NUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

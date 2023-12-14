@@ -35,8 +35,9 @@ namespace Samples.Security.AspNetCore5.Controllers
             if (!filterContext.HttpContext.Request.Path.Contains("XContentTypeHeaderMissing"))
             {
                 filterContext.HttpContext.Response.AddHeader("X-Content-Type-Options", "nosniff");
-                base.OnResultExecuting(filterContext);
             }
+
+            base.OnResultExecuting(filterContext);
         }
     }
 
@@ -362,6 +363,34 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
         }
 
+        [Route("StrictTransportSecurity")]
+        public ActionResult StrictTransportSecurity(string contentType = "text/html", int returnCode = 200, string hstsHeaderValue = "", string xForwardedProto = "")
+        {
+            if (!string.IsNullOrEmpty(hstsHeaderValue))
+            {
+                Response.Headers.Add("Strict-Transport-Security", hstsHeaderValue);
+            }
+
+            if (!string.IsNullOrEmpty(xForwardedProto))
+            {
+                Response.Headers.Add("X-Forwarded-Proto", xForwardedProto);
+            }
+
+            if (returnCode != (int)HttpStatusCode.OK)
+            {
+                return new HttpStatusCodeResult(returnCode);
+            }
+
+            if (!string.IsNullOrEmpty(contentType))
+            {
+                return Content("StrictTransportSecurityMissing", contentType);
+            }
+            else
+            {
+                return Content("StrictTransportSecurityMissing");
+            }
+        }
+
         private HttpCookie GetDefaultCookie(string key, string value)
         {
             var cookie = new HttpCookie(key, value);
@@ -437,8 +466,8 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content("Random number: " + (new Random()).Next().ToString() , "text/html");
         }
 
-        [Route("TBV")]
-        public ActionResult Tbv(string name, string value)
+        [Route("TrustBoundaryViolation")]
+        public ActionResult TrustBoundaryViolation(string name, string value)
         {
             string result = string.Empty;
             try
@@ -464,5 +493,19 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return Content(result, "text/html");
         }
+
+        [Route("UnvalidatedRedirect")]
+        public ActionResult UnvalidatedRedirect(string param)
+        {
+            var location = $"Redirected?param={param}";
+            return Redirect(location);
+        }
+
+        [Route("Redirected")]
+        public ActionResult Redirected(string param)
+        {
+            return Content($"Redirected param:{param}\n");
+        }
+
     }
 }

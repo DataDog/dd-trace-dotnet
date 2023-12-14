@@ -39,8 +39,9 @@ namespace Samples.Security.AspNetCore5.Controllers
             if (!filterContext.HttpContext.Request.Path.Value.Contains("XContentTypeHeaderMissing"))
             {
                 filterContext.HttpContext.Response.Headers.Add("X-Content-Type-Options", "nosniff");
-                base.OnResultExecuting(filterContext);
             }
+
+            base.OnResultExecuting(filterContext);
         }
     }
 
@@ -443,34 +444,6 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content(result, "text/html");
         }
 
-        [HttpGet("TBV")]
-        [Route("TBV")]
-        public ActionResult Tbv(string name, string value)
-        {
-            string result = string.Empty;
-            try
-            {
-                if (HttpContext.Session == null)
-                {
-                    result = "No session";
-                }
-                else
-                {
-                    HttpContext.Session.SetString(name, value);
-                    HttpContext.Session.SetInt32(name + "-" + value, 42);
-                    result = "Request parameters added to session";
-
-                    result = "Request parameters added to session";
-                }
-            }
-            catch (Exception err)
-            {
-                result = "Error in request. " + err.ToString();
-            }
-
-            return Content(result, "text/html");
-        }
-
         private ActionResult ExecuteQuery(string query)
         {
             var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
@@ -556,6 +529,86 @@ namespace Samples.Security.AspNetCore5.Controllers
             else
             {
                 return Content("XContentTypeHeaderMissing");
+            }
+        }
+
+        [HttpGet("TBV")]
+        [Route("TBV")]
+        public ActionResult TrustBoundaryViolation(string name, string value)
+        {
+            string result = string.Empty;
+            try
+            {
+                if (HttpContext.Session == null)
+                {
+                    result = "No session";
+                }
+                else
+                {
+                    HttpContext.Session.SetString(name, value);
+                    HttpContext.Session.SetInt32(name + "-" + value, 42);
+                    result = "Request parameters added to session (TrustBoundaryViolation)";
+                }
+            }
+            catch (Exception err)
+            {
+                result = "Error in request. " + err.ToString();
+            }
+
+            return Content(result, "text/html");
+        }
+
+        [HttpGet("UnvalidatedRedirect")]
+        [Route("UnvalidatedRedirect")]
+        public ActionResult UnvalidatedRedirect(string param)
+        {
+            string result = string.Empty;
+            try
+            {
+                var location = $"Redirected?param={param}";
+                HttpContext.Response.Redirect(location);
+                result = $"Request redirected to {location}";
+            }
+            catch (Exception err)
+            {
+                result = "Error in request. " + err.ToString();
+            }
+
+            return Content(result, "text/html");
+        }
+
+        [Route("Redirected")]
+        public IActionResult Redirected(string param)
+        {
+            return Content($"Redirected param:{param}\n");
+        }
+
+        [HttpGet("StrictTransportSecurity")]
+        [Route("StrictTransportSecurity")]
+        public ActionResult StrictTransportSecurity(string contentType = "text/html", int returnCode = 200, string hstsHeaderValue = "", string xForwardedProto ="")
+        {
+            if (!string.IsNullOrEmpty(hstsHeaderValue))
+            {
+                Response.Headers.Add("Strict-Transport-Security", hstsHeaderValue);
+            }
+
+            if (!string.IsNullOrEmpty(xForwardedProto))
+            {
+                Response.Headers.Add("X-Forwarded-Proto", xForwardedProto);
+            }
+
+            if (returnCode != (int)HttpStatusCode.OK)
+            {
+                return StatusCode(returnCode);
+            }
+
+            if (!string.IsNullOrEmpty(contentType))
+            {
+                return Content("StrictTransportSecurityMissing", contentType);
+            }
+            else
+            {
+                return Content("StrictTransportSecurityMissing");
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -24,11 +24,11 @@
             },
             "locals": {
               "_Pass_WoRD_": {
-                "notCapturedReason": "redactedByIndentifier",
+                "notCapturedReason": "redactedIdent",
                 "type": "String"
               },
               "_SeC_ReT": {
-                "notCapturedReason": "redactedByIndentifier",
+                "notCapturedReason": "redactedIdent",
                 "type": "String"
               },
               "a": {
@@ -38,7 +38,7 @@
                     "type": "String"
                   },
                   "PassWord": {
-                    "notCapturedReason": "redactedByIndentifier",
+                    "notCapturedReason": "redactedIdent",
                     "type": "String"
                   },
                   "RedactMe": {
@@ -56,7 +56,7 @@
                     "type": "String"
                   },
                   "PassWord": {
-                    "notCapturedReason": "redactedByIndentifier",
+                    "notCapturedReason": "redactedIdent",
                     "type": "String"
                   },
                   "RedactMe": {
@@ -66,6 +66,46 @@
                 },
                 "type": "OuterClass",
                 "value": "OuterClass"
+              },
+              "iamok": {
+                "fields": {
+                  "Name": {
+                    "type": "String",
+                    "value": "You should see me IAmOkType"
+                  }
+                },
+                "type": "IAmOkType",
+                "value": "IAmOkType"
+              },
+              "redactedTypeA": {
+                "fields": {
+                  "Name": {
+                    "type": "String",
+                    "value": "You should not see me RedactMeTypeA"
+                  }
+                },
+                "type": "RedactMeTypeA",
+                "value": "RedactMeTypeA"
+              },
+              "redactedTypeB": {
+                "fields": {
+                  "Name": {
+                    "type": "String",
+                    "value": "You should not see me RedactMeTypeB"
+                  }
+                },
+                "type": "RedactMeTypeB",
+                "value": "RedactMeTypeB"
+              },
+              "redactedTypeC": {
+                "fields": {
+                  "Name": {
+                    "type": "String",
+                    "value": "You should not see me AnotherRedactMeTypeB"
+                  }
+                },
+                "type": "AnotherRedactMeTypeB",
+                "value": "AnotherRedactMeTypeB"
               }
             }
           }

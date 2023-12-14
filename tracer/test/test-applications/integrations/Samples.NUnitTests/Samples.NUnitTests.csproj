@@ -4,6 +4,7 @@
     <IsPackable>false</IsPackable>
     <OutputType>Library</OutputType>
     <ApiVersion Condition="'$(ApiVersion)' == ''">3.13.1</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)'&gt;='4.0.0'">$(DefineConstants);NUNIT_4_0</DefineConstants>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -13,8 +14,15 @@
 
   <ItemGroup>
     <PackageReference Include="NUnit" Version="$(ApiVersion)" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(ApiVersion)'&lt;'4.0.0'">
     <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ApiVersion)'&gt;='4.0.0'">
+    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1"/>
   </ItemGroup>
 
 </Project>

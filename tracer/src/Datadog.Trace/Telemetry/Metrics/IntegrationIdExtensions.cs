@@ -64,13 +64,14 @@ internal static class IntegrationIdExtensions
             IntegrationId.Ssrf => MetricTags.IntegrationName.Ssrf,
             IntegrationId.Ldap => MetricTags.IntegrationName.Ldap,
             IntegrationId.HardcodedSecret => MetricTags.IntegrationName.HardcodedSecret,
-            IntegrationId.TrustBoundaryViolation => MetricTags.IntegrationName.TrustBoundaryViolation,
             IntegrationId.AwsKinesis => MetricTags.IntegrationName.AwsKinesis,
             IntegrationId.AzureServiceBus => MetricTags.IntegrationName.AzureServiceBus,
             IntegrationId.SystemRandom => MetricTags.IntegrationName.SystemRandom,
             IntegrationId.AwsDynamoDb => MetricTags.IntegrationName.AwsDynamoDb,
             IntegrationId.IbmMq => MetricTags.IntegrationName.IbmMq,
             IntegrationId.Remoting => MetricTags.IntegrationName.Remoting,
+            IntegrationId.TrustBoundaryViolation => MetricTags.IntegrationName.TrustBoundaryViolation,
+            IntegrationId.UnvalidatedRedirect => MetricTags.IntegrationName.UnvalidatedRedirect,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }
