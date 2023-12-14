@@ -51,6 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             // for the InjectHeadersIntoMessage<TSendMessageRequest> call below
             var requestProxy = request.DuckCast<ISendMessageBatchRequest>();
 
+            var queueName = AwsSqsCommon.GetQueueName(requestProxy.QueueUrl);
             var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out var tags, spanKind: SpanKinds.Producer);
             if (tags is not null && requestProxy.QueueUrl is not null)
             {
@@ -66,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                     var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
                     if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
                     {
-                        var edgeTags = new[] { "direction:out", $"topic:{tags.QueueName}", "type:sqs" };
+                        var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
                         scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, 0, 0);
                     }
 

@@ -51,17 +51,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 return CallTargetState.GetDefault();
             }
 
+            var queueName = AwsSqsCommon.GetQueueName(request.QueueUrl);
             var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out var tags, spanKind: SpanKinds.Consumer);
             if (tags is not null && request.QueueUrl is not null)
             {
                 tags.QueueUrl = request.QueueUrl;
-                tags.QueueName = AwsSqsCommon.GetQueueName(request.QueueUrl);
+                tags.QueueName = queueName;
             }
 
             // request the message attributes that a datadog instrumentation might have set when sending
             request.MessageAttributeNames.Add(ContextPropagation.SqsKey);
 
-            return new CallTargetState(scope, tags.QueueName);
+            return new CallTargetState(scope, queueName);
         }
 
         /// <summary>
@@ -77,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
             where TResponse : IReceiveMessageResponse, IDuckType
         {
-            if (response != null && response.Messages.Count > 0)
+            if (response.Instance != null && response.Messages.Count > 0)
             {
                 var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
                 if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
