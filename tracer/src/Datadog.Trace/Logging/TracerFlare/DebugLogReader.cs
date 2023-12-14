@@ -76,16 +76,8 @@ internal static class DebugLogReader
                     var filename = Path.GetFileName(filePath);
                     var entry = archive.CreateEntry(filename);
                     using var entryStream = entry.Open();
-
-                    // Using the default buffer size
-                    using var sw = new StreamWriter(entryStream, EncodingHelpers.Utf8, bufferSize: 1024, leaveOpen: true);
-
-                    // TODO: we currently only scrub line by line - should we be doing whole file scrubbing?
-                    foreach (var line in File.ReadLines(filePath))
-                    {
-                        var scrubbed = DebugLogScrubber.ScrubString(line);
-                        await sw.WriteAsync(scrubbed).ConfigureAwait(false);
-                    }
+                    using var file = File.OpenRead(filePath);
+                    await file.CopyToAsync(entryStream).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
