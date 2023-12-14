@@ -24,7 +24,7 @@ internal class PushStreamContent : IHttpContent
     private readonly Func<Stream, Task> _onStreamAvailable;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="PushStreamContent"/> class with the given <see cref="MediaTypeHeaderValue"/>.
+    /// Initializes a new instance of the <see cref="PushStreamContent"/> class.
     /// </summary>
     /// <param name="onStreamAvailable">The action to call when an output stream is available. When the
     /// output stream is closed or disposed, it will signal to the content that it has completed and the
