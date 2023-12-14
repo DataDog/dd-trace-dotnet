@@ -93,7 +93,17 @@ public class DebugLogReaderTests(ITestOutputHelper output)
         using var ms = new MemoryStream();
 
         // zip, scrub, write to stream
+        output.WriteLine("Reading log files");
         await DebugLogReader.WriteDebugLogArchiveToStream(ms, directory);
+
+        // write the zip file for external testing
+        var zipFile = Path.Combine(directory, "debug_logs.zip");
+        output.WriteLine("Creating zip file " + zipFile);
+        using (var fs = File.Create(zipFile))
+        {
+            ms.Seek(offset: 0, SeekOrigin.Begin);
+            await ms.CopyToAsync(fs);
+        }
 
         ms.Seek(offset: 0, SeekOrigin.Begin);
         using var archive = new ZipArchive(ms, ZipArchiveMode.Read);
@@ -131,7 +141,9 @@ public class DebugLogReaderTests(ITestOutputHelper output)
                 """;
 
             using var writer = File.CreateText(Path.Combine(directory, filename));
-            foreach (string line in Enumerable.Repeat(logLines, 5000))
+            // Creates files ~10MB (max file size we expect)
+            const int repeats = 4000;
+            foreach (var line in Enumerable.Repeat(logLines, repeats))
             {
                 await writer.WriteLineAsync(line);
             }
