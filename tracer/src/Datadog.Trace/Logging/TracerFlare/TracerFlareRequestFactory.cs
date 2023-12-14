@@ -7,6 +7,7 @@
 
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using static Datadog.Trace.Logging.TracerFlare.EncodingHelpers;
 
 namespace Datadog.Trace.Logging.TracerFlare;
@@ -43,7 +44,7 @@ internal class TracerFlareRequestFactory
           {{Boundary}}--
           """;
 
-    public static ArraySegment<byte> GetRequestBody(ArraySegment<byte> flare, string caseId)
+    public static async Task WriteRequestBody(Stream destination, Func<Stream, Task> writeFlareBytes, string caseId)
     {
         // Need to create a body that looks something like this:
 
@@ -63,25 +64,17 @@ internal class TracerFlareRequestFactory
         //
         // --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B--
 
-        // We could calculate _most_ of this byte count (and even the encoding itself)
-        // ahead of time to save some overhead if we wanted
-        var contentSize = Utf8.GetByteCount(RequestBodyPrefix)
-                        + Utf8.GetByteCount(caseId)
-                        + Utf8.GetByteCount(RequestBodyMiddle)
-                        + flare.Count
-                        + Utf8.GetByteCount(RequestBodySuffix);
+        // Use the default buffer size for the stream writer
+        using var sw = new StreamWriter(destination, Utf8NoBom, bufferSize: 1024, leaveOpen: true);
+        await sw.WriteAsync(RequestBodyPrefix).ConfigureAwait(false);
+        await sw.WriteAsync(caseId).ConfigureAwait(false);
+        await sw.WriteAsync(RequestBodyMiddle).ConfigureAwait(false);
+        await sw.FlushAsync().ConfigureAwait(false);
 
-        // TODO: this could be very big, should we use the unmanaged heap or something?
-        var buffer = new byte[contentSize];
-        using var ms = new MemoryStream(buffer);
-        using var sw = new StreamWriter(ms, Utf8, bufferSize: contentSize, leaveOpen: true);
-        sw.Write(RequestBodyPrefix);
-        sw.Write(caseId);
-        sw.Write(RequestBodyMiddle);
-        sw.Flush();
-        ms.Write(flare.Array!, flare.Offset, flare.Count); // right directly to the memory stream here
-        sw.Write(RequestBodySuffix);
+        await writeFlareBytes(destination).ConfigureAwait(false);
 
-        return new ArraySegment<byte>(buffer);
+        await sw.WriteAsync(RequestBodySuffix).ConfigureAwait(false);
+        // explicitly flush to avoid any potential sync-over-async from the disposal
+        await sw.FlushAsync().ConfigureAwait(false);
     }
 }

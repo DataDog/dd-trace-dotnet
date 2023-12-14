@@ -11,5 +11,5 @@ namespace Datadog.Trace.Logging.TracerFlare;
 
 internal static class EncodingHelpers
 {
-    internal static readonly Encoding Utf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+    internal static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 }
