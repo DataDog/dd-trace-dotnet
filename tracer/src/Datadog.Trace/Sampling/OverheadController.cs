@@ -64,5 +64,5 @@ internal class OverheadController
         }
     }
 
-    private static int ComputeSamplingParameter(int pct) => (int)Math.Round(100m / pct);
+    private static int ComputeSamplingParameter(int pct) => pct == 0 ? pct : (int)Math.Round(100m / pct);
 }
