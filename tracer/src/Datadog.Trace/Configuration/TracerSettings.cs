@@ -202,6 +202,8 @@ namespace Datadog.Trace.Configuration
 
             CustomSamplingRulesInternal = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
 
+            CustomSamplingRulesFormat = config.WithKeys(ConfigurationKeys.CustomSamplingRulesFormat).AsString(defaultValue: Configuration.CustomSamplingRulesFormat.Regex);
+
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
             GlobalSamplingRateInternal = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble();
@@ -533,6 +535,12 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_CustomSamplingRules_Set)]
         [ConfigKey(ConfigurationKeys.CustomSamplingRules)]
         internal string? CustomSamplingRulesInternal { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating the format for custom sampling rules ("regex" or "glob").
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.CustomSamplingRulesFormat"/>
+        internal string? CustomSamplingRulesFormat { get; }
 
         /// <summary>
         /// Gets a value indicating span sampling rules.

@@ -18,6 +18,8 @@ namespace Datadog.Trace.Configuration
 
         public string? CustomSamplingRules { get; init; }
 
+        public string? CustomSamplingRulesFormat { get; init; }
+
         public double? GlobalSamplingRate { get; init; }
 
         public string? SpanSamplingRules { get; init; }
@@ -46,6 +48,7 @@ namespace Datadog.Trace.Configuration
                 RuntimeMetricsEnabled == other.RuntimeMetricsEnabled
              && DataStreamsMonitoringEnabled == other.DataStreamsMonitoringEnabled
              && CustomSamplingRules == other.CustomSamplingRules
+             && CustomSamplingRulesFormat == other.CustomSamplingRulesFormat
              && Nullable.Equals(GlobalSamplingRate, other.GlobalSamplingRate)
              && SpanSamplingRules == other.SpanSamplingRules
              && LogsInjectionEnabled == other.LogsInjectionEnabled
@@ -76,7 +79,14 @@ namespace Datadog.Trace.Configuration
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(RuntimeMetricsEnabled, DataStreamsMonitoringEnabled, CustomSamplingRules, GlobalSamplingRate, SpanSamplingRules, LogsInjectionEnabled);
+            return HashCode.Combine(
+                RuntimeMetricsEnabled,
+                DataStreamsMonitoringEnabled,
+                CustomSamplingRules,
+                CustomSamplingRulesFormat,
+                GlobalSamplingRate,
+                SpanSamplingRules,
+                LogsInjectionEnabled);
         }
 
         private static bool AreEqual(IReadOnlyDictionary<string, string>? dictionary1, IReadOnlyDictionary<string, string>? dictionary2)
