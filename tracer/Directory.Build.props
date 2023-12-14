@@ -11,7 +11,8 @@
     <DelaySign>false</DelaySign>
 
     <!-- WebClient is obsolete -->
-    <NoWarn>SYSLIB0014</NoWarn>
+    <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
+    <NoWarn>SYSLIB0014;NU1902;NU1903</NoWarn>
   </PropertyGroup>
 
   <!-- StyleCop -->
