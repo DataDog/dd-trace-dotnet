@@ -2,7 +2,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: internal,
+    Name: MyServiceName.internal,
     Resource: OperationNameRootSpan,
     Service: MyServiceName,
     Type: custom,
@@ -20,7 +20,9 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -33,7 +35,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: http.server.request,
+    Name: MyServiceName.server,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: web,
@@ -52,13 +54,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: http.client.request,
+    Name: MyServiceName.client,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: http,
@@ -77,13 +81,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_5,
-    Name: redis.query,
+    Name: MyServiceName.client,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: db,
@@ -102,13 +108,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_6,
-    Name: kafka.receive,
+    Name: MyServiceName.client,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: http,
@@ -128,13 +136,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_7,
-    Name: kafka.receive,
+    Name: MyServiceName.server,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: web,
@@ -154,13 +164,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_8,
-    Name: kafka.receive,
+    Name: MyServiceName.producer,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: custom,
@@ -180,13 +192,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_9,
-    Name: kafka.receive,
+    Name: MyServiceName.consumer,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: custom,
@@ -206,13 +220,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_10,
-    Name: aws.s3.request,
+    Name: MyServiceName.client,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: http,
@@ -232,13 +248,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_11,
-    Name: aws.client.request,
+    Name: MyServiceName.client,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: http,
@@ -257,13 +275,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_12,
-    Name: grpc.client.request,
+    Name: MyServiceName.client,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: http,
@@ -282,13 +302,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_13,
-    Name: grpc.server.request,
+    Name: MyServiceName.server,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: web,
@@ -307,13 +329,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_14,
-    Name: aws.my-function.invoke,
+    Name: MyServiceName.client,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: http,
@@ -333,13 +357,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_15,
-    Name: datasource.invoke,
+    Name: MyServiceName.server,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: web,
@@ -358,13 +384,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_16,
-    Name: graphql.server.request,
+    Name: MyServiceName.server,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: web,
@@ -383,13 +411,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_17,
-    Name: amqp.server.request,
+    Name: MyServiceName.server,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: web,
@@ -408,13 +438,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_18,
-    Name: server.request,
+    Name: MyServiceName.server,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: web,
@@ -432,13 +464,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_19,
-    Name: amqp.client.request,
+    Name: MyServiceName.client,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: http,
@@ -457,13 +491,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_20,
-    Name: client.request,
+    Name: MyServiceName.client,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: http,
@@ -481,13 +517,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_21,
-    Name: internal,
+    Name: MyServiceName.internal,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: custom,
@@ -505,13 +543,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_22,
-    Name: consumer,
+    Name: MyServiceName.consumer,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: custom,
@@ -529,13 +569,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_23,
-    Name: producer,
+    Name: MyServiceName.producer,
     Resource: ResourceName,
     Service: MyServiceName,
     Type: custom,
@@ -553,7 +595,9 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -579,7 +623,9 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0,
@@ -617,7 +663,9 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       attribute-double: 2.0,
@@ -632,7 +680,7 @@
   {
     TraceId: Id_25,
     SpanId: Id_27,
-    Name: internal,
+    Name: MyServiceName.internal,
     Resource: StartSpan,
     Service: MyServiceName,
     Type: custom,
@@ -650,13 +698,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_25,
     SpanId: Id_28,
-    Name: internal,
+    Name: MyServiceName.internal,
     Resource: StartSpan2,
     Service: MyServiceName,
     Type: custom,
@@ -674,15 +724,17 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_25,
     SpanId: Id_29,
-    Name: internal,
+    Name: MyServiceName.internal,
     Resource: StartRootSpan,
-    Service: CustomServiceName,
+    Service: MyServiceName,
     Type: custom,
     ParentId: Id_26,
     Tags: {
@@ -691,18 +743,22 @@
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
-      runtime-id: Guid_2,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal,
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_25,
     SpanId: Id_30,
-    Name: internal,
+    Name: MyServiceName.internal,
     Resource: InnerSpanOk,
     Service: MyServiceName,
     Type: custom,
@@ -720,13 +776,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_25,
     SpanId: Id_31,
-    Name: internal,
+    Name: MyServiceName.internal,
     Resource: InnerSpanError,
     Service: MyServiceName,
     Type: custom,
@@ -747,13 +805,15 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_25,
     SpanId: Id_32,
-    Name: internal,
+    Name: MyServiceName.internal,
     Resource: InnerSpanUpdated,
     Service: MyServiceName,
     Type: custom,
@@ -778,13 +838,15 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_25,
     SpanId: Id_33,
-    Name: internal,
+    Name: OtherLibrary.internal,
     Resource: Response,
     Service: MyServiceName,
     Type: custom,
@@ -803,13 +865,15 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_25,
     SpanId: Id_34,
-    Name: internal,
+    Name: MyServiceName.internal,
     Resource: StartActiveSpan.Child,
     Service: MyServiceName,
     Type: custom,
@@ -827,13 +891,15 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
     TraceId: Id_35,
     SpanId: Id_36,
-    Name: internal,
+    Name: MyServiceName.internal,
     Resource: SayHello2,
     Service: MyServiceName,
     Type: custom,
@@ -851,7 +917,9 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -864,7 +932,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
   {
     TraceId: Id_37,
     SpanId: Id_38,
-    Name: internal,
+    Name: MyServiceName.internal,
     Resource: SayHello3,
     Service: MyServiceName,
     Type: custom,
@@ -882,7 +950,9 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -895,7 +965,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
   {
     TraceId: Id_39,
     SpanId: Id_40,
-    Name: internal,
+    Name: AdditionalActivitySource.internal,
     Resource: Transform,
     Service: CustomServiceName,
     Type: custom,
@@ -906,7 +976,9 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_7,
       runtime-id: Guid_2,
-      span.kind: internal
+      span.kind: internal,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,

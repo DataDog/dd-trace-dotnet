@@ -204,6 +204,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 return "_up_to_1_5_0" + legacyEnabled;
             }
 
+            // v1.7.0 fixed StartRootSpan to not be a child of the active span
+            if (!string.IsNullOrEmpty(packageVersion)
+             && new Version(packageVersion) <= new Version("1.7.0"))
+            {
+                return "_up_to_1_7_0" + legacyEnabled;
+            }
+
             return string.Empty + legacyEnabled;
         }
     }
