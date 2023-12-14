@@ -153,20 +153,6 @@ std::string Logger::GetLogPath(const std::string& file_name_suffix)
     return log_path.string();
 }
 
-#ifdef MACOS
-template <class T>
-void WriteToStream(std::ostringstream& oss, T const& x)
-{
-    if constexpr (std::is_same<T, ::shared::WSTRING>::value)
-    {
-        oss << ::shared::ToString(x);
-    }
-    else
-    {
-        oss << x;
-    }
-}
-#else
 
 // On Debian buster, we only have libstdc++ 8 which does not have a definition for the std::same_as concept
 // and std::remove_cvref_t struct.
@@ -206,9 +192,8 @@ template <class T>
 concept IsWstring = same_as<T, ::shared::WSTRING> ||
                     // check if it's WCHAR[N] or WCHAR*
                     same_as<remove_cvref_t<std::remove_pointer_t<std::decay_t<T>>>, WCHAR>;
-
 template <IsWstring T>
-void  WriteToStream(std::ostringstream& oss, T const& x)
+void WriteToStream(std::ostringstream& oss, T const& x)
 {
     if constexpr (std::is_same_v<T, ::shared::WSTRING>)
     {
@@ -229,7 +214,6 @@ void WriteToStream(std::ostringstream& oss, T const& x)
 {
     oss << x;
 }
-#endif
 
 template <typename... Args>
 static std::string LogToString(Args const&... args)

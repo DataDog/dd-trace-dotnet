@@ -387,19 +387,17 @@ WSTRING DebuggerMethodRewriter::GetInstrumentationId(RejitHandlerModule* moduleH
     }
 
 #ifdef MACOS
-    std::wstringstream instrumentationIdStream;
+    std::stringstream instrumentationIdStream;
+    instrumentationIdStream << "M" << methodProbes.size() << "L" << lineProbes.size() << "S"
+                            << spanOnMethodProbes.size();
 #else
     WSTRINGSTREAM instrumentationIdStream;
-#endif
     instrumentationIdStream << WStr("M") << methodProbes.size() << WStr("L") << lineProbes.size() << WStr("S")
                             << spanOnMethodProbes.size();
+#endif
 
 #ifdef MACOS
-    // Convert std::wstring to WSTRING
-    std::wstring temp = instrumentationIdStream.str();
-    WSTRING converted(temp.begin(), temp.end());
-
-    return converted;
+    return shared::ToWSTRING(instrumentationIdStream.str());
 #else
     return instrumentationIdStream.str();
 #endif
