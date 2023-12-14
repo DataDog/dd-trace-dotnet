@@ -7,6 +7,7 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Tagging;
 
@@ -57,7 +58,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 for (int i = 0; i < requestProxy.Entries.Count; i++)
                 {
                     var entry = requestProxy.Entries[i].DuckCast<IContainsMessageAttributes>();
-                    ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context);
+
+                    var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
+                    if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
+                    {
+                        var edgeTags = new[] { "direction:out", $"topic:{tags.QueueName}", "type:sqs" };
+                        scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, 0, 0);
+                    }
+
+                    ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context, dataStreamsManager);
                 }
             }
 

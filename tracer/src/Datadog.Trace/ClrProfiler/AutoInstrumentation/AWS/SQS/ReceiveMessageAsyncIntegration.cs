@@ -5,8 +5,10 @@
 
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Tagging;
 
@@ -40,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TReceiveMessageRequest>(TTarget instance, TReceiveMessageRequest request, CancellationToken cancellationToken)
-            where TReceiveMessageRequest : IAmazonSQSRequestWithQueueUrl, IDuckType
+            where TReceiveMessageRequest : IAmazonSQSRequestWithQueueUrl, IContainsMessageAttributeNames, IDuckType
         {
             if (request.Instance is null)
             {
@@ -51,7 +53,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             tags.QueueUrl = request.QueueUrl;
             tags.QueueName = AwsSqsCommon.GetQueueName(request.QueueUrl);
 
-            return new CallTargetState(scope);
+            // request the message attributes that a datadog instrumentation might have set when sending
+            request.MessageAttributeNames.Add(ContextPropagation.SqsKey);
+
+            return new CallTargetState(scope, tags.QueueName);
         }
 
         /// <summary>
@@ -65,7 +70,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
+            where TResponse : IReceiveMessageResponse, IDuckType
         {
+            if (response != null && response.Messages.Count > 0)
+            {
+                var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
+                if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
+                {
+                    var queueName = (string)state.State;
+                    foreach (var message in response.Messages)
+                    {
+                        var adapter = new ContextPropagation.MessageAttributesAdapter(message.Attributes);
+                        state.Scope.Span.Context.MergePathwayContext(dataStreamsManager.ExtractPathwayContext(adapter));
+
+                        var edgeTags = new[] { "direction:in", $"topic:{queueName}", "type:sqs" };
+                        state.Scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                    }
+                }
+            }
+
             state.Scope.DisposeWithException(exception);
             return response;
         }

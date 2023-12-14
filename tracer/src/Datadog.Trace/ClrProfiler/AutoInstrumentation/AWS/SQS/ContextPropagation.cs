@@ -8,20 +8,24 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     internal static class ContextPropagation
     {
-        private const string SqsKey = "_datadog";
+        internal const string SqsKey = "_datadog";
 
-        private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes)
+        private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes, DataStreamsManager dataStreamsManager)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
             sb.Append('{');
             SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
+            dataStreamsManager.InjectPathwayContext(context.PathwayContext, new StringBuilderJsonAdapter(sb));
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
             sb.Append('}');
 
@@ -29,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             messageAttributes[SqsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(resultString);
         }
 
-        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext)
+        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext, DataStreamsManager dataStreamsManager)
         {
             // add distributed tracing headers to the message
             if (carrier.MessageAttributes == null)
@@ -73,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             // Only inject if there's room
             if (carrier.MessageAttributes.Count < 10)
             {
-                Inject<TMessageRequest>(spanContext, carrier.MessageAttributes);
+                Inject<TMessageRequest>(spanContext, carrier.MessageAttributes, dataStreamsManager);
             }
         }
 
@@ -82,6 +86,61 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             public void Set(StringBuilder carrier, string key, string value)
             {
                 carrier.AppendFormat("\"{0}\":\"{1}\",", key, value);
+            }
+        }
+
+        /// <summary>
+        /// The adapter to use to append stuff to a string builder where a json is being built
+        /// </summary>
+        private class StringBuilderJsonAdapter : IBinaryHeadersCollection
+        {
+            private readonly StringBuilder _carrier;
+
+            public StringBuilderJsonAdapter(StringBuilder carrier)
+            {
+                _carrier = carrier;
+            }
+
+            public byte[] TryGetLastBytes(string name)
+            {
+                throw new NotImplementedException("this adapter can only be use to write to a StringBuilder, not to read data");
+            }
+
+            public void Add(string key, byte[] value)
+            {
+                _carrier.AppendFormat("\"{0}\":\"{1}\",", key, Convert.ToBase64String(value));
+            }
+        }
+
+        /// <summary>
+        /// The adapter to use to read attributes packed in a json string under the _datadog key
+        /// </summary>
+        public class MessageAttributesAdapter : IBinaryHeadersCollection
+        {
+            private readonly Dictionary<string, string> _messageAttributes;
+
+            public MessageAttributesAdapter(Dictionary<string, string> messageAttributes)
+            {
+                _messageAttributes = messageAttributes;
+            }
+
+            public byte[] TryGetLastBytes(string name)
+            {
+                if (_messageAttributes != null && _messageAttributes.TryGetValue(SqsKey, out var json))
+                {
+                    var ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+                    if (ddAttributes.TryGetValue(name, out var b64))
+                    {
+                        return Convert.FromBase64String(b64);
+                    }
+                }
+
+                return Array.Empty<byte>();
+            }
+
+            public void Add(string name, byte[] value)
+            {
+                throw new NotImplementedException("this is meant to read attributes only, not write them");
             }
         }
     }
