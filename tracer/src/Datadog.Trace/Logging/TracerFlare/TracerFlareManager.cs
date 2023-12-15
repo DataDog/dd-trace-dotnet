@@ -19,7 +19,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Logging.TracerFlare;
 
-internal class TracerFlareManager
+internal class TracerFlareManager : ITracerFlareManager
 {
     internal const string TracerFlareInitializationLog = "Enabling debug mode due to tracer flare initialization";
     internal const string TracerFlareCompleteLog = "Disabled debug mode due to tracer flare complete";
