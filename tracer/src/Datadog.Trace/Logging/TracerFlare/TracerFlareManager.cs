@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerFlareController.cs" company="Datadog">
+﻿// <copyright file="TracerFlareManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,10 +19,13 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Logging.TracerFlare;
 
-internal class TracerFlareController
+internal class TracerFlareManager
 {
+    internal const string TracerFlareInitializationLog = "Enabling debug mode due to tracer flare initialization";
+    internal const string TracerFlareCompleteLog = "Disabled debug mode due to tracer flare complete";
+    internal const string ReceivedTracerFlareRequestLog = "Received tracer flare request";
     private const int RevertGlobalDebugMinutes = 20;
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerFlareController>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerFlareManager>();
 
     private readonly IDiscoveryService _discoveryService;
     private readonly IRcmSubscriptionManager _subscriptionManager;
@@ -30,7 +33,7 @@ internal class TracerFlareController
     private ISubscription? _subscription;
     private Timer? _resetTimer = null;
 
-    public TracerFlareController(
+    public TracerFlareManager(
         IDiscoveryService discoveryService,
         IRcmSubscriptionManager subscriptionManager,
         TracerFlareApi flareApi)
@@ -46,7 +49,7 @@ internal class TracerFlareController
     {
         if (Interlocked.Exchange(ref _subscription, new Subscription(RcmProductReceived, RcmProducts.TracerFlareInitiated, RcmProducts.TracerFlareRequested)) == null)
         {
-            // TODO: do we need to set capabilities?
+            // Don't need to set any capabilities for tracer flare
             _subscriptionManager.SubscribeToChanges(_subscription!);
         }
     }
@@ -77,25 +80,29 @@ internal class TracerFlareController
         Dictionary<string, List<RemoteConfiguration>> configByProduct,
         Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
     {
+        // We only expect _one_ of these to happen at a time, but handle the case where they all come together
+        IEnumerable<ApplyDetails>? results = null;
         if (configByProduct.TryGetValue(RcmProducts.TracerFlareInitiated, out var initiatedConfig)
          && initiatedConfig.Count > 0)
         {
-            return HandleTracerFlareInitiated(initiatedConfig);
-        }
-
-        if (removedConfigByProduct?.TryGetValue(RcmProducts.TracerFlareInitiated, out var removedConfig) == true
-         && removedConfig.Count > 0)
-        {
-            return HandleTracerFlareResolved(removedConfig);
+            results = HandleTracerFlareInitiated(initiatedConfig);
         }
 
         if (configByProduct.TryGetValue(RcmProducts.TracerFlareRequested, out var requestedConfig)
          && requestedConfig.Count > 0)
         {
-            return HandleTracerFlareRequested(requestedConfig);
+            var handled = HandleTracerFlareRequested(requestedConfig);
+            results = results is null ? handled : results.Concat(handled);
         }
 
-        return Enumerable.Empty<ApplyDetails>();
+        if (removedConfigByProduct?.TryGetValue(RcmProducts.TracerFlareInitiated, out var removedConfig) == true
+         && removedConfig.Count > 0)
+        {
+            var handled = HandleTracerFlareResolved(removedConfig);
+            results = results is null ? handled : results.Concat(handled);
+        }
+
+        return results ?? Enumerable.Empty<ApplyDetails>();
     }
 
     private ApplyDetails[] HandleTracerFlareInitiated(List<RemoteConfiguration> config)
@@ -116,7 +123,7 @@ internal class TracerFlareController
             var previous = Interlocked.Exchange(ref _resetTimer, timer);
             previous?.Dispose();
 
-            Log.Debug("Enabling debug mode due to tracer flare initialization");
+            Log.Debug(TracerFlareInitializationLog);
 
             return AcknowledgeAll(config);
         }
@@ -137,7 +144,7 @@ internal class TracerFlareController
             var timer = Interlocked.Exchange(ref _resetTimer, null);
             timer?.Dispose();
 
-            Log.Debug("Disabled debug mode due to tracer flare complete");
+            Log.Information(TracerFlareCompleteLog);
 
             // TODO: I don't know if we need to "accept" removed config?
             var result = new ApplyDetails[config.Count];
@@ -169,7 +176,7 @@ internal class TracerFlareController
         {
             // This product means "send the flare to the endpoint."
             // We may consider doing more than just enabling debug mode in the future
-            Log.Debug("Received tracer flare request");
+            Log.Debug(ReceivedTracerFlareRequestLog);
 
             if (CanSendTracerFlare != true)
             {
@@ -205,11 +212,10 @@ internal class TracerFlareController
     // internal for testing
     internal ApplyDetails TrySendDebugLogs(RemoteConfiguration config, string fileLogDirectory)
     {
-        // TODO: I have no idea what I'm doing here. This almost certainly isn't correct
-        // TODO: Look for the "task_type": "tracer_flare" key, reject config if it doesn't have that
-        // TODO: Look for the "args" { "case_id": "12345"} key (I think?)
         try
         {
+            // Looking for config that looks like this:
+            // { "task_type": "tracer_flare", "args" { "case_id": "12345"} }
             var jObject = TryDeserialize(config);
             if (jObject is null
              || !jObject.TryGetValue("task_type", StringComparison.Ordinal, out var taskTypeToken)
