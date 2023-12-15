@@ -239,7 +239,7 @@ namespace Datadog.Trace
 
             if (!string.IsNullOrWhiteSpace(settings.CustomSamplingRulesInternal))
             {
-                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(settings.CustomSamplingRulesInternal))
+                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(settings.CustomSamplingRulesInternal, settings.CustomSamplingRulesFormat))
                 {
                     sampler.RegisterRule(rule);
                 }

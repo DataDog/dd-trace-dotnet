@@ -6,7 +6,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if NETCOREAPP3_1_OR_GREATER
+using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
+#else
 using System.Text.RegularExpressions;
+#endif
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -14,6 +19,12 @@ namespace Datadog.Trace.Sampling
 {
     internal class CustomSamplingRule : ISamplingRule
     {
+#if NETCOREAPP3_1_OR_GREATER
+        private const RegexOptions DefaultRegexOptions = RegexOptions.Compiled | RegexOptions.NonBacktracking;
+#else
+        private const RegexOptions DefaultRegexOptions = RegexOptions.Compiled;
+#endif
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CustomSamplingRule>();
         private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
@@ -26,42 +37,15 @@ namespace Datadog.Trace.Sampling
         public CustomSamplingRule(
             float rate,
             string ruleName,
+            string patternFormat,
             string serviceNameRegex,
             string operationNameRegex)
         {
             _samplingRate = rate;
-
-            try
-            {
-                _serviceNameRegex = serviceNameRegex is null
-                    ? null
-                    : new(
-                        WrapWithLineCharacters(serviceNameRegex),
-                        RegexOptions.Compiled | RegexOptions.IgnoreCase,
-                        RegexTimeout);
-            }
-            catch (ArgumentException e)
-            {
-                Log.Error(e, "Custom sampling rule regex for service name was invalid.");
-                throw;
-            }
-
-            try
-            {
-                _operationNameRegex = operationNameRegex is null
-                                      ? null
-                                      : new(
-                                          WrapWithLineCharacters(operationNameRegex),
-                                          RegexOptions.Compiled | RegexOptions.IgnoreCase,
-                                          RegexTimeout);
-            }
-            catch (ArgumentException e)
-            {
-                Log.Error(e, "Custom sampling rule regex for operation name was invalid.");
-                throw;
-            }
-
             RuleName = ruleName;
+
+            _serviceNameRegex = BuildRegex(serviceNameRegex, patternFormat);
+            _operationNameRegex = BuildRegex(operationNameRegex, patternFormat);
         }
 
         public string RuleName { get; }
@@ -74,7 +58,7 @@ namespace Datadog.Trace.Sampling
         /// </summary>
         public int Priority { get; protected set; } = 1;
 
-        public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration)
+        public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration, string patternFormat)
         {
             try
             {
@@ -83,10 +67,18 @@ namespace Datadog.Trace.Sampling
                     var index = 0;
                     var rules = JsonConvert.DeserializeObject<List<CustomRuleConfig>>(configuration);
                     var samplingRules = new List<CustomSamplingRule>();
+
                     foreach (var r in rules)
                     {
                         index++; // Used to create a readable rule name if one is not specified
-                        samplingRules.Add(new CustomSamplingRule(r.SampleRate, r.RuleName ?? $"config-rule-{index}", r.Service, r.OperationName));
+
+                        samplingRules.Add(
+                            new CustomSamplingRule(
+                                r.SampleRate,
+                                r.RuleName ?? $"config-rule-{index}",
+                                patternFormat,
+                                r.Service,
+                                r.OperationName));
                     }
 
                     return samplingRules;
@@ -156,6 +148,37 @@ namespace Datadog.Trace.Sampling
             }
 
             return regex;
+        }
+
+        private static Regex BuildRegex(string pattern, string patternFormat)
+        {
+            try
+            {
+                if (pattern is null)
+                {
+                    return null;
+                }
+
+                switch (patternFormat)
+                {
+                    case CustomSamplingRulesFormat.Regex:
+                        pattern = WrapWithLineCharacters(pattern);
+                        return new Regex(pattern, DefaultRegexOptions, RegexTimeout);
+
+                    case CustomSamplingRulesFormat.Glob:
+                        return GlobMatcher.BuildRegex(pattern, DefaultRegexOptions, RegexTimeout);
+
+                    default:
+                        // ReSharper disable once RedundantNameQualifier (only redundant for some target frameworks)
+                        Util.ThrowHelper.ThrowArgumentOutOfRangeException(nameof(patternFormat), patternFormat, "Invalid match pattern format. Valid values are 'regex' or 'glob'.");
+                        return null; // unreachable
+                }
+            }
+            catch (ArgumentException e)
+            {
+                Log.Error(e, "Invalid {Format} match pattern: {Pattern}", patternFormat, pattern);
+                throw;
+            }
         }
 
         [Serializable]
