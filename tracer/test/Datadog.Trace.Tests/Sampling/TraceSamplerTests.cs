@@ -38,7 +38,15 @@ namespace Datadog.Trace.Tests.Sampling
         public void RateLimiter_Denies_All_Traces()
         {
             var sampler = new TraceSampler(new DenyAll());
-            sampler.RegisterRule(new CustomSamplingRule(1, "Allow_all", ".*", ".*"));
+
+            sampler.RegisterRule(
+                new CustomSamplingRule(
+                    rate: 1,
+                    ruleName: "Allow_all",
+                    patternFormat: CustomSamplingRulesFormat.Regex,
+                    serviceNameRegex: ".*",
+                    operationNameRegex: ".*"));
+
             RunSamplerTest(
                 sampler,
                 iterations: 500,
@@ -51,7 +59,15 @@ namespace Datadog.Trace.Tests.Sampling
         public void Keep_Everything_Rule()
         {
             var sampler = new TraceSampler(new NoLimits());
-            sampler.RegisterRule(new CustomSamplingRule(1, "Allow_all", ".*", ".*"));
+
+            sampler.RegisterRule(
+                new CustomSamplingRule(
+                    rate: 1,
+                    ruleName: "Allow_all",
+                    patternFormat: CustomSamplingRulesFormat.Regex,
+                    serviceNameRegex: ".*",
+                    operationNameRegex: ".*"));
+
             RunSamplerTest(
                 sampler,
                 iterations: 500,
@@ -64,7 +80,15 @@ namespace Datadog.Trace.Tests.Sampling
         public void Keep_Nothing_Rule()
         {
             var sampler = new TraceSampler(new NoLimits());
-            sampler.RegisterRule(new CustomSamplingRule(0, "Allow_nothing", ".*", ".*"));
+
+            sampler.RegisterRule(
+                new CustomSamplingRule(
+                    rate: 0,
+                    ruleName: "Allow_nothing",
+                    patternFormat: CustomSamplingRulesFormat.Regex,
+                    serviceNameRegex: ".*",
+                    operationNameRegex: ".*"));
+
             RunSamplerTest(
                 sampler,
                 iterations: 500,
@@ -77,7 +101,15 @@ namespace Datadog.Trace.Tests.Sampling
         public void Keep_Half_Rule()
         {
             var sampler = new TraceSampler(new NoLimits());
-            sampler.RegisterRule(new CustomSamplingRule(0.5f, "Allow_half", ".*", ".*"));
+
+            sampler.RegisterRule(
+                new CustomSamplingRule(
+                    rate: 0.5f,
+                    ruleName: "Allow_half",
+                    patternFormat: CustomSamplingRulesFormat.Regex,
+                    serviceNameRegex: ".*",
+                    operationNameRegex: ".*"));
+
             RunSamplerTest(
                 sampler,
                 iterations: 50_000, // Higher number for lower variance
