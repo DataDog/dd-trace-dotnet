@@ -44,9 +44,9 @@ internal static class IastModule
         EvidenceRedactorLazy = new(() => CreateRedactor(iastSettings));
     }
 
-    internal static string OnUnvalidatedRedirect(string evidence)
+    internal static string? OnUnvalidatedRedirect(string? evidence)
     {
-        if (OnUnvalidatedRedirect(evidence, IntegrationId.UnvalidatedRedirect).VulnerabilityAdded)
+        if (evidence != null && OnUnvalidatedRedirect(evidence, IntegrationId.UnvalidatedRedirect).VulnerabilityAdded)
         {
             return new string(evidence.ToCharArray());
         }
