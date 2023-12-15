@@ -566,7 +566,7 @@ partial class Build
 
                         foreach (var olderLibDdwafVersion in OlderLibDdwafVersions)
                         {
-                            var patchedArchWaf = (IsOsx && olderLibDdwafVersion != "1.10.0") ? archWaf + "-x64" : archWaf;
+                            var patchedArchWaf = (IsOsx && olderLibDdwafVersion == "1.3.0") ? archWaf + "-x64" : archWaf;
                             var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
                             var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
                             await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
