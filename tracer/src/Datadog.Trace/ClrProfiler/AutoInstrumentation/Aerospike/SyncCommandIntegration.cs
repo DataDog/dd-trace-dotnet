@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
         MethodName = "ExecuteCommand",
         ReturnTypeName = ClrNames.Void,
         MinimumVersion = "4.0.0",
-        MaximumVersion = "6.*.*",
+        MaximumVersion = "7.*.*",
         IntegrationName = AerospikeCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
