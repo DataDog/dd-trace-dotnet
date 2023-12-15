@@ -77,7 +77,7 @@ public:
 
 // Inherited via IEtwEventsReceiver
     virtual void OnEvent(
-        uint64_t timestamp,
+        uint64_t systemTimestamp,
         uint32_t tid,
         uint32_t version,
         uint64_t keyword,

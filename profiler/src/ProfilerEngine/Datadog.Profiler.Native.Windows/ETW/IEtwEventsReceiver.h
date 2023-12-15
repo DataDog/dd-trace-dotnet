@@ -10,7 +10,7 @@ class IEtwEventsReceiver
 {
 public:
     virtual void OnEvent(
-        uint64_t timestamp,
+        uint64_t timestamp,  // the events timestamp is in System Time for GMT
         uint32_t tid,
         uint32_t version,
         uint64_t keyword,

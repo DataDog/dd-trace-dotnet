@@ -199,7 +199,16 @@ public:
         IGCSuspensionsListener* pGCSuspensionsListener
         );
 
+
+    // the parser is used both for synchronous (ICorProfilerCallback) and
+    // asynchronous (.NET Framework via the Agent) cases. The timestamp parameter
+    // is only valid (different from 0) in the asynchronous scenario.
+    // As of today, only the GC related events could be received asynchronously.
+    //
+    // Lock contention and AllocationTick qre synchronous only here.
+    //
     void ParseEvent(
+        uint64_t timestamp,
         DWORD version,
         INT64 keywords,
         DWORD id,
@@ -210,19 +219,19 @@ public:
     void Register(IGarbageCollectionsListener* pGarbageCollectionsListener);
 
 private:
-    void ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
+    void ParseGcEvent(uint64_t timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
     void ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
 
     // garbage collection events processing
     void OnGCTriggered();
-    void OnGCStart(GCStartPayload& payload);
+    void OnGCStart(uint64_t timestamp, GCStartPayload& payload);
     void OnGCStop(GCEndPayload& payload);
-    void OnGCSuspendEEBegin();
-    void OnGCRestartEEEnd();
-    void OnGCHeapStats();
-    void OnGCGlobalHeapHistory(GCGlobalHeapPayload& payload);
-    void NotifySuspension(uint32_t number, uint32_t generation, uint64_t duration, uint64_t timestamp);
-    void NotifyGarbageCollectionStarted(int32_t number, uint32_t generation, GCReason reason, GCType type);
+    void OnGCSuspendEEBegin(uint64_t timestamp);
+    void OnGCRestartEEEnd(uint64_t timestamp);
+    void OnGCHeapStats(uint64_t timestamp);
+    void OnGCGlobalHeapHistory(uint64_t timestamp, GCGlobalHeapPayload& payload);
+    void NotifySuspension(uint64_t timestamp, uint32_t number, uint32_t generation, uint64_t duration);
+    void NotifyGarbageCollectionStarted(uint64_t timestamp, int32_t number, uint32_t generation, GCReason reason, GCType type);
 
     void NotifyGarbageCollectionEnd(
         int32_t number,
@@ -235,7 +244,7 @@ private:
         uint64_t endTimestamp
         );
     GCDetails& GetCurrentGC();
-    void InitializeGC(GCDetails& gc, GCStartPayload& payload);
+    void InitializeGC(uint64_t timestamp, GCDetails& gc, GCStartPayload& payload);
     void ClearCollections();
     static void ResetGC(GCDetails& gc);
     static uint64_t GetCurrentTimestamp();
@@ -293,7 +302,8 @@ private:
     // Events emitted during garbage collection lifetime
     // read https://medium.com/criteo-engineering/spying-on-net-garbage-collector-with-net-core-eventpipes-9f2a986d5705?source=friends_link&sk=baf9a7766fb5c7899b781f016803597f
     //  and https://www.codeproject.com/Articles/1127179/Visualising-the-NET-Garbage-Collector
-    // for more details
+    // for more details.
+    // The versions payload are supported for both .NET Core and Framework
     const int EVENT_GC_TRIGGERED = 35;
     const int EVENT_GC_START = 1;                 // V2
     const int EVENT_GC_END = 2;                   // V1

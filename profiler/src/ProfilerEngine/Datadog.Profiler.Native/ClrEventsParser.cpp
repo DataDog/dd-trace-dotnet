@@ -52,6 +52,7 @@ void ClrEventsParser::Register(IGarbageCollectionsListener* pGarbageCollectionsL
 
 
 void ClrEventsParser::ParseEvent(
+    uint64_t timestamp,
     DWORD version,
     INT64 keywords,
     DWORD id,
@@ -61,7 +62,7 @@ void ClrEventsParser::ParseEvent(
 {
     if (KEYWORD_GC == (keywords & KEYWORD_GC))
     {
-        ParseGcEvent(id, version, cbEventData, eventData);
+        ParseGcEvent(timestamp, id, version, cbEventData, eventData);
     }
     else if (KEYWORD_CONTENTION == (keywords & KEYWORD_CONTENTION))
     {
@@ -90,7 +91,8 @@ uint64_t ClrEventsParser::GetCurrentTimestamp()
 #if defined(__clang__) || defined(DD_SANITIZERS)
 __attribute__((no_sanitize("alignment")))
 #endif
-void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
+void
+ClrEventsParser::ParseGcEvent(uint64_t timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
 {
     // look for AllocationTick_V4
     if ((id == EVENT_ALLOCATION_TICK) && (version == 4))
@@ -179,7 +181,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
         }
 
         LOG_GC_EVENT("OnGCStart");
-        OnGCStart(payload);
+        OnGCStart(timestamp, payload);
     }
     else if (id == EVENT_GC_END)
     {
@@ -196,12 +198,12 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
     else if (id == EVENT_GC_SUSPEND_EE_BEGIN)
     {
         LOG_GC_EVENT("OnGCSuspendEEBegin");
-        OnGCSuspendEEBegin();
+        OnGCSuspendEEBegin(timestamp);
     }
     else if (id == EVENT_GC_RESTART_EE_END)
     {
         LOG_GC_EVENT("OnGCRestartEEEnd");
-        OnGCRestartEEEnd();
+        OnGCRestartEEEnd(timestamp);
     }
     else if (id == EVENT_GC_HEAP_STAT)
     {
@@ -217,7 +219,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
         }
 
         LOG_GC_EVENT("OnGCHeapStats");
-        OnGCHeapStats();
+        OnGCHeapStats(timestamp);
     }
     else if (id == EVENT_GC_GLOBAL_HEAP_HISTORY)
     {
@@ -229,7 +231,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
         }
 
         LOG_GC_EVENT("OnGCGlobalHeapHistory");
-        OnGCGlobalHeapHistory(payload);
+        OnGCGlobalHeapHistory(timestamp, payload);
     }
 }
 
@@ -260,19 +262,19 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
     }
 }
 
-void ClrEventsParser::NotifySuspension(uint32_t number, uint32_t generation, uint64_t duration, uint64_t timestamp)
+void ClrEventsParser::NotifySuspension(uint64_t timestamp, uint32_t number, uint32_t generation, uint64_t duration)
 {
     if (_pGCSuspensionsListener != nullptr)
     {
-        _pGCSuspensionsListener->OnSuspension(number, generation, duration, timestamp);
+        _pGCSuspensionsListener->OnSuspension(timestamp, number, generation, duration);
     }
 }
 
-void ClrEventsParser::NotifyGarbageCollectionStarted(int32_t number, uint32_t generation, GCReason reason, GCType type)
+void ClrEventsParser::NotifyGarbageCollectionStarted(uint64_t timestamp, int32_t number, uint32_t generation, GCReason reason, GCType type)
 {
     for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
-        pGarbageCollectionsListener->OnGarbageCollectionStart(number, generation, reason, type);
+        pGarbageCollectionsListener->OnGarbageCollectionStart(timestamp, number, generation, reason, type);
     }
 }
 
@@ -329,7 +331,7 @@ void ClrEventsParser::ResetGC(GCDetails& gc)
     gc.StartTimestamp = 0;
 }
 
-void ClrEventsParser::InitializeGC(GCDetails& gc, GCStartPayload& payload)
+void ClrEventsParser::InitializeGC(uint64_t timestamp, GCDetails& gc, GCStartPayload& payload)
 {
     gc.Number = payload.Count;
     gc.Generation = payload.Depth;
@@ -337,7 +339,7 @@ void ClrEventsParser::InitializeGC(GCDetails& gc, GCStartPayload& payload)
     gc.Type = (GCType)payload.Type;
     gc.IsCompacting = false;
     gc.PauseDuration = 0;
-    gc.StartTimestamp = GetCurrentTimestamp();
+    gc.StartTimestamp = timestamp;
 }
 
 void ClrEventsParser::OnGCTriggered()
@@ -346,9 +348,10 @@ void ClrEventsParser::OnGCTriggered()
     ClearCollections();
 }
 
-void ClrEventsParser::OnGCStart(GCStartPayload& payload)
+void ClrEventsParser::OnGCStart(uint64_t timestamp, GCStartPayload& payload)
 {
     NotifyGarbageCollectionStarted(
+        timestamp,
         payload.Count,
         payload.Depth,
         static_cast<GCReason>(payload.Reason),
@@ -359,11 +362,11 @@ void ClrEventsParser::OnGCStart(GCStartPayload& payload)
     //
     if ((payload.Depth == 2) && (payload.Type == GCType::BackgroundGC))
     {
-        InitializeGC(_currentBGC, payload);
+        InitializeGC(timestamp, _currentBGC, payload);
     }
     else
     {
-        InitializeGC(_gcInProgress, payload);
+        InitializeGC(timestamp, _gcInProgress, payload);
     }
 }
 
@@ -371,14 +374,14 @@ void ClrEventsParser::OnGCStop(GCEndPayload& payload)
 {
 }
 
-void ClrEventsParser::OnGCSuspendEEBegin()
+void ClrEventsParser::OnGCSuspendEEBegin(uint64_t timestamp)
 {
     // we don't know yet what will be the next GC corresponding to this suspension
     // so it is kept until next GCStart
-    _suspensionStart = GetCurrentTimestamp();
+    _suspensionStart = timestamp;
 }
 
-void ClrEventsParser::OnGCRestartEEEnd()
+void ClrEventsParser::OnGCRestartEEEnd(uint64_t timestamp)
 {
     GCDetails& gc = GetCurrentGC();
     if (gc.Number == -1)
@@ -391,11 +394,10 @@ void ClrEventsParser::OnGCRestartEEEnd()
 
     // compute suspension time
     uint64_t suspensionDuration = 0;
-    uint64_t currentTimestamp = GetCurrentTimestamp();
     if (_suspensionStart != 0)
     {
-        suspensionDuration = currentTimestamp - _suspensionStart;
-        NotifySuspension(gc.Number, gc.Generation, suspensionDuration, currentTimestamp);
+        suspensionDuration = timestamp - _suspensionStart;
+        NotifySuspension(timestamp, gc.Number, gc.Generation, suspensionDuration);
 
         _suspensionStart = 0;
     }
@@ -409,7 +411,7 @@ void ClrEventsParser::OnGCRestartEEEnd()
     // could be the end of a gen0/gen1 or of a non concurrent gen2 GC
     if ((gc.Generation < 2) || (gc.Type == GCType::NonConcurrentGC))
     {
-        auto endTimestamp = GetCurrentTimestamp();
+        auto endTimestamp = timestamp;
         NotifyGarbageCollectionEnd(
             gc.Number,
             gc.Generation,
@@ -425,7 +427,7 @@ void ClrEventsParser::OnGCRestartEEEnd()
     }
 }
 
-void ClrEventsParser::OnGCHeapStats()
+void ClrEventsParser::OnGCHeapStats(uint64_t timestamp)
 {
     // Note: last event for non background GC (will be GcGlobalHeapHistory for background gen 2)
     GCDetails& gc = GetCurrentGC();
@@ -437,7 +439,6 @@ void ClrEventsParser::OnGCHeapStats()
     // this is the last event for a gen0/gen1 foreground collection during a background gen2 collections
     if ((_currentBGC.Number != -1) && (gc.Generation < 2))
     {
-        auto endTimestamp = GetCurrentTimestamp();
         NotifyGarbageCollectionEnd(
             gc.Number,
             gc.Generation,
@@ -445,14 +446,14 @@ void ClrEventsParser::OnGCHeapStats()
             gc.Type,
             gc.IsCompacting,
             gc.PauseDuration,
-            endTimestamp - gc.StartTimestamp,
-            endTimestamp
+            timestamp - gc.StartTimestamp,
+            timestamp
             );
         ResetGC(_gcInProgress);
     }
 }
 
-void ClrEventsParser::OnGCGlobalHeapHistory(GCGlobalHeapPayload& payload)
+void ClrEventsParser::OnGCGlobalHeapHistory(uint64_t timestamp, GCGlobalHeapPayload& payload)
 {
     GCDetails& gc = GetCurrentGC();
 
@@ -475,7 +476,6 @@ void ClrEventsParser::OnGCGlobalHeapHistory(GCGlobalHeapPayload& payload)
             return;
         }
 
-        auto endTimestamp = GetCurrentTimestamp();
         NotifyGarbageCollectionEnd(
             gc.Number,
             gc.Generation,
@@ -483,8 +483,8 @@ void ClrEventsParser::OnGCGlobalHeapHistory(GCGlobalHeapPayload& payload)
             gc.Type,
             gc.IsCompacting,
             gc.PauseDuration,
-            endTimestamp - gc.StartTimestamp,
-            endTimestamp
+            timestamp - gc.StartTimestamp,
+            timestamp
             );
 
         ClearCollections();

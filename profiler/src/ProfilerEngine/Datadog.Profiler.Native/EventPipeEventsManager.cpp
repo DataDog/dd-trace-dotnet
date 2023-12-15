@@ -6,6 +6,8 @@
 #include "IAllocationsListener.h"
 #include "IContentionListener.h"
 #include "IGCSuspensionsListener.h"
+#include "OpSysTools.h"
+
 
 EventPipeEventsManager::EventPipeEventsManager(
     IAllocationsListener* pAllocationListener,
@@ -50,7 +52,8 @@ void EventPipeEventsManager::ParseEvent(EVENTPIPE_PROVIDER provider,
         return;
     }
 
-    _parser->ParseEvent(version, keywords, id, cbEventData, eventData);
+    // the events are expected to be processed synchronously so the current time is used as timestamp
+    _parser->ParseEvent(OpSysTools::GetHighPrecisionTimestamp(), version, keywords, id, cbEventData, eventData);
 }
 
 bool EventPipeEventsManager::TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version)

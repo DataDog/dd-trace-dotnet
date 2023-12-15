@@ -69,7 +69,7 @@ uint64_t TimestampToEpochNS(uint64_t eventTimestamp)
 }
 
 void EtwEventsManager::OnEvent(
-    uint64_t timestamp,
+    uint64_t systemTimestamp,
     uint32_t tid,
     uint32_t version,
     uint64_t keyword,
@@ -112,7 +112,7 @@ void EtwEventsManager::OnEvent(
             }
 
             auto pThreadInfo = GetOrCreate(tid);
-            pThreadInfo->ContentionStartTimestamp = TimestampToEpochNS(timestamp);
+            pThreadInfo->ContentionStartTimestamp = TimestampToEpochNS(systemTimestamp);
             pThreadInfo->LastEventId = EventId::ContentionStart;
         }
         else if (id == EVENT_CONTENTION_STOP)
@@ -128,11 +128,11 @@ void EtwEventsManager::OnEvent(
                 pThreadInfo->ClearLastEventId();
                 if (pThreadInfo->ContentionStartTimestamp != 0)
                 {
-                    auto ticks = TimestampToEpochNS(timestamp);
-                    auto duration = ticks - pThreadInfo->ContentionStartTimestamp;
+                    auto timestamp = TimestampToEpochNS(systemTimestamp);
+                    auto duration = timestamp - pThreadInfo->ContentionStartTimestamp;
                     pThreadInfo->ContentionStartTimestamp = 0;
 
-                    _pContentionListener->OnContention(ticks, tid, duration, pThreadInfo->ContentionCallStack);
+                    _pContentionListener->OnContention(timestamp, tid, duration, pThreadInfo->ContentionCallStack);
                 }
             }
             else
@@ -143,7 +143,6 @@ void EtwEventsManager::OnEvent(
     }
     else if (keyword == KEYWORD_GC)
     {
-        auto pThreadInfo = GetOrCreate(tid);
 
         if (id == EVENT_ALLOCATION_TICK)
         {
@@ -157,6 +156,7 @@ void EtwEventsManager::OnEvent(
                 return;
             }
 
+            auto pThreadInfo = GetOrCreate(tid);
             pThreadInfo->LastEventId = EventId::AllocationTick;
 
             // TODO: get the type name and ClassID from the payload
@@ -164,8 +164,9 @@ void EtwEventsManager::OnEvent(
         }
         else
         {
-            // TODO: call only for no call stack GC events
-            //_parser.get()->ParseEvent(version, keyword, id, cbEventData, pEventData);
+            // reuse GC events parser
+            auto timestamp = TimestampToEpochNS(systemTimestamp);
+            _parser.get()->ParseEvent(timestamp, version, keyword, id, cbEventData, pEventData);
         }
     }
 }
