@@ -21,6 +21,7 @@ using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
@@ -67,6 +68,7 @@ namespace Datadog.Trace
             ISpanSampler spanSampler,
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
+            ITracerFlareManager tracerFlareManager,
             ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
@@ -95,6 +97,7 @@ namespace Datadog.Trace
 
             RemoteConfigurationManager = remoteConfigurationManager;
             DynamicConfigurationManager = dynamicConfigurationManager;
+            TracerFlareManager = tracerFlareManager;
 
             var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, defaultServiceName, settings.ServiceNameMappings, settings.PeerServiceNameMappings);
             PerTraceSettings = new(traceSampler, spanSampler, settings.ServiceNameMappings, schema);
@@ -155,6 +158,8 @@ namespace Datadog.Trace
 
         public IDynamicConfigurationManager DynamicConfigurationManager { get; }
 
+        public ITracerFlareManager TracerFlareManager { get; }
+
         public RuntimeMetricsWriter RuntimeMetrics { get; }
 
         public PerTraceSettings PerTraceSettings { get; set; }
@@ -211,6 +216,7 @@ namespace Datadog.Trace
             DirectLogSubmission?.Sink.Start();
             Telemetry?.Start();
             DynamicConfigurationManager.Start();
+            TracerFlareManager.Start();
             RemoteConfigurationManager.Start();
         }
 
@@ -274,10 +280,17 @@ namespace Datadog.Trace
                     oldManager.DynamicConfigurationManager.Dispose();
                 }
 
+                var tracerFlareManagerReplaced = false;
+                if (oldManager.TracerFlareManager != newManager.TracerFlareManager && oldManager.TracerFlareManager is not null)
+                {
+                    tracerFlareManagerReplaced = true;
+                    oldManager.TracerFlareManager.Dispose();
+                }
+
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}",
-                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, discoveryReplaced, dataStreamsReplaced, configurationManagerReplaced, dynamicConfigurationManagerReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}, TracerFlareManager {TracerFlareManagerReplaced}",
+                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, discoveryReplaced, dataStreamsReplaced, configurationManagerReplaced, dynamicConfigurationManagerReplaced, tracerFlareManagerReplaced });
             }
             catch (Exception ex)
             {
@@ -626,6 +639,8 @@ namespace Datadog.Trace
                 {
                     Log.Debug("Disposing DynamicConfigurationManager");
                     instance.DynamicConfigurationManager.Dispose();
+                    Log.Debug("Disposing TracerFlareManager");
+                    instance.TracerFlareManager.Dispose();
 
                     Log.Debug("Disposing AgentWriter.");
                     var flushTracesTask = instance.AgentWriter?.FlushAndCloseAsync() ?? Task.CompletedTask;

@@ -13,6 +13,7 @@ using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
@@ -51,15 +52,16 @@ namespace Datadog.Trace.Ci
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
             IRemoteConfigurationManager remoteConfigurationManager,
-            IDynamicConfigurationManager dynamicConfigurationManager)
+            IDynamicConfigurationManager dynamicConfigurationManager,
+            ITracerFlareManager tracerFlareManager)
         {
             if (_useLockedManager)
             {
-                return new CITracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager);
+                return new CITracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);
             }
             else
             {
-                return new CITracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager);
+                return new CITracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);
             }
         }
 
