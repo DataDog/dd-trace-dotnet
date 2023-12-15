@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 #endif
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Sampling
@@ -134,20 +135,24 @@ namespace Datadog.Trace.Sampling
         {
             if (regex == null)
             {
-                return regex;
+                return null;
             }
+
+            var sb = StringBuilderCache.Acquire(regex.Length + 2);
 
             if (!regex.StartsWith("^"))
             {
-                regex = "^" + regex;
+                sb.Append('^');
             }
+
+            sb.Append(regex);
 
             if (!regex.EndsWith("$"))
             {
-                regex = regex + "$";
+                sb.Append('$');
             }
 
-            return regex;
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         private static Regex BuildRegex(string pattern, string patternFormat)
