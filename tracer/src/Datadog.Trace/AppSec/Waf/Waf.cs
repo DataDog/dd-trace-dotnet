@@ -55,20 +55,10 @@ namespace Datadog.Trace.AppSec.Waf
         internal static InitResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? embeddedRulesetPath = null, JToken? rulesFromRcm = null, bool setupWafSchemaExtraction = false)
         {
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
-            var isCompatible = wafConfigurator.CheckVersionCompatibility();
-            if (!isCompatible)
-            {
-                return InitResult.FromIncompatibleWaf();
-            }
 
             // set the log level and setup the logger
             wafLibraryInvoker.SetupLogging(GlobalSettings.Instance.DebugEnabledInternal);
             var jtokenRoot = rulesFromRcm ?? WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath)!;
-            if (setupWafSchemaExtraction)
-            {
-                var schemaConfig = WafConfigurator.DeserializeSchemaExtractionConfig();
-                jtokenRoot.Children().Last().AddAfterSelf(schemaConfig!.Children());
-            }
 
             var argCache = new List<Obj>();
             var configObj = Encoder.Encode(jtokenRoot, wafLibraryInvoker, argCache, applySafetyLimits: false);
