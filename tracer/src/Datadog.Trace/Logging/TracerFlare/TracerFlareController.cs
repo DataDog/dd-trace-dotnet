@@ -26,14 +26,17 @@ internal class TracerFlareController
 
     private readonly IDiscoveryService _discoveryService;
     private readonly IRcmSubscriptionManager _subscriptionManager;
+    private readonly TracerFlareApi _flareApi;
     private ISubscription? _subscription;
     private Timer? _resetTimer = null;
 
     public TracerFlareController(
         IDiscoveryService discoveryService,
-        IRcmSubscriptionManager subscriptionManager)
+        IRcmSubscriptionManager subscriptionManager,
+        TracerFlareApi flareApi)
     {
         _subscriptionManager = subscriptionManager;
+        _flareApi = flareApi;
         _discoveryService = discoveryService;
     }
 
@@ -70,12 +73,20 @@ internal class TracerFlareController
 
     private static void ResetDebugging() => GlobalSettings.SetDebugEnabledInternal(false);
 
-    private IEnumerable<ApplyDetails> RcmProductReceived(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
+    private IEnumerable<ApplyDetails> RcmProductReceived(
+        Dictionary<string, List<RemoteConfiguration>> configByProduct,
+        Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
     {
         if (configByProduct.TryGetValue(RcmProducts.TracerFlareInitiated, out var initiatedConfig)
          && initiatedConfig.Count > 0)
         {
             return HandleTracerFlareInitiated(initiatedConfig);
+        }
+
+        if (removedConfigByProduct?.TryGetValue(RcmProducts.TracerFlareInitiated, out var removedConfig) == true
+         && removedConfig.Count > 0)
+        {
+            return HandleTracerFlareResolved(removedConfig);
         }
 
         if (configByProduct.TryGetValue(RcmProducts.TracerFlareRequested, out var requestedConfig)
@@ -117,6 +128,41 @@ internal class TracerFlareController
         }
     }
 
+    private ApplyDetails[] HandleTracerFlareResolved(List<RemoteConfigurationPath> config)
+    {
+        try
+        {
+            // This product means "tracer flare is over, revert log levels"
+            ResetDebugging();
+            var timer = Interlocked.Exchange(ref _resetTimer, null);
+            timer?.Dispose();
+
+            Log.Debug("Disabled debug mode due to tracer flare complete");
+
+            // TODO: I don't know if we need to "accept" removed config?
+            var result = new ApplyDetails[config.Count];
+            for (var i = 0; i < config.Count; i++)
+            {
+                result[i] = ApplyDetails.FromOk(config[i].Path);
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error handling tracer flare complete");
+
+            // TODO: I don't know if we need to "accept" removed config?
+            var result = new ApplyDetails[config.Count];
+            for (var i = 0; i < config.Count; i++)
+            {
+                result[i] = ApplyDetails.FromError(config[i].Path, ex.ToString());
+            }
+
+            return result;
+        }
+    }
+
     private ApplyDetails[] HandleTracerFlareRequested(List<RemoteConfiguration> config)
     {
         try
@@ -137,7 +183,16 @@ internal class TracerFlareController
                 return AcknowledgeAll(config);
             }
 
-            return AcknowledgeAll(config);
+            // TODO: do we care about the case where we have multiple configs with the same case_id?
+            // Assuming not, and we'll just get two submissions in that case
+            var result = new ApplyDetails[config.Count];
+            for (var i = 0; i < result.Length; i++)
+            {
+                var remoteConfig = config[i];
+                result[i] = TrySendDebugLogs(remoteConfig, fileLogDirectory);
+            }
+
+            return result;
         }
         catch (Exception ex)
         {
@@ -147,44 +202,55 @@ internal class TracerFlareController
         }
     }
 
-    private void ShouldSendDebugLogs(List<RemoteConfiguration> configs)
+    // internal for testing
+    internal ApplyDetails TrySendDebugLogs(RemoteConfiguration config, string fileLogDirectory)
     {
-        // // We can't
-        // // We could have multiple configs here with the same config_ids, so need to account for all of them
-        // Dictionary<string, List<RemoteConfiguration>>? results
-        //
-        //
-        // // try with each of the configs until we find one that works
-        // foreach (var config in configs)
-        // {
-        //     // TODO: I have no idea what I'm doing here. This almost certainly isn't correct
-        //     // TODO: Look for the "task_type": "tracer_flare" key, reject config if it doesn't have that
-        //     // TODO: Look for the "args" { "case_id": "12345"} key (I think?)
-        //     var jobject = TryDeserialize(config);
-        //     if (jobject is null
-        //         || !jobject.TryGetValue("task_type", StringComparison.Ordinal, out var taskTypeToken)
-        //         || taskTypeToken.Type != JTokenType.String
-        //         || !string.Equals(taskTypeToken.Value<string>(), "tracer_flare", StringComparison.Ordinal))
-        //     {
-        //         // not the right sort of task
-        //         continue;
-        //     }
-        //
-        //     if (!jobject.TryGetValue("args", StringComparison.Ordinal, out var args)
-        //      || args is not JObject argsObject
-        //      || argsObject.TryGetValue("case_id", out var caseIdToken)
-        //      || caseIdToken?.Type != JTokenType.String
-        //      || caseIdToken.Value<string>() is not { Length: > 0 } caseId)
-        //     {
-        //         // missing case_id
-        //         continue;
-        //     }
-        //
-        //     if (DebugLogReader.TryToCreateSentinelFile(fileLogDirectory, fileLogDirectory))
-        //     {
-        //         return true;
-        //     }
-        // }
+        // TODO: I have no idea what I'm doing here. This almost certainly isn't correct
+        // TODO: Look for the "task_type": "tracer_flare" key, reject config if it doesn't have that
+        // TODO: Look for the "args" { "case_id": "12345"} key (I think?)
+        try
+        {
+            var jObject = TryDeserialize(config);
+            if (jObject is null
+             || !jObject.TryGetValue("task_type", StringComparison.Ordinal, out var taskTypeToken)
+             || taskTypeToken.Type != JTokenType.String
+             || !string.Equals(taskTypeToken.Value<string>(), "tracer_flare", StringComparison.Ordinal))
+            {
+                // not the right sort of task, just acknowledge it
+                return ApplyDetails.FromOk(config.Path.Path);
+            }
+
+            if (!jObject.TryGetValue("args", StringComparison.Ordinal, out var args)
+             || args is not JObject argsObject
+             || argsObject.TryGetValue("case_id", out var caseIdToken)
+             || caseIdToken?.Type != JTokenType.String
+             || caseIdToken.Value<string>() is not { Length: > 0 } caseId)
+            {
+                // missing case_id - should we just accept it?
+                return ApplyDetails.FromError(config.Path.Path, "Missing case_id");
+            }
+
+            if (!DebugLogReader.TryToCreateSentinelFile(fileLogDirectory, fileLogDirectory))
+            {
+                // already accepted by a different tracer
+                return ApplyDetails.FromOk(config.Path.Path);
+            }
+
+            // ok, do the thing
+            var task = _flareApi.SendTracerFlare(stream => DebugLogReader.WriteDebugLogArchiveToStream(stream, fileLogDirectory), caseId);
+
+            // uh oh, sync over async :grimace:
+            // and this all happens inside a lock IIRC, so this could be problematic...
+            var result = task.GetAwaiter().GetResult();
+            return result
+                       ? ApplyDetails.FromOk(config.Path.Path)
+                       : ApplyDetails.FromError(config.Path.Path, "There was an error uploading the debug log archive");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error handling tracer flare generation for config {ConfigPath}", config.Path.Path);
+            return ApplyDetails.FromError(config.Path.Path, ex.ToString());
+        }
     }
 
     private ApplyDetails[] AcknowledgeAll(List<RemoteConfiguration> config)
@@ -237,14 +303,5 @@ internal class TracerFlareController
             Log.Error(ex, "Error parsing remote configuration response");
             return null;
         }
-    }
-
-    private class TracerFlareRequest
-    {
-        [JsonProperty("tracer_type")]
-        public string? TracerType { get; set; }
-
-        [JsonProperty("args")]
-        public Dictionary<string, object>? Args { get; set; }
     }
 }
