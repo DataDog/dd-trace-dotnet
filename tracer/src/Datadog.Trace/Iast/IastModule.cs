@@ -23,6 +23,7 @@ namespace Datadog.Trace.Iast;
 
 internal static class IastModule
 {
+    public const string HeaderInjectionEvidenceSeparator = ": ";
     private const string OperationNameWeakHash = "weak_hashing";
     private const string OperationNameWeakCipher = "weak_cipher";
     private const string OperationNameSqlInjection = "sql_injection";
@@ -559,7 +560,7 @@ internal static class IastModule
 
     internal static void OnHeaderInjection(IntegrationId integrationId, string headerName, string headerValue)
     {
-        var evidence = StringAspects.Concat(headerName, ": ", headerValue);
+        var evidence = StringAspects.Concat(headerName, HeaderInjectionEvidenceSeparator, headerValue);
         var hash = ("HEADER_INJECTION:" + headerName).GetStaticHashCode();
         GetScope(evidence, integrationId, VulnerabilityTypeName.HeaderInjection, OperationNameHeaderInjection, Always, false, hash);
     }
