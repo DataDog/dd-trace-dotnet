@@ -19,6 +19,12 @@ namespace Datadog.Trace.Sampling
 {
     internal class CustomSamplingRule : ISamplingRule
     {
+#if NETCOREAPP3_1_OR_GREATER
+        private const RegexOptions DefaultRegexOptions = RegexOptions.Compiled | RegexOptions.NonBacktracking;
+#else
+        private const RegexOptions DefaultRegexOptions = RegexOptions.Compiled;
+#endif
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CustomSamplingRule>();
 
         private readonly float _samplingRate;
