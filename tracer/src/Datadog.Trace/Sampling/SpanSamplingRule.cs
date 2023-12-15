@@ -23,7 +23,6 @@ namespace Datadog.Trace.Sampling
     internal class SpanSamplingRule : ISpanSamplingRule
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanSamplingRule>();
-        private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
         // TODO consider moving toward this https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/SimpleRegex.cs
         private readonly Regex _serviceNameRegex;
@@ -53,8 +52,8 @@ namespace Datadog.Trace.Sampling
             SamplingRate = samplingRate;
             MaxPerSecond = maxPerSecond;
 
-            _serviceNameRegex = ConvertGlobToRegex(serviceNameGlob);
-            _operationNameRegex = ConvertGlobToRegex(operationNameGlob);
+            _serviceNameRegex = GlobMatcher.BuildRegex(serviceNameGlob);
+            _operationNameRegex = GlobMatcher.BuildRegex(operationNameGlob);
 
             // null/absent for MaxPerSecond indicates unlimited, which is a negative value in the limiter
             _limiter = MaxPerSecond is null ? new SpanRateLimiter(-1) : new SpanRateLimiter((int?)MaxPerSecond);
@@ -81,6 +80,7 @@ namespace Datadog.Trace.Sampling
             try
             {
                 var rules = JsonConvert.DeserializeObject<List<SpanSamplingRuleConfig>>(configuration);
+
                 return rules?.Select(
                                   rule => new SpanSamplingRule(
                                       rule.ServiceNameGlob,
@@ -125,19 +125,6 @@ namespace Datadog.Trace.Sampling
             var limitKeep = _limiter.Allowed(span);
 
             return limitKeep;
-        }
-
-        private static Regex ConvertGlobToRegex(string glob)
-        {
-            // TODO default glob (maybe null/empty/whitespace) should be *
-            var regexPattern = "^" + Regex.Escape(glob).Replace("\\?", ".").Replace("\\*", ".*") + "$";
-#if NETCOREAPP3_1_OR_GREATER
-            var regex = new Regex(regexPattern, RegexOptions.Compiled | RegexOptions.NonBacktracking, RegexTimeout);
-#else
-            var regex = new Regex(regexPattern, RegexOptions.Compiled, RegexTimeout);
-#endif
-
-            return regex;
         }
 
         [Serializable]
