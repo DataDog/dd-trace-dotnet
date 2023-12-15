@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast.Aspects.System;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Iast.SensitiveData;
 using Datadog.Trace.Iast.Settings;
@@ -33,6 +34,7 @@ internal static class IastModule
     private const string OperationNameHardcodedSecret = "hardcoded_secret";
     private const string OperationNameTrustBoundaryViolation = "trust_boundary_violation";
     private const string OperationNameUnvalidatedRedirect = "unvalidated_redirect";
+    private const string OperationNameHeaderInjection = "header_injection";
     private const string ReferrerHeaderName = "Referrer";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
@@ -381,7 +383,7 @@ internal static class IastModule
         return isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() == true;
     }
 
-    private static IastModuleResponse GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Func<TaintedObject, bool>? taintValidator = null)
+    private static IastModuleResponse GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Func<TaintedObject, bool>? taintValidator = null, bool addLocation = true, int? hash = null)
     {
         var tracer = Tracer.Instance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
@@ -418,27 +420,33 @@ internal static class IastModule
             }
         }
 
-        var frameInfo = StackWalker.GetFrame();
+        Location? location = null;
 
-        if (!frameInfo.IsValid)
+        if (addLocation)
         {
-            return IastModuleResponse.Empty;
+            var frameInfo = StackWalker.GetFrame();
+
+            if (!frameInfo.IsValid)
+            {
+                return IastModuleResponse.Empty;
+            }
+
+            // Sometimes we do not have the file/line but we have the method/class.
+            var stackFrame = frameInfo.StackFrame;
+            var filename = stackFrame?.GetFileName();
+            var line = string.IsNullOrEmpty(filename) ? 0 : (stackFrame?.GetFileLineNumber() ?? 0);
+
+            location = new Location(
+                    stackFile: filename,
+                    methodName: string.IsNullOrEmpty(filename) ? stackFrame?.GetMethod()?.Name : null,
+                    line: line > 0 ? line : null,
+                    spanId: currentSpan?.SpanId,
+                    methodTypeName: string.IsNullOrEmpty(filename) ? GetMethodTypeName(stackFrame) : null);
         }
 
-        // Sometimes we do not have the file/line but we have the method/class.
-        var stackFrame = frameInfo.StackFrame;
-        var filename = stackFrame?.GetFileName();
-        var line = string.IsNullOrEmpty(filename) ? 0 : (stackFrame?.GetFileLineNumber() ?? 0);
-        var vulnerability = new Vulnerability(
-            vulnerabilityType,
-            new Location(
-                stackFile: filename,
-                methodName: string.IsNullOrEmpty(filename) ? stackFrame?.GetMethod()?.Name : null,
-                line: line > 0 ? line : null,
-                spanId: currentSpan?.SpanId,
-                methodTypeName: string.IsNullOrEmpty(filename) ? GetMethodTypeName(stackFrame) : null),
-            new Evidence(evidenceValue, tainted?.Ranges),
-            integrationId);
+        var vulnerability = (hash is null) ?
+            new Vulnerability(vulnerabilityType, location, new Evidence(evidenceValue, tainted?.Ranges), integrationId) :
+            new Vulnerability(vulnerabilityType, (int)hash, location, new Evidence(evidenceValue, tainted?.Ranges), integrationId);
 
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
@@ -551,6 +559,8 @@ internal static class IastModule
 
     internal static void OnHeaderInjection(IntegrationId integrationId, string headerName, string headerValue)
     {
-        AddWebVulnerability(headerName + ":" + headerValue, integrationId, VulnerabilityTypeName.HeaderInjection, ("HEADER_INJECTION:" + headerName).GetStaticHashCode());
+        var evidence = StringAspects.Concat(headerName, ": ", headerValue);
+        var hash = ("HEADER_INJECTION:" + headerName).GetStaticHashCode();
+        GetScope(evidence, integrationId, VulnerabilityTypeName.HeaderInjection, OperationNameHeaderInjection, Always, false, hash);
     }
 }

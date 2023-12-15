@@ -655,6 +655,13 @@ namespace Samples.Security.AspNetCore5.Controllers
             var cookieValue = Request.Cookies["value"];
             var headerName = Request.Headers["name"];
             var cookieName = Request.Cookies["name"];
+            string propagationHeader = Request.Headers["propagation"];
+
+            if (!string.IsNullOrEmpty(propagationHeader))
+            {
+                Response.Headers.Add("propagation", propagationHeader);
+                return Content($"returned propagation header");
+            }
 
             var returnedName = Combine(headerName, cookieName, defaultHeaderName);
             var returnedValue = UseValueFromOriginHeader ? originValue.ToString() : Combine(headerValue, cookieValue, defaultHeaderValue);
