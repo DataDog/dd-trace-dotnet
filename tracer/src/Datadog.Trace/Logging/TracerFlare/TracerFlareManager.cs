@@ -54,7 +54,7 @@ internal class TracerFlareManager
         }
     }
 
-    public Task DisposeAsync()
+    public void Dispose()
     {
         if (_resetTimer is not null)
         {
@@ -70,8 +70,6 @@ internal class TracerFlareManager
         {
             _subscriptionManager.Unsubscribe(subscription);
         }
-
-        return Task.CompletedTask;
     }
 
     private static void ResetDebugging() => GlobalSettings.SetDebugEnabledInternal(false);
