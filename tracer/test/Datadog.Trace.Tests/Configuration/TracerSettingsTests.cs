@@ -453,6 +453,16 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [MemberData(nameof(StringTestCases), Trace.Configuration.CustomSamplingRulesFormat.Regex, Strings.AllowEmpty)]
+        public void CustomSamplingRulesFormat(string value, string expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.CustomSamplingRulesFormat, value));
+            var settings = new TracerSettings(source);
+
+            settings.CustomSamplingRulesFormat.Should().Be(expected);
+        }
+
+        [Theory]
         [MemberData(nameof(StringTestCases))]
         public void SpanSamplingRules(string value, string expected)
         {
