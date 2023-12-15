@@ -51,4 +51,9 @@ public enum MockTracerResponseType
     /// The CI Visibility EVP proxy endpoint
     /// </summary>
     EvpProxy,
+
+    /// <summary>
+    /// The Tracer flare endpoint
+    /// </summary>
+    TracerFlare,
 }
