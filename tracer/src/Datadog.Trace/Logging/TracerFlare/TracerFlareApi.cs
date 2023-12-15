@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -42,28 +43,33 @@ internal class TracerFlareApi
         return new TracerFlareApi(requestFactory);
     }
 
-    public async Task SendTracerFlare(ArraySegment<byte> flare, string caseId)
+    public async Task<bool> SendTracerFlare(Func<Stream, Task> writeFlareToStreamFunc, string caseId)
     {
         try
         {
-            Log.Debug("Sending {FlareSize} byte tracer flare to {Endpoint}", flare.Count, _endpoint);
-
-            // TODO: Stream this instead
-            var buffer = TracerFlareRequestFactory.GetRequestBody(flare, caseId);
+            Log.Debug("Sending tracer flare to {Endpoint}", _endpoint);
 
             var request = _requestFactory.Create(_endpoint);
-            using var response = await request.PostAsync(buffer, MimeTypes.MultipartFormData).ConfigureAwait(false);
+            using var response = await request.PostAsync(
+                                                   stream => TracerFlareRequestFactory.WriteRequestBody(stream, writeFlareToStreamFunc, caseId),
+                                                   MimeTypes.MultipartFormData,
+                                                   contentEncoding: null,
+                                                   multipartBoundary: TracerFlareRequestFactory.Boundary)
+                                              .ConfigureAwait(false);
+
             if (response.StatusCode is >= 200 and < 300)
             {
-                Log.Debug("Tracer flare sent successfully");
-                return;
+                Log.Information(TracerFlareSentLog);
+                return true;
             }
 
             Log.Warning<string, int>("Error sending tracer flare to '{Endpoint}' {StatusCode} ", _requestFactory.Info(_endpoint), response.StatusCode);
+            return false;
         }
         catch (Exception ex)
         {
             Log.Information(ex, "Error sending tracer flare to '{Endpoint}'", _requestFactory.Info(_endpoint));
+            return false;
         }
     }
 }
