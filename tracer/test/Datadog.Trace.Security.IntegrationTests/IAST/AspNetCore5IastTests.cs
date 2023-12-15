@@ -601,16 +601,15 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [Trait("Category", "EndToEnd")]
     [SkippableTheory]
     [Trait("RunOnWindows", "True")]
-    [InlineData("Vuln.SensitiveName", new string[] { "name", "private_token" }, new string[] { "value", "SecretValue" })]
-    [InlineData("Vuln.SensitiveValue", new string[] { "name", "myName" }, new string[] { "value", "%3Abearer%20ewe" })]
-    [InlineData("Vuln.SensitiveValue2", new string[] { "name", "myName", "value", ":bearer ewe" }, null)]
-    [InlineData("Vuln.NoSensitive", new string[] { "value", "vulnerable" }, null)]
+    [InlineData("Vuln.SensitiveName", new string[] { "name", "private_token" }, new string[] { "value", "ShouldBeRedacted" })]
+    [InlineData("Vuln.SensitiveValue", new string[] { "name", "myName", "value", ":bearer secret" }, null)]
+    [InlineData("Vuln.SensitiveValueComplex", new string[] { "name", "myName", "value", ":bear" }, new string[] { "value", "er%20secret" })]
     [InlineData("NotVulnerable", new string[] { "propagation", "noVulnValue" }, null)]
-    [InlineData("Vuln.Propagation.NoSensitive", new string[] { "name", "Name", "value", "value" }, new string[] { "value", "moreText" })]
+    [InlineData("Vuln.NoSensitive", new string[] { "name", "Name", "value", "value" }, new string[] { "value", "moreText" })]
     [InlineData("NotVulnerable", new string[] { "name", "Sec-WebSocket-Accept" }, new string[] { "value", "moreText" })]
-    [InlineData("Vuln.Origin.SensitiveValue", new string[] { "name", "access-control-allow-origin", "value", "glpat-xyz123abc456def789" }, null)]
+    [InlineData("Vuln.Origin", new string[] { "name", "access-control-allow-origin", "value", "https://example.com" }, null)]
     [InlineData("NotVulnerable", new string[] { "name", "access-control-allow-origin", "origin", "NotVulnerable" }, null, true)] // Not vulnerable
-    [InlineData("Vuln.Cookie.SensitiveValue", new string[] { "name", "set-cookie", "value", "ssh-rsa abc.def/ghi+jkl123" }, null)]
+    [InlineData("Vuln.Cookie.SensitiveValue", new string[] { "name", "set-cookie", "value", "glpat-eFynewhuKJFGdfGDFGdw" }, null)]
     [InlineData("NotVulnerable", null, new string[] { "name", "set-cookie", "value", "NotVulnerable" })]
     public async Task TestIastHeaderInjectionRequest(string testCase, string[] headers, string[] cookies, bool useValueFromOriginHeader = false)
     {
@@ -618,6 +617,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var filename = "Iast.HeaderInjection.AspNetCore5." + (notVulnerable ? "NotVuln" : testCase) +
             (useValueFromOriginHeader ? ".origin" : string.Empty);
         if (!notVulnerable && RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        if (!IastEnabled) { filename += ".IastDisabled"; }
         var url = $"/Iast/HeaderInjection?useValueFromOriginHeader={useValueFromOriginHeader}";
         IncludeAllHttpSpans = true;
 
