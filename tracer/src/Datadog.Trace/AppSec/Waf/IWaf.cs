@@ -19,7 +19,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IContext CreateContext();
 
-        internal WafReturnCode Run(IntPtr contextHandle, IntPtr rawPersistentData, IntPtr rawEephemeralData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
+        internal WafReturnCode Run(IntPtr contextHandle, IntPtr rawPersistentData, IntPtr rawEphemeralData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
 
         UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus);
     }

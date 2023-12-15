@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Configuration;
@@ -184,7 +185,46 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 return LibraryInitializationResult.FromExportErrorHappened();
             }
 
+            var isCompatible = CheckVersionCompatibility(wafLibraryInvoker);
+            if (!isCompatible)
+            {
+                return LibraryInitializationResult.FromVersionNotCompatible();
+            }
+
             return LibraryInitializationResult.FromSuccess(wafLibraryInvoker);
+        }
+
+        public static bool CheckVersionCompatibility(WafLibraryInvoker wafLibraryInvoker)
+        {
+            Log.Information("Checking compt starting ...");
+
+            var versionWaf = wafLibraryInvoker.GetVersion();
+            var versionWafSplit = versionWaf.Split('.');
+            if (versionWafSplit.Length != 3)
+            {
+                Log.Warning("Waf version {WafVersion} has a non expected format", versionWaf);
+                return false;
+            }
+
+            var canParse = int.TryParse(versionWafSplit[1], out var wafMinor);
+            canParse &= int.TryParse(versionWafSplit[0], out var wafMajor);
+            var tracerVersion = Assembly.GetExecutingAssembly().GetName().Version;
+            if (tracerVersion is null || !canParse)
+            {
+                Log.Warning("Waf version {WafVersion} or tracer version {TracerVersion} have a non expected format", versionWaf, tracerVersion);
+                return false;
+            }
+
+            // tracer >= 2.34.0 needs waf >= 1.11 cause it passes a ddwafobject for diagnostics instead of a ruleset info struct which causes unpredictable unmanaged crashes
+            if ((tracerVersion is { Minor: >= 34, Major: >= 2 } && wafMajor == 1 && wafMinor <= 10) ||
+                (tracerVersion is { Minor: >= 38, Major: >= 2 } && wafMajor == 1 && wafMinor < 13) ||
+                (tracerVersion is { Minor: >= 44, Major: >= 2 } && wafMajor == 1 && wafMinor < 15))
+            {
+                Log.Warning("Waf version {WafVersion} is not compatible with tracer version {TracerVersion}", versionWaf, tracerVersion);
+                return false;
+            }
+
+            return true;
         }
 
         internal void SetupLogging(bool instanceDebugEnabled)
