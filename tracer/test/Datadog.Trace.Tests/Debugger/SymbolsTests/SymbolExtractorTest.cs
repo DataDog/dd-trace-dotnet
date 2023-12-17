@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Debugger.Symbols.Model;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using VerifyTests;
 using VerifyXunit;
@@ -26,10 +27,15 @@ public class SymbolExtractorTest
     public static IEnumerable<object[]> TestSamples =>
         typeof(SymbolExtractorTest).Assembly.GetTypes().Where(t => t.Namespace == TestSamplesNamespace && !t.Name.StartsWith("<") && !t.IsNested).Select(type => new object[] { type });
 
-    [Theory]
+    [SkippableTheory]
     [MemberData(nameof(TestSamples))]
     private async Task Test(Type type)
     {
+        if (!EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("PDB test only on windows");
+        }
+
         var assembly = Assembly.GetAssembly(type);
         Assert.NotNull(assembly);
         var root = GetSymbols(assembly, type.FullName);
@@ -41,10 +47,15 @@ public class SymbolExtractorTest
         await Verifier.Verify(toVerify, settings);
     }
 
-    [Theory(Skip = "Implement this")]
+    [SkippableTheory(Skip = "Implement this")]
     [MemberData(nameof(TestSamples))]
     private async Task TestDnlib(Type type)
     {
+        if (!EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("PDB test only on windows");
+        }
+
         var assembly = Assembly.GetAssembly(type);
         Assert.NotNull(assembly);
         var root = GetSymbols(assembly, type.FullName);
