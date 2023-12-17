@@ -41,7 +41,7 @@ public class SymbolExtractorTest
         await Verifier.Verify(toVerify, settings);
     }
 
-    [Theory(Skip = "Implemented this")]
+    [Theory(Skip = "Implement this")]
     [MemberData(nameof(TestSamples))]
     private async Task TestDnlib(Type type)
     {

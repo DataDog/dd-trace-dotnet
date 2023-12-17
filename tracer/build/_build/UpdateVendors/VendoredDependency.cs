@@ -84,7 +84,7 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "System.Collections.Immutable",
-                version: "1.0.0",
+                version: "7.0.0",
                 downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
                 pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Collections.Immutable" },
                 transform: filePath =>
@@ -94,7 +94,7 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "System.Memory",
-                version: "1.0.0",
+                version: "4.5.5",
                 downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
                 pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Memory" },
                 transform: filePath =>
@@ -117,7 +117,7 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "System.Reflection.Metadata",
-                version: "1.0.0",
+                version: "7.0.2",
                 downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
                 pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Reflection.Metadata" },
                 transform: filePath =>
