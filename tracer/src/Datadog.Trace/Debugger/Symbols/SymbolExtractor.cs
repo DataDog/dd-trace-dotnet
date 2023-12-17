@@ -75,6 +75,11 @@ namespace Datadog.Trace.Debugger.Symbols
                     return null;
                 }
 
+                if (!datadogMetadataReader.IsPdbExist)
+                {
+                    throw new InvalidOperationException($"symbol test no pdb.{Environment.NewLine}Assembly location: {assembly.Location}");
+                }
+
                 return datadogMetadataReader.IsPdbExist ? new SymbolPdbExtractor(datadogMetadataReader, assembly.Location) : new SymbolExtractor(datadogMetadataReader, assembly.Location);
             }
             catch (Exception e)
