@@ -616,8 +616,9 @@ namespace Samples.Security.AspNetCore5.Controllers
         // We should exclude some headers to prevent false positives:
         // location: it is already reported in UNVALIDATED_REDIRECT vulnerability detection.
         // Sec-WebSocket-Location, Sec-WebSocket-Accept, Upgrade, Connection: Usually the framework gets info from request
-        // access-control-allow-origin: when the header is access-control-allow-origin and the source of the tainted range is the request header origin 
+        // access-control-allow-origin: when the header is access-control-allow-origin and the source of the tainted range is the request header origin
         // set-cookie: We should ignore set-cookie header if the source of all the tainted ranges are cookies
+        // We should exclude the injection when the tainted string only has one range which comes from a request header with the same name that the header that we are checking in the response.
         // Headers could store sensitive information, we should redact whole <header_value> if:
         // <header_name> matches with this RegExp
         // <header_value> matches with  this RegExp

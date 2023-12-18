@@ -508,6 +508,18 @@ namespace Samples.Security.AspNetCore5.Controllers
         }
 
 
+        // We should exclude some headers to prevent false positives:
+        // location: it is already reported in UNVALIDATED_REDIRECT vulnerability detection.
+        // Sec-WebSocket-Location, Sec-WebSocket-Accept, Upgrade, Connection: Usually the framework gets info from request
+        // access-control-allow-origin: when the header is access-control-allow-origin and the source of the tainted range is the request header origin
+        // set-cookie: We should ignore set-cookie header if the source of all the tainted ranges are cookies
+        // We should exclude the injection when the tainted string only has one range which comes from a request header with the same name that the header that we are checking in the response.
+        // Headers could store sensitive information, we should redact whole <header_value> if:
+        // <header_name> matches with this RegExp
+        // <header_value> matches with  this RegExp
+        // We should redact the sensitive information from the evidence when:
+        // Tainted range is considered sensitive value
+
         [Route("HeaderInjection")]
         public ActionResult HeaderInjection(bool UseValueFromOriginHeader = false)
         {
@@ -535,12 +547,19 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             var originValue = Request.Headers["origin"];
             var headerValue = Request.Headers["value"];
-            var cookieValue = Request.Cookies["value"].Value;
+            var cookieValue = Request.Cookies["value"];
             var headerName = Request.Headers["name"];
-            var cookieName = Request.Cookies["name"].Value;
+            var cookieName = Request.Cookies["name"];
+            string propagationHeader = Request.Headers["propagation"];
 
-            var returnedName = Combine(headerName, cookieName, defaultHeaderName);
-            var returnedValue = UseValueFromOriginHeader ? originValue.ToString() : Combine(headerValue, cookieValue, defaultHeaderValue);
+            if (!string.IsNullOrEmpty(propagationHeader))
+            {
+                Response.Headers.Add("propagation", propagationHeader);
+                return Content($"returned propagation header");
+            }
+
+            var returnedName = Combine(headerName, cookieName?.Value, defaultHeaderName);
+            var returnedValue = UseValueFromOriginHeader ? originValue.ToString() : Combine(headerValue, cookieValue?.Value, defaultHeaderValue);
             Response.Headers.Add(returnedName, returnedValue);
             return Content($"returned header {returnedName},{returnedValue}");
         }
