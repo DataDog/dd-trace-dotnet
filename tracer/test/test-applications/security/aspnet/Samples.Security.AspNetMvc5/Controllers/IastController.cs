@@ -341,6 +341,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 // We don't want a header injection vulnerability here, so we untaint the header values.
                 var xContentTypeHeaderValueUntainted = CopyStringAvoidTainting(xContentTypeHeaderValue);
+                var contentTypeUntainted = CopyStringAvoidTainting(contentType);
 
                 if (!string.IsNullOrEmpty(xContentTypeHeaderValueUntainted))
                 {
@@ -352,9 +353,9 @@ namespace Samples.Security.AspNetCore5.Controllers
                     return new HttpStatusCodeResult(returnCode);
                 }
 
-                if (!string.IsNullOrEmpty(contentType))
+                if (!string.IsNullOrEmpty(contentTypeUntainted))
                 {
-                    return Content("XContentTypeHeaderMissing", contentType);
+                    return Content("XContentTypeHeaderMissing", contentTypeUntainted);
                 }
                 else
                 {
@@ -374,6 +375,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             // using reflection to access the private field "m_string" from the String class.
             var hstsHeaderValueUntainted = CopyStringAvoidTainting(hstsHeaderValue);
             var xForwardedProtoUntainted = CopyStringAvoidTainting(xForwardedProto);
+            var contentTypeUntainted = CopyStringAvoidTainting(contentType);
 
             if (!string.IsNullOrEmpty(hstsHeaderValueUntainted))
             {
@@ -390,9 +392,9 @@ namespace Samples.Security.AspNetCore5.Controllers
                 return new HttpStatusCodeResult(returnCode);
             }
 
-            if (!string.IsNullOrEmpty(contentType))
+            if (!string.IsNullOrEmpty(contentTypeUntainted))
             {
-                return Content("StrictTransportSecurityMissing", contentType);
+                return Content("StrictTransportSecurityMissing", contentTypeUntainted);
             }
             else
             {
