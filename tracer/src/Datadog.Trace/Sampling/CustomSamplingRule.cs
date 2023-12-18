@@ -158,6 +158,12 @@ namespace Datadog.Trace.Sampling
 
             [JsonProperty(PropertyName = "service")]
             public string Service { get; set; }
+
+            [JsonProperty(PropertyName = "resource")]
+            public string Resource { get; set; }
+
+            [JsonProperty(PropertyName = "tags")]
+            public KeyValuePair<string, string>[] Tags { get; set; }
         }
     }
 }
