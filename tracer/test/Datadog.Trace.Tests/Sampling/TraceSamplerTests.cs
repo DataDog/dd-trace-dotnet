@@ -45,7 +45,8 @@ namespace Datadog.Trace.Tests.Sampling
                     ruleName: "Allow_all",
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
-                    operationNamePattern: ".*"));
+                    operationNamePattern: ".*",
+                    resourceNamePattern: ".*"));
 
             RunSamplerTest(
                 sampler,
@@ -66,7 +67,8 @@ namespace Datadog.Trace.Tests.Sampling
                     ruleName: "Allow_all",
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
-                    operationNamePattern: ".*"));
+                    operationNamePattern: ".*",
+                    resourceNamePattern: ".*"));
 
             RunSamplerTest(
                 sampler,
@@ -87,7 +89,8 @@ namespace Datadog.Trace.Tests.Sampling
                     ruleName: "Allow_nothing",
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
-                    operationNamePattern: ".*"));
+                    operationNamePattern: ".*",
+                    resourceNamePattern: ".*"));
 
             RunSamplerTest(
                 sampler,
@@ -108,7 +111,8 @@ namespace Datadog.Trace.Tests.Sampling
                     ruleName: "Allow_half",
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
-                    operationNamePattern: ".*"));
+                    operationNamePattern: ".*",
+                    resourceNamePattern: ".*"));
 
             RunSamplerTest(
                 sampler,
