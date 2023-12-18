@@ -18,8 +18,8 @@
 
     <!-- Integration: AerospikeClient -->
     <!-- Assembly: AerospikeClient -->
-    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/6.2.0 -->
-    <PackageReference Include="Aerospike.Client" Version="6.2.0" />
+    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/7.0.0 -->
+    <PackageReference Include="Aerospike.Client" Version="7.0.0" />
 
     <!-- Integration: System.Web.Mvc -->
     <!-- Assembly: System.Web.Mvc -->
@@ -116,6 +116,11 @@
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/8.0.0 -->
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
 
+    <!-- Integration: Microsoft.Extensions.Telemetry -->
+    <!-- Assembly: Microsoft.Extensions.Telemetry -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Telemetry/8.0.0 -->
+    <PackageReference Include="Microsoft.Extensions.Telemetry" Version="8.0.0" />
+
     <!-- Integration: Confluent.Kafka -->
     <!-- Assembly: Confluent.Kafka -->
     <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.3.0 -->
@@ -169,7 +174,7 @@
     <!-- Integration: nunit.framework -->
     <!-- Assembly: nunit.framework -->
     <!-- Latest package https://www.nuget.org/packages/NUnit/4.0.1 -->
-    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit" Version="4.0.1" />
 
     <!-- Integration: OpenTelemetry -->
     <!-- Assembly: OpenTelemetry -->
