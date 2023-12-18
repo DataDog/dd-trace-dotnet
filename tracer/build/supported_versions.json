@@ -44,16 +44,16 @@
     "integrationName": "Aerospike",
     "assemblyName": "AerospikeClient",
     "minAssemblyVersionInclusive": "4.0.0",
-    "maxAssemblyVersionInclusive": "6.65535.65535",
+    "maxAssemblyVersionInclusive": "7.65535.65535",
     "packages": [
       {
         "name": "Aerospike.Client",
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "4.0.0",
         "minVersionTestedInclusive": "4.0.3",
-        "maxVersionSupportedInclusive": "6.2.0",
-        "maxVersionAvailableInclusive": "6.2.0",
-        "maxVersionTestedInclusive": "6.2.0"
+        "maxVersionSupportedInclusive": "7.0.0",
+        "maxVersionAvailableInclusive": "7.0.0",
+        "maxVersionTestedInclusive": "7.0.0"
       }
     ]
   },
@@ -603,6 +603,23 @@
         "maxVersionSupportedInclusive": "8.0.0",
         "maxVersionAvailableInclusive": "8.0.0",
         "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "ILogger",
+    "assemblyName": "Microsoft.Extensions.Telemetry",
+    "minAssemblyVersionInclusive": "8.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.Extensions.Telemetry",
+        "minVersionAvailableInclusive": "8.0.0",
+        "minVersionSupportedInclusive": "8.0.0",
+        "minVersionTestedInclusive": "8.0.0",
+        "maxVersionSupportedInclusive": "8.0.0",
+        "maxVersionAvailableInclusive": "8.0.0",
+        "maxVersionTestedInclusive": "8.0.0"
       }
     ]
   },

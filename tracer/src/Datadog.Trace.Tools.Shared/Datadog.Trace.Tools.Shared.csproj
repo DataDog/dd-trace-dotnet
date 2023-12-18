@@ -7,7 +7,8 @@
     <Nullable>enable</Nullable>
     
     <!-- Disable the warnings about commenting public members - This library is not exposed publicly -->
-    <NoWarn>CS1591;SA1600;SA1602</NoWarn>
+    <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
+    <NoWarn>CS1591;SA1600;SA1602;NU1902;NU1903</NoWarn>
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>

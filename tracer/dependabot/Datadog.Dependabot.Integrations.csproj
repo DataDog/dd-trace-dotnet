@@ -18,8 +18,8 @@
 
     <!-- Integration: AerospikeClient -->
     <!-- Assembly: AerospikeClient -->
-    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/6.2.0 -->
-    <PackageReference Include="Aerospike.Client" Version="6.2.0" />
+    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/7.0.0 -->
+    <PackageReference Include="Aerospike.Client" Version="7.0.0" />
 
     <!-- Integration: System.Web.Mvc -->
     <!-- Assembly: System.Web.Mvc -->
@@ -115,6 +115,11 @@
     <!-- Assembly: Microsoft.Extensions.Logging.Abstractions -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/8.0.0 -->
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+
+    <!-- Integration: Microsoft.Extensions.Telemetry -->
+    <!-- Assembly: Microsoft.Extensions.Telemetry -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Telemetry/8.0.0 -->
+    <PackageReference Include="Microsoft.Extensions.Telemetry" Version="8.0.0" />
 
     <!-- Integration: Confluent.Kafka -->
     <!-- Assembly: Confluent.Kafka -->

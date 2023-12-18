@@ -21,6 +21,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         MinimumVersion = "2.0.0",
         MaximumVersion = "8.*.*",
         IntegrationName = LoggerIntegrationCommon.IntegrationName)]
+    [InstrumentMethod(
+        AssemblyName = "Microsoft.Extensions.Telemetry",
+        TypeName = "Microsoft.Extensions.Logging.LoggerFactoryScopeProvider",
+        MethodName = "ForEachScope",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { "System.Action`2[System.Object,!!0]", "!!0" },
+        MinimumVersion = "8.0.0",
+        MaximumVersion = "8.*.*",
+        IntegrationName = LoggerIntegrationCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class LoggerFactoryScopeProviderForEachScopeIntegration
