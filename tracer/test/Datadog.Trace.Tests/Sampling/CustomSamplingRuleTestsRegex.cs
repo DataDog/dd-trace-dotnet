@@ -14,23 +14,16 @@ namespace Datadog.Trace.Tests.Sampling
     [Collection(nameof(Datadog.Trace.Tests.Sampling))]
     public class CustomSamplingRuleTestsRegex
     {
-        private static readonly ulong Id = 1;
-        private static readonly Span CartCheckoutSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shopping-cart-service"), DateTimeOffset.Now) { OperationName = "checkout" };
-        private static readonly Span AddToCartSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shopping-cart-service"), DateTimeOffset.Now) { OperationName = "cart-add" };
-        private static readonly Span ShippingAuthSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shipping-auth-service"), DateTimeOffset.Now) { OperationName = "authorize" };
-        private static readonly Span ShippingRevertSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shipping-auth-service"), DateTimeOffset.Now) { OperationName = "authorize-revert" };
-        private static readonly Span RequestShippingSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "request-shipping"), DateTimeOffset.Now) { OperationName = "submit" };
-
         [Fact]
         public void Constructs_ZeroRateOnly_From_Config_String()
         {
             var config = "[{\"sample_rate\":0}]";
             VerifyRate(config, 0f);
-            VerifySingleRule(config, CartCheckoutSpan, true);
-            VerifySingleRule(config, AddToCartSpan, true);
-            VerifySingleRule(config, ShippingAuthSpan, true);
-            VerifySingleRule(config, ShippingRevertSpan, true);
-            VerifySingleRule(config, RequestShippingSpan, true);
+            VerifySingleRule(config, TestSpans.CartCheckoutSpan, true);
+            VerifySingleRule(config, TestSpans.AddToCartSpan, true);
+            VerifySingleRule(config, TestSpans.ShippingAuthSpan, true);
+            VerifySingleRule(config, TestSpans.ShippingRevertSpan, true);
+            VerifySingleRule(config, TestSpans.RequestShippingSpan, true);
         }
 
         [Fact]
@@ -38,11 +31,11 @@ namespace Datadog.Trace.Tests.Sampling
         {
             var config = "[{\"sample_rate\":0.3, \"service\":\"shopping-cart.*\"}]";
             VerifyRate(config, 0.3f);
-            VerifySingleRule(config, CartCheckoutSpan, true);
-            VerifySingleRule(config, AddToCartSpan, true);
-            VerifySingleRule(config, ShippingAuthSpan, false);
-            VerifySingleRule(config, ShippingRevertSpan, false);
-            VerifySingleRule(config, RequestShippingSpan, false);
+            VerifySingleRule(config, TestSpans.CartCheckoutSpan, true);
+            VerifySingleRule(config, TestSpans.AddToCartSpan, true);
+            VerifySingleRule(config, TestSpans.ShippingAuthSpan, false);
+            VerifySingleRule(config, TestSpans.ShippingRevertSpan, false);
+            VerifySingleRule(config, TestSpans.RequestShippingSpan, false);
         }
 
         [Fact]
@@ -50,11 +43,11 @@ namespace Datadog.Trace.Tests.Sampling
         {
             var config = "[{\"sample_rate\":0.5, \"name\":\"auth.*\"}]";
             VerifyRate(config, 0.5f);
-            VerifySingleRule(config, CartCheckoutSpan, false);
-            VerifySingleRule(config, AddToCartSpan, false);
-            VerifySingleRule(config, ShippingAuthSpan, true);
-            VerifySingleRule(config, ShippingRevertSpan, true);
-            VerifySingleRule(config, RequestShippingSpan, false);
+            VerifySingleRule(config, TestSpans.CartCheckoutSpan, false);
+            VerifySingleRule(config, TestSpans.AddToCartSpan, false);
+            VerifySingleRule(config, TestSpans.ShippingAuthSpan, true);
+            VerifySingleRule(config, TestSpans.ShippingRevertSpan, true);
+            VerifySingleRule(config, TestSpans.RequestShippingSpan, false);
         }
 
         [Fact]
@@ -64,40 +57,40 @@ namespace Datadog.Trace.Tests.Sampling
             var rules = CustomSamplingRule.BuildFromConfigurationString(config, CustomSamplingRulesFormat.Regex).ToArray();
 
             var cartRule = rules[0];
-            Assert.Equal(expected: 0.5f, actual: cartRule.GetSamplingRate(CartCheckoutSpan));
+            Assert.Equal(expected: 0.5f, actual: cartRule.GetSamplingRate(TestSpans.CartCheckoutSpan));
 
-            VerifySingleRule(cartRule, CartCheckoutSpan, true);
-            VerifySingleRule(cartRule, AddToCartSpan, true);
-            VerifySingleRule(cartRule, ShippingAuthSpan, false);
-            VerifySingleRule(cartRule, ShippingRevertSpan, false);
-            VerifySingleRule(cartRule, RequestShippingSpan, false);
+            VerifySingleRule(cartRule, TestSpans.CartCheckoutSpan, true);
+            VerifySingleRule(cartRule, TestSpans.AddToCartSpan, true);
+            VerifySingleRule(cartRule, TestSpans.ShippingAuthSpan, false);
+            VerifySingleRule(cartRule, TestSpans.ShippingRevertSpan, false);
+            VerifySingleRule(cartRule, TestSpans.RequestShippingSpan, false);
 
             var shippingAuthRule = rules[1];
-            Assert.Equal(expected: 1f, actual: shippingAuthRule.GetSamplingRate(CartCheckoutSpan));
+            Assert.Equal(expected: 1f, actual: shippingAuthRule.GetSamplingRate(TestSpans.CartCheckoutSpan));
 
-            VerifySingleRule(shippingAuthRule, CartCheckoutSpan, false);
-            VerifySingleRule(shippingAuthRule, AddToCartSpan, false);
-            VerifySingleRule(shippingAuthRule, ShippingAuthSpan, true);
-            VerifySingleRule(shippingAuthRule, ShippingRevertSpan, false);
-            VerifySingleRule(shippingAuthRule, RequestShippingSpan, false);
+            VerifySingleRule(shippingAuthRule, TestSpans.CartCheckoutSpan, false);
+            VerifySingleRule(shippingAuthRule, TestSpans.AddToCartSpan, false);
+            VerifySingleRule(shippingAuthRule, TestSpans.ShippingAuthSpan, true);
+            VerifySingleRule(shippingAuthRule, TestSpans.ShippingRevertSpan, false);
+            VerifySingleRule(shippingAuthRule, TestSpans.RequestShippingSpan, false);
 
             var fallbackShippingRule = rules[2];
-            Assert.Equal(expected: 0.1f, actual: fallbackShippingRule.GetSamplingRate(CartCheckoutSpan));
+            Assert.Equal(expected: 0.1f, actual: fallbackShippingRule.GetSamplingRate(TestSpans.CartCheckoutSpan));
 
-            VerifySingleRule(fallbackShippingRule, CartCheckoutSpan, false);
-            VerifySingleRule(fallbackShippingRule, AddToCartSpan, false);
-            VerifySingleRule(fallbackShippingRule, ShippingAuthSpan, true);
-            VerifySingleRule(fallbackShippingRule, ShippingRevertSpan, true);
-            VerifySingleRule(fallbackShippingRule, RequestShippingSpan, true);
+            VerifySingleRule(fallbackShippingRule, TestSpans.CartCheckoutSpan, false);
+            VerifySingleRule(fallbackShippingRule, TestSpans.AddToCartSpan, false);
+            VerifySingleRule(fallbackShippingRule, TestSpans.ShippingAuthSpan, true);
+            VerifySingleRule(fallbackShippingRule, TestSpans.ShippingRevertSpan, true);
+            VerifySingleRule(fallbackShippingRule, TestSpans.RequestShippingSpan, true);
 
             var fallbackRule = rules[3];
-            Assert.Equal(expected: 0.05f, actual: fallbackRule.GetSamplingRate(CartCheckoutSpan));
+            Assert.Equal(expected: 0.05f, actual: fallbackRule.GetSamplingRate(TestSpans.CartCheckoutSpan));
 
-            VerifySingleRule(fallbackRule, CartCheckoutSpan, true);
-            VerifySingleRule(fallbackRule, AddToCartSpan, true);
-            VerifySingleRule(fallbackRule, ShippingAuthSpan, true);
-            VerifySingleRule(fallbackRule, ShippingRevertSpan, true);
-            VerifySingleRule(fallbackRule, RequestShippingSpan, true);
+            VerifySingleRule(fallbackRule, TestSpans.CartCheckoutSpan, true);
+            VerifySingleRule(fallbackRule, TestSpans.AddToCartSpan, true);
+            VerifySingleRule(fallbackRule, TestSpans.ShippingAuthSpan, true);
+            VerifySingleRule(fallbackRule, TestSpans.ShippingRevertSpan, true);
+            VerifySingleRule(fallbackRule, TestSpans.RequestShippingSpan, true);
         }
 
         [Fact]
@@ -120,19 +113,19 @@ namespace Datadog.Trace.Tests.Sampling
             Assert.Empty(rules);
         }
 
-        private void VerifyRate(string config, float expectedRate)
+        private static void VerifyRate(string config, float expectedRate)
         {
             var rule = CustomSamplingRule.BuildFromConfigurationString(config, CustomSamplingRulesFormat.Regex).Single();
-            Assert.Equal(expected: expectedRate, actual: rule.GetSamplingRate(CartCheckoutSpan));
+            Assert.Equal(expected: expectedRate, actual: rule.GetSamplingRate(TestSpans.CartCheckoutSpan));
         }
 
-        private void VerifySingleRule(string config, Span span, bool isMatch)
+        private static void VerifySingleRule(string config, Span span, bool isMatch)
         {
             var rule = CustomSamplingRule.BuildFromConfigurationString(config, CustomSamplingRulesFormat.Regex).Single();
             VerifySingleRule(rule, span, isMatch);
         }
 
-        private void VerifySingleRule(ISamplingRule rule, Span span, bool isMatch)
+        private static void VerifySingleRule(ISamplingRule rule, Span span, bool isMatch)
         {
             Assert.Equal(rule.IsMatch(span), isMatch);
         }

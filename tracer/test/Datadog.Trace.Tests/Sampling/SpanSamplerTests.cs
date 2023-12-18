@@ -16,9 +16,6 @@ namespace Datadog.Trace.Tests.Sampling
     [Collection(nameof(Sampling))]
     public class SpanSamplerTests
     {
-        private static readonly ulong Id = 1;
-        private static readonly Span CartCheckoutSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shopping-cart-service"), DateTimeOffset.Now) { OperationName = "checkout" };
-
         [Fact]
         public void Constructor_ShouldThrow_WhenNullRulesGiven()
         {
