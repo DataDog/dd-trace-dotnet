@@ -359,6 +359,7 @@
       <type fullname="System.Net.Sockets.AddressFamily" />
       <type fullname="System.Net.Sockets.SocketError" />
       <type fullname="System.Net.Sockets.SocketException" />
+      <type fullname="System.Net.TransportContext" />
    </assembly>
    <assembly fullname="System.Net.Requests">
       <type fullname="System.Net.HttpWebRequest" />
