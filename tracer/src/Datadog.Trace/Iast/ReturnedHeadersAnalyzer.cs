@@ -53,6 +53,8 @@ internal static class ReturnedHeadersAnalyzer
     {
         try
         {
+            IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.HeaderInjection);
+
             var tracer = Tracer.Instance;
             var currentSpan = (tracer.ActiveScope as Scope)?.Span;
             var traceContext = currentSpan?.Context?.TraceContext;
