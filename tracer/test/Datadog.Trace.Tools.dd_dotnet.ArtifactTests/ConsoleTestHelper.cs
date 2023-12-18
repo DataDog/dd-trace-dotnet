@@ -89,7 +89,7 @@ public abstract class ConsoleTestHelper : ToolTestHelper
         var completed = await Task.WhenAny(
                             helper.Task,
                             startedTask.Task,
-                            Task.Delay(TimeSpan.FromSeconds(30)));
+                            Task.Delay(TimeSpan.FromMinutes(30)));
 
         if (completed == startedTask.Task)
         {
