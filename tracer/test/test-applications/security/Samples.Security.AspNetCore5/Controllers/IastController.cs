@@ -8,6 +8,7 @@ using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
@@ -513,9 +514,13 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("XContentTypeHeaderMissing")]
         public ActionResult XContentTypeHeaderMissing(string contentType = "text/html", int returnCode = 200, string xContentTypeHeaderValue = "")
         {
-            if (!string.IsNullOrEmpty(xContentTypeHeaderValue))
+            // We don't want a header injection vulnerability here, so we untaint the header values.
+
+            var xContentTypeHeaderValueUntainted = CopyStringAvoidTainting(xContentTypeHeaderValue);
+
+            if (!string.IsNullOrEmpty(xContentTypeHeaderValueUntainted))
             {
-                Response.Headers.Add("X-Content-Type-Options", xContentTypeHeaderValue);
+                Response.Headers.Add("X-Content-Type-Options", xContentTypeHeaderValueUntainted);
             }
 
             if (returnCode != (int) HttpStatusCode.OK)
@@ -588,14 +593,19 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("StrictTransportSecurity")]
         public ActionResult StrictTransportSecurity(string contentType = "text/html", int returnCode = 200, string hstsHeaderValue = "", string xForwardedProto ="")
         {
-            if (!string.IsNullOrEmpty(hstsHeaderValue))
+            // We don't want a header injection vulnerability here, so we untaint the header values by
+            // using reflection to access the private field "m_string" from the String class.
+            var hstsHeaderValueUntainted = CopyStringAvoidTainting(hstsHeaderValue);
+            var xForwardedProtoUntainted = CopyStringAvoidTainting(xForwardedProto);
+
+            if (!string.IsNullOrEmpty(hstsHeaderValueUntainted))
             {
-                Response.Headers.Add("Strict-Transport-Security", hstsHeaderValue);
+                Response.Headers.Add("Strict-Transport-Security", hstsHeaderValueUntainted);
             }
 
-            if (!string.IsNullOrEmpty(xForwardedProto))
+            if (!string.IsNullOrEmpty(xForwardedProtoUntainted))
             {
-                Response.Headers.Add("X-Forwarded-Proto", xForwardedProto);
+                Response.Headers.Add("X-Forwarded-Proto", xForwardedProtoUntainted);
             }
 
             if (returnCode != (int)HttpStatusCode.OK)
@@ -668,6 +678,11 @@ namespace Samples.Security.AspNetCore5.Controllers
             var returnedValue = UseValueFromOriginHeader ? originValue.ToString() : Combine(headerValue, cookieValue, defaultHeaderValue);
             Response.Headers.Add(returnedName, returnedValue);
             return Content($"returned header {returnedName},{returnedValue}");
+        }
+
+        static string CopyStringAvoidTainting(string original)
+        {
+            return new string(original.AsEnumerable().ToArray());
         }
     }
 }
