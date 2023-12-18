@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 using System.Net;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -92,10 +91,9 @@ internal static class ReturnedHeadersAnalyzer
                     continue;
                 }
 
-                // For now, we only analyze the header injection vulnerability when the header value is tainted (not name).
                 var taintedValue = traceContext?.IastRequestContext?.GetTainted(headerValue);
 
-                if (taintedValue is null || taintedValue.Ranges.Count() == 0)
+                if (taintedValue is null || taintedValue.Ranges.Length == 0)
                 {
                     continue;
                 }
@@ -149,8 +147,7 @@ internal static class ReturnedHeadersAnalyzer
             taintedValue.Ranges.Length == 1 &&
             taintedValue.Ranges[0].Source is not null &&
             taintedValue.Ranges[0].Source!.OriginByte == (byte)SourceTypeName.RequestHeaderValue &&
-            taintedValue.Ranges[0].Source!.Name is not null &&
-            taintedValue.Ranges[0].Source!.Name!.Equals(headerName, StringComparison.OrdinalIgnoreCase));
+            string.Equals(taintedValue.Ranges[0].Source!.Name, headerName, StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool ComesFromOriginHeader(TaintedObject taintedValue)
@@ -158,7 +155,7 @@ internal static class ReturnedHeadersAnalyzer
         foreach (var range in taintedValue.Ranges)
         {
             if (range.Source is not null && (range.Source.OriginByte != (byte)SourceTypeName.RequestHeaderValue
-                || range.Source.Name?.Equals("origin", StringComparison.OrdinalIgnoreCase) == false))
+                || !string.Equals(range.Source.Name, "origin", StringComparison.OrdinalIgnoreCase)))
             {
                 return false;
             }

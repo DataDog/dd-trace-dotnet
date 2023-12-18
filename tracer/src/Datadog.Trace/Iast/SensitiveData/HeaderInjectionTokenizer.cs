@@ -29,19 +29,21 @@ internal class HeaderInjectionTokenizer : ITokenizer
 
     public List<Range> GetTokens(string evidence, IntegrationId? integrationId = null)
     {
-        var res = new List<Range>();
+        var result = new List<Range>();
         var separatorStart = evidence.IndexOf(IastModule.HeaderInjectionEvidenceSeparator);
 
         if (separatorStart > 0)
         {
             var separatorEnd = separatorStart + IastModule.HeaderInjectionEvidenceSeparator.Length;
+            var valuePart = evidence.Substring(separatorEnd);
+
             if (_keyPattern.IsMatch(evidence.Substring(0, separatorStart)) ||
-                _valuePattern.IsMatch(evidence.Substring(separatorEnd)))
+                _valuePattern.IsMatch(valuePart))
             {
-                res.Add(new Range(separatorEnd, evidence.Length - separatorEnd));
+                result.Add(new Range(separatorEnd, valuePart.Length));
             }
         }
 
-        return res;
+        return result;
     }
 }
