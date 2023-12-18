@@ -34,6 +34,7 @@ namespace Datadog.Trace.Sampling
         private readonly Regex _serviceNameRegex;
         private readonly Regex _operationNameRegex;
         private readonly Regex _resourceNameRegex;
+        private readonly List<KeyValuePair<string, Regex>> _tagRegexes;
 
         private bool _regexTimedOut;
 
@@ -43,7 +44,8 @@ namespace Datadog.Trace.Sampling
             string patternFormat,
             string serviceNamePattern,
             string operationNamePattern,
-            string resourceNamePattern)
+            string resourceNamePattern,
+            KeyValuePair<string, string>[] tagPatterns)
         {
             _samplingRate = rate;
             RuleName = ruleName;
@@ -52,9 +54,27 @@ namespace Datadog.Trace.Sampling
             _operationNameRegex = RegexBuilder.Build(operationNamePattern, patternFormat);
             _resourceNameRegex = RegexBuilder.Build(resourceNamePattern, patternFormat);
 
+            if (tagPatterns is { Length: > 0 })
+            {
+                var tagRegexList = new List<KeyValuePair<string, Regex>>(tagPatterns.Length);
+
+                foreach (var tagPattern in tagPatterns)
+                {
+                    var regex = RegexBuilder.Build(tagPattern.Value, patternFormat);
+
+                    if (regex != null)
+                    {
+                        tagRegexList.Add(new KeyValuePair<string, Regex>(tagPattern.Key, regex));
+                    }
+                }
+
+                _tagRegexes = tagRegexList;
+            }
+
             if (_serviceNameRegex is null &&
                 _operationNameRegex is null &&
-                _resourceNameRegex is null)
+                _resourceNameRegex is null &&
+                (_tagRegexes is null || _tagRegexes.Count == 0))
             {
                 // if no patterns were specified, this rule always matches (i.e. catch-all)
                 _alwaysMatch = true;
@@ -92,7 +112,8 @@ namespace Datadog.Trace.Sampling
                                 patternFormat,
                                 r.Service,
                                 r.OperationName,
-                                r.Resource));
+                                r.Resource,
+                                r.Tags));
                     }
 
                     return samplingRules;
