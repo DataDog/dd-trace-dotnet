@@ -734,7 +734,7 @@
     SpanId: Id_29,
     Name: MyServiceName.internal,
     Resource: StartRootSpan,
-    Service: MyServiceName,
+    Service: CustomServiceName,
     Type: custom,
     ParentId: Id_26,
     Tags: {
@@ -743,16 +743,14 @@
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
-      service.instance.id: Guid_3,
-      service.name: MyServiceName,
-      service.version: 1.0.x,
+      runtime-id: Guid_2,
       span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
+      version: 1.0.x,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
