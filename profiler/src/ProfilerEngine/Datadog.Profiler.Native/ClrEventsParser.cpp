@@ -180,7 +180,9 @@ ClrEventsParser::ParseGcEvent(uint64_t timestamp, DWORD id, DWORD version, ULONG
             return;
         }
 
-        LOG_GC_EVENT("OnGCStart");
+        std::stringstream buffer;
+        buffer << "OnGCStart: " << payload.Count << " " << payload.Depth << " " << payload.Reason << " " << payload.Type;
+        LOG_GC_EVENT(buffer.str());
         OnGCStart(timestamp, payload);
     }
     else if (id == EVENT_GC_END)
@@ -192,7 +194,9 @@ ClrEventsParser::ParseGcEvent(uint64_t timestamp, DWORD id, DWORD version, ULONG
             return;
         }
 
-        LOG_GC_EVENT("OnGCStop");
+        std::stringstream buffer;
+        buffer << "OnGCStop: " << payload.Count << " " << payload.Depth;
+        LOG_GC_EVENT(buffer.str());
         OnGCStop(payload);
     }
     else if (id == EVENT_GC_SUSPEND_EE_BEGIN)
@@ -475,6 +479,10 @@ void ClrEventsParser::OnGCGlobalHeapHistory(uint64_t timestamp, GCGlobalHeapPayl
         {
             return;
         }
+
+        std::stringstream buffer;
+        buffer << "   end of GC #" << gc.Number;
+        LOG_GC_EVENT(buffer.str());
 
         NotifyGarbageCollectionEnd(
             gc.Number,

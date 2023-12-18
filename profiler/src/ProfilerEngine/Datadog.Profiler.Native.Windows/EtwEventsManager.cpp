@@ -82,7 +82,7 @@ void EtwEventsManager::OnEvent(
     {
         if (_isDebugLogEnabled)
         {
-            std::cout << "StackWalk" << std::endl;
+            //std::cout << "StackWalk" << std::endl;
         }
 
         auto pThreadInfo = GetOrCreate(tid);
@@ -148,7 +148,7 @@ void EtwEventsManager::OnEvent(
         {
             if (_isDebugLogEnabled)
             {
-                std::cout << "AllocationTick" << std::endl;
+                //std::cout << "AllocationTick" << std::endl;
             }
 
             if (_pAllocationListener == nullptr)
