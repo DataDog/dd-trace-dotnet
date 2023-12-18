@@ -47,6 +47,7 @@ internal class TracerFlareManager : ITracerFlareManager
 
     public void Start()
     {
+        _discoveryService.SubscribeToChanges(HandleConfigUpdate);
         if (Interlocked.Exchange(ref _subscription, new Subscription(RcmProductReceived, RcmProducts.TracerFlareInitiated, RcmProducts.TracerFlareRequested)) == null)
         {
             // Don't need to set any capabilities for tracer flare
@@ -194,7 +195,7 @@ internal class TracerFlareManager : ITracerFlareManager
             for (var i = 0; i < result.Length; i++)
             {
                 var remoteConfig = config[i];
-                result[i] = TrySendDebugLogs(remoteConfig, fileLogDirectory);
+                result[i] = TrySendDebugLogs(remoteConfig.Path.Path, remoteConfig.Contents, remoteConfig.Path.Id, fileLogDirectory);
             }
 
             return result;
@@ -208,36 +209,44 @@ internal class TracerFlareManager : ITracerFlareManager
     }
 
     // internal for testing
-    internal ApplyDetails TrySendDebugLogs(RemoteConfiguration config, string fileLogDirectory)
+    internal ApplyDetails TrySendDebugLogs(string configPath, byte[] configContents, string configId, string fileLogDirectory)
     {
         try
         {
             // Looking for config that looks like this:
             // { "task_type": "tracer_flare", "args" { "case_id": "12345"} }
-            var jObject = TryDeserialize(config);
-            if (jObject is null
-             || !jObject.TryGetValue("task_type", StringComparison.Ordinal, out var taskTypeToken)
+            var jObject = TryDeserialize(configContents);
+            if (jObject is null)
+            {
+                Log.Debug("Invalid configuration provided for tracer flare");
+                return ApplyDetails.FromError(configPath, "Invalid configuration provided");
+            }
+
+            if (!jObject.TryGetValue("task_type", StringComparison.Ordinal, out var taskTypeToken)
              || taskTypeToken.Type != JTokenType.String
              || !string.Equals(taskTypeToken.Value<string>(), "tracer_flare", StringComparison.Ordinal))
             {
                 // not the right sort of task, just acknowledge it
-                return ApplyDetails.FromOk(config.Path.Path);
+                Log.Debug($"{RcmProducts.TracerFlareRequested} was not tracer flare - ignoring");
+                return ApplyDetails.FromOk(configPath);
             }
 
             if (!jObject.TryGetValue("args", StringComparison.Ordinal, out var args)
              || args is not JObject argsObject
-             || argsObject.TryGetValue("case_id", out var caseIdToken)
-             || caseIdToken?.Type != JTokenType.String
+             || !argsObject.TryGetValue("case_id", out var caseIdToken)
+             || caseIdToken.Type != JTokenType.String
              || caseIdToken.Value<string>() is not { Length: > 0 } caseId)
             {
                 // missing case_id - should we just accept it?
-                return ApplyDetails.FromError(config.Path.Path, "Missing case_id");
+                Log.Debug("Invalid configuration provided for tracer flare - missing case_id");
+                return ApplyDetails.FromError(configPath, "Missing case_id");
             }
 
-            if (!DebugLogReader.TryToCreateSentinelFile(fileLogDirectory, fileLogDirectory))
+            if (!DebugLogReader.TryToCreateSentinelFile(fileLogDirectory, configId))
             {
                 // already accepted by a different tracer
-                return ApplyDetails.FromOk(config.Path.Path);
+                Log.Debug("Tracer flare already handled by other tracer instance - ignoring");
+                return ApplyDetails.FromOk(configPath);
             }
 
             // ok, do the thing
@@ -246,14 +255,21 @@ internal class TracerFlareManager : ITracerFlareManager
             // uh oh, sync over async :grimace:
             // and this all happens inside a lock IIRC, so this could be problematic...
             var result = task.GetAwaiter().GetResult();
-            return result
-                       ? ApplyDetails.FromOk(config.Path.Path)
-                       : ApplyDetails.FromError(config.Path.Path, "There was an error uploading the debug log archive");
+            if (result.Key)
+            {
+                return ApplyDetails.FromOk(configPath);
+            }
+
+            var error = string.IsNullOrEmpty(result.Value)
+                            ? "There was an error uploading the debug log archive"
+                            : $"There was an error uploading the debug log archive. Agent response: {result.Value}";
+
+            return ApplyDetails.FromError(configPath, error);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error handling tracer flare generation for config {ConfigPath}", config.Path.Path);
-            return ApplyDetails.FromError(config.Path.Path, ex.ToString());
+            Log.Error(ex, "Error handling tracer flare generation for config {ConfigPath}", configPath);
+            return ApplyDetails.FromError(configPath, ex.ToString());
         }
     }
 
@@ -293,11 +309,11 @@ internal class TracerFlareManager : ITracerFlareManager
         }
     }
 
-    private JObject? TryDeserialize(RemoteConfiguration config)
+    private JObject? TryDeserialize(byte[] contents)
     {
         try
         {
-            using var stream = new MemoryStream(config.Contents);
+            using var stream = new MemoryStream(contents);
             using var streamReader = new StreamReader(stream);
             using var jsonReader = new JsonTextReader(streamReader);
             return JObject.Load(jsonReader);
