@@ -515,7 +515,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         public ActionResult XContentTypeHeaderMissing(string contentType = "text/html", int returnCode = 200, string xContentTypeHeaderValue = "")
         {
             // We don't want a header injection vulnerability here, so we untaint the header values.
-
             var xContentTypeHeaderValueUntainted = CopyStringAvoidTainting(xContentTypeHeaderValue);
 
             if (!string.IsNullOrEmpty(xContentTypeHeaderValueUntainted))
