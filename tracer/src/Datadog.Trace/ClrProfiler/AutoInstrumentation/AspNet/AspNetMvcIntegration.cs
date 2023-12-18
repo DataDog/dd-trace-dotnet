@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Routing;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -159,6 +160,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     if (headers is not null)
                     {
                         SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers.Value, tracer.Settings.HeaderTagsInternal, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                    }
+
+                    if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)
+                    {
+                        Headers.Ip.RequestIpExtractor.AddIpToTags(httpContext.Request.UserHostAddress, httpContext.Request.IsSecureConnection, key => httpContext.Request.Headers[key], tracer.Settings.IpHeader, tags);
                     }
 
                     tags.AspNetRoute = routeUrl;
