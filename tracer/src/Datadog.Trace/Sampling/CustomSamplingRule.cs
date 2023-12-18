@@ -33,6 +33,7 @@ namespace Datadog.Trace.Sampling
         // TODO consider moving toward these https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/SimpleRegex.cs
         private readonly Regex _serviceNameRegex;
         private readonly Regex _operationNameRegex;
+        private readonly Regex _resourceNameRegex;
 
         private bool _regexTimedOut;
 
@@ -41,16 +42,19 @@ namespace Datadog.Trace.Sampling
             string ruleName,
             string patternFormat,
             string serviceNamePattern,
-            string operationNamePattern)
+            string operationNamePattern,
+            string resourceNamePattern)
         {
             _samplingRate = rate;
             RuleName = ruleName;
 
             _serviceNameRegex = RegexBuilder.Build(serviceNamePattern, patternFormat);
             _operationNameRegex = RegexBuilder.Build(operationNamePattern, patternFormat);
+            _resourceNameRegex = RegexBuilder.Build(resourceNamePattern, patternFormat);
 
             if (_serviceNameRegex is null &&
-                _operationNameRegex is null)
+                _operationNameRegex is null &&
+                _resourceNameRegex is null)
             {
                 // if no patterns were specified, this rule always matches (i.e. catch-all)
                 _alwaysMatch = true;
@@ -87,7 +91,8 @@ namespace Datadog.Trace.Sampling
                                 r.RuleName ?? $"config-rule-{index}",
                                 patternFormat,
                                 r.Service,
-                                r.OperationName));
+                                r.OperationName,
+                                r.Resource));
                     }
 
                     return samplingRules;
@@ -120,7 +125,8 @@ namespace Datadog.Trace.Sampling
                 // if a regex is null (not specified), it always matches.
                 // stop as soon as we find a non-match.
                 return (_serviceNameRegex?.Match(span.ServiceName).Success ?? true) &&
-                       (_operationNameRegex?.Match(span.OperationName).Success ?? true);
+                       (_operationNameRegex?.Match(span.OperationName).Success ?? true) &&
+                       (_resourceNameRegex?.Match(span.ResourceName).Success ?? true);
             }
             catch (RegexMatchTimeoutException e)
             {
