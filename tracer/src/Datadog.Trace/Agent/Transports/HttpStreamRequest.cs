@@ -33,18 +33,18 @@ namespace Datadog.Trace.Agent.Transports
         }
 
         public async Task<IApiResponse> GetAsync()
-            => (await SendAsync(WebRequestMethods.Http.Get, null, null, null).ConfigureAwait(false)).Item1;
+            => (await SendAsync(WebRequestMethods.Http.Get, null, null, null, chunkedEncoding: false).ConfigureAwait(false)).Item1;
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
             => PostAsync(bytes, contentType, contentEncoding: null);
 
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
-            => (await SendAsync(WebRequestMethods.Http.Post, contentType, new BufferContent(bytes), contentEncoding).ConfigureAwait(false)).Item1;
+            => (await SendAsync(WebRequestMethods.Http.Post, contentType, new BufferContent(bytes), contentEncoding, chunkedEncoding: false).ConfigureAwait(false)).Item1;
 
-        public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding)
-            => (await SendAsync(WebRequestMethods.Http.Post, contentType, new HttpOverStreams.HttpContent.PushStreamContent(writeToRequestStream), contentEncoding).ConfigureAwait(false)).Item1;
+        public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
+            => (await SendAsync(WebRequestMethods.Http.Post, contentType, new HttpOverStreams.HttpContent.PushStreamContent(writeToRequestStream), contentEncoding, chunkedEncoding: true, multipartBoundary).ConfigureAwait(false)).Item1;
 
-        private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType, IHttpContent content, string contentEncoding)
+        private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType, IHttpContent content, string contentEncoding, bool chunkedEncoding, string multipartBoundary = null)
         {
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
             {
@@ -56,6 +56,11 @@ namespace Datadog.Trace.Agent.Transports
                 if (!string.IsNullOrEmpty(contentEncoding))
                 {
                     _headers.Add("Content-Encoding", contentEncoding);
+                }
+
+                if (chunkedEncoding)
+                {
+                    _headers.Add("Transfer-Encoding", "chunked");
                 }
 
                 var request = new HttpRequest(verb, _uri.Host, _uri.PathAndQuery, _headers, content);
