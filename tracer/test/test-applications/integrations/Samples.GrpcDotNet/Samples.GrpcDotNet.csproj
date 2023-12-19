@@ -4,7 +4,7 @@
     <TargetFrameworks>netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <!-- Suppress warnings about lowercase variable names in generated code -->
-    <NoWarn>0618;NETSDK1138;CS8981</NoWarn>
+    <NoWarn>$(NoWarn);0618;NETSDK1138;CS8981</NoWarn>
 
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.43.0</ApiVersion>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='2.29.0'">$(DefineConstants);GRPC_2_29</DefineConstants>
