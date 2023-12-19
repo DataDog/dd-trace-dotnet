@@ -3,13 +3,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Streams;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -74,6 +77,9 @@ namespace Datadog.Trace.TestHelpers
             while (true);
 
             var length = long.TryParse(headers.GetValue(ContentLengthHeaderKey), out var headerValue) ? headerValue : (long?)null;
+            var body = headers.GetValue("Transfer-Encoding") is "chunked"
+                           ? new ChunkedEncodingReadContent(stream)
+                           : new StreamContent(stream, length);
 
             return new MockHttpRequest()
             {
@@ -81,7 +87,7 @@ namespace Datadog.Trace.TestHelpers
                 Method = method,
                 PathAndQuery = pathAndQuery,
                 ContentLength = length,
-                Body = new StreamContent(stream, length)
+                Body = body
             };
         }
 
@@ -183,6 +189,89 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 return false;
+            }
+        }
+
+        private class ChunkedEncodingReadContent(Stream stream)
+            : StreamContent(new ChunkedEncodingReadStream(stream), length: null);
+
+        private class ChunkedEncodingReadStream(Stream innerStream) : DelegatingStream(innerStream)
+        {
+            private readonly Stream _innerStream = innerStream;
+            private readonly StreamReaderHelper _helper = new(innerStream);
+            private readonly StringBuilder _sb = new();
+            private int _bytesRemainingInChunk = 0;
+            private State _state = State.AwaitingChunkHeader;
+
+            private enum State
+            {
+                AwaitingChunkHeader,
+                ReadingChunk,
+                ChunkFinished,
+                Complete,
+            }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                // YOLO
+                return ReadAsync(buffer, offset, count).GetAwaiter().GetResult();
+            }
+
+            public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            {
+                // This is very crude and doesn't handle edge cases etc, but hopefully it's good enough for tests
+                while (true)
+                {
+                    switch (_state)
+                    {
+                        case State.AwaitingChunkHeader:
+                            // Read the chunk size
+                            _sb.Clear();
+                            await _helper.ReadUntilNewLine(_sb).ConfigureAwait(false);
+                            // annoying, but this is always prepended with an invalid char due to
+                            // the way we parse the response. Just hacking around it for simplicity
+                            var hexString = _sb.ToString(startIndex: 1, _sb.Length - 1);
+                            _bytesRemainingInChunk = int.Parse(hexString, System.Globalization.NumberStyles.HexNumber);
+                            _state = State.ReadingChunk;
+                            if (_bytesRemainingInChunk == 0)
+                            {
+                                // we're done
+                                _state = State.Complete;
+                                // The final chunk has a double newline at the end
+                                await _helper.ReadUntilNewLine(_sb);
+                                return 0;
+                            }
+
+                            break;
+                        case State.ReadingChunk:
+                            // Read and return the chunk bytes
+                            // We might not have enough for the whole chunk, so just read what we can
+                            var bytesToRead = Math.Min(count, _bytesRemainingInChunk);
+                            var bytesReadFromStream = await _innerStream.ReadAsync(buffer, offset, bytesToRead, cancellationToken).ConfigureAwait(false);
+
+                            // we might not have read the whole chunk, so just return what we have for now
+                            _bytesRemainingInChunk -= bytesReadFromStream;
+                            if (_bytesRemainingInChunk <= 0)
+                            {
+                                _state = State.ChunkFinished;
+                            }
+
+                            return bytesReadFromStream;
+                        case State.ChunkFinished:
+                            // Should have a CRLF after the chunk is finished
+                            await _helper.GoNextChar();
+                            if (!await _helper.IsNewLine())
+                            {
+                                throw new Exception("Did not receive expected line feed");
+                            }
+
+                            // chunk is finished, wait for the next one
+                            _state = State.AwaitingChunkHeader;
+                            break;
+                        case State.Complete:
+                            return 0;
+                    }
+                }
             }
         }
     }
