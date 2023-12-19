@@ -92,7 +92,7 @@ public class RunCommandTests : ConsoleTestHelper
 
             var output = process.StandardOutput.ReadLine();
 
-            output.Should().Be("Hello World!");
+            output.Should().Be("Echo: Hello World!");
         }
         finally
         {
