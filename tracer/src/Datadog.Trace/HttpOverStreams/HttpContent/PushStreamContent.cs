@@ -33,12 +33,16 @@ internal class PushStreamContent : IHttpContent
 
     public long? Length => 0;
 
-    public Task CopyToAsync(Stream destination)
+    public async Task CopyToAsync(Stream destination)
     {
         // Note the callee must not close or dispose the stream because they don't own it
         // We _could_ use a wrapper stream to enforce that, but then it _requires_ the
         // callee to call close/dispose which seems weird
-        return _onStreamAvailable(destination);
+
+        // We're doing chunked encoding, so we need to wrap the stream to ensure we add the required chunked encoding headers
+        using var wrappedStream = new ChunkedEncodingWriteStream(destination);
+        await _onStreamAvailable(wrappedStream).ConfigureAwait(false);
+        await wrappedStream.FinishAsync().ConfigureAwait(false); // write the final block
     }
 
     public Task CopyToAsync(byte[] buffer)
