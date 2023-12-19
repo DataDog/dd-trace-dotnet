@@ -27,7 +27,8 @@ namespace Datadog.Trace.TestHelpers
             // Read POST
             await helper.ReadUntil(stringBuilder, stopChar: ' ').ConfigureAwait(false);
 
-            var method = stringBuilder.ToString();
+            // This will have a null character prefixed on it because of reasons
+            var method = stringBuilder.ToString(1, stringBuilder.Length - 1);
             stringBuilder.Clear();
 
             // Read /path?request
