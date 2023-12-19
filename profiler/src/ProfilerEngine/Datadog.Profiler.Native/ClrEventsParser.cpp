@@ -13,14 +13,14 @@
 #include "OpSysTools.h"
 
 
-const bool LogGcEvents = false;
+const bool LogGcEvents = true;
 #define LOG_GC_EVENT(x)                         \
 {                                               \
     if (LogGcEvents)                            \
     {                                           \
         std::stringstream builder;              \
         builder << OpSysTools::GetThreadId()    \
-        << " " << ((_gcInProgress.Number != -1) ? "F" : ((_currentBGC.Number != -1) ? "B" : " "))   \
+        << " " << ((_gcInProgress.Number != -1) ? "F" : ((_currentBGC.Number != -1) ? "B" : ""))   \
         << GetCurrentGC().Number                \
         << " | " << x << std::endl;             \
         std::cout << builder.str();             \
@@ -168,7 +168,7 @@ ClrEventsParser::ParseGcEvent(uint64_t timestamp, DWORD id, DWORD version, ULONG
     //
     if (id == EVENT_GC_TRIGGERED)
     {
-        LOG_GC_EVENT("OnGCTriggered");
+        //LOG_GC_EVENT("OnGCTriggered");
         OnGCTriggered();
     }
     else if (id == EVENT_GC_START)
@@ -195,18 +195,18 @@ ClrEventsParser::ParseGcEvent(uint64_t timestamp, DWORD id, DWORD version, ULONG
         }
 
         std::stringstream buffer;
-        buffer << "OnGCStop: " << payload.Count << " " << payload.Depth;
+        buffer << "OnGCEnd: " << payload.Count << " " << payload.Depth;
         LOG_GC_EVENT(buffer.str());
-        OnGCStop(payload);
+        OnGCEnd(payload);
     }
     else if (id == EVENT_GC_SUSPEND_EE_BEGIN)
     {
-        LOG_GC_EVENT("OnGCSuspendEEBegin");
+        //LOG_GC_EVENT("OnGCSuspendEEBegin");
         OnGCSuspendEEBegin(timestamp);
     }
     else if (id == EVENT_GC_RESTART_EE_END)
     {
-        LOG_GC_EVENT("OnGCRestartEEEnd");
+        //LOG_GC_EVENT("OnGCRestartEEEnd");
         OnGCRestartEEEnd(timestamp);
     }
     else if (id == EVENT_GC_HEAP_STAT)
@@ -374,7 +374,7 @@ void ClrEventsParser::OnGCStart(uint64_t timestamp, GCStartPayload& payload)
     }
 }
 
-void ClrEventsParser::OnGCStop(GCEndPayload& payload)
+void ClrEventsParser::OnGCEnd(GCEndPayload& payload)
 {
 }
 
@@ -443,6 +443,10 @@ void ClrEventsParser::OnGCHeapStats(uint64_t timestamp)
     // this is the last event for a gen0/gen1 foreground collection during a background gen2 collections
     if ((_currentBGC.Number != -1) && (gc.Generation < 2))
     {
+        std::stringstream buffer;
+        buffer << "   end of GC #" << gc.Number << " - " << (timestamp - gc.StartTimestamp) / 1000000 << "ms";
+        LOG_GC_EVENT(buffer.str());
+
         NotifyGarbageCollectionEnd(
             gc.Number,
             gc.Generation,
@@ -481,7 +485,7 @@ void ClrEventsParser::OnGCGlobalHeapHistory(uint64_t timestamp, GCGlobalHeapPayl
         }
 
         std::stringstream buffer;
-        buffer << "   end of GC #" << gc.Number;
+        buffer << "   end of GC #" << gc.Number << " - " << (timestamp - gc.StartTimestamp) / 1000000 << "ms";
         LOG_GC_EVENT(buffer.str());
 
         NotifyGarbageCollectionEnd(

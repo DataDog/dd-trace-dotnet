@@ -225,7 +225,7 @@ private:
     // garbage collection events processing
     void OnGCTriggered();
     void OnGCStart(uint64_t timestamp, GCStartPayload& payload);
-    void OnGCStop(GCEndPayload& payload);
+    void OnGCEnd(GCEndPayload& payload);
     void OnGCSuspendEEBegin(uint64_t timestamp);
     void OnGCRestartEEEnd(uint64_t timestamp);
     void OnGCHeapStats(uint64_t timestamp);

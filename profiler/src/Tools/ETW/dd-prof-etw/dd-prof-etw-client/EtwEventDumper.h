@@ -3,7 +3,6 @@
 #pragma once
 
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IEtwEventsReceiver.h"
-//#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\Protocol.h"
 
 #include <string>
 
@@ -25,7 +24,8 @@ public:
 private:
     bool BuildClrEvent(
         std::string& name,
-        uint32_t tid, uint8_t version, uint16_t id, uint64_t keyword, uint8_t level);
+        uint32_t tid, uint8_t version, uint16_t id, uint64_t keyword, uint8_t level,
+        uint32_t cbEventData, const uint8_t* pEventData);
     void DumpCallstack(uint32_t cbEventData, const uint8_t* pEventData);
     void DumpAllocationTick(uint32_t cbEventData, const uint8_t* pEventData);
 };

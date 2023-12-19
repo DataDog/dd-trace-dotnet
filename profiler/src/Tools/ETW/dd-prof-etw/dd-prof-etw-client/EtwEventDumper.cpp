@@ -13,7 +13,8 @@
 
 bool EtwEventDumper::BuildClrEvent(
     std::string& name,
-    uint32_t tid, uint8_t version, uint16_t id, uint64_t keyword, uint8_t level)
+    uint32_t tid, uint8_t version, uint16_t id, uint64_t keyword, uint8_t level,
+    uint32_t cbEventData, const uint8_t* pEventData)
 {
     std::stringstream buffer;
     if (keyword == KEYWORD_GC)
@@ -22,57 +23,78 @@ bool EtwEventDumper::BuildClrEvent(
         {
             case EVENT_ALLOCATION_TICK:
                 buffer << "AllocationTick";
-                break;
+                return false;
 
             case EVENT_GC_TRIGGERED:
                 buffer << "GCTriggered";
-                break;
+                return false;
 
             case EVENT_GC_START:
+            {
                 buffer << "GCStart";
-                break;
+                if (cbEventData >= sizeof(GCStartPayload))
+                {
+                    GCStartPayload* pPayload = (GCStartPayload*)pEventData;
+                    buffer << " #" << pPayload->Count << " gen" << pPayload->Depth;
+                }
+            }
+            break;
 
             case EVENT_GC_END:
+            {
                 buffer << "GCEnd";
-                break;
+                if (cbEventData >= sizeof(GCEndPayload))
+                {
+                    GCEndPayload* pPayload = (GCEndPayload*)pEventData;
+                    buffer << " #" << pPayload->Count << " gen" << pPayload->Depth;
+                }
+            }
+            break;
 
             case EVENT_GC_HEAP_STAT:
                 buffer << "GCHeapStat";
-                break;
+                return false;
 
             case EVENT_GC_GLOBAL_HEAP_HISTORY:
+            {
                 buffer << "GCGlobalHeapHistory";
-                break;
+                if (cbEventData >= sizeof(GCGlobalHeapPayload))
+                {
+                    GCGlobalHeapPayload* pPayload = (GCGlobalHeapPayload*)pEventData;
+                    buffer << " gen" << pPayload->CondemnedGeneration;
+                }
+            }
+            break;
 
             case EVENT_GC_SUSPEND_EE_BEGIN:
                 buffer << "GCSuspendEEBegin";
-                break;
+                return false;
 
             case EVENT_GC_RESTART_EE_END:
                 buffer << "GCRestartEEEnd";
-                break;
+                return false;
 
             case EVENT_GC_PER_HEAP_HISTORY:
                 buffer << "GCPerHeapHistory";
-                break;
+                return false;
 
             case EVENT_GC_JOIN:
                 buffer << "GCJOIN";
-                break;
+                return false;
 
             case EVENT_GC_MARKWITHTYPE:
                 buffer << "GCMARKWITHTYPE";
-                break;
+                return false;
 
             case EVENT_GC_PINOBJECTATGCTIME:
                 buffer << "GCPINOBJECTATGCTIME";
-                break;
+                return false;
 
             default:
             {
                 buffer << "GC-" << id;
             }
-            break;
+            return false;
         }
     }
     else if (keyword == KEYWORD_CONTENTION)
@@ -89,6 +111,7 @@ bool EtwEventDumper::BuildClrEvent(
         {
             buffer << "Lock-" << id;
         }
+        return false;
     }
     else if (keyword == KEYWORD_STACKWALK)
     {
@@ -100,6 +123,7 @@ bool EtwEventDumper::BuildClrEvent(
         {
             buffer << "SW-" << id;
         }
+        return false;
     }
     else
     {
@@ -174,10 +198,10 @@ void EtwEventDumper::OnEvent(
     const uint8_t* pEventData)
 {
     std::string name;
-    if (BuildClrEvent(name, tid, version, id, keyword, level))
+    if (BuildClrEvent(name, tid, version, id, keyword, level, cbEventData, pEventData))
     {
         std::cout
-            << std::setw(16) << std::setfill('0') << timestamp
+            //<< std::setw(16) << std::setfill('0') << timestamp
             << " (0x" << std::setw(8) << std::setfill(' ') << std::hex << keyword << std::dec << ", " << (uint16_t)level << ")"
             << " " << std::setw(4) << std::setfill(' ') << id << " | "
             << std::setw(6) << std::setfill(' ') << tid << " | " << name
@@ -187,7 +211,7 @@ void EtwEventDumper::OnEvent(
         {
             if (id == EVENT_SW_STACK)
             {
-                DumpCallstack(cbEventData, pEventData);
+                //DumpCallstack(cbEventData, pEventData);
             }
         }
         else
@@ -201,7 +225,7 @@ void EtwEventDumper::OnEvent(
     }
     else
     {
-        std::cout << "   Impossible to get CLR event details...\n";
+        //std::cout << "   Impossible to get CLR event details...\n";
     }
 }
 

@@ -19,15 +19,15 @@
 
 void ShowHelp()
 {
-    printf("\nDatadog CLR Events Client v1.0\n");
+    printf("\nDatadog CLR Events Client v1.1\n");
     printf("Simulate a .NET profiled application asking for ETW CLR events via named pipes.\n");
     printf("\n");
-    printf("Usage: -pid <pid of a .NET process emitting events> -pipe <server named pipe endpoint>\n");
-    printf("   Ex: -pid 1234 -pipe DD_ETW_DISPATCHER\n");
+    printf("Usage: -pid <pid of a .NET process emitting events>\n");
+    printf("   Ex: -pid 1234\n");
     printf("\n");
 }
 
-bool ParseCommandLine(int argc, char* argv[], int& pid, char*& pipe, bool& needHelp)
+bool ParseCommandLine(int argc, char* argv[], int& pid, bool& needHelp)
 {
     bool success = false;
 
@@ -50,17 +50,6 @@ bool ParseCommandLine(int argc, char* argv[], int& pid, char*& pipe, bool& needH
             // atoi is fine because we don't expect 0 to be a valid pid
             pid = atoi(argv[i+1]);
             success = (pid != 0);
-        }
-        else
-        if (strcmp(argv[i], "-pipe") == 0)
-        {
-            if (i == argc - 1)
-            {
-                return false;
-            }
-
-            pipe = argv[i + 1];
-            success = true;
         }
         else
         if (strcmp(argv[i], "-help") == 0)
@@ -143,17 +132,13 @@ void SendRegistrationCommand(IpcClient* pClient, int pid, bool add)
 int main(int argc, char* argv[])
 {
     int pid = -1;
-    char* pipe = nullptr;
+    const char* pipe = "DD_ETW_DISPATCHER";
     bool needHelp = false;
-    if (!ParseCommandLine(argc, argv, pid, pipe, needHelp))
+    if (!ParseCommandLine(argc, argv, pid, needHelp))
     {
         if (pid == -1)
         {
             std::cout << "Missing -p <pid>...\n";
-        }
-        if (pipe == nullptr)
-        {
-            std::cout << "Missing -pipe <server name>...\n";
         }
 
         return -1;
