@@ -33,7 +33,7 @@
             "value": ": "
           },
           {
-            "value": "glpat-eFynewhuKJFGdfGDFGdw",
+            "value": "token=glpat-eFynewhuKJFGdfGDFGdw;max-age=31536000;Secure;HttpOnly;SameSite=Strict",
             "source": 1
           }
         ]
@@ -49,7 +49,7 @@
     {
       "origin": "http.request.header",
       "name": "value",
-      "value": "glpat-eFynewhuKJFGdfGDFGdw"
+      "value": "token=glpat-eFynewhuKJFGdfGDFGdw;max-age=31536000;Secure;HttpOnly;SameSite=Strict"
     }
   ]
 }

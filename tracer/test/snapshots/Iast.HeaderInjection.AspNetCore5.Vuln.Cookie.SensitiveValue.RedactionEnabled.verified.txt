@@ -35,7 +35,7 @@
           },
           {
             "redacted": true,
-            "pattern": "abcdefghijklmnopqrstuvwxyz",
+            "pattern": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrs",
             "source": 0
           }
         ]
@@ -47,7 +47,7 @@
       "origin": "http.request.header",
       "name": "value",
       "redacted": true,
-      "pattern": "abcdefghijklmnopqrstuvwxyz"
+      "pattern": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrs"
     }
   ]
 }
