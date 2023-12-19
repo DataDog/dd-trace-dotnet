@@ -46,7 +46,8 @@ namespace Datadog.Trace.Tests.Sampling
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
-                    resourceNamePattern: ".*"));
+                    resourceNamePattern: ".*",
+                    tagPatterns: null));
 
             RunSamplerTest(
                 sampler,
@@ -68,7 +69,8 @@ namespace Datadog.Trace.Tests.Sampling
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
-                    resourceNamePattern: ".*"));
+                    resourceNamePattern: ".*",
+                    tagPatterns: null));
 
             RunSamplerTest(
                 sampler,
@@ -90,7 +92,8 @@ namespace Datadog.Trace.Tests.Sampling
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
-                    resourceNamePattern: ".*"));
+                    resourceNamePattern: ".*",
+                    tagPatterns: null));
 
             RunSamplerTest(
                 sampler,
@@ -112,7 +115,8 @@ namespace Datadog.Trace.Tests.Sampling
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
-                    resourceNamePattern: ".*"));
+                    resourceNamePattern: ".*",
+                    tagPatterns: null));
 
             RunSamplerTest(
                 sampler,
