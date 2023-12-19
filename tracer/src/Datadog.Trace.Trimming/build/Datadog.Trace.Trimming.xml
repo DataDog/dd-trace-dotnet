@@ -318,6 +318,8 @@
    </assembly>
    <assembly fullname="System.Memory">
       <type fullname="System.Buffers.Binary.BinaryPrimitives" />
+      <type fullname="System.Buffers.StandardFormat" />
+      <type fullname="System.Buffers.Text.Utf8Formatter" />
       <type fullname="System.MemoryExtensions" />
       <type fullname="System.Runtime.InteropServices.MemoryMarshal" />
    </assembly>
@@ -329,6 +331,7 @@
       <type fullname="System.Net.Http.Headers.HttpRequestHeaders" />
       <type fullname="System.Net.Http.Headers.HttpResponseHeaders" />
       <type fullname="System.Net.Http.Headers.MediaTypeHeaderValue" />
+      <type fullname="System.Net.Http.Headers.NameValueHeaderValue" />
       <type fullname="System.Net.Http.HttpClient" />
       <type fullname="System.Net.Http.HttpClientHandler" />
       <type fullname="System.Net.Http.HttpContent" />
