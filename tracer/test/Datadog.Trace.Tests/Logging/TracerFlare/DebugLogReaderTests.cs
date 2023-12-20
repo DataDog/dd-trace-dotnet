@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging.TracerFlare;
 using FluentAssertions;
@@ -57,6 +58,31 @@ public class DebugLogReaderTests(ITestOutputHelper output)
 
         result1.Should().BeTrue();
         result2.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task TryToCreateSentinelFile_CreateSameSentinelInMultipleThreads_OnlyOneWins()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(directory);
+
+        for (var i = 0; i < 1000; i++)
+        {
+            var id = Guid.NewGuid().ToString();
+            using var barrier = new Barrier(2);
+            var tryToCreateSentinel = () =>
+            {
+                barrier.SignalAndWait();
+                return DebugLogReader.TryToCreateSentinelFile(directory, id);
+            };
+
+            var result1 = Task.Run(tryToCreateSentinel);
+            var result2 = Task.Run(tryToCreateSentinel);
+
+            await Task.WhenAll(result1, result2);
+
+            result1.Should().NotBe(result2);
+        }
     }
 
     [Fact]
