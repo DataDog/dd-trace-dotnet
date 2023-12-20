@@ -173,8 +173,11 @@ namespace Datadog.Trace.Sampling
                         return GlobMatcher.BuildRegex(pattern, DefaultRegexOptions, RegexTimeout);
 
                     default:
-                        // ReSharper disable once RedundantNameQualifier (only redundant for some target frameworks)
-                        Util.ThrowHelper.ThrowArgumentOutOfRangeException(nameof(patternFormat), patternFormat, "Invalid match pattern format. Valid values are 'regex' or 'glob'.");
+                        // ReSharper disable once RedundantNameQualifier ("Util." is only redundant for some target frameworks)
+                        Util.ThrowHelper.ThrowArgumentOutOfRangeException(
+                            nameof(patternFormat),
+                            patternFormat,
+                            "Invalid match pattern format. Valid values are 'regex' or 'glob'.");
                         return null; // unreachable
                 }
             }
