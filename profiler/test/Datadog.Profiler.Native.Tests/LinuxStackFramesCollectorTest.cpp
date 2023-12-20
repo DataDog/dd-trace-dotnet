@@ -5,6 +5,7 @@
 
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/LinuxStackFramesCollector.h"
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/ProfilerSignalManager.h"
+#include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/NativeLibraries.h"
 #include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
 #include "StackSnapshotResultBuffer.h"
@@ -302,7 +303,10 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    UnwindTablesStore store;
+    store.Start();
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &store);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
     threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
@@ -326,7 +330,10 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWith
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(false));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    UnwindTablesStore store;
+    store.Start();
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &store);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
     threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
@@ -352,7 +359,10 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCa
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    UnwindTablesStore store;
+    store.Start();
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &store);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
     threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
@@ -372,7 +382,10 @@ TEST_F(LinuxStackFramesCollectorFixture, MustNotCollectIfUnknownThreadId)
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    UnwindTablesStore store;
+    store.Start();
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &store);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
     threadInfo.SetOsInfo(0, (HANDLE)0);
@@ -393,7 +406,10 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    UnwindTablesStore store;
+    store.Start();
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &store);
 
     // Validate the profiler is working correctly
     auto threadId = (DWORD)GetWorkerThreadId();
@@ -454,7 +470,10 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    UnwindTablesStore store;
+    store.Start();
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &store);
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
@@ -497,7 +516,10 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    UnwindTablesStore store;
+    store.Start();
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &store);
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
@@ -540,7 +562,10 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    UnwindTablesStore store;
+    store.Start();
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &store);
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
@@ -581,7 +606,10 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckNoCrashIfPreviousHandlerWasMarkedA
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    UnwindTablesStore store;
+    store.Start();
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &store);
 
     EXPECT_EQ(sigaction(SIGUSR1, nullptr, &currentAction), 0) << "Unable to get current action.";
     EXPECT_NE(currentAction.sa_handler, SIG_DFL);
@@ -604,7 +632,10 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckThatProfilerHandlerAndOtherHandler
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    UnwindTablesStore store;
+    store.Start();
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &store);
 
     // 3rd now point to the profiler handler
     InstallHandler(SA_SIGINFO, true);
@@ -642,7 +673,10 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckNoCrashIfNoPreviousHandlerInstalle
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    UnwindTablesStore store;
+    store.Start();
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &store);
 
     EXPECT_EQ(sigaction(SIGUSR1, nullptr, &currentAction), 0) << "Unable to get current action.";
     EXPECT_NE(currentAction.sa_handler, SIG_DFL);
@@ -661,7 +695,10 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    UnwindTablesStore store;
+    store.Start();
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &store);
 
     const auto threadId = GetWorkerThreadId();
     auto threadInfo = ManagedThreadInfo((ThreadID)0);

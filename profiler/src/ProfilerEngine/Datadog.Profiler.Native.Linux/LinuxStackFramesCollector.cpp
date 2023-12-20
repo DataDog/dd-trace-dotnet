@@ -26,14 +26,15 @@ using namespace std::chrono_literals;
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
-LinuxStackFramesCollector::LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* const configuration) :
+LinuxStackFramesCollector::LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* const configuration, UnwindTablesStore* unwindTablesStore) :
     StackFramesCollectorBase(configuration),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
     _errorStatistics{},
     _processId{OpSysTools::GetProcId()},
     _signalManager{signalManager},
-    _useBacktrace2{configuration->UseBacktrace2()}
+    _useBacktrace2{configuration->UseBacktrace2()},
+    _unwindTablesStore{unwindTablesStore}
 {
     _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
 }
@@ -83,8 +84,6 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
                                                                                        bool selfCollect)
 {
     long errorCode;
-
-    NativeLibraries::Instance()->UpdateCache();
 
     if (selfCollect)
     {
@@ -300,7 +299,6 @@ const intptr_t MAX_FRAME_SIZE = 0x40000;
 
 std::uint16_t LinuxStackFramesCollector::stackWalkBro(ddprof::span<std::uintptr_t> callchain, StackFrame& frame)
 {
-    auto cache = NativeLibraries::Instance()->GetCache();
     std::size_t depth = 0;
 
     uintptr_t prev_sp;
@@ -324,7 +322,7 @@ std::uint16_t LinuxStackFramesCollector::stackWalkBro(ddprof::span<std::uintptr_
         prev_sp = sp;
 
         FrameDesc* f;
-        CodeCache* cc = cache.findLibraryByAddress(pc);
+        CodeCache* cc = _unwindTablesStore->FindByAddress(pc);
         if (cc == NULL || (f = cc->findFrameDesc(pc)) == NULL)
         {
             //walkFp(pc, fp, sp); // how to break there is an issue
@@ -406,7 +404,7 @@ std::uint16_t LinuxStackFramesCollector::stackWalkBro(ddprof::span<std::uintptr_
 std::int32_t LinuxStackFramesCollector::CollectStackWithAsyncProfilerUnwinder(void* ctx)
 {
     auto* newCtx = ctx;
-    ucontext_t cttx;
+    ucontext_t cttx{};
     if (ctx == nullptr)
     {
         cttx.uc_mcontext.gregs[REG_RIP] = (long long)__builtin_return_address(0);

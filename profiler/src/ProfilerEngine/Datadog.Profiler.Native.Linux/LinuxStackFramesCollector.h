@@ -17,6 +17,7 @@
 #include <signal.h>
 #include <unordered_map>
 
+#include "NativeLibraries.h"
 
 #include "../async-profiler/stackFrame.h"
 #include "../async-profiler/dwarf.h"
@@ -37,11 +38,12 @@ class IManagedThreadList;
 class ProfilerSignalManager;
 class ProfilerSignalManager;
 class IConfiguration;
+class UnwindTablesStore;
 
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* configuration);
+    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* configuration, UnwindTablesStore* unwindTablesStore);
     ~LinuxStackFramesCollector() override;
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;
@@ -103,4 +105,5 @@ private:
 
     ErrorStatistics _errorStatistics;
     bool _useBacktrace2;
+    UnwindTablesStore* _unwindTablesStore;
 };
