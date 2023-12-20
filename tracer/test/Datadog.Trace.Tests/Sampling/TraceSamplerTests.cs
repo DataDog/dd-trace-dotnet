@@ -43,7 +43,7 @@ namespace Datadog.Trace.Tests.Sampling
                 new CustomSamplingRule(
                     rate: 1,
                     ruleName: "Allow_all",
-                    patternFormat: CustomSamplingRulesFormat.Regex,
+                    patternFormat: SamplingRulesFormat.Regex,
                     serviceNameRegex: ".*",
                     operationNameRegex: ".*"));
 
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Tests.Sampling
                 new CustomSamplingRule(
                     rate: 1,
                     ruleName: "Allow_all",
-                    patternFormat: CustomSamplingRulesFormat.Regex,
+                    patternFormat: SamplingRulesFormat.Regex,
                     serviceNameRegex: ".*",
                     operationNameRegex: ".*"));
 
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tests.Sampling
                 new CustomSamplingRule(
                     rate: 0,
                     ruleName: "Allow_nothing",
-                    patternFormat: CustomSamplingRulesFormat.Regex,
+                    patternFormat: SamplingRulesFormat.Regex,
                     serviceNameRegex: ".*",
                     operationNameRegex: ".*"));
 
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Tests.Sampling
                 new CustomSamplingRule(
                     rate: 0.5f,
                     ruleName: "Allow_half",
-                    patternFormat: CustomSamplingRulesFormat.Regex,
+                    patternFormat: SamplingRulesFormat.Regex,
                     serviceNameRegex: ".*",
                     operationNameRegex: ".*"));
 

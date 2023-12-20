@@ -453,7 +453,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases), Trace.Configuration.CustomSamplingRulesFormat.Regex, Strings.AllowEmpty)]
+        [MemberData(nameof(StringTestCases), Trace.Sampling.SamplingRulesFormat.Regex, Strings.AllowEmpty)]
         public void CustomSamplingRulesFormat(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CustomSamplingRulesFormat, value));

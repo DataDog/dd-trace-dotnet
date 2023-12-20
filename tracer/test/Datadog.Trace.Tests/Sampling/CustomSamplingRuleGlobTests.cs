@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void Constructs_All_Expected_From_Config_String()
         {
             const string config = """[{"sample_rate":0.5, "service":"*cart*"}, {"sample_rate":1, "service":"*shipping*", "name":"authorize"}, {"sample_rate":0.1, "service":"*shipping*"}, {"sample_rate":0.05}]""";
-            var rules = CustomSamplingRule.BuildFromConfigurationString(config, CustomSamplingRulesFormat.Glob).ToArray();
+            var rules = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob).ToArray();
 
             var cartRule = rules[0];
             cartRule.GetSamplingRate(TestSpans.CartCheckoutSpan).Should().Be(0.5f);
@@ -102,19 +102,19 @@ namespace Datadog.Trace.Tests.Sampling
 
         public void Malformed_Rules_Do_Not_Register_Or_Crash(string ruleConfig, int count)
         {
-            var rules = CustomSamplingRule.BuildFromConfigurationString(ruleConfig, CustomSamplingRulesFormat.Glob).ToArray();
+            var rules = CustomSamplingRule.BuildFromConfigurationString(ruleConfig, SamplingRulesFormat.Glob).ToArray();
             rules.Should().HaveCount(count);
         }
 
         private static void VerifyRate(string config, float expectedRate)
         {
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config, CustomSamplingRulesFormat.Glob).Single();
+            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob).Single();
             rule.GetSamplingRate(TestSpans.CartCheckoutSpan).Should().Be(expectedRate);
         }
 
         private static void VerifySingleRule(string config, Span span, bool isMatch)
         {
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config, CustomSamplingRulesFormat.Glob).Single();
+            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob).Single();
             VerifySingleRule(rule, span, isMatch);
         }
 

@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void Constructs_All_Expected_From_Config_String()
         {
             var config = "[{\"sample_rate\":0.5, \"service\":\".*cart.*\"}, {\"sample_rate\":1, \"service\":\".*shipping.*\", \"name\":\"authorize\"}, {\"sample_rate\":0.1, \"service\":\".*shipping.*\"}, {\"sample_rate\":0.05}]";
-            var rules = CustomSamplingRule.BuildFromConfigurationString(config, CustomSamplingRulesFormat.Regex).ToArray();
+            var rules = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex).ToArray();
 
             var cartRule = rules[0];
             Assert.Equal(expected: 0.5f, actual: cartRule.GetSamplingRate(TestSpans.CartCheckoutSpan));
@@ -109,19 +109,19 @@ namespace Datadog.Trace.Tests.Sampling
 
         public void Malformed_Rules_Do_Not_Register_Or_Crash(string ruleConfig)
         {
-            var rules = CustomSamplingRule.BuildFromConfigurationString(ruleConfig, CustomSamplingRulesFormat.Regex).ToArray();
+            var rules = CustomSamplingRule.BuildFromConfigurationString(ruleConfig, SamplingRulesFormat.Regex).ToArray();
             Assert.Empty(rules);
         }
 
         private static void VerifyRate(string config, float expectedRate)
         {
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config, CustomSamplingRulesFormat.Regex).Single();
+            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex).Single();
             Assert.Equal(expected: expectedRate, actual: rule.GetSamplingRate(TestSpans.CartCheckoutSpan));
         }
 
         private static void VerifySingleRule(string config, Span span, bool isMatch)
         {
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config, CustomSamplingRulesFormat.Regex).Single();
+            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex).Single();
             VerifySingleRule(rule, span, isMatch);
         }
 
