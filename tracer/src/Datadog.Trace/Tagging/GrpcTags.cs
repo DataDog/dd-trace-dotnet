@@ -58,6 +58,9 @@ namespace Datadog.Trace.Tagging
 
         [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }
+
+        [Tag(Trace.Tags.PeerHostname)]
+        public string PeerHostname => Host;
     }
 
     internal partial class GrpcClientV1Tags : GrpcClientTags
