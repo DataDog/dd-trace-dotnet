@@ -530,5 +530,6 @@
   "trace.wordpress_callbacks": "trace_wordpress_callbacks",
   "trace.wordpress_enhanced_integration": "trace_wordpress_enhanced_integration",
   "trace.wordpress_additional_actions": "trace_wordpress_additional_actions",
-  "trace.sidecar_trace_sender": "trace_sidecar_trace_sender"
+  "trace.sidecar_trace_sender": "trace_sidecar_trace_sender",
+  "DD_TRACE_SAMPLING_RULES_FORMAT": "trace_sample_rules_format"
 }
