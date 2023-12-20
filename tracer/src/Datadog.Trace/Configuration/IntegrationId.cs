@@ -70,5 +70,6 @@ namespace Datadog.Trace.Configuration
         IbmMq,
         Remoting,
         TrustBoundaryViolation,
+        UnvalidatedRedirect,
     }
 }

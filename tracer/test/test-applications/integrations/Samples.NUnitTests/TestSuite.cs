@@ -79,7 +79,11 @@ namespace Samples.NUnitTests
         [TestCase(3, 3, 6, Category = "ThirdCase")]
         public void SimpleParameterizedTest(int xValue, int yValue, int expectedResult)
         {
+#if NUNIT_4_0
+            Assert.That(xValue + yValue, Is.EqualTo(expectedResult));
+#else
             Assert.AreEqual(expectedResult, xValue + yValue);
+#endif
         }
 
 
@@ -90,7 +94,11 @@ namespace Samples.NUnitTests
         [TestCase(3, 3, 6)]
         public void SimpleSkipParameterizedTest(int xValue, int yValue, int expectedResult)
         {
+#if NUNIT_4_0
+            Assert.That(xValue + yValue, Is.EqualTo(expectedResult));
+#else            
             Assert.AreEqual(expectedResult, xValue + yValue);
+#endif
         }
 
         [Theory]
@@ -99,7 +107,11 @@ namespace Samples.NUnitTests
         [TestCase(3, 0, 6)]
         public void SimpleErrorParameterizedTest(int xValue, int yValue, int expectedResult)
         {
+#if NUNIT_4_0
+            Assert.That(xValue / yValue, Is.EqualTo(expectedResult));
+#else
             Assert.AreEqual(expectedResult, xValue / yValue);
+#endif
         }
 
         // **********************************************************************************
@@ -152,7 +164,11 @@ namespace Samples.NUnitTests
         [Test]
         public void IsNull()
         {
+#if NUNIT_4_0
+            Assert.That(default(T), Is.Null);
+#else
             Assert.IsNull(default(T));
+#endif
         }
     }
 

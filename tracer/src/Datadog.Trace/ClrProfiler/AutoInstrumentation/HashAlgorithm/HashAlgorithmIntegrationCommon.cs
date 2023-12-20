@@ -29,7 +29,7 @@ internal class HashAlgorithmIntegrationCommon
 
             try
             {
-                return IastModule.OnHashingAlgorithm(GetAlgorithmName(algorithm.GetType()), IntegrationId);
+                return IastModule.OnHashingAlgorithm(GetAlgorithmName(algorithm.GetType()), IntegrationId).SingleSpan;
             }
             catch (Exception ex)
             {

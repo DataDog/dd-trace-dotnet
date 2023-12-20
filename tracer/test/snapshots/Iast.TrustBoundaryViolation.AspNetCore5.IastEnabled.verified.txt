@@ -7,7 +7,7 @@
     Service: Samples.Security.AspNetCore5,
     Type: web,
     Tags: {
-      aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.IastController.Tbv (Samples.Security.AspNetCore5),
+      aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.IastController.TrustBoundaryViolation (Samples.Security.AspNetCore5),
       aspnet_core.route: iast/tbv,
       component: aspnet_core,
       env: integration_tests,
@@ -110,7 +110,7 @@
     Type: web,
     ParentId: Id_2,
     Tags: {
-      aspnet_core.action: tbv,
+      aspnet_core.action: trustboundaryviolation,
       aspnet_core.controller: iast,
       aspnet_core.route: iast/tbv,
       component: aspnet_core,

@@ -145,6 +145,11 @@ namespace Datadog.Trace.TestHelpers
             settings.AddScrubber(builder => ReplaceRegex(builder, regex, replacement));
         }
 
+        public static void AddRegexScrubber(this VerifySettings settings, (Regex RegexPattern, string Replacement) scrubber)
+        {
+            settings.AddScrubber(builder => ReplaceRegex(builder, scrubber.RegexPattern, scrubber.Replacement));
+        }
+
         public static void AddSimpleScrubber(this VerifySettings settings, string oldValue, string newValue)
         {
             settings.AddScrubber(builder => ReplaceSimple(builder, oldValue, newValue));
