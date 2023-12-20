@@ -14,6 +14,7 @@ namespace Datadog.Trace.Logging.TracerFlare;
 
 internal static class DebugLogReader
 {
+    private const string SentinelFilePrefix = "dotnet-tracer-sentinel-";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebugLogReader));
 
     public static bool TryToCreateSentinelFile(string logDirectory, string flareRequestId)
@@ -23,7 +24,7 @@ internal static class DebugLogReader
         try
         {
             // Using the dotnet-tracer-sentinel-*.log pattern means it gets automatically cleaned up by the log cleaning task
-            var filePath = Path.Combine(logDirectory, $"dotnet-tracer-sentinel-{flareRequestId}.log");
+            var filePath = Path.Combine(logDirectory, $"{SentinelFilePrefix}{flareRequestId}.log");
             using var file = File.Open(filePath, FileMode.CreateNew, FileAccess.Write);
 
             // if we got this far, the file was created
@@ -74,6 +75,12 @@ internal static class DebugLogReader
                 try
                 {
                     var filename = Path.GetFileName(filePath);
+                    if (filename.StartsWith(SentinelFilePrefix, StringComparison.Ordinal))
+                    {
+                        // we don't need to send the sentinel files
+                        continue;
+                    }
+
                     var entry = archive.CreateEntry(filename);
                     using var entryStream = entry.Open();
                     // Have to allow FileShare.ReadWrite as the logger will already have it open for writing
