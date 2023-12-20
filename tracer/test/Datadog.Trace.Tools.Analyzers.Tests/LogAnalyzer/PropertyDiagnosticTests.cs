@@ -68,6 +68,52 @@ public class PropertyDiagnosticTests
 
     [Theory]
     [MemberData(nameof(Helpers.LogMethods), MemberType = typeof(Helpers))]
+    public async Task ShouldNotFlag_MatchingPropertiesAndArgsWhenUsingNullableArray(string logMethod)
+    {
+        var src = $$"""
+        #nullable enable
+        using Datadog.Trace.Logging;
+
+        {{Helpers.LoggerDefinitions}}
+
+        class TypeName
+        {
+            private static IDatadogLogger Log = null;
+            public static void Test()
+            {
+                Log.{{logMethod}}("Hello {Tester1} {Tester2}", new object?[] {"tester1", "tester2"});
+            }
+        }
+        """;
+
+        await Verifier.VerifyAnalyzerAsync(src);
+    }
+
+    [Theory]
+    [MemberData(nameof(Helpers.LogMethods), MemberType = typeof(Helpers))]
+    public async Task ShouldNotFlag_MatchingPropertiesAndArgsWhenUsingCollectionInitializer(string logMethod)
+    {
+        var src = $$"""
+        #nullable enable
+        using Datadog.Trace.Logging;
+
+        {{Helpers.LoggerDefinitions}}
+
+        class TypeName
+        {
+            private static IDatadogLogger Log = null;
+            public static void Test()
+            {
+                Log.{{logMethod}}("Hello {Tester1} {Tester2}", ["tester1", "tester2"]);
+            }
+        }
+        """;
+
+        await Verifier.VerifyAnalyzerAsync(src);
+    }
+
+    [Theory]
+    [MemberData(nameof(Helpers.LogMethods), MemberType = typeof(Helpers))]
     public async Task ShouldNotFlag_MatchingPositionalPropertiesAndArgs(string logMethod)
     {
         var src = $$"""
