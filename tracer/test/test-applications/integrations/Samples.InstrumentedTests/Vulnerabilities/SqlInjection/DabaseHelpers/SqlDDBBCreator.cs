@@ -10,7 +10,7 @@ internal static class SqlDDBBCreator
     public static SqlConnection Create()
     {
         // Linux does not support localDB
-        if (InstrumentationTestsBase.IsLinux())
+        if (!InstrumentationTestsBase.IsWindows())
         {
             return new SqlConnection("Data Source=.\\DUMMY;Initial Catalog=Dummy");
         }
