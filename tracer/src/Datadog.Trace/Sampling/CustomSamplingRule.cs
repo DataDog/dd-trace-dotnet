@@ -19,12 +19,6 @@ namespace Datadog.Trace.Sampling
 {
     internal class CustomSamplingRule : ISamplingRule
     {
-#if NETCOREAPP3_1_OR_GREATER
-        private const RegexOptions DefaultRegexOptions = RegexOptions.Compiled | RegexOptions.NonBacktracking;
-#else
-        private const RegexOptions DefaultRegexOptions = RegexOptions.Compiled;
-#endif
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CustomSamplingRule>();
 
         private readonly float _samplingRate;
@@ -145,6 +139,7 @@ namespace Datadog.Trace.Sampling
             {
                 // if a regex is null (not specified), it always matches.
                 // stop as soon as we find a non-match.
+                // TODO: match tags
                 return (_serviceNameRegex?.Match(span.ServiceName).Success ?? true) &&
                        (_operationNameRegex?.Match(span.OperationName).Success ?? true) &&
                        (_resourceNameRegex?.Match(span.ResourceName).Success ?? true);

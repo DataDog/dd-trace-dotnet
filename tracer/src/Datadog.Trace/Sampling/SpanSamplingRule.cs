@@ -30,6 +30,8 @@ namespace Datadog.Trace.Sampling
         // TODO consider moving toward this https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/SimpleRegex.cs
         private readonly Regex _serviceNameRegex;
         private readonly Regex _operationNameRegex;
+        private readonly Regex _resourceNameRegex;
+        private readonly List<KeyValuePair<string, Regex>> _tagRegexes;
 
         private readonly IRateLimiter _limiter;
 
@@ -38,11 +40,15 @@ namespace Datadog.Trace.Sampling
         /// </summary>
         /// <param name="serviceNameGlob">The glob pattern for the <see cref="Span.ServiceName"/>.</param>
         /// <param name="operationNameGlob">The glob pattern for the <see cref="Span.OperationName"/>.</param>
+        /// <param name="resourceNameGlob">The glob pattern for the <see cref="Span.ResourceName"/>.</param>
+        /// <param name="tagGlobs">The glob pattern for the <see cref="Span.Tags"/>.</param>
         /// <param name="samplingRate">The proportion of spans that are kept. <c>1.0</c> indicates keep all where <c>0.0</c> would be drop all.</param>
         /// <param name="maxPerSecond">The maximum number of spans allowed to be kept per second - <see langword="null"/> indicates that there is no limit</param>
         public SpanSamplingRule(
             string serviceNameGlob,
             string operationNameGlob,
+            string resourceNameGlob,
+            KeyValuePair<string, string>[] tagGlobs,
             float samplingRate = 1.0f,
             float? maxPerSecond = null)
         {
@@ -64,9 +70,29 @@ namespace Datadog.Trace.Sampling
 
             _serviceNameRegex = RegexBuilder.Build(serviceNameGlob, SamplingRulesFormat.Glob);
             _operationNameRegex = RegexBuilder.Build(operationNameGlob, SamplingRulesFormat.Glob);
+            _resourceNameRegex = RegexBuilder.Build(resourceNameGlob, SamplingRulesFormat.Glob);
+
+            if (tagGlobs is { Length: > 0 })
+            {
+                var tagRegexList = new List<KeyValuePair<string, Regex>>(tagGlobs.Length);
+
+                foreach (var tagRegex in tagGlobs)
+                {
+                    var regex = RegexBuilder.Build(tagRegex.Value, SamplingRulesFormat.Glob);
+
+                    if (regex != null)
+                    {
+                        tagRegexList.Add(new KeyValuePair<string, Regex>(tagRegex.Key, regex));
+                    }
+                }
+
+                _tagRegexes = tagRegexList;
+            }
 
             if (_serviceNameRegex is null &&
-                _operationNameRegex is null)
+                _operationNameRegex is null &&
+                _resourceNameRegex is null &&
+                (_tagRegexes is null || _tagRegexes.Count == 0))
             {
                 // if no patterns were specified, this rule always matches (i.e. catch-all)
                 _alwaysMatch = true;
@@ -99,6 +125,8 @@ namespace Datadog.Trace.Sampling
                             new SpanSamplingRule(
                                 rule.ServiceNameGlob,
                                 rule.OperationNameGlob,
+                                rule.ResourceNameGlob,
+                                rule.TagGlobs,
                                 rule.SampleRate,
                                 rule.MaxPerSecond));
                     }
@@ -130,8 +158,10 @@ namespace Datadog.Trace.Sampling
 
             // if a regex is null (not specified), it always matches.
             // stop as soon as we find a non-match.
+            // TODO: match tags
             return (_serviceNameRegex?.Match(span.ServiceName).Success ?? true) &&
-                   (_operationNameRegex?.Match(span.OperationName).Success ?? true);
+                   (_operationNameRegex?.Match(span.OperationName).Success ?? true) &&
+                   (_resourceNameRegex?.Match(span.ResourceName).Success ?? true);
         }
 
         /// <inheritdoc/>
@@ -162,6 +192,12 @@ namespace Datadog.Trace.Sampling
 
             [JsonProperty(PropertyName = "name")]
             public string OperationNameGlob { get; set; } = "*";
+
+            [JsonProperty(PropertyName = "resource")]
+            public string ResourceNameGlob { get; set; }
+
+            [JsonProperty(PropertyName = "tags")]
+            public KeyValuePair<string, string>[] TagGlobs { get; set; }
 
             [JsonProperty(PropertyName = "sample_rate")]
             public float SampleRate { get; set; } = 1.0f; // default to accept all
