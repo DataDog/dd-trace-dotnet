@@ -94,22 +94,26 @@ void DwarfParser::parse(const char *eh_frame_hdr, u64 adjust_eh_frame) {
   u8 fde_count_enc = eh_frame_hdr[2];
   u8 table_enc = eh_frame_hdr[3];
 
+#ifndef NDEBUG
   printf("eh_frame_ptr_enc = %lx \n", eh_frame_ptr_enc);
   printf("table_enc = %lx \n", table_enc);
+#endif
   if (version != 1 || (eh_frame_ptr_enc & 0x7) != 0x3 ||
       (fde_count_enc & 0x7) != 0x3 || (table_enc & 0xf7) != 0x33) {
     return;
   }
 
   int fde_count = *(int *)(eh_frame_hdr + 8);
-#ifdef DEBUG
+#ifndef NDEBUG
   printf("fde count = %d \n", fde_count);
 #endif
   int *table = (int *)(eh_frame_hdr + 16);
   for (int i = 0; i < fde_count; i++) {
     _ptr = eh_frame_hdr + table[i * 2] - adjust_eh_frame;
     if (i == 0) {
+#ifndef NDEBUG
       printf("ptr = %lx, table offset = %lx \n", _ptr, table[i * 2]);
+#endif
     }
     parseFde();
   }
@@ -140,7 +144,7 @@ void DwarfParser::parseFde() {
   const char *fde_start = _ptr;
   u32 cie_offset = get32();
   if (_count == 0) {
-#ifdef DEBUG
+#ifndef NDEBUG
     printf("Change pointer to %lx - %lx \n", fde_start, cie_offset);
 #endif
     _ptr = fde_start - cie_offset;
@@ -150,8 +154,10 @@ void DwarfParser::parseFde() {
 
   u32 range_start = getPtr() - _image_base;
   if (_count == 0) {
+#ifndef NDEBUG
     printf("Dwarf range start: %lx (ptr) - %lx (image) = %lx \n", getPtr(),
            _image_base, range_start);
+#endif
   }
 
   u32 range_len = get32();
@@ -160,6 +166,7 @@ void DwarfParser::parseFde() {
   addRecord(range_start + range_len, DW_REG_SP, DW_STACK_SLOT, DW_SAME_FP);
 }
 
+__attribute__((no_sanitize_address))
 void DwarfParser::parseInstructions(u32 loc, const char *end) {
   const u32 code_align = _code_align;
   const int data_align = _data_align;
@@ -195,7 +202,7 @@ void DwarfParser::parseInstructions(u32 loc, const char *end) {
           // The address is not 16-bit aligned here
           printf("Addr is not aligned 0x%lx (code_align=%i)\n", _ptr,
                  code_align);
-          exit(1);
+          //exit(1);
         }
 #endif
         loc += get16() * code_align;

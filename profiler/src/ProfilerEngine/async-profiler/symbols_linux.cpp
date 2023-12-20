@@ -31,6 +31,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <algorithm>
+
 class SymbolDesc
 {
 private:
@@ -626,6 +628,111 @@ void Symbols::parseKernelSymbols(CodeCache* cc)
     }
 
     fclose(f);
+}
+
+std::vector<std::shared_ptr<CodeCache>> Symbols::parseLibraries(bool kernel_symbols)
+{
+    MutexLocker ml(_parse_lock);
+
+    std::vector<std::shared_ptr<CodeCache>> result;
+    result.reserve(100);
+
+    if (kernel_symbols && !haveKernelSymbols())
+    {
+        auto cc = std::make_unique<CodeCache>("[kernel]");
+        parseKernelSymbols(cc.get());
+
+        if (haveKernelSymbols())
+        {
+            cc->sort();
+            result.push_back(std::move(cc));
+        }
+        else
+        {
+            cc.reset();
+        }
+    }
+
+    FILE* f = fopen("/proc/self/maps", "r");
+    if (f == NULL)
+    {
+        return result;
+    }
+
+    const char* last_readable_base = NULL;
+    const char* image_end = NULL;
+    char* str = NULL;
+    size_t str_size = 0;
+    ssize_t len;
+
+    while ((len = getline(&str, &str_size, f)) > 0)
+    {
+        str[len - 1] = 0;
+
+        MemoryMapDesc map(str);
+        if (!map.isReadable() || map.file() == NULL || map.file()[0] == 0)
+        {
+            continue;
+        }
+        if (strchr(map.file(), ':') != NULL)
+        {
+            // Skip pseudofiles like anon_inode:name, /memfd:name
+            continue;
+        }
+
+        const char* image_base = map.addr();
+        if (image_base != image_end) last_readable_base = image_base;
+        image_end = map.end();
+
+        if (map.isExecutable())
+        {
+            //if (!_parsed_libraries.insert(image_base).second)
+            //{
+            //    continue; // the library was already parsed
+            //}
+
+            int count = result.size();
+            if (count >= MAX_NATIVE_LIBS)
+            {
+                break;
+            }
+
+            auto cc = std::make_shared<CodeCache>(map.file(), count, image_base, image_end);
+
+            unsigned long inode = map.inode();
+            if (inode != 0)
+            {
+                // Do not parse the same executable twice, e.g. on Alpine Linux
+                //if (_parsed_inodes.insert(u64(map.dev()) << 32 | inode).second)
+                {
+                    // Be careful: executable file is not always ELF, e.g. classes.jsa
+                    unsigned long offs = map.offs();
+                    if ((unsigned long)image_base > offs && (image_base -= offs) >= last_readable_base)
+                    {
+                        ElfParser::parseProgramHeaders(cc.get(), image_base);
+                    }
+                    ElfParser::parseFile(cc.get(), image_base, map.file(), true);
+                }
+            }
+            else if (strcmp(map.file(), "[vdso]") == 0)
+            {
+                ElfParser::parseMem(cc.get(), image_base);
+            }
+
+            cc->sort();
+            result.push_back(std::move(cc));
+        }
+    }
+
+    free(str);
+    fclose(f);
+
+    std::sort(result.begin(), result.end(), [] (std::shared_ptr<CodeCache> const& a, std::shared_ptr<CodeCache> const& b)
+    {
+        return a->minAddress() < b->minAddress();
+    });
+
+    return result;
 }
 
 void Symbols::parseLibraries(CodeCacheArray* array, bool kernel_symbols)

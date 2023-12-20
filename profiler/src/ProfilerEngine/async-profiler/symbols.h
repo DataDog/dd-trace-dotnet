@@ -19,6 +19,8 @@
 
 #include "codeCache.h"
 #include "mutex.h"
+#include <vector>
+#include <memory>
 
 
 class Symbols {
@@ -29,6 +31,7 @@ class Symbols {
   public:
     static void parseKernelSymbols(CodeCache* cc);
     static void parseLibraries(CodeCacheArray* array, bool kernel_symbols);
+    static std::vector<std::shared_ptr<CodeCache>> parseLibraries(bool kernel_symbols);
 
     static bool haveKernelSymbols() {
         return _have_kernel_symbols;

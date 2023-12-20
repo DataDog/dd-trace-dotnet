@@ -61,6 +61,7 @@ CodeCache::~CodeCache() {
   NativeFunc::destroy(_name);
   delete[] _blobs;
   free(_dwarf_table);
+  _dwarf_table = nullptr;
 }
 
 void CodeCache::expand() {

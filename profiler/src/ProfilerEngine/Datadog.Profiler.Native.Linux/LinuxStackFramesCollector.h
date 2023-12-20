@@ -101,7 +101,7 @@ private:
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
 
     std::int32_t CollectCallStackCurrentThread(void* ucontext);
-    std::uint16_t stackWalkBro(ddprof::span<std::uintptr_t> callchain, StackFrame& frame);
+    std::uint16_t stackWalkBro(ddprof::span<std::uintptr_t> callchain, void* ctx);
 
     ErrorStatistics _errorStatistics;
     bool _useBacktrace2;

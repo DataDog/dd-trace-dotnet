@@ -145,6 +145,10 @@ void SamplesCollector::CollectSamples(std::forward_list<std::pair<ISamplesProvid
                 {
                     _exporter->Add(sample);
                 }
+                else
+                {
+                    Log::Debug("SamplesCollector - No samples were collected for this callstack");
+                }
             }
         }
         catch (std::exception const& ex)

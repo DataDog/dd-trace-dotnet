@@ -1,6 +1,7 @@
 #include "NativeLibraries.h"
 
 #include "OpSysTools.h"
+#include "Log.h"
 
 #include "../async-profiler/symbols.h"
 
@@ -83,21 +84,12 @@ UnwindTablesStore::UnwindTablesStore() = default;
 UnwindTablesStore::~UnwindTablesStore()
 {
     Stop();
-    
-    std::unique_lock lock(_tablesLock);
-    for (auto i = 0; i < _tables->count(); i++)
-    {
-        auto* table = (*_tables)[i];
-        delete table;
-    }
-    _tables.reset();
 }
 
 // implement destructor to clean
 bool UnwindTablesStore::Start()
 {
     _mustStop = false;
-    _tables = std::make_unique<UnwindTables>();
     LoadUnwindTables();
     _tablesReloader = std::thread(&UnwindTablesStore::ReloadUnwindTables, this);
     
@@ -123,24 +115,44 @@ const char* UnwindTablesStore::GetName() const
     return "Unwind Tables store";
 }
 
-UnwindTablesStore::UnwindTable* UnwindTablesStore::FindByAddress(const void* address)
+std::shared_ptr<UnwindTablesStore::UnwindTable> UnwindTablesStore::FindByAddress(const void* address)
 {
-    // TODO binarySearch if native_lib_count is big?
     std::unique_lock lock(_tablesLock);
-    const int native_lib_count = _tables->count();
-    for (int i = 0; i < native_lib_count; i++)
+    
+    using store_type = typeof(_tables);
+    store_type::difference_type count, step;
+    store_type::iterator it, first;
+    
+    first = _tables.begin();
+    count = std::distance(_tables.cbegin(), _tables.cend());
+
+    while (count > 0)
     {
-        if ((*_tables)[i]->contains(address))
+        it = first;
+        step = count / 2;
+        std::advance(it, step);
+ 
+        auto const& current = *it;
+
+        if (current->contains(address))
         {
-            return reinterpret_cast<UnwindTable*>((*_tables)[i]);
+            return current;
         }
+
+        if (current->minAddress() < address)
+        {
+            first = ++it;
+            count -= step + 1;
+        }
+        else
+            count = step;
     }
+ 
     return nullptr;
 }
 
 extern "C" unsigned int dd_get_nb_opened_libraries() __attribute__((weak));
 
-// TODO rename to ReloadUnwindTables
 void UnwindTablesStore::ReloadUnwindTables()
 {
     const auto future = _updaterPromise.get_future();
@@ -165,7 +177,16 @@ void UnwindTablesStore::ReloadUnwindTables()
 void UnwindTablesStore::LoadUnwindTables()
 {
     std::unique_lock lock(_tablesLock);
-    Symbols::parseLibraries(_tables.get(), false);
+    _tables = Symbols::parseLibraries(false);
+    
+    std::ostringstream oss;
+    const int native_lib_count = _tables.size();
+    Log::Debug("=======================");
+    for (auto const& table : _tables)
+    {
+        oss << "* " << table->name() << " | " << std::hex << (std::uintptr_t)(table->minAddress()) << " - " << (std::uintptr_t)(table->maxAddress()) << "\n";
+    }
+    Log::Debug(oss.str());
 }
 //void UnwindTablesStore::UpdateUnwindTables()
 //{

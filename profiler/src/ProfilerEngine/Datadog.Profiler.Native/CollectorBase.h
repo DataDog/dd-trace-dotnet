@@ -221,6 +221,11 @@ private:
                 sample->AddFrame(frame);
             }
         }
+
+        if (sample->GetCallstack().empty())
+        {
+            Log::Debug("CollectorBase - no frames were added to the sample... only native ?");
+        }
     }
 
 private:

@@ -49,7 +49,7 @@ private:
 #include <mutex>
 #include <chrono>
 #include <condition_variable>
-
+#include <vector>
 
 using namespace std::chrono_literals;
 
@@ -67,7 +67,7 @@ public:
 
     const char* GetName() const;
 
-    UnwindTable* FindByAddress(const void* address);
+    std::shared_ptr<UnwindTable> FindByAddress(const void* address);
 
 private:
     void ReloadUnwindTables();
@@ -76,7 +76,7 @@ private:
     inline static constexpr std::chrono::nanoseconds CollectingPeriod = 1s;
 
     class UnwindTables;
-    std::unique_ptr<UnwindTables> _tables;
+    std::vector<std::shared_ptr<UnwindTable>> _tables;
     std::mutex _tablesLock;
 
     std::thread _tablesReloader;
