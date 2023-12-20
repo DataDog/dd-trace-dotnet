@@ -28,8 +28,9 @@ public class TracerFlareRequestFactoryTests
         using var requestStream = new MemoryStream();
 
         var caseId = "12345";
+        var timestamp = 1703093253;
 
-        await TracerFlareRequestFactory.WriteRequestBody(requestStream, stream => flare.CopyToAsync(stream), caseId);
+        await TracerFlareRequestFactory.WriteRequestBody(requestStream, stream => flare.CopyToAsync(stream), caseId, timestamp);
 
         var deserializedBytes = Encoding.UTF8.GetString(requestStream.ToArray());
 
@@ -43,7 +44,7 @@ public class TracerFlareRequestFactoryTests
 
                                       12345
                                       --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B
-                                      Content-Disposition: form-data; name="flare_file"; filename="debug_logs.zip"
+                                      Content-Disposition: form-data; name="flare_file"; filename="tracer-dotnet-12345-1703093253-debug.zip"
                                       Content-Type: application/octet-stream
 
                                       ++++++++++++++++++++++++++++++++++++++++++++++++++
