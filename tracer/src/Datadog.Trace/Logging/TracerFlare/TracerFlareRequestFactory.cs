@@ -28,11 +28,16 @@ internal class TracerFlareRequestFactory
 
           """;
 
-    private const string RequestBodyMiddle =
+    private const string RequestBodyMiddle1 =
         $$"""
 
           {{Boundary}}
-          Content-Disposition: form-data; name="flare_file"; filename="debug_logs.zip"
+          Content-Disposition: form-data; name="flare_file"; filename="tracer-dotnet-
+          """;
+
+    private const string RequestBodyMiddle2 =
+        """
+          -debug.zip"
           Content-Type: application/octet-stream
 
 
@@ -44,7 +49,10 @@ internal class TracerFlareRequestFactory
           {{Boundary}}--
           """;
 
-    public static async Task WriteRequestBody(Stream destination, Func<Stream, Task> writeFlareBytes, string caseId)
+    public static Task WriteRequestBody(Stream destination, Func<Stream, Task> writeFlareBytes, string caseId)
+        => WriteRequestBody(destination, writeFlareBytes, caseId, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+
+    public static async Task WriteRequestBody(Stream destination, Func<Stream, Task> writeFlareBytes, string caseId, long timestamp)
     {
         // Need to create a body that looks something like this:
 
@@ -70,7 +78,18 @@ internal class TracerFlareRequestFactory
         using var sw = new StreamWriter(destination, encoding: EncodingHelpers.Utf8NoBom, bufferSize: 1024, leaveOpen: true);
         await sw.WriteAsync(RequestBodyPrefix).ConfigureAwait(false);
         await sw.WriteAsync(caseId).ConfigureAwait(false);
-        await sw.WriteAsync(RequestBodyMiddle).ConfigureAwait(false);
+        await sw.WriteAsync(RequestBodyMiddle1).ConfigureAwait(false);
+
+        // write the filename as tracer-dotnet-caseid-timestamp-debug.zip
+        // - tracer-dotnet to distinguish between different languages
+        // - timestamp incase multiple tracer flares are attached
+        // - caseid to make it easier to distinguish between the zip files when read
+        await sw.WriteAsync(caseId).ConfigureAwait(false);
+        await sw.WriteAsync('-').ConfigureAwait(false);
+        await sw.WriteAsync(timestamp.ToString()).ConfigureAwait(false);
+
+        await sw.WriteAsync(RequestBodyMiddle2).ConfigureAwait(false);
+
         await sw.FlushAsync().ConfigureAwait(false);
 
         await writeFlareBytes(destination).ConfigureAwait(false);
