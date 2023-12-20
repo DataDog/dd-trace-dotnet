@@ -167,8 +167,7 @@ namespace Datadog.Trace.Sampling
                 switch (patternFormat)
                 {
                     case CustomSamplingRulesFormat.Regex:
-                        pattern = WrapWithLineCharacters(pattern);
-                        return new Regex(pattern, DefaultRegexOptions, RegexTimeout);
+                        return new Regex(WrapWithLineCharacters(pattern), DefaultRegexOptions, RegexTimeout);
 
                     case CustomSamplingRulesFormat.Glob:
                         return GlobMatcher.BuildRegex(pattern, DefaultRegexOptions, RegexTimeout);

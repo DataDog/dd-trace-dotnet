@@ -25,12 +25,10 @@ internal static class GlobMatcher
 
 #if NETCOREAPP3_1_OR_GREATER
         var options = regexOptions ?? RegexOptions.Compiled | RegexOptions.NonBacktracking;
-        var regex = new Regex(regexPattern, options, timeout);
 #else
         var options = regexOptions ?? RegexOptions.Compiled;
-        var regex = new Regex(regexPattern, options, timeout);
 #endif
 
-        return regex;
+        return new Regex(regexPattern, options, timeout);
     }
 }
