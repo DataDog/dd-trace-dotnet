@@ -3195,6 +3195,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.0.1" },
                 new object[] { "6.1.0" },
                 new object[] { "6.2.0" },
+                new object[] { "7.0.0" },
 #endif
 #if NET7_0
                 new object[] { "4.0.3" },
@@ -3209,6 +3210,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.0.1" },
                 new object[] { "6.1.0" },
                 new object[] { "6.2.0" },
+                new object[] { "7.0.0" },
 #endif
 #if NET8_0
                 new object[] { "4.0.3" },
@@ -3223,6 +3225,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.0.1" },
                 new object[] { "6.1.0" },
                 new object[] { "6.2.0" },
+                new object[] { "7.0.0" },
 #endif
 #endif
             };

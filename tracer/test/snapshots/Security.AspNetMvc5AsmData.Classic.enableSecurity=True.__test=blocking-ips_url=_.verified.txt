@@ -12,12 +12,14 @@
       aspnet.controller: home,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
+      http.client_ip: 86.242.244.246,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
       http.url: http://localhost:00000/,
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       span.kind: server
     }
   },
