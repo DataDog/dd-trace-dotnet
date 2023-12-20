@@ -467,34 +467,37 @@ namespace Datadog.Trace.Debugger.Symbols
             int? startColumn = null;
             int? endColumn = null;
             string? sourceFile = null;
-            for (int i = 0; i < methodScope.Scopes.Length; i++)
+            if (methodScope.Scopes != null)
             {
-                var scope = methodScope.Scopes[i];
-                if (startLine > scope.StartLine && scope.StartLine > 0)
+                for (int i = 0; i < methodScope.Scopes.Length; i++)
                 {
-                    startLine = scope.StartLine;
-                }
+                    var scope = methodScope.Scopes[i];
+                    if (startLine > scope.StartLine && scope.StartLine > 0)
+                    {
+                        startLine = scope.StartLine;
+                    }
 
-                if (endLine < scope.EndLine)
-                {
-                    endLine = scope.EndLine;
-                }
+                    if (endLine < scope.EndLine)
+                    {
+                        endLine = scope.EndLine;
+                    }
 
-                sourceFile ??= scope.SourceFile;
+                    sourceFile ??= scope.SourceFile;
 
-                if (!scope.LanguageSpecifics.HasValue)
-                {
-                    continue;
-                }
+                    if (!scope.LanguageSpecifics.HasValue)
+                    {
+                        continue;
+                    }
 
-                if (startColumn == null || startColumn > scope.LanguageSpecifics.Value.StartColumn)
-                {
-                    startColumn = scope.LanguageSpecifics.Value.StartColumn;
-                }
+                    if (startColumn == null || startColumn > scope.LanguageSpecifics.Value.StartColumn)
+                    {
+                        startColumn = scope.LanguageSpecifics.Value.StartColumn;
+                    }
 
-                if (endColumn == null || endColumn < scope.LanguageSpecifics.Value.EndColumn)
-                {
-                    endColumn = scope.LanguageSpecifics.Value.EndColumn;
+                    if (endColumn == null || endColumn < scope.LanguageSpecifics.Value.EndColumn)
+                    {
+                        endColumn = scope.LanguageSpecifics.Value.EndColumn;
+                    }
                 }
             }
 

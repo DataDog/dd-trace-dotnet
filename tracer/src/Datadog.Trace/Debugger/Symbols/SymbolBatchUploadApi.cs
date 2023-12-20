@@ -76,7 +76,7 @@ namespace Datadog.Trace.Debugger.Symbols
         {
             if (Volatile.Read(ref _endpoint) is not { } endpoint)
             {
-                // Should not happen
+                // Should not happen because if we are here it means that we got SymDB endpoint from discovery service - see SymbolsUploader
                 throw new Exception("Symbol database endpoint is not defined");
             }
 

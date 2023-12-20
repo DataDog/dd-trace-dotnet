@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
@@ -16,10 +17,10 @@ internal record struct Scope
     internal SymbolType ScopeType { get; set; }
 
     [JsonProperty("name")]
-    internal string Name { get; set; }
+    internal string? Name { get; set; }
 
     [JsonProperty("source_file")]
-    internal string SourceFile { get; set; }
+    internal string? SourceFile { get; set; }
 
     [JsonProperty("start_line")]
     internal int StartLine { get; set; }
@@ -31,8 +32,8 @@ internal record struct Scope
     internal LanguageSpecifics? LanguageSpecifics { get; set; }
 
     [JsonProperty("symbols")]
-    internal Symbol[] Symbols { get; set; }
+    internal Symbol[]? Symbols { get; set; }
 
     [JsonProperty("scopes")]
-    internal Scope[] Scopes { get; set; }
+    internal Scope[]? Scopes { get; set; }
 }
