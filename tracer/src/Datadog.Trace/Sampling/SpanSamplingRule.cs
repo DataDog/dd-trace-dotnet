@@ -24,6 +24,8 @@ namespace Datadog.Trace.Sampling
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanSamplingRule>();
 
+        private readonly bool _alwaysMatch;
+
         // TODO consider moving toward this https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/SimpleRegex.cs
         private readonly Regex _serviceNameRegex;
         private readonly Regex _operationNameRegex;
@@ -37,7 +39,11 @@ namespace Datadog.Trace.Sampling
         /// <param name="operationNameGlob">The glob pattern for the <see cref="Span.OperationName"/>.</param>
         /// <param name="samplingRate">The proportion of spans that are kept. <c>1.0</c> indicates keep all where <c>0.0</c> would be drop all.</param>
         /// <param name="maxPerSecond">The maximum number of spans allowed to be kept per second - <see langword="null"/> indicates that there is no limit</param>
-        public SpanSamplingRule(string serviceNameGlob, string operationNameGlob, float samplingRate = 1.0f, float? maxPerSecond = null)
+        public SpanSamplingRule(
+            string serviceNameGlob,
+            string operationNameGlob,
+            float samplingRate = 1.0f,
+            float? maxPerSecond = null)
         {
             if (string.IsNullOrWhiteSpace(serviceNameGlob))
             {
@@ -52,18 +58,25 @@ namespace Datadog.Trace.Sampling
             SamplingRate = samplingRate;
             MaxPerSecond = maxPerSecond;
 
-            _serviceNameRegex = GlobMatcher.BuildRegex(serviceNameGlob);
-            _operationNameRegex = GlobMatcher.BuildRegex(operationNameGlob);
-
             // null/absent for MaxPerSecond indicates unlimited, which is a negative value in the limiter
             _limiter = MaxPerSecond is null ? new SpanRateLimiter(-1) : new SpanRateLimiter((int?)MaxPerSecond);
+
+            _serviceNameRegex = RegexBuilder.Build(serviceNameGlob, SamplingRulesFormat.Glob);
+            _operationNameRegex = RegexBuilder.Build(operationNameGlob, SamplingRulesFormat.Glob);
+
+            if (_serviceNameRegex is null &&
+                _operationNameRegex is null)
+            {
+                // if no globs were specified, we always match (i.e. catch-all)
+                _alwaysMatch = true;
+            }
         }
 
         /// <inheritdoc/>
-        public float SamplingRate { get; } = 1.0f;
+        public float SamplingRate { get; }
 
         /// <inheritdoc/>
-        public float? MaxPerSecond { get; } = null;
+        public float? MaxPerSecond { get; }
 
         /// <summary>
         ///     Creates <see cref="SpanSamplingRule"/>s from the supplied JSON <paramref name="configuration"/>.
@@ -104,7 +117,16 @@ namespace Datadog.Trace.Sampling
                 return false;
             }
 
-            return _serviceNameRegex.Match(span.ServiceName).Success && _operationNameRegex.Match(span.OperationName).Success;
+            if (_alwaysMatch)
+            {
+                // the rule is a catch-all
+                return true;
+            }
+
+            // if a regex is null (not specified), it always matches.
+            // stop as soon as we find a non-match.
+            return (_serviceNameRegex?.Match(span.ServiceName).Success ?? true) &&
+                   (_operationNameRegex?.Match(span.OperationName).Success ?? true);
         }
 
         /// <inheritdoc/>

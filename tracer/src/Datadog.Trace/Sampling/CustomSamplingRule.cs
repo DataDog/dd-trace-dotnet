@@ -11,25 +11,19 @@ using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
 #else
 using System.Text.RegularExpressions;
 #endif
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Sampling
 {
     internal class CustomSamplingRule : ISamplingRule
     {
-#if NETCOREAPP3_1_OR_GREATER
-        private const RegexOptions DefaultRegexOptions = RegexOptions.Compiled | RegexOptions.NonBacktracking;
-#else
-        private const RegexOptions DefaultRegexOptions = RegexOptions.Compiled;
-#endif
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CustomSamplingRule>();
-        private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
         private readonly float _samplingRate;
+        private readonly bool _alwaysMatch;
+
+        // TODO consider moving toward these https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/SimpleRegex.cs
         private readonly Regex _serviceNameRegex;
         private readonly Regex _operationNameRegex;
 
@@ -45,8 +39,15 @@ namespace Datadog.Trace.Sampling
             _samplingRate = rate;
             RuleName = ruleName;
 
-            _serviceNameRegex = BuildRegex(serviceNameRegex, patternFormat);
-            _operationNameRegex = BuildRegex(operationNameRegex, patternFormat);
+            _serviceNameRegex = RegexBuilder.Build(serviceNameRegex, patternFormat);
+            _operationNameRegex = RegexBuilder.Build(operationNameRegex, patternFormat);
+
+            if (_serviceNameRegex is null &&
+                _operationNameRegex is null)
+            {
+                // if no regexes were specified, we always match (i.e. catch-all)
+                _alwaysMatch = true;
+            }
         }
 
         public string RuleName { get; }
@@ -67,7 +68,7 @@ namespace Datadog.Trace.Sampling
                 {
                     var index = 0;
                     var rules = JsonConvert.DeserializeObject<List<CustomRuleConfig>>(configuration);
-                    var samplingRules = new List<CustomSamplingRule>();
+                    var samplingRules = new List<CustomSamplingRule>(rules.Count);
 
                     foreach (var r in rules)
                     {
@@ -95,32 +96,36 @@ namespace Datadog.Trace.Sampling
 
         public bool IsMatch(Span span)
         {
-            if (_hasPoisonedRegex)
+            if (_alwaysMatch)
             {
-                return false;
+                // the rule is a catch-all
+                return true;
             }
 
-            // special case where if both regex are null we match
-            if (_serviceNameRegex is null && _operationNameRegex is null)
+            if (_hasPoisonedRegex)
             {
-                return true;
+                // the regex had a valid format, but it timed out previously. stop trying to use it.
+                return false;
             }
 
             try
             {
-                // if the regex is null, we will always match it as we don't care
-                var serviceMatch = _serviceNameRegex?.Match(span.ServiceName).Success ?? true;
-                var operationMatch = _operationNameRegex?.Match(span.OperationName).Success ?? true;
-                return serviceMatch && operationMatch;
+                // if a regex is null (not specified), it always matches.
+                // stop as soon as we find a non-match.
+                return (_serviceNameRegex?.Match(span.ServiceName).Success ?? true) &&
+                       (_operationNameRegex?.Match(span.OperationName).Success ?? true);
             }
             catch (RegexMatchTimeoutException e)
             {
+                // flag regex so we don't try to use it again
                 _hasPoisonedRegex = true;
+
                 Log.Error(
                     e,
                     "Timeout when trying to match against {Value} on {Pattern}.",
                     e.Input,
                     e.Pattern);
+
                 return false;
             }
         }
@@ -129,63 +134,6 @@ namespace Datadog.Trace.Sampling
         {
             span.SetMetric(Metrics.SamplingRuleDecision, _samplingRate);
             return _samplingRate;
-        }
-
-        private static string WrapWithLineCharacters(string regex)
-        {
-            if (regex == null)
-            {
-                return null;
-            }
-
-            var sb = StringBuilderCache.Acquire(regex.Length + 2);
-
-            if (!regex.StartsWith("^"))
-            {
-                sb.Append('^');
-            }
-
-            sb.Append(regex);
-
-            if (!regex.EndsWith("$"))
-            {
-                sb.Append('$');
-            }
-
-            return StringBuilderCache.GetStringAndRelease(sb);
-        }
-
-        private static Regex BuildRegex(string pattern, string patternFormat)
-        {
-            try
-            {
-                if (pattern is null)
-                {
-                    return null;
-                }
-
-                switch (patternFormat)
-                {
-                    case CustomSamplingRulesFormat.Regex:
-                        return new Regex(WrapWithLineCharacters(pattern), DefaultRegexOptions, RegexTimeout);
-
-                    case CustomSamplingRulesFormat.Glob:
-                        return GlobMatcher.BuildRegex(pattern, DefaultRegexOptions, RegexTimeout);
-
-                    default:
-                        // ReSharper disable once RedundantNameQualifier ("Util." is only redundant for some target frameworks)
-                        Util.ThrowHelper.ThrowArgumentOutOfRangeException(
-                            nameof(patternFormat),
-                            patternFormat,
-                            "Invalid match pattern format. Valid values are 'regex' or 'glob'.");
-                        return null; // unreachable
-                }
-            }
-            catch (ArgumentException e)
-            {
-                Log.Error(e, "Invalid {Format} match pattern: {Pattern}", patternFormat, pattern);
-                throw;
-            }
         }
 
         [Serializable]
