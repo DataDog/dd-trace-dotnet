@@ -420,6 +420,25 @@ void ClrEventsParser::OnGCRestartEEEnd(uint64_t timestamp)
         LOG_GC_EVENT("### missing Begin event");
     }
     gc.PauseDuration += suspensionDuration;
+
+    // could be the end of a gen0/gen1 or of a non concurrent gen2 GC
+    if ((gc.Generation < 2) || (gc.Type == GCType::NonConcurrentGC))
+    {
+        std::stringstream buffer;
+        buffer << "   end of GC #" << gc.Number << " - " << (timestamp - gc.StartTimestamp) / 1000000 << "ms";
+        LOG_GC_EVENT(buffer.str());
+
+        NotifyGarbageCollectionEnd(
+            gc.Number,
+            gc.Generation,
+            gc.Reason,
+            gc.Type,
+            gc.IsCompacting,
+            gc.PauseDuration,
+            timestamp - gc.StartTimestamp,
+            timestamp);
+        ResetGC(gc);
+    }
 }
 
 void ClrEventsParser::OnGCHeapStats(uint64_t timestamp)
@@ -432,7 +451,7 @@ void ClrEventsParser::OnGCHeapStats(uint64_t timestamp)
         return;
     }
 
-    if (gc.HasGlobalHeapHistoryBeenReceived)
+    if (gc.HasGlobalHeapHistoryBeenReceived && (gc.Generation == 2) && (gc.Type == GCType::BackgroundGC))
     {
             std::stringstream buffer;
             buffer << "   end of GC #" << gc.Number << " - " << (timestamp - gc.StartTimestamp) / 1000000 << "ms";
@@ -467,7 +486,7 @@ void ClrEventsParser::OnGCGlobalHeapHistory(uint64_t timestamp, GCGlobalHeapPayl
     gc.IsCompacting =
         (payload.GlobalMechanisms & GCGlobalMechanisms::Compaction) == GCGlobalMechanisms::Compaction;
 
-    if (gc.HasHeapStatsBeenReceived)
+    if (gc.HasHeapStatsBeenReceived && (gc.Generation == 2) && (gc.Type == GCType::BackgroundGC))
     {
         std::stringstream buffer;
         buffer << "   end of GC #" << gc.Number << " - " << (timestamp - gc.StartTimestamp) / 1000000 << "ms";
