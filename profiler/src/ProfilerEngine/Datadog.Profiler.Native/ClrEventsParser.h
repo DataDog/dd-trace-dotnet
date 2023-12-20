@@ -184,6 +184,11 @@ struct GCDetails
     bool IsCompacting;
     uint64_t PauseDuration;
     uint64_t StartTimestamp;
+
+    // GlobalHeapHistory and HeapStats events are not received in the same order
+    // between Framewrok and CoreCLR. So we need to keep track of what has been received
+    bool HasGlobalHeapHistoryBeenReceived;
+    bool HasHeapStatsBeenReceived;
 };
 
 class ClrEventsParser
@@ -245,7 +250,7 @@ private:
         );
     GCDetails& GetCurrentGC();
     void InitializeGC(uint64_t timestamp, GCDetails& gc, GCStartPayload& payload);
-    void ClearCollections();
+    void ClearCurrentGC();
     static void ResetGC(GCDetails& gc);
     static uint64_t GetCurrentTimestamp();
 
@@ -292,7 +297,7 @@ private:
     // for concurrent mode, a background GC could be started
     GCDetails _currentBGC;
 
-    // this is a foreground GC (could be triggered while a background GC is already running)
+    // this is a foreground/non concurrent GC (could be triggered while a background GC is already running)
     GCDetails _gcInProgress;
 
 private:

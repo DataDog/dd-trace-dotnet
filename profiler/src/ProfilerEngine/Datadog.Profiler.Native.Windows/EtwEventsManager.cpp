@@ -159,6 +159,7 @@ void EtwEventsManager::OnEvent(
             auto pThreadInfo = GetOrCreate(tid);
             pThreadInfo->LastEventId = EventId::AllocationTick;
 
+            auto timestamp = TimestampToEpochNS(systemTimestamp);
             // TODO: get the type name and ClassID from the payload
             // TODO: update IAllocationListener to take the type name, ClassID and stack
         }
