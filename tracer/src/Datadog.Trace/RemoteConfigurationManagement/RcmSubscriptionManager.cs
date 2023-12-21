@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
@@ -37,7 +38,7 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
 
     private IReadOnlyList<ISubscription> _subscriptions = new List<ISubscription>();
 
-    private BackendState _backendState;
+    private StrongBox<BackendState> _backendState = new();
     private BigInteger _capabilities;
 
     public RcmSubscriptionManager()
@@ -177,7 +178,7 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
             configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product, cache.ApplyState, cache.Error));
         }
 
-        var backendState = _backendState;
+        var backendState = Volatile.Read(ref _backendState).Value;
 
         var rcmState = new RcmClientState(RootVersion, backendState.TargetsVersion, configStates, lastPollError != null, lastPollError, backendState.ClientState);
         var rcmClient = new RcmClient(_id, ProductKeys, rcmTracer, rcmState, GetCapabilities());
@@ -296,7 +297,7 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
             }
         }
 
-        _backendState = new(response.Targets.Signed.Version, response.Targets.Signed.Custom?.OpaqueBackendState);
+        _backendState = new(new(response.Targets.Signed.Version, response.Targets.Signed.Custom?.OpaqueBackendState));
     }
 
     private void RefreshProductKeys() => ProductKeys = _subscriptions.SelectMany(s => s.ProductKeys).Distinct().ToList();
