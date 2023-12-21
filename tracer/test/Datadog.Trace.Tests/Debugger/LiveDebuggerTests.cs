@@ -142,12 +142,7 @@ public class LiveDebuggerTests
             throw new NotImplementedException();
         }
 
-        public GetRcmRequest BuildRequest(RcmClientTracer rcmTracer, string lastPollError)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task ProcessResponse(GetRcmResponse response)
+        public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse>> callback)
         {
             throw new NotImplementedException();
         }

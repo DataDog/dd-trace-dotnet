@@ -6,11 +6,9 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
@@ -28,18 +26,21 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RcmSubscriptionManager>();
 
     private readonly object _syncRoot = new();
+    private readonly SemaphoreSlim _sendRequestMutex = new(1, 1);
 
     /// <summary>
     /// Key is the path
     /// </summary>
-    private readonly ConcurrentDictionary<string, RemoteConfigurationCache> _appliedConfigurations = new();
+    private readonly Dictionary<string, RemoteConfigurationCache> _appliedConfigurations = new();
 
     private readonly string _id;
 
     private IReadOnlyList<ISubscription> _subscriptions = new List<ISubscription>();
 
-    private StrongBox<BackendState> _backendState = new();
+    private string? _backendClientState;
+    private int _targetsVersion;
     private BigInteger _capabilities;
+    private string? _lastPollError;
 
     public RcmSubscriptionManager()
     {
@@ -74,12 +75,7 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
 
             foreach (var subscription in _subscriptions)
             {
-                var subscriptionToAdd = subscription;
-
-                if (subscriptionToAdd == oldSubscription)
-                {
-                    subscriptionToAdd = newSubscription;
-                }
+                var subscriptionToAdd = subscription == oldSubscription ? newSubscription : subscription;
 
                 if (subscriptionToAdd == newSubscription)
                 {
@@ -166,7 +162,33 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
         return capabilitiesArray;
     }
 
-    public GetRcmRequest BuildRequest(RcmClientTracer rcmTracer, string? lastPollError)
+    public async Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse>> callback)
+    {
+        await _sendRequestMutex.WaitAsync().ConfigureAwait(false);
+
+        try
+        {
+            var request = BuildRequest(rcmTracer, _lastPollError);
+            _lastPollError = null;
+
+            var response = await callback(request).ConfigureAwait(false);
+
+            if (response?.Targets?.Signed != null)
+            {
+                await ProcessResponse(response).ConfigureAwait(false);
+            }
+        }
+        catch (Exception e)
+        {
+            _lastPollError = e.Message;
+        }
+        finally
+        {
+            _sendRequestMutex.Release();
+        }
+    }
+
+    private GetRcmRequest BuildRequest(RcmClientTracer rcmTracer, string? lastPollError)
     {
         var cachedTargetFiles = new List<RcmCachedTargetFile>();
         var configStates = new List<RcmConfigState>();
@@ -178,16 +200,14 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
             configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product, cache.ApplyState, cache.Error));
         }
 
-        var backendState = Volatile.Read(ref _backendState).Value;
-
-        var rcmState = new RcmClientState(RootVersion, backendState.TargetsVersion, configStates, lastPollError != null, lastPollError, backendState.ClientState);
+        var rcmState = new RcmClientState(RootVersion, _targetsVersion, configStates, lastPollError != null, lastPollError, _backendClientState);
         var rcmClient = new RcmClient(_id, ProductKeys, rcmTracer, rcmState, GetCapabilities());
         var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
 
         return rcmRequest;
     }
 
-    public async Task ProcessResponse(GetRcmResponse response)
+    private async Task ProcessResponse(GetRcmResponse response)
     {
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
@@ -269,7 +289,7 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
         {
             foreach (var value in removedConfig)
             {
-                _appliedConfigurations.TryRemove(value.Path, out _);
+                _appliedConfigurations.Remove(value.Path);
             }
         }
 
@@ -277,34 +297,26 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
 
         foreach (var result in results)
         {
-            if (_appliedConfigurations.TryGetValue(result.Filename, out var appliedConfiguration))
+            switch (result.ApplyState)
             {
-                switch (result.ApplyState)
-                {
-                    case ApplyStates.UNACKNOWLEDGED:
-                        // Do nothing
-                        break;
-                    case ApplyStates.ACKNOWLEDGED:
-                        appliedConfiguration.Applied();
-                        break;
-                    case ApplyStates.ERROR:
-                        appliedConfiguration.ErrorOccured(result.Error);
-                        break;
-                    default:
-                        Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
-                        break;
-                }
+                case ApplyStates.UNACKNOWLEDGED:
+                    // Do nothing
+                    break;
+                case ApplyStates.ACKNOWLEDGED:
+                    _appliedConfigurations[result.Filename].Applied();
+                    break;
+                case ApplyStates.ERROR:
+                    _appliedConfigurations[result.Filename].ErrorOccured(result.Error);
+                    break;
+                default:
+                    Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
+                    break;
             }
         }
 
-        _backendState = new(new(response.Targets.Signed.Version, response.Targets.Signed.Custom?.OpaqueBackendState));
+        _targetsVersion = response.Targets.Signed.Version;
+        _backendClientState = response.Targets.Signed.Custom?.OpaqueBackendState;
     }
 
     private void RefreshProductKeys() => ProductKeys = _subscriptions.SelectMany(s => s.ProductKeys).Distinct().ToList();
-
-    private readonly struct BackendState(int targetsVersion, string? clientState)
-    {
-        public readonly int TargetsVersion = targetsVersion;
-        public readonly string? ClientState = clientState;
-    }
 }

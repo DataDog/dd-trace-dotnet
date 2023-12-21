@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -27,7 +28,5 @@ internal interface IRcmSubscriptionManager
 
     byte[] GetCapabilities();
 
-    GetRcmRequest BuildRequest(RcmClientTracer rcmTracer, string? lastPollError);
-
-    Task ProcessResponse(GetRcmResponse response);
+    Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse>> callback);
 }
