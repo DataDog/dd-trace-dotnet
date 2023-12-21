@@ -7,12 +7,10 @@
 
 using System;
 using System.ComponentModel;
-using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
@@ -44,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TReceiveMessageRequest>(TTarget instance, TReceiveMessageRequest request, CancellationToken cancellationToken)
-            where TReceiveMessageRequest : IAmazonSQSRequestWithQueueUrl, IContainsMessageAttributeNames, IDuckType
+            where TReceiveMessageRequest : IReceiveMessageRequest
         {
             if (request.Instance is null)
             {
@@ -76,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
-            where TResponse : IReceiveMessageResponse, IDuckType
+            where TResponse : IReceiveMessageResponse
         {
             if (response.Instance != null && response.Messages.Count > 0)
             {
@@ -84,8 +82,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
                 {
                     var queueName = (string)state.State;
-                    foreach (var message in response.Messages)
+                    foreach (var o in response.Messages)
                     {
+                        var message = o.DuckCast<IMessage>();
+                        if (message == null)
+                        {
+                            continue; // should not happen
+                        }
+
                         var adapter = new ContextPropagation.MessageAttributesAdapter(message.Attributes);
                         state.Scope.Span.Context.MergePathwayContext(dataStreamsManager.ExtractPathwayContext(adapter));
 

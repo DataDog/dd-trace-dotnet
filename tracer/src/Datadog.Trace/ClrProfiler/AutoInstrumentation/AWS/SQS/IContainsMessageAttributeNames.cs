@@ -13,8 +13,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
     internal interface IContainsMessageAttributeNames
     {
         /// <summary>
-        /// Gets or sets the list of message attributes that are going to be requested with the messages
+        /// Gets the list of message attributes that are going to be requested with the messages
         /// </summary>
-        List<string> MessageAttributeNames { get; set;  }
+        List<string> MessageAttributeNames { get; }
     }
 }
