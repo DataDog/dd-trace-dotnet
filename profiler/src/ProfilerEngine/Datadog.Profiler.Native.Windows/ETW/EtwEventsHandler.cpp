@@ -44,6 +44,15 @@ void EtwEventsHandler::OnConnectError()
     Stop();
 }
 
+void EtwEventsHandler::WriteSuccessResponse(HANDLE hPipe)
+{
+    DWORD written;
+    if (!::WriteFile(hPipe, &SuccessResponse, sizeof(SuccessResponse), &written, nullptr))
+    {
+        _logger->Warn("Failed to send success response\n");
+    }
+}
+
 void EtwEventsHandler::OnConnect(HANDLE hPipe)
 {
     const DWORD bufferSize = (1 << 16) + sizeof(IpcHeader);
@@ -61,6 +70,11 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
         }
 
         // check the message based on the expected command
+        if (message->CommandId == Commands::IsAlive)
+        {
+            WriteSuccessResponse(hPipe);
+        }
+        else
         if (message->CommandId == Commands::ClrEvents)
         {
             if (message->Size > readSize)

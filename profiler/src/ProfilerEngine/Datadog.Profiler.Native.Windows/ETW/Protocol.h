@@ -21,6 +21,7 @@ enum Commands : uint8_t
 
     // commands sent by the Agent
     ClrEvents  = 16,
+    IsAlive    = 17,
 };
 
 enum class ResponseId : uint8_t
@@ -117,6 +118,13 @@ inline void SetupUnregisterCommand(RegistrationProcessMessage& message, uint64_t
 {
     SetupRegistrationCommand(message, pid);
     message.CommandId = Commands::Unregister;
+}
+
+inline void SetupIsAliveCommand(IpcHeader& message)
+{
+    memcpy(message.Magic, &DD_Ipc_Magic_V1, sizeof(DD_Ipc_Magic_V1));
+    message.Size = sizeof(IpcHeader);
+    message.CommandId = Commands::IsAlive;
 }
 
 // the given message will probably be dynamically allocated

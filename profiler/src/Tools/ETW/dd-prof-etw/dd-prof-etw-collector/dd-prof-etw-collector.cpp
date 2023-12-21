@@ -14,27 +14,6 @@
 
 #include "..\ConsoleLogger.h"
 
-
-bool ParseCommandLine(int argc, char* argv[], char*& pipe)
-{
-    bool success = false;
-    for (size_t i = 1; i < argc; i++)
-    {
-        if (strcmp(argv[i], "-pipe") == 0)
-        {
-            if (i == argc - 1)
-            {
-                return false;
-            }
-
-            pipe = argv[i + 1];
-            success = true;
-        }
-    }
-
-    return success;
-}
-
 int ShowLastError(const char* msg, DWORD error = ::GetLastError())
 {
     printf("%s (%u)\n", msg, error);
@@ -113,6 +92,19 @@ void SendClrEvents(PTP_CALLBACK_INSTANCE instance, PVOID context)
         //}
     }
 
+    // check the client is still listening
+    IpcHeader IsAliveMessage;
+    SetupIsAliveCommand(IsAliveMessage);
+    auto success = client->Send(&IsAliveMessage, sizeof(IsAliveMessage));
+    if (success != NamedPipesCode::Success)
+    {
+        std::cout << "Failed to send IsAlive command...\n";
+        return;
+    }
+    else
+    {
+        std::cout << "The client is alive\n";
+    }
 
     std::cout << "Disconnecting from " << pipeName << "\n ";
     client->Disconnect();
@@ -197,17 +189,9 @@ void CALLBACK CommandCallback(PTP_CALLBACK_INSTANCE instance, PVOID context)
 
 int main(int argc, char* argv[])
 {
-    char* pipe = nullptr;
-    if (!ParseCommandLine(argc, argv, pipe))
-    {
-        std::cout << "Missing pipe...\n";
-        return -1;
-    }
-
     std::cout << "\n";
 
-    std::string pipeName = "\\\\.\\pipe\\";
-    pipeName += pipe;
+    std::string pipeName = "\\\\.\\pipe\\DD_ETW_DISPATCHER";
     std::cout << "Exposing " << pipeName << "\n";
 
     while (true)

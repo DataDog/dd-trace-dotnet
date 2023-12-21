@@ -31,6 +31,7 @@ public:
 
 private:
     bool ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSize, DWORD& readSize);
+    void WriteSuccessResponse(HANDLE hPipe);
 
 private:
     std::atomic<bool> _stopRequested = false;
