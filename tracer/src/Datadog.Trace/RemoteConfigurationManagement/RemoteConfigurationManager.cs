@@ -163,7 +163,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
                 if (response?.Targets?.Signed != null)
                 {
-                    _subscriptionManager.ProcessResponse(response);
+                    await _subscriptionManager.ProcessResponse(response).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
