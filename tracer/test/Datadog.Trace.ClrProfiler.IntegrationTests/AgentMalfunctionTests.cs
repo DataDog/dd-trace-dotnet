@@ -61,7 +61,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             EnvironmentHelper.EnableTransport(transportType);
             using var agent = EnvironmentHelper.GetMockAgent();
-            agent.SetBehaviour(behaviour);
+            var customResponse = behaviour switch
+            {
+                AgentBehaviour.Return404 => new MockTracerResponse { StatusCode = 404 },
+                AgentBehaviour.Return500 => new MockTracerResponse { StatusCode = 500 },
+                AgentBehaviour.WrongAnswer => new MockTracerResponse("WRONG_ANSWER"),
+                AgentBehaviour.NoAnswer => new MockTracerResponse { SendResponse = false },
+                _ => null,
+            };
+
+            if (customResponse is { } cr)
+            {
+                // set everything except traces, but only these are actually used
+                agent.CustomResponses[MockTracerResponseType.Telemetry] = cr;
+                agent.CustomResponses[MockTracerResponseType.Info] = cr;
+                agent.CustomResponses[MockTracerResponseType.RemoteConfig] = cr;
+            }
 
             // The server implementation of named pipes is flaky so have 3 attempts
             var attemptsRemaining = 3;
