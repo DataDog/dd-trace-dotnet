@@ -220,8 +220,6 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
         }
 
         var configByProducts = new Dictionary<string, List<RemoteConfiguration>>();
-        var removedConfigsByProduct = new Dictionary<string, List<RemoteConfigurationPath>>();
-
         var receivedPaths = new List<string>();
 
         // handle new configurations
@@ -268,6 +266,8 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
 
             configByProducts[remoteConfigurationPath.Product].Add(remoteConfiguration);
         }
+
+        Dictionary<string, List<RemoteConfigurationPath>> removedConfigsByProduct = new();
 
         // handle removed configurations
         foreach (var appliedConfiguration in _appliedConfigurations)
