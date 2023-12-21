@@ -89,6 +89,52 @@ public class TracerFlareApiTests(ITestOutputHelper output)
         }
     }
 
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task ReturnsFalseWhenSendFails()
+    {
+        const string caseId = "abc123";
+        using var agent = MockTracerAgent.Create(output);
+        var agentPath = new Uri($"http://localhost:{agent.Port}");
+        var settings = new ImmutableExporterSettings(new ExporterSettings { AgentUri = agentPath });
+
+        var invalidJson = "{meep";
+        agent.CustomResponses[MockTracerResponseType.TracerFlare] = new MockTracerResponse(invalidJson, 500);
+
+        var api = TracerFlareApi.Create(settings);
+
+        var result = await api.SendTracerFlare(WriteFlareToStreamFunc, caseId);
+
+        // It was sent, but we returned an error
+        agent.TracerFlareRequests.Should().ContainSingle();
+        result.Key.Should().BeFalse();
+        result.Value.Should().BeNull();
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task ReturnsErrorMessageWhenSendFails()
+    {
+        const string caseId = "abc123";
+        using var agent = MockTracerAgent.Create(output);
+        var agentPath = new Uri($"http://localhost:{agent.Port}");
+        var settings = new ImmutableExporterSettings(new ExporterSettings { AgentUri = agentPath });
+
+        var somethingWentWrong = "Something went wrong";
+        agent.CustomResponses[MockTracerResponseType.TracerFlare] = new MockTracerResponse($$"""{ "error": "{{somethingWentWrong}}" }""", 500);
+
+        var api = TracerFlareApi.Create(settings);
+
+        var result = await api.SendTracerFlare(WriteFlareToStreamFunc, caseId);
+
+        // It was sent, but we returned an error
+        agent.TracerFlareRequests.Should().ContainSingle();
+        result.Key.Should().BeFalse();
+        result.Value.Should().Be(somethingWentWrong);
+    }
+
     private async Task RunTest(ImmutableExporterSettings settings, string caseId, MockTracerAgent agent)
     {
         var api = TracerFlareApi.Create(settings);
@@ -98,7 +144,8 @@ public class TracerFlareApiTests(ITestOutputHelper output)
         var tracerFlares = agent.TracerFlareRequests;
         var (headers, form) = tracerFlares.Should().ContainSingle().Subject;
 
-        result.Should().BeTrue();
+        result.Key.Should().BeTrue();
+        result.Value.Should().BeNull();
         headers.Should()
                .ContainKey("Content-Type")
                .WhoseValue

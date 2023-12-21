@@ -6,12 +6,14 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Logging.TracerFlare;
 
@@ -43,7 +45,7 @@ internal class TracerFlareApi
         return new TracerFlareApi(requestFactory);
     }
 
-    public async Task<bool> SendTracerFlare(Func<Stream, Task> writeFlareToStreamFunc, string caseId)
+    public async Task<KeyValuePair<bool, string?>> SendTracerFlare(Func<Stream, Task> writeFlareToStreamFunc, string caseId)
     {
         try
         {
@@ -60,16 +62,31 @@ internal class TracerFlareApi
             if (response.StatusCode is >= 200 and < 300)
             {
                 Log.Information(TracerFlareSentLog);
-                return true;
+                return new(true, null);
+            }
+
+            string? responseContent = null;
+            string? error = null;
+            try
+            {
+                responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                if (responseContent is not null)
+                {
+                    error = JObject.Parse(responseContent)["error"]?.ToString();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Warning<int, string?>(e, "Error parsing {StatusCode} response from tracer flare endpoint: {ResponseContent}", response.StatusCode, responseContent);
             }
 
             Log.Warning<string, int>("Error sending tracer flare to '{Endpoint}' {StatusCode} ", _requestFactory.Info(_endpoint), response.StatusCode);
-            return false;
+            return new(false, error);
         }
         catch (Exception ex)
         {
             Log.Information(ex, "Error sending tracer flare to '{Endpoint}'", _requestFactory.Info(_endpoint));
-            return false;
+            return new(false, null);
         }
     }
 }
