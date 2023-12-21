@@ -7,9 +7,24 @@ namespace Datadog.Trace.TestHelpers
 {
     public class MockTracerResponse
     {
+        public MockTracerResponse()
+        {
+        }
+
+        public MockTracerResponse(string response)
+        {
+            Response = response;
+        }
+
+        public MockTracerResponse(string response, int statusCode)
+        {
+            Response = response;
+            StatusCode = statusCode;
+        }
+
         public int StatusCode { get; set; } = 200;
 
-        public string Response { get; set; }
+        public string Response { get; set; } = "{}";
 
         public bool SendResponse { get; set; } = true;
     }

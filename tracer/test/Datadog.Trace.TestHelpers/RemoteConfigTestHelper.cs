@@ -23,7 +23,7 @@ namespace Datadog.Trace.TestHelpers
         internal static GetRcmResponse SetupRcm(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string ProductName, string Id)> configurations)
         {
             var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.ProductName, c.Id)));
-            agent.RcmResponse = JsonConvert.SerializeObject(response);
+            agent.CustomResponses[MockTracerResponseType.RemoteConfig] = new(JsonConvert.SerializeObject(response));
             output.WriteLine($"{DateTime.UtcNow}: Using RCM response: {response}");
             return response;
         }
@@ -31,7 +31,7 @@ namespace Datadog.Trace.TestHelpers
         internal static async Task<GetRcmRequest> SetupRcmAndWait(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string ProductName, string Id)> configurations, int timeoutInMilliseconds = WaitForAcknowledgmentTimeout)
         {
             var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.ProductName, c.Id)));
-            agent.RcmResponse = JsonConvert.SerializeObject(response);
+            agent.CustomResponses[MockTracerResponseType.RemoteConfig] = new(JsonConvert.SerializeObject(response));
             output.WriteLine($"{DateTime.UtcNow}: Using RCM response: {response} with custom opaque state {response.Targets.Signed.Custom.OpaqueBackendState}");
             var res = await agent.WaitRcmRequestAndReturnMatchingRequest(response, timeoutInMilliseconds: timeoutInMilliseconds);
             return res;
