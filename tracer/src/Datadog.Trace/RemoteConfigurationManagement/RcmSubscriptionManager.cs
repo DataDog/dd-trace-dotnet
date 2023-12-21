@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+#pragma warning disable SA1010 // Opening square brackets should be spaced correctly
 
 using System;
 using System.Collections.Generic;
@@ -35,7 +36,8 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
 
     private readonly string _id;
 
-    private IReadOnlyList<ISubscription> _subscriptions = new List<ISubscription>();
+    // Ideally this would be an ImmutableArray but that's not available in net461
+    private IReadOnlyList<ISubscription> _subscriptions = [];
 
     private string? _backendClientState;
     private int _targetsVersion;
@@ -50,7 +52,7 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
     public bool HasAnySubscription => _subscriptions.Count > 0;
 
     // this list shouldn't be recalculated everytime we access it as it is used by RemoteConfigurationManager to build an rcm request every x seconds
-    public ICollection<string> ProductKeys { get; private set; } = new List<string>();
+    public ICollection<string> ProductKeys { get; private set; } = [];
 
     public void SubscribeToChanges(ISubscription subscription)
     {
@@ -58,7 +60,7 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
         {
             if (!_subscriptions.Contains(subscription))
             {
-                _subscriptions = new List<ISubscription>(_subscriptions) { subscription };
+                _subscriptions = [.. _subscriptions, subscription];
             }
 
             RefreshProductKeys();
