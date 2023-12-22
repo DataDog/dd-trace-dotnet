@@ -46,7 +46,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseParameters(packageVersion);
             settings.AddDataStreamsScrubber();
-            await Verifier.Verify(PayloadsToPoints(agent.DataStreams), settings)
+            await Verifier.Verify(MockDataStreamsPayload.ToPoints(agent.DataStreams), settings)
                           .UseFileName($"{nameof(DataStreamsMonitoringRabbitMQTests)}.{nameof(HandleProduceAndConsume)}")
                           .DisableRequireUniquePrefix();
         }
@@ -68,22 +68,5 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
             var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
             taggedSpans.Should().HaveCount(13);
         }
-    }
-
-    private static IList<MockDataStreamsStatsPoint> PayloadsToPoints(IImmutableList<MockDataStreamsPayload> payloads)
-    {
-        var points = new List<MockDataStreamsStatsPoint>();
-        foreach (var payload in payloads)
-        {
-            foreach (var bucket in payload.Stats)
-            {
-                if (bucket.Stats != null)
-                {
-                    points.AddRange(bucket.Stats);
-                }
-            }
-        }
-
-        return points.OrderBy(s => s.Hash).ThenBy(s => s.TimestampType).ToList();
     }
 }

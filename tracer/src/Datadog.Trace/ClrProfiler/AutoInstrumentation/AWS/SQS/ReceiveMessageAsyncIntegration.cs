@@ -59,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             // request the message attributes that a datadog instrumentation might have set when sending
             request.MessageAttributeNames.Add(ContextPropagation.SqsKey);
+            request.AttributeNames.Add("SentTimestamp"); // TODO: check if setting twice the same attribute here is a pb
 
             return new CallTargetState(scope, queueName);
         }
@@ -90,11 +91,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                             continue; // should not happen
                         }
 
-                        var adapter = new ContextPropagation.MessageAttributesAdapter(message.Attributes);
+                        var adapter = new ContextPropagation.MessageAttributesAdapter(message.MessageAttributes);
                         state.Scope.Span.Context.MergePathwayContext(dataStreamsManager.ExtractPathwayContext(adapter));
 
+                        var sentTime = 0;
+                        if (message.Attributes.TryGetValue("SentTimestamp", out var sentTimeStr) && sentTimeStr != null)
+                        {
+                            int.TryParse(sentTimeStr, out sentTime);
+                        }
+
                         var edgeTags = new[] { "direction:in", $"topic:{queueName}", "type:sqs" };
-                        state.Scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                        state.Scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime);
                     }
                 }
             }

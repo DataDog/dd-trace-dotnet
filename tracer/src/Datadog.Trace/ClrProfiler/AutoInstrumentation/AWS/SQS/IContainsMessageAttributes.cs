@@ -15,6 +15,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <summary>
         /// Gets or sets the message attributes
         /// </summary>
-        IDictionary MessageAttributes { get; set;  }
+        IDictionary MessageAttributes { get; set; }
     }
 }

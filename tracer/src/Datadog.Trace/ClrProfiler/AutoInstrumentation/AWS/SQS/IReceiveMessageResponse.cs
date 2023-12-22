@@ -11,10 +11,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     internal interface IReceiveMessageResponse : IDuckType
     {
-        IList Messages { get; set; } // <IMessage>
+        IList Messages { get; } // <IMessage>
     }
 
-    internal interface IMessage
+    internal interface IMessage : IContainsMessageAttributes
     {
         Dictionary<string, string> Attributes { get; set; }
     }

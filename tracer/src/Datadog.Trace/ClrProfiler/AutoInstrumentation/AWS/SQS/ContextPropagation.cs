@@ -117,16 +117,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// </summary>
         public class MessageAttributesAdapter : IBinaryHeadersCollection
         {
-            private readonly Dictionary<string, string> _messageAttributes;
+            private readonly IDictionary _messageAttributes;
 
-            public MessageAttributesAdapter(Dictionary<string, string> messageAttributes)
+            public MessageAttributesAdapter(IDictionary messageAttributes)
             {
                 _messageAttributes = messageAttributes;
             }
 
             public byte[] TryGetLastBytes(string name)
             {
-                if (_messageAttributes != null && _messageAttributes.TryGetValue(SqsKey, out var json))
+                if (_messageAttributes != null && _messageAttributes.TryGetValue(SqsKey, out string json))
                 {
                     var ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
                     if (ddAttributes.TryGetValue(name, out var b64))
