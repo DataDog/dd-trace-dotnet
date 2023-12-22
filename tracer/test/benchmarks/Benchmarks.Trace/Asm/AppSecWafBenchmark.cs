@@ -82,17 +82,9 @@ public class AppSecWafBenchmark
 
     public IEnumerable<NestedMap> Source()
     {
-        yield return MakeNestedMap(10);
-        yield return MakeNestedMap(20);
-        yield return MakeNestedMap(100);
+        yield return MakeNestedMap(0);
     }
 
-    public IEnumerable<NestedMap> SourceWithAttack()
-    {
-        yield return MakeNestedMap(10, true);
-        yield return MakeNestedMap(20, true);
-        yield return MakeNestedMap(100, true);
-    }
 
     /// <summary>
     /// Generates dummy arguments for the waf
@@ -163,10 +155,6 @@ public class AppSecWafBenchmark
     [Benchmark]
     [ArgumentsSource(nameof(Source))]
     public void RunWafTwice(NestedMap args) => RunWafBenchmark(args, true);
-
-    [Benchmark]
-    [ArgumentsSource(nameof(SourceWithAttack))]
-    public void RunWafWithAttack(NestedMap args) => RunWafBenchmark(args, false);
 
     private void RunWafBenchmark(NestedMap args, bool secondRun)
     {
