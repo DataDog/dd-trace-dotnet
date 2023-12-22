@@ -37,7 +37,7 @@ namespace Datadog.Trace.Sampling
                     ? null
                     : new(
                         WrapWithLineCharacters(serviceNameRegex),
-                        RegexOptions.Compiled,
+                        RegexOptions.Compiled | RegexOptions.IgnoreCase,
                         RegexTimeout);
             }
             catch (ArgumentException e)
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Sampling
                                       ? null
                                       : new(
                                           WrapWithLineCharacters(operationNameRegex),
-                                          RegexOptions.Compiled,
+                                          RegexOptions.Compiled | RegexOptions.IgnoreCase,
                                           RegexTimeout);
             }
             catch (ArgumentException e)
