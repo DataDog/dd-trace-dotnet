@@ -103,7 +103,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void RuleShouldBeCaseInsensitive()
         {
-            var config = "[{\"sample_rate\":0.5, \"service\":\"SHOPPING-cart-service\"}]";
+            var config = "[{\"sample_rate\":0.5, \"service\":\"SHOPPING-cart-service\", \"name\":\"CHECKOUT\"}]";
             var rule = CustomSamplingRule.BuildFromConfigurationString(config).Single();
             VerifySingleRule(rule, CartCheckoutSpan, true);
         }
