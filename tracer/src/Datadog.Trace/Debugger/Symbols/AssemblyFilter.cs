@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -12,29 +13,34 @@ namespace Datadog.Trace.Debugger.Symbols
 {
     internal class AssemblyFilter
     {
-        internal static bool ShouldSkipAssembly(Assembly assembly)
+        internal static bool ShouldSkipAssembly(Assembly assembly, HashSet<string>? includeList = null)
         {
+            var assemblyName = assembly.GetName().Name;
             return assembly.IsDynamic ||
                    assembly.ManifestModule.IsResource() ||
                    string.IsNullOrWhiteSpace(assembly.Location) ||
-                   IsThirdPartyCode(assembly) ||
-                   IsDatadogAssembly(assembly);
+                   string.IsNullOrWhiteSpace(assemblyName) ||
+                   IsThirdPartyCode(assemblyName) ||
+                   IsDatadogAssembly(assemblyName) ||
+                   (includeList != null && !IsInIncludeList(assemblyName, includeList));
         }
 
-        internal static bool IsThirdPartyCode(Assembly loadedAssembly)
+        private static bool IsThirdPartyCode(string assemblyName)
         {
             // This implementation is just a stub - we will need to replace it
             // with a proper implementation in the future.
             string[] thirdPartyStartsWith = { "Microsoft", "System", "netstandard" };
-
-            var assemblyName = loadedAssembly.GetName().Name;
             return thirdPartyStartsWith.Any(t => assemblyName?.StartsWith(t, StringComparison.OrdinalIgnoreCase) == true);
         }
 
-        internal static bool IsDatadogAssembly(Assembly loadedAssembly)
+        private static bool IsDatadogAssembly(string assemblyName)
         {
-            var assemblyName = loadedAssembly.GetName().Name;
             return assemblyName?.StartsWith("datadog.", StringComparison.OrdinalIgnoreCase) == true;
+        }
+
+        private static bool IsInIncludeList(string assemblyName, HashSet<string>? includeList)
+        {
+            return includeList?.Contains(assemblyName) == true;
         }
     }
 }
