@@ -55,6 +55,14 @@ namespace Datadog.Trace.Debugger
                                          .AsInt32(DefaultSymbolBatchSizeInBytes, batchSize => batchSize > 0)
                                          .Value;
 
+            var includeLibraries = config
+                                     .WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseIncludes)
+                                     .AsString()?
+                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                      Enumerable.Empty<string>();
+
+            SymbolDatabaseIncludes = new HashSet<string>(includeLibraries, StringComparer.OrdinalIgnoreCase);
+
             SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(false);
 
             DiagnosticsIntervalSeconds = config
@@ -95,6 +103,8 @@ namespace Datadog.Trace.Debugger
         public int SymbolDatabaseBatchSizeInBytes { get; }
 
         public bool SymbolDatabaseUploadEnabled { get; }
+
+        public HashSet<string> SymbolDatabaseIncludes { get; }
 
         public int DiagnosticsIntervalSeconds { get; }
 

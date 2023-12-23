@@ -60,6 +60,12 @@ namespace Datadog.Trace.Configuration
             public const string SymbolDatabaseUploadEnabledInternal = "DD_DYNAMIC_INSTRUMENTATION_INTERAL_FORCE_SYMBOL_DATABASE_UPLOAD";
 
             /// <summary>
+            /// Configuration key for a separated comma list of libraries to include in the symbol database upload
+            /// Default value is empty.
+            /// </summary>
+            public const string SymbolDatabaseIncludes = "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_DATABASE_INCLUDES";
+
+            /// <summary>
             /// Configuration key for the interval (in seconds) between sending probe statuses.
             /// Default value is 3600.
             /// </summary>
