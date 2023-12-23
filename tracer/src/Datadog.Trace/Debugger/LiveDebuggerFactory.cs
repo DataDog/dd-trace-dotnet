@@ -60,7 +60,7 @@ internal class LiveDebuggerFactory
 
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.EnvironmentInternal, tracerSettings.ServiceVersionInternal);
 
-        var symbolsUploader = CreateSymbolsUploader(discoveryService, tracerSettings, serviceName, settings);
+        var symbolsUploader = CreateSymbolsUploader(discoveryService, remoteConfigurationManager, tracerSettings, serviceName, settings);
 
         IDogStatsd statsd;
         if (FrameworkDescription.Instance.IsWindows()
@@ -78,7 +78,7 @@ internal class LiveDebuggerFactory
         return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, symbolsUploader, probeStatusPoller, configurationUpdater, statsd);
     }
 
-    private static ISymbolsUploader CreateSymbolsUploader(IDiscoveryService discoveryService, ImmutableTracerSettings tracerSettings, string serviceName, DebuggerSettings settings)
+    private static ISymbolsUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName, DebuggerSettings settings)
     {
         var symbolsApiFactory = AgentTransportStrategy.Get(
             tracerSettings.ExporterInternal,
@@ -89,7 +89,7 @@ internal class LiveDebuggerFactory
             uri => uri);
 
         var symbolBatchApi = SymbolBatchUploadApi.Create(symbolsApiFactory, discoveryService, serviceName);
-        var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, settings, tracerSettings, serviceName);
+        var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceName);
         return symbolsUploader;
     }
 }

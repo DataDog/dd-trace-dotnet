@@ -5,16 +5,19 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -30,17 +33,22 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly string? _environment;
         private readonly SemaphoreSlim _assemblySemaphore;
         private readonly SemaphoreSlim _discoveryServiceSemaphore;
+        private readonly SemaphoreSlim _enablementSemaphore;
         private readonly HashSet<string> _alreadyProcessed;
+        private readonly HashSet<string> _librariesToUpload;
         private readonly long _thresholdInBytes;
         private readonly CancellationTokenSource _cancellationToken;
         private readonly IBatchUploadApi _api;
+        private readonly IRcmSubscriptionManager _subscriptionManager;
+        private readonly ISubscription _subscription;
         private IDiscoveryService? _discoveryService;
         private byte[]? _payload;
-        private string? _isSymbolUploaderEnabled;
+        private string? _symDbEndpoint;
+        private bool _isSymDbEnabled;
 
-        private SymbolsUploader(IBatchUploadApi api, IDiscoveryService discoveryService, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
+        private SymbolsUploader(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
         {
-            _isSymbolUploaderEnabled = null;
+            _symDbEndpoint = null;
             _alreadyProcessed = new HashSet<string>();
             _environment = tracerSettings.EnvironmentInternal;
             _serviceVersion = tracerSettings.ServiceVersionInternal;
@@ -49,32 +57,75 @@ namespace Datadog.Trace.Debugger.Symbols
             _api = api;
             _assemblySemaphore = new SemaphoreSlim(1);
             _discoveryServiceSemaphore = new SemaphoreSlim(0);
+            _enablementSemaphore = new SemaphoreSlim(0);
             _thresholdInBytes = settings.SymbolDatabaseBatchSizeInBytes;
+            _librariesToUpload = settings.SymbolDatabaseIncludes;
             _cancellationToken = new CancellationTokenSource();
             _jsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             _discoveryService.SubscribeToChanges(ConfigurationChanged);
+            _subscription = new Subscription(Callback, RcmProducts.LiveDebuggingSymbolDb);
+            _subscriptionManager = remoteConfigurationManager;
+            _subscriptionManager.SubscribeToChanges(_subscription);
+        }
+
+        private IEnumerable<ApplyDetails> Callback(Dictionary<string, List<RemoteConfiguration>> addedConfig, Dictionary<string, List<RemoteConfigurationPath>>? removedConfig)
+        {
+            // TODO: should we do something with `removedConfig`?
+            // Assumptions:
+            // 1. Only one value at a time (No `true` and `false` in the same RC update)
+            // 2. Once first `true` arrives, no need to act for another `true`
+            // 3. Once `false` arrives, stop uploading and act for next `true`
+
+            var result =
+                (from configByProduct in addedConfig
+                 where configByProduct.Key == RcmProducts.LiveDebuggingSymbolDb
+                 from remoteConfiguration in configByProduct.Value
+                 where remoteConfiguration.Path.Id.StartsWith(DefinitionPaths.SymDB)
+                 select new NamedRawFile(remoteConfiguration.Path, remoteConfiguration.Contents)
+                 into rawFile
+                 select rawFile.Deserialize<SymDbEnablement>()).FirstOrDefault();
+
+            if (_isSymDbEnabled == false && result.TypedFile?.UploadSymbols == true)
+            {
+                _isSymDbEnabled = true;
+                _enablementSemaphore.Release(1);
+            }
+            else if (_isSymDbEnabled && result.TypedFile?.UploadSymbols == false)
+            {
+                _isSymDbEnabled = false;
+                UnRegisterToAssemblyLoadEvent();
+                _cancellationToken.Cancel(false);
+            }
+            else
+            {
+                // DELETE ME !!!!!!!!!!!
+                _isSymDbEnabled = true;
+                _enablementSemaphore.Release(1);
+            }
+
+            return Enumerable.Empty<ApplyDetails>();
         }
 
         private void ConfigurationChanged(AgentConfiguration configuration)
         {
-            _isSymbolUploaderEnabled = configuration.SymbolDbEndpoint;
-            if (string.IsNullOrEmpty(Volatile.Read(ref _isSymbolUploaderEnabled)))
+            if (string.IsNullOrEmpty(configuration.SymbolDbEndpoint))
             {
                 Log.Debug("`SymbolDb endpoint` is null. This can happen if your datadog-agent version is lower than 7.45");
                 return;
             }
 
+            _symDbEndpoint = configuration.SymbolDbEndpoint;
             _discoveryServiceSemaphore.Release(1);
             _discoveryService!.RemoveSubscription(ConfigurationChanged);
             _discoveryService = null;
         }
 
-        public static ISymbolsUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
+        public static ISymbolsUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
         {
             if (api is not NoOpSymbolBatchUploadApi &&
                (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "false")?.ToBoolean() ?? false))
             {
-                return new SymbolsUploader(api, discoveryService, settings, tracerSettings, serviceName);
+                return new SymbolsUploader(api, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceName);
             }
 
             Log.Information("Symbol database uploading is disabled. To enable it, please set {EnvironmentVariable} environment variable to 'true'.", ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled);
@@ -83,18 +134,30 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private void RegisterToAssemblyLoadEvent()
         {
-            AppDomain.CurrentDomain.AssemblyLoad += async (_, args) =>
-            {
-                await ProcessItemAsync(args.LoadedAssembly).ConfigureAwait(false);
-            };
+            AppDomain.CurrentDomain.AssemblyLoad += CurrentDomain_AssemblyLoad;
+        }
+
+        private void UnRegisterToAssemblyLoadEvent()
+        {
+            AppDomain.CurrentDomain.AssemblyLoad -= CurrentDomain_AssemblyLoad;
+        }
+
+        private async void CurrentDomain_AssemblyLoad(object? sender, AssemblyLoadEventArgs args)
+        {
+            await ProcessItemAsync(args.LoadedAssembly).ConfigureAwait(false);
         }
 
         private async Task ProcessItemAsync(Assembly assembly)
         {
+            if (!_isSymDbEnabled)
+            {
+                return;
+            }
+
             await Task.Yield();
             await _assemblySemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
 
-            if (_cancellationToken.IsCancellationRequested)
+            if (!_isSymDbEnabled || _cancellationToken.IsCancellationRequested)
             {
                 _assemblySemaphore.Release();
                 return;
@@ -114,7 +177,13 @@ namespace Datadog.Trace.Debugger.Symbols
         {
             try
             {
-                if (AssemblyFilter.ShouldSkipAssembly(assembly))
+                var assemblyName = assembly.GetName().Name;
+                if (string.IsNullOrEmpty(assemblyName))
+                {
+                    return;
+                }
+
+                if (AssemblyFilter.ShouldSkipAssembly(assembly, null /*_librariesToUpload*/))
                 {
                     return;
                 }
@@ -262,6 +331,12 @@ namespace Datadog.Trace.Debugger.Symbols
                 return;
             }
 
+            if (await WaitForEnablementAsync().ConfigureAwait(false) == false)
+            {
+                Log.Information("This can happen when the service is shut down");
+                return;
+            }
+
             RegisterToAssemblyLoadEvent();
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (var i = 0; i < assemblies.Length; i++)
@@ -272,6 +347,13 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task<bool> WaitForDiscoveryServiceAsync()
         {
+            if (!string.IsNullOrEmpty(_symDbEndpoint))
+            {
+                // if it is already set, return immediately.
+                // theoretically, this can be reverted in case of version downgrade, but we not support that atm.
+                return true;
+            }
+
             await Task.Yield();
             await _discoveryServiceSemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
             _discoveryServiceSemaphore.Dispose();
@@ -280,7 +362,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 return false;
             }
 
-            if (!string.IsNullOrEmpty(Volatile.Read(ref _isSymbolUploaderEnabled)))
+            if (!string.IsNullOrEmpty(Volatile.Read(ref _symDbEndpoint)))
             {
                 return true;
             }
@@ -288,11 +370,25 @@ namespace Datadog.Trace.Debugger.Symbols
             return false;
         }
 
+        private async Task<bool> WaitForEnablementAsync()
+        {
+            await Task.Yield();
+            await _enablementSemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
+            if (_cancellationToken.IsCancellationRequested)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public void Dispose()
         {
+            _subscriptionManager.Unsubscribe(_subscription);
             _cancellationToken.Cancel();
             _cancellationToken.Dispose();
             _assemblySemaphore.Dispose();
+            _enablementSemaphore.Dispose();
         }
     }
 }
