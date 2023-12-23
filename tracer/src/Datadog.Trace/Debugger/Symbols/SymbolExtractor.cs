@@ -42,20 +42,27 @@ namespace Datadog.Trace.Debugger.Symbols
 
         protected Dictionary<int, string> MethodAccess { get; } = new()
         {
-            { 0x0001, "Private" },
-            { 0x0002, "FamANDAssem" },
-            { 0x0003, "Assembly" },
-            { 0x0004, "Family" },
-            { 0x0005, "FamORAssem" },
-            { 0x0006, "Public" }
+            { 0x0001, "private" },
+            { 0x0002, "private protected" },
+            { 0x0003, "internal" },
+            { 0x0004, "protected" },
+            { 0x0005, "protected internal" },
+            { 0x0006, "public" }
         };
 
         protected Dictionary<int, string> MethodAttributes { get; } = new()
         {
-            { 0x0010, "Static" },
-            { 0x0020, "Final" },
-            { 0x0040, "Virtual" },
-            { 0x0060, "Final Virtual" },
+            { 0x0010, "static" },
+            { 0x0020, "final" },
+            { 0x0040, "virtual" },
+            { 0x0060, "final virtual" }
+        };
+
+        protected Dictionary<int, string> FieldAttributes { get; } = new()
+        {
+            { 0x0010, "static" },
+            { 0x0020, "readonly" },
+            { 0x0040, "const" },
         };
 
         public static SymbolExtractor? Create(Assembly assembly)
@@ -380,16 +387,15 @@ namespace Datadog.Trace.Debugger.Symbols
                     }
                 }
 
-                var accessModifiers = (fieldDef.Attributes & FieldAttributes.FieldAccessMask) > 0 ? new[] { MethodAccess[Convert.ToUInt16(fieldDef.Attributes & FieldAttributes.FieldAccessMask)] } : null;
-                var fieldAttributes = fieldDef.Attributes & FieldAttributes.Static;
-                var annotations = fieldAttributes > 0 ? new[] { MethodAttributes[Convert.ToUInt16(fieldAttributes)] } : null;
-                var ls = new LanguageSpecifics() { AccessModifiers = accessModifiers, Annotations = annotations };
+                var accessModifiers = (fieldDef.Attributes & System.Reflection.FieldAttributes.FieldAccessMask) > 0 ? new[] { MethodAccess[Convert.ToUInt16(fieldDef.Attributes & System.Reflection.FieldAttributes.FieldAccessMask)] } : null;
+                var fieldAttributes = ((int)fieldDef.Attributes & 0x0070) > 0 ? new[] { FieldAttributes[Convert.ToUInt16((int)fieldDef.Attributes & 0x0070)] } : null;
+                var ls = new LanguageSpecifics() { AccessModifiers = accessModifiers, Annotations = fieldAttributes };
 
                 fieldSymbols[index] = new Symbol
                 {
                     Name = fieldName.ToString(),
                     Type = fieldTypeName,
-                    SymbolType = ((fieldDef.Attributes & FieldAttributes.Static) != 0) ? SymbolType.StaticField : SymbolType.Field,
+                    SymbolType = ((fieldDef.Attributes & System.Reflection.FieldAttributes.Static) != 0) ? SymbolType.StaticField : SymbolType.Field,
                     Line = UnknownFieldAndArgLine,
                     LanguageSpecifics = ls
                 };
@@ -533,11 +539,14 @@ namespace Datadog.Trace.Debugger.Symbols
             // closures
             var closureScopes = GetClosureScopes(type, method);
             var methodAttributes = method.Attributes & StaticFinalVirtualMethod;
+            var isAsyncMethod = DatadogMetadataReader.IsAsyncMethod(method.GetCustomAttributes());
             var methodLanguageSpecifics = new LanguageSpecifics
             {
                 ReturnType = method.DecodeSignature(new TypeProvider(false), 0).ReturnType,
                 AccessModifiers = (method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask) > 0 ? new[] { MethodAccess[Convert.ToUInt16(method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask)] } : null,
-                Annotations = methodAttributes > 0 ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes)] } : null
+                Annotations = methodAttributes > 0 && isAsyncMethod ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes)], "async" } :
+                              methodAttributes > 0 ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes)] } :
+                              isAsyncMethod ? new[] { "async" } : null
             };
 
             var methodScope = new Model.Scope

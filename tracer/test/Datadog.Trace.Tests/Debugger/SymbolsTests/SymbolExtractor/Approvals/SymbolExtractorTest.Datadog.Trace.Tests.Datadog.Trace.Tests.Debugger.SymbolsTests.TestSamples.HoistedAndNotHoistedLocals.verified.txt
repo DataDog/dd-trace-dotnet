@@ -30,7 +30,10 @@
               "line": 0,
               "language_specifics": {
                 "access_modifiers": [
-                  "Private"
+                  "private"
+                ],
+                "annotations": [
+                  "readonly"
                 ]
               }
             }
@@ -69,6 +72,9 @@
                 "access_modifiers": [
                   "sanitized"
                 ],
+                "annotations": [
+                  "async"
+                ],
                 "return_type": "System.Threading.Tasks.Task`1<Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+Person>",
                 "start_column": 999,
                 "end_column": 999
@@ -105,7 +111,7 @@
                       "sanitized"
                     ],
                     "annotations": [
-                      "Final Virtual"
+                      "final virtual"
                     ],
                     "return_type": "System.Void",
                     "start_column": 999,
@@ -154,6 +160,9 @@
               "language_specifics": {
                 "access_modifiers": [
                   "sanitized"
+                ],
+                "annotations": [
+                  "async"
                 ],
                 "return_type": "System.Threading.Tasks.Task`1<Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+Person>"
               },
@@ -223,7 +232,8 @@
                       "sanitized"
                     ],
                     "annotations": [
-                      "Final Virtual"
+                      "final virtual",
+                      "async"
                     ],
                     "return_type": "System.Threading.Tasks.Task"
                   },

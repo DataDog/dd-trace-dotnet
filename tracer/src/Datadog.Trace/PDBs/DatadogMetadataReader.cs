@@ -295,8 +295,7 @@ namespace Datadog.Trace.Pdb
                 }
 
                 var att = MetadataReader.GetCustomAttribute(attributeHandle);
-                var attributeTypeName = MetadataReader.GetMemberReference((MemberReferenceHandle)att.Constructor).Parent.FullName(MetadataReader);
-                if (attributeTypeName != AsyncStateMachineAttribute)
+                if (!IsAsyncMethod(att))
                 {
                     continue;
                 }
@@ -336,6 +335,12 @@ namespace Datadog.Trace.Pdb
             var generatedType = MetadataReader.GetTypeDefinition(nestedTypeHandle);
             var moveNext = generatedType.GetMethods().FirstOrDefault(handle => MetadataReader.GetString(MetadataReader.GetMethodDefinition(handle).Name) == "MoveNext");
             return moveNext;
+        }
+
+        private bool IsAsyncMethod(CustomAttribute att)
+        {
+            var attributeTypeName = MetadataReader.GetMemberReference((MemberReferenceHandle)att.Constructor).Parent.FullName(MetadataReader);
+            return attributeTypeName == AsyncStateMachineAttribute;
         }
 
         /// <summary>
@@ -599,6 +604,26 @@ namespace Datadog.Trace.Pdb
 
                 var attributeName = GetAttributeName(attributeHandle);
                 if (attributeName?.Equals(CompilerGeneratedAttribute) == true)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        internal bool IsAsyncMethod(CustomAttributeHandleCollection attributes)
+        {
+            foreach (var attributeHandle in attributes)
+            {
+                if (attributeHandle.IsNil)
+                {
+                    continue;
+                }
+
+                var att = MetadataReader.GetCustomAttribute(attributeHandle);
+
+                if (IsAsyncMethod(att))
                 {
                     return true;
                 }

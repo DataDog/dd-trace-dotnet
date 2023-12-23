@@ -30,7 +30,10 @@
               "line": 0,
               "language_specifics": {
                 "access_modifiers": [
-                  "Private"
+                  "private"
+                ],
+                "annotations": [
+                  "readonly"
                 ]
               }
             },
@@ -41,7 +44,10 @@
               "line": 0,
               "language_specifics": {
                 "access_modifiers": [
-                  "Private"
+                  "private"
+                ],
+                "annotations": [
+                  "readonly"
                 ]
               }
             }

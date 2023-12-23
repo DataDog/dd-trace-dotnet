@@ -21,6 +21,12 @@
                 "type": "String",
                 "value": "VoidTaskMethod"
               }
+            },
+            "locals": {
+              "e": {
+                "isNull": "true",
+                "type": "Exception"
+              }
             }
           }
         },

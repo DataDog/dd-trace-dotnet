@@ -33,6 +33,9 @@
                 "access_modifiers": [
                   "sanitized"
                 ],
+                "annotations": [
+                  "async"
+                ],
                 "return_type": "System.Threading.Tasks.Task`1<System.Int32>",
                 "start_column": 999,
                 "end_column": 999

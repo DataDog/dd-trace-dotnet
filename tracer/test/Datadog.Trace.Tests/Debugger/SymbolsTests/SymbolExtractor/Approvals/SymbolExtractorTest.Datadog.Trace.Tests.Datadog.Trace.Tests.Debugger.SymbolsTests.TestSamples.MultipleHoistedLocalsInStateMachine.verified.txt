@@ -33,6 +33,9 @@
                 "access_modifiers": [
                   "sanitized"
                 ],
+                "annotations": [
+                  "async"
+                ],
                 "return_type": "System.Threading.Tasks.Task",
                 "start_column": 999,
                 "end_column": 999
@@ -49,7 +52,7 @@
                       "sanitized"
                     ],
                     "annotations": [
-                      "Final Virtual"
+                      "final virtual"
                     ],
                     "return_type": "System.Void",
                     "start_column": 999,

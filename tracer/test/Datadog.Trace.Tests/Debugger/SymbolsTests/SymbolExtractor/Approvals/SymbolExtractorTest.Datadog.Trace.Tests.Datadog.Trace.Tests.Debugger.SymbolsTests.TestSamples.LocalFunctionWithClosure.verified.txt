@@ -49,7 +49,7 @@
                       "sanitized"
                     ],
                     "annotations": [
-                      "Static"
+                      "static"
                     ],
                     "return_type": "System.Void",
                     "start_column": 999,

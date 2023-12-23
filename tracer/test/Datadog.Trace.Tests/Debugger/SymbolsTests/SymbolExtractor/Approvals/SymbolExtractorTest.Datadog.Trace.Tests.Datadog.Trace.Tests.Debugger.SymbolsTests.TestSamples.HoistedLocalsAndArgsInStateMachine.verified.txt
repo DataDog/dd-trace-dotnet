@@ -30,7 +30,7 @@
               "line": 0,
               "language_specifics": {
                 "access_modifiers": [
-                  "Private"
+                  "private"
                 ]
               }
             },
@@ -41,7 +41,7 @@
               "line": 0,
               "language_specifics": {
                 "access_modifiers": [
-                  "Private"
+                  "private"
                 ]
               }
             }
@@ -56,6 +56,9 @@
                 "access_modifiers": [
                   "sanitized"
                 ],
+                "annotations": [
+                  "async"
+                ],
                 "return_type": "System.Threading.Tasks.Task"
               }
             },
@@ -68,6 +71,9 @@
               "language_specifics": {
                 "access_modifiers": [
                   "sanitized"
+                ],
+                "annotations": [
+                  "async"
                 ],
                 "return_type": "System.Threading.Tasks.Task",
                 "start_column": 999,
@@ -99,7 +105,7 @@
                       "sanitized"
                     ],
                     "annotations": [
-                      "Final Virtual"
+                      "final virtual"
                     ],
                     "return_type": "System.Void",
                     "start_column": 999,
@@ -184,7 +190,10 @@
                   "line": 0,
                   "language_specifics": {
                     "access_modifiers": [
-                      "Private"
+                      "private"
+                    ],
+                    "annotations": [
+                      "readonly"
                     ]
                   }
                 },
@@ -195,7 +204,10 @@
                   "line": 0,
                   "language_specifics": {
                     "access_modifiers": [
-                      "Private"
+                      "private"
+                    ],
+                    "annotations": [
+                      "readonly"
                     ]
                   }
                 },
@@ -206,7 +218,10 @@
                   "line": 0,
                   "language_specifics": {
                     "access_modifiers": [
-                      "Private"
+                      "private"
+                    ],
+                    "annotations": [
+                      "readonly"
                     ]
                   }
                 }
@@ -258,7 +273,7 @@
                       "sanitized"
                     ],
                     "annotations": [
-                      "Virtual"
+                      "virtual"
                     ],
                     "return_type": "System.String",
                     "start_column": 999,
@@ -293,7 +308,10 @@
                   "line": 0,
                   "language_specifics": {
                     "access_modifiers": [
-                      "Private"
+                      "private"
+                    ],
+                    "annotations": [
+                      "readonly"
                     ]
                   }
                 },
@@ -304,7 +322,10 @@
                   "line": 0,
                   "language_specifics": {
                     "access_modifiers": [
-                      "Private"
+                      "private"
+                    ],
+                    "annotations": [
+                      "readonly"
                     ]
                   }
                 }
@@ -350,7 +371,7 @@
                       "sanitized"
                     ],
                     "annotations": [
-                      "Virtual"
+                      "virtual"
                     ],
                     "return_type": "System.String",
                     "start_column": 999,

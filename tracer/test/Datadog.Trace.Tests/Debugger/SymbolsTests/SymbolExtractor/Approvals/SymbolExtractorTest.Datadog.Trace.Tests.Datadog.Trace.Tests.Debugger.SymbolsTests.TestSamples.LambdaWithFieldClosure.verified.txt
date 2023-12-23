@@ -30,7 +30,7 @@
               "line": 0,
               "language_specifics": {
                 "access_modifiers": [
-                  "Private"
+                  "private"
                 ]
               }
             }
