@@ -131,7 +131,6 @@ src/Datadog.Trace/ContinuousProfiler/ProfilerStatus.cs
 src/Datadog.Trace/DatabaseMonitoring/DatabaseMonitoringPropagator.cs
 src/Datadog.Trace/DataStreamsMonitoring/CheckpointKind.cs
 src/Datadog.Trace/Debugger/ILineProbeResolver.cs
-src/Datadog.Trace/Debugger/LineProbeResolver.cs
 src/Datadog.Trace/Debugger/LiveDebugger.cs
 src/Datadog.Trace/Debugger/ProbeLocationType.cs
 src/Datadog.Trace/DiagnosticListeners/AspNetCoreDiagnosticObserver.cs
@@ -170,10 +169,16 @@ src/Datadog.Trace/HttpOverStreams/HttpMessage.cs
 src/Datadog.Trace/HttpOverStreams/HttpRequest.cs
 src/Datadog.Trace/HttpOverStreams/HttpResponse.cs
 src/Datadog.Trace/HttpOverStreams/IHttpContent.cs
+<<<<<<< HEAD
 src/Datadog.Trace/Iast/Iast.cs
 src/Datadog.Trace/Iast/ITaintedMap.cs
 src/Datadog.Trace/Iast/SourceType.cs
 src/Datadog.Trace/PDBs/DatadogPdbReader.cs
+=======
+src/Datadog.Trace/IAST/Iast.cs
+src/Datadog.Trace/IAST/ITaintedMap.cs
+src/Datadog.Trace/IAST/SourceTypeName.cs
+>>>>>>> 6c299e1c9 (Update missing-nullability-files)
 src/Datadog.Trace/PDBs/SymbolMethodExtensions.cs
 src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs
 src/Datadog.Trace/PlatformHelpers/AzureContext.cs

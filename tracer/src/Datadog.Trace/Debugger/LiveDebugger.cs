@@ -4,6 +4,7 @@
 // </copyright>
 
 #pragma warning disable SA1402 // FileMayOnlyContainASingleType - StyleCop did not enforce this for records initially
+#nullable disable
 
 using System;
 using System.Collections.Generic;
