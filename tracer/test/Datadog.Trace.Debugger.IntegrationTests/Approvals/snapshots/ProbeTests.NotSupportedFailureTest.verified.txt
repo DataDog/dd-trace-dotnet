@@ -98,6 +98,10 @@
               "@return": {
                 "type": "NormalStruct",
                 "value": "NormalStruct"
+              },
+              "ret": {
+                "type": "NormalStruct",
+                "value": "NormalStruct"
               }
             }
           }
@@ -455,6 +459,12 @@
                 "this": {
                   "type": "NotSupportedFailureTest",
                   "value": "NotSupportedFailureTest"
+                }
+              },
+              "locals": {
+                "ret": {
+                  "type": "NormalStruct",
+                  "value": "NormalStruct"
                 }
               }
             }

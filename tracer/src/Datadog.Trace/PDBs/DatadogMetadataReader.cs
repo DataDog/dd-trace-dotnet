@@ -62,7 +62,7 @@ namespace Datadog.Trace.Pdb
 
         internal static DatadogMetadataReader? CreatePdbReader(Assembly? assembly)
         {
-            if (assembly == null)
+            if (assembly == null || string.IsNullOrEmpty(assembly.Location))
             {
                 return null;
             }
@@ -294,11 +294,12 @@ namespace Datadog.Trace.Pdb
                     continue;
                 }
 
-                var att = MetadataReader.GetCustomAttribute(attributeHandle);
-                if (!IsAsyncMethod(att))
+                if (GetAttributeName(attributeHandle) != AsyncStateMachineAttribute)
                 {
                     continue;
                 }
+
+                var att = MetadataReader.GetCustomAttribute(attributeHandle);
 
                 var decoded = att.DecodeValue(provider);
                 if (decoded.FixedArguments.Length != 1)
@@ -337,7 +338,7 @@ namespace Datadog.Trace.Pdb
             return moveNext;
         }
 
-        private bool IsAsyncMethod(CustomAttribute att)
+        private bool IsAsyncMethodOld(CustomAttribute att)
         {
             var attributeTypeName = MetadataReader.GetMemberReference((MemberReferenceHandle)att.Constructor).Parent.FullName(MetadataReader);
             return attributeTypeName == AsyncStateMachineAttribute;
@@ -504,13 +505,13 @@ namespace Datadog.Trace.Pdb
                         continue;
                     }
 
-                    var localNAme = PdbReader.GetString(local.Name);
-                    if (string.IsNullOrEmpty(localNAme))
+                    var localName = PdbReader.GetString(local.Name);
+                    if (string.IsNullOrEmpty(localName))
                     {
                         continue;
                     }
 
-                    names[local.Index] = localNAme;
+                    names[local.Index] = localName;
                     localsCount++;
                 }
             }
@@ -621,9 +622,7 @@ namespace Datadog.Trace.Pdb
                     continue;
                 }
 
-                var att = MetadataReader.GetCustomAttribute(attributeHandle);
-
-                if (IsAsyncMethod(att))
+                if (GetAttributeName(attributeHandle) == AsyncStateMachineAttribute)
                 {
                     return true;
                 }

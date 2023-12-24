@@ -66,7 +66,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
             catch (Exception e)
             {
-                Log.Error(e, "Failed to obtain local variable names from PDB for {Name}", method.Name);
+                Log.Error(e, "Failed to obtain local variable names from PDB for {Type}.{Name}", method.DeclaringType?.Name, method.Name);
                 return null;
             }
         }
