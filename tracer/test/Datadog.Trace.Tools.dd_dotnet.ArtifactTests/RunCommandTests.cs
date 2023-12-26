@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -79,6 +80,8 @@ public class RunCommandTests : ConsoleTestHelper
 
         // dd-env is an argument for the target application and therefore shouldn't set the DD_ENV variable
         var commandLine = $"run -- {startInfo.Executable} {startInfo.Args} echo";
+
+        System.Console.InputEncoding = Encoding.ASCII;
 
         var process = RunToolInteractive(commandLine);
 
