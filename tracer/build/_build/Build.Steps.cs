@@ -2217,7 +2217,7 @@ partial class Build
 
             var csvFilePath = TracerDirectory / "missing-nullability-files.csv";
             File.WriteAllText(csvFilePath, sb.ToString());
-            Serilog.Log.Information("File saved: {File}", csvFilePath);
+            Serilog.Log.Information("File ordered and saved: {File}", csvFilePath);
         });
 
     Target CreateRootDescriptorsFile => _ => _
