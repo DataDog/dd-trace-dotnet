@@ -342,6 +342,51 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                    .Be("Unable to parse custom sampling rules");
         }
 
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task Telemetry_CollectsInstallSignature()
+        {
+            var expectedInstallId = "install id";
+            var expectedInstallType = "install type";
+            var expectedInstallTime = "install time";
+
+            EnvironmentHelper.CustomEnvironmentVariables["DD_INSTRUMENTATION_INSTALL_ID"] = expectedInstallId;
+            EnvironmentHelper.CustomEnvironmentVariables["DD_INSTRUMENTATION_INSTALL_TYPE"] = expectedInstallType;
+            EnvironmentHelper.CustomEnvironmentVariables["DD_INSTRUMENTATION_INSTALL_TIME"] = expectedInstallTime;
+
+            using var agent = MockTracerAgent.Create(Output, useTelemetry: true);
+            using var telemetry = new MockTelemetryAgent();
+            EnableAgentlessTelemetry(telemetry.Port, enableDependencies: true);
+
+            var httpPort = TcpPortProvider.GetOpenPort();
+
+            using (var processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            {
+                ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
+
+                var spans = agent.WaitForSpans(ExpectedSpans);
+                await AssertExpectedSpans(spans);
+            }
+
+            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppStarted));
+
+            var appStarted = telemetry.Telemetry.Should()
+                .ContainSingle(x => x.IsRequestType(TelemetryRequestTypes.AppStarted))
+                .Subject;
+
+            var appStartedPayload = appStarted.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted);
+
+            appStartedPayload.Should().NotBeNull();
+            appStartedPayload.InstallSignature.Should().NotBeNull()
+                .And.BeEquivalentTo(new AppStartedPayload.InstallSignaturePayload
+                {
+                    InstallId = expectedInstallId,
+                    InstallType = expectedInstallType,
+                    InstallTime = expectedInstallTime
+                });
+        }
+
         private static void AssertService(MockTracerAgent mockAgent, string expectedServiceName, string expectedServiceVersion)
         {
             mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppStarted));
