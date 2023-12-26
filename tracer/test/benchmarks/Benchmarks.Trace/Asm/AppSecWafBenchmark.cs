@@ -68,7 +68,7 @@ public class AppSecWafBenchmark
         }
 
         var wafLibraryInvoker = libInitResult.WafLibraryInvoker!;
-        var initResult = Waf.Create(wafLibraryInvoker, string.Empty, string.Empty, embeddedRulesetPath: Path.Combine(Directory.GetCurrentDirectory(), "Asm", "rule-set.1.7.2.json"));
+        var initResult = Waf.Create(wafLibraryInvoker, string.Empty, string.Empty, embeddedRulesetPath: Path.Combine(Directory.GetCurrentDirectory(), "Asm", "rule-set.1.10.0.json"));
 
         if (!initResult.Success || initResult.HasErrors)
         {
@@ -137,7 +137,7 @@ public class AppSecWafBenchmark
                 };
                 map.Add("list", nextList);
             }
-        
+
             var nextMap = new Dictionary<string, object>
             {
                 { "lorem", "ipsum" },
