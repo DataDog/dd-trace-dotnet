@@ -20,8 +20,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("1.10.0")]
         public void ShouldNotInitializeWithExportsMissing(string version)
         {
-            // for some reason, these tests cause a "DDWAF_ERROR": [ddwaf_run]interface.cpp(206): std::bad_alloc on mac when run with others
-            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var libraryInitializationResult = WafLibraryInvoker.Initialize(version);
             libraryInitializationResult.ExportErrorHappened.Should().BeTrue();
             libraryInitializationResult.Success.Should().BeFalse();
@@ -32,8 +30,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("1.14.0")]
         public void ShouldNotInitializeWithKnownIncompatibility(string version)
         {
-            // for some reason, these tests cause a "DDWAF_ERROR": [ddwaf_run]interface.cpp(206): std::bad_alloc on mac when run with others
-            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var libraryInitializationResult = WafLibraryInvoker.Initialize(version);
             libraryInitializationResult.VersionNotCompatible.Should().BeTrue();
             libraryInitializationResult.Success.Should().BeFalse();
