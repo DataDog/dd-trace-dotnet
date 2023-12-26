@@ -2176,7 +2176,24 @@ partial class Build
                 "src/Datadog.Trace/Vendors/**"
             );
 
-            var sourceFiles = include.Except(exclude);
+            int ComputeDepth(AbsolutePath ap)
+            {
+                var d = 0;
+                while ((ap = ap.Parent) != null)
+                {
+                    d++;
+                }
+
+                return d;
+            }
+
+            var sourceFiles = include.Except(exclude).ToList();
+            // sort by depth, then alphabetical.
+            sourceFiles.Sort((a, b) =>
+            {
+                var depthDiff = ComputeDepth(a) - ComputeDepth(b);
+                return depthDiff != 0 ? depthDiff : string.Compare(a.ToString(), b.ToString(), StringComparison.OrdinalIgnoreCase);
+            });
 
             var sb = new StringBuilder();
             foreach (var file in sourceFiles)
