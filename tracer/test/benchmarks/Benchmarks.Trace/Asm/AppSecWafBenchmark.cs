@@ -23,6 +23,10 @@ public class AppSecWafBenchmark
 
     private static readonly Waf Waf;
 
+    private static readonly NestedMap stage1 = MakeRealisticNestedMapStage1();
+    private static readonly NestedMap stage2 = MakeRealisticNestedMapStage2();
+    private static readonly NestedMap stage3 = MakeRealisticNestedMapStage3();
+
     static AppSecWafBenchmark()
     {
         var fDesc = FrameworkDescription.Instance;
@@ -154,18 +158,81 @@ public class AppSecWafBenchmark
         return new NestedMap(root, nestingDepth, withAttack);
     }
 
-    [Benchmark]
-    [ArgumentsSource(nameof(Source))]
-    public void RunWaf(NestedMap args) => RunWafBenchmark(args);
+    private static NestedMap MakeRealisticNestedMapStage1()
+    {
+        var headersDict = new Dictionary<string, string[]>
+        {
+            { "header1", new [] { "value1", "value2", "value3", } },
+            { "header2", new [] { "value1", "value2", "value3", } },
+            { "header3", new [] { "value1", "value2", "value3", } },
+        };
+        var cookiesDic = new Dictionary<string, List<string>>
+        {
+            { "cookie1", new List<string> { "value1", "value2", "value3", } },
+        };
+        var queryStringDic = new Dictionary<string, List<string>>
+        {
+            { "key1", new List<string> { "value1", "value2", "value3", } },
+        };
+
+        var addressesDictionary = new Dictionary<string, object>
+        {
+            { AddressesConstants.RequestMethod, "GET" },
+            { AddressesConstants.ResponseStatus, "200" },
+            { AddressesConstants.RequestUriRaw, "/short/url" },
+            { AddressesConstants.RequestClientIp, "10.20.30.40" }
+        };
+
+        addressesDictionary.Add(AddressesConstants.RequestQuery, queryStringDic);
+        addressesDictionary.Add(AddressesConstants.RequestHeaderNoCookies, headersDict);
+        addressesDictionary.Add(AddressesConstants.RequestCookies, cookiesDic);
+
+        return new NestedMap(addressesDictionary, 1, false);
+    }
+
+    private static NestedMap MakeRealisticNestedMapStage2()
+    {
+        IDictionary<string, object> pathParams = new Dictionary<string, object>()
+        {
+            { "id", "22" }
+        };
+
+        var args = new Dictionary<string, object>
+        {
+            { AddressesConstants.RequestPathParams, pathParams }
+        };
+
+        return new NestedMap(args, 1, false);
+    }
+
+    private static NestedMap MakeRealisticNestedMapStage3()
+    {
+        var headersDict = new Dictionary<string, string[]>()
+        {
+            { "header1", new [] { "value1", "value2", "value3", } },
+            { "header2", new [] { "value1", "value2", "value3", } },
+            { "header3", new [] { "value1", "value2", "value3", } },
+        };
+
+        var args = new Dictionary<string, object>
+        {
+            {
+                AddressesConstants.ResponseHeaderNoCookies,
+                headersDict
+            },
+            { AddressesConstants.ResponseStatus, "200" },
+        };
+
+        return new NestedMap(args, 1, false);
+    }
 
     [Benchmark]
-    [ArgumentsSource(nameof(SourceWithAttack))]
-    public void RunWafWithAttack(NestedMap args) => RunWafBenchmark(args);
-
-    private void RunWafBenchmark(NestedMap args)
+    public void RunWafRealisticBenchmark()
     {
         var context = Waf.CreateContext();
-        context!.Run(args.Map, TimeoutMicroSeconds);
+        context!.Run(stage1.Map, TimeoutMicroSeconds);
+        context!.Run(stage2.Map, TimeoutMicroSeconds);
+        context!.Run(stage3.Map, TimeoutMicroSeconds);
         context.Dispose();
     }
 
