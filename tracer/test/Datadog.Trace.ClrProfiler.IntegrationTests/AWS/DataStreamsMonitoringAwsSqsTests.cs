@@ -43,7 +43,7 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
         using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
 #if NETFRAMEWORK
-                var expectedCount = 56;
+            var expectedCount = 56;
 #else
             var expectedCount = 28;
 #endif
