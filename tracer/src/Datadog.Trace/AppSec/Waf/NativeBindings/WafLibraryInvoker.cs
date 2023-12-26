@@ -182,22 +182,23 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             if (wafLibraryInvoker.ExportErrorHappened)
             {
                 Log.Error("Waf library couldn't initialize properly because of missing methods in native library, please make sure the tracer has been correctly installed and that previous versions are correctly uninstalled.");
+                NativeLibrary.CloseLibrary(libraryHandle);
                 return LibraryInitializationResult.FromExportErrorHappened();
             }
 
             var isCompatible = CheckVersionCompatibility(wafLibraryInvoker);
             if (!isCompatible)
             {
+                // no log because CheckVersionCompatibility writes logs in error cases
+                NativeLibrary.CloseLibrary(libraryHandle);
                 return LibraryInitializationResult.FromVersionNotCompatible();
             }
 
             return LibraryInitializationResult.FromSuccess(wafLibraryInvoker);
         }
 
-        public static bool CheckVersionCompatibility(WafLibraryInvoker wafLibraryInvoker)
+        private static bool CheckVersionCompatibility(WafLibraryInvoker wafLibraryInvoker)
         {
-            Log.Information("Checking compt starting ...");
-
             var versionWaf = wafLibraryInvoker.GetVersion();
             var versionWafSplit = versionWaf.Split('.');
             if (versionWafSplit.Length != 3)
