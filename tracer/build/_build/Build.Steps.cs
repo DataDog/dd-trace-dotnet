@@ -2187,12 +2187,19 @@ partial class Build
                 return d;
             }
 
+            string NormalizedPath(AbsolutePath ap)
+            {
+                // paths are not printed the same way in windows vs unix-based, which affects the ordering.
+                // to get a stable order, we use / everywhere, which is what's written in the csv in the end.
+                return ap.ToString().Replace(oldChar: '\\', newChar: '/');
+            }
+
             var sourceFiles = include.Except(exclude).ToList();
             // sort by depth, then alphabetical.
             sourceFiles.Sort((a, b) =>
             {
                 var depthDiff = ComputeDepth(a) - ComputeDepth(b);
-                return depthDiff != 0 ? depthDiff : string.Compare(a.ToString(), b.ToString(), StringComparison.OrdinalIgnoreCase);
+                return depthDiff != 0 ? depthDiff : string.Compare(NormalizedPath(a), NormalizedPath(b), StringComparison.OrdinalIgnoreCase);
             });
 
             var sb = new StringBuilder();
