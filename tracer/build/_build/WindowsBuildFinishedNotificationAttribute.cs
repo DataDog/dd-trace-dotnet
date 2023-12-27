@@ -4,7 +4,9 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+#if IS_WINDOWS
 using Microsoft.Toolkit.Uwp.Notifications;
+#endif
 using NuGet.Packaging;
 using Nuke.Common;
 using Nuke.Common.Execution;
