@@ -58,7 +58,7 @@
       aws.operation: Publish,
       aws.requestId: Guid_2,
       aws.service: SNS,
-      aws.topic.arn: arn:aws:sns:***:000000000000:MyTopic,
+      aws.topic.arn: arn:aws:sns:us-east-1:000000000000:MyTopic,
       aws.topic.name: MyTopic,
       aws_service: SNS,
       component: aws-sdk,
