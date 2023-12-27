@@ -73,6 +73,11 @@ namespace Datadog.Trace.Iast
             return _map.Get(objectToFind) as TaintedObject;
         }
 
+        public TaintedObject? FromPositiveHashCode(int hash)
+        {
+            return _map.FromPositiveHashCode(hash) as TaintedObject;
+        }
+
         public int GetEstimatedSize()
         {
             return _map.GetEstimatedSize();
