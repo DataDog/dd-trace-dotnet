@@ -767,14 +767,20 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     var body = ReadStreamBody(request);
-                    var json = MessagePackSerializer.ToJson(body);
                     var headerCollection = new NameValueCollection();
                     foreach (var header in request.Headers)
                     {
                         headerCollection.Add(header.Name, header.Value);
                     }
 
-                    EventPlatformProxyPayloadReceived?.Invoke(this, new EventArgs<EvpProxyPayload>(new EvpProxyPayload(request.PathAndQuery, headerCollection, json)));
+                    var bodyAsJson = headerCollection["Content-Type"] switch
+                    {
+                        "application/msgpack" => MessagePackSerializer.ToJson(body),
+                        "application/json" => Encoding.UTF8.GetString(body),
+                        _ => Encoding.UTF8.GetString(body), // e.g. multipart form data, currently we don't do anything with this so meh
+                    };
+
+                    EventPlatformProxyPayloadReceived?.Invoke(this, new EventArgs<EvpProxyPayload>(new EvpProxyPayload(request.PathAndQuery, headerCollection, bodyAsJson)));
                 }
                 catch (Exception ex)
                 {
