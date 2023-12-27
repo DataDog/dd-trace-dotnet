@@ -48,7 +48,11 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation => "vulnerability_type:trust_boundary_violation",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing => "vulnerability_type:hsts_header_missing",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection => "vulnerability_type:header_injection",
+<<<<<<< HEAD
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak => "vulnerability_type:stacktrace_leak",
+=======
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NosqlInjection => "vulnerability_type:nosql_injection",
+>>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
             _ => value.ToString(),
         };
 
@@ -80,7 +84,11 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection,
+<<<<<<< HEAD
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak,
+=======
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NosqlInjection,
+>>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
         };
 
     /// <summary>
@@ -112,7 +120,11 @@ internal static partial class IastInstrumentedSinksExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection),
+<<<<<<< HEAD
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak),
+=======
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NosqlInjection),
+>>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
         };
 
     /// <summary>
@@ -144,6 +156,10 @@ internal static partial class IastInstrumentedSinksExtensions
             "vulnerability_type:trust_boundary_violation",
             "vulnerability_type:hsts_header_missing",
             "vulnerability_type:header_injection",
+<<<<<<< HEAD
             "vulnerability_type:stacktrace_leak",
+=======
+            "vulnerability_type:nosql_injection",
+>>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
         };
 }
