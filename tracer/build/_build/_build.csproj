@@ -5,8 +5,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <RollForward>LatestMajor</RollForward>
     <RootNamespace></RootNamespace>
-    <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
-    <NoWarn>CS0649;CS0169;SA1652;NU1901;NU1902;NU1903;NU1904</NoWarn>
+    <NoWarn>CS0649;CS0169;SA1652</NoWarn>
     <NukeRootDirectory>..\..\..</NukeRootDirectory>
     <NukeScriptDirectory>..\..</NukeScriptDirectory>
     <NukeExcludeDirectoryBuild>True</NukeExcludeDirectoryBuild>
