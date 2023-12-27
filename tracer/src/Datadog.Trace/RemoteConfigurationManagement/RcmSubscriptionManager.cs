@@ -4,7 +4,6 @@
 // </copyright>
 
 #nullable enable
-#pragma warning disable SA1010 // Opening square brackets should be spaced correctly
 
 using System;
 using System.Collections.Generic;

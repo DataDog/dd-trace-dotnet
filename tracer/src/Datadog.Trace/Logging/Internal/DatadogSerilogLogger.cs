@@ -165,7 +165,6 @@ namespace Datadog.Trace.Logging
             (logger as IDisposable)?.Dispose();
         }
 
-#pragma warning disable SA1010 // Opening square bracket should not be preceded by a space
         private void Write<T>(LogEventLevel level, Exception? exception, string messageTemplate, T property, int sourceLine, string sourceFile)
         {
             if (_logger.IsEnabled(level))
@@ -201,7 +200,6 @@ namespace Datadog.Trace.Logging
                 WriteIfNotRateLimited(level, exception, messageTemplate, [property0, property1, property2, property3], sourceLine, sourceFile);
             }
         }
-#pragma warning restore SA1010
 
         private void Write(LogEventLevel level, Exception? exception, string messageTemplate, object?[] args, int sourceLine, string sourceFile)
         {
