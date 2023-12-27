@@ -81,7 +81,7 @@ public class CorrectLoggingAbstractionDiagnostic
 
         var expected = new DiagnosticResult(DiagnosticId, Severity)
                       .WithLocation(0)
-                      .WithMessage("Incorrect use of Serilog ILogger. Use IDatadogLogger instead");
+                      .WithMessage("Incorrect use of Serilog ILogger. Use IDatadogLogger instead.");
         await Verifier.VerifyAnalyzerAsync(src, expected);
     }
 }
