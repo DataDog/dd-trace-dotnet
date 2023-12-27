@@ -35,8 +35,9 @@ namespace Samples.AWS.SQS
                 {
                     await RunValidationsWithoutReceiveLoopAsync(sqsClient);
                 }
-                catch
+                catch (Exception e)
                 {
+                    Console.WriteLine("Caught an error:\n" + e);
                     await DeleteQueueAsync(sqsClient);
                     return;
                 }
