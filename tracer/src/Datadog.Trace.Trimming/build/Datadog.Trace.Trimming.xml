@@ -249,6 +249,9 @@
       <type fullname="System.IO.Compression.CompressionMode" />
       <type fullname="System.IO.Compression.DeflateStream" />
       <type fullname="System.IO.Compression.GZipStream" />
+      <type fullname="System.IO.Compression.ZipArchive" />
+      <type fullname="System.IO.Compression.ZipArchiveEntry" />
+      <type fullname="System.IO.Compression.ZipArchiveMode" />
    </assembly>
    <assembly fullname="System.IO.FileSystem">
       <type fullname="System.IO.Directory" />

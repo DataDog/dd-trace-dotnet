@@ -19,6 +19,8 @@ public static class Helpers
 
     public static string LoggerDefinitions { get; } =
         """
+        #nullable enable
+
         namespace Datadog.Trace.Logging
         {
             using System;
@@ -38,42 +40,42 @@ public static class Helpers
                 void Debug<T0, T1>(string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
                 void Debug<T0, T1, T2>(string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
                 void Debug<T0, T1, T2, T3>(string messageTemplate, T0 property0, T1 property1, T2 property2, T3 property3, int sourceLine = 0, string sourceFile = "");
-                void Debug(string messageTemplate, object[] args, int sourceLine = 0, string sourceFile = "");
-                void Debug(Exception exception, string messageTemplate, int sourceLine = 0, string sourceFile = "");
-                void Debug<T>(Exception exception, string messageTemplate, T property, int sourceLine = 0, string sourceFile = "");
-                void Debug<T0, T1>(Exception exception, string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
-                void Debug<T0, T1, T2>(Exception exception, string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
-                void Debug(Exception exception, string messageTemplate, object[] args, int sourceLine = 0, string sourceFile = "");
+                void Debug(string messageTemplate, object?[] args, int sourceLine = 0, string sourceFile = "");
+                void Debug(Exception? exception, string messageTemplate, int sourceLine = 0, string sourceFile = "");
+                void Debug<T>(Exception? exception, string messageTemplate, T property, int sourceLine = 0, string sourceFile = "");
+                void Debug<T0, T1>(Exception? exception, string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
+                void Debug<T0, T1, T2>(Exception? exception, string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
+                void Debug(Exception? exception, string messageTemplate, object?[] args, int sourceLine = 0, string sourceFile = "");
                 void Information(string messageTemplate, int sourceLine = 0, string sourceFile = "");
                 void Information<T>(string messageTemplate, T property, int sourceLine = 0, string sourceFile = "");
                 void Information<T0, T1>(string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
                 void Information<T0, T1, T2>(string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
-                void Information(string messageTemplate, object[] args, int sourceLine = 0, string sourceFile = "");
-                void Information(Exception exception, string messageTemplate, int sourceLine = 0, string sourceFile = "");
-                void Information<T>(Exception exception, string messageTemplate, T property, int sourceLine = 0, string sourceFile = "");
-                void Information<T0, T1>(Exception exception, string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
-                void Information<T0, T1, T2>(Exception exception, string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
-                void Information(Exception exception, string messageTemplate, object[] args, int sourceLine = 0, string sourceFile = "");
+                void Information(string messageTemplate, object?[] args, int sourceLine = 0, string sourceFile = "");
+                void Information(Exception? exception, string messageTemplate, int sourceLine = 0, string sourceFile = "");
+                void Information<T>(Exception? exception, string messageTemplate, T property, int sourceLine = 0, string sourceFile = "");
+                void Information<T0, T1>(Exception? exception, string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
+                void Information<T0, T1, T2>(Exception? exception, string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
+                void Information(Exception? exception, string messageTemplate, object?[] args, int sourceLine = 0, string sourceFile = "");
                 void Warning(string messageTemplate, int sourceLine = 0, string sourceFile = "");
                 void Warning<T>(string messageTemplate, T property, int sourceLine = 0, string sourceFile = "");
                 void Warning<T0, T1>(string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
                 void Warning<T0, T1, T2>(string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
-                void Warning(string messageTemplate, object[] args, int sourceLine = 0, string sourceFile = "");
-                void Warning(Exception exception, string messageTemplate, int sourceLine = 0, string sourceFile = "");
-                void Warning<T>(Exception exception, string messageTemplate, T property, int sourceLine = 0, string sourceFile = "");
-                void Warning<T0, T1>(Exception exception, string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
-                void Warning<T0, T1, T2>(Exception exception, string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
-                void Warning(Exception exception, string messageTemplate, object[] args, int sourceLine = 0, string sourceFile = "");
+                void Warning(string messageTemplate, object?[] args, int sourceLine = 0, string sourceFile = "");
+                void Warning(Exception? exception, string messageTemplate, int sourceLine = 0, string sourceFile = "");
+                void Warning<T>(Exception? exception, string messageTemplate, T property, int sourceLine = 0, string sourceFile = "");
+                void Warning<T0, T1>(Exception? exception, string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
+                void Warning<T0, T1, T2>(Exception? exception, string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
+                void Warning(Exception? exception, string messageTemplate, object?[] args, int sourceLine = 0, string sourceFile = "");
                 void Error(string messageTemplate, int sourceLine = 0, string sourceFile = "");
                 void Error<T>(string messageTemplate, T property, int sourceLine = 0, string sourceFile = "");
                 void Error<T0, T1>(string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
                 void Error<T0, T1, T2>(string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
-                void Error(string messageTemplate, object[] args, int sourceLine = 0, string sourceFile = "");
-                void Error(Exception exception, string messageTemplate, int sourceLine = 0, string sourceFile = "");
-                void Error<T>(Exception exception, string messageTemplate, T property, int sourceLine = 0, string sourceFile = "");
-                void Error<T0, T1>(Exception exception, string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
-                void Error<T0, T1, T2>(Exception exception, string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
-                void Error(Exception exception, string messageTemplate, object[] args, int sourceLine = 0, string sourceFile = "");
+                void Error(string messageTemplate, object?[] args, int sourceLine = 0, string sourceFile = "");
+                void Error(Exception? exception, string messageTemplate, int sourceLine = 0, string sourceFile = "");
+                void Error<T>(Exception? exception, string messageTemplate, T property, int sourceLine = 0, string sourceFile = "");
+                void Error<T0, T1>(Exception? exception, string messageTemplate, T0 property0, T1 property1, int sourceLine = 0, string sourceFile = "");
+                void Error<T0, T1, T2>(Exception? exception, string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine = 0, string sourceFile = "");
+                void Error(Exception? exception, string messageTemplate, object?[] args, int sourceLine = 0, string sourceFile = "");
                 void CloseAndFlush();
             }
         }

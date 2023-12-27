@@ -98,7 +98,7 @@ namespace Datadog.Trace.Tests.Logging
         {
             const int secondsBetweenLogs = 60;
             var rateLimiter = new LogRateLimiter(secondsBetweenLogs);
-            var logger = new DatadogSerilogLogger(_logger, rateLimiter);
+            var logger = new DatadogSerilogLogger(_logger, rateLimiter, null);
 
             var clock = new SimpleClock();
             _clockDisposable = Clock.SetForCurrentThread(clock);
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Tests.Logging
         {
             const int secondsBetweenLogs = 60;
             var rateLimiter = new LogRateLimiter(secondsBetweenLogs);
-            var logger = new DatadogSerilogLogger(_logger, rateLimiter);
+            var logger = new DatadogSerilogLogger(_logger, rateLimiter, null);
 
             var clock = new SimpleClock();
             _clockDisposable = Clock.SetForCurrentThread(clock);
@@ -142,7 +142,7 @@ namespace Datadog.Trace.Tests.Logging
         {
             const int secondsBetweenLogs = 60;
             var rateLimiter = new LogRateLimiter(secondsBetweenLogs);
-            var logger = new DatadogSerilogLogger(_logger, rateLimiter);
+            var logger = new DatadogSerilogLogger(_logger, rateLimiter, null);
 
             var clock = new SimpleClock();
             _clockDisposable = Clock.SetForCurrentThread(clock);
@@ -161,7 +161,7 @@ namespace Datadog.Trace.Tests.Logging
         {
             const int secondsBetweenLogs = 60;
             var rateLimiter = new LogRateLimiter(secondsBetweenLogs);
-            var logger = new DatadogSerilogLogger(_logger, rateLimiter);
+            var logger = new DatadogSerilogLogger(_logger, rateLimiter, null);
             var clock = new SimpleClock();
             _clockDisposable = Clock.SetForCurrentThread(clock);
 
@@ -189,7 +189,7 @@ namespace Datadog.Trace.Tests.Logging
         public void ErrorsDuringRateLimiting_DontBubbleUp()
         {
             var rateLimiter = new FailingRateLimiter();
-            var logger = new DatadogSerilogLogger(_logger, rateLimiter);
+            var logger = new DatadogSerilogLogger(_logger, rateLimiter, null);
 
             // Should not throw
             logger.Warning("Warning level message");
@@ -206,7 +206,7 @@ namespace Datadog.Trace.Tests.Logging
                 .Setup(x => x.Write(It.IsAny<LogEventLevel>(), It.IsAny<Exception>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Throws(new NotImplementedException());
 
-            var logger = new DatadogSerilogLogger(mockLogger.Object, new NullLogRateLimiter());
+            var logger = new DatadogSerilogLogger(mockLogger.Object, new NullLogRateLimiter(), null);
 
             // Should not throw
             logger.Warning("Warning level message");
