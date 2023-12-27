@@ -8,11 +8,10 @@
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <NoWarn>NU5100</NoWarn>
     <RootNamespace>Datadog.Trace.Tools.dd_dotnet</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
-    <NoWarn>SA1300</NoWarn>
+    <NoWarn>SA1300;NU5100</NoWarn>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
 
     <AssemblyName>dd-dotnet</AssemblyName>
