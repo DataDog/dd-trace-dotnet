@@ -45,8 +45,10 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
         {
 #if NETFRAMEWORK
             var expectedCount = 56;
+            var frameworkName = "NetFramework";
 #else
             var expectedCount = 28;
+            var frameworkName = "NetCore";
 #endif
             var spans = agent.WaitForSpans(expectedCount);
             var sqsSpans = spans.Where(
@@ -61,7 +63,7 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
             settings.UseParameters(packageVersion);
             settings.AddDataStreamsScrubber();
             await Verifier.Verify(MockDataStreamsPayload.ToPoints(agent.DataStreams), settings)
-                          .UseFileName($"{nameof(DataStreamsMonitoringAwsSqsTests)}.{nameof(SubmitsDsmMetrics)}")
+                          .UseFileName($"{nameof(DataStreamsMonitoringAwsSqsTests)}.{nameof(SubmitsDsmMetrics)}.{frameworkName}")
                           .DisableRequireUniquePrefix();
 
             telemetry.AssertIntegrationEnabled(IntegrationId.AwsSqs);
