@@ -13,6 +13,7 @@ using System.IO.Compression;
 using System.IO.Pipes;
 using System.Linq;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -788,13 +789,31 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
-                    var formData = MultipartFormDataParser.Parse(request.Body.Stream);
-                    var headerCollection = new Dictionary<string, string>();
+                    var headerCollection = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                     foreach (var header in request.Headers)
                     {
                         headerCollection.Add(header.Name, header.Value);
                     }
 
+                    var contentTypeHeader = headerCollection["Content-Type"];
+                    var contentType = MediaTypeHeaderValue.Parse(contentTypeHeader);
+                    if (contentType.MediaType != "multipart/form-data")
+                    {
+                        throw new Exception($"Unexpected media type: {contentType.MediaType} in header {contentTypeHeader}");
+                    }
+
+                    var boundary = contentType
+                                  .Parameters
+                                  .FirstOrDefault(x => string.Equals(x.Name, "boundary", StringComparison.Ordinal));
+
+                    if (boundary is null)
+                    {
+                        throw new Exception("Content-Type is missing boundary in header " + contentTypeHeader);
+                    }
+
+                    var encoding = contentType.CharSet ?? "utf-8";
+
+                    var formData = MultipartFormDataParser.Parse(request.Body.Stream, boundary.Value, Encoding.GetEncoding(encoding));
                     TracerFlareRequests = TracerFlareRequests.Add((headerCollection, formData));
                 }
                 catch (Exception ex)
