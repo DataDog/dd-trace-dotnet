@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
+    [Collection(nameof(AwsSqsTestsCollection))]
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
     public class AwsSqsTests : TracingIntegrationTest
@@ -104,6 +105,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                         _ => string.Empty
                     };
             }
+        }
+
+        [CollectionDefinition(nameof(AwsSqsTestsCollection), DisableParallelization = true)]
+        public class AwsSqsTestsCollection
+        {
         }
     }
 }
