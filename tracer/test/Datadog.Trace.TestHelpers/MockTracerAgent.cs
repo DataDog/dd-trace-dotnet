@@ -36,8 +36,6 @@ namespace Datadog.Trace.TestHelpers
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-        private AgentBehaviour behaviour = AgentBehaviour.Normal;
-
         protected MockTracerAgent(bool telemetryEnabled, TestTransports transport)
         {
             TelemetryEnabled = telemetryEnabled;
@@ -62,7 +60,7 @@ namespace Datadog.Trace.TestHelpers
 
         public bool TelemetryEnabled { get; }
 
-        public string RcmResponse { get; set; }
+        public Dictionary<MockTracerResponseType, MockTracerResponse> CustomResponses { get; } = new();
 
         /// <summary>
         /// Gets the filters used to filter out spans we don't want to look at for a test.
@@ -438,8 +436,6 @@ namespace Datadog.Trace.TestHelpers
             _cancellationTokenSource.Cancel();
         }
 
-        public void SetBehaviour(AgentBehaviour behaviour) => this.behaviour = behaviour;
-
         protected void IgnoreException(Action action)
         {
             try
@@ -474,74 +470,53 @@ namespace Datadog.Trace.TestHelpers
 
         private protected MockTracerResponse HandleHttpRequest(MockHttpParser.MockHttpRequest request)
         {
-            string response;
-            int statusCode;
-            bool sendResponse;
-            var isTraceCommand = false;
+            string response = null;
+            var responseType = MockTracerResponseType.Unknown;
 
             if (TelemetryEnabled && request.PathAndQuery.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint))
             {
                 HandlePotentialTelemetryData(request);
-                response = "{}";
+                responseType = MockTracerResponseType.Telemetry;
             }
             else if (request.PathAndQuery.EndsWith("/info"))
             {
                 response = JsonConvert.SerializeObject(Configuration);
+                responseType = MockTracerResponseType.Info;
             }
             else if (request.PathAndQuery.StartsWith("/debugger/v1/input"))
             {
                 HandlePotentialDebuggerData(request);
-                response = "{}";
+                responseType = MockTracerResponseType.Debugger;
             }
             else if (request.PathAndQuery.StartsWith("/v0.6/stats"))
             {
                 HandlePotentialStatsData(request);
-                response = "{}";
+                responseType = MockTracerResponseType.Stats;
             }
             else if (request.PathAndQuery.StartsWith("/v0.7/config"))
             {
                 HandlePotentialRemoteConfig(request);
-                response = RcmResponse ?? "{}";
+                responseType = MockTracerResponseType.RemoteConfig;
             }
             else if (request.PathAndQuery.StartsWith("/v0.1/pipeline_stats"))
             {
                 HandlePotentialDataStreams(request);
-                response = "{}";
+                responseType = MockTracerResponseType.DataStreams;
             }
             else if (request.PathAndQuery.StartsWith("/evp_proxy/v2/"))
             {
                 HandleEvpProxyPayload(request);
-                response = "{}";
+                responseType = MockTracerResponseType.EvpProxy;
             }
             else
             {
                 HandlePotentialTraces(request);
-                response = "{}";
-                isTraceCommand = true;
+                responseType = MockTracerResponseType.Traces;
             }
 
-            if (isTraceCommand)
-            {
-                statusCode = 200;
-                sendResponse = true;
-            }
-            else
-            {
-                if (behaviour == AgentBehaviour.WrongAnswer)
-                {
-                    response = "WRONG_ANSWER";
-                }
-
-                sendResponse = behaviour != AgentBehaviour.NoAnswer;
-                statusCode = behaviour == AgentBehaviour.Return500 ? 500 : (behaviour == AgentBehaviour.Return404 ? 404 : 200);
-            }
-
-            return new MockTracerResponse()
-            {
-                Response = response,
-                SendResponse = sendResponse,
-                StatusCode = statusCode
-            };
+            return CustomResponses.TryGetValue(responseType, out var custom)
+                       ? custom // custom response, use that
+                       : new MockTracerResponse(response ?? "{}");
         }
 
         private void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
