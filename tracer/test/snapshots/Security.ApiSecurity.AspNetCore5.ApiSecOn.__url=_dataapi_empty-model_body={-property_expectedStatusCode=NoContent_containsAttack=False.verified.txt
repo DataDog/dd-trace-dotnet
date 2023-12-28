@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -43,7 +43,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.s.req.body: [{"Property":[8],"Property2":[8],"Property3":[4],"Property4":[4]}],
-      _dd.appsec.s.req.headers: [{"content-length":[[[8]],{"len":1}],"content-type":[[[8]],{"len":1}],"host":[[[8,{"category":"pii","type":"passport_number"}]],{"len":1}],"user-agent":[[[8]],{"len":1}],"x-forwarded-for":[[[8]],{"len":1}]}],
+      _dd.appsec.s.req.headers: [{"content-length":[[[8]],{"len":1}],"content-type":[[[8]],{"len":1}],"host":[[[8]],{"len":1}],"user-agent":[[[8]],{"len":1}],"x-forwarded-for":[[[8]],{"len":1}]}],
       _dd.appsec.s.req.params: [{"action":[8],"controller":[8]}],
       _dd.appsec.s.res.headers: [{}],
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,

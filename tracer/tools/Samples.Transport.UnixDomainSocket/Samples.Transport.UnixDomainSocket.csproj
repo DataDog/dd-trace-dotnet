@@ -14,7 +14,7 @@
     <!-- Pass any sensitive information as arguments -->
     <DockerfileBuildArguments>--build-arg DD_API_KEY=$(DD_API_KEY)</DockerfileBuildArguments>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj">
       <CopyLocal>True</CopyLocal>

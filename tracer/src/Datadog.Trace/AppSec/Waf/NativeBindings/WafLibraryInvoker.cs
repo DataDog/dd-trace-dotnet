@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Configuration;
@@ -90,7 +91,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate IntPtr InitContextDelegate(IntPtr wafHandle);
 
-        private delegate WafReturnCode RunDelegate(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs);
+        private delegate WafReturnCode RunDelegate(IntPtr context, IntPtr rawPersistentData, IntPtr rawEphemeralData, ref DdwafResultStruct result, ulong timeLeftInUs);
 
         private delegate void DestroyDelegate(IntPtr handle);
 
@@ -181,10 +182,50 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             if (wafLibraryInvoker.ExportErrorHappened)
             {
                 Log.Error("Waf library couldn't initialize properly because of missing methods in native library, please make sure the tracer has been correctly installed and that previous versions are correctly uninstalled.");
+                NativeLibrary.CloseLibrary(libraryHandle);
                 return LibraryInitializationResult.FromExportErrorHappened();
             }
 
+            var isCompatible = CheckVersionCompatibility(wafLibraryInvoker);
+            if (!isCompatible)
+            {
+                // no log because CheckVersionCompatibility writes logs in error cases
+                NativeLibrary.CloseLibrary(libraryHandle);
+                return LibraryInitializationResult.FromVersionNotCompatible();
+            }
+
             return LibraryInitializationResult.FromSuccess(wafLibraryInvoker);
+        }
+
+        private static bool CheckVersionCompatibility(WafLibraryInvoker wafLibraryInvoker)
+        {
+            var versionWaf = wafLibraryInvoker.GetVersion();
+            var versionWafSplit = versionWaf.Split('.');
+            if (versionWafSplit.Length != 3)
+            {
+                Log.Warning("Waf version {WafVersion} has a non expected format", versionWaf);
+                return false;
+            }
+
+            var canParse = int.TryParse(versionWafSplit[1], out var wafMinor);
+            canParse &= int.TryParse(versionWafSplit[0], out var wafMajor);
+            var tracerVersion = Assembly.GetExecutingAssembly().GetName().Version;
+            if (tracerVersion is null || !canParse)
+            {
+                Log.Warning("Waf version {WafVersion} or tracer version {TracerVersion} have a non expected format", versionWaf, tracerVersion);
+                return false;
+            }
+
+            // tracer >= 2.34.0 needs waf >= 1.11 cause it passes a ddwafobject for diagnostics instead of a ruleset info struct which causes unpredictable unmanaged crashes
+            if ((tracerVersion is { Minor: >= 34, Major: >= 2 } && wafMajor == 1 && wafMinor <= 10) ||
+                (tracerVersion is { Minor: >= 38, Major: >= 2 } && wafMajor == 1 && wafMinor < 13) ||
+                (tracerVersion is { Minor: >= 44, Major: >= 2 } && wafMajor == 1 && wafMinor < 15))
+            {
+                Log.Warning("Waf version {WafVersion} is not compatible with tracer version {TracerVersion}", versionWaf, tracerVersion);
+                return false;
+            }
+
+            return true;
         }
 
         internal void SetupLogging(bool instanceDebugEnabled)
@@ -217,7 +258,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
 
-        internal WafReturnCode Run(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs) => _runField(context, newArgs, ref result, timeLeftInUs);
+        internal WafReturnCode Run(IntPtr context, IntPtr rawPersistentData, IntPtr rawEphemeralData, ref DdwafResultStruct result, ulong timeLeftInUs)
+            => _runField(context, rawPersistentData, rawEphemeralData, ref result, timeLeftInUs);
 
         internal void Destroy(IntPtr wafHandle) => _destroyField(wafHandle);
 

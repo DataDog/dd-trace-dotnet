@@ -23,6 +23,8 @@ public class AppSecWafBenchmark
 
     private static readonly Waf Waf;
 
+    private static readonly Dictionary<string, object> SecondRunArg = new Dictionary<string, object>() { { "address", new Dictionary<string, object>() { {"route", "path"} } } };
+
     static AppSecWafBenchmark()
     {
         var fDesc = FrameworkDescription.Instance;
@@ -137,7 +139,7 @@ public class AppSecWafBenchmark
                 };
                 map.Add("list", nextList);
             }
-        
+
             var nextMap = new Dictionary<string, object>
             {
                 { "lorem", "ipsum" },
@@ -156,16 +158,25 @@ public class AppSecWafBenchmark
 
     [Benchmark]
     [ArgumentsSource(nameof(Source))]
-    public void RunWaf(NestedMap args) => RunWafBenchmark(args);
+    public void RunWaf(NestedMap args) => RunWafBenchmark(args, false);
+
+    [Benchmark]
+    [ArgumentsSource(nameof(Source))]
+    public void RunWafTwice(NestedMap args) => RunWafBenchmark(args, true);
 
     [Benchmark]
     [ArgumentsSource(nameof(SourceWithAttack))]
-    public void RunWafWithAttack(NestedMap args) => RunWafBenchmark(args);
+    public void RunWafWithAttack(NestedMap args) => RunWafBenchmark(args, false);
 
-    private void RunWafBenchmark(NestedMap args)
+    private void RunWafBenchmark(NestedMap args, bool secondRun)
     {
         var context = Waf.CreateContext();
         context!.Run(args.Map, TimeoutMicroSeconds);
+        if (secondRun)
+        {
+            context!.Run(SecondRunArg, TimeoutMicroSeconds);
+        }
+
         context.Dispose();
     }
 

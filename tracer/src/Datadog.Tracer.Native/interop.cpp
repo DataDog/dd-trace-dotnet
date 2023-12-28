@@ -126,9 +126,9 @@ EXTERN_C VOID STDAPICALLTYPE InitializeTraceMethods(WCHAR* id, WCHAR* integratio
 }
 
 EXTERN_C VOID STDAPICALLTYPE InstrumentProbes(
-    debugger::DebuggerMethodProbeDefinition* methodProbes, 
-    int methodProbesLength, 
-    debugger::DebuggerLineProbeDefinition* lineProbes, 
+    debugger::DebuggerMethodProbeDefinition* methodProbes,
+    int methodProbesLength,
+    debugger::DebuggerLineProbeDefinition* lineProbes,
     int lineProbesLength,
     debugger::DebuggerMethodSpanProbeDefinition* spanProbes,
     int spanProbesLength,
@@ -261,5 +261,10 @@ EXTERN_C char *dddlerror (void)
 EXTERN_C void *dddlsym (void *__restrict __handle, const char *__restrict __name)
 {
     return dlsym(__handle, __name);
+}
+
+EXTERN_C int dddlclose (void *handle)
+{
+    return dlclose(handle);
 }
 #endif

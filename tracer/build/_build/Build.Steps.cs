@@ -61,9 +61,9 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.14.0";
+    const string LibDdwafVersion = "1.15.1";
 
-    string[] OlderLibDdwafVersions = new[] { "1.3.0", "1.10.0" };
+    string[] OlderLibDdwafVersions = new[] { "1.3.0", "1.10.0", "1.14.0" };
 
     AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
@@ -563,7 +563,7 @@ partial class Build
 
                         foreach (var olderLibDdwafVersion in OlderLibDdwafVersions)
                         {
-                            var patchedArchWaf = (IsOsx && olderLibDdwafVersion != "1.10.0") ? archWaf + "-x64" : archWaf;
+                            var patchedArchWaf = (IsOsx && olderLibDdwafVersion == "1.3.0") ? archWaf + "-x64" : archWaf;
                             var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
                             var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
                             await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);

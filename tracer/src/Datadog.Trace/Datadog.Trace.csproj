@@ -64,7 +64,6 @@
     <None Remove="AppSec\Waf\ConfigFiles\rule-set.json" />
     <EmbeddedResource Include="AppSec\Waf\ConfigFiles\rule-set.json" />
     <None Remove="AppSec\Waf\ConfigFiles\apisecurity-config.json" />
-    <EmbeddedResource Include="AppSec\Waf\ConfigFiles\apisecurity-config.json" />
   </ItemGroup>
 
   <!-- Below this point is reserved for vendor items -->
