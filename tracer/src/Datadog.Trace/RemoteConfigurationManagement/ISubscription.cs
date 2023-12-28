@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
@@ -14,6 +15,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
     {
         public IReadOnlyCollection<string> ProductKeys { get; }
 
-        Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, IEnumerable<ApplyDetails>> Invoke { get; }
+        Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, Task<ApplyDetails[]>> Invoke { get; }
     }
 }
