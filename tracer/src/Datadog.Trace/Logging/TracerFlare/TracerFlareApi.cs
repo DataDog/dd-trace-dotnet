@@ -45,7 +45,7 @@ internal class TracerFlareApi
         return new TracerFlareApi(requestFactory);
     }
 
-    public async Task<KeyValuePair<bool, string?>> SendTracerFlare(Func<Stream, Task> writeFlareToStreamFunc, string caseId)
+    public async Task<KeyValuePair<bool, string?>> SendTracerFlare(Func<Stream, Task> writeFlareToStreamFunc, string caseId, string hostname, string email)
     {
         try
         {
@@ -53,7 +53,7 @@ internal class TracerFlareApi
 
             var request = _requestFactory.Create(_endpoint);
             using var response = await request.PostAsync(
-                                                   stream => TracerFlareRequestFactory.WriteRequestBody(stream, writeFlareToStreamFunc, caseId),
+                                                   stream => TracerFlareRequestFactory.WriteRequestBody(stream, writeFlareToStreamFunc, caseId, hostname: hostname, email: email),
                                                    MimeTypes.MultipartFormData,
                                                    contentEncoding: null,
                                                    multipartBoundary: TracerFlareRequestFactory.Boundary)

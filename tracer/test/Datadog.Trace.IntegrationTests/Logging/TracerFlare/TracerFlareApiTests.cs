@@ -19,6 +19,10 @@ namespace Datadog.Trace.IntegrationTests.Logging.TracerFlare;
 
 public class TracerFlareApiTests(ITestOutputHelper output)
 {
+    private const string CaseId = "abc123";
+    private const string Hostname = "some.host";
+    private const string Email = "my.email@datadoghq.com";
+
     private readonly byte[] _flareFile = Enumerable.Repeat<byte>(43, 50).ToArray(); // repeat '+' 50 times
 
     [SkippableFact]
@@ -26,12 +30,11 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     [Trait("RunOnWindows", "True")]
     public async Task CanSendToAgent_Tcp()
     {
-        const string caseId = "abc123";
         using var agent = MockTracerAgent.Create(output);
         var agentPath = new Uri($"http://localhost:{agent.Port}");
         var settings = new ImmutableExporterSettings(new ExporterSettings { AgentUri = agentPath });
 
-        await RunTest(settings, caseId, agent);
+        await RunTest(settings, agent);
     }
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -40,14 +43,13 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     [Trait("RunOnWindows", "True")]
     public async Task CanSendToAgent_UDS()
     {
-        const string caseId = "abc123";
         using var agent = MockTracerAgent.Create(output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null));
         var agentPath = agent.TracesUdsPath;
         var settings = new ImmutableExporterSettings(
             new ExporterSettings(
                 new NameValueConfigurationSource(new() { { "DD_APM_RECEIVER_SOCKET", agentPath } })));
 
-        await RunTest(settings, caseId, agent);
+        await RunTest(settings, agent);
     }
 #endif
 
@@ -78,14 +80,13 @@ public class TracerFlareApiTests(ITestOutputHelper output)
 
         async Task RunNamedPipesTest()
         {
-            const string caseId = "abc123";
             using var agent = MockTracerAgent.Create(output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", null));
             var pipeName = agent.TracesWindowsPipeName;
             var settings = new ImmutableExporterSettings(
                 new ExporterSettings(
                     new NameValueConfigurationSource(new() { { "DD_TRACE_PIPE_NAME", pipeName } })));
 
-            await RunTest(settings, caseId, agent);
+            await RunTest(settings, agent);
         }
     }
 
@@ -94,7 +95,6 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     [Trait("RunOnWindows", "True")]
     public async Task ReturnsFalseWhenSendFails()
     {
-        const string caseId = "abc123";
         using var agent = MockTracerAgent.Create(output);
         var agentPath = new Uri($"http://localhost:{agent.Port}");
         var settings = new ImmutableExporterSettings(new ExporterSettings { AgentUri = agentPath });
@@ -104,7 +104,7 @@ public class TracerFlareApiTests(ITestOutputHelper output)
 
         var api = TracerFlareApi.Create(settings);
 
-        var result = await api.SendTracerFlare(WriteFlareToStreamFunc, caseId);
+        var result = await api.SendTracerFlare(WriteFlareToStreamFunc, CaseId, Hostname, Email);
 
         // It was sent, but we returned an error
         agent.TracerFlareRequests.Should().ContainSingle();
@@ -117,7 +117,6 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     [Trait("RunOnWindows", "True")]
     public async Task ReturnsErrorMessageWhenSendFails()
     {
-        const string caseId = "abc123";
         using var agent = MockTracerAgent.Create(output);
         var agentPath = new Uri($"http://localhost:{agent.Port}");
         var settings = new ImmutableExporterSettings(new ExporterSettings { AgentUri = agentPath });
@@ -127,7 +126,7 @@ public class TracerFlareApiTests(ITestOutputHelper output)
 
         var api = TracerFlareApi.Create(settings);
 
-        var result = await api.SendTracerFlare(WriteFlareToStreamFunc, caseId);
+        var result = await api.SendTracerFlare(WriteFlareToStreamFunc, CaseId, Hostname, Email);
 
         // It was sent, but we returned an error
         agent.TracerFlareRequests.Should().ContainSingle();
@@ -135,11 +134,11 @@ public class TracerFlareApiTests(ITestOutputHelper output)
         result.Value.Should().Be(somethingWentWrong);
     }
 
-    private async Task RunTest(ImmutableExporterSettings settings, string caseId, MockTracerAgent agent)
+    private async Task RunTest(ImmutableExporterSettings settings, MockTracerAgent agent)
     {
         var api = TracerFlareApi.Create(settings);
 
-        var result = await api.SendTracerFlare(WriteFlareToStreamFunc, caseId);
+        var result = await api.SendTracerFlare(WriteFlareToStreamFunc, CaseId, Hostname, Email);
 
         var tracerFlares = agent.TracerFlareRequests;
         var (headers, form) = tracerFlares.Should().ContainSingle().Subject;
@@ -154,9 +153,11 @@ public class TracerFlareApiTests(ITestOutputHelper output)
                .Contain("multipart/form-data")
                .And.ContainSingle(x => x.Trim().StartsWith("boundary="));
         form.GetParameterValue("source").Should().Be("tracer_dotnet");
-        form.GetParameterValue("case_id").Should().Be(caseId);
+        form.GetParameterValue("case_id").Should().Be(CaseId);
+        form.GetParameterValue("hostname").Should().Be(Hostname);
+        form.GetParameterValue("email").Should().Be(Email);
         var file = form.Files.Should().ContainSingle().Subject;
-        file.FileName.Should().StartWith($"tracer-dotnet-{caseId}-").And.EndWith("-debug.zip");
+        file.FileName.Should().StartWith($"tracer-dotnet-{CaseId}-").And.EndWith("-debug.zip");
         file.Name.Should().Be("flare_file");
         file.ContentType.Should().Be("application/octet-stream");
         file.Data.Length.Should().Be(_flareFile.Length);

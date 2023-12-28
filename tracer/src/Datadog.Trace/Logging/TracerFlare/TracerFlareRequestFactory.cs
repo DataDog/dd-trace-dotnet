@@ -14,28 +14,47 @@ namespace Datadog.Trace.Logging.TracerFlare;
 
 internal class TracerFlareRequestFactory
 {
-    internal const string Boundary = "--83CAD6AA-8A24-462C-8B3D-FF9CC683B51B";
+    internal const string Boundary = "83CAD6AA-8A24-462C-8B3D-FF9CC683B51B";
+    private const string Separator = "--" + Boundary;
 
-    private const string RequestBodyPrefix =
+    private const string RequestBodyCaseId =
         $$"""
-          {{Boundary}}
+          {{Separator}}
           Content-Disposition: form-data; name="source"
 
           tracer_dotnet
-          {{Boundary}}
+          {{Separator}}
           Content-Disposition: form-data; name="case_id"
 
 
           """;
 
-    private const string RequestBodyMiddle1 =
+    private const string RequestBodyHostname =
         $$"""
 
-          {{Boundary}}
+          {{Separator}}
+          Content-Disposition: form-data; name="hostname"
+
+
+          """;
+
+    private const string RequestBodyEmail =
+        $$"""
+
+          {{Separator}}
+          Content-Disposition: form-data; name="email"
+
+
+          """;
+
+    private const string RequestBodyFlareFile1 =
+        $$"""
+
+          {{Separator}}
           Content-Disposition: form-data; name="flare_file"; filename="tracer-dotnet-
           """;
 
-    private const string RequestBodyMiddle2 =
+    private const string RequestBodyFlareFile2 =
         """
           -debug.zip"
           Content-Type: application/octet-stream
@@ -46,13 +65,30 @@ internal class TracerFlareRequestFactory
     private const string RequestBodySuffix =
         $$"""
 
-          {{Boundary}}--
+          {{Separator}}--
           """;
 
-    public static Task WriteRequestBody(Stream destination, Func<Stream, Task> writeFlareBytes, string caseId)
-        => WriteRequestBody(destination, writeFlareBytes, caseId, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+    public static Task WriteRequestBody(
+        Stream destination,
+        Func<Stream, Task> writeFlareBytes,
+        string caseId,
+        string hostname,
+        string email)
+        => WriteRequestBody(
+            destination,
+            writeFlareBytes,
+            caseId: caseId,
+            hostname: hostname,
+            email: email,
+            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
 
-    public static async Task WriteRequestBody(Stream destination, Func<Stream, Task> writeFlareBytes, string caseId, long timestamp)
+    public static async Task WriteRequestBody(
+        Stream destination,
+        Func<Stream, Task> writeFlareBytes,
+        string caseId,
+        string hostname,
+        string email,
+        long timestamp)
     {
         // Need to create a body that looks something like this:
 
@@ -76,9 +112,16 @@ internal class TracerFlareRequestFactory
         // In .NET Core 3+, if you pass null for the encoding you get UTF8NoBOM, but
         // using it everywhere here for consistency
         using var sw = new StreamWriter(destination, encoding: EncodingHelpers.Utf8NoBom, bufferSize: 1024, leaveOpen: true);
-        await sw.WriteAsync(RequestBodyPrefix).ConfigureAwait(false);
+        await sw.WriteAsync(RequestBodyCaseId).ConfigureAwait(false);
         await sw.WriteAsync(caseId).ConfigureAwait(false);
-        await sw.WriteAsync(RequestBodyMiddle1).ConfigureAwait(false);
+
+        await sw.WriteAsync(RequestBodyHostname).ConfigureAwait(false);
+        await sw.WriteAsync(hostname).ConfigureAwait(false);
+
+        await sw.WriteAsync(RequestBodyEmail).ConfigureAwait(false);
+        await sw.WriteAsync(email).ConfigureAwait(false);
+
+        await sw.WriteAsync(RequestBodyFlareFile1).ConfigureAwait(false);
 
         // write the filename as tracer-dotnet-caseid-timestamp-debug.zip
         // - tracer-dotnet to distinguish between different languages
@@ -88,7 +131,7 @@ internal class TracerFlareRequestFactory
         await sw.WriteAsync('-').ConfigureAwait(false);
         await sw.WriteAsync(timestamp.ToString()).ConfigureAwait(false);
 
-        await sw.WriteAsync(RequestBodyMiddle2).ConfigureAwait(false);
+        await sw.WriteAsync(RequestBodyFlareFile2).ConfigureAwait(false);
 
         await sw.FlushAsync().ConfigureAwait(false);
 
