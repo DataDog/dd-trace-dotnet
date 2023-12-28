@@ -168,13 +168,10 @@ partial class Build
         Solution.GetProject(Projects.OpenTracingIntegrationTests),
     };
 
-    Project[] ClrProfilerIntegrationTests => new[]
-    {
-        Solution.GetProject(Projects.ClrProfilerIntegrationTests),
-        Solution.GetProject(Projects.AppSecIntegrationTests),
-        Solution.GetProject(Projects.DdTraceIntegrationTests),
-        Solution.GetProject(Projects.DdDotnetIntegrationTests)
-    };
+    Project[] ClrProfilerIntegrationTests
+        => IsOsx
+               ? new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests) }
+               : new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests), Solution.GetProject(Projects.DdDotnetIntegrationTests) };
 
     TargetFramework[] TestingFrameworks =>
     IncludeAllTestFrameworks || HaveIntegrationsChanged
