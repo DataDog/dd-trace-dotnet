@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -81,7 +82,7 @@ public class TracerFlareManagerTests
     [InlineData("""{ "task_type": "tracer_flare", "args": { "case_id": "abc123", "hostname": "my.host", "user_handle": 123 } }""")]
     [InlineData("""{ "task_type": "tracer_flare", "args": { "case_id": "abc123", "hostname": null, "user_handle": "test@datadog.com" } }""")]
     [InlineData("""{ "task_type": "tracer_flare", "args": { "case_id": null, "hostname": "my.host", "user_handle": "test@datadog.com" } }""")]
-    public void InvalidConfig_DoesNotSend_ReturnsError(string config)
+    public async Task InvalidConfig_DoesNotSend_ReturnsError(string config)
     {
         var requestMock = new Mock<IApiRequestFactory>();
         var manager = new TracerFlareManager(
@@ -89,7 +90,7 @@ public class TracerFlareManagerTests
             Mock.Of<IRcmSubscriptionManager>(),
             new TracerFlareApi(requestMock.Object));
 
-        var result = manager.TrySendDebugLogs(ConfigPath, Encoding.UTF8.GetBytes(config), _requestId, _logsDir);
+        var result = await manager.TrySendDebugLogs(ConfigPath, Encoding.UTF8.GetBytes(config), _requestId, _logsDir);
 
         result.Filename.Should().Be(ConfigPath);
         result.ApplyState.Should().Be(ApplyStates.ERROR);
@@ -101,7 +102,7 @@ public class TracerFlareManagerTests
     [InlineData("{}")]
     [InlineData("""{ "task_type": "agent_flare"}""")]
     [InlineData("""{ "something": "else"}""")]
-    public void ValidNonApplicableConfig_DoesNotSend_ReturnsSuccess(string config)
+    public async Task ValidNonApplicableConfig_DoesNotSend_ReturnsSuccess(string config)
     {
         var requestMock = new Mock<IApiRequestFactory>();
         var manager = new TracerFlareManager(
@@ -109,7 +110,7 @@ public class TracerFlareManagerTests
             Mock.Of<IRcmSubscriptionManager>(),
             new TracerFlareApi(requestMock.Object));
 
-        var result = manager.TrySendDebugLogs(ConfigPath, Encoding.UTF8.GetBytes(config), _requestId, _logsDir);
+        var result = await manager.TrySendDebugLogs(ConfigPath, Encoding.UTF8.GetBytes(config), _requestId, _logsDir);
 
         result.Filename.Should().Be(ConfigPath);
         result.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
@@ -118,7 +119,7 @@ public class TracerFlareManagerTests
     }
 
     [Fact]
-    public void WhenSentinelIsAlreadySet_DoesNotSend_ReturnsSuccess()
+    public async Task WhenSentinelIsAlreadySet_DoesNotSend_ReturnsSuccess()
     {
         var requestMock = new Mock<IApiRequestFactory>();
         var manager = new TracerFlareManager(
@@ -130,7 +131,7 @@ public class TracerFlareManagerTests
         var configId = Guid.NewGuid().ToString();
         DebugLogReader.TryToCreateSentinelFile(_logsDir, configId);
 
-        var result = manager.TrySendDebugLogs(ConfigPath, _validConfigBytes, configId, _logsDir);
+        var result = await manager.TrySendDebugLogs(ConfigPath, _validConfigBytes, configId, _logsDir);
 
         result.Filename.Should().Be(ConfigPath);
         result.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
@@ -139,7 +140,7 @@ public class TracerFlareManagerTests
     }
 
     [Fact]
-    public void WhenShouldShip_SendsRequest_ReturnsSuccess()
+    public async Task WhenShouldShip_SendsRequest_ReturnsSuccess()
     {
         var requestFactory = new TestRequestFactory();
         var manager = new TracerFlareManager(
@@ -150,7 +151,7 @@ public class TracerFlareManagerTests
         // Create a new sentinel to make sure there's no flake
         var configId = Guid.NewGuid().ToString();
 
-        var result = manager.TrySendDebugLogs(ConfigPath, _validConfigBytes, configId, _logsDir);
+        var result = await manager.TrySendDebugLogs(ConfigPath, _validConfigBytes, configId, _logsDir);
 
         result.Filename.Should().Be(ConfigPath);
         result.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);

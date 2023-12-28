@@ -76,12 +76,12 @@ internal class TracerFlareManager : ITracerFlareManager
 
     private static void ResetDebugging() => GlobalSettings.SetDebugEnabledInternal(false);
 
-    private IEnumerable<ApplyDetails> RcmProductReceived(
+    private async Task<ApplyDetails[]> RcmProductReceived(
         Dictionary<string, List<RemoteConfiguration>> configByProduct,
         Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
     {
         // We only expect _one_ of these to happen at a time, but handle the case where they all come together
-        IEnumerable<ApplyDetails>? results = null;
+        ApplyDetails[]? results = null;
         if (configByProduct.TryGetValue(RcmProducts.TracerFlareInitiated, out var initiatedConfig)
          && initiatedConfig.Count > 0)
         {
@@ -91,18 +91,18 @@ internal class TracerFlareManager : ITracerFlareManager
         if (configByProduct.TryGetValue(RcmProducts.TracerFlareRequested, out var requestedConfig)
          && requestedConfig.Count > 0)
         {
-            var handled = HandleTracerFlareRequested(requestedConfig);
-            results = results is null ? handled : results.Concat(handled);
+            var handled = await HandleTracerFlareRequested(requestedConfig).ConfigureAwait(false);
+            results = results is null ? handled : [..results, ..handled];
         }
 
         if (removedConfigByProduct?.TryGetValue(RcmProducts.TracerFlareInitiated, out var removedConfig) == true
          && removedConfig.Count > 0)
         {
             var handled = HandleTracerFlareResolved(removedConfig);
-            results = results is null ? handled : results.Concat(handled);
+            results = results is null ? handled : [..results, ..handled];
         }
 
-        return results ?? Enumerable.Empty<ApplyDetails>();
+        return results ?? [];
     }
 
     private ApplyDetails[] HandleTracerFlareInitiated(List<RemoteConfiguration> config)
@@ -170,7 +170,7 @@ internal class TracerFlareManager : ITracerFlareManager
         }
     }
 
-    private ApplyDetails[] HandleTracerFlareRequested(List<RemoteConfiguration> config)
+    private async Task<ApplyDetails[]> HandleTracerFlareRequested(List<RemoteConfiguration> config)
     {
         try
         {
@@ -196,7 +196,7 @@ internal class TracerFlareManager : ITracerFlareManager
             for (var i = 0; i < result.Length; i++)
             {
                 var remoteConfig = config[i];
-                result[i] = TrySendDebugLogs(remoteConfig.Path.Path, remoteConfig.Contents, remoteConfig.Path.Id, fileLogDirectory);
+                result[i] = await TrySendDebugLogs(remoteConfig.Path.Path, remoteConfig.Contents, remoteConfig.Path.Id, fileLogDirectory).ConfigureAwait(false);
             }
 
             return result;
@@ -210,7 +210,7 @@ internal class TracerFlareManager : ITracerFlareManager
     }
 
     // internal for testing
-    internal ApplyDetails TrySendDebugLogs(string configPath, byte[] configContents, string configId, string fileLogDirectory)
+    internal async Task<ApplyDetails> TrySendDebugLogs(string configPath, byte[] configContents, string configId, string fileLogDirectory)
     {
         try
         {
@@ -263,15 +263,13 @@ internal class TracerFlareManager : ITracerFlareManager
             }
 
             // ok, do the thing
-            var task = _flareApi.SendTracerFlare(
-                stream => DebugLogReader.WriteDebugLogArchiveToStream(stream, fileLogDirectory),
-                caseId: caseId,
-                email: email,
-                hostname: hostname);
+            var result = await _flareApi.SendTracerFlare(
+                                             stream => DebugLogReader.WriteDebugLogArchiveToStream(stream, fileLogDirectory),
+                                             caseId: caseId,
+                                             email: email,
+                                             hostname: hostname)
+                                        .ConfigureAwait(false);
 
-            // uh oh, sync over async :grimace:
-            // and this all happens inside a lock IIRC, so this could be problematic...
-            var result = task.GetAwaiter().GetResult();
             if (result.Key)
             {
                 return ApplyDetails.FromOk(configPath);
