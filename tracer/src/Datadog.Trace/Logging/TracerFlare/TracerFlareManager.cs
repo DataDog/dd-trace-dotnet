@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -232,14 +233,26 @@ internal class TracerFlareManager : ITracerFlareManager
             }
 
             if (!jObject.TryGetValue("args", StringComparison.Ordinal, out var args)
-             || args is not JObject argsObject
-             || !argsObject.TryGetValue("case_id", out var caseIdToken)
-             || caseIdToken.Type != JTokenType.String
-             || caseIdToken.Value<string>() is not { Length: > 0 } caseId)
+             || args is not JObject argsObject)
             {
-                // missing case_id - should we just accept it?
-                Log.Debug("Invalid configuration provided for tracer flare - missing case_id");
-                return ApplyDetails.FromError(configPath, "Missing case_id");
+                // missing args
+                Log.Debug("Invalid configuration provided for tracer flare - missing args");
+                return ApplyDetails.FromError(configPath, "Missing args");
+            }
+
+            if (!TryGetArg(argsObject, "case_id", configPath, out var caseId, out var caseError))
+            {
+                return caseError.Value;
+            }
+
+            if (!TryGetArg(argsObject, "hostname", configPath, out var hostname, out var hostError))
+            {
+                return hostError.Value;
+            }
+
+            if (!TryGetArg(argsObject, "user_handle", configPath, out var email, out var emailError))
+            {
+                return emailError.Value;
             }
 
             if (!DebugLogReader.TryToCreateSentinelFile(fileLogDirectory, configId))
@@ -250,7 +263,11 @@ internal class TracerFlareManager : ITracerFlareManager
             }
 
             // ok, do the thing
-            var task = _flareApi.SendTracerFlare(stream => DebugLogReader.WriteDebugLogArchiveToStream(stream, fileLogDirectory), caseId);
+            var task = _flareApi.SendTracerFlare(
+                stream => DebugLogReader.WriteDebugLogArchiveToStream(stream, fileLogDirectory),
+                caseId: caseId,
+                email: email,
+                hostname: hostname);
 
             // uh oh, sync over async :grimace:
             // and this all happens inside a lock IIRC, so this could be problematic...
@@ -270,6 +287,24 @@ internal class TracerFlareManager : ITracerFlareManager
         {
             Log.Error(ex, "Error handling tracer flare generation for config {ConfigPath}", configPath);
             return ApplyDetails.FromError(configPath, ex.ToString());
+        }
+
+        static bool TryGetArg(JObject argsObject, string name, string configPath, [NotNullWhen(true)] out string? value, [NotNullWhen(false)] out ApplyDetails? error)
+        {
+            if (argsObject.TryGetValue(name, out var token)
+             && token.Type == JTokenType.String
+             && token.Value<string>() is { Length: > 0 } parsedValue)
+            {
+                value = parsedValue;
+                error = null;
+                return true;
+            }
+
+            // missing required token
+            Log.Debug("Invalid configuration provided for tracer flare - missing {Token}", name);
+            error = ApplyDetails.FromError(configPath, "Missing " + name);
+            value = null;
+            return false;
         }
     }
 

@@ -22,7 +22,7 @@ public class TracerFlareManagerTests
     private const string ConfigPath = "/some/path";
     private readonly string _requestId = Guid.NewGuid().ToString();
     private readonly string _logsDir;
-    private readonly byte[] _validConfigBytes = """{ "task_type": "tracer_flare", "args": { "case_id": "abc123" } }"""u8.ToArray();
+    private readonly byte[] _validConfigBytes = """{ "task_type": "tracer_flare", "args": { "case_id": "abc123","hostname": "my.hostname", "user_handle": "its.me@datadoghq.com" } }"""u8.ToArray();
 
     public TracerFlareManagerTests()
     {
@@ -73,6 +73,14 @@ public class TracerFlareManagerTests
     [InlineData("""{ "task_type": "tracer_flare", "args": { "case_id": null} }""")]
     [InlineData("""{ "task_type": "tracer_flare", "args": { "case_id": 123} }""")]
     [InlineData("""{ "task_type": "tracer_flare", "args": { "case_id": "" } }""")]
+    [InlineData("""{ "task_type": "tracer_flare", "args": { "case_id": "abc123", "hostname": null } }""")]
+    [InlineData("""{ "task_type": "tracer_flare", "args": { "case_id": "abc123", "hostname": "" } }""")]
+    [InlineData("""{ "task_type": "tracer_flare", "args": { "case_id": "abc123", "hostname": 123 } }""")]
+    [InlineData("""{ "task_type": "tracer_flare", "args": { "case_id": "abc123", "hostname": "my.host", "user_handle": null } }""")]
+    [InlineData("""{ "task_type": "tracer_flare", "args": { "case_id": "abc123", "hostname": "my.host", "user_handle": "" } }""")]
+    [InlineData("""{ "task_type": "tracer_flare", "args": { "case_id": "abc123", "hostname": "my.host", "user_handle": 123 } }""")]
+    [InlineData("""{ "task_type": "tracer_flare", "args": { "case_id": "abc123", "hostname": null, "user_handle": "test@datadog.com" } }""")]
+    [InlineData("""{ "task_type": "tracer_flare", "args": { "case_id": null, "hostname": "my.host", "user_handle": "test@datadog.com" } }""")]
     public void InvalidConfig_DoesNotSend_ReturnsError(string config)
     {
         var requestMock = new Mock<IApiRequestFactory>();
