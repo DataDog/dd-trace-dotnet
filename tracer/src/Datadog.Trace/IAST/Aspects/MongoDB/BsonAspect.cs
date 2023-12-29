@@ -35,11 +35,11 @@ public class BsonAspect
     }
 
     /// <summary>
-    /// test
+    /// MongoDB Deserialize aspect
     /// </summary>
-    /// <param name="serializer"> sdf </param>
-    /// <param name="context"> sdedf </param>
-    /// <returns> oui </returns>
+    /// <param name="serializer"> the serializer </param>
+    /// <param name="context"> the context </param>
+    /// <returns> the original deserialized object </returns>
     [AspectMethodReplace("MongoDB.Bson.Serialization.IBsonSerializerExtensions::Deserialize(MongoDB.Bson.Serialization.IBsonSerializer`1<!!0>,MongoDB.Bson.Serialization.BsonDeserializationContext)")]
     public static object? DeserializeExtension(object serializer, object context)
     {
@@ -61,7 +61,7 @@ public class BsonAspect
                 var deserializeMethod = methodsPublicStatic.Where(m => m is { Name: "Deserialize", IsGenericMethod: true }).FirstOrDefault();
                 var genericMethod = deserializeMethod?.MakeGenericMethod(typeArgument);
 
-                return genericMethod?.Invoke(null, new object[] { serializer, context });
+                return genericMethod?.Invoke(null, new[] { serializer, context });
             }
             catch (Exception)
             {
@@ -71,11 +71,11 @@ public class BsonAspect
     }
 
     /// <summary>
-    /// test
+    /// MongoDB Deserialize aspect
     /// </summary>
-    /// <param name="bsonReader"> sdgsdg </param>
-    /// <param name="configurator"> ezgezggz </param>
-    /// <returns> oui </returns>
+    /// <param name="bsonReader"> the bson reader </param>
+    /// <param name="configurator"> the configurator </param>
+    /// <returns> the original deserialized object </returns>
     [AspectMethodReplace("MongoDB.Bson.Serialization.BsonSerializer::Deserialize(MongoDB.Bson.IO.IBsonReader,System.Action`1<Builder>)")]
     public static object? DeserializeBson(object bsonReader, object configurator)
     {
@@ -99,7 +99,7 @@ public class BsonAspect
 
                 var genericMethod = deserializeMethod?.MakeGenericMethod(typeof(object));
 
-                return genericMethod?.Invoke(null, new object[] { bsonReader, configurator });
+                return genericMethod?.Invoke(null, new[] { bsonReader, configurator });
             }
             catch (Exception)
             {
@@ -109,39 +109,47 @@ public class BsonAspect
     }
 
     /// <summary>
-    /// xxxx
+    /// MongoDB Bson Parse aspect
     /// </summary>
-    /// <param name="json"> json </param>
-    /// <returns> oui </returns>
+    /// <param name="json"> the json </param>
+    /// <returns> the original parsed object </returns>
     [AspectMethodReplace("MongoDB.Bson.BsonDocument::Parse(System.String)")]
     public static object? Parse(string json)
     {
-        var result = MongoDbHelper.InvokeMethod("MongoDB.Bson.BsonDocument, MongoDB.Bson", "Parse", new object[] { json }, new Type[] { typeof(string) });
+        var result = MongoDbHelper.InvokeMethod("MongoDB.Bson.BsonDocument, MongoDB.Bson", "Parse", new object[] { json }, new[] { typeof(string) });
 
         if (result != null && IastModule.GetIastContext()?.GetTaintedObjects().Get(json)?.PositiveHashCode is { } taintedStringReference)
         {
-            IastModule.GetIastContext()?.GetTaintedObjects().Taint(result, new Range[] { new Range(0, taintedStringReference) });
+            IastModule.GetIastContext()?.GetTaintedObjects().Taint(result, new[] { new Range(0, taintedStringReference) });
         }
 
         return result;
     }
 
     /// <summary>
-    /// xxxx
+    /// MongoDB JsonReader constructor aspect
     /// </summary>
-    /// <param name="json"> json </param>
-    /// <returns> oui </returns>
+    /// <param name="json"> the json </param>
+    /// <returns> the JsonReader object </returns>
     [AspectMethodReplace("MongoDB.Bson.IO.JsonReader::.ctor(System.String)")]
     public static object? Constructor(string json)
     {
-        // Invoke the constructor method of the JsonReader
-        var typeMethodClass = Type.GetType("MongoDB.Bson.IO.JsonReader, MongoDB.Bson")!;
-        var constructor = typeMethodClass.GetConstructor(new Type[] { typeof(string) });
-        var result = constructor?.Invoke(new object[] { json });
+        try
+        {
+            // Invoke the constructor method of the JsonReader
+            var typeMethodClass = Type.GetType("MongoDB.Bson.IO.JsonReader, MongoDB.Bson")!;
+            var constructor = typeMethodClass.GetConstructor(new[] { typeof(string) });
+            var result = constructor?.Invoke(new object[] { json });
 
-        MongoDbHelper.TaintObjectWithJson(result, json);
+            MongoDbHelper.TaintObjectWithJson(result, json);
 
-        return result;
+            return result;
+        }
+        catch (Exception)
+        {
+            // Failed to invoke the original method
+            return null;
+        }
     }
 }
 #endif

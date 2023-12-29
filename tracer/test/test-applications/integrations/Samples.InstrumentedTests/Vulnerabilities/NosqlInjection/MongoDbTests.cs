@@ -1,35 +1,30 @@
 using System;
-using System.Data;
-using System.Threading;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.NosqlInjection;
 
 [Trait("RequiresDockerDependency", "true")]
 [Trait("Category", "EndToEnd")]
-public class MongoDbTests : InstrumentationTestsBase, IDisposable
+public class MongoDbTests : InstrumentationTestsBase
 {
-    private readonly ITestOutputHelper _testOutputHelper;
     private MongoClient _client;
-    private IMongoDatabase _database;
+    private readonly IMongoDatabase _database;
 
-    readonly string taintedString12 = "12";
-    readonly string taintedStringCommand = "dbstats";
-    readonly string taintedStringAttack = "nnn\"}}, { \"Author.Name\" : { \"$ne\" : \"notTainted2";
+    private readonly string _taintedString12 = "12";
+    private readonly string _taintedStringCommand = "dbstats";
+    private readonly string _taintedStringAttack = "nnn\"}}, { \"Author.Name\" : { \"$ne\" : \"notTainted2";
 
     private static string Host()
     {
         return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
     }
 
-    public MongoDbTests(ITestOutputHelper testOutputHelper)
+    public MongoDbTests()
     {
-        _testOutputHelper = testOutputHelper;
         var connectionString = $"mongodb://{Host()}:27017";
         _client = new MongoClient(connectionString);
         _database = _client.GetDatabase("test-db");
@@ -37,9 +32,9 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
         InitializeDatabase();
         
         // Add all tainted values
-        AddTainted(taintedString12);
-        AddTainted(taintedStringCommand);
-        AddTainted(taintedStringAttack);
+        AddTainted(_taintedString12);
+        AddTainted(_taintedStringCommand);
+        AddTainted(_taintedStringAttack);
     }
     
     // Initialize the database with default values that will be used in the tests
@@ -80,7 +75,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAMongoDb_JSON_JsonCommand_WhenRunCommandWithTainted_VulnerabilityReported()
     {
-        var json = "{ \"" + taintedStringCommand + "\" : 1 }";
+        var json = "{ \"" + _taintedStringCommand + "\" : 1 }";
         var command = new JsonCommand<BsonDocument>(json);
         var result = _database.RunCommand(command);
         
@@ -102,7 +97,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAMongoDb_JSON_JsonCommand_WhenRunCommandAsyncWithTainted_VulnerabilityReported()
     {
-        var json = "{ \"" + taintedStringCommand + "\" : 1 }";
+        var json = "{ \"" + _taintedStringCommand + "\" : 1 }";
         var command = new JsonCommand<BsonDocument>(json);
         var result = _database.RunCommandAsync(command).Result;
         
@@ -113,7 +108,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAMongoDb_BsonDocumentCommand_BsonParse_WhenRunCommandWithTainted_VulnerabilityReported()
     {
-        var json = "{ \"" + taintedStringCommand + "\" : 1 }";
+        var json = "{ \"" + _taintedStringCommand + "\" : 1 }";
         var document = BsonDocument.Parse(json);
         var command = new BsonDocumentCommand<BsonDocument>(document);
         var result = _database.RunCommand(command);
@@ -137,7 +132,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAMongoDb_BsonDocumentCommand_BsonParse_WhenRunCommandAsyncWithTainted_VulnerabilityReported()
     {
-        var json = "{ \"" + taintedStringCommand + "\" : 1 }";
+        var json = "{ \"" + _taintedStringCommand + "\" : 1 }";
         var document = BsonDocument.Parse(json);
         var command = new BsonDocumentCommand<BsonDocument>(document);
         var result = _database.RunCommandAsync(command).Result;
@@ -149,7 +144,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAMongoDb_BsonDocument_BsonParse_WhenFindWithTainted_VulnerabilityReported()
     {
-        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
         var document = BsonDocument.Parse(json);
         var collection = _database.GetCollection<BsonDocument>("Books");
         var find = collection.Find(document).ToList();
@@ -161,7 +156,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAMongoDb_BsonDocument_BsonParse_WhenFindAsyncWithTainted_VulnerabilityReported()
     {
-        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
         var document = BsonDocument.Parse(json);
         var collection = _database.GetCollection<BsonDocument>("Books");
         var find = collection.FindAsync(document).Result.ToList();
@@ -173,7 +168,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAMongoDb_BsonDocument_JsonReaderWithContext_WhenFindWithTainted_VulnerabilityReported()
     {
-        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
         var reader = new JsonReader(json);
         var serializer = BsonSerializer.LookupSerializer<BsonDocument>();
         var context = BsonDeserializationContext.CreateRoot(reader);
@@ -188,7 +183,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAMongoDb_BsonDocument_JsonReaderWithContext_WhenFindAsyncWithTainted_VulnerabilityReported()
     {
-        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
         var reader = new JsonReader(json);
         var serializer = BsonSerializer.LookupSerializer<BsonDocument>();
         var context = BsonDeserializationContext.CreateRoot(reader);
@@ -203,7 +198,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAMongoDb_BsonDocument_JsonReader_WhenFindWithTainted_VulnerabilityReported()
     {
-        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
         var reader = new JsonReader(json);
         var doc = BsonSerializer.Deserialize<BsonDocument>(reader);
         var collection = _database.GetCollection<BsonDocument>("Books");
@@ -216,7 +211,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAMongoDb_BsonDocument_JsonReader_WhenFindAsyncWithTainted_VulnerabilityReported()
     {
-        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
         var reader = new JsonReader(json);
         var doc = BsonSerializer.Deserialize<BsonDocument>(reader);
         var collection = _database.GetCollection<BsonDocument>("Books");
@@ -229,7 +224,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAMongoDbString_WhenFindWithTainted_VulnerabilityReported()
     {
-        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
         var collection = _database.GetCollection<BsonDocument>("Books");
         var find = collection.Find(json).ToList();
 
@@ -240,7 +235,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAMongoDb_String_WhenFindAsyncWithTainted_VulnerabilityReported()
     {
-        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
         var collection = _database.GetCollection<BsonDocument>("Books");
         var find = collection.FindAsync(json).Result.ToList();
 
@@ -251,7 +246,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAMongoDb_String_WhenFindWithTainted_Attack_VulnerabilityReported()
     {
-        var json = "{ \"$or\" : [{ \"Author.LastName\" : { \"$eq\" : \"notTainted2\" } }, { \"Author.Name\" : { \"$eq\" : \""+ taintedStringAttack +"\" } }] }";
+        var json = "{ \"$or\" : [{ \"Author.LastName\" : { \"$eq\" : \"notTainted2\" } }, { \"Author.Name\" : { \"$eq\" : \""+ _taintedStringAttack +"\" } }] }";
         var collection = _database.GetCollection<BsonDocument>("Books");
         var find = collection.Find(json).ToList();
 
@@ -262,7 +257,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAMongoDb_String_WhenFindAsyncWithTainted_Attack_VulnerabilityReported()
     {
-        var json = "{ \"$or\" : [{ \"Author.LastName\" : { \"$eq\" : \"notTainted2\" } }, { \"Author.Name\" : { \"$eq\" : \""+ taintedStringAttack +"\" } }] }";
+        var json = "{ \"$or\" : [{ \"Author.LastName\" : { \"$eq\" : \"notTainted2\" } }, { \"Author.Name\" : { \"$eq\" : \""+ _taintedStringAttack +"\" } }] }";
         var collection = _database.GetCollection<BsonDocument>("Books");
         var find = collection.FindAsync(json).Result.ToList();
 

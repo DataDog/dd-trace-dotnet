@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Helpers;
 
@@ -11,24 +10,23 @@ using Datadog.Trace.Iast.Helpers;
 
 namespace Datadog.Trace.Iast.Aspects.MongoDB;
 
-/// <summary> BsonAspect class aspect </summary>
+/// <summary> MongoDB Driver class aspect </summary>
 [AspectClass("MongoDB.Driver", AspectType.Sink, VulnerabilityType.NoSqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class MongoDatabaseAspect
 {
     /// <summary>
-    /// xx
+    /// MongoDB Driver aspect
     /// </summary>
-    /// <param name="command"> command </param>
-    /// <returns> oui </returns>
+    /// <param name="command"> the mongodb command </param>
+    /// <returns> the original command </returns>
     [AspectMethodInsertBefore("MongoDB.Driver.IMongoDatabase::RunCommand(MongoDB.Driver.Command`1<!!0>,MongoDB.Driver.ReadPreference,System.Threading.CancellationToken)", 2)]
     [AspectMethodInsertBefore("MongoDB.Driver.IMongoDatabase::RunCommandAsync(MongoDB.Driver.Command`1<!!0>,MongoDB.Driver.ReadPreference,System.Threading.CancellationToken)", 2)]
     [AspectMethodInsertBefore("MongoDB.Driver.IMongoCollectionExtensions::Find(MongoDB.Driver.IMongoCollection`1<!!0>,MongoDB.Driver.FilterDefinition`1<!!0>,MongoDB.Driver.FindOptions)", 1)]
     [AspectMethodInsertBefore("MongoDB.Driver.IMongoCollectionExtensions::FindAsync(MongoDB.Driver.IMongoCollection`1<!!0>,MongoDB.Driver.FilterDefinition`1<!!0>,MongoDB.Driver.FindOptions`2<!!0,!!0>,System.Threading.CancellationToken)", 2)]
     public static object AnalyzeCommand(object command)
     {
-        // Check if the command is a BsonDocument
         var commandType = command.GetType().Name;
         switch (commandType)
         {

@@ -83,7 +83,7 @@ internal static class MongoDbHelper
             return;
         }
 
-        IastModule.GetIastContext()?.GetTaintedObjects().Taint(obj, new Range[] { new Range(0, taintedStringReference.Value) });
+        IastModule.GetIastContext()?.GetTaintedObjects().Taint(obj, new[] { new Range(0, taintedStringReference.Value) });
     }
 
     // Taint an object by linking it to a tainted string
