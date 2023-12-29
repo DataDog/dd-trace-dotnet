@@ -41,7 +41,7 @@ public class BsonAspect
     /// <param name="context"> sdedf </param>
     /// <returns> oui </returns>
     [AspectMethodReplace("MongoDB.Bson.Serialization.IBsonSerializerExtensions::Deserialize(MongoDB.Bson.Serialization.IBsonSerializer`1<!!0>,MongoDB.Bson.Serialization.BsonDeserializationContext)")]
-    public static object? Deserialize(object serializer, object context)
+    public static object? DeserializeExtension(object serializer, object context)
     {
         var result = CallOriginalMethod();
 
@@ -62,6 +62,44 @@ public class BsonAspect
                 var genericMethod = deserializeMethod?.MakeGenericMethod(typeArgument);
 
                 return genericMethod?.Invoke(null, new object[] { serializer, context });
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// test
+    /// </summary>
+    /// <param name="bsonReader"> sdgsdg </param>
+    /// <param name="configurator"> ezgezggz </param>
+    /// <returns> oui </returns>
+    [AspectMethodReplace("MongoDB.Bson.Serialization.BsonSerializer::Deserialize(MongoDB.Bson.IO.IBsonReader,System.Action`1<Builder>)")]
+    public static object? DeserializeBson(object bsonReader, object configurator)
+    {
+        var result = CallOriginalMethod();
+
+        // The reader can be tainted
+        MongoDbHelper.TaintObjectWithJson(result, MongoDbHelper.TaintedJsonStringPositiveHashCode(bsonReader));
+
+        return result;
+
+        object? CallOriginalMethod()
+        {
+            try
+            {
+                var typeMethodClass = Type.GetType("MongoDB.Bson.Serialization.BsonSerializer, MongoDB.Bson")!;
+                var methodsPublicStatic = typeMethodClass.GetMethods(BindingFlags.Public | BindingFlags.Static);
+                var deserializeMethod = methodsPublicStatic.FirstOrDefault(m =>
+                                                                               m is { IsGenericMethod: true, Name: "Deserialize" } &&
+                                                                               m.GetParameters().Length == 2 &&
+                                                                               m.GetParameters()[0].ParameterType == Type.GetType("MongoDB.Bson.IO.IBsonReader, MongoDB.Bson"));
+
+                var genericMethod = deserializeMethod?.MakeGenericMethod(typeof(object));
+
+                return genericMethod?.Invoke(null, new object[] { bsonReader, configurator });
             }
             catch (Exception)
             {
