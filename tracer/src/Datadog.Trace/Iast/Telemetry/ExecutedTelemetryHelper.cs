@@ -131,6 +131,7 @@ internal class ExecutedTelemetryHelper
             IastInstrumentedSinks.WeakCipher => BasicExecutedTag + SinkExecutedTag + "weak_cipher",
             IastInstrumentedSinks.WeakHash => BasicExecutedTag + SinkExecutedTag + "weak_hash",
             IastInstrumentedSinks.SqlInjection => BasicExecutedTag + SinkExecutedTag + "sql_injection",
+            IastInstrumentedSinks.NoSqlInjection => BasicExecutedTag + SinkExecutedTag + "nosql_injection",
             IastInstrumentedSinks.CommandInjection => BasicExecutedTag + SinkExecutedTag + "command_injection",
             IastInstrumentedSinks.PathTraversal => BasicExecutedTag + SinkExecutedTag + "path_traversal",
             IastInstrumentedSinks.LdapInjection => BasicExecutedTag + SinkExecutedTag + "ldap_injection",
