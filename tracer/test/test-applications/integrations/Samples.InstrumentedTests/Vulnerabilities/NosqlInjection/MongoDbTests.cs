@@ -175,10 +175,9 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
     }
     
     /// TESTING ZONE
-
-    /*
+    
     [Fact]
-    public void GivenAMongoDDBB_WhenJSonReaderContextFindTainted_Vulnerable()
+    public void GivenAMongoDb_JSON_JsonReader_WhenFindWithTainted_VulnerabilityReported()
     {
         var json = "{ \"Price\" :\"" + taintedString3 + "\"   }";
         var reader = new JsonReader(json);
@@ -190,6 +189,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
         AssertVulnerable();
     }
     
+    /*
     [Fact]
     public void test()
     {

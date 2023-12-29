@@ -5,6 +5,7 @@
 
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Iast.Helpers;
 
 #nullable enable
 
@@ -33,48 +34,14 @@ public class MongoDatabaseAspect
         {
             case "BsonDocumentFilterDefinition`1":
             case "BsonDocumentCommand`1":
-                AnalyzeBsonDocument(command);
+                MongoDbHelper.AnalyzeBsonDocument(command);
                 break;
             case "JsonFilterDefinition`1":
             case "JsonCommand`1":
-                AnalyzeJsonCommand(command);
+                MongoDbHelper.AnalyzeJsonCommand(command);
                 break;
         }
 
         return command;
-
-        static void AnalyzeBsonDocument(object command)
-        {
-            var document = command.GetType().GetProperty("Document")?.GetValue(command);
-            if (document == null)
-            {
-                return;
-            }
-
-            var taintedObjectDocument = IastModule.GetIastContext()?.GetTaintedObjects().Get(document);
-            if (taintedObjectDocument is null)
-            {
-                return;
-            }
-
-            var jsonTaintedObject = IastModule.GetIastContext()?.GetTaintedObjects().FromPositiveHashCode(taintedObjectDocument.Ranges[0].Length);
-            if (jsonTaintedObject?.Value is not string jsonStringValue)
-            {
-                return;
-            }
-
-            IastModule.OnNoSqlQuery(jsonStringValue, IntegrationId.MongoDb);
-        }
-
-        static void AnalyzeJsonCommand(object command)
-        {
-            var json = command.GetType().GetProperty("Json")?.GetValue(command);
-            if (json is not string jsonStringValue)
-            {
-                return;
-            }
-
-            IastModule.OnNoSqlQuery(jsonStringValue, IntegrationId.MongoDb);
-        }
     }
 }

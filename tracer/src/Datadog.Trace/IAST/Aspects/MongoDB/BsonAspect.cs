@@ -4,8 +4,10 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
+using System.Linq;
+using System.Reflection;
 using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Iast.Helpers;
 
 #nullable enable
 
@@ -32,18 +34,41 @@ public class BsonAspect
         return "result";
     }
 
-    /*
     /// <summary>
-    /// xxxx
+    /// test
     /// </summary>
-    /// <param name="json"> json </param>
+    /// <param name="serializer"> sdf </param>
+    /// <param name="context"> sdedf </param>
     /// <returns> oui </returns>
-    [AspectMethodInsertBefore("MongoDB.Bson.BsonDocument::Parse(System.String)")]
-    public static object Deserialize(string json)
+    [AspectMethodReplace("MongoDB.Bson.Serialization.IBsonSerializerExtensions::Deserialize(MongoDB.Bson.Serialization.IBsonSerializer`1<!!0>,MongoDB.Bson.Serialization.BsonDeserializationContext)")]
+    public static object? Deserialize(object serializer, object context)
     {
-        return json;
+        var result = CallOriginalMethod();
+
+        // The reader can be tainted
+        var reader = context.GetType().GetProperty("Reader")?.GetValue(context);
+        MongoDbHelper.TaintObjectWithJson(result, MongoDbHelper.TaintedJsonStringPositiveHashCode(reader));
+
+        return result;
+
+        object? CallOriginalMethod()
+        {
+            try
+            {
+                var typeMethodClass = Type.GetType("MongoDB.Bson.Serialization.IBsonSerializerExtensions, MongoDB.Bson")!;
+                var typeArgument = Type.GetType("MongoDB.Bson.BsonDocument, MongoDB.Bson")!;
+                var methodsPublicStatic = typeMethodClass.GetMethods(BindingFlags.Public | BindingFlags.Static);
+                var deserializeMethod = methodsPublicStatic.Where(m => m is { Name: "Deserialize", IsGenericMethod: true }).FirstOrDefault();
+                var genericMethod = deserializeMethod?.MakeGenericMethod(typeArgument);
+
+                return genericMethod?.Invoke(null, new object[] { serializer, context });
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
     }
-    */
 
     /// <summary>
     /// xxxx
@@ -53,34 +78,33 @@ public class BsonAspect
     [AspectMethodReplace("MongoDB.Bson.BsonDocument::Parse(System.String)")]
     public static object? Parse(string json)
     {
-        // Do something with the json
-        var taintedJson = IastModule.GetIastContext()?.GetTaintedObjects().Get(json);
+        var result = MongoDbHelper.InvokeMethod("MongoDB.Bson.BsonDocument, MongoDB.Bson", "Parse", new object[] { json }, new Type[] { typeof(string) });
 
-        var type = Type.GetType("MongoDB.Bson.BsonDocument, MongoDB.Bson");
-        var method = type?.GetMethod("Parse", new Type[] { typeof(string) });
-        var result = method?.Invoke(null, new object[] { json });
-
-        // taint the document if the json is tainted
-        if (result != null && taintedJson != null)
+        if (result != null && IastModule.GetIastContext()?.GetTaintedObjects().Get(json)?.PositiveHashCode is { } taintedStringReference)
         {
-            var taintedStringReference = taintedJson.PositiveHashCode;
             IastModule.GetIastContext()?.GetTaintedObjects().Taint(result, new Range[] { new Range(0, taintedStringReference) });
         }
 
         return result;
     }
 
-    /*
     /// <summary>
     /// xxxx
     /// </summary>
     /// <param name="json"> json </param>
     /// <returns> oui </returns>
-    [AspectMethodInsertBefore("MongoDB.Bson.IO.JsonReader::.ctor(System.String)")]
-    public static object Init(string json)
+    [AspectMethodReplace("MongoDB.Bson.IO.JsonReader::.ctor(System.String)")]
+    public static object? Constructor(string json)
     {
-        return json;
-    }*/
+        // Invoke the constructor method of the JsonReader
+        var typeMethodClass = Type.GetType("MongoDB.Bson.IO.JsonReader, MongoDB.Bson")!;
+        var constructor = typeMethodClass.GetConstructor(new Type[] { typeof(string) });
+        var result = constructor?.Invoke(new object[] { json });
+
+        MongoDbHelper.TaintObjectWithJson(result, json);
+
+        return result;
+    }
 }
 #endif
 
