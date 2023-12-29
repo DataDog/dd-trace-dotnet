@@ -10,16 +10,16 @@ using Xunit.Abstractions;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.NosqlInjection;
 
+[Trait("RequiresDockerDependency", "true")]
+[Trait("Category", "EndToEnd")]
 public class MongoDbTests : InstrumentationTestsBase, IDisposable
 {
     private readonly ITestOutputHelper _testOutputHelper;
     private MongoClient _client;
     private IMongoDatabase _database;
 
-    readonly string taintedString = "tainted";
-    readonly string taintedString2 = "{ \"$ne\" : \"eee\" }";
-    readonly string taintedString3 = "12";
-    readonly string taintedString4 = "dbstats";
+    readonly string taintedString12 = "12";
+    readonly string taintedStringCommand = "dbstats";
     readonly string taintedStringAttack = "nnn\"}}, { \"Author.Name\" : { \"$ne\" : \"notTainted2";
 
     private static string Host()
@@ -37,10 +37,8 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
         InitializeDatabase();
         
         // Add all tainted values
-        AddTainted(taintedString);
-        AddTainted(taintedString2);
-        AddTainted(taintedString3);
-        AddTainted(taintedString4);
+        AddTainted(taintedString12);
+        AddTainted(taintedStringCommand);
         AddTainted(taintedStringAttack);
     }
     
@@ -63,7 +61,7 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
             },
             { "BookName", "name" },
             { "Category", "Economy" },
-            { "Price", 12 }
+            { "Price", "12" }
         };
         
         collection.InsertOne(newDocument);
@@ -76,131 +74,223 @@ public class MongoDbTests : InstrumentationTestsBase, IDisposable
         base.Dispose();
     }
 
-    // We exclude the tests that only pass when using a real MySql Connection
-    // These tests have been left here for local testing purposes with MySql installed
+    // We exclude the tests that only pass when using a real MongoDB Connection
+    // These tests have been left here for local testing purposes with MongoDB installed
     
     [Fact]
     public void GivenAMongoDb_JSON_JsonCommand_WhenRunCommandWithTainted_VulnerabilityReported()
     {
-        TestDummyDDBBCall(
-            () =>
-            {
-                var json = "{\"$or\":[{ \"Author.LastName\":{\"$eq\":\"notTainted2\"}},{\"Author.Name\":{\"$eq\":\""+ taintedStringAttack +"\"}}]}";
-                var command = new JsonCommand<BsonDocument>(json);
-                _database.RunCommand(command);
-            });
+        var json = "{ \"" + taintedStringCommand + "\" : 1 }";
+        var command = new JsonCommand<BsonDocument>(json);
+        var result = _database.RunCommand(command);
+        
+        Assert.NotNull(result);
         AssertVulnerable();
     }
     
     [Fact]
     public void GivenAMongoDb_JSON_JsonCommand_WhenRunCommandWithNotTainted_NotVulnerable()
     {
-        TestDummyDDBBCall(
-            () =>
-            {
-                const string json = "{ \"Author.Name\" : \"John\"}";
-                var command = new JsonCommand<BsonDocument>(json);
-                _database.RunCommand(command);
-            });
+        const string json = "{ \"dbstats\" : 1 }";  
+        var command = new JsonCommand<BsonDocument>(json);
+        var result = _database.RunCommand(command);
+
+        Assert.NotNull(result);
         AssertNotVulnerable();
     }
     
     [Fact]
     public void GivenAMongoDb_JSON_JsonCommand_WhenRunCommandAsyncWithTainted_VulnerabilityReported()
     {
-        TestDummyDDBBCall(
-            () =>
-            {
-                var json = "{\"$or\":[{ \"Author.LastName\":{\"$eq\":\"notTainted2\"}},{\"Author.Name\":{\"$eq\":\""+ taintedStringAttack +"\"}}]}";
-                var command = new JsonCommand<BsonDocument>(json);
-                _database.RunCommandAsync(command);
-            });
+        var json = "{ \"" + taintedStringCommand + "\" : 1 }";
+        var command = new JsonCommand<BsonDocument>(json);
+        var result = _database.RunCommandAsync(command).Result;
+        
+        Assert.NotNull(result);
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenAMongoDb_JSON_BsonParse_WhenRunCommandWithTainted_VulnerabilityReported()
+    public void GivenAMongoDb_BsonDocumentCommand_BsonParse_WhenRunCommandWithTainted_VulnerabilityReported()
     {
-        TestDummyDDBBCall(
-            () =>
-            {
-                var json = "{\"$or\":[{ \"Author.LastName\":{\"$eq\":\"notTainted2\"}},{\"Author.Name\":{\"$eq\":\""+ taintedStringAttack +"\"}}]}";
-                var document = BsonDocument.Parse(json);
-                var command = new BsonDocumentCommand<BsonDocument>(document);
-                _database.RunCommand(command);
-            });
+        var json = "{ \"" + taintedStringCommand + "\" : 1 }";
+        var document = BsonDocument.Parse(json);
+        var command = new BsonDocumentCommand<BsonDocument>(document);
+        var result = _database.RunCommand(command);
+
+        Assert.NotNull(result);
         AssertVulnerable();
     }
     
     [Fact]
-    public void GivenAMongoDb_JSON_BsonParse_WhenRunCommandWithNotTainted_NotVulnerable()
+    public void GivenAMongoDb_BsonDocumentCommand_BsonParse_WhenRunCommandWithNotTainted_NotVulnerable()
     {
-        TestDummyDDBBCall(
-            () =>
-            {
-                const string json = "{ \"Author.Name\" : \"John\"}";
-                var document = BsonDocument.Parse(json);
-                var command = new BsonDocumentCommand<BsonDocument>(document);
-                _database.RunCommand(command);
-            });
+        const string json = "{ \"dbstats\" : 1 }";  
+        var document = BsonDocument.Parse(json);
+        var command = new BsonDocumentCommand<BsonDocument>(document);
+        var result = _database.RunCommand(command);
+
+        Assert.NotNull(result);
         AssertNotVulnerable();
     }
     
     [Fact]
-    public void GivenAMongoDb_JSON_BsonParse_WhenRunCommandAsyncWithTainted_VulnerabilityReported()
+    public void GivenAMongoDb_BsonDocumentCommand_BsonParse_WhenRunCommandAsyncWithTainted_VulnerabilityReported()
     {
-        TestDummyDDBBCall(
-            () =>
-            {
-                var json = "{\"$or\":[{ \"Author.LastName\":{\"$eq\":\"notTainted2\"}},{\"Author.Name\":{\"$eq\":\""+ taintedStringAttack +"\"}}]}";
-                var document = BsonDocument.Parse(json);
-                var command = new BsonDocumentCommand<BsonDocument>(document);
-                _database.RunCommandAsync(command);
-            });
+        var json = "{ \"" + taintedStringCommand + "\" : 1 }";
+        var document = BsonDocument.Parse(json);
+        var command = new BsonDocumentCommand<BsonDocument>(document);
+        var result = _database.RunCommandAsync(command).Result;
+
+        Assert.NotNull(result);
         AssertVulnerable();
     }
     
     [Fact]
-    public void GivenAMongoDb_JSON_BsonParse_WhenFindWithTainted_VulnerabilityReported()
+    public void GivenAMongoDb_BsonDocument_BsonParse_WhenFindWithTainted_VulnerabilityReported()
     {
-        TestDummyDDBBCall(
-            () =>
-            {
-                var json = "{ \"Price\" :\"" + taintedString3 + "\"   }";
-                var document = BsonDocument.Parse(json);
-                var collection = _database.GetCollection<BsonDocument>("Books");
-                collection.Find(document).ToList();
-            });
+        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var document = BsonDocument.Parse(json);
+        var collection = _database.GetCollection<BsonDocument>("Books");
+        var find = collection.Find(document).ToList();
+
+        Assert.True(find.Count > 0);
         AssertVulnerable();
     }
     
-    /// TESTING ZONE
+    [Fact]
+    public void GivenAMongoDb_BsonDocument_BsonParse_WhenFindAsyncWithTainted_VulnerabilityReported()
+    {
+        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var document = BsonDocument.Parse(json);
+        var collection = _database.GetCollection<BsonDocument>("Books");
+        var find = collection.FindAsync(document).Result.ToList();
+
+        Assert.True(find.Count > 0);
+        AssertVulnerable();
+    }
     
     [Fact]
-    public void GivenAMongoDb_JSON_JsonReader_WhenFindWithTainted_VulnerabilityReported()
+    public void GivenAMongoDb_BsonDocument_JsonReaderWithContext_WhenFindWithTainted_VulnerabilityReported()
     {
-        var json = "{ \"Price\" :\"" + taintedString3 + "\"   }";
+        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
         var reader = new JsonReader(json);
-        IBsonSerializer<BsonDocument> serializer = BsonSerializer.LookupSerializer<BsonDocument>();
-        BsonDeserializationContext context = BsonDeserializationContext.CreateRoot(reader);
-        BsonDocument doc = serializer.Deserialize(context);
+        var serializer = BsonSerializer.LookupSerializer<BsonDocument>();
+        var context = BsonDeserializationContext.CreateRoot(reader);
+        var doc = serializer.Deserialize(context);
         var collection = _database.GetCollection<BsonDocument>("Books");
         var books = collection.Find(doc).ToList();
+        
+        Assert.True(books.Count > 0);
         AssertVulnerable();
     }
     
-    /*
     [Fact]
-    public void test()
+    public void GivenAMongoDb_BsonDocument_JsonReaderWithContext_WhenFindAsyncWithTainted_VulnerabilityReported()
     {
-        TestDummyDDBBCall(
-            () =>
-            {
-                var json = "{\"$or\":[{ \"Author.LastName\":{\"$eq\":\"notTainted2\"}},{\"Author.Name\":{\"$eq\":\""+ taintedStringAttack +"\"}}]}";
-                var document = BsonDocument.Parse(json);
-                var command = new BsonDocumentCommand<BsonDocument>(document);
-                _database.RunCommandAs
-            });
+        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var reader = new JsonReader(json);
+        var serializer = BsonSerializer.LookupSerializer<BsonDocument>();
+        var context = BsonDeserializationContext.CreateRoot(reader);
+        var doc = serializer.Deserialize(context);
+        var collection = _database.GetCollection<BsonDocument>("Books");
+        var books = collection.FindAsync(doc).Result.ToList();
+        
+        Assert.True(books.Count > 0);
         AssertVulnerable();
-    }*/
+    }
+    
+    [Fact]
+    public void GivenAMongoDb_BsonDocument_JsonReader_WhenFindWithTainted_VulnerabilityReported()
+    {
+        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var reader = new JsonReader(json);
+        var doc = BsonSerializer.Deserialize<BsonDocument>(reader);
+        var collection = _database.GetCollection<BsonDocument>("Books");
+        var find = collection.Find(doc).ToList();
+        
+        Assert.True(find.Count > 0);
+        AssertVulnerable();
+    }
+    
+    [Fact]
+    public void GivenAMongoDb_BsonDocument_JsonReader_WhenFindAsyncWithTainted_VulnerabilityReported()
+    {
+        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var reader = new JsonReader(json);
+        var doc = BsonSerializer.Deserialize<BsonDocument>(reader);
+        var collection = _database.GetCollection<BsonDocument>("Books");
+        var find = collection.FindAsync(doc).Result.ToList();
+        
+        Assert.True(find.Count > 0);
+        AssertVulnerable();
+    }
+    
+    [Fact]
+    public void GivenAMongoDbString_WhenFindWithTainted_VulnerabilityReported()
+    {
+        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var collection = _database.GetCollection<BsonDocument>("Books");
+        var find = collection.Find(json).ToList();
+
+        Assert.True(find.Count > 0);
+        AssertVulnerable();
+    }
+    
+    [Fact]
+    public void GivenAMongoDb_String_WhenFindAsyncWithTainted_VulnerabilityReported()
+    {
+        var json = "{ \"Price\" :\"" + taintedString12 + "\"   }";
+        var collection = _database.GetCollection<BsonDocument>("Books");
+        var find = collection.FindAsync(json).Result.ToList();
+
+        Assert.True(find.Count > 0);
+        AssertVulnerable();
+    }
+    
+    [Fact]
+    public void GivenAMongoDb_String_WhenFindWithTainted_Attack_VulnerabilityReported()
+    {
+        var json = "{ \"$or\" : [{ \"Author.LastName\" : { \"$eq\" : \"notTainted2\" } }, { \"Author.Name\" : { \"$eq\" : \""+ taintedStringAttack +"\" } }] }";
+        var collection = _database.GetCollection<BsonDocument>("Books");
+        var find = collection.Find(json).ToList();
+
+        Assert.True(find.Count > 0);
+        AssertVulnerable();
+    }
+    
+    [Fact]
+    public void GivenAMongoDb_String_WhenFindAsyncWithTainted_Attack_VulnerabilityReported()
+    {
+        var json = "{ \"$or\" : [{ \"Author.LastName\" : { \"$eq\" : \"notTainted2\" } }, { \"Author.Name\" : { \"$eq\" : \""+ taintedStringAttack +"\" } }] }";
+        var collection = _database.GetCollection<BsonDocument>("Books");
+        var find = collection.FindAsync(json).Result.ToList();
+
+        Assert.True(find.Count > 0);
+        AssertVulnerable();
+    }
+    
+    [Fact]
+    public void GivenAMongoDb_String_WhenFindWithNotTainted_NotVulnerable()
+    {
+        var json = "{ \"Author.Name\" : \"John\"}";
+        var collection = _database.GetCollection<BsonDocument>("Books");
+        var find = collection.Find(json).ToList();
+
+        Assert.True(find.Count > 0);
+        AssertNotVulnerable();
+    }
+    
+    [Fact]
+    public void GivenAMongoDb_BsonDocument_WhenFindWithNotTainted_FirstOrDefault_NotVulnerable()
+    {
+        var bElement1 = new BsonElement("Author.Name", "John");
+        var doc = new BsonDocument() { bElement1 };
+        
+        var collection = _database.GetCollection<BsonDocument>("Books");
+        var find = collection.Find(doc).FirstOrDefault();
+
+        Assert.NotNull(find);
+        AssertNotVulnerable();
+    }
 }
