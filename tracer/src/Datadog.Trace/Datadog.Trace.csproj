@@ -28,6 +28,7 @@
     from a source generator as opposed to something that is coming from some other tool. -->
     <Compile Remove="$(GeneratedFolder)/*/**/*.cs" />
     <Compile Update="Configuration\ConfigurationKeys.*.cs" DependentUpon="ConfigurationKeys.cs" />
+    <Compile Remove="Util\Streams\ChunkedEncodingWriteStream.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,6 +38,7 @@
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />
+    <Reference Include="System.IO.Compression" />
   </ItemGroup>
 
   <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
@@ -62,7 +64,6 @@
     <None Remove="AppSec\Waf\ConfigFiles\rule-set.json" />
     <EmbeddedResource Include="AppSec\Waf\ConfigFiles\rule-set.json" />
     <None Remove="AppSec\Waf\ConfigFiles\apisecurity-config.json" />
-    <EmbeddedResource Include="AppSec\Waf\ConfigFiles\apisecurity-config.json" />
   </ItemGroup>
 
   <!-- Below this point is reserved for vendor items -->

@@ -61,9 +61,9 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.14.0";
+    const string LibDdwafVersion = "1.15.1";
 
-    string[] OlderLibDdwafVersions = new[] { "1.3.0", "1.10.0" };
+    string[] OlderLibDdwafVersions = new[] { "1.3.0", "1.10.0", "1.14.0" };
 
     AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
@@ -168,13 +168,10 @@ partial class Build
         Solution.GetProject(Projects.OpenTracingIntegrationTests),
     };
 
-    Project[] ClrProfilerIntegrationTests => new[]
-    {
-        Solution.GetProject(Projects.ClrProfilerIntegrationTests),
-        Solution.GetProject(Projects.AppSecIntegrationTests),
-        Solution.GetProject(Projects.DdTraceIntegrationTests),
-        Solution.GetProject(Projects.DdDotnetIntegrationTests)
-    };
+    Project[] ClrProfilerIntegrationTests
+        => IsOsx
+               ? new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests) }
+               : new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests), Solution.GetProject(Projects.DdDotnetIntegrationTests) };
 
     TargetFramework[] TestingFrameworks =>
     IncludeAllTestFrameworks || HaveIntegrationsChanged
@@ -566,7 +563,7 @@ partial class Build
 
                         foreach (var olderLibDdwafVersion in OlderLibDdwafVersions)
                         {
-                            var patchedArchWaf = (IsOsx && olderLibDdwafVersion != "1.10.0") ? archWaf + "-x64" : archWaf;
+                            var patchedArchWaf = (IsOsx && olderLibDdwafVersion == "1.3.0") ? archWaf + "-x64" : archWaf;
                             var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
                             var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
                             await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
@@ -2176,7 +2173,31 @@ partial class Build
                 "src/Datadog.Trace/Vendors/**"
             );
 
-            var sourceFiles = include.Except(exclude);
+            int ComputeDepth(AbsolutePath ap)
+            {
+                var d = 0;
+                while ((ap = ap.Parent) != null)
+                {
+                    d++;
+                }
+
+                return d;
+            }
+
+            string NormalizedPath(AbsolutePath ap)
+            {
+                // paths are not printed the same way in windows vs unix-based, which affects the ordering.
+                // to get a stable order, we use / everywhere, which is what's written in the csv in the end.
+                return ap.ToString().Replace(oldChar: '\\', newChar: '/');
+            }
+
+            var sourceFiles = include.Except(exclude).ToList();
+            // sort by depth, then alphabetical.
+            sourceFiles.Sort((a, b) =>
+            {
+                var depthDiff = ComputeDepth(a) - ComputeDepth(b);
+                return depthDiff != 0 ? depthDiff : string.Compare(NormalizedPath(a), NormalizedPath(b), StringComparison.OrdinalIgnoreCase);
+            });
 
             var sb = new StringBuilder();
             foreach (var file in sourceFiles)
@@ -2200,7 +2221,7 @@ partial class Build
 
             var csvFilePath = TracerDirectory / "missing-nullability-files.csv";
             File.WriteAllText(csvFilePath, sb.ToString());
-            Serilog.Log.Information("File saved: {File}", csvFilePath);
+            Serilog.Log.Information("File ordered and saved: {File}", csvFilePath);
         });
 
     Target CreateRootDescriptorsFile => _ => _
