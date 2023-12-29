@@ -43,12 +43,22 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Collections.Generic.IEnumerable`1<System.Object>,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] ReviewSqlString(System.String)",
 "  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalQueryableExtensions::FromSqlRaw(Microsoft.EntityFrameworkCore.DbSet`1<!!0>,System.String,System.Object[])\",\"\",[1],[False],[None],Default,[])] ReviewSqlString(System.String)",
 "[AspectClass(\"MongoDB.Bson\",[None],Sink,[NoSqlInjection])] Datadog.Trace.Iast.Aspects.MongoDB.BsonAspect",
+<<<<<<< HEAD
 "  [AspectMethodReplace(\"MongoDB.Bson.IO.BsonBinaryReader::ReadString()\",\"\",[0],[False],[None],Default,[])] ReadString(System.Object)",
 "  [AspectMethodReplace(\"MongoDB.Bson.IO.BsonReader::ReadString()\",\"\",[0],[False],[None],Default,[])] ReadString(System.Object)",
 "  [AspectMethodReplace(\"MongoDB.Bson.IO.IBsonReader::ReadString()\",\"\",[0],[False],[None],Default,[])] ReadString(System.Object)",
 "  [AspectMethodReplace(\"MongoDB.Bson.Serialization.IBsonSerializerExtensions::Deserialize(MongoDB.Bson.Serialization.IBsonSerializer`1<!!0>,MongoDB.Bson.Serialization.BsonDeserializationContext)\",\"\",[0],[False],[None],Default,[])] Deserialize(System.Object,System.Object)",
 "  [AspectMethodReplace(\"MongoDB.Bson.BsonDocument::Parse(System.String)\",\"\",[0],[False],[None],Default,[])] Parse(System.String)",
 "  [AspectMethodReplace(\"MongoDB.Bson.IO.JsonReader::.ctor(System.String)\",\"\",[0],[False],[None],Default,[])] Constructor(System.String)",
+=======
+"  [AspectMethodReplace(\"MongoDB.Bson.IO.BsonBinaryReader::ReadString()\",\"\",[0],[False],[None],Propagation,[])] ReadString(System.Object)",
+"  [AspectMethodReplace(\"MongoDB.Bson.IO.BsonReader::ReadString()\",\"\",[0],[False],[None],Propagation,[])] ReadString(System.Object)",
+"  [AspectMethodReplace(\"MongoDB.Bson.IO.IBsonReader::ReadString()\",\"\",[0],[False],[None],Propagation,[])] ReadString(System.Object)",
+"  [AspectMethodReplace(\"MongoDB.Bson.Serialization.IBsonSerializerExtensions::Deserialize(MongoDB.Bson.Serialization.IBsonSerializer`1<!!0>,MongoDB.Bson.Serialization.BsonDeserializationContext)\",\"\",[0],[False],[None],Propagation,[])] DeserializeExtension(System.Object,System.Object)",
+"  [AspectMethodReplace(\"MongoDB.Bson.Serialization.BsonSerializer::Deserialize(MongoDB.Bson.IO.IBsonReader,System.Action`1<Builder>)\",\"\",[0],[False],[None],Propagation,[])] DeserializeBson(System.Object,System.Object)",
+"  [AspectMethodReplace(\"MongoDB.Bson.BsonDocument::Parse(System.String)\",\"\",[0],[False],[None],Propagation,[])] Parse(System.String)",
+"  [AspectMethodReplace(\"MongoDB.Bson.IO.JsonReader::.ctor(System.String)\",\"\",[0],[False],[None],Propagation,[])] Constructor(System.String)",
+>>>>>>> 7a751e9d0 (Fix vuln type)
 "[AspectClass(\"MongoDB.Driver\",[None],Sink,[NoSqlInjection])] Datadog.Trace.Iast.Aspects.MongoDB.MongoDatabaseAspect",
 "  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoDatabase::RunCommand(MongoDB.Driver.Command`1<!!0>,MongoDB.Driver.ReadPreference,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] AnalyzeCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoDatabase::RunCommandAsync(MongoDB.Driver.Command`1<!!0>,MongoDB.Driver.ReadPreference,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] AnalyzeCommand(System.Object)",
