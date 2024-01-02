@@ -16,57 +16,14 @@ internal class TracerFlareRequestFactory
 {
     internal const string Boundary = "83CAD6AA-8A24-462C-8B3D-FF9CC683B51B";
     private const string Separator = "--" + Boundary;
+    private const string CrLf = "\r\n";
 
-    private const string RequestBodyCaseId =
-        $$"""
-          {{Separator}}
-          Content-Disposition: form-data; name="source"
-
-          tracer_dotnet
-          {{Separator}}
-          Content-Disposition: form-data; name="case_id"
-
-
-          """;
-
-    private const string RequestBodyHostname =
-        $$"""
-
-          {{Separator}}
-          Content-Disposition: form-data; name="hostname"
-
-
-          """;
-
-    private const string RequestBodyEmail =
-        $$"""
-
-          {{Separator}}
-          Content-Disposition: form-data; name="email"
-
-
-          """;
-
-    private const string RequestBodyFlareFile1 =
-        $$"""
-
-          {{Separator}}
-          Content-Disposition: form-data; name="flare_file"; filename="tracer-dotnet-
-          """;
-
-    private const string RequestBodyFlareFile2 =
-        """
-          -debug.zip"
-          Content-Type: application/octet-stream
-
-
-          """;
-
-    private const string RequestBodySuffix =
-        $$"""
-
-          {{Separator}}--
-          """;
+    private const string RequestBodyCaseId = $"""{Separator}{CrLf}Content-Disposition: form-data; name="source"{CrLf}{CrLf}tracer_dotnet{CrLf}{Separator}{CrLf}Content-Disposition: form-data; name="case_id"{CrLf}{CrLf}""";
+    private const string RequestBodyHostname = $"""{CrLf}{Separator}{CrLf}Content-Disposition: form-data; name="hostname"{CrLf}{CrLf}""";
+    private const string RequestBodyEmail = $"""{CrLf}{Separator}{CrLf}Content-Disposition: form-data; name="email"{CrLf}{CrLf}""";
+    private const string RequestBodyFlareFile1 = $"""{CrLf}{Separator}{CrLf}Content-Disposition: form-data; name="flare_file"; filename="tracer-dotnet-""";
+    private const string RequestBodyFlareFile2 = $"""-debug.zip"{CrLf}Content-Type: application/octet-stream{CrLf}{CrLf}""";
+    private const string RequestBodySuffix = $"""{CrLf}{Separator}--{CrLf}""";
 
     public static Task WriteRequestBody(
         Stream destination,

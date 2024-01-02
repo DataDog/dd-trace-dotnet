@@ -42,29 +42,47 @@ public class TracerFlareRequestFactoryTests
 
         var deserializedBytes = Encoding.UTF8.GetString(requestStream.ToArray());
 
-        deserializedBytes.Should().Be("""
-                                      --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B
-                                      Content-Disposition: form-data; name="source"
+        // Multipart form data _must_ use CRLF, so ensure we are.
+        var expected = ReplaceLineEndings(
+                               """
+                               --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B
+                               Content-Disposition: form-data; name="source"
 
-                                      tracer_dotnet
-                                      --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B
-                                      Content-Disposition: form-data; name="case_id"
+                               tracer_dotnet
+                               --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B
+                               Content-Disposition: form-data; name="case_id"
 
-                                      12345
-                                      --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B
-                                      Content-Disposition: form-data; name="hostname"
-                                      
-                                      my.hostname
-                                      --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B
-                                      Content-Disposition: form-data; name="email"
-                                      
-                                      some.person@datadoghq.com
-                                      --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B
-                                      Content-Disposition: form-data; name="flare_file"; filename="tracer-dotnet-12345-1703093253-debug.zip"
-                                      Content-Type: application/octet-stream
+                               12345
+                               --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B
+                               Content-Disposition: form-data; name="hostname"
 
-                                      ++++++++++++++++++++++++++++++++++++++++++++++++++
-                                      --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B--
-                                      """);
+                               my.hostname
+                               --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B
+                               Content-Disposition: form-data; name="email"
+
+                               some.person@datadoghq.com
+                               --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B
+                               Content-Disposition: form-data; name="flare_file"; filename="tracer-dotnet-12345-1703093253-debug.zip"
+                               Content-Type: application/octet-stream
+
+                               ++++++++++++++++++++++++++++++++++++++++++++++++++
+                               --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B--
+                               """)
+                          .Trim() + "\r\n"; // make sure with a crlf at the end
+
+        deserializedBytes.Should().Be(expected);
+    }
+
+    private static string ReplaceLineEndings(string value)
+    {
+#if NET6_0_OR_GREATER
+        return value.ReplaceLineEndings("\r\n");
+#else
+        return value
+              .Replace("\r\n", "\n")
+              .Replace("\n\r", "\n")
+              .Replace("\r", "\n")
+              .Replace("\n", "\r\n");
+#endif
     }
 }
