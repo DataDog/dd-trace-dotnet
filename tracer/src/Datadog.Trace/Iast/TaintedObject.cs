@@ -28,5 +28,7 @@ internal class TaintedObject : ITaintedObject
 
     public Range[] Ranges { get; set; }
 
+    public ITaintedObject? LinkedObject { get; set; }
+
     public ITaintedObject? Next { get; set; }
 }

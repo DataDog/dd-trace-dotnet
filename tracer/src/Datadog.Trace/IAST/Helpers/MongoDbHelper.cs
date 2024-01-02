@@ -23,14 +23,7 @@ internal static class MongoDbHelper
             }
 
             var taintedObjectDocument = IastModule.GetIastContext()?.GetTaintedObjects().Get(document);
-            if (taintedObjectDocument is null)
-            {
-                return;
-            }
-
-            var jsonTaintedObjectPositiveHashCode = taintedObjectDocument.Ranges[0].Length;
-            var jsonTaintedObject = IastModule.GetIastContext()?.GetTaintedObjects().FromPositiveHashCode(jsonTaintedObjectPositiveHashCode);
-            if (jsonTaintedObject?.Value is not string jsonStringValue)
+            if (taintedObjectDocument?.LinkedObject?.Value is not string jsonStringValue)
             {
                 return;
             }
@@ -76,35 +69,14 @@ internal static class MongoDbHelper
         }
     }
 
-    internal static void TaintObjectWithJson(object? obj, int? taintedStringReference)
-    {
-        if (obj == null || taintedStringReference == null)
-        {
-            return;
-        }
-
-        IastModule.GetIastContext()?.GetTaintedObjects().Taint(obj, new[] { new Range(0, taintedStringReference.Value) });
-    }
-
     // Taint an object by linking it to a tainted string
-    internal static void TaintObjectWithJson(object? obj, string? json)
+    internal static void TaintObjectWithJson(object? obj, object? json)
     {
-        if (obj == null || json == null)
-        {
-            return;
-        }
-
-        var taintedJson = IastModule.GetIastContext()?.GetTaintedObjects().Get(json);
-        if (taintedJson == null)
-        {
-            return;
-        }
-
-        TaintObjectWithJson(obj, taintedJson.PositiveHashCode);
+        IastModule.GetIastContext()?.GetTaintedObjects().TaintWithLinkedObject(obj, json);
     }
 
-    internal static int? TaintedJsonStringPositiveHashCode(object? taintedObject)
+    internal static object? TaintedLinkedObject(object? taintedObject)
     {
-        return taintedObject == null ? null : IastModule.GetIastContext()?.GetTaintedObjects().Get(taintedObject)?.Ranges[0].Length;
+        return taintedObject == null ? null : IastModule.GetIastContext()?.GetTaintedObjects().Get(taintedObject)?.LinkedObject?.Value;
     }
 }

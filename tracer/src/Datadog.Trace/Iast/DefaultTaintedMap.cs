@@ -76,23 +76,6 @@ internal class DefaultTaintedMap : ITaintedMap
         return null;
     }
 
-    public ITaintedObject? FromPositiveHashCode(int hash)
-    {
-        _map.TryGetValue(Index(hash), out var entry);
-
-        while (entry != null)
-        {
-            if (entry.PositiveHashCode == hash)
-            {
-                return entry;
-            }
-
-            entry = entry.Next;
-        }
-
-        return null;
-    }
-
     /// <summary>
     /// Put a new TaintedObject in the dictionary.
     /// </summary>

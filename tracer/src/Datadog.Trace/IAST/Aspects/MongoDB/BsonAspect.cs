@@ -47,7 +47,7 @@ public class BsonAspect
 
         // The reader can be tainted
         var reader = context.GetType().GetProperty("Reader")?.GetValue(context);
-        MongoDbHelper.TaintObjectWithJson(result, MongoDbHelper.TaintedJsonStringPositiveHashCode(reader));
+        MongoDbHelper.TaintObjectWithJson(result, MongoDbHelper.TaintedLinkedObject(reader));
 
         return result;
 
@@ -82,7 +82,7 @@ public class BsonAspect
         var result = CallOriginalMethod();
 
         // The reader can be tainted
-        MongoDbHelper.TaintObjectWithJson(result, MongoDbHelper.TaintedJsonStringPositiveHashCode(bsonReader));
+        MongoDbHelper.TaintObjectWithJson(result, MongoDbHelper.TaintedLinkedObject(bsonReader));
 
         return result;
 
@@ -118,10 +118,7 @@ public class BsonAspect
     {
         var result = MongoDbHelper.InvokeMethod("MongoDB.Bson.BsonDocument, MongoDB.Bson", "Parse", new object[] { json }, new[] { typeof(string) });
 
-        if (result != null && IastModule.GetIastContext()?.GetTaintedObjects().Get(json)?.PositiveHashCode is { } taintedStringReference)
-        {
-            IastModule.GetIastContext()?.GetTaintedObjects().Taint(result, new[] { new Range(0, taintedStringReference) });
-        }
+        MongoDbHelper.TaintObjectWithJson(result, json);
 
         return result;
     }

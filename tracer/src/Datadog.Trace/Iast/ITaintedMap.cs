@@ -13,8 +13,6 @@ internal interface ITaintedMap
 
     public ITaintedObject Get(object obj);
 
-    public ITaintedObject FromPositiveHashCode(int hash);
-
     public List<ITaintedObject> GetListValues();
 
     public int GetEstimatedSize();
