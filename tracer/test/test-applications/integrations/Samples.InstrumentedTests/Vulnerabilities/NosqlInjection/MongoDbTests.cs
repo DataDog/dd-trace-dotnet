@@ -3,63 +3,31 @@ using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
+using Moq;
+using Samples.InstrumentedTests.Iast.Vulnerabilities.NosqlInjection.DatabaseHelper;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.NosqlInjection;
 
 public class MongoDbTests : InstrumentationTestsBase
 {
-    private MongoClient _client;
+    private Mock<IMongoClient> _client;
     private readonly IMongoDatabase _database;
 
     private readonly string _taintedString12 = "12";
     private readonly string _taintedStringCommand = "dbstats";
     private readonly string _taintedStringAttack = "nnn\"}}, { \"Author.Name\" : { \"$ne\" : \"notTainted2";
 
-    private static string Host()
-    {
-        return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
-    }
-
     public MongoDbTests()
     {
-        var connectionString = $"mongodb://{Host()}:27017";
-        _client = new MongoClient(connectionString);
-        _database = _client.GetDatabase("test-db");
+        _client = MockMongoDb.MockMongoClient();
+        _database = _client.Object.GetDatabase("test-db");
 
-        InitializeDatabase();
-        
         // Add all tainted values
         AddTainted(_taintedString12);
         AddTainted(_taintedStringCommand);
         AddTainted(_taintedStringAttack);
     }
-    
-    // Initialize the database with default values that will be used in the tests
-    private void InitializeDatabase()
-    {
-        // Empty the database
-        var collection = _database.GetCollection<BsonDocument>("Books");
-        var allFilter = new BsonDocument();
-        collection.DeleteMany(allFilter);
-        
-        // Insert the default values
-        var newDocument = new BsonDocument
-        {
-            { "Author", new BsonDocument
-                {
-                    { "Name", "John" },
-                    { "LastName", "Perkins" }
-                }
-            },
-            { "BookName", "name" },
-            { "Category", "Economy" },
-            { "Price", "12" }
-        };
-        
-        collection.InsertOne(newDocument);
-    }
-    
 
     public override void Dispose()
     {
@@ -67,10 +35,7 @@ public class MongoDbTests : InstrumentationTestsBase
         base.Dispose();
     }
 
-    // We exclude the tests that only pass when using a real MongoDB Connection
-    // These tests have been left here for local testing purposes with MongoDB installed
-    
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_JSON_JsonCommand_WhenRunCommandWithTainted_VulnerabilityReported()
     {
         var json = "{ \"" + _taintedStringCommand + "\" : 1 }";
@@ -81,7 +46,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_JSON_JsonCommand_WhenRunCommandWithNotTainted_NotVulnerable()
     {
         const string json = "{ \"dbstats\" : 1 }";  
@@ -92,7 +57,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_JSON_JsonCommand_WhenRunCommandAsyncWithTainted_VulnerabilityReported()
     {
         var json = "{ \"" + _taintedStringCommand + "\" : 1 }";
@@ -103,7 +68,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_BsonDocumentCommand_BsonParse_WhenRunCommandWithTainted_VulnerabilityReported()
     {
         var json = "{ \"" + _taintedStringCommand + "\" : 1 }";
@@ -115,7 +80,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_BsonDocumentCommand_BsonParse_WhenRunCommandWithNotTainted_NotVulnerable()
     {
         const string json = "{ \"dbstats\" : 1 }";  
@@ -127,7 +92,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_BsonDocumentCommand_BsonParse_WhenRunCommandAsyncWithTainted_VulnerabilityReported()
     {
         var json = "{ \"" + _taintedStringCommand + "\" : 1 }";
@@ -139,7 +104,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_BsonDocument_BsonParse_WhenFindWithTainted_VulnerabilityReported()
     {
         var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
@@ -151,7 +116,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_BsonDocument_BsonParse_WhenFindAsyncWithTainted_VulnerabilityReported()
     {
         var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
@@ -163,7 +128,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_BsonDocument_JsonReaderWithContext_WhenFindWithTainted_VulnerabilityReported()
     {
         var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
@@ -178,7 +143,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_BsonDocument_JsonReaderWithContext_WhenFindAsyncWithTainted_VulnerabilityReported()
     {
         var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
@@ -193,7 +158,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_BsonDocument_JsonReader_WhenFindWithTainted_VulnerabilityReported()
     {
         var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
@@ -206,7 +171,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_BsonDocument_JsonReader_WhenFindAsyncWithTainted_VulnerabilityReported()
     {
         var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
@@ -219,7 +184,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDbString_WhenFindWithTainted_VulnerabilityReported()
     {
         var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
@@ -230,7 +195,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_String_WhenFindAsyncWithTainted_VulnerabilityReported()
     {
         var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
@@ -241,7 +206,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_String_WhenFindWithTainted_Attack_VulnerabilityReported()
     {
         var json = "{ \"$or\" : [{ \"Author.LastName\" : { \"$eq\" : \"notTainted2\" } }, { \"Author.Name\" : { \"$eq\" : \""+ _taintedStringAttack +"\" } }] }";
@@ -252,7 +217,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_String_WhenFindAsyncWithTainted_Attack_VulnerabilityReported()
     {
         var json = "{ \"$or\" : [{ \"Author.LastName\" : { \"$eq\" : \"notTainted2\" } }, { \"Author.Name\" : { \"$eq\" : \""+ _taintedStringAttack +"\" } }] }";
@@ -263,7 +228,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_String_WhenFindWithNotTainted_NotVulnerable()
     {
         var json = "{ \"Author.Name\" : \"John\"}";
@@ -274,7 +239,7 @@ public class MongoDbTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
     
-    [Fact(Skip = "Test only with a real MongoDB connection")]
+    [Fact]
     public void GivenAMongoDb_BsonDocument_WhenFindWithNotTainted_FirstOrDefault_NotVulnerable()
     {
         var bElement1 = new BsonElement("Author.Name", "John");
