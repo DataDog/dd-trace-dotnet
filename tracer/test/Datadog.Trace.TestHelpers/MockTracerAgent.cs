@@ -13,6 +13,7 @@ using System.IO.Compression;
 using System.IO.Pipes;
 using System.Linq;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -27,6 +28,7 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using HttpMultipartParser;
 using MessagePack; // use nuget MessagePack to deserialize
 using Xunit.Abstractions;
 
@@ -76,6 +78,8 @@ namespace Datadog.Trace.TestHelpers
         public IImmutableList<MockDataStreamsPayload> DataStreams { get; private set; } = ImmutableList<MockDataStreamsPayload>.Empty;
 
         public IImmutableList<NameValueCollection> TraceRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+
+        public IImmutableList<(Dictionary<string, string> Headers, MultipartFormDataParser Form)> TracerFlareRequests { get; private set; } = ImmutableList<(Dictionary<string, string> Headers, MultipartFormDataParser Form)>.Empty;
 
         public IImmutableList<string> Snapshots { get; private set; } = ImmutableList<string>.Empty;
 
@@ -508,6 +512,11 @@ namespace Datadog.Trace.TestHelpers
                 HandleEvpProxyPayload(request);
                 responseType = MockTracerResponseType.EvpProxy;
             }
+            else if (request.PathAndQuery.StartsWith("/tracer_flare/v1"))
+            {
+                HandleTracerFlarePayload(request);
+                responseType = MockTracerResponseType.TracerFlare;
+            }
             else
             {
                 HandlePotentialTraces(request);
@@ -756,6 +765,56 @@ namespace Datadog.Trace.TestHelpers
                     };
 
                     EventPlatformProxyPayloadReceived?.Invoke(this, new EventArgs<EvpProxyPayload>(new EvpProxyPayload(request.PathAndQuery, headerCollection, bodyAsJson)));
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+        }
+
+        private void HandleTracerFlarePayload(MockHttpParser.MockHttpRequest request)
+        {
+            // we don't send content length header in the request, so just deserialize into bytes
+            if (ShouldDeserializeTraces)
+            {
+                try
+                {
+                    var headerCollection = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var header in request.Headers)
+                    {
+                        headerCollection.Add(header.Name, header.Value);
+                    }
+
+                    var contentTypeHeader = headerCollection["Content-Type"];
+                    var contentType = MediaTypeHeaderValue.Parse(contentTypeHeader);
+                    if (contentType.MediaType != "multipart/form-data")
+                    {
+                        throw new Exception($"Unexpected media type: {contentType.MediaType} in header {contentTypeHeader}");
+                    }
+
+                    var boundary = contentType
+                                  .Parameters
+                                  .FirstOrDefault(x => string.Equals(x.Name, "boundary", StringComparison.Ordinal));
+
+                    if (boundary is null)
+                    {
+                        throw new Exception("Content-Type is missing boundary in header " + contentTypeHeader);
+                    }
+
+                    var encoding = contentType.CharSet ?? "utf-8";
+
+                    var formData = MultipartFormDataParser.Parse(request.Body.Stream, boundary.Value, Encoding.GetEncoding(encoding));
+                    TracerFlareRequests = TracerFlareRequests.Add((headerCollection, formData));
                 }
                 catch (Exception ex)
                 {

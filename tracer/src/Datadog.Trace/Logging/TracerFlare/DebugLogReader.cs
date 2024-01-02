@@ -106,7 +106,7 @@ internal static class DebugLogReader
 
             foreach (var fileDetails in filesToUpload)
             {
-                var remainingSize = MaximumCompressedSizeBytes - monitoringStream.BytesWritten;
+                var remainingSize = MaximumCompressedSizeBytes - monitoringStream.Position;
                 if (!streamHasCapacityFunc(fileDetails, remainingSize))
                 {
                     Log.Warning(
@@ -152,29 +152,37 @@ internal static class DebugLogReader
 
     public class WriteCountingStream(Stream innerStream) : LeaveOpenDelegatingStream(innerStream)
     {
-        public long BytesWritten { get; private set; }
+        private long _position = 0;
+
+        public override long Position
+        {
+            get => _position;
+            set => throw new NotSupportedException();
+        }
+
+        public override bool CanSeek => false;
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            BytesWritten += count;
+            _position += count;
             base.Write(buffer, offset, count);
         }
 
         public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            BytesWritten += count;
+            _position += count;
             return base.WriteAsync(buffer, offset, count, cancellationToken);
         }
 
         public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state)
         {
-            BytesWritten += count;
+            _position += count;
             return base.BeginWrite(buffer, offset, count, callback!, state);
         }
 
         public override void WriteByte(byte value)
         {
-            BytesWritten++;
+            _position++;
             base.WriteByte(value);
         }
     }
