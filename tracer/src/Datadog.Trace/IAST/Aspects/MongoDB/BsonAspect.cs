@@ -56,12 +56,9 @@ public class BsonAspect
             try
             {
                 var typeMethodClass = Type.GetType("MongoDB.Bson.Serialization.IBsonSerializerExtensions, MongoDB.Bson")!;
-                var typeArgument = Type.GetType("MongoDB.Bson.BsonDocument, MongoDB.Bson")!;
                 var methodsPublicStatic = typeMethodClass.GetMethods(BindingFlags.Public | BindingFlags.Static);
-                var deserializeMethod = methodsPublicStatic.Where(m => m is { Name: "Deserialize", IsGenericMethod: true }).FirstOrDefault();
-                var genericMethod = deserializeMethod?.MakeGenericMethod(typeArgument);
-
-                return genericMethod?.Invoke(null, new[] { serializer, context });
+                var deserializeMethod = methodsPublicStatic.Where(m => m is { Name: "Deserialize" }).FirstOrDefault();
+                return deserializeMethod?.Invoke(null, new[] { serializer, context });
             }
             catch (Exception)
             {

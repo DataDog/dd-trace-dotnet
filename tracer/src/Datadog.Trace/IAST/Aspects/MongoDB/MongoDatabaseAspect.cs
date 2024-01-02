@@ -25,8 +25,13 @@ public class MongoDatabaseAspect
     [AspectMethodInsertBefore("MongoDB.Driver.IMongoDatabase::RunCommandAsync(MongoDB.Driver.Command`1<!!0>,MongoDB.Driver.ReadPreference,System.Threading.CancellationToken)", 2)]
     [AspectMethodInsertBefore("MongoDB.Driver.IMongoCollectionExtensions::Find(MongoDB.Driver.IMongoCollection`1<!!0>,MongoDB.Driver.FilterDefinition`1<!!0>,MongoDB.Driver.FindOptions)", 1)]
     [AspectMethodInsertBefore("MongoDB.Driver.IMongoCollectionExtensions::FindAsync(MongoDB.Driver.IMongoCollection`1<!!0>,MongoDB.Driver.FilterDefinition`1<!!0>,MongoDB.Driver.FindOptions`2<!!0,!!0>,System.Threading.CancellationToken)", 2)]
-    public static object AnalyzeCommand(object command)
+    public static object? AnalyzeCommand(object? command)
     {
+        if (command == null)
+        {
+            return command;
+        }
+
         var commandType = command.GetType().Name;
         switch (commandType)
         {
