@@ -351,9 +351,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedInstallType = "install type";
             var expectedInstallTime = "install time";
 
-            EnvironmentHelper.CustomEnvironmentVariables["DD_INSTRUMENTATION_INSTALL_ID"] = expectedInstallId;
-            EnvironmentHelper.CustomEnvironmentVariables["DD_INSTRUMENTATION_INSTALL_TYPE"] = expectedInstallType;
-            EnvironmentHelper.CustomEnvironmentVariables["DD_INSTRUMENTATION_INSTALL_TIME"] = expectedInstallTime;
+            SetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_ID", expectedInstallId);
+            SetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TYPE", expectedInstallType);
+            SetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TIME", expectedInstallTime);
 
             using var agent = MockTracerAgent.Create(Output, useTelemetry: true);
             using var telemetry = new MockTelemetryAgent();
