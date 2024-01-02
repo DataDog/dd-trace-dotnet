@@ -100,6 +100,14 @@ namespace Datadog.Trace.Tests.Sampling
             VerifySingleRule(fallbackRule, RequestShippingSpan, true);
         }
 
+        [Fact]
+        public void RuleShouldBeCaseInsensitive()
+        {
+            var config = "[{\"sample_rate\":0.5, \"service\":\"SHOPPING-cart-service\", \"name\":\"CHECKOUT\"}]";
+            var rule = CustomSamplingRule.BuildFromConfigurationString(config).Single();
+            VerifySingleRule(rule, CartCheckoutSpan, true);
+        }
+
         [Theory]
         [InlineData("\"rate:0.5, \"name\":\"auth.*\"}]")]
         [InlineData("[{\"name\":\"wat\"}]")]
