@@ -5,7 +5,6 @@
 
 using System;
 using System.Linq;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Xunit;
 
@@ -97,8 +96,8 @@ namespace Datadog.Trace.Tests.Sampling
         public void RuleShouldBeCaseInsensitive()
         {
             var config = "[{\"sample_rate\":0.5, \"service\":\"SHOPPING-cart-service\", \"name\":\"CHECKOUT\"}]";
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config).Single();
-            VerifySingleRule(rule, CartCheckoutSpan, true);
+            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex).Single();
+            VerifySingleRule(rule, TestSpans.CartCheckoutSpan, true);
         }
 
         [Theory]
