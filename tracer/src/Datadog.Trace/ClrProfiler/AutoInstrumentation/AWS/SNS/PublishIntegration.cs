@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             if (scope?.Span.Context is { } context)
             {
-                ContextPropagation.InjectHeadersIntoMessage<TTarget>(request, context);
+                ContextPropagation.InjectHeadersIntoMessage<TTarget, TPublishRequest>(request, context);
             }
 
             return new CallTargetState(scope);
