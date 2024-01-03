@@ -59,10 +59,12 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
             var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
             taggedSpans.Should().HaveCount(expected: 16);
 
+            var dsPoints = agent.WaitForDataStreamsPoints(statsCount: 32);
+
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseParameters(packageVersion);
             settings.AddDataStreamsScrubber();
-            await Verifier.Verify(MockDataStreamsPayload.ToPoints(agent.DataStreams), settings)
+            await Verifier.Verify(MockDataStreamsPayload.ToPoints(dsPoints), settings)
                           .UseFileName($"{nameof(DataStreamsMonitoringAwsSqsTests)}.{nameof(SubmitsDsmMetrics)}.{frameworkName}")
                           .DisableRequireUniquePrefix();
 
