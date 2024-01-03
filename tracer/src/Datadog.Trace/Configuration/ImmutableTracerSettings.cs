@@ -38,8 +38,6 @@ namespace Datadog.Trace.Configuration
         private readonly double? _globalSamplingRate;
         private readonly bool _runtimeMetricsEnabled;
         private readonly string? _spanSamplingRules;
-        private readonly string? _customSamplingRules;
-        private readonly string? _customSamplingRulesFormat;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableTracerSettings"/> class
@@ -98,8 +96,8 @@ namespace Datadog.Trace.Configuration
             AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
 #pragma warning restore 618
             MaxTracesSubmittedPerSecondInternal = settings.MaxTracesSubmittedPerSecondInternal;
-            _customSamplingRules = settings.CustomSamplingRulesInternal;
-            _customSamplingRulesFormat = settings.CustomSamplingRulesFormat;
+            CustomSamplingRulesInternal = settings.CustomSamplingRulesInternal;
+            CustomSamplingRulesFormat = settings.CustomSamplingRulesFormat;
             _spanSamplingRules = settings.SpanSamplingRules;
             _globalSamplingRate = settings.GlobalSamplingRateInternal;
             IntegrationsInternal = new ImmutableIntegrationSettingsCollection(settings.IntegrationsInternal, settings.DisabledIntegrationNamesInternal);
@@ -299,13 +297,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_CustomSamplingRules_Get)]
-        internal string? CustomSamplingRulesInternal => DynamicSettings.CustomSamplingRules ?? _customSamplingRules;
+        internal string? CustomSamplingRulesInternal { get; }
 
         /// <summary>
         /// Gets a value indicating the format for custom sampling rules ("regex" or "glob").
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRulesFormat"/>
-        internal string? CustomSamplingRulesFormat => DynamicSettings.CustomSamplingRulesFormat ?? _customSamplingRulesFormat;
+        internal string? CustomSamplingRulesFormat { get; }
 
         /// <summary>
         /// Gets a value indicating the span sampling rules.
