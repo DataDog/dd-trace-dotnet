@@ -43,9 +43,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
                 return;
             }
 
-            for (var i = 0; i < request.PublishBatchRequestEntries.Count; i++)
+            foreach (var t in request.PublishBatchRequestEntries)
             {
-                var entry = request.PublishBatchRequestEntries[i].DuckCast<IContainsMessageAttributes>();
+                var entry = t?.DuckCast<IContainsMessageAttributes>();
 
                 if (entry != null)
                 {
