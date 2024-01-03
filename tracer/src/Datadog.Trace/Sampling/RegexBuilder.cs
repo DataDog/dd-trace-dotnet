@@ -29,9 +29,9 @@ internal static class RegexBuilder
         }
 
 #if NETCOREAPP3_1_OR_GREATER
-        var options = RegexOptions.Compiled | RegexOptions.NonBacktracking;
+        var options = RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.NonBacktracking;
 #else
-        var options = RegexOptions.Compiled;
+        var options = RegexOptions.Compiled | RegexOptions.IgnoreCase;
 #endif
 
         var timeout = TimeSpan.FromSeconds(1);
