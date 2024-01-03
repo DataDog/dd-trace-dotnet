@@ -125,8 +125,8 @@ public class BsonAspect
     /// </summary>
     /// <param name="json"> the json </param>
     /// <returns> the JsonReader object </returns>
-    [AspectMethodReplace("MongoDB.Bson.IO.JsonReader::.ctor(System.String)")]
-    public static object? Constructor(string json)
+    [AspectCtorReplace("MongoDB.Bson.IO.JsonReader::.ctor(System.String)")]
+    public static object Constructor(string json)
     {
         try
         {

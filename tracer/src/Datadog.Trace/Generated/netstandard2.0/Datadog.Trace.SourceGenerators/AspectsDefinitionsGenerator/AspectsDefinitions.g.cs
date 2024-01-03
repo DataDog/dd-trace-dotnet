@@ -57,8 +57,12 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"MongoDB.Bson.Serialization.IBsonSerializerExtensions::Deserialize(MongoDB.Bson.Serialization.IBsonSerializer`1<!!0>,MongoDB.Bson.Serialization.BsonDeserializationContext)\",\"\",[0],[False],[None],Propagation,[])] DeserializeExtension(System.Object,System.Object)",
 "  [AspectMethodReplace(\"MongoDB.Bson.Serialization.BsonSerializer::Deserialize(MongoDB.Bson.IO.IBsonReader,System.Action`1<Builder>)\",\"\",[0],[False],[None],Propagation,[])] DeserializeBson(System.Object,System.Object)",
 "  [AspectMethodReplace(\"MongoDB.Bson.BsonDocument::Parse(System.String)\",\"\",[0],[False],[None],Propagation,[])] Parse(System.String)",
+<<<<<<< HEAD
 "  [AspectMethodReplace(\"MongoDB.Bson.IO.JsonReader::.ctor(System.String)\",\"\",[0],[False],[None],Propagation,[])] Constructor(System.String)",
 >>>>>>> 7a751e9d0 (Fix vuln type)
+=======
+"  [AspectCtorReplace(\"MongoDB.Bson.IO.JsonReader::.ctor(System.String)\",\"\",[0],[False],[None],Propagation,[])] Constructor(System.String)",
+>>>>>>> 6234bca2b (Change to AspectCtorReplace)
 "[AspectClass(\"MongoDB.Driver\",[None],Sink,[NoSqlInjection])] Datadog.Trace.Iast.Aspects.MongoDB.MongoDatabaseAspect",
 "  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoDatabase::RunCommand(MongoDB.Driver.Command`1<!!0>,MongoDB.Driver.ReadPreference,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] AnalyzeCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoDatabase::RunCommandAsync(MongoDB.Driver.Command`1<!!0>,MongoDB.Driver.ReadPreference,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] AnalyzeCommand(System.Object)",
