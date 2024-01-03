@@ -6,15 +6,11 @@
 #nullable enable
 
 using System;
-using System.Collections;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {

@@ -3,9 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
 using MessagePack;
 
 namespace Datadog.Trace.TestHelpers.DataStreamsMonitoring;
@@ -31,21 +28,4 @@ public class MockDataStreamsPayload
 
     [Key(nameof(Stats))]
     public MockDataStreamsBucket[] Stats { get; set; }
-
-    public static IList<MockDataStreamsStatsPoint> ToPoints(IImmutableList<MockDataStreamsPayload> payloads)
-    {
-        var points = new List<MockDataStreamsStatsPoint>();
-        foreach (var payload in payloads)
-        {
-            foreach (var bucket in payload.Stats)
-            {
-                if (bucket.Stats != null)
-                {
-                    points.AddRange(bucket.Stats);
-                }
-            }
-        }
-
-        return points.OrderBy(s => s.Hash).ThenBy(s => s.TimestampType).ToList();
-    }
 }
