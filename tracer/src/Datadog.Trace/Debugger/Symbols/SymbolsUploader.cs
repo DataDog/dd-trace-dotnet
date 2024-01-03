@@ -68,7 +68,7 @@ namespace Datadog.Trace.Debugger.Symbols
             _subscriptionManager.SubscribeToChanges(_subscription);
         }
 
-        private IEnumerable<ApplyDetails> Callback(Dictionary<string, List<RemoteConfiguration>> addedConfig, Dictionary<string, List<RemoteConfigurationPath>>? removedConfig)
+        private ApplyDetails[] Callback(Dictionary<string, List<RemoteConfiguration>> addedConfig, Dictionary<string, List<RemoteConfigurationPath>>? removedConfig)
         {
             // TODO: should we do something with `removedConfig`?
             // Assumptions:
@@ -103,7 +103,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 _enablementSemaphore.Release(1);
             }
 
-            return Enumerable.Empty<ApplyDetails>();
+            return Array.Empty<ApplyDetails>();
         }
 
         private void ConfigurationChanged(AgentConfiguration configuration)
