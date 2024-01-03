@@ -17,6 +17,7 @@ internal record AgentConfiguration
         string? dataStreamsMonitoringEndpoint,
         string? eventPlatformProxyEndpoint,
         string? telemetryProxyEndpoint,
+        string? tracerFlareEndpoint,
         bool clientDropP0)
     {
         ConfigurationEndpoint = configurationEndpoint;
@@ -26,6 +27,7 @@ internal record AgentConfiguration
         DataStreamsMonitoringEndpoint = dataStreamsMonitoringEndpoint;
         EventPlatformProxyEndpoint = eventPlatformProxyEndpoint;
         TelemetryProxyEndpoint = telemetryProxyEndpoint;
+        TracerFlareEndpoint = tracerFlareEndpoint;
         ClientDropP0s = clientDropP0;
     }
 
@@ -42,6 +44,8 @@ internal record AgentConfiguration
     public string? EventPlatformProxyEndpoint { get; }
 
     public string? TelemetryProxyEndpoint { get; }
+
+    public string? TracerFlareEndpoint { get; }
 
     public bool ClientDropP0s { get; }
 }

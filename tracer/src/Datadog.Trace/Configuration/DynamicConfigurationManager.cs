@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration.ConfigurationSources;
@@ -110,16 +109,16 @@ namespace Datadog.Trace.Configuration
             Tracer.ConfigureInternal(newSettings);
         }
 
-        private IEnumerable<ApplyDetails> ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
+        private ApplyDetails[] ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
         {
             if (!configByProduct.TryGetValue(ProductName, out var apmLibrary))
             {
-                return Enumerable.Empty<ApplyDetails>();
+                return Array.Empty<ApplyDetails>();
             }
 
             if (apmLibrary.Count == 0)
             {
-                return Enumerable.Empty<ApplyDetails>();
+                return Array.Empty<ApplyDetails>();
             }
 
             var result = new ApplyDetails[apmLibrary.Count];

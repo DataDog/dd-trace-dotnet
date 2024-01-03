@@ -675,10 +675,10 @@ src/Datadog.Trace/Debugger/Sink/Models/ProbeException.cs
 src/Datadog.Trace/Debugger/Sink/Models/ProbeStatus.cs
 src/Datadog.Trace/Debugger/Sink/Models/Status.cs
 src/Datadog.Trace/Debugger/Sink/Models/TimedMessage.cs
-src/Datadog.Trace/IAST/Aspects/System/StringAspects.cs
 src/Datadog.Trace/IAST/Aspects/System.DirectoryServices/SearchRequestAspect.cs
 src/Datadog.Trace/IAST/Aspects/System.Web.SessionState/HttpSessionStateBaseAspect.cs
 src/Datadog.Trace/IAST/Aspects/System.Web.SessionState/SessionExtensionsAspect.cs
+src/Datadog.Trace/IAST/Aspects/System/StringAspects.cs
 src/Datadog.Trace/RemoteConfigurationManagement/Protocol/Tuf/Signed.cs
 src/Datadog.Trace/RemoteConfigurationManagement/Protocol/Tuf/Target.cs
 src/Datadog.Trace/RemoteConfigurationManagement/Protocol/Tuf/TargetCustom.cs

@@ -33,7 +33,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private readonly CancellationTokenSource _cancellationSource;
 
-        private string? _lastPollError;
         private int _isPollingStarted;
         private bool _isRcmEnabled;
         private bool _gitMetadataAddedToRequestTags;
@@ -52,7 +51,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _pollInterval = pollInterval;
             _gitMetadataTagsProvider = gitMetadataTagsProvider;
 
-            _lastPollError = null;
             _subscriptionManager = subscriptionManager;
             _cancellationSource = new CancellationTokenSource();
             discoveryService.SubscribeToChanges(SetRcmEnabled);
@@ -135,8 +133,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
                 if (isRcmEnabled && _subscriptionManager.HasAnySubscription)
                 {
-                    await Poll().ConfigureAwait(false);
-                    _lastPollError = null;
+                    try
+                    {
+                        await Poll().ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        // It shouldn't happen because the RcmSubscriptionManager swallows exceptions.
+                        // But hey, we all know what's going to happen sooner or later.
+                        Log.Error(ex, "Error while polling remote configuration management service");
+                    }
                 }
 
                 try
@@ -150,26 +156,15 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
         }
 
-        private async Task Poll()
+        private Task Poll()
         {
-            try
+            return _subscriptionManager.SendRequest(_rcmTracer, request =>
             {
-                var request = _subscriptionManager.BuildRequest(_rcmTracer, _lastPollError);
-
                 EnrichTagsWithGitMetadata(request.Client.ClientTracer.Tags);
                 request.Client.ClientTracer.ExtraServices = ExtraServicesProvider.Instance.GetExtraServices();
 
-                var response = await _remoteConfigurationApi.GetConfigs(request).ConfigureAwait(false);
-
-                if (response?.Targets?.Signed != null)
-                {
-                    _subscriptionManager.ProcessResponse(response);
-                }
-            }
-            catch (Exception e)
-            {
-                _lastPollError = e.Message;
-            }
+                return _remoteConfigurationApi.GetConfigs(request);
+            });
         }
 
         private void EnrichTagsWithGitMetadata(List<string> tags)

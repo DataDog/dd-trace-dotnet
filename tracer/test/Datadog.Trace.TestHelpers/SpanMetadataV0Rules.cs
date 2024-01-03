@@ -336,6 +336,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("grpc.method.service")
                 .IsPresent("grpc.status.code")
                 .IsPresent("out.host")
+                .IsPresent("peer.hostname")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "Grpc")
                 .Matches("span.kind", "client"));

@@ -164,7 +164,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal IEnumerable<ApplyDetails> UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
+        internal ApplyDetails[] UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
         {
             string? rcmUpdateError = null;
             UpdateResult? updateResult = null;
@@ -228,20 +228,30 @@ namespace Datadog.Trace.AppSec
                 Log.Warning(e, "An error happened on the rcm subscription callback in class Security");
             }
 
-            var applyDetails = new List<ApplyDetails>();
+            int productsCount = 0;
+
+            foreach (var config in configsByProduct)
+            {
+                productsCount += config.Value.Count;
+            }
+
+            var applyDetails = new ApplyDetails[productsCount];
             var finalError = rcmUpdateError ?? updateResult?.ErrorMessage;
+
+            int index = 0;
+
             if (string.IsNullOrEmpty(finalError))
             {
                 foreach (var config in configsByProduct.Values.SelectMany(v => v))
                 {
-                    applyDetails.Add(ApplyDetails.FromOk(config.Path.Path));
+                    applyDetails[index++] = ApplyDetails.FromOk(config.Path.Path);
                 }
             }
             else
             {
                 foreach (var config in configsByProduct.Values.SelectMany(v => v))
                 {
-                    applyDetails.Add(ApplyDetails.FromError(config.Path.Path, finalError));
+                    applyDetails[index++] = ApplyDetails.FromError(config.Path.Path, finalError);
                 }
             }
 

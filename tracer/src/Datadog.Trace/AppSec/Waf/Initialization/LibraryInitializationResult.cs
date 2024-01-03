@@ -10,12 +10,13 @@ namespace Datadog.Trace.AppSec.Waf.Initialization;
 
 internal class LibraryInitializationResult
 {
-    private LibraryInitializationResult(bool exportErrorHappened, bool libraryLoadError, bool platformNotSupported, WafLibraryInvoker? wafLibraryInvoker = null)
+    private LibraryInitializationResult(bool exportErrorHappened, bool libraryLoadError, bool platformNotSupported, bool versionNotCompatible, WafLibraryInvoker? wafLibraryInvoker = null)
     {
         ExportErrorHappened = exportErrorHappened;
         LibraryLoadError = libraryLoadError;
         PlatformNotSupported = platformNotSupported;
         WafLibraryInvoker = wafLibraryInvoker;
+        VersionNotCompatible = versionNotCompatible;
     }
 
     internal WafLibraryInvoker? WafLibraryInvoker { get; }
@@ -26,13 +27,17 @@ internal class LibraryInitializationResult
 
     internal bool PlatformNotSupported { get; }
 
-    internal bool Success => ExportErrorHappened == false && LibraryLoadError == false && PlatformNotSupported == false;
+    internal bool VersionNotCompatible { get; }
 
-    internal static LibraryInitializationResult FromLibraryLoadError() => new(false, true, false);
+    internal bool Success => ExportErrorHappened == false && LibraryLoadError == false && PlatformNotSupported == false && VersionNotCompatible == false;
 
-    internal static LibraryInitializationResult FromExportErrorHappened() => new(true, false, false);
+    internal static LibraryInitializationResult FromLibraryLoadError() => new(false, true, false, false);
 
-    internal static LibraryInitializationResult FromPlatformNotSupported() => new(false, false, true);
+    internal static LibraryInitializationResult FromExportErrorHappened() => new(true, false, false, false);
 
-    public static LibraryInitializationResult FromSuccess(WafLibraryInvoker wafLibraryInvoker) => new(false, false, false, wafLibraryInvoker);
+    internal static LibraryInitializationResult FromPlatformNotSupported() => new(false, false, true, false);
+
+    internal static LibraryInitializationResult FromVersionNotCompatible() => new(false, false, false, true);
+
+    public static LibraryInitializationResult FromSuccess(WafLibraryInvoker wafLibraryInvoker) => new(false, false, false, false, wafLibraryInvoker);
 }

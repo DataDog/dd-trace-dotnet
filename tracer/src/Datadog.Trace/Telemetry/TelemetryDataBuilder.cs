@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryDataBuilder.cs" company="Datadog">
+// <copyright file="TelemetryDataBuilder.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.DTOs;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry;
 
@@ -36,6 +37,7 @@ internal class TelemetryDataBuilder
                 {
                     Configuration = input.Configuration,
                     Products = input.Products,
+                    InstallSignature = GetInstallSignature()
                 })
             };
         }
@@ -161,6 +163,25 @@ internal class TelemetryDataBuilder
                 Integrations = integrations
             },
             namingSchemeVersion);
+
+    private static AppStartedPayload.InstallSignaturePayload? GetInstallSignature()
+    {
+        var installId = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_ID");
+        var installType = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TYPE");
+        var installTime = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TIME");
+
+        if (string.IsNullOrEmpty(installId) && string.IsNullOrEmpty(installType) && string.IsNullOrEmpty(installTime))
+        {
+            return null;
+        }
+
+        return new AppStartedPayload.InstallSignaturePayload
+        {
+            InstallId = installId,
+            InstallType = installType,
+            InstallTime = installTime
+        };
+    }
 
     private TelemetryData GetRequest(
         ApplicationTelemetryData application,

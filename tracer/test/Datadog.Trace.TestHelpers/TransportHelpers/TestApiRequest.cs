@@ -5,8 +5,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 
 namespace Datadog.Trace.TestHelpers.TransportHelpers;
 
@@ -56,5 +58,14 @@ internal class TestApiRequest : IApiRequest
         Responses.Add(response);
 
         return Task.FromResult((IApiResponse)response);
+    }
+
+    public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
+    {
+        using (var ms = new MemoryStream())
+        {
+            await writeToRequestStream(ms);
+            return await PostAsync(new ArraySegment<byte>(ms.ToArray()), ContentTypeHelper.GetContentType(contentType, multipartBoundary), contentEncoding);
+        }
     }
 }
