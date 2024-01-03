@@ -213,6 +213,7 @@ internal class CheckIisCommand : Command
                 if (process.DotnetRuntime == ProcessInfo.Runtime.Unknown)
                 {
                     Utils.WriteError(AspNetCoreOutOfProcessNotFound);
+                    return 1;
                 }
             }
 
