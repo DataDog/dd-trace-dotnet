@@ -1,4 +1,4 @@
-﻿// <copyright file="ActivityTagsTests.cs" company="Datadog">
+// <copyright file="ActivityTagsTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -57,6 +57,14 @@ public class ActivityTagsTests
             new object[] { "string[]_val", new[] { "val1", "val2" }, TagKind.Meta, new Dictionary<string, object> { { "string[]_val.0", "val1" }, { "string[]_val.1", "val2" } } },
             new object[] { "bool[]_val", new[] { true, false }, TagKind.Meta, new Dictionary<string, object> { { "bool[]_val.0", "true" }, { "bool[]_val.1", "false" } } },
             new object[] { "double[]_val", new[] { -5.0, 5.0 }, TagKind.Metric, new Dictionary<string, object> { { "double[]_val.0", -5.0 }, { "double[]_val.1", 5.0 } } },
+            new object[]
+            {
+                "char[][]_val", new[]
+                {
+                    new object[] { 'a', 'b', 'c' },
+                    new object[] { 'd', 'e', 'f' }
+                }, TagKind.Meta, new Dictionary<string, object> { { "char[][]_val.0", """["a","b","c"]""" }, { "char[][]_val.1", """["d","e","f"]""" } }
+            }
         };
 
     // TODO what about an array of object that contains string and numeric objects?
