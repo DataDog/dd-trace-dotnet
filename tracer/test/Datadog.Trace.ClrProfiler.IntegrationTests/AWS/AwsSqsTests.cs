@@ -110,6 +110,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         [CollectionDefinition(nameof(AwsSqsTestsCollection), DisableParallelization = true)]
         public class AwsSqsTestsCollection
         {
+            // Just an empty collection that's going to be used to prevent different SQS tests relying on the same "backend" (an SQS queue)
+            // from running at the same time, which would cause unwanted interactions between them and make tests fail.
         }
     }
 }
