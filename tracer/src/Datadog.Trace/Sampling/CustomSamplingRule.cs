@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -135,6 +136,36 @@ namespace Datadog.Trace.Sampling
                 return false;
             }
 
+            static bool MatchTags(Span span, List<KeyValuePair<string, Regex>> tagRegexes)
+            {
+                foreach (var pair in tagRegexes)
+                {
+                    var tagName = pair.Key;
+                    var tagRegex = pair.Value;
+                    var tagValue = span.GetTag(tagName);
+
+                    if (tagValue is null)
+                    {
+                        // if the string tag doesn't exist, try to get it as a numeric tag
+                        var numericTagValue = span.GetMetric(tagName);
+
+                        if (numericTagValue is not null)
+                        {
+                            // G17 comes from https://learn.microsoft.com/en-us/dotnet/standard/base-types/standard-numeric-format-strings
+                            tagValue = numericTagValue.Value.ToString("G17", CultureInfo.InvariantCulture);
+                        }
+                    }
+
+                    if (tagValue is null || !tagRegex.Match(tagValue).Success)
+                    {
+                        // stop as soon as we find a non-match.
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
             try
             {
                 // if a regex is null (not specified), it always matches.
@@ -142,7 +173,8 @@ namespace Datadog.Trace.Sampling
                 // TODO: match tags
                 return (_serviceNameRegex is null || _serviceNameRegex.Match(span.ServiceName).Success) &&
                        (_operationNameRegex is null || _operationNameRegex.Match(span.OperationName).Success) &&
-                       (_resourceNameRegex is null || _resourceNameRegex.Match(span.ResourceName).Success);
+                       (_resourceNameRegex is null || _resourceNameRegex.Match(span.ResourceName).Success) &&
+                       (_tagRegexes is null || MatchTags(span, _tagRegexes));
             }
             catch (RegexMatchTimeoutException e)
             {
