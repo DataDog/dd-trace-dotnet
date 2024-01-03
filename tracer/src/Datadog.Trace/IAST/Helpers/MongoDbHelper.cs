@@ -14,59 +14,38 @@ internal static class MongoDbHelper
 {
     internal static void AnalyzeBsonDocument(object command)
     {
-        try
+        var document = command.GetType().GetProperty("Document")?.GetValue(command);
+        if (document == null)
         {
-            var document = command.GetType().GetProperty("Document")?.GetValue(command);
-            if (document == null)
-            {
-                return;
-            }
-
-            var taintedObjectDocument = IastModule.GetIastContext()?.GetTaintedObjects().Get(document);
-            if (taintedObjectDocument?.LinkedObject?.Value is not string jsonStringValue)
-            {
-                return;
-            }
-
-            IastModule.OnNoSqlQuery(jsonStringValue, IntegrationId.MongoDb);
+            return;
         }
-        catch (Exception)
+
+        var taintedObjectDocument = IastModule.GetIastContext()?.GetTaintedObjects().Get(document);
+        if (taintedObjectDocument?.LinkedObject?.Value is not string jsonStringValue)
         {
-            // Failed to get Document property, ignore
+            return;
         }
+
+        IastModule.OnNoSqlQuery(jsonStringValue, IntegrationId.MongoDb);
     }
 
     internal static void AnalyzeJsonCommand(object command)
     {
-        try
+        var json = command.GetType().GetProperty("Json")?.GetValue(command);
+        if (json is not string jsonStringValue)
         {
-            var json = command.GetType().GetProperty("Json")?.GetValue(command);
-            if (json is not string jsonStringValue)
-            {
-                return;
-            }
+            return;
+        }
 
-            IastModule.OnNoSqlQuery(jsonStringValue, IntegrationId.MongoDb);
-        }
-        catch (Exception)
-        {
-            // Failed to get Json property, ignore
-        }
+        IastModule.OnNoSqlQuery(jsonStringValue, IntegrationId.MongoDb);
     }
 
     internal static object? InvokeMethod(string typeName, string methodName, object[] args, Type[] argTypes)
     {
-        try
-        {
-            var type = Type.GetType(typeName);
-            var method = type?.GetMethod(methodName, argTypes);
-            var result = method?.Invoke(null, args);
-            return result;
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var type = Type.GetType(typeName);
+        var method = type?.GetMethod(methodName, argTypes);
+        var result = method?.Invoke(null, args);
+        return result;
     }
 
     // Taint an object by linking it to a tainted string

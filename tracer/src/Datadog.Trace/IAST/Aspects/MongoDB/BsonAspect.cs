@@ -45,25 +45,22 @@ public class BsonAspect
     {
         var result = CallOriginalMethod();
 
-        // The reader can be tainted
-        var reader = context.GetType().GetProperty("Reader")?.GetValue(context);
-        MongoDbHelper.TaintObjectWithJson(result, MongoDbHelper.TaintedLinkedObject(reader));
+        try
+        {
+            // The reader can be tainted
+            var reader = context.GetType().GetProperty("Reader")?.GetValue(context);
+            MongoDbHelper.TaintObjectWithJson(result, MongoDbHelper.TaintedLinkedObject(reader));
+        }
+        catch (Exception) { /* Failed to get the Reader or taint the object */ }
 
         return result;
 
         object? CallOriginalMethod()
         {
-            try
-            {
-                var typeMethodClass = Type.GetType("MongoDB.Bson.Serialization.IBsonSerializerExtensions, MongoDB.Bson")!;
-                var methodsPublicStatic = typeMethodClass.GetMethods(BindingFlags.Public | BindingFlags.Static);
-                var deserializeMethod = methodsPublicStatic.Where(m => m is { Name: "Deserialize" }).FirstOrDefault();
-                return deserializeMethod?.Invoke(null, new[] { serializer, context });
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            var typeMethodClass = Type.GetType("MongoDB.Bson.Serialization.IBsonSerializerExtensions, MongoDB.Bson")!;
+            var methodsPublicStatic = typeMethodClass.GetMethods(BindingFlags.Public | BindingFlags.Static);
+            var deserializeMethod = methodsPublicStatic.Where(m => m is { Name: "Deserialize" }).FirstOrDefault();
+            return deserializeMethod?.Invoke(null, new[] { serializer, context });
         }
     }
 
@@ -78,30 +75,26 @@ public class BsonAspect
     {
         var result = CallOriginalMethod();
 
-        // The reader can be tainted
-        MongoDbHelper.TaintObjectWithJson(result, MongoDbHelper.TaintedLinkedObject(bsonReader));
+        try
+        {
+            MongoDbHelper.TaintObjectWithJson(result, MongoDbHelper.TaintedLinkedObject(bsonReader));
+        }
+        catch (Exception) { /* Failed to taint the object */ }
 
         return result;
 
         object? CallOriginalMethod()
         {
-            try
-            {
-                var typeMethodClass = Type.GetType("MongoDB.Bson.Serialization.BsonSerializer, MongoDB.Bson")!;
-                var methodsPublicStatic = typeMethodClass.GetMethods(BindingFlags.Public | BindingFlags.Static);
-                var deserializeMethod = methodsPublicStatic.FirstOrDefault(m =>
+            var typeMethodClass = Type.GetType("MongoDB.Bson.Serialization.BsonSerializer, MongoDB.Bson")!;
+            var methodsPublicStatic = typeMethodClass.GetMethods(BindingFlags.Public | BindingFlags.Static);
+            var deserializeMethod = methodsPublicStatic.FirstOrDefault(m =>
                                                                                m is { IsGenericMethod: true, Name: "Deserialize" } &&
                                                                                m.GetParameters().Length == 2 &&
                                                                                m.GetParameters()[0].ParameterType == Type.GetType("MongoDB.Bson.IO.IBsonReader, MongoDB.Bson"));
 
-                var genericMethod = deserializeMethod?.MakeGenericMethod(typeof(object));
+            var genericMethod = deserializeMethod?.MakeGenericMethod(typeof(object));
 
-                return genericMethod?.Invoke(null, new[] { bsonReader, configurator });
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            return genericMethod?.Invoke(null, new[] { bsonReader, configurator });
         }
     }
 
@@ -115,7 +108,11 @@ public class BsonAspect
     {
         var result = MongoDbHelper.InvokeMethod("MongoDB.Bson.BsonDocument, MongoDB.Bson", "Parse", new object[] { json }, new[] { typeof(string) });
 
-        MongoDbHelper.TaintObjectWithJson(result, json);
+        try
+        {
+            MongoDbHelper.TaintObjectWithJson(result, json);
+        }
+        catch (Exception) { /* Failed to taint the object */ }
 
         return result;
     }
@@ -126,24 +123,20 @@ public class BsonAspect
     /// <param name="json"> the json </param>
     /// <returns> the JsonReader object </returns>
     [AspectCtorReplace("MongoDB.Bson.IO.JsonReader::.ctor(System.String)")]
-    public static object Constructor(string json)
+    public static object? Constructor(string json)
     {
+        // Invoke the constructor method of the JsonReader
+        var typeMethodClass = Type.GetType("MongoDB.Bson.IO.JsonReader, MongoDB.Bson")!;
+        var constructor = typeMethodClass.GetConstructor(new[] { typeof(string) });
+        var result = constructor?.Invoke(new object[] { json });
+
         try
         {
-            // Invoke the constructor method of the JsonReader
-            var typeMethodClass = Type.GetType("MongoDB.Bson.IO.JsonReader, MongoDB.Bson")!;
-            var constructor = typeMethodClass.GetConstructor(new[] { typeof(string) });
-            var result = constructor?.Invoke(new object[] { json });
-
             MongoDbHelper.TaintObjectWithJson(result, json);
+        }
+        catch (Exception) { /* Failed to taint the object */ }
 
-            return result;
-        }
-        catch (Exception)
-        {
-            // Failed to invoke the original method
-            return null;
-        }
+        return result;
     }
 }
 #endif

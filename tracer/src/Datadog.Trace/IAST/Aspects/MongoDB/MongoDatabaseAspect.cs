@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Helpers;
 
@@ -32,17 +33,24 @@ public class MongoDatabaseAspect
             return command;
         }
 
-        var commandType = command.GetType().Name;
-        switch (commandType)
+        try
         {
-            case "BsonDocumentFilterDefinition`1":
-            case "BsonDocumentCommand`1":
-                MongoDbHelper.AnalyzeBsonDocument(command);
-                break;
-            case "JsonFilterDefinition`1":
-            case "JsonCommand`1":
-                MongoDbHelper.AnalyzeJsonCommand(command);
-                break;
+            var commandType = command.GetType().Name;
+            switch (commandType)
+            {
+                case "BsonDocumentFilterDefinition`1":
+                case "BsonDocumentCommand`1":
+                    MongoDbHelper.AnalyzeBsonDocument(command);
+                    break;
+                case "JsonFilterDefinition`1":
+                case "JsonCommand`1":
+                    MongoDbHelper.AnalyzeJsonCommand(command);
+                    break;
+            }
+        }
+        catch (Exception)
+        {
+            // Failed to analyze the command
         }
 
         return command;
