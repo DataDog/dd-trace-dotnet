@@ -44,6 +44,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalQueryableExtensions::FromSqlRaw(Microsoft.EntityFrameworkCore.DbSet`1<!!0>,System.String,System.Object[])\",\"\",[1],[False],[None],Default,[])] ReviewSqlString(System.String)",
 "[AspectClass(\"MongoDB.Bson\",[None],Sink,[NoSqlInjection])] Datadog.Trace.Iast.Aspects.MongoDB.BsonAspect",
 <<<<<<< HEAD
+<<<<<<< HEAD
 "  [AspectMethodReplace(\"MongoDB.Bson.IO.BsonBinaryReader::ReadString()\",\"\",[0],[False],[None],Default,[])] ReadString(System.Object)",
 "  [AspectMethodReplace(\"MongoDB.Bson.IO.BsonReader::ReadString()\",\"\",[0],[False],[None],Default,[])] ReadString(System.Object)",
 "  [AspectMethodReplace(\"MongoDB.Bson.IO.IBsonReader::ReadString()\",\"\",[0],[False],[None],Default,[])] ReadString(System.Object)",
@@ -54,6 +55,8 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"MongoDB.Bson.IO.BsonBinaryReader::ReadString()\",\"\",[0],[False],[None],Propagation,[])] ReadString(System.Object)",
 "  [AspectMethodReplace(\"MongoDB.Bson.IO.BsonReader::ReadString()\",\"\",[0],[False],[None],Propagation,[])] ReadString(System.Object)",
 "  [AspectMethodReplace(\"MongoDB.Bson.IO.IBsonReader::ReadString()\",\"\",[0],[False],[None],Propagation,[])] ReadString(System.Object)",
+=======
+>>>>>>> a6ddfb16b (Remove testing aspect)
 "  [AspectMethodReplace(\"MongoDB.Bson.Serialization.IBsonSerializerExtensions::Deserialize(MongoDB.Bson.Serialization.IBsonSerializer`1<!!0>,MongoDB.Bson.Serialization.BsonDeserializationContext)\",\"\",[0],[False],[None],Propagation,[])] DeserializeExtension(System.Object,System.Object)",
 "  [AspectMethodReplace(\"MongoDB.Bson.Serialization.BsonSerializer::Deserialize(MongoDB.Bson.IO.IBsonReader,System.Action`1<Builder>)\",\"\",[0],[False],[None],Propagation,[])] DeserializeBson(System.Object,System.Object)",
 "  [AspectMethodReplace(\"MongoDB.Bson.BsonDocument::Parse(System.String)\",\"\",[0],[False],[None],Propagation,[])] Parse(System.String)",

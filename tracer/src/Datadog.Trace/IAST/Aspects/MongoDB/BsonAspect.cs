@@ -21,20 +21,6 @@ namespace Datadog.Trace.Iast.Aspects.MongoDB;
 public class BsonAspect
 {
     /// <summary>
-    /// MongoDB Bson aspect
-    /// </summary>
-    /// <param name="source"> source </param>
-    /// <returns> oui </returns>
-    [AspectMethodReplace("MongoDB.Bson.IO.BsonBinaryReader::ReadString()")]
-    [AspectMethodReplace("MongoDB.Bson.IO.BsonReader::ReadString()")]
-    [AspectMethodReplace("MongoDB.Bson.IO.IBsonReader::ReadString()")]
-    public static object ReadString(object source)
-    {
-        Console.WriteLine(source);
-        return "result";
-    }
-
-    /// <summary>
     /// MongoDB Deserialize aspect
     /// </summary>
     /// <param name="serializer"> the serializer </param>
