@@ -103,7 +103,7 @@ namespace Datadog.Trace
         /// Automatic instrumentation intercepts this method and reconfigures the automatic tracer
         /// </summary>
         [Instrumented]
-        private static void Configure(Dictionary<string, object> settings)
+        private static void Configure(Dictionary<string, object?> settings)
         {
             _ = settings;
         }

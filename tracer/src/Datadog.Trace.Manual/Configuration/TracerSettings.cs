@@ -4,6 +4,9 @@
 // </copyright>
 
 using System.Collections.Concurrent;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration;
 
@@ -31,50 +34,102 @@ public sealed class TracerSettings
     private readonly bool _tracerMetricsEnabledInitial;
     private readonly bool _statsComputationEnabledInitial;
     private readonly Uri _agentUriInitial;
+    private readonly bool _isFromDefaultSources;
 
-    private string? _environmentOverride;
-    private string? _serviceNameOverride;
-    private string? _serviceVersionOverride;
-    private bool? _analyticsEnabledOverride;
-    private double? _globalSamplingRateOverride;
-    private IDictionary<string, string>? _globalTagsOverride;
-    private bool? _kafkaCreateConsumerScopeEnabledOverride;
-    private bool? _logsInjectionEnabledOverride;
-    private bool? _startupDiagnosticLogEnabledOverride;
-    private bool? _traceEnabledOverride;
-    private bool? _tracerMetricsEnabledOverride;
-    private Uri? _agentUriOverride;
+    private OverrideValue<string?> _environmentOverride = new();
+    private OverrideValue<string?> _serviceNameOverride = new();
+    private OverrideValue<string?> _serviceVersionOverride = new();
+    private OverrideValue<bool> _analyticsEnabledOverride = new();
+    private OverrideValue<double?> _globalSamplingRateOverride = new();
+    private IDictionary<string, string> _globalTagsOverride;
+    private IDictionary<string, string> _grpcTagsOverride;
+    private IDictionary<string, string> _headerTagsOverride;
+    private OverrideValue<bool> _kafkaCreateConsumerScopeEnabledOverride = new();
+    private OverrideValue<bool> _logsInjectionEnabledOverride = new();
+    private OverrideValue<int> _maxTracesSubmittedPerSecondOverride = new();
+    private OverrideValue<string?> _customSamplingRulesOverride = new();
+    private OverrideValue<bool> _startupDiagnosticLogEnabledOverride = new();
+    private OverrideValue<bool> _traceEnabledOverride = new();
+    private HashSet<string> _disabledIntegrationNamesOverride;
+    private OverrideValue<bool> _tracerMetricsEnabledOverride = new();
+    private OverrideValue<bool> _statsComputationEnabledOverride = new();
+    private OverrideValue<Uri> _agentUriOverride = new();
+    private List<int>? _httpClientErrorCodes;
+    private List<int>? _httpServerErrorCodes;
+    private Dictionary<string, string>? _serviceNameMappings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
     /// </summary>
     [Instrumented]
     public TracerSettings()
+        : this(PopulateDictionary(new(), useDefaultSources: false), isFromDefaultSources: false)
     {
-        // TODO: _Currently_ this doesn't load _any_ configuration, which feels like an error for customers to use?
-        // Instead, I'm thinking that we should populate from the default sources instead, as otherwise seems
+        // TODO: _Currently_ this doesn't load _any_ configuration, so it feels like an error for customers to use it?
+        // I'm wondering if we should _always_ populate from the default sources instead, as otherwise seems
         // like an obvious point of confusion?
+    }
 
-        // TODO: We need to set the values here based on the current auto-config values
-        // to ensure the setters get the correct values
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values,
+    /// or initializes the configuration from environment variables and configuration files.
+    /// Calling <c>new TracerSettings(true)</c> is equivalent to calling <c>TracerSettings.FromDefaultSources()</c>
+    /// </summary>
+    /// <param name="useDefaultSources">If <c>true</c>, creates a <see cref="TracerSettings"/> populated from
+    /// the default sources such as environment variables etc. If <c>false</c>, uses the default values.</param>
+    [Instrumented]
+    public TracerSettings(bool useDefaultSources)
+        : this(PopulateDictionary(new(), useDefaultSources), useDefaultSources)
+    {
+    }
+
+    // Internal for testing
+    internal TracerSettings(Dictionary<string, object?> initialValues, bool isFromDefaultSources)
+    {
         // The values set here represent the defaults when there's no auto-instrumentation
-        _diagnosticSourceEnabledInitial = false;
-        _analyticsEnabledInitial = false;
-        _environmentInitial = null;
-        _serviceNameInitial = null;
-        _serviceVersionInitial = null;
-        _globalSamplingRateInitial = null;
-        _globalTagsInitial = new ConcurrentDictionary<string, string>();
-        _kafkaCreateConsumerScopeEnabledInitial = true;
-        _logsInjectionEnabledInitial = false;
-        _startupDiagnosticLogEnabledInitial = true;
-        _traceEnabledInitial = true;
-        _tracerMetricsEnabledInitial = false;
-        _agentUriInitial = new Uri("http://localhost:8126");
+        // We don't care too much if they get out of sync because that's not supported anyway
+        _agentUriInitial = GetValue<Uri?>(initialValues, TracerSettingKeyConstants.AgentUriKey, null) ?? new Uri("http://127.0.0.1:8126");
+        _analyticsEnabledInitial = GetValue(initialValues, TracerSettingKeyConstants.AnalyticsEnabledKey, false);
+        _customSamplingRulesInitial = GetValue<string?>(initialValues, TracerSettingKeyConstants.CustomSamplingRules, null);
+        _disabledIntegrationNamesInitial = GetValue<HashSet<string>?>(initialValues, TracerSettingKeyConstants.DisabledIntegrationNamesKey, null) ?? [];
+        _diagnosticSourceEnabledInitial = GetValue(initialValues, TracerSettingKeyConstants.DiagnosticSourceEnabledKey, false);
+        _environmentInitial = GetValue<string?>(initialValues, TracerSettingKeyConstants.EnvironmentKey, null);
+        _globalSamplingRateInitial = GetValue<double?>(initialValues, TracerSettingKeyConstants.GlobalSamplingRateKey, null);
+        _globalTagsInitial = GetValue<IDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GlobalTagsKey, null) ?? new ConcurrentDictionary<string, string>();
+        _grpcTagsInitial = GetValue<IDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GrpcTags, null) ?? new ConcurrentDictionary<string, string>();
+        _headerTagsInitial = GetValue<IDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.HeaderTags, null) ?? new ConcurrentDictionary<string, string>();
+        _kafkaCreateConsumerScopeEnabledInitial = GetValue(initialValues, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, true);
+        _logsInjectionEnabledInitial = GetValue(initialValues, TracerSettingKeyConstants.LogsInjectionEnabledKey, false);
+        _maxTracesSubmittedPerSecondInitial = GetValue(initialValues, TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey, 100);
+        _serviceNameInitial = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceNameKey, null);
+        _serviceVersionInitial = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceVersionKey, null);
+        _startupDiagnosticLogEnabledInitial = GetValue(initialValues, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, true);
+        _statsComputationEnabledInitial = GetValue(initialValues, TracerSettingKeyConstants.StatsComputationEnabledKey, true);
+        _traceEnabledInitial = GetValue(initialValues, TracerSettingKeyConstants.TraceEnabledKey, true);
+        _tracerMetricsEnabledInitial = GetValue(initialValues, TracerSettingKeyConstants.TracerMetricsEnabledKey, false);
+        _isFromDefaultSources = isFromDefaultSources;
 
+        // we copy these so we can detect changes later (including replacement)
+        _globalTagsOverride = new ConcurrentDictionary<string, string>(_globalTagsInitial);
+        _disabledIntegrationNamesOverride = new HashSet<string>(_disabledIntegrationNamesInitial);
+        _grpcTagsOverride = new ConcurrentDictionary<string, string>(_grpcTagsInitial);
+        _headerTagsOverride = new ConcurrentDictionary<string, string>(_headerTagsInitial);
+
+        // This is just a bunch of indirection to not change the public API for now
 #pragma warning disable CS0618 // Type or member is obsolete
         Exporter = new ExporterSettings(this);
 #pragma warning restore CS0618 // Type or member is obsolete
+
+        static T GetValue<T>(Dictionary<string, object?> results, string key, T defaultValue)
+        {
+            if (results.TryGetValue(key, out var value)
+                && value is T t)
+            {
+                return t;
+            }
+
+            return defaultValue;
+        }
     }
 
     /// <summary>
@@ -104,29 +159,32 @@ public sealed class TracerSettings
     /// Gets or sets the default environment name applied to all spans.
     /// Can also be set via DD_ENV.
     /// </summary>
-    internal string? Environment
+    public string? Environment
     {
-        get => _environmentOverride ?? _environmentInitial;
-        set => _environmentOverride = value;
+        [Instrumented]
+        get => _environmentOverride.IsOverridden ? _environmentOverride.Value : _environmentInitial;
+        set => _environmentOverride = new(value);
     }
 
     /// <summary>
     /// Gets or sets the service name applied to top-level spans and used to build derived service names.
     /// Can also be set via DD_SERVICE.
     /// </summary>
-    internal string? ServiceName
+    public string? ServiceName
     {
-        get => _serviceNameOverride ?? _serviceNameInitial;
-        set => _serviceNameOverride = value;
+        [Instrumented]
+        get => _serviceNameOverride.IsOverridden ? _serviceNameOverride.Value : _serviceNameInitial;
+        set => _serviceNameOverride = new(value);
     }
 
     /// <summary>
     /// Gets or sets the version tag applied to all spans.
     /// </summary>
-    internal string? ServiceVersion
+    public string? ServiceVersion
     {
-        get => _serviceVersionOverride ?? _serviceVersionInitial;
-        set => _serviceVersionOverride = value;
+        [Instrumented]
+        get => _serviceVersionOverride.IsOverridden ? _serviceVersionOverride.Value : _serviceVersionInitial;
+        set => _serviceVersionOverride = new(value);
     }
 
     /// <summary>
@@ -136,38 +194,64 @@ public sealed class TracerSettings
     /// See the documentation for more details.
     /// </summary>
     [Obsolete(DeprecationMessages.AppAnalytics)]
-    internal bool AnalyticsEnabled
+    public bool AnalyticsEnabled
     {
-        get => _analyticsEnabledOverride ?? _analyticsEnabledInitial;
-        set => _analyticsEnabledOverride = value;
+        [Instrumented]
+        get => _analyticsEnabledOverride.IsOverridden ? _analyticsEnabledOverride.Value : _analyticsEnabledInitial;
+        set => _analyticsEnabledOverride = new(value);
     }
 
     /// <summary>
     /// Gets or sets a value indicating a global rate for sampling.
     /// </summary>
-    internal double? GlobalSamplingRate
+    public double? GlobalSamplingRate
     {
-        get => _globalSamplingRateOverride ?? _globalSamplingRateInitial;
-        set => _globalSamplingRateOverride = value;
+        [Instrumented]
+        get => _globalSamplingRateOverride.IsOverridden ? _globalSamplingRateOverride.Value : _globalSamplingRateInitial;
+        set => _globalSamplingRateOverride = new(value);
     }
 
     /// <summary>
     /// Gets or sets the global tags, which are applied to all <see cref="ISpan"/>s.
     /// </summary>
-    internal IDictionary<string, string> GlobalTags
+    public IDictionary<string, string> GlobalTags
     {
-        get => _globalTagsOverride ?? _globalTagsInitial;
+        [Instrumented]
+        get => _globalTagsOverride;
         set => _globalTagsOverride = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the map of metadata keys to tag names, which are applied to the root <see cref="ISpan"/>
+    /// of incoming and outgoing GRPC requests.
+    /// </summary>
+    public IDictionary<string, string> GrpcTags
+    {
+        [Instrumented]
+        get => _grpcTagsOverride;
+        set => _grpcTagsOverride = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="ISpan"/>
+    /// of incoming and outgoing HTTP requests.
+    /// </summary>
+    public IDictionary<string, string> HeaderTags
+    {
+        [Instrumented]
+        get => _headerTagsOverride;
+        set => _headerTagsOverride = value;
     }
 
     /// <summary>
     /// Gets or sets a value indicating whether a span context should be created on exiting a successful Kafka
     /// Consumer.Consume() call, and closed on entering Consumer.Consume().
     /// </summary>
-    internal bool KafkaCreateConsumerScopeEnabled
+    public bool KafkaCreateConsumerScopeEnabled
     {
-        get => _kafkaCreateConsumerScopeEnabledOverride ?? _kafkaCreateConsumerScopeEnabledInitial;
-        set => _kafkaCreateConsumerScopeEnabledOverride = value;
+        [Instrumented]
+        get => _kafkaCreateConsumerScopeEnabledOverride.IsOverridden ? _kafkaCreateConsumerScopeEnabledOverride.Value : _kafkaCreateConsumerScopeEnabledInitial;
+        set => _kafkaCreateConsumerScopeEnabledOverride = new(value);
     }
 
     /// <summary>
@@ -177,8 +261,9 @@ public sealed class TracerSettings
     /// </summary>
     public bool LogsInjectionEnabled
     {
-        get => _logsInjectionEnabledOverride ?? _logsInjectionEnabledInitial;
-        set => _logsInjectionEnabledOverride = value;
+        [Instrumented]
+        get => _logsInjectionEnabledOverride.IsOverridden ? _logsInjectionEnabledOverride.Value : _logsInjectionEnabledInitial;
+        set => _logsInjectionEnabledOverride = new(value);
     }
 
     /// <summary>
@@ -205,12 +290,11 @@ public sealed class TracerSettings
     /// <summary>
     /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
     /// </summary>
-    // TODO: redirect to ImmutableTracerSettings.StartupDiagnosticLogEnabled?
     public bool StartupDiagnosticLogEnabled
     {
-        get => _startupDiagnosticLogEnabledOverride ?? _startupDiagnosticLogEnabledInitial;
-        [Obsolete("This value cannot be set in code. Instead, set it using the DD_TRACE_STARTUP_LOGS environment variable, or in configuration files")]
-        set => _startupDiagnosticLogEnabledOverride = value;
+        [Instrumented]
+        get => _startupDiagnosticLogEnabledOverride.IsOverridden ? _startupDiagnosticLogEnabledOverride.Value : _startupDiagnosticLogEnabledInitial;
+        set => _startupDiagnosticLogEnabledOverride = new(value);
     }
 
     /// <summary>
@@ -219,8 +303,9 @@ public sealed class TracerSettings
     /// </summary>
     public bool TraceEnabled
     {
-        get => _traceEnabledOverride ?? _traceEnabledInitial;
-        set => _traceEnabledOverride = value;
+        [Instrumented]
+        get => _traceEnabledOverride.IsOverridden ? _traceEnabledOverride.Value : _traceEnabledInitial;
+        set => _traceEnabledOverride = new(value);
     }
 
     /// <summary>
@@ -239,8 +324,9 @@ public sealed class TracerSettings
     /// </summary>
     public bool TracerMetricsEnabled
     {
-        get => _tracerMetricsEnabledOverride ?? _tracerMetricsEnabledInitial;
-        set => _tracerMetricsEnabledOverride = value;
+        [Instrumented]
+        get => _tracerMetricsEnabledOverride.IsOverridden ? _tracerMetricsEnabledOverride.Value : _tracerMetricsEnabledInitial;
+        set => _tracerMetricsEnabledOverride = new(value);
     }
 
     /// <summary>
@@ -259,62 +345,160 @@ public sealed class TracerSettings
     /// </summary>
     public Uri AgentUri
     {
-        get => _agentUriOverride ?? _agentUriInitial;
-        set => _agentUriOverride = value;
+        [Instrumented]
+        get => _agentUriOverride.IsOverridden ? _agentUriOverride.Value : _agentUriInitial;
+        set => _agentUriOverride = new(value);
     }
 
     /// <summary>
     /// Gets a collection of <see cref="IntegrationSettings"/> keyed by integration name.
     /// </summary>
-    internal IntegrationSettingsCollection IntegrationsInternal { get; } = new();
+    public IntegrationSettingsCollection Integrations { get; } = new();
 
     /// <summary>
     /// Gets the transport settings that dictate how the tracer connects to the agent.
     /// </summary>
     [Obsolete("This property is obsolete and will be removed in a future version. To set the AgentUri, use the TracerSettings.AgentUri property")]
-    internal ExporterSettings Exporter { get; }
+    [Instrumented]
+    public ExporterSettings Exporter { get; }
 
     /// <summary>
     /// Create a <see cref="TracerSettings"/> populated from the default sources.
     /// </summary>
     /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
-    public static TracerSettings FromDefaultSources()
+    [Instrumented]
+    public static TracerSettings FromDefaultSources() => new(PopulateDictionary(new(), useDefaultSources: true), isFromDefaultSources: true);
+
+    /// <summary>
+    /// Sets the HTTP status code that should be marked as errors for client integrations.
+    /// </summary>
+    /// <param name="statusCodes">Status codes that should be marked as errors</param>
+    public void SetHttpClientErrorStatusCodes(IEnumerable<int> statusCodes)
     {
-        // TODO: this assumes that we change the behaviour of new TracerSettings() to populate with default sources
-        return new TracerSettings();
+        // Check for null to be safe as it's a public API.
+        // We throw in Datadog.Trace so it's the same behaviour, just a better error message
+        if (statusCodes is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(statusCodes));
+        }
+
+        _httpClientErrorCodes = statusCodes.ToList();
     }
 
-    /// TODO: Can we delete this? There's no API for creating a tracer like this
     /// <summary>
-    /// Create an instance of <see cref="ImmutableTracerSettings"/> that can be used to build a <see cref="Tracer"/>
+    /// Sets the HTTP status code that should be marked as errors for server integrations.
     /// </summary>
-    /// <returns>The <see cref="ImmutableTracerSettings"/> that can be passed to a <see cref="Tracer"/> instance</returns>
-    public ImmutableTracerSettings Build() => new();
-
-    internal Dictionary<string, object> ToDictionary()
+    /// <param name="statusCodes">Status codes that should be marked as errors</param>
+    public void SetHttpServerErrorStatusCodes(IEnumerable<int> statusCodes)
     {
-        // only record the overrides
-        var results = new Dictionary<string, object>();
-        AddIfNotNull(results, "DD_ENV", _environmentOverride);
-        AddIfNotNull(results, "DD_SERVICE", _serviceNameOverride);
-        AddIfNotNull(results, "DD_VERSION", _serviceVersionOverride);
-        AddIfNotNull(results, "DD_TRACE_ANALYTICS_ENABLED", _analyticsEnabledOverride);
-        AddIfNotNull(results, "DD_TRACE_SAMPLE_RATE", _globalSamplingRateOverride);
-        AddIfNotNull(results, "DD_TAGS", _globalTagsOverride);
-        AddIfNotNull(results, "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED", _kafkaCreateConsumerScopeEnabledOverride);
-        AddIfNotNull(results, "DD_LOGS_INJECTION", _logsInjectionEnabledOverride);
-        AddIfNotNull(results, "DD_TRACE_STARTUP_LOGS", _startupDiagnosticLogEnabledOverride);
-        AddIfNotNull(results, "DD_TRACE_ENABLED", _traceEnabledOverride);
-        AddIfNotNull(results, "DD_TRACE_METRICS_ENABLED", _tracerMetricsEnabledOverride);
-        AddIfNotNull(results, "DD_TRACE_AGENT_URL", _agentUriOverride);
+        // Check for null to be safe as it's a public API.
+        // We throw in Datadog.Trace so it's the same behaviour, just a better error message
+        if (statusCodes is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(statusCodes));
+        }
+
+        _httpServerErrorCodes = statusCodes.ToList();
+    }
+
+    /// <summary>
+    /// Sets the mappings to use for service names within a <see cref="ISpan"/>
+    /// </summary>
+    /// <param name="mappings">Mappings to use from original service name (e.g. <code>sql-server</code> or <code>graphql</code>)
+    /// as the <see cref="KeyValuePair{TKey, TValue}.Key"/>) to replacement service names as <see cref="KeyValuePair{TKey, TValue}.Value"/>).</param>
+    [PublicApi]
+    public void SetServiceNameMappings(IEnumerable<KeyValuePair<string, string>> mappings)
+    {
+        // Check for null to be safe as it's a public API.
+        // We throw in Datadog.Trace so it's the same behaviour, just a better error message
+        if (mappings is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(mappings));
+        }
+
+        _serviceNameMappings = mappings.ToDictionary(x => x.Key, x => x.Value);
+    }
+
+    [Instrumented]
+    private static Dictionary<string, object?> PopulateDictionary(Dictionary<string, object?> values, bool useDefaultSources)
+    {
+        // The automatic tracer populates the dictionary with values which are then used to create the tracer
+        _ = useDefaultSources;
+        return values;
+    }
+
+    internal Dictionary<string, object?> ToDictionary()
+    {
+        // Could probably source gen this if we can be bothered
+        var results = new Dictionary<string, object?>();
+
+        AddIfChanged(results, TracerSettingKeyConstants.AgentUriKey, _agentUriOverride);
+        AddIfChanged(results, TracerSettingKeyConstants.AnalyticsEnabledKey, _analyticsEnabledOverride);
+        AddIfChanged(results, TracerSettingKeyConstants.EnvironmentKey, _environmentOverride);
+        AddIfChanged(results, TracerSettingKeyConstants.CustomSamplingRules, _customSamplingRulesOverride);
+        AddIfChanged(results, TracerSettingKeyConstants.GlobalSamplingRateKey, _globalSamplingRateOverride);
+        AddIfChanged(results, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, _kafkaCreateConsumerScopeEnabledOverride);
+        AddIfChanged(results, TracerSettingKeyConstants.LogsInjectionEnabledKey, _logsInjectionEnabledOverride);
+        AddIfChanged(results, TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey, _maxTracesSubmittedPerSecondOverride);
+        AddIfChanged(results, TracerSettingKeyConstants.ServiceNameKey, _serviceNameOverride);
+        AddIfChanged(results, TracerSettingKeyConstants.ServiceVersionKey, _serviceVersionOverride);
+        AddIfChanged(results, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, _startupDiagnosticLogEnabledOverride);
+        AddIfChanged(results, TracerSettingKeyConstants.StatsComputationEnabledKey, _statsComputationEnabledOverride);
+        AddIfChanged(results, TracerSettingKeyConstants.TraceEnabledKey, _traceEnabledOverride);
+        AddIfChanged(results, TracerSettingKeyConstants.TracerMetricsEnabledKey, _tracerMetricsEnabledOverride);
+
+        // We have to check if any of the tags have changed
+        AddChangedDictionary(results, TracerSettingKeyConstants.GlobalTagsKey, _globalTagsOverride, _globalTagsInitial);
+        AddChangedDictionary(results, TracerSettingKeyConstants.GrpcTags, _grpcTagsOverride, _grpcTagsInitial);
+        AddChangedDictionary(results, TracerSettingKeyConstants.HeaderTags, _headerTagsOverride, _headerTagsInitial);
+
+        if (_disabledIntegrationNamesInitial.Count != _disabledIntegrationNamesOverride.Count
+         || !_disabledIntegrationNamesOverride.SetEquals(_disabledIntegrationNamesInitial))
+        {
+            results.Add(TracerSettingKeyConstants.DisabledIntegrationNamesKey, _disabledIntegrationNamesOverride);
+        }
+
+        results[TracerSettingKeyConstants.IsFromDefaultSourcesKey] = _isFromDefaultSources;
 
         return results;
 
-        static void AddIfNotNull<T>(Dictionary<string, object> results, string key, T value)
+        static void AddIfChanged<T>(Dictionary<string, object?> results, string key, OverrideValue<T> updated)
         {
-            if (value is not null)
+            if (updated.IsOverridden)
             {
-                results.Add(key, value);
+                results.Add(key, updated.Value);
+            }
+        }
+
+        static void AddChangedDictionary(Dictionary<string, object?> results, string key, IDictionary<string, string> updated, IDictionary<string, string> initial)
+        {
+            if (HasChanges(initial, updated))
+            {
+                results[key] = updated;
+            }
+
+            return;
+
+            static bool HasChanges(IDictionary<string, string> initial, IDictionary<string, string> updated)
+            {
+                // Currently need to account for customers _replacing_ the Global Tags as well as changing it
+                // we create the updated one as a concurrent dictionary, so if they change it
+                if (initial.Count != updated.Count || updated is not ConcurrentDictionary<string, string>)
+                {
+                    return true;
+                }
+
+                var comparer = StringComparer.Ordinal;
+                foreach (var kvp in initial)
+                {
+                    if (!updated.TryGetValue(kvp.Key, out var value2)
+                     || !comparer.Equals(kvp.Value, value2))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
             }
         }
     }
