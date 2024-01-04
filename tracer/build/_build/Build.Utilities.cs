@@ -335,21 +335,35 @@ partial class Build
               {
                   if (t.operation != Operation.EQUAL)
                   {
-                      Logger.Information(DiffToString(t));
+                      var str = DiffToString(t);
+                      if (str.Contains(value: '\n'))
+                      {
+                          // if the diff is multiline, start with a newline so that all changes are aligned
+                          // otherwise it's easy to miss the first line of the diff
+                          str = "\n" + str;
+                      }
+
+                      Logger.Information(str);
                   }
               }
           }
 
           string DiffToString(Diff diff)
           {
-              var line = diff.operation switch
+              if (diff.operation == Operation.EQUAL)
               {
-                  Operation.DELETE => $"- {diff.text}",
-                  Operation.INSERT => $"+ {diff.text}",
-                  Operation.EQUAL => string.Empty,
+                  return string.Empty;
+              }
+
+              var symbol = diff.operation switch
+              {
+                  Operation.DELETE => '-',
+                  Operation.INSERT => '+',
                   _ => throw new Exception("Unknown value of the Option enum.")
               };
-              return line.Trim('\n');
+              // put the symbol at the beginning of each line to make diff clearer when whole blocks of text are missing
+              var lines = diff.text.TrimEnd(trimChar: '\n').Split(Environment.NewLine);
+              return string.Join(Environment.NewLine, lines.Select(l => symbol + l));
           }
       });
 
