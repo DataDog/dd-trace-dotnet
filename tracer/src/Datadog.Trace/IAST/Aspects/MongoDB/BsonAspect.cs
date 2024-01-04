@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
+using Datadog.Trace.Iast.Aspects.MongoDB.DuckTyping;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Helpers;
 using Datadog.Trace.Iast.Helpers.Reflection;
@@ -27,6 +29,10 @@ public class BsonAspect
     private static readonly FuncWrappers.FuncWrapper<string, object> ParseWrapper = new("MongoDB.Bson.BsonDocument::Parse(System.String)");
     private static readonly FuncWrappers.FuncWrapper<string, object> JsonReaderCtorWrapper = new("MongoDB.Bson.IO.JsonReader::.ctor(System.String)");
 
+    private static readonly IBsonSerializerExtensionsDuckType? DeserializeExtensionDuck = DuckTypeHelper.DuckTypeOriginalMethod(typeof(IBsonSerializerExtensionsDuckType), Type.GetType("MongoDB.Bson.Serialization.IBsonSerializerExtensions, MongoDB.Bson")!) as IBsonSerializerExtensionsDuckType;
+    private static readonly IBsonSerializerDuckType? DeserializeBsonDuck = DuckTypeHelper.DuckTypeOriginalMethod(typeof(IBsonSerializerDuckType), Type.GetType("MongoDB.Bson.Serialization.BsonSerializer, MongoDB.Bson")!) as IBsonSerializerDuckType;
+    private static readonly IBsonDocumentDuckType? ParseDuck = DuckTypeHelper.DuckTypeOriginalMethod(typeof(IBsonDocumentDuckType), Type.GetType("MongoDB.Bson.BsonDocument, MongoDB.Bson")!) as IBsonDocumentDuckType;
+
     /// <summary>
     ///     MongoDB Deserialize aspect
     /// </summary>
@@ -36,7 +42,7 @@ public class BsonAspect
     [AspectMethodReplace("MongoDB.Bson.Serialization.IBsonSerializerExtensions::Deserialize(MongoDB.Bson.Serialization.IBsonSerializer`1<!!0>,MongoDB.Bson.Serialization.BsonDeserializationContext)")]
     public static object? DeserializeExtension(object serializer, object context)
     {
-        var result = DeserializeExtensionWrapper.Invoke(serializer, context);
+        var result = DeserializeExtensionDuck?.Deserialize(serializer, context);
 
         try
         {
@@ -58,7 +64,7 @@ public class BsonAspect
     [AspectMethodReplace("MongoDB.Bson.Serialization.BsonSerializer::Deserialize(MongoDB.Bson.IO.IBsonReader,System.Action`1<Builder>)")]
     public static object? DeserializeBson(object bsonReader, object configurator)
     {
-        var result = DeserializeBsonWrapper.Invoke(bsonReader, configurator);
+        var result = DeserializeBsonDuck?.Deserialize<object>(bsonReader, configurator);
 
         try
         {
@@ -77,7 +83,8 @@ public class BsonAspect
     [AspectMethodReplace("MongoDB.Bson.BsonDocument::Parse(System.String)")]
     public static object? Parse(string json)
     {
-        var result = ParseWrapper.Invoke(json);
+        // var result = ParseWrapper.Invoke(json);
+        var result = ParseDuck?.Parse(json);
 
         try
         {
