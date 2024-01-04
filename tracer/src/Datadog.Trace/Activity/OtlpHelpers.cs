@@ -10,6 +10,7 @@ using System.Collections;
 using System.Text;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -22,6 +23,8 @@ namespace Datadog.Trace.Activity
         internal const string OpenTelemetryErrorType = "exception.type";
         internal const string OpenTelemetryErrorMsg = "exception.message";
         internal const string OpenTelemetryErrorStack = "exception.stacktrace";
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpHelpers));
 
         internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span)
             where TInner : IActivity
@@ -37,7 +40,6 @@ namespace Datadog.Trace.Activity
             var w3cActivity = activity as IW3CActivity;
             var activity5 = activity as IActivity5;
             var activity6 = activity as IActivity6;
-
             span.ResourceName = null; // Reset the resource name, it will be repopulated via the Datadog trace agent logic
             span.OperationName = null; // Reset the operation name, it will be repopulated
 
@@ -200,6 +202,34 @@ namespace Datadog.Trace.Activity
             {
                 span.Type = activity5 is null ? SpanTypes.Custom : AgentSpanKind2Type(activity5.Kind, span);
             }
+
+            // extract any ActivityLinks
+            ExtractActivityLinks<TInner>(span, activity5);
+        }
+
+        private static void ExtractActivityLinks<TInner>(Span span, IActivity5? activity5)
+            where TInner : IActivity
+        {
+            if (activity5 is null)
+            {
+                return;
+            }
+
+            var links = new List<IActivityLink>();
+            foreach (var link in (activity5.Links))
+            {
+                var duckLink = link.DuckCast<IActivityLink>();
+                links.Add(duckLink!);
+            }
+
+            if (links.Count <= 0)
+            {
+                return;
+            }
+
+            var settings = new JsonSerializerSettings { Converters = new List<JsonConverter> { new ActivityLinkConverter() }, Formatting = Formatting.None };
+            var jsonArray = JsonConvert.SerializeObject(links, settings);
+            span.SetTag("_dd.span_links", jsonArray);
         }
 
         internal static string GetSpanKind(ActivityKind activityKind) =>

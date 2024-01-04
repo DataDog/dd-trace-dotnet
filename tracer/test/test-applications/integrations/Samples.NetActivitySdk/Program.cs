@@ -9,8 +9,15 @@ public static class Program
 {
     private static ActivitySource _source;
 
+    private static string SpanLinkTraceId1;
+    private static string SpanLinkTraceId2;
+
+    private static string SpanLinkSpanId1;
+    private static string SpanLinkSpanId2;
+
     public static async Task Main(string[] args)
     {
+        Console.WriteLine($"SpanId 1: {SpanLinkSpanId1} SpanId 2: {SpanLinkSpanId2}");
         _source = new ActivitySource("Samples.NetActivitySdk");
 
         var activityListener = new ActivityListener
@@ -22,6 +29,10 @@ public static class Program
         };
 
         ActivitySource.AddActivityListener(activityListener);
+
+        RunCreateSpanLinkSpans();
+
+        RunActivityLinks();
 
         using (var rootSpan = _source.StartActivity("RootSpan")) // 1 span (total 1)
         {
@@ -37,6 +48,7 @@ public static class Program
         RunActivityUpdate(); //  9 spans (total 44)
         RunNonW3CId(); // 2 spans (total 46)
         RunActivityReservedAttributes(); // 1 span (47 total)
+
         await Task.Delay(1000);
     }
 
@@ -271,6 +283,58 @@ public static class Program
         tags.Add("span.type", "SpanTypeOverride");
         tags.Add("analytics.event", "true"); // metric->  _dd1.sr.eausr: 1.0
         using var activity = _source.StartActivity(name: "This name should not be in the snapshot", kind: ActivityKind.Server, tags: tags);
+    }
+
+    private static void RunCreateSpanLinkSpans()
+    {
+        using var activity1 = _source.StartActivity("SpanLinkSpan1", ActivityKind.Server);
+        SpanLinkTraceId1 = activity1?.TraceId.ToHexString();
+        SpanLinkSpanId1 = activity1?.SpanId.ToHexString();
+
+        using var activity2 = _source.StartActivity("SpanLinkSpan2", ActivityKind.Server);
+        SpanLinkTraceId2 = activity2?.TraceId.ToHexString();
+        SpanLinkSpanId2 = activity2?.SpanId.ToHexString();
+    }
+
+    private static void RunActivityLinks()
+    {
+        var activityTags = new ActivityTagsCollection();
+
+        activityTags["some_tag"] = "value";
+
+        var activityLinks = new List<ActivityLink>();
+
+        var activityLinkTags1 = new ActivityTagsCollection();
+        activityLinkTags1.Add("some_unserializeable_object", null); // can't serialize
+        // activityLinkTags1.Add("some_int", 5);
+        activityLinkTags1.Add("some_string", "five");
+        // activityLinkTags1.Add("some_bool", false);
+        // activityLinkTags1.Add("some_int[]", new [] { 5, 55, 555 } );
+        activityLinkTags1.Add("some_int[][]", new [,] {{5, 55}, {555, 5555}}); // can't serialize
+
+        // basic linked context
+        var context1 = new ActivityContext(
+            ActivityTraceId.CreateFromString(SpanLinkTraceId1.AsSpan()),
+            ActivitySpanId.CreateFromString(SpanLinkSpanId1.AsSpan()),
+            ActivityTraceFlags.None);
+
+        // basic linked context - with flat set to 1
+        var context2 = new ActivityContext(
+            ActivityTraceId.CreateFromString(SpanLinkTraceId2.AsSpan()),
+            ActivitySpanId.CreateFromString(SpanLinkSpanId2.AsSpan()),
+            ActivityTraceFlags.Recorded);
+
+        // TODO context with tracestate
+
+        activityLinks.Add(new ActivityLink(context1, activityLinkTags1));
+        activityLinks.Add(new ActivityLink(context2));
+
+        using var activity = _source.StartActivity(
+            "Activity_With_ActivityLinks",
+            ActivityKind.Server,
+            default(ActivityContext),
+            activityTags,
+            activityLinks);
     }
 
     private static IEnumerable<KeyValuePair<string, object>> GenerateKeyValuePairs()
