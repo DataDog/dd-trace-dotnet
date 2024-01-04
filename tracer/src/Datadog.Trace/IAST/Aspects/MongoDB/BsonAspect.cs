@@ -6,8 +6,10 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Helpers;
+using Datadog.Trace.Iast.Helpers.Reflection;
 
 #nullable enable
 
@@ -20,6 +22,11 @@ namespace Datadog.Trace.Iast.Aspects.MongoDB;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class BsonAspect
 {
+    private static readonly FuncWrappers.FuncWrapper<object, object, object> DeserializeExtensionWrapper = new("MongoDB.Bson.Serialization.IBsonSerializerExtensions::Deserialize(MongoDB.Bson.Serialization.IBsonSerializer,MongoDB.Bson.Serialization.BsonDeserializationContext)");
+    private static readonly FuncWrappers.FuncWrapper<object, object, object> DeserializeBsonWrapper = new("MongoDB.Bson.Serialization.BsonSerializer::Deserialize(MongoDB.Bson.IO.IBsonReader,System.Action`1[MongoDB.Bson.Serialization.BsonDeserializationContext+Builder])");
+    private static readonly FuncWrappers.FuncWrapper<string, object> ParseWrapper = new("MongoDB.Bson.BsonDocument::Parse(System.String)");
+    private static readonly FuncWrappers.FuncWrapper<string, object> JsonReaderCtorWrapper = new("MongoDB.Bson.IO.JsonReader::.ctor(System.String)");
+
     /// <summary>
     /// MongoDB Deserialize aspect
     /// </summary>
@@ -29,7 +36,7 @@ public class BsonAspect
     [AspectMethodReplace("MongoDB.Bson.Serialization.IBsonSerializerExtensions::Deserialize(MongoDB.Bson.Serialization.IBsonSerializer`1<!!0>,MongoDB.Bson.Serialization.BsonDeserializationContext)")]
     public static object? DeserializeExtension(object serializer, object context)
     {
-        var result = CallOriginalMethod();
+        var result = DeserializeExtensionWrapper.Invoke(serializer, context);
 
         try
         {
@@ -41,13 +48,14 @@ public class BsonAspect
 
         return result;
 
-        object? CallOriginalMethod()
+        /*
+        MethodInfo? OriginalMethod()
         {
             var typeMethodClass = Type.GetType("MongoDB.Bson.Serialization.IBsonSerializerExtensions, MongoDB.Bson")!;
             var methodsPublicStatic = typeMethodClass.GetMethods(BindingFlags.Public | BindingFlags.Static);
-            var deserializeMethod = methodsPublicStatic.Where(m => m is { Name: "Deserialize" }).FirstOrDefault();
-            return deserializeMethod?.Invoke(null, new[] { serializer, context });
+            return methodsPublicStatic.Where(m => m is { Name: "Deserialize" }).FirstOrDefault();
         }
+        */
     }
 
     /// <summary>
@@ -59,7 +67,7 @@ public class BsonAspect
     [AspectMethodReplace("MongoDB.Bson.Serialization.BsonSerializer::Deserialize(MongoDB.Bson.IO.IBsonReader,System.Action`1<Builder>)")]
     public static object? DeserializeBson(object bsonReader, object configurator)
     {
-        var result = CallOriginalMethod();
+        var result = DeserializeBsonWrapper.Invoke(bsonReader, configurator);
 
         try
         {
@@ -69,6 +77,7 @@ public class BsonAspect
 
         return result;
 
+        /*
         object? CallOriginalMethod()
         {
             var typeMethodClass = Type.GetType("MongoDB.Bson.Serialization.BsonSerializer, MongoDB.Bson")!;
@@ -82,6 +91,7 @@ public class BsonAspect
 
             return genericMethod?.Invoke(null, new[] { bsonReader, configurator });
         }
+        */
     }
 
     /// <summary>
@@ -92,7 +102,7 @@ public class BsonAspect
     [AspectMethodReplace("MongoDB.Bson.BsonDocument::Parse(System.String)")]
     public static object? Parse(string json)
     {
-        var result = MongoDbHelper.InvokeMethod("MongoDB.Bson.BsonDocument, MongoDB.Bson", "Parse", new object[] { json }, new[] { typeof(string) });
+        var result = ParseWrapper.Invoke(json);
 
         try
         {
@@ -111,10 +121,7 @@ public class BsonAspect
     [AspectCtorReplace("MongoDB.Bson.IO.JsonReader::.ctor(System.String)")]
     public static object? Constructor(string json)
     {
-        // Invoke the constructor method of the JsonReader
-        var typeMethodClass = Type.GetType("MongoDB.Bson.IO.JsonReader, MongoDB.Bson")!;
-        var constructor = typeMethodClass.GetConstructor(new[] { typeof(string) });
-        var result = constructor?.Invoke(new object[] { json });
+        var result = JsonReaderCtorWrapper.Invoke(json);
 
         try
         {
