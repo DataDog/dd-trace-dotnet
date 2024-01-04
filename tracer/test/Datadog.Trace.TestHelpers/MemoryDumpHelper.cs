@@ -49,17 +49,19 @@ namespace Datadog.Trace.TestHelpers
             _path = Path.Combine(unpackedDirectory, "procdump.exe");
         }
 
-        public static void MonitorCrashes(int pid)
+        public static Task MonitorCrashes(int pid)
         {
             if (!EnvironmentTools.IsWindows() || !IsAvailable)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (_path == null)
             {
-                return;
+                return Task.CompletedTask;
             }
+
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             _ = Task.Run(() =>
             {
@@ -73,7 +75,15 @@ namespace Datadog.Trace.TestHelpers
                     RedirectStandardError = true,
                 });
 
-                using var helper = new ProcessHelper(dumpToolProcess);
+                void OnDataReceived(string output)
+                {
+                    if (output == "Press Ctrl-C to end monitoring without terminating the process.")
+                    {
+                        tcs.TrySetResult(true);
+                    }
+                }
+
+                using var helper = new ProcessHelper(dumpToolProcess, OnDataReceived);
 
                 helper.Drain();
 
@@ -84,7 +94,11 @@ namespace Datadog.Trace.TestHelpers
                     _output.Report($"[dump][stdout] {helper.StandardOutput}");
                     _output.Report($"[dump][stderr] {helper.ErrorOutput}");
                 }
+
+                tcs.TrySetCanceled();
             });
+
+            return tcs.Task;
         }
 
         public static bool CaptureMemoryDump(Process process, IProgress<string> output = null)

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+// Based on https://github.com/dotnet/runtime/blob/045e55abac82e89e0daaee47bcb8433e0fc9ccbc/src/libraries/System.Diagnostics.Process/src/System/Diagnostics/Process.Windows.cs
+
 #nullable enable
 
 using System;

@@ -78,19 +78,12 @@ namespace Datadog.Trace.TestHelpers
             {
                 using var suspendedProcess = NativeProcess.CreateProcess.StartSuspendedProcess(startInfo);
 
-                MemoryDumpHelper.MonitorCrashes(suspendedProcess.Id);
+                MemoryDumpHelper.MonitorCrashes(suspendedProcess.Id).Wait();
 
                 return suspendedProcess.ResumeProcess();
             }
 
-            var process = Process.Start(startInfo);
-
-            if (process != null)
-            {
-                MemoryDumpHelper.MonitorCrashes(process.Id);
-            }
-
-            return process;
+            return Process.Start(startInfo);
         }
 
         public static void SetCorFlags(string executable, ITestOutputHelper output, bool require32Bit)
