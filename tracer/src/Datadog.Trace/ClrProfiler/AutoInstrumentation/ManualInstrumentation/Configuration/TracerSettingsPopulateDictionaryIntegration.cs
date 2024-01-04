@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -69,8 +70,23 @@ public class TracerSettingsPopulateDictionaryIntegration
         values[TracerSettingKeyConstants.TraceEnabledKey] = settings.TraceEnabledInternal;
         values[TracerSettingKeyConstants.TracerMetricsEnabledKey] = settings.TracerMetricsEnabledInternal;
 
-        values[TracerSettingKeyConstants.GlobalTagsKey] = new ConcurrentDictionary<string, string>(settings.GlobalTagsInternal);
+        values[TracerSettingKeyConstants.GlobalTagsKey] = settings.GlobalTagsInternal;
+        values[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(settings.IntegrationsInternal);
+    }
 
-        return CallTargetState.GetDefault();
+    private static Dictionary<string, object?[]>? BuildIntegrationSettings(IntegrationSettingsCollection settings)
+    {
+        if (settings.Settings.Length == 0)
+        {
+            return null;
+        }
+
+        var results = new Dictionary<string, object?[]>(settings.Settings.Length, StringComparer.OrdinalIgnoreCase);
+        foreach (var setting in settings.Settings)
+        {
+            results[setting.IntegrationNameInternal] = [setting.EnabledInternal, setting.AnalyticsEnabledInternal, setting.AnalyticsSampleRateInternal];
+        }
+
+        return results;
     }
 }

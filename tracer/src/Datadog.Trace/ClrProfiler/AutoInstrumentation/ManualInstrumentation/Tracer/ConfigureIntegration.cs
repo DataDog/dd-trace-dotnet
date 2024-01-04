@@ -173,38 +173,103 @@ public class ConfigureIntegration
 #pragma warning disable DD0002 // This API is only for public usage and should not be called internally (there's no internal version currently)
                         tracerSettings.LogsInjectionEnabled = (bool)setting.Value!;
 #pragma warning restore DD0002
-                    break;
+                        break;
 
-                case TracerSettingKeyConstants.ServiceNameKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_ServiceName_Set);
-                    settings.ServiceNameInternal = setting.Value as string;
-                    break;
+                    case TracerSettingKeyConstants.ServiceNameKey:
+                        TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_ServiceName_Set);
+                        tracerSettings.ServiceNameInternal = setting.Value as string;
+                        break;
 
-                case TracerSettingKeyConstants.ServiceVersionKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_ServiceVersion_Set);
-                    settings.ServiceVersionInternal = setting.Value as string;
-                    break;
+                    case TracerSettingKeyConstants.ServiceNameMappingsKey:
+                        if (setting.Value is Dictionary<string, string> mappings)
+                        {
+                            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetServiceNameMappings);
+                            tracerSettings.SetServiceNameMappingsInternal(mappings);
+                        }
 
-                case TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_StartupDiagnosticLogEnabled_Set);
-                    settings.StartupDiagnosticLogEnabledInternal = (bool)setting.Value!;
-                    break;
+                        break;
 
-                case TracerSettingKeyConstants.TraceEnabledKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_TraceEnabled_Set);
-                    settings.TraceEnabledInternal = (bool)setting.Value!;
-                    break;
+                    case TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey:
+                        TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_MaxTracesSubmittedPerSecond_Set);
+                        tracerSettings.MaxTracesSubmittedPerSecondInternal = (int)setting.Value!;
+                        break;
 
-                case TracerSettingKeyConstants.TracerMetricsEnabledKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_TracerMetricsEnabled_Set);
-                    settings.TracerMetricsEnabledInternal = (bool)setting.Value!;
-                    break;
+                    case TracerSettingKeyConstants.ServiceVersionKey:
+                        TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_ServiceVersion_Set);
+                        tracerSettings.ServiceVersionInternal = setting.Value as string;
+                        break;
 
-                default:
-                    Log.Warning("Unknown manual instrumentation key '{Key}' provided. Ignoring value '{Value}'", setting.Key, setting.Value);
-                    break;
-            }
+                    case TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey:
+                        TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_StartupDiagnosticLogEnabled_Set);
+                        tracerSettings.StartupDiagnosticLogEnabledInternal = (bool)setting.Value!;
+                        break;
+
+                    case TracerSettingKeyConstants.StatsComputationEnabledKey:
+                        TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_StatsComputationEnabled_Set);
+                        tracerSettings.StatsComputationEnabledInternal = (bool)setting.Value!;
+                        break;
+
+                    case TracerSettingKeyConstants.TraceEnabledKey:
+                        TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_TraceEnabled_Set);
+                        tracerSettings.TraceEnabledInternal = (bool)setting.Value!;
+                        break;
+
+                    case TracerSettingKeyConstants.TracerMetricsEnabledKey:
+                        TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_TracerMetricsEnabled_Set);
+                        tracerSettings.TracerMetricsEnabledInternal = (bool)setting.Value!;
+                        break;
+
+                    case TracerSettingKeyConstants.IntegrationSettingsKey:
+                        UpdateIntegrations(tracerSettings, setting.Value as Dictionary<string, object?[]>);
+                        break;
+
+                    default:
+                        Log.Warning("Unknown manual instrumentation key '{Key}' provided. Ignoring value '{Value}'", setting.Key, setting.Value);
+                        break;
+                }
 #pragma warning restore DD0002
+            }
+        }
+
+        static void UpdateIntegrations(TracerSettings settings, Dictionary<string, object?[]>? updated)
+        {
+            if (updated is null || updated.Count == 0)
+            {
+                return;
+            }
+
+            var integrations = settings.IntegrationsInternal.Settings;
+
+            foreach (var pair in updated)
+            {
+                if (!IntegrationRegistry.TryGetIntegrationId(pair.Key, out var integrationId))
+                {
+                    Log.Warning("Error updating integration {IntegrationName} from manual instrumentation - unknown integration ID", pair.Key);
+                    continue;
+                }
+
+                var setting = integrations[(int)integrationId];
+
+                if (pair.Value is { Length: 6 } values)
+                {
+                    if (values[0] is true)
+                    {
+                        TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettings_Enabled_Set);
+                        setting.EnabledInternal = values[1] as bool?;
+                    }
+
+                    if (values[2] is true)
+                    {
+                        TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettings_AnalyticsEnabled_Set);
+                        setting.AnalyticsEnabledInternal = values[3] as bool?;
+                    }
+
+                    if (values[4] is true && values[5] is double rate)
+                    {
+                        TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettings_AnalyticsSampleRate_Set);
+                        setting.AnalyticsSampleRateInternal = rate;
+                    }
+                }
             }
         }
     }

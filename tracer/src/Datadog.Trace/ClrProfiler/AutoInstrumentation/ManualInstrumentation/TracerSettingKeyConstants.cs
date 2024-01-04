@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 internal class TracerSettingKeyConstants
 {
     public const string IsFromDefaultSourcesKey = "IsFromDefaultSources";
+    public const string IntegrationSettingsKey = "IntegrationSettings";
 
     public const string AgentUriKey = "DD_TRACE_AGENT_URL";
     public const string AnalyticsEnabledKey = "DD_TRACE_ANALYTICS_ENABLED";

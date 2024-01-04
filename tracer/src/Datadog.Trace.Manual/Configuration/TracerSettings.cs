@@ -120,6 +120,8 @@ public sealed class TracerSettings
         Exporter = new ExporterSettings(this);
 #pragma warning restore CS0618 // Type or member is obsolete
 
+        Integrations = IntegrationSettingsHelper.ParseFromAutomatic(initialValues);
+
         static T GetValue<T>(Dictionary<string, object?> results, string key, T defaultValue)
         {
             if (results.TryGetValue(key, out var value)
@@ -353,7 +355,8 @@ public sealed class TracerSettings
     /// <summary>
     /// Gets a collection of <see cref="IntegrationSettings"/> keyed by integration name.
     /// </summary>
-    public IntegrationSettingsCollection Integrations { get; } = new();
+    [Instrumented]
+    public IntegrationSettingsCollection Integrations { get; }
 
     /// <summary>
     /// Gets the transport settings that dictate how the tracer connects to the agent.
@@ -458,7 +461,25 @@ public sealed class TracerSettings
             results.Add(TracerSettingKeyConstants.DisabledIntegrationNamesKey, _disabledIntegrationNamesOverride);
         }
 
+        // These are write-only, so only send them if we have them
+        if (_serviceNameMappings is not null)
+        {
+            results.Add(TracerSettingKeyConstants.ServiceNameMappingsKey, _serviceNameMappings);
+        }
+
+        if (_httpClientErrorCodes is not null)
+        {
+            results.Add(TracerSettingKeyConstants.HttpClientErrorCodesKey, _httpClientErrorCodes);
+        }
+
+        if (_httpServerErrorCodes is not null)
+        {
+            results.Add(TracerSettingKeyConstants.HttpServerErrorCodesKey, _httpServerErrorCodes);
+        }
+
+        // Always set
         results[TracerSettingKeyConstants.IsFromDefaultSourcesKey] = _isFromDefaultSources;
+        results[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(Integrations);
 
         return results;
 
@@ -500,6 +521,26 @@ public sealed class TracerSettings
 
                 return false;
             }
+        }
+
+        static Dictionary<string, object?[]>? BuildIntegrationSettings(IntegrationSettingsCollection settings)
+        {
+            if (settings.Settings.Count == 0)
+            {
+                return null;
+            }
+
+            var results = new Dictionary<string, object?[]>(settings.Settings.Count, StringComparer.OrdinalIgnoreCase);
+            foreach (var pair in settings.Settings)
+            {
+                var setting = pair.Value;
+                if (setting.GetChangeDetails() is { } changes)
+                {
+                    results[setting.IntegrationName] = changes;
+                }
+            }
+
+            return results;
         }
     }
 }

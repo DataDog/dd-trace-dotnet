@@ -14,25 +14,31 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public sealed class IntegrationSettingsCollection
     {
+        internal IntegrationSettingsCollection(Dictionary<string, IntegrationSettings> settings)
+        {
+            Settings = settings;
+        }
+
+        internal Dictionary<string, IntegrationSettings> Settings { get; }
+
         /// <summary>
         /// Gets the <see cref="IntegrationSettings"/> for the specified integration.
         /// </summary>
         /// <param name="integrationName">The name of the integration.</param>
         /// <returns>The integration-specific settings for the specified integration.</returns>
-        [Instrumented]
         public IntegrationSettings this[string integrationName]
         {
             get
             {
-                // Return a "null" version. The auto-instrumentation will overwrite with the "correct" values
-                return new IntegrationSettings(integrationName, enabled: null, analyticsEnabled: false, analyticsSampleRate: 1.0);
+                if (Settings.TryGetValue(integrationName, out var setting))
+                {
+                    return setting;
+                }
+
+                // Unknown integration or manual-only instrumentation
+                // so return a "null" version.
+                return new IntegrationSettings(integrationName, enabled: null, analyticsEnabled: null, analyticsSampleRate: 1.0);
             }
         }
-
-        // The auto-instrumentation can call this method to create IntegrationSettings without needing
-        // to use reverse duck typing
-        [DuckTypeTarget]
-        private IntegrationSettings CreateIntegrationSetting(string integrationName, bool? enabled, bool? analyticsEnabled, double analyticsSampleRate)
-            => new(integrationName, enabled, analyticsEnabled, analyticsSampleRate);
     }
 }
