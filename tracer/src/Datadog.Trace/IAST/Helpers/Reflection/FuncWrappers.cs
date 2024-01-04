@@ -23,7 +23,12 @@ internal static class FuncWrappers
 
         public TRes? Invoke(T1 arg1)
         {
-            _func ??= GetFunc(ResolveMethod(arg1));
+            if (_func == null)
+            {
+                if (IsCtor) { _func = GetFunc(ResolveCtor()); }
+                else { _func = GetFunc(ResolveMethod(arg1)); }
+            }
+
             return _func.Invoke(arg1);
         }
 
@@ -35,7 +40,6 @@ internal static class FuncWrappers
                 var dynMethod = new DynamicMethod(method.Name + DynMethodSuffix, typeof(TRes), new Type[] { typeof(T1) }, method.DeclaringType! /* weird */, skipVisibility: true);
                 var il = dynMethod.GetILGenerator();
                 il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldarg_1);
                 il.EmitCall(method.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, method, optionalParameterTypes: null);
                 il.Emit(OpCodes.Ret);
                 res = (Func<T1, TRes>)dynMethod.CreateDelegate(typeof(Func<T1, TRes>));
@@ -52,7 +56,7 @@ internal static class FuncWrappers
                     if (method.IsStatic)
                     {
                         // Check if he method is generic
-                        if (method.IsGenericMethod)
+                        if (method.IsGenericMethodDefinition)
                         {
                             method = method.MakeGenericMethod(typeof(T1));
                         }
@@ -61,6 +65,34 @@ internal static class FuncWrappers
                     }
 
                     return (TRes?)method.Invoke(arg1, Array.Empty<object>())!;
+                };
+            }
+
+            return res;
+        }
+
+        private static Func<T1, TRes?> GetFunc(ConstructorInfo ctor)
+        {
+            Func<T1, TRes?>? res = null;
+            try
+            {
+                var dynMethod = new DynamicMethod(ctor.Name + DynMethodSuffix, typeof(TRes), new Type[] { typeof(T1) }, ctor.DeclaringType!, true);
+                ILGenerator il = dynMethod.GetILGenerator();
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Newobj, ctor);
+                il.Emit(OpCodes.Ret);
+                res = (Func<T1, TRes>)dynMethod.CreateDelegate(typeof(Func<T1, TRes>));
+            }
+            catch (Exception err)
+            {
+                Console.WriteLine(err.ToString());
+            }
+
+            if (res == null)
+            {
+                res = (arg1) =>
+                {
+                    return (TRes)ctor.Invoke(new object[] { arg1! });
                 };
             }
 
@@ -103,7 +135,7 @@ internal static class FuncWrappers
                     if (method.IsStatic)
                     {
                         // Check if he method is generic
-                        if (method.IsGenericMethod)
+                        if (method.IsGenericMethodDefinition)
                         {
                             method = method.MakeGenericMethod(typeof(T1));
                         }
@@ -111,7 +143,7 @@ internal static class FuncWrappers
                         return (TRes?)method.Invoke(obj: null, new object[] { arg1!, arg2! });
                     }
 
-                    return (TRes?)method.Invoke(arg1, new object[] { arg2! })!;
+                    return (TRes)method.Invoke(arg1, new object[] { arg2! })!;
                 };
             }
 

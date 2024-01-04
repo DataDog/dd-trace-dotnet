@@ -22,6 +22,7 @@ public abstract class MethodWrapper
     private bool initialized = false;
     private string? _typeName = null;
     private MethodInfo? method = null;
+    private ConstructorInfo? ctor = null;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MethodWrapper"/> class.
@@ -64,10 +65,16 @@ public abstract class MethodWrapper
     public string? AssemblyName { get; }
 
     /// <summary>
+    ///   Gets a value indicating whether the method is a constructor
+    /// </summary>
+    protected bool IsCtor => Name == ".ctor";
+
+    /// <summary>
     ///    Gets the type name of the method
     /// </summary>
     /// <param name="obj"> the object </param>
     /// <returns> the method </returns>
+    /// <exception cref="ArgumentNullException"> Argument null </exception>
     /// <exception cref="MissingMethodException"> Method not found </exception>
     protected MethodInfo ResolveMethod(object? obj = null)
     {
@@ -88,7 +95,31 @@ public abstract class MethodWrapper
         return method;
     }
 
-    private Type? GetType(string? typeName)
+    /// <summary>
+    ///   Gets the constructor of the method
+    /// </summary>
+    /// <returns> the constructor </returns>
+    /// <exception cref="ArgumentNullException"> Argument null </exception>
+    /// <exception cref="MissingMethodException"> Method not found </exception>
+    protected ConstructorInfo ResolveCtor()
+    {
+        if (!initialized)
+        {
+            if (_typeName == null) { throw new ArgumentNullException("obj"); }
+            var t = GetType(_typeName);
+            SetCtor(t);
+        }
+
+        if (ctor == null)
+        {
+            Log.Warning("Method {0}::{1} not found on", _typeName, MethodSignature);
+            throw new MissingMethodException(_typeName, MethodSignature);
+        }
+
+        return ctor;
+    }
+
+    private protected Type? GetType(string? typeName)
     {
         if (typeName == null) { return null; }
 
@@ -115,7 +146,7 @@ public abstract class MethodWrapper
         return null;
     }
 
-    private void SetMethod(Type? t)
+    private protected void SetMethod(Type? t)
     {
         if (t != null)
         {
@@ -131,7 +162,22 @@ public abstract class MethodWrapper
         initialized = true;
     }
 
-    private bool IsMethod(MethodInfo m)
+    private void SetCtor(Type? t)
+    {
+        if (t != null)
+        {
+            if (_typeName == null) { _typeName = t.ToString(); }
+            ctor = t.GetConstructors().FirstOrDefault(m => IsMethod(m));
+            if (ctor == null)
+            {
+                ctor = t.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault(m => IsMethod(m));
+            }
+        }
+
+        initialized = true;
+    }
+
+    private bool IsMethod(MethodBase m)
     {
         if (m.Name != Name) { return false; }
         var parameters = m.GetParameters().Select(p => p.ParameterType.ToString()).ToArray();
