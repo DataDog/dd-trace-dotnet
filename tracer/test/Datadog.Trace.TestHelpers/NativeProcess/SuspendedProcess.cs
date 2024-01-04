@@ -15,6 +15,16 @@ namespace Datadog.Trace.TestHelpers.NativeProcess;
 
 internal class SuspendedProcess(int pid, SafeHandle threadHandle, StreamWriter? standardInput, StreamReader? standardOutput, StreamReader? standardError) : IDisposable
 {
+#if NETFRAMEWORK
+    private const string StandardInputFieldName = "standardInput";
+    private const string StandardOutputFieldName = "standardOutput";
+    private const string StandardErrorFieldName = "standardError";
+#else
+    private const string StandardInputFieldName = "_standardInput";
+    private const string StandardOutputFieldName = "_standardOutput";
+    private const string StandardErrorFieldName = "_standardError";
+#endif
+
     private readonly SafeHandle _threadHandle = threadHandle;
 
     private readonly StreamWriter? _standardInput = standardInput;
@@ -31,17 +41,17 @@ internal class SuspendedProcess(int pid, SafeHandle threadHandle, StreamWriter? 
 
         if (_standardInput != null)
         {
-            typeof(Process).GetField("_standardInput", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(process, _standardInput);
+            typeof(Process).GetField(StandardInputFieldName, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(process, _standardInput);
         }
 
         if (_standardOutput != null)
         {
-            typeof(Process).GetField("_standardOutput", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(process, _standardOutput);
+            typeof(Process).GetField(StandardOutputFieldName, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(process, _standardOutput);
         }
 
         if (_standardError != null)
         {
-            typeof(Process).GetField("_standardError", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(process, _standardError);
+            typeof(Process).GetField(StandardErrorFieldName, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(process, _standardError);
         }
 
         return process;
