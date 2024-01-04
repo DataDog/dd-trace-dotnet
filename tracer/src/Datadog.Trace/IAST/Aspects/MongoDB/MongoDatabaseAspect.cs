@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Helpers;
+using Datadog.Trace.Logging;
 
 #nullable enable
 
@@ -17,8 +18,10 @@ namespace Datadog.Trace.Iast.Aspects.MongoDB;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class MongoDatabaseAspect
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MongoDatabaseAspect));
+
     /// <summary>
-    /// MongoDB Driver aspect
+    ///     MongoDB Driver aspect
     /// </summary>
     /// <param name="command"> the mongodb command </param>
     /// <returns> the original command </returns>
@@ -48,9 +51,9 @@ public class MongoDatabaseAspect
                     break;
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Failed to analyze the command
+            Log.Debug(ex, "Failed to analyze the command");
         }
 
         return command;
