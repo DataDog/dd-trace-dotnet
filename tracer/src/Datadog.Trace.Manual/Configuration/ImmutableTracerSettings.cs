@@ -21,9 +21,40 @@ public sealed class ImmutableTracerSettings
     /// </summary>
     internal ImmutableTracerSettings(Dictionary<string, object?> initialValues)
     {
+        AgentUri = GetValue<Uri?>(initialValues, TracerSettingKeyConstants.AgentUriKey, null) ?? new Uri("http://127.0.0.1:8126");
+        CustomSamplingRules = GetValue<string?>(initialValues, TracerSettingKeyConstants.CustomSamplingRules, null);
+        Environment = GetValue<string?>(initialValues, TracerSettingKeyConstants.EnvironmentKey, null);
+        GlobalSamplingRate = GetValue<double?>(initialValues, TracerSettingKeyConstants.GlobalSamplingRateKey, null);
+        GlobalTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GlobalTagsKey, null) ?? new ConcurrentDictionary<string, string>();
+        GrpcTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GrpcTags, null) ?? new ConcurrentDictionary<string, string>();
+        HeaderTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.HeaderTags, null) ?? new ConcurrentDictionary<string, string>();
+        KafkaCreateConsumerScopeEnabled = GetValue(initialValues, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, true);
+        LogsInjectionEnabled = GetValue(initialValues, TracerSettingKeyConstants.LogsInjectionEnabledKey, false);
+        MaxTracesSubmittedPerSecond = GetValue(initialValues, TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey, 100);
+        ServiceName = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceNameKey, null);
+        ServiceVersion = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceVersionKey, null);
+        StartupDiagnosticLogEnabled = GetValue(initialValues, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, true);
+        StatsComputationEnabled = GetValue(initialValues, TracerSettingKeyConstants.StatsComputationEnabledKey, false);
+        TraceEnabled = GetValue(initialValues, TracerSettingKeyConstants.TraceEnabledKey, true);
+        TracerMetricsEnabled = GetValue(initialValues, TracerSettingKeyConstants.TracerMetricsEnabledKey, false);
+
 #pragma warning disable CS0618 // Type or member is obsolete
         Exporter = new ImmutableExporterSettings(this);
+        AnalyticsEnabled = GetValue(initialValues, TracerSettingKeyConstants.AnalyticsEnabledKey, false);
 #pragma warning restore CS0618 // Type or member is obsolete
+
+        Integrations = IntegrationSettingsHelper.ParseImmutableFromAutomatic(initialValues);
+
+        static T GetValue<T>(Dictionary<string, object?> results, string key, T defaultValue)
+        {
+            if (results.TryGetValue(key, out var value)
+             && value is T t)
+            {
+                return t;
+            }
+
+            return defaultValue;
+        }
     }
 
     /// <summary>
@@ -107,6 +138,12 @@ public sealed class ImmutableTracerSettings
     public double? GlobalSamplingRate { get; }
 
     /// <summary>
+    /// Gets a collection of <see cref="ImmutableIntegrationSettings"/> keyed by integration name.
+    /// </summary>
+    [Instrumented]
+    public ImmutableIntegrationSettingsCollection Integrations { get; }
+
+    /// <summary>
     /// Gets the global tags, which are applied to all <see cref="ISpan"/>s.
     /// </summary>
     [Instrumented]
@@ -118,6 +155,13 @@ public sealed class ImmutableTracerSettings
     /// </summary>
     [Instrumented]
     public IReadOnlyDictionary<string, string> GrpcTags { get; }
+
+    /// <summary>
+    /// Gets the map of header keys to tag names, which are applied to the root <see cref="ISpan"/>
+    /// of incoming and outgoing requests.
+    /// </summary>
+    [Instrumented]
+    public IReadOnlyDictionary<string, string> HeaderTags { get; }
 
     /// <summary>
     /// Gets a value indicating whether internal metrics
