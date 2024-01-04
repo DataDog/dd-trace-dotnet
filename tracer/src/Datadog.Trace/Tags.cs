@@ -128,6 +128,11 @@ namespace Datadog.Trace
         public const string OutHost = "out.host";
 
         /// <summary>
+        /// Remote hostname.
+        /// </summary>
+        public const string PeerHostname = "peer.hostname";
+
+        /// <summary>
         /// The port of a outgoing server connection.
         /// </summary>
         public const string OutPort = "out.port";

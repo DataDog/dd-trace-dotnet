@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
@@ -40,7 +41,8 @@ namespace Datadog.Trace.Ci
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
             IRemoteConfigurationManager remoteConfigurationManager,
-            IDynamicConfigurationManager dynamicConfigurationManager)
+            IDynamicConfigurationManager dynamicConfigurationManager,
+            ITracerFlareManager tracerFlareManager)
             : base(
                 settings,
                 agentWriter,
@@ -57,6 +59,7 @@ namespace Datadog.Trace.Ci
                 spanSampler,
                 remoteConfigurationManager,
                 dynamicConfigurationManager,
+                tracerFlareManager,
                 GetProcessors(settings.ExporterInternal.PartialFlushEnabledInternal, agentWriter is CIVisibilityProtocolWriter))
         {
         }
@@ -141,7 +144,8 @@ namespace Datadog.Trace.Ci
                 ITraceSampler traceSampler,
                 ISpanSampler spanSampler,
                 IRemoteConfigurationManager remoteConfigurationManager,
-                IDynamicConfigurationManager dynamicConfigurationManager)
+                IDynamicConfigurationManager dynamicConfigurationManager,
+                ITracerFlareManager tracerFlareManager)
             : base(
                 settings,
                 agentWriter,
@@ -157,7 +161,8 @@ namespace Datadog.Trace.Ci
                 traceSampler,
                 spanSampler,
                 remoteConfigurationManager,
-                dynamicConfigurationManager)
+                dynamicConfigurationManager,
+                tracerFlareManager)
             {
             }
         }

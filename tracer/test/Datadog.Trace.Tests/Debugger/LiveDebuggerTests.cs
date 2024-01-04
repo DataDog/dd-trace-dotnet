@@ -87,6 +87,7 @@ public class LiveDebuggerTests
                     dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
                     eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
                     telemetryProxyEndpoint: "telemetryProxyEndpoint",
+                    tracerFlareEndpoint: "tracerFlareEndpoint",
                     clientDropP0: false));
         }
 
