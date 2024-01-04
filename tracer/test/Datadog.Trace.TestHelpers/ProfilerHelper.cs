@@ -68,9 +68,19 @@ namespace Datadog.Trace.TestHelpers
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
             startInfo.RedirectStandardInput = redirectStandardInput;
+
             if (!string.IsNullOrEmpty(workingDirectory))
             {
                 startInfo.WorkingDirectory = workingDirectory;
+            }
+
+            if (EnvironmentTools.IsWindows())
+            {
+                using var suspendedProcess = NativeProcess.CreateProcess.StartSuspendedProcess(startInfo);
+
+                MemoryDumpHelper.MonitorCrashes(suspendedProcess.Id);
+
+                return suspendedProcess.ResumeProcess();
             }
 
             var process = Process.Start(startInfo);
