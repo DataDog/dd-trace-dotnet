@@ -8,12 +8,13 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.Iast.Aspects.MongoDB.DuckTyping;
 
 /// <summary>
-/// A static class that represents the BSON serialization functionality.
+///     Duck type interface for MongoDB.Bson.Serialization.IBsonSerializer
+///     https://github.com/mongodb/mongo-csharp-driver/blob/v2.8.0/src/MongoDB.Bson/Serialization/IBsonSerializer.cs
 /// </summary>
 public interface IBsonSerializerDuckType
 {
     /// <summary>
-    /// Deserializes a value.
+    ///     Deserializes a value.
     /// </summary>
     /// <typeparam name="TNominalType">The nominal type of the object.</typeparam>
     /// <param name="bsonReader">The BsonReader.</param>

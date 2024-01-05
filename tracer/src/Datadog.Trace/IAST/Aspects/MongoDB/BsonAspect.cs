@@ -3,14 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using Datadog.Trace.Iast.Aspects.MongoDB.DuckTyping;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Helpers;
 using Datadog.Trace.Iast.Helpers.Reflection;
 using Datadog.Trace.Logging;
-
-#nullable enable
 
 namespace Datadog.Trace.Iast.Aspects.MongoDB;
 
@@ -23,10 +23,10 @@ public class BsonAspect
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BsonAspect));
 
-    private static readonly IBsonSerializerExtensionsDuckType? DeserializeExtensionDuck = DuckTypeHelper.DuckTypeOriginalMethod(typeof(IBsonSerializerExtensionsDuckType), Type.GetType("MongoDB.Bson.Serialization.IBsonSerializerExtensions, MongoDB.Bson")!) as IBsonSerializerExtensionsDuckType;
-    private static readonly IBsonSerializerDuckType? DeserializeBsonDuck = DuckTypeHelper.DuckTypeOriginalMethod(typeof(IBsonSerializerDuckType), Type.GetType("MongoDB.Bson.Serialization.BsonSerializer, MongoDB.Bson")!) as IBsonSerializerDuckType;
-    private static readonly IBsonDocumentDuckType? ParseDuck = DuckTypeHelper.DuckTypeOriginalMethod(typeof(IBsonDocumentDuckType), Type.GetType("MongoDB.Bson.BsonDocument, MongoDB.Bson")!) as IBsonDocumentDuckType;
-    private static readonly FuncWrappers.FuncWrapper<string, object>? JsonReaderCtorWrapper = DuckTypeHelper.DuckTypeOriginalCtor<string, object>("MongoDB.Bson.IO.JsonReader::.ctor(System.String)");
+    private static readonly IBsonSerializerExtensionsDuckType? DeserializeExtensionDuck = ReflectionHelper.DuckTypeOriginalMethod(typeof(IBsonSerializerExtensionsDuckType), "MongoDB.Bson.Serialization.IBsonSerializerExtensions, MongoDB.Bson") as IBsonSerializerExtensionsDuckType;
+    private static readonly IBsonSerializerDuckType? DeserializeBsonDuck = ReflectionHelper.DuckTypeOriginalMethod(typeof(IBsonSerializerDuckType), "MongoDB.Bson.Serialization.BsonSerializer, MongoDB.Bson") as IBsonSerializerDuckType;
+    private static readonly IBsonDocumentDuckType? ParseDuck = ReflectionHelper.DuckTypeOriginalMethod(typeof(IBsonDocumentDuckType), "MongoDB.Bson.BsonDocument, MongoDB.Bson") as IBsonDocumentDuckType;
+    private static readonly CtorWrappers.CtorWrapper<string, object>? JsonReaderCtorWrapper = ReflectionHelper.WrapOriginalCtor<string, object>("MongoDB.Bson.IO.JsonReader::.ctor(System.String)");
 
     /// <summary>
     ///     MongoDB Deserialize aspect
@@ -109,4 +109,3 @@ public class BsonAspect
     }
 }
 #endif
-

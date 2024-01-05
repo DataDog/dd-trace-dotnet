@@ -1,4 +1,4 @@
-// <copyright file="FuncWrappers.cs" company="Datadog">
+// <copyright file="CtorWrappers.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,11 +11,11 @@ using System.Reflection.Emit;
 
 namespace Datadog.Trace.Iast.Helpers.Reflection;
 
-internal static class FuncWrappers
+internal static class CtorWrappers
 {
     private const string DynMethodSuffix = "_dd_dyn";
 
-    public class FuncWrapper<T1, TRes>(string methodSignature) : MethodWrapper(methodSignature)
+    public class CtorWrapper<T1, TRes>(string methodSignature) : MethodWrapper(methodSignature)
     {
         private Func<T1, TRes?>? _func;
 

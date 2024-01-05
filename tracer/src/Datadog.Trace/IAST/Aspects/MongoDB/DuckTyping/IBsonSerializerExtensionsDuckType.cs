@@ -8,7 +8,8 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.Iast.Aspects.MongoDB.DuckTyping;
 
 /// <summary>
-///     Extensions methods for IBsonSerializer.
+///     Duck type interface for MongoDB.Bson.Serialization.IBsonSerializerExtensions
+///     https://github.com/mongodb/mongo-csharp-driver/blob/v2.8.0/src/MongoDB.Bson/Serialization/IBsonSerializerExtensions.cs
 /// </summary>
 public interface IBsonSerializerExtensionsDuckType
 {

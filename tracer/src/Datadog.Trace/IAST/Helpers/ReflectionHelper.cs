@@ -1,4 +1,4 @@
-// <copyright file="DuckTypeHelper.cs" company="Datadog">
+// <copyright file="ReflectionHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,35 +12,40 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast.Helpers;
 
-internal static class DuckTypeHelper
+internal static class ReflectionHelper
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DuckTypeHelper));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ReflectionHelper));
 
-    internal static object? DuckTypeOriginalMethod(Type proxyType, Type staticType)
+    internal static object? DuckTypeOriginalMethod(Type proxyType, string staticTypeStr)
     {
         try
         {
+            var staticType = Type.GetType(staticTypeStr);
+            if (staticType == null)
+            {
+                throw new Exception($"Failed to get type for {staticTypeStr}");
+            }
+
             var proxyResult = DuckType.GetOrCreateProxyType(proxyType, staticType);
             if (!proxyResult.Success)
             {
-                Log.Warning("Failed to create proxy type for {StaticType}", staticType);
-                return null;
+                throw new Exception($"Failed to create proxy type for {staticType}");
             }
 
             return proxyResult.CreateInstance(null!);
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Failed to duck type original method for {StaticType}", staticType);
+            Log.Warning(ex, "Failed to duck type original method for {ProxyType}", proxyType);
             return null;
         }
     }
 
-    internal static FuncWrappers.FuncWrapper<T1, TRes>? DuckTypeOriginalCtor<T1, TRes>(string signature)
+    internal static CtorWrappers.CtorWrapper<T1, TRes>? WrapOriginalCtor<T1, TRes>(string signature)
     {
         try
         {
-            return new FuncWrappers.FuncWrapper<T1, TRes>(signature);
+            return new CtorWrappers.CtorWrapper<T1, TRes>(signature);
         }
         catch (Exception ex)
         {
