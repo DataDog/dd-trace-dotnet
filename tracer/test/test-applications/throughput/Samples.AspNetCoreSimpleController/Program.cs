@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.IO;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 
 namespace Samples.AspNetCoreSimpleController
 {
