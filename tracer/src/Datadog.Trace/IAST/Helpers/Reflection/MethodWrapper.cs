@@ -15,7 +15,7 @@ namespace Datadog.Trace.Iast.Helpers.Reflection;
 /// <summary>
 ///     Method wrapper class
 /// </summary>
-public abstract class MethodWrapper
+internal abstract class MethodWrapper
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MethodWrapper));
 

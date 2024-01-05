@@ -13,7 +13,7 @@ namespace Datadog.Trace.Iast.Aspects.MongoDB.DuckTyping;
 ///     Duck type interface for MongoDB.Bson.Serialization.IBsonSerializerExtensions
 ///     https://github.com/mongodb/mongo-csharp-driver/blob/v2.8.0/src/MongoDB.Bson/Serialization/IBsonSerializerExtensions.cs
 /// </summary>
-public interface IBsonSerializerExtensionsDuckType
+internal interface IBsonSerializerExtensionsDuckType
 {
     /// <summary>
     ///     Deserializes a value.

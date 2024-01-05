@@ -11,7 +11,7 @@ namespace Datadog.Trace.Iast.Aspects.MongoDB.DuckTyping;
 ///     Duck type interface for MongoDB.Bson.BsonDocument
 ///     https://github.com/mongodb/mongo-csharp-driver/blob/v2.8.0/src/MongoDB.Bson/ObjectModel/BsonDocument.cs
 /// </summary>
-public interface IBsonDocumentDuckType
+internal interface IBsonDocumentDuckType
 {
     /// <summary>
     ///     Parses a JSON string and returns a BsonDocument.
