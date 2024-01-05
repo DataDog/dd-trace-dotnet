@@ -79,37 +79,6 @@
   {
     TraceId: Id_1,
     SpanId: Id_5,
-    Name: sns.request,
-    Resource: SNS.PublishBatch,
-    Service: Samples.AWS.SimpleNotificationService-aws-sns,
-    Type: http,
-    ParentId: Id_2,
-    Tags: {
-      aws.agent: dotnet-aws-sdk,
-      aws.operation: PublishBatch,
-      aws.requestId: Guid_3,
-      aws.service: SNS,
-      aws.topic.arn: arn:aws:sns:us-east-1:000000000000:MyTopic,
-      aws.topic.name: MyTopic,
-      aws_service: SNS,
-      component: aws-sdk,
-      env: integration_tests,
-      http.method: POST,
-      http.status_code: 200,
-      http.url: http://localhost:00000/,
-      runtime-id: Guid_1,
-      span.kind: client,
-      topicname: MyTopic,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_6,
     Name: http.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.SimpleNotificationService-http-client,
