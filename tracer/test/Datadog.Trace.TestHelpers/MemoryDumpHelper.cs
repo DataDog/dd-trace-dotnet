@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -106,6 +107,8 @@ namespace Datadog.Trace.TestHelpers
                     }
                     else
                     {
+                        _output.Report($"[dump] Dumping the output as binary (have fun)");
+                        _output.Report(string.Join(",", helper.StandardOutput.Select(c => (int)c)));
                         tcs.TrySetCanceled();
                     }
                 },
