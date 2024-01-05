@@ -17,7 +17,6 @@ internal class NativeMethods
     internal const int STD_INPUT_HANDLE = -10;
     internal const int STD_OUTPUT_HANDLE = -11;
     internal const int STD_ERROR_HANDLE = -12;
-    internal const int STARTF_USESHOWWINDOW = 0x00000001;
     internal const int STARTF_USESTDHANDLES = 0x00000100;
     internal const int CREATE_NO_WINDOW = 0x08000000;
     internal const int CREATE_SUSPENDED = 0x00000004;
@@ -25,7 +24,7 @@ internal class NativeMethods
     internal const int ERROR_BAD_EXE_FORMAT = 193;
     internal const int ERROR_EXE_MACHINE_TYPE_MISMATCH = 216;
 
-    [DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true, BestFitMapping = false)]
+    [DllImport("kernel32.dll", SetLastError = true)]
     internal static extern bool DuplicateHandle(
         IntPtr hSourceProcessHandle,
         SafeHandle hSourceHandle,

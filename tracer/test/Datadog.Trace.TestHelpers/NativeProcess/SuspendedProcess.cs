@@ -45,6 +45,11 @@ internal class SuspendedProcess(int pid, SafeProcessHandle processHandle, SafeHa
             throw new ObjectDisposedException(nameof(SuspendedProcess));
         }
 
+        if (_isResumed)
+        {
+            throw new InvalidOperationException("You really, really shouldn't call ResumeProcess twice");
+        }
+
         _isResumed = true;
 
         NativeMethods.ResumeThread(_threadHandle);
