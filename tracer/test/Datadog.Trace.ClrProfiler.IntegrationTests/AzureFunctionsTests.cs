@@ -1,4 +1,4 @@
-﻿// <copyright file="AzureFunctionsTests.cs" company="Datadog">
+// <copyright file="AzureFunctionsTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -43,12 +43,12 @@ public abstract class AzureFunctionsTests : TestHelper
         SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS", ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions + ", devstoreaccount1/azure-webjobs-hosts");
     }
 
-    protected ProcessResult RunAzureFunctionAndWaitForExit(MockTracerAgent agent, string framework = null, int expectedExitCode = 0)
+    protected async Task<ProcessResult> RunAzureFunctionAndWaitForExit(MockTracerAgent agent, string framework = null, int expectedExitCode = 0)
     {
         // run the azure function
         var binFolder = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion: string.Empty, framework, usePublishFolder: false);
         Output.WriteLine("Using binFolder: " + binFolder);
-        var process = ProfilerHelper.StartProcessWithProfiler(
+        var process = await ProfilerHelper.StartProcessWithProfiler(
             executable: "func",
             EnvironmentHelper,
             agent,

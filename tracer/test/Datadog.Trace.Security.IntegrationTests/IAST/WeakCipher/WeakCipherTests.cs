@@ -40,7 +40,7 @@ public class WeakCipherTests : TestHelper
         const int expectedSpanCount = 6;
         var filename = "WeakCipherTests.SubmitsTraces";
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var process = RunSampleAndWaitForExit(agent);
+        using var process = await RunSampleAndWaitForExit(agent);
         var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();

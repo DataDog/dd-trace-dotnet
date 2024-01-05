@@ -7,6 +7,7 @@ using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -51,7 +52,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         /// </summary>
         /// <param name="shouldDeserializeTraces">Optimization parameter, pass false when the resulting traces aren't being verified</param>
         /// <param name="expectedExitCode">Expected exit code</param>
-        protected void CheckForSmoke(bool shouldDeserializeTraces = true, int expectedExitCode = 0)
+        /// <returns>Async operation</returns>
+        protected async Task CheckForSmoke(bool shouldDeserializeTraces = true, int expectedExitCode = 0)
         {
             var applicationPath = EnvironmentHelper.GetSampleApplicationPath().Replace(@"\\", @"\");
             Output.WriteLine($"Application path: {applicationPath}");
@@ -79,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 // Command becomes: dotnet.exe <applicationPath>
                 var args = EnvironmentHelper.IsCoreClr() ? applicationPath : null;
                 // Using the following code to avoid possible hangs on WaitForExit due to synchronous reads: https://stackoverflow.com/questions/139593/processstartinfo-hanging-on-waitforexit-why
-                using (var process = ProfilerHelper.StartProcessWithProfiler(executable, EnvironmentHelper, agent, arguments: args, aspNetCorePort: aspNetCorePort, processToProfile: executable))
+                using (var process = await ProfilerHelper.StartProcessWithProfiler(executable, EnvironmentHelper, agent, arguments: args, aspNetCorePort: aspNetCorePort, processToProfile: executable))
                 {
                     using var helper = new ProcessHelper(process);
 

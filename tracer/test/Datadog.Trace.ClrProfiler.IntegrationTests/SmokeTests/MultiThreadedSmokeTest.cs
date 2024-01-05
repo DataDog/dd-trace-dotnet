@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,9 +18,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         [Fact(Skip = "Investigation needed to understand timeout issues.")]
         [Trait("Category", "Smoke")]
-        public void NoExceptions()
+        public async Task NoExceptions()
         {
-            CheckForSmoke(shouldDeserializeTraces: false);
+            await CheckForSmoke(shouldDeserializeTraces: false);
         }
     }
 }

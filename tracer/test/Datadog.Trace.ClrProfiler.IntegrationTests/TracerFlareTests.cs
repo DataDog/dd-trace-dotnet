@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerFlareTests.cs" company="Datadog">
+// <copyright file="TracerFlareTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -42,7 +42,7 @@ public class TracerFlareTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
         using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory);
-        using var sample = StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
+        using var sample = await StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
 
         try
         {

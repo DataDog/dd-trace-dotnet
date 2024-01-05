@@ -17,6 +17,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -239,7 +240,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public void TestInstrumentedUnitTests()
+    public async Task TestInstrumentedUnitTests()
     {
         using (var agent = EnvironmentHelper.GetMockAgent())
         {
@@ -266,7 +267,7 @@ public class IastInstrumentationUnitTests : TestHelper
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "0"); // without this key, ci visibility is enabled for the samples, which we don't really want
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
             SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
-            ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
+            ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
     }

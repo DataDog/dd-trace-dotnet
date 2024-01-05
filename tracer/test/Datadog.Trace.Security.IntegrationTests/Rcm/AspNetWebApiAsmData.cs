@@ -57,18 +57,19 @@ public class AspNetWebApiAsmDataClassicWithoutSecurity : AspNetWebApiAsmData
     }
 }
 
-public abstract class AspNetWebApiAsmData : RcmBaseFramework, IClassFixture<IisFixture>
+public abstract class AspNetWebApiAsmData : RcmBaseFramework, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
     private readonly string _testName;
+    private readonly bool _classicMode;
 
     public AspNetWebApiAsmData(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
         : base("WebApi", output, "/api/home/shutdown", @"test\test-applications\security\aspnet")
     {
         SetSecurity(enableSecurity);
 
+        _classicMode = classicMode;
         _iisFixture = iisFixture;
-        _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
         _testName = "Security." + nameof(AspNetWebApiAsmData)
                                 + (classicMode ? ".Classic" : ".Integrated")
                                 + ".enableSecurity=" + enableSecurity; // assume that arm is the same
@@ -149,6 +150,10 @@ public abstract class AspNetWebApiAsmData : RcmBaseFramework, IClassFixture<IisF
             SetClientIp(MainIp);
         }
     }
+
+    public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     protected override string GetTestName() => _testName;
 }

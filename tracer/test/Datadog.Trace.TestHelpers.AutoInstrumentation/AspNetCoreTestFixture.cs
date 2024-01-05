@@ -73,69 +73,66 @@ namespace Datadog.Trace.TestHelpers
                 return;
             }
 
-            lock (this)
+            if (Process is null)
             {
-                if (Process is null)
+                var initialAgentPort = TcpPortProvider.GetOpenPort();
+
+                Agent = MockTracerAgent.Create(_currentOutput, initialAgentPort);
+                WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}");
+                Process = await helper.StartSample(Agent, arguments: null, packageVersion: packageVersion, aspNetCorePort: 0, enableSecurity: enableSecurity, externalRulesFile: externalRulesFile);
+
+                var mutex = new ManualResetEventSlim();
+
+                int? port = null;
+
+                Process.OutputDataReceived += (_, args) =>
                 {
-                    var initialAgentPort = TcpPortProvider.GetOpenPort();
-
-                    Agent = MockTracerAgent.Create(_currentOutput, initialAgentPort);
-                    WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}");
-                    Process = helper.StartSample(Agent, arguments: null, packageVersion: packageVersion, aspNetCorePort: 0, enableSecurity: enableSecurity, externalRulesFile: externalRulesFile);
-
-                    var mutex = new ManualResetEventSlim();
-
-                    int? port = null;
-
-                    Process.OutputDataReceived += (_, args) =>
+                    if (args.Data != null)
                     {
-                        if (args.Data != null)
+                        if (args.Data.Contains("Now listening on:"))
                         {
-                            if (args.Data.Contains("Now listening on:"))
-                            {
-                                var splitIndex = args.Data.LastIndexOf(':');
-                                port = int.Parse(args.Data.Substring(splitIndex + 1));
-                            }
-
-                            if (args.Data.Contains("Unable to start Kestrel"))
-                            {
-                                mutex.Set();
-                            }
-
-                            if (args.Data.Contains("Webserver started") || args.Data.Contains("Application started"))
-                            {
-                                mutex.Set();
-                            }
-
-                            WriteToOutput($"[webserver][stdout] {args.Data}");
+                            var splitIndex = args.Data.LastIndexOf(':');
+                            port = int.Parse(args.Data.Substring(splitIndex + 1));
                         }
-                    };
 
-                    Process.ErrorDataReceived += (_, args) =>
+                        if (args.Data.Contains("Unable to start Kestrel"))
+                        {
+                            mutex.Set();
+                        }
+
+                        if (args.Data.Contains("Webserver started") || args.Data.Contains("Application started"))
+                        {
+                            mutex.Set();
+                        }
+
+                        WriteToOutput($"[webserver][stdout] {args.Data}");
+                    }
+                };
+
+                Process.ErrorDataReceived += (_, args) =>
+                {
+                    if (args.Data != null)
                     {
-                        if (args.Data != null)
-                        {
-                            WriteToOutput($"[webserver][stderr] {args.Data}");
-                        }
-                    };
+                        WriteToOutput($"[webserver][stderr] {args.Data}");
+                    }
+                };
 
-                    Process.BeginOutputReadLine();
-                    Process.BeginErrorReadLine();
+                Process.BeginOutputReadLine();
+                Process.BeginErrorReadLine();
 
                     if (!mutex.Wait(TimeSpan.FromSeconds(60)))
                     {
                         WriteToOutput("Timeout while waiting for the proces to start");
                     }
 
-                    if (port == null)
-                    {
-                        WriteToOutput("Unable to determine port application is listening on");
-                        throw new Exception("Unable to determine port application is listening on");
-                    }
-
-                    HttpPort = port.Value;
-                    WriteToOutput($"Started aspnetcore sample, listening on {HttpPort}");
+                if (port == null)
+                {
+                    WriteToOutput("Unable to determine port application is listening on");
+                    throw new Exception("Unable to determine port application is listening on");
                 }
+
+                HttpPort = port.Value;
+                WriteToOutput($"Started aspnetcore sample, listening on {HttpPort}");
             }
 
             await EnsureServerStarted(sendHealthCheck);

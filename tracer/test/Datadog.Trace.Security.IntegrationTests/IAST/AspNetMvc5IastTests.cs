@@ -101,7 +101,7 @@ public class AspNetMvc5ClassicWithIast : AspNetMvc5IastTests
 }
 
 [Collection("IisTests")]
-public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixture<IisFixture>
+public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
     private readonly string _testName;
@@ -118,7 +118,6 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
 
         _iisFixture = iisFixture;
-        _iisFixture.TryStartIis(this, IisAppType.AspNetClassic);
         _testName = "Security." + nameof(AspNetMvc5) + ".TelemetryEnabled" +
                  ".Classic" + ".enableIast=true";
         SetHttpPort(iisFixture.HttpPort);
@@ -159,6 +158,10 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
                           .UseFileName($"{_testName}.path={sanitisedPath}")
                           .DisableRequireUniquePrefix();
     }
+
+    public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetClassic);
+
+    public Task DisposeAsync() => Task.CompletedTask;
 }
 
 [Collection("IisTests")]
@@ -170,11 +173,12 @@ public class AspNetMvc5ClassicWithoutIast : AspNetMvc5IastTests
     }
 }
 
-public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture>
+public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
     private readonly string _testName;
     private readonly bool _enableIast;
+    private readonly bool _classicMode;
 
     public AspNetMvc5IastTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableIast)
         : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
@@ -190,13 +194,17 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
         _iisFixture = iisFixture;
+        _classicMode = classicMode;
         _enableIast = enableIast;
-        _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
         _testName = "Security." + nameof(AspNetMvc5)
                  + (classicMode ? ".Classic" : ".Integrated")
                  + ".enableIast=" + enableIast;
         SetHttpPort(iisFixture.HttpPort);
     }
+
+    public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]

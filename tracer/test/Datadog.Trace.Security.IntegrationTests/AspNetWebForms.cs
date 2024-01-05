@@ -52,10 +52,10 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
     }
 
-    public abstract class AspNetWebForms : AspNetBase, IClassFixture<IisFixture>
+    public abstract class AspNetWebForms : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
-        private readonly bool _enableSecurity;
+        private readonly bool _classicMode;
         private readonly string _testName;
 
         public AspNetWebForms(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
@@ -65,8 +65,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
             _iisFixture = iisFixture;
-            _enableSecurity = enableSecurity;
-            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+            _classicMode = classicMode;
             _testName = "Security." + nameof(AspNetWebForms)
                      + (classicMode ? ".Classic" : ".Integrated")
                      + ".enableSecurity=" + enableSecurity;
@@ -103,6 +102,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             var settings = VerifyHelper.GetSpanVerifierSettings(test);
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
         }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+
+        public Task DisposeAsync() => Task.CompletedTask;
 
         protected override string GetTestName() => _testName;
     }

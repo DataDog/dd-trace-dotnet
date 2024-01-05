@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
 
-            using var process = RunSampleAndWaitForExit(agent);
+            using var process = await RunSampleAndWaitForExit(agent);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 

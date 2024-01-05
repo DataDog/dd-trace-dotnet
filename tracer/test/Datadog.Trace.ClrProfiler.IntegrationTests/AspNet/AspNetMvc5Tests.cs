@@ -119,10 +119,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class AspNetMvc5Tests : TracingIntegrationTest, IClassFixture<IisFixture>
+    public abstract class AspNetMvc5Tests : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
+        private readonly bool _classicMode;
 
         protected AspNetMvc5Tests(
             IisFixture iisFixture,
@@ -139,6 +140,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, enableRouteTemplateExpansion.ToString());
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, enable128BitTraceIds ? "true" : "false");
 
+            _classicMode = classicMode;
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
             if (virtualApp)
@@ -146,7 +148,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.VirtualApplicationPath = "/my-app";
             }
 
-            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetMvc5Tests)
                       + (virtualApp ? ".VirtualApp" : string.Empty)
                       + (classicMode ? ".Classic" : ".Integrated")
@@ -215,13 +216,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                           .UseMethodName("_")
                           .UseTypeName(_testName);
         }
+
+        public async Task InitializeAsync()
+        {
+            await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 
     [UsesVerify]
-    public abstract class AspNetMvc5ModuleOnlyTests : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetMvc5ModuleOnlyTests : TestHelper, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
+        private readonly bool _classicMode;
 
         protected AspNetMvc5ModuleOnlyTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableRouteTemplateResourceNames, bool virtualApp = false)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
@@ -232,6 +241,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Disable the MVC part, so we can't back propagate any details to the tracing module
             SetEnvironmentVariable(ConfigurationKeys.DisabledIntegrations, nameof(Configuration.IntegrationId.AspNetMvc));
 
+            _classicMode = classicMode;
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
             if (virtualApp)
@@ -239,7 +249,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.VirtualApplicationPath = "/my-app";
             }
 
-            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetMvc5Tests)
                       + "ModuleOnly"
                       + (virtualApp ? ".VirtualApp" : string.Empty)
@@ -284,6 +293,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                           .DisableRequireUniquePrefix()
                           .UseTypeName(_testName);
         }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 }
 #endif

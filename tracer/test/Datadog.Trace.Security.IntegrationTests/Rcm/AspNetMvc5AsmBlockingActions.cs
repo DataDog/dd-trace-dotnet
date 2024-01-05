@@ -59,10 +59,11 @@ public class AspNetMvc5AsmBlockingActionsClassicWithoutSecurity : AspNetMvc5AsmB
     }
 }
 
-public abstract class AspNetMvc5AsmBlockingActions : RcmBaseFramework, IClassFixture<IisFixture>
+public abstract class AspNetMvc5AsmBlockingActions : RcmBaseFramework, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
     private readonly string _testName;
+    private readonly bool _classicMode;
 
     public AspNetMvc5AsmBlockingActions(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
         : base("AspNetMvc5", output, "/home/shutdown", @"test\test-applications\security\aspnet")
@@ -70,8 +71,8 @@ public abstract class AspNetMvc5AsmBlockingActions : RcmBaseFramework, IClassFix
         SetSecurity(enableSecurity);
         SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
+        _classicMode = classicMode;
         _iisFixture = iisFixture;
-        _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
         _testName = "Security." + nameof(AspNetMvc5AsmBlockingActions)
                                 + (classicMode ? ".Classic" : ".Integrated")
                                 + ".enableSecurity=" + enableSecurity;
@@ -104,6 +105,10 @@ public abstract class AspNetMvc5AsmBlockingActions : RcmBaseFramework, IClassFix
         await VerifySpans(spans.ToImmutableList(), settings);
         await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, asmProduct, fileId) });
     }
+
+    public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     protected override string GetTestName() => _testName;
 }
