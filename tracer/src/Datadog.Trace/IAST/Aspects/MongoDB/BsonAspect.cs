@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 using Datadog.Trace.Iast.Aspects.MongoDB.DuckTyping;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Helpers;
@@ -24,14 +23,10 @@ public class BsonAspect
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BsonAspect));
 
-    private static readonly FuncWrappers.FuncWrapper<object, object, object> DeserializeExtensionWrapper = new("MongoDB.Bson.Serialization.IBsonSerializerExtensions::Deserialize(MongoDB.Bson.Serialization.IBsonSerializer,MongoDB.Bson.Serialization.BsonDeserializationContext)");
-    private static readonly FuncWrappers.FuncWrapper<object, object, object> DeserializeBsonWrapper = new("MongoDB.Bson.Serialization.BsonSerializer::Deserialize(MongoDB.Bson.IO.IBsonReader,System.Action`1[MongoDB.Bson.Serialization.BsonDeserializationContext+Builder])");
-    private static readonly FuncWrappers.FuncWrapper<string, object> ParseWrapper = new("MongoDB.Bson.BsonDocument::Parse(System.String)");
-    private static readonly FuncWrappers.FuncWrapper<string, object> JsonReaderCtorWrapper = new("MongoDB.Bson.IO.JsonReader::.ctor(System.String)");
-
     private static readonly IBsonSerializerExtensionsDuckType? DeserializeExtensionDuck = DuckTypeHelper.DuckTypeOriginalMethod(typeof(IBsonSerializerExtensionsDuckType), Type.GetType("MongoDB.Bson.Serialization.IBsonSerializerExtensions, MongoDB.Bson")!) as IBsonSerializerExtensionsDuckType;
     private static readonly IBsonSerializerDuckType? DeserializeBsonDuck = DuckTypeHelper.DuckTypeOriginalMethod(typeof(IBsonSerializerDuckType), Type.GetType("MongoDB.Bson.Serialization.BsonSerializer, MongoDB.Bson")!) as IBsonSerializerDuckType;
     private static readonly IBsonDocumentDuckType? ParseDuck = DuckTypeHelper.DuckTypeOriginalMethod(typeof(IBsonDocumentDuckType), Type.GetType("MongoDB.Bson.BsonDocument, MongoDB.Bson")!) as IBsonDocumentDuckType;
+    private static readonly FuncWrappers.FuncWrapper<string, object>? JsonReaderCtorWrapper = DuckTypeHelper.DuckTypeOriginalCtor<string, object>("MongoDB.Bson.IO.JsonReader::.ctor(System.String)");
 
     /// <summary>
     ///     MongoDB Deserialize aspect
@@ -83,7 +78,6 @@ public class BsonAspect
     [AspectMethodReplace("MongoDB.Bson.BsonDocument::Parse(System.String)")]
     public static object? Parse(string json)
     {
-        // var result = ParseWrapper.Invoke(json);
         var result = ParseDuck?.Parse(json);
 
         try
@@ -103,7 +97,7 @@ public class BsonAspect
     [AspectCtorReplace("MongoDB.Bson.IO.JsonReader::.ctor(System.String)")]
     public static object? Constructor(string json)
     {
-        var result = JsonReaderCtorWrapper.Invoke(json);
+        var result = JsonReaderCtorWrapper?.Invoke(json);
 
         try
         {

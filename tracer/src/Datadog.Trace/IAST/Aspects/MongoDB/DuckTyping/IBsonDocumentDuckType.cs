@@ -15,6 +15,5 @@ public interface IBsonDocumentDuckType
     /// </summary>
     /// <param name="json">The JSON string.</param>
     /// <returns>A BsonDocument.</returns>
-    /// [Duck(Name = "Parse", ParameterTypeNames = new[] { "System.String" })]
     object Parse(string json);
 }

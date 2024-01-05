@@ -7,6 +7,7 @@
 
 using System;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Iast.Helpers.Reflection;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast.Helpers;
@@ -17,13 +18,34 @@ internal static class DuckTypeHelper
 
     internal static object? DuckTypeOriginalMethod(Type proxyType, Type staticType)
     {
-        var proxyResult = DuckType.GetOrCreateProxyType(proxyType, staticType);
-        if (!proxyResult.Success)
+        try
         {
-            Log.Warning("Failed to create proxy type for {0}", staticType);
+            var proxyResult = DuckType.GetOrCreateProxyType(proxyType, staticType);
+            if (!proxyResult.Success)
+            {
+                Log.Warning("Failed to create proxy type for {StaticType}", staticType);
+                return null;
+            }
+
+            return proxyResult.CreateInstance(null!);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to duck type original method for {StaticType}", staticType);
             return null;
         }
+    }
 
-        return proxyResult.CreateInstance(null!);
+    internal static FuncWrappers.FuncWrapper<T1, TRes>? DuckTypeOriginalCtor<T1, TRes>(string signature)
+    {
+        try
+        {
+            return new FuncWrappers.FuncWrapper<T1, TRes>(signature);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to create proxy type for {Signature}", signature);
+            return null;
+        }
     }
 }
