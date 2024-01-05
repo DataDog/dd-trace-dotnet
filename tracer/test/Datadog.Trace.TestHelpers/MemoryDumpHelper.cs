@@ -76,9 +76,11 @@ namespace Datadog.Trace.TestHelpers
                         RedirectStandardError = true,
                     });
 
+                    const string procdumpStarted = "Press Ctrl-C to end monitoring without terminating the process.";
+
                     void OnDataReceived(string output)
                     {
-                        if (output == "Press Ctrl-C to end monitoring without terminating the process.")
+                        if (output == procdumpStarted)
                         {
                             tcs.TrySetResult(true);
                         }
@@ -96,7 +98,16 @@ namespace Datadog.Trace.TestHelpers
                         _output.Report($"[dump][stderr] {helper.ErrorOutput}");
                     }
 
-                    tcs.TrySetCanceled();
+                    // It looks like there's a small race condition where this could happen before the OnDataReceived callback is called.
+                    // So redo the check before setting the task as cancelled.
+                    if (helper.StandardOutput.Contains(procdumpStarted))
+                    {
+                        tcs.TrySetResult(true);
+                    }
+                    else
+                    {
+                        tcs.TrySetCanceled();
+                    }
                 },
                 TaskCreationOptions.LongRunning);
 
