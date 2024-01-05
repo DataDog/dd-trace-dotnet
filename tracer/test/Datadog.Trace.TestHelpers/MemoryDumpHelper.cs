@@ -63,40 +63,42 @@ namespace Datadog.Trace.TestHelpers
 
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            _ = Task.Run(() =>
-            {
-                var args = $"-ma -accepteula -e {pid} {Path.GetTempPath()}";
-
-                using var dumpToolProcess = Process.Start(new ProcessStartInfo(_path, args)
+            _ = Task.Factory.StartNew(
+                () =>
                 {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                });
+                    var args = $"-ma -accepteula -e {pid} {Path.GetTempPath()}";
 
-                void OnDataReceived(string output)
-                {
-                    if (output == "Press Ctrl-C to end monitoring without terminating the process.")
+                    using var dumpToolProcess = Process.Start(new ProcessStartInfo(_path, args)
                     {
-                        tcs.TrySetResult(true);
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                    });
+
+                    void OnDataReceived(string output)
+                    {
+                        if (output == "Press Ctrl-C to end monitoring without terminating the process.")
+                        {
+                            tcs.TrySetResult(true);
+                        }
                     }
-                }
 
-                using var helper = new ProcessHelper(dumpToolProcess, OnDataReceived);
+                    using var helper = new ProcessHelper(dumpToolProcess, OnDataReceived);
 
-                helper.Drain();
+                    helper.Drain();
 
-                if (helper.StandardOutput.Contains("Dump count reached") || !helper.StandardOutput.Contains("Dump count not reached"))
-                {
-                    _output.Report($"procdump for process {pid} exited with code {helper.Process.ExitCode}");
+                    if (helper.StandardOutput.Contains("Dump count reached") || !helper.StandardOutput.Contains("Dump count not reached"))
+                    {
+                        _output.Report($"procdump for process {pid} exited with code {helper.Process.ExitCode}");
 
-                    _output.Report($"[dump][stdout] {helper.StandardOutput}");
-                    _output.Report($"[dump][stderr] {helper.ErrorOutput}");
-                }
+                        _output.Report($"[dump][stdout] {helper.StandardOutput}");
+                        _output.Report($"[dump][stderr] {helper.ErrorOutput}");
+                    }
 
-                tcs.TrySetCanceled();
-            });
+                    tcs.TrySetCanceled();
+                },
+                TaskCreationOptions.LongRunning);
 
             return tcs.Task;
         }
