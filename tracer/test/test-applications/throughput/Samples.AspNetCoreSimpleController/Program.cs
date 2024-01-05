@@ -8,8 +8,14 @@ namespace Samples.AspNetCoreSimpleController
 {
     public class Program
     {
+        [DllImport("libdd_profiling", EntryPoint = "ddprof_start_profiling")]
+        private static extern void DdprofStartProfiling();
+
+
         public static void Main(string[] args)
         {
+            DdprofStartProfiling();
+
             string managedTracerVersion = "None";
             string nativeTracerVersion = "None";
 
