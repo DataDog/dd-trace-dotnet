@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.Iast.Aspects.MongoDB.DuckTyping;
@@ -21,5 +23,5 @@ public interface IBsonSerializerDuckType
     /// <param name="configurator">The configurator.</param>
     /// <returns>A deserialized value.</returns>
     [Duck(Name = "Deserialize", ParameterTypeNames = new[] { "MongoDB.Bson.IO.IBsonReader, MongoDB.Bson", "Action`1" }, GenericParameterTypeNames = new[] { "TNominalType" })]
-    TNominalType Deserialize<TNominalType>(object bsonReader, object configurator = null);
+    TNominalType Deserialize<TNominalType>(object bsonReader, object configurator);
 }
