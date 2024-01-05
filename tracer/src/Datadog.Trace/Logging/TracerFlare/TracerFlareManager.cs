@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerFlareManager.cs" company="Datadog">
+// <copyright file="TracerFlareManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -33,6 +33,8 @@ internal class TracerFlareManager : ITracerFlareManager
     private readonly TracerFlareApi _flareApi;
     private ISubscription? _subscription;
     private Timer? _resetTimer = null;
+
+    private bool _wasDebugLogEnabled;
 
     public TracerFlareManager(
         IDiscoveryService discoveryService,
@@ -74,7 +76,14 @@ internal class TracerFlareManager : ITracerFlareManager
         }
     }
 
-    private static void ResetDebugging() => GlobalSettings.SetDebugEnabledInternal(false);
+    private void ResetDebugging()
+    {
+        // Restore the log level to its old value
+        if (!_wasDebugLogEnabled)
+        {
+            GlobalSettings.SetDebugEnabledInternal(false);
+        }
+    }
 
     private async Task<ApplyDetails[]> RcmProductReceived(
         Dictionary<string, List<RemoteConfiguration>> configByProduct,
@@ -111,6 +120,7 @@ internal class TracerFlareManager : ITracerFlareManager
         {
             // This product means "prepare for sending a tracer flare."
             // We may consider doing more than just enabling debug mode in the future
+            _wasDebugLogEnabled = GlobalSettings.Instance.DebugEnabledInternal;
             GlobalSettings.SetDebugEnabledInternal(true);
 
             // The timer is a fallback, in case we never receive a "send flare" product
