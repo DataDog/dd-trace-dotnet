@@ -96,12 +96,6 @@ namespace Datadog.Trace.Debugger.Symbols
                 UnRegisterToAssemblyLoadEvent();
                 _cancellationToken.Cancel(false);
             }
-            else
-            {
-                // DELETE ME !!!!!!!!!!!
-                _isSymDbEnabled = true;
-                _enablementSemaphore.Release(1);
-            }
 
             return Array.Empty<ApplyDetails>();
         }
