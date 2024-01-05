@@ -15,6 +15,7 @@ namespace Samples.AspNetCoreSimpleController
         public static void Main(string[] args)
         {
             DdprofStartProfiling();
+            Console.WriteLine("C++ Profiling started ...");
 
             string managedTracerVersion = "None";
             string nativeTracerVersion = "None";
