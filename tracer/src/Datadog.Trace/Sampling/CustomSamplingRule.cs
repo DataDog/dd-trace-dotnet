@@ -136,45 +136,14 @@ namespace Datadog.Trace.Sampling
                 return false;
             }
 
-            static bool MatchTags(Span span, List<KeyValuePair<string, Regex>> tagRegexes)
-            {
-                foreach (var pair in tagRegexes)
-                {
-                    var tagName = pair.Key;
-                    var tagRegex = pair.Value;
-                    var tagValue = span.GetTag(tagName);
-
-                    if (tagValue is null)
-                    {
-                        // if the string tag doesn't exist, try to get it as a numeric tag
-                        var numericTagValue = span.GetMetric(tagName);
-
-                        if (numericTagValue is not null)
-                        {
-                            // G17 comes from https://learn.microsoft.com/en-us/dotnet/standard/base-types/standard-numeric-format-strings
-                            tagValue = numericTagValue.Value.ToString("G17", CultureInfo.InvariantCulture);
-                        }
-                    }
-
-                    if (tagValue is null || !tagRegex.Match(tagValue).Success)
-                    {
-                        // stop as soon as we find a non-match.
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
             try
             {
                 // if a regex is null (not specified), it always matches.
                 // stop as soon as we find a non-match.
-                // TODO: match tags
                 return (_serviceNameRegex is null || _serviceNameRegex.Match(span.ServiceName).Success) &&
                        (_operationNameRegex is null || _operationNameRegex.Match(span.OperationName).Success) &&
                        (_resourceNameRegex is null || _resourceNameRegex.Match(span.ResourceName).Success) &&
-                       (_tagRegexes is null || MatchTags(span, _tagRegexes));
+                       (_tagRegexes is null || _tagRegexes.Count == 0 || MatchSpanTags(span, _tagRegexes));
             }
             catch (RegexMatchTimeoutException e)
             {
@@ -189,6 +158,49 @@ namespace Datadog.Trace.Sampling
 
                 return false;
             }
+        }
+
+        private static bool MatchSpanTags(Span span, List<KeyValuePair<string, Regex>> tagRegexes)
+        {
+            foreach (var pair in tagRegexes)
+            {
+                var tagName = pair.Key;
+                var tagRegex = pair.Value;
+                var tagValue = GetSpanTag(span, tagName);
+
+                if (tagValue is null || !tagRegex.Match(tagValue).Success)
+                {
+                    // stop as soon as we find a tag that isn't set or doesn't match
+                    return false;
+                }
+            }
+
+            // all specified tags exist and matched
+            return true;
+        }
+
+        private static string GetSpanTag(Span span, string tagName)
+        {
+            var tagValue = span.GetTag(tagName);
+
+            if (tagValue is null)
+            {
+                // if the string tag doesn't exist, try to get it as a numeric tag...
+                var numericTagValue = span.GetMetric(tagName);
+
+                if (numericTagValue is not null)
+                {
+                    var intValue = (int)numericTagValue.Value;
+
+                    // ...but only if it is an integer
+                    if (Math.Abs(intValue - numericTagValue.Value) < 0.0001)
+                    {
+                        tagValue = intValue.ToString(CultureInfo.InvariantCulture);
+                    }
+                }
+            }
+
+            return tagValue;
         }
 
         public float GetSamplingRate(Span span)
