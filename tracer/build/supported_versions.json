@@ -1108,5 +1108,22 @@
         "maxVersionTestedInclusive": null
       }
     ]
+  },
+  {
+    "integrationName": "Yarp",
+    "assemblyName": "Yarp.ReverseProxy",
+    "minAssemblyVersionInclusive": "1.1.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": [
+      {
+        "name": "Yarp.ReverseProxy",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "1.1.0",
+        "minVersionTestedInclusive": "1.1.2",
+        "maxVersionSupportedInclusive": "2.1.0",
+        "maxVersionAvailableInclusive": "2.1.0",
+        "maxVersionTestedInclusive": "2.1.0"
+      }
+    ]
   }
 ]
