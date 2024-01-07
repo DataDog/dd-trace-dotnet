@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger.Expressions;
 internal partial class ProbeExpressionParser<T>
 {
     private const string @Return = "@return";
-    private const string @Exceptions = "@exceptions";
+    private const string @Exceptions = "@exception";
     private const string @Duration = "@duration";
     private const string @It = "@it";
     private const string @This = "this";
@@ -231,12 +231,12 @@ internal partial class ProbeExpressionParser<T>
                                     }
 
                                 // collection operations
-                                case "hasAny":
+                                case "any":
                                     {
                                         return HasAny(reader, parameters);
                                     }
 
-                                case "hasAll":
+                                case "all":
                                     {
                                         return HasAll(reader, parameters);
                                     }
@@ -246,10 +246,8 @@ internal partial class ProbeExpressionParser<T>
                                         return Filter(reader, parameters);
                                     }
 
-                                case "count":
-                                    {
-                                        return Count(reader, parameters, itParameter);
-                                    }
+                                // see `len` above
+                                // case "len":
 
                                 case "index":
                                     {

@@ -1,6 +1,6 @@
 {
-  "dsl": "hasAny(ref CollectionLocal, { @it == 'hello' })",
-  "hasAny": [
+  "dsl": "any(ref CollectionLocal, { @it == 'hello' })",
+  "any": [
     {
       "ref": "CollectionLocal"
     },
