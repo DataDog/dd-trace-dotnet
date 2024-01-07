@@ -292,7 +292,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.Metric.HasValue)
             {
-                LiveDebugger.Instance.SendMetrics(ProbeInfo.MetricKind.Value, ProbeInfo.MetricName, evaluationResult.Metric.Value);
+                LiveDebugger.Instance.SendMetrics(ProbeInfo.MetricKind.Value, ProbeInfo.MetricName, evaluationResult.Metric.Value, ProbeInfo.ProbeId);
                 // snapshot creator is created for all probes in the method invokers,
                 // if it is a metric probe, once we sent the value, we can stop the invokers and dispose the snapshot creator
                 snapshotCreator.Dispose();
