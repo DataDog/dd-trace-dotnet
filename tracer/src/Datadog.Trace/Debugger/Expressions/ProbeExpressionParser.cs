@@ -267,6 +267,11 @@ internal partial class ProbeExpressionParser<T>
                                         return GetReference(reader, parameters, itParameter);
                                     }
 
+                                case "instanceof":
+                                    {
+                                        return IsInstanceOf(reader, parameters, itParameter);
+                                    }
+
                                 case "isUndefined":
                                     {
                                         return IsUndefined(reader, parameters, itParameter);

@@ -76,6 +76,37 @@ internal partial class ProbeExpressionParser<T>
                        Expression.Constant(NumberFormatInfo.CurrentInfo));
     }
 
+    private Expression IsInstanceOf(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    {
+        var value = ParseTree(reader, parameters, itParameter);
+        var instanceOf = (ConstantExpression)ParseTree(reader, parameters, itParameter);
+        var typeName = instanceOf.Value?.ToString();
+        if (string.IsNullOrEmpty(typeName))
+        {
+            AddError($"{value} is ?", "failed to parse type name");
+            return Expression.Constant(false);
+        }
+
+        Type type = null;
+        try
+        {
+            type = Type.GetType(typeName);
+        }
+        catch (Exception e)
+        {
+            AddError($"{value} is {typeName}", e.Message);
+            return Expression.Constant(false);
+        }
+
+        if (type == null)
+        {
+            AddError($"{value} is {typeName}", $"'{typeName}' is unknown type");
+            return Expression.Constant(false);
+        }
+
+        return Expression.TypeIs(value, type);
+    }
+
     private Expression IsUndefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var value = ParseTree(reader, parameters, itParameter);
