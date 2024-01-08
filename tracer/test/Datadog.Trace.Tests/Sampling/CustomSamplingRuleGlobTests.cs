@@ -56,6 +56,7 @@ namespace Datadog.Trace.Tests.Sampling
         {
             const string config = """[{"sample_rate":0.5, "service":"*cart*"}, {"sample_rate":1, "service":"*shipping*", "name":"authorize"}, {"sample_rate":0.1, "service":"*shipping*"}, {"sample_rate":0.05}]""";
             var rules = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob).ToArray();
+            rules.Should().HaveCount(4);
 
             var cartRule = rules[0];
             cartRule.GetSamplingRate(TestSpans.CartCheckoutSpan).Should().Be(0.5f);

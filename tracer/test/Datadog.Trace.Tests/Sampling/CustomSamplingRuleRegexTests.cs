@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using Datadog.Trace.Sampling;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling
@@ -54,6 +55,7 @@ namespace Datadog.Trace.Tests.Sampling
         {
             var config = """[{"sample_rate":0.5, "service":".*cart.*"}, {"sample_rate":1, "service":".*shipping.*", "name":"authorize"}, {"sample_rate":0.1, "service":".*shipping.*"}, {"sample_rate":0.05}]""";
             var rules = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex).ToArray();
+            rules.Should().HaveCount(4);
 
             var cartRule = rules[0];
             Assert.Equal(expected: 0.5f, actual: cartRule.GetSamplingRate(TestSpans.CartCheckoutSpan));
@@ -112,6 +114,14 @@ namespace Datadog.Trace.Tests.Sampling
         {
             var rules = CustomSamplingRule.BuildFromConfigurationString(ruleConfig, SamplingRulesFormat.Regex).ToArray();
             Assert.Empty(rules);
+        }
+
+        [Fact]
+        public void Unknown_Rules_Format_Does_Not_Register()
+        {
+            var config = """[{"sample_rate":0.5, "service":".*cart.*"}, {"sample_rate":1, "service":".*shipping.*", "name":"authorize"}, {"sample_rate":0.1, "service":".*shipping.*"}, {"sample_rate":0.05}]""";
+            var rules = CustomSamplingRule.BuildFromConfigurationString(config, "unknown").ToArray();
+            rules.Should().HaveCount(0);
         }
 
         private static void VerifyRate(string config, float expectedRate)
