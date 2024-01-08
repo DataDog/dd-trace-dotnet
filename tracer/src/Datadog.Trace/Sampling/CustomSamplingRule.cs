@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -143,7 +142,7 @@ namespace Datadog.Trace.Sampling
                 return (_serviceNameRegex is null || _serviceNameRegex.Match(span.ServiceName).Success) &&
                        (_operationNameRegex is null || _operationNameRegex.Match(span.OperationName).Success) &&
                        (_resourceNameRegex is null || _resourceNameRegex.Match(span.ResourceName).Success) &&
-                       (_tagRegexes is null || _tagRegexes.Count == 0 || MatchSpanTags(span, _tagRegexes));
+                       (_tagRegexes is null || _tagRegexes.Count == 0 || SamplingRuleHelper.MatchSpanByTags(span, _tagRegexes));
             }
             catch (RegexMatchTimeoutException e)
             {
@@ -158,49 +157,6 @@ namespace Datadog.Trace.Sampling
 
                 return false;
             }
-        }
-
-        private static bool MatchSpanTags(Span span, List<KeyValuePair<string, Regex>> tagRegexes)
-        {
-            foreach (var pair in tagRegexes)
-            {
-                var tagName = pair.Key;
-                var tagRegex = pair.Value;
-                var tagValue = GetSpanTag(span, tagName);
-
-                if (tagValue is null || !tagRegex.Match(tagValue).Success)
-                {
-                    // stop as soon as we find a tag that isn't set or doesn't match
-                    return false;
-                }
-            }
-
-            // all specified tags exist and matched
-            return true;
-        }
-
-        private static string GetSpanTag(Span span, string tagName)
-        {
-            var tagValue = span.GetTag(tagName);
-
-            if (tagValue is null)
-            {
-                // if the string tag doesn't exist, try to get it as a numeric tag...
-                var numericTagValue = span.GetMetric(tagName);
-
-                if (numericTagValue is not null)
-                {
-                    var intValue = (int)numericTagValue.Value;
-
-                    // ...but only if it is an integer
-                    if (Math.Abs(intValue - numericTagValue.Value) < 0.0001)
-                    {
-                        tagValue = intValue.ToString(CultureInfo.InvariantCulture);
-                    }
-                }
-            }
-
-            return tagValue;
         }
 
         public float GetSamplingRate(Span span)

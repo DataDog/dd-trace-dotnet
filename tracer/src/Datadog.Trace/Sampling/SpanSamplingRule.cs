@@ -158,10 +158,10 @@ namespace Datadog.Trace.Sampling
 
             // if a regex is null (not specified), it always matches.
             // stop as soon as we find a non-match.
-            // TODO: match tags
-            return (_serviceNameRegex?.Match(span.ServiceName).Success ?? true) &&
-                   (_operationNameRegex?.Match(span.OperationName).Success ?? true) &&
-                   (_resourceNameRegex?.Match(span.ResourceName).Success ?? true);
+            return (_serviceNameRegex is null || _serviceNameRegex.Match(span.ServiceName).Success) &&
+                   (_operationNameRegex is null || _operationNameRegex.Match(span.OperationName).Success) &&
+                   (_resourceNameRegex is null || _resourceNameRegex.Match(span.ResourceName).Success) &&
+                   (_tagRegexes is null || _tagRegexes.Count == 0 || SamplingRuleHelper.MatchSpanByTags(span, _tagRegexes));
         }
 
         /// <inheritdoc/>
