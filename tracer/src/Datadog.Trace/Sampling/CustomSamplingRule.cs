@@ -122,7 +122,7 @@ namespace Datadog.Trace.Sampling
 
                 Log.Error(
                     e,
-                    "Timeout when trying to match against {Value} on {Pattern}.",
+                    """Regex timed out when trying to match value "{Input}" against pattern "{Pattern}".""",
                     e.Input,
                     e.Pattern);
 
