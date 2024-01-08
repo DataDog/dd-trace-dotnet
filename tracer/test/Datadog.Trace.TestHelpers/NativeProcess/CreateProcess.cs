@@ -27,14 +27,11 @@ public class CreateProcess
         // Just making extra sure that the Process static constructor has run
         _ = Process.GetCurrentProcess();
 
-        CreateProcessLock = typeof(Process)
+        var createProcessLock = typeof(Process)
             .GetField("s_createProcessLock", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!
             .GetValue(null);
 
-        if (CreateProcessLock == null)
-        {
-            throw new InvalidOperationException("Failed to read the s_createProcessLock field from Process");
-        }
+        CreateProcessLock = createProcessLock ?? throw new InvalidOperationException("Failed to read the s_createProcessLock field from Process");
     }
 
     internal static SuspendedProcess StartSuspendedProcess(ProcessStartInfo startInfo)
