@@ -8,9 +8,7 @@
 
 using System;
 using System.ComponentModel;
-using System.IO;
-using System.Net.Http;
-using System.Threading;
+using System.Diagnostics;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 
@@ -73,7 +71,7 @@ public class YarpForwarderHttpClientFactoryIntegration
         // trace context is not updated by Yarp.
         if (state.State is System.Net.Http.SocketsHttpHandler handler)
         {
-            handler.ActivityHeadersPropagator = null;
+            handler.ActivityHeadersPropagator = DistributedContextPropagator.CreateNoOutputPropagator();
         }
 
         return CallTargetReturn.GetDefault();
