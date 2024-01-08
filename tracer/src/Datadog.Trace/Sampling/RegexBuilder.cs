@@ -66,12 +66,6 @@ internal static class RegexBuilder
         var hasLineStart = regex.StartsWith("^");
         var hasLineEnd = regex.EndsWith("$");
 
-        if (hasLineStart && hasLineEnd)
-        {
-            // nothing to do here
-            return regex;
-        }
-
         return hasLineStart
                  ? (hasLineEnd ? regex : $"{regex}$")
                  : (hasLineEnd ? $"^{regex}" : $"^{regex}$");
