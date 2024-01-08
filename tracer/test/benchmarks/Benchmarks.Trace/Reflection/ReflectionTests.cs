@@ -3,6 +3,7 @@ using System.Reflection;
 using System;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 using System.Text;
 using Microsoft.Diagnostics.Tracing.Parsers.MicrosoftWindowsWPF;
@@ -204,6 +205,10 @@ namespace Benchmarks.Trace.Reflection
             }
         }
 
+        interface ITestTypeProxy
+        {
+            public string Method1(string s1, int i2);
+        }
 
         class TestType
         {
@@ -247,6 +252,17 @@ namespace Benchmarks.Trace.Reflection
         {
             _wrapper.Invoke("Iteration: ", 10);
         }
+
+
+
+        static DuckType.CreateTypeResult _duckType = DuckType.GetOrCreateProxyType(typeof(ITestTypeProxy), typeof(TestType));
+        static ITestTypeProxy _proxy = (ITestTypeProxy)_duckType.CreateInstance(null);
+        [Benchmark]
+        public void DuckTypingMethod()
+        {
+            _proxy.Method1("Iteration: ", 10);
+        }
+
 
         [Benchmark]
         public void DirectCall()
