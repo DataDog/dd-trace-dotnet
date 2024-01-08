@@ -6,13 +6,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+
 #if NETCOREAPP3_1_OR_GREATER
 using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
 #else
 using System.Text.RegularExpressions;
 #endif
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Sampling
 {
