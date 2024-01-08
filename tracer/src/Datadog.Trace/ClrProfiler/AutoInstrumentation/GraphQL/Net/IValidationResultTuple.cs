@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
@@ -13,6 +15,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
     internal interface IValidationResultTuple
     {
         [DuckField]
-        public IValidationResult Item1 { get; }
+        public IValidationResult? Item1 { get; }
     }
 }

@@ -415,7 +415,7 @@
         "name": "GraphQL",
         "minVersionAvailableInclusive": "0.1.0",
         "minVersionSupportedInclusive": "2.3.0",
-        "minVersionTestedInclusive": "4.1.0",
+        "minVersionTestedInclusive": "2.1.0",
         "maxVersionSupportedInclusive": "7.6.1",
         "maxVersionAvailableInclusive": "7.6.1",
         "maxVersionTestedInclusive": "7.6.1"

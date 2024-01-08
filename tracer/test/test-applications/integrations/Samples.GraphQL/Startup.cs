@@ -12,6 +12,8 @@ using Microsoft.Extensions.Logging;
 using GraphQL.StarWars;
 using GraphQL.StarWars.Types;
 using System.Threading.Tasks;
+using StarWarsMutation = Samples.GraphQL.StarWarsExtensions.StarWarsMutation;
+using StarWarsSchema = Samples.GraphQL.StarWarsExtensions.StarWarsSchema;
 
 namespace Samples.GraphQL
 {
