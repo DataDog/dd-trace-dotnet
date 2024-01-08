@@ -18,10 +18,8 @@ namespace Datadog.Trace.Iast.SensitiveData;
 /// </summary>
 internal class HeaderInjectionTokenizer : ITokenizer
 {
-    internal const string KeysRegex = @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)";
-    private static Regex _keyPattern = new Regex(KeysRegex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    internal const string ValuesRegex = @"(?i)(?:bearer\s+[a-z0-9\._\-]+|glpat-[\w\-]{20}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=\-]+\.ey[I-L][\w=\-]+(?:\.[\w.+/=\-]+)?|(?:[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY[\-]{5}|ssh-rsa\s*[a-z0-9/\.+]{100,}))";
-    private static Regex _valuePattern = new Regex(KeysRegex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static Regex _keyPattern = new Regex(@"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static Regex _valuePattern = new Regex(@"(?i)(?:bearer\s+[a-z0-9\._\-]+|glpat-[\w\-]{20}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=\-]+\.ey[I-L][\w=\-]+(?:\.[\w.+/=\-]+)?|(?:[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY[\-]{5}|ssh-rsa\s*[a-z0-9/\.+]{100,}))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public HeaderInjectionTokenizer()
     {
