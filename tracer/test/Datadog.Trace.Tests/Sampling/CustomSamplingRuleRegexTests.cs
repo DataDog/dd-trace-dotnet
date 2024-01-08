@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Constructs_ZeroRateOnly_From_Config_String()
         {
-            var config = "[{\"sample_rate\":0}]";
+            var config = """[{"sample_rate":0}]""";
             VerifyRate(config, 0f);
             VerifySingleRule(config, TestSpans.CartCheckoutSpan, true);
             VerifySingleRule(config, TestSpans.AddToCartSpan, true);
@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Constructs_CartOnlyRule_From_Config_String()
         {
-            var config = "[{\"sample_rate\":0.3, \"service\":\"shopping-cart.*\"}]";
+            var config = """[{"sample_rate":0.3, "service":"shopping-cart.*"}]""";
             VerifyRate(config, 0.3f);
             VerifySingleRule(config, TestSpans.CartCheckoutSpan, true);
             VerifySingleRule(config, TestSpans.AddToCartSpan, true);
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Constructs_AuthOperationRule_From_Config_String()
         {
-            var config = "[{\"sample_rate\":0.5, \"name\":\"auth.*\"}]";
+            var config = """[{"sample_rate":0.5, "name":"auth.*"}]""";
             VerifyRate(config, 0.5f);
             VerifySingleRule(config, TestSpans.CartCheckoutSpan, false);
             VerifySingleRule(config, TestSpans.AddToCartSpan, false);
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Constructs_All_Expected_From_Config_String()
         {
-            var config = "[{\"sample_rate\":0.5, \"service\":\".*cart.*\"}, {\"sample_rate\":1, \"service\":\".*shipping.*\", \"name\":\"authorize\"}, {\"sample_rate\":0.1, \"service\":\".*shipping.*\"}, {\"sample_rate\":0.05}]";
+            var config = """[{"sample_rate":0.5, "service":".*cart.*"}, {"sample_rate":1, "service":".*shipping.*", "name":"authorize"}, {"sample_rate":0.1, "service":".*shipping.*"}, {"sample_rate":0.05}]""";
             var rules = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex).ToArray();
 
             var cartRule = rules[0];
@@ -95,16 +95,18 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void RuleShouldBeCaseInsensitive()
         {
-            var config = "[{\"sample_rate\":0.5, \"service\":\"SHOPPING-cart-service\", \"name\":\"CHECKOUT\"}]";
+            var config = """[{"sample_rate":0.5, "service":"SHOPPING-cart-service", "name":"CHECKOUT"}]""";
             var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex).Single();
             VerifySingleRule(rule, TestSpans.CartCheckoutSpan, true);
         }
 
         [Theory]
-        [InlineData("\"rate:0.5, \"name\":\"auth.*\"}]")]
-        [InlineData("[{\"name\":\"wat\"}]")]
-        [InlineData("[{\"sample_rate\":0.3, \"service\":\"[\"}]")] // valid config, but invalid service regex
-        [InlineData("[{\"sample_rate\":0.3, \"name\":\"[\"}]")] // valid config, but invalid operation regex
+        [InlineData("""
+                    "rate:0.5, "name":"auth.*"}]
+                    """)] // missing closing double quotes in "rate"
+        [InlineData("""[{"name":"wat"}]""")] // missing "sample_rate"
+        [InlineData("""[{"sample_rate":0.3, "service":"["}]""")] // valid config, but invalid service regex
+        [InlineData("""[{"sample_rate":0.3, "name":"["}]""")] // valid config, but invalid operation regex
 
         public void Malformed_Rules_Do_Not_Register_Or_Crash(string ruleConfig)
         {
