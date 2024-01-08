@@ -1264,8 +1264,8 @@ partial class Build
                     (project, project.TryGetTargetFrameworks(), project.RequiresDockerDependency()) switch
                     {
                         _ when exclude.Contains(project.Path) => false,
-                        _ when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase),
                         (_, _, DockerDependencyType.All) => false, // can't use docker on Windows
+                        (_, { } targets, _) when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase) && targets.Contains(Framework),
                         (_, { } targets, _) => targets.Contains(Framework),
                         _ => true,
                     }
