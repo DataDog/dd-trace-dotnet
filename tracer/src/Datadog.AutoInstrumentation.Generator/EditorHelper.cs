@@ -86,13 +86,13 @@ internal static class EditorHelper
         var parameters = methodDef.Parameters.Where(p => !p.IsHiddenThisParameter).ToArray();
         if (parameters.Length == 0)
         {
-            return "new string[0]";
+            return "[]";
         }
 
         var sb = new StringBuilder();
-        sb.Append("new[] { ")
+        sb.Append('[')
             .Append(string.Join(", ", parameters.Select(p => CreateTypeName(p.Type))))
-            .Append(" }");
+            .Append(']');
         return sb.ToString();
     }
 
