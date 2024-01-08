@@ -62,36 +62,43 @@ namespace Datadog.Trace.Sampling
 
         public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration, string patternFormat)
         {
+            if (string.IsNullOrWhiteSpace(configuration))
+            {
+                return Enumerable.Empty<CustomSamplingRule>();
+            }
+
             try
             {
-                if (!string.IsNullOrEmpty(configuration))
+                var rules = JsonConvert.DeserializeObject<List<CustomRuleConfig>>(configuration);
+
+                if (rules == null)
                 {
-                    var index = 0;
-                    var rules = JsonConvert.DeserializeObject<List<CustomRuleConfig>>(configuration);
-                    var samplingRules = new List<CustomSamplingRule>(rules.Count);
-
-                    foreach (var r in rules)
-                    {
-                        index++; // Used to create a readable rule name if one is not specified
-
-                        samplingRules.Add(
-                            new CustomSamplingRule(
-                                r.SampleRate,
-                                r.RuleName ?? $"config-rule-{index}",
-                                patternFormat,
-                                r.Service,
-                                r.OperationName));
-                    }
-
-                    return samplingRules;
+                    return Enumerable.Empty<CustomSamplingRule>();
                 }
+
+                var index = 0;
+                var samplingRules = new List<CustomSamplingRule>(rules.Count);
+
+                foreach (var r in rules)
+                {
+                    index++; // Used to create a readable rule name if one is not specified
+
+                    samplingRules.Add(
+                        new CustomSamplingRule(
+                            r.SampleRate,
+                            r.RuleName ?? $"config-rule-{index}",
+                            patternFormat,
+                            r.Service,
+                            r.OperationName));
+                }
+
+                return samplingRules;
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Unable to parse the trace sampling rules.");
+                return Enumerable.Empty<CustomSamplingRule>();
             }
-
-            return Enumerable.Empty<CustomSamplingRule>();
         }
 
         public bool IsMatch(Span span)
