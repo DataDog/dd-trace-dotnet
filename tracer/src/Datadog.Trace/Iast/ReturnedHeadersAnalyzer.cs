@@ -75,7 +75,7 @@ internal static class ReturnedHeadersAnalyzer
                     if (excludeType.Equals((string)headerKey, StringComparison.OrdinalIgnoreCase))
                     {
                         isHeaderInjectionException = true;
-                        continue;
+                        break;
                     }
                 }
 
