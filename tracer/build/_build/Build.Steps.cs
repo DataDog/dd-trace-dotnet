@@ -1451,7 +1451,7 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "RunOnWindows=True&Category=AzureFunctions" : Filter)
+                    .SetFilter("RunOnWindows=True&Category=AzureFunctions")
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
