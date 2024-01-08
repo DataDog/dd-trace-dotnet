@@ -218,6 +218,7 @@ namespace Datadog.Trace.Configuration
                                                            return Sampling.SamplingRulesFormat.Glob;
                                                        }
 
+                                                       // invalid values are converted to "unknown"
                                                        return Sampling.SamplingRulesFormat.Unknown;
                                                    },
                                                    validator: null);
