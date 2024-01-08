@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -19,12 +20,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class AerospikeTests : TracingIntegrationTest
+    public class AerospikeTests : TracingIntegrationTest, IClassFixture<AerospikeFixture>
     {
-        public AerospikeTests(ITestOutputHelper output)
+        public AerospikeTests(ITestOutputHelper output, AerospikeFixture aerospikeFixture)
             : base("Aerospike", output)
         {
             SetServiceVersion("1.0.0");
+            ConfigureContainers(aerospikeFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
