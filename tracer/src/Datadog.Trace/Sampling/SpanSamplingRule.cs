@@ -67,7 +67,7 @@ namespace Datadog.Trace.Sampling
             if (_serviceNameRegex is null &&
                 _operationNameRegex is null)
             {
-                // if no globs were specified, we always match (i.e. catch-all)
+                // if no patterns were specified, this rule always matches (i.e. catch-all)
                 _alwaysMatch = true;
             }
         }
@@ -104,7 +104,7 @@ namespace Datadog.Trace.Sampling
             }
             catch (Exception e)
             {
-                Log.Error(e, "Unable to parse the span sampling rule.");
+                Log.Error(e, "Unable to parse the span sampling rules.");
                 return Enumerable.Empty<SpanSamplingRule>();
             }
         }

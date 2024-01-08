@@ -45,7 +45,7 @@ namespace Datadog.Trace.Sampling
             if (_serviceNameRegex is null &&
                 _operationNameRegex is null)
             {
-                // if no regexes were specified, we always match (i.e. catch-all)
+                // if no patterns were specified, this rule always matches (i.e. catch-all)
                 _alwaysMatch = true;
             }
         }
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Sampling
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Unable to parse custom sampling rules");
+                Log.Error(ex, "Unable to parse the trace sampling rules.");
             }
 
             return Enumerable.Empty<CustomSamplingRule>();
