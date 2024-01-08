@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
             where TResponse : IReceiveMessageResponse
         {
-            if (response.Instance != null && response.Messages.Count > 0)
+            if (response.Instance != null && response.Messages != null && response.Messages.Count > 0 && state.State != null)
             {
                 var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
                 if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                         state.Scope.Span.Context.MergePathwayContext(dataStreamsManager.ExtractPathwayContext(adapter));
 
                         var sentTime = 0;
-                        if (message.Attributes.TryGetValue("SentTimestamp", out var sentTimeStr) && sentTimeStr != null)
+                        if (message.Attributes != null && message.Attributes.TryGetValue("SentTimestamp", out var sentTimeStr) && sentTimeStr != null)
                         {
                             int.TryParse(sentTimeStr, out sentTime);
                         }

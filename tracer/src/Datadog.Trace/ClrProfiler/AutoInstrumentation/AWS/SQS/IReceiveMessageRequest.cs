@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 
@@ -10,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
 
 internal interface IReceiveMessageRequest : IAmazonSQSRequestWithQueueUrl, IDuckType
 {
-    List<string> MessageAttributeNames { get; }
+    List<string?> MessageAttributeNames { get; }
 
-    List<string> AttributeNames { get; }
+    List<string?> AttributeNames { get; }
 }

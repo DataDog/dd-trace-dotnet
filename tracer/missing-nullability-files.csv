@@ -741,8 +741,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/IAmazonSQSRequestWithQ
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/IContainsMessageAttributes.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ICreateQueueRequest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ICreateQueueResponse.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/IReceiveMessageRequest.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/IReceiveMessageResponse.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ISendMessageBatchRequest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ISendMessageRequest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/AzureFunctionsExecutionReason.cs

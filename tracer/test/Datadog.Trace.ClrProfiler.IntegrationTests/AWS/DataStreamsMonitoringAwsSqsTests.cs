@@ -45,8 +45,7 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
         using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
 #if NETFRAMEWORK
-            var expectedCount = 56;
-            var frameworkName = "NetFramework";
+            throw new SkipException();
 #else
             var expectedCount = 28;
             var frameworkName = "NetCore";

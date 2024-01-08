@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <summary>
         /// The adapter to use to append stuff to a string builder where a json is being built
         /// </summary>
-        private class StringBuilderJsonAdapter : IBinaryHeadersCollection
+        private readonly struct StringBuilderJsonAdapter : IBinaryHeadersCollection
         {
             private readonly StringBuilder _carrier;
 
@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <summary>
         /// The adapter to use to read attributes packed in a json string under the _datadog key
         /// </summary>
-        public class MessageAttributesAdapter : IBinaryHeadersCollection
+        public readonly struct MessageAttributesAdapter : IBinaryHeadersCollection
         {
             private readonly IDictionary _messageAttributes;
 

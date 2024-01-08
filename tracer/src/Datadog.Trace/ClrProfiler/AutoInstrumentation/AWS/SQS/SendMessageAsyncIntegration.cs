@@ -60,13 +60,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 tags.QueueName = queueName;
             }
 
-            if (scope?.Span.Context != null)
+            if (scope?.Span.Context != null && !string.IsNullOrEmpty(queueName))
             {
                 var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
                 if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
                 {
                     var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
-                    scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, 0, 0);
+                    scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
                 }
 
                 ContextPropagation.InjectHeadersIntoMessage<TSendMessageRequest>(requestProxy, scope.Span.Context, dataStreamsManager);
