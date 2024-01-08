@@ -27,7 +27,7 @@ namespace Datadog.Trace.Sampling
         private readonly Regex _serviceNameRegex;
         private readonly Regex _operationNameRegex;
 
-        private bool _hasPoisonedRegex;
+        private bool _regexTimedOut;
 
         public CustomSamplingRule(
             float rate,
@@ -102,7 +102,7 @@ namespace Datadog.Trace.Sampling
                 return true;
             }
 
-            if (_hasPoisonedRegex)
+            if (_regexTimedOut)
             {
                 // the regex had a valid format, but it timed out previously. stop trying to use it.
                 return false;
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Sampling
             catch (RegexMatchTimeoutException e)
             {
                 // flag regex so we don't try to use it again
-                _hasPoisonedRegex = true;
+                _regexTimedOut = true;
 
                 Log.Error(
                     e,
