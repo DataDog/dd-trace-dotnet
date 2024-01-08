@@ -103,11 +103,10 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         [Theory]
-        [InlineData(@"""rate:0.5, ""name"":""auth*""}]", 0)]
-        [InlineData("""[{"name":"wat"}]""", 0)]
+        [InlineData(@"""rate:0.5, ""name"":""auth*""}]", 0)] // missing closing double quote in "rate"
+        [InlineData("""[{"name":"wat"}]""", 0)] // missing "sample_rate"
         [InlineData("""[{"sample_rate":0.3, "service":"["}]""", 1)] // invalid regex, but valid glob
         [InlineData("""[{"sample_rate":0.3, "name":"["}]""", 1)] // invalid regex, but valid glob
-
         public void Malformed_Rules_Do_Not_Register_Or_Crash(string ruleConfig, int count)
         {
             var rules = CustomSamplingRule.BuildFromConfigurationString(ruleConfig, SamplingRulesFormat.Glob).ToArray();
