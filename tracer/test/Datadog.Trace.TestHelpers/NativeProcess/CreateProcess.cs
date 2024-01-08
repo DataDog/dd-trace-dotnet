@@ -20,7 +20,22 @@ namespace Datadog.Trace.TestHelpers.NativeProcess;
 
 public class CreateProcess
 {
-    private static readonly object CreateProcessLock = new();
+    private static readonly object CreateProcessLock;
+
+    static CreateProcess()
+    {
+        // Just making extra sure that the Process static constructor has run
+        _ = Process.GetCurrentProcess();
+
+        CreateProcessLock = typeof(Process)
+            .GetField("s_createProcessLock", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!
+            .GetValue(null);
+
+        if (CreateProcessLock == null)
+        {
+            throw new InvalidOperationException("Failed to read the s_createProcessLock field from Process");
+        }
+    }
 
     internal static SuspendedProcess StartSuspendedProcess(ProcessStartInfo startInfo)
     {
