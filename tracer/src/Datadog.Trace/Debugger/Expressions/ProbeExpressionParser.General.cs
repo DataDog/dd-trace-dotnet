@@ -17,6 +17,8 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {
+    private const BindingFlags GetMemberFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy;
+
     private static Expression ConvertToDouble(Expression expr)
     {
         if (expr.Type == typeof(double))
@@ -101,7 +103,7 @@ internal partial class ProbeExpressionParser<T>
                 return refMember;
             }
 
-            var constantValue = constant.Value.ToString();
+            var constantValue = constant.Value?.ToString();
 
             if (Redaction.ShouldRedact(constantValue, constant.Type, out _))
             {
@@ -127,7 +129,12 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression MemberPathExpression(Expression expression, ConstantExpression propertyOrField)
     {
-        var propertyOrFieldValue = propertyOrField.Value.ToString();
+        var propertyOrFieldValue = propertyOrField.Value?.ToString();
+        if (string.IsNullOrEmpty(propertyOrFieldValue))
+        {
+            AddError($"{expression}.{propertyOrFieldValue}", "Property or field name is empty.");
+            return UndefinedValue();
+        }
 
         try
         {
@@ -137,19 +144,16 @@ internal partial class ProbeExpressionParser<T>
                 return RedactedValue();
             }
 
-            var memberInfo = expression.Type.GetMember(
-                propertyOrFieldValue,
-                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)
-                .FirstOrDefault();
+            var memberInfo = expression.Type.GetMember(propertyOrFieldValue, GetMemberFlags).FirstOrDefault();
 
             if (memberInfo == null)
             {
-                AddError($"{expression}.{propertyOrFieldValue}", "The property or field does not exist.");
+                AddError($"{expression}.{propertyOrFieldValue}", $"The property or field does not exist in {expression.Type}");
                 return UndefinedValue();
             }
 
-            bool isStatic = (memberInfo is PropertyInfo && ((PropertyInfo)memberInfo).GetGetMethod(true)?.IsStatic == true) ||
-                            (memberInfo is FieldInfo && ((FieldInfo)memberInfo).IsStatic);
+            bool isStatic = (memberInfo is PropertyInfo propertyInfo && propertyInfo.GetGetMethod(true)?.IsStatic == true) ||
+                            memberInfo is FieldInfo { IsStatic: true };
 
             if (isStatic)
             {

@@ -1,0 +1,14 @@
+{
+  "dsl": "getmember(ref ChildNested, _childPrivateMember) == Hello from child private member",
+  "eq": [
+    {
+      "getmember": [
+        {
+          "ref": "ParentAsChildNested"
+        },
+        "_childPrivateMember"
+      ]
+    },
+    "Hello from child private member"
+  ]
+}
