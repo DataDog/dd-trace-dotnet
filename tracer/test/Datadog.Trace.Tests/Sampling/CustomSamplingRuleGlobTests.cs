@@ -54,7 +54,15 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Constructs_All_Expected_From_Config_String()
         {
-            const string config = """[{"sample_rate":0.5, "service":"*cart*"}, {"sample_rate":1, "service":"*shipping*", "name":"authorize"}, {"sample_rate":0.1, "service":"*shipping*"}, {"sample_rate":0.05}]""";
+            const string config = """
+                                  [
+                                    {"sample_rate":0.5, "service":"*cart*"},
+                                    {"sample_rate":1, "service":"*shipping*", "name":"authorize"},
+                                    {"sample_rate":0.1, "service":"*shipping*"},
+                                    {"sample_rate":0.05}
+                                  ]
+                                  """;
+
             var rules = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob).ToArray();
             rules.Should().HaveCount(4);
 
