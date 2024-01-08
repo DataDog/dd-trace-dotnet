@@ -11,6 +11,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
@@ -29,7 +30,6 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
     {
         _fixture = fixture;
         _fixture.SetOutput(outputHelper);
-        SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
         Directory.CreateDirectory(LogDirectory);
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
         if (enableApiSecurity)
@@ -47,13 +47,17 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
 
     [SkippableTheory]
     [Trait("RunOnWindows", "True")]
-    [InlineData("/dataapi/model", """{"property":"dummy_rule", "property2":"test2", "property3": 2, "property4": 3}""", HttpStatusCode.Forbidden, true)]
+    [InlineData("/dataapi/model", """{"property":"dev/zero", "property2":"test2", "property3": 2, "property4": 3}""", HttpStatusCode.Forbidden, true)]
     [InlineData("/dataapi/model", """{"property":"test", "property2":"test2", "property3": 2, "property4": 2}""", HttpStatusCode.OK, false)]
     [InlineData("/dataapi/empty-model", """{"property":"test", "property2":"test2", "property3": 2, "property4": 2}""", HttpStatusCode.NoContent, false)]
     public async Task TestApiSecurityScan(string url, string body, HttpStatusCode expectedStatusCode, bool containsAttack)
     {
         await TryStartApp();
         var agent = _fixture.Agent;
+
+        var fileId = nameof(TestApiSecurityScan) + Guid.NewGuid();
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = "crs-932-160", Enabled = true, OnMatch = new[] { "block" } } } }, "ASM", fileId) });
+
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl, body.Substring(0, 10), expectedStatusCode, containsAttack);
         var dateTime = DateTime.UtcNow;

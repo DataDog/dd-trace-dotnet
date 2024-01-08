@@ -75,6 +75,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             MockCIVisibilityTestModule testSession = null;
             agent.EventPlatformProxyPayloadReceived += (sender, args) =>
             {
+                if (args.Value.Headers["Content-Type"] != "application/msgpack")
+                {
+                    return;
+                }
+
                 var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(args.Value.BodyInJson);
                 if (payload.Events?.Length > 0)
                 {

@@ -433,12 +433,6 @@ src/Datadog.Trace/IAST/Analyzers/UserStringInterop.cs
 src/Datadog.Trace/IAST/Aspects/DebugAspects.cs
 src/Datadog.Trace/IAST/Dataflow/AspectFilter.cs
 src/Datadog.Trace/IAST/Dataflow/AspectType.cs
-src/Datadog.Trace/Logging/Internal/DatadogLogging.cs
-src/Datadog.Trace/Logging/Internal/DatadogSerilogLogger.cs
-src/Datadog.Trace/Logging/Internal/IDatadogLogger.cs
-src/Datadog.Trace/Logging/Internal/ILogRateLimiter.cs
-src/Datadog.Trace/Logging/Internal/LogRateLimiter.cs
-src/Datadog.Trace/Logging/Internal/NullLogRateLimiter.cs
 src/Datadog.Trace/PDBs/dnlibAdditions/DssSymbolReaderImpl.Additions.cs
 src/Datadog.Trace/PDBs/dnlibAdditions/PdbReader.Additions.cs
 src/Datadog.Trace/PDBs/dnlibAdditions/PortablePdbReader.Additions.cs
@@ -681,10 +675,10 @@ src/Datadog.Trace/Debugger/Sink/Models/ProbeException.cs
 src/Datadog.Trace/Debugger/Sink/Models/ProbeStatus.cs
 src/Datadog.Trace/Debugger/Sink/Models/Status.cs
 src/Datadog.Trace/Debugger/Sink/Models/TimedMessage.cs
-src/Datadog.Trace/IAST/Aspects/System/StringAspects.cs
 src/Datadog.Trace/IAST/Aspects/System.DirectoryServices/SearchRequestAspect.cs
 src/Datadog.Trace/IAST/Aspects/System.Web.SessionState/HttpSessionStateBaseAspect.cs
 src/Datadog.Trace/IAST/Aspects/System.Web.SessionState/SessionExtensionsAspect.cs
+src/Datadog.Trace/IAST/Aspects/System/StringAspects.cs
 src/Datadog.Trace/RemoteConfigurationManagement/Protocol/Tuf/Signed.cs
 src/Datadog.Trace/RemoteConfigurationManagement/Protocol/Tuf/Target.cs
 src/Datadog.Trace/RemoteConfigurationManagement/Protocol/Tuf/TargetCustom.cs

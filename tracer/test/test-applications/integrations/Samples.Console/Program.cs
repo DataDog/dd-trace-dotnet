@@ -38,7 +38,7 @@ namespace Samples.Console_
                 if (string.Equals(args[0], "echo", StringComparison.OrdinalIgnoreCase))
                 {
                     Console.WriteLine("Ready");
-                    Console.WriteLine(Console.ReadLine());
+                    Console.WriteLine($"Echo: {Console.ReadLine()}");
                 }
 
                 if (string.Equals(args[0], "wait", StringComparison.OrdinalIgnoreCase))

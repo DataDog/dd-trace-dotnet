@@ -13,6 +13,49 @@
 
 
 
+
+## [Release 2.44.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.44.0)
+
+## Summary
+
+- [Tracer] Add support for NUnit 4.0. and Aersospike 7.0.0+
+- [Tracer] Add workaround for NGEN bug in .NET runtime
+- [Tracer] Add logs inject + agentless logging support for Microsoft.Extensions.Telemetry
+- [ASM] Missing HSTS header and unvalidated redirect vulnerability detection
+- [Dynamic Instrumentation] Added type support for PII redaction
+
+## Changes
+
+### Tracer
+* Add global tags to dynamic config (#4901)
+* Revert "Add CorProfilerInfo7::ApplyMetadata call" (#4945)
+* Add logs injection + direct log shipping for Microsoft.Extensions.Telemetry (#4951)
+* Add support for NUnit 4 (#4959)
+* Un-skip manual instrumentation tests and fix flake (#4960)
+* Stop caching exceptions in lazy (#4962)
+* Add support for aerospike v7 (#4974)
+* [IAST] Added missing nullable enable (#4977)
+
+### ASM
+* [ASM] Hsts header missing vulnerability (#4873)
+* [IAST] Unvalidated redirect vulnerability detection (#4925)
+* Add fix for null key in `SecurityCoordinator` (#4961)
+* [IAST] Hardcoded Secrets location bugfix (#4965)
+* [ASM] Add client IP feature to the AspNetMvc integration (#4970)
+
+### Dynamic Instrumentation
+* [Dynamic Instrumentation] Added type support for PII redaction (#4941)
+
+### Build / Test
+* Increase the dd-dotnet artifact tests timeout to 30 seconds. (#4947)
+* Remove test environment variable in Samples.Console (#4948)
+* [Build/Test] Add GitHub Action to track files without nullable reference types (#4954)
+* [Test Package Versions Bump] Updating package versions (#4956)
+* Add workaround for Rider bug (#4976)
+
+
+[Changes since 2.43.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.43.0...v2.44.0)
+
 ## [Release 2.43.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.43.0)
 
 ## Summary

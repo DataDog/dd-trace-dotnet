@@ -1,6 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">3.3.3</ApiVersion>
+    <!-- Minimun version is 3.7.3 since it is when Batch methods were introduced in SNS -->
+    <ApiVersion Condition="'$(ApiVersion)' == ''">3.7.3</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)' == '3.7.3' OR '$(ApiVersion)'&gt;'3.7.3'">$(DefineConstants);AWS_SNS_3_7_3</DefineConstants>
     <RequiresDockerDependency>All</RequiresDockerDependency>
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 
@@ -13,8 +15,7 @@ namespace Datadog.Trace.Logging
     internal class LogRateLimiter : ILogRateLimiter
     {
         private readonly int _secondsBetweenLogs;
-        private readonly ConcurrentDictionary<LogRateBucketKey, LogRateBucketInfo> _buckets
-            = new ConcurrentDictionary<LogRateBucketKey, LogRateBucketInfo>();
+        private readonly ConcurrentDictionary<LogRateBucketKey, LogRateBucketInfo> _buckets = new();
 
         public LogRateLimiter(int secondsBetweenLogs)
         {
@@ -49,7 +50,7 @@ namespace Datadog.Trace.Logging
             var newLogInfo = _buckets.AddOrUpdate(
                 key,
                 new LogRateBucketInfo(currentTimeBucket, skipCount: 0, 0),
-                (key, prev) => GetUpdatedLimitInfo(prev, currentTimeBucket));
+                (_, prev) => GetUpdatedLimitInfo(prev, currentTimeBucket));
 
             skipCount = newLogInfo.PreviousSkipCount;
             return newLogInfo.SkipCount == 0;
@@ -90,7 +91,7 @@ namespace Datadog.Trace.Logging
                 LineNo = lineNo;
             }
 
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 return obj is LogRateBucketKey key &&
                        FilePath == key.FilePath &&

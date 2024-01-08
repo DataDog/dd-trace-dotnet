@@ -1,4 +1,4 @@
-﻿// <copyright file="JsonTelemetryTransportTests.cs" company="Datadog">
+// <copyright file="JsonTelemetryTransportTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -59,7 +59,13 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     {
                         Appsec = new ProductData(false, null),
                         Profiler = new ProductData(true, new ErrorData((TelemetryErrorCode)1, "Some error"))
-                    }
+                    },
+                    InstallSignature = new AppStartedPayload.InstallSignaturePayload
+                    {
+                        InstallId = "68e75c48-57ca-4a12-adfc-575c4b05fcbe",
+                        InstallTime = "1703188212",
+                        InstallType = "k8s_single_step"
+                    },
                 })
             {
                 NamingSchemaVersion = "1"

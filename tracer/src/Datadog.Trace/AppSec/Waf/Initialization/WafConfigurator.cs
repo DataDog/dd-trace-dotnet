@@ -28,36 +28,6 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
         public WafConfigurator(WafLibraryInvoker wafLibraryInvoker) => _wafLibraryInvoker = wafLibraryInvoker;
 
-        public bool CheckVersionCompatibility()
-        {
-            var versionWaf = _wafLibraryInvoker.GetVersion();
-            var versionWafSplit = versionWaf.Split('.');
-            if (versionWafSplit.Length != 3)
-            {
-                Log.Warning("Waf version {WafVersion} has a non expected format", versionWaf);
-                return false;
-            }
-
-            var canParse = int.TryParse(versionWafSplit[1], out var wafMinor);
-            canParse &= int.TryParse(versionWafSplit[0], out var wafMajor);
-            var tracerVersion = GetType().Assembly.GetName().Version;
-            if (tracerVersion is null || !canParse)
-            {
-                Log.Warning("Waf version {WafVersion} or tracer version {TracerVersion} have a non expected format", versionWaf, tracerVersion);
-                return false;
-            }
-
-            // tracer >= 2.34.0 needs waf >= 1.11 cause it passes a ddwafobject for diagnostics instead of a ruleset info struct which causes unpredictable unmanaged crashes
-            if ((tracerVersion is { Minor: >= 34, Major: >= 2 } && wafMajor == 1 && wafMinor <= 10) ||
-                (tracerVersion is { Minor: >= 38, Major: >= 2 } && wafMajor == 1 && wafMinor < 13))
-            {
-                Log.Warning("Waf version {WafVersion} is not compatible with tracer version {TracerVersion}", versionWaf, tracerVersion);
-                return false;
-            }
-
-            return true;
-        }
-
         private static void LogRuleDetailsIfDebugEnabled(JToken root)
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
@@ -105,20 +75,6 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
 
             return File.OpenRead(rulesFile);
-        }
-
-        internal static JToken? DeserializeSchemaExtractionConfig()
-        {
-            using var stream = GetSchemaExtractionConfigStream();
-            if (stream == null)
-            {
-                return null;
-            }
-
-            using var reader = new StreamReader(stream);
-            using var jsonReader = new JsonTextReader(reader);
-            var root = JToken.ReadFrom(jsonReader);
-            return root;
         }
 
         internal static JToken? DeserializeEmbeddedOrStaticRules(string? rulesFilePath)

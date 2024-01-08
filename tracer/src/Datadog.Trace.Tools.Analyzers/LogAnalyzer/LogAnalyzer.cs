@@ -155,7 +155,8 @@ public class LogAnalyzer : DiagnosticAnalyzer
                 var nextParameterIndex = messageTemplateArgumentIndex + 1;
                 if ((invocationArguments.Count == nextParameterIndex + 1)
                     && method.Parameters.Length > nextParameterIndex
-                    && method.Parameters[nextParameterIndex].Type.ToString() == "object[]")
+                    && (method.Parameters[nextParameterIndex].Type.ToString() == "object[]"
+                        || method.Parameters[nextParameterIndex].Type.ToString() == "object?[]"))
                 {
                     // we're in the object[] version of the log message,
                     if (invocationArguments[nextParameterIndex].Expression is ArrayCreationExpressionSyntax { Initializer: { } initializer })

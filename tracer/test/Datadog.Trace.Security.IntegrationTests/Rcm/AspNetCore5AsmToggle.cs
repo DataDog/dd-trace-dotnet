@@ -77,8 +77,16 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                 if (EnableSecurity != null)
                 {
                     associatedRcmRequest.CachedTargetFiles.Should().BeEmpty();
-                    // Expected: APM_PRODUCT + the 3 ASM products
-                    associatedRcmRequest.Client.Products.Should().HaveCount(EnableSecurity == false ? 1 : 4);
+                    // Other products may be included, but none of the ASM ones should be
+                    var asmProducts = new[] { RcmProducts.Asm, RcmProducts.AsmData, RcmProducts.AsmDd };
+                    if (EnableSecurity == false)
+                    {
+                        associatedRcmRequest.Client.Products.Should().NotContain(asmProducts);
+                    }
+                    else
+                    {
+                        associatedRcmRequest.Client.Products.Should().Contain(asmProducts);
+                    }
                 }
                 else
                 {

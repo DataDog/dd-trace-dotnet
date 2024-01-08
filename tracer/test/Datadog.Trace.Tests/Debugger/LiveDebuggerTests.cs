@@ -87,6 +87,7 @@ public class LiveDebuggerTests
                     dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
                     eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
                     telemetryProxyEndpoint: "telemetryProxyEndpoint",
+                    tracerFlareEndpoint: "tracerFlareEndpoint",
                     clientDropP0: false));
         }
 
@@ -132,11 +133,6 @@ public class LiveDebuggerTests
             }
         }
 
-        public List<ApplyDetails> Update(Dictionary<string, List<RemoteConfiguration>> configByProducts, Dictionary<string, List<RemoteConfigurationPath>> removedConfigsByProduct)
-        {
-            throw new NotImplementedException();
-        }
-
         public void SetCapability(BigInteger index, bool available)
         {
             throw new NotImplementedException();
@@ -147,12 +143,7 @@ public class LiveDebuggerTests
             throw new NotImplementedException();
         }
 
-        public GetRcmRequest BuildRequest(RcmClientTracer rcmTracer, string lastPollError)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ProcessResponse(GetRcmResponse response)
+        public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse>> callback)
         {
             throw new NotImplementedException();
         }

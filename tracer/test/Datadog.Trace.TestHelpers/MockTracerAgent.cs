@@ -13,6 +13,7 @@ using System.IO.Compression;
 using System.IO.Pipes;
 using System.Linq;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -27,6 +28,7 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using HttpMultipartParser;
 using MessagePack; // use nuget MessagePack to deserialize
 using Xunit.Abstractions;
 
@@ -35,8 +37,6 @@ namespace Datadog.Trace.TestHelpers
     public abstract class MockTracerAgent : IDisposable
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new();
-
-        private AgentBehaviour behaviour = AgentBehaviour.Normal;
 
         protected MockTracerAgent(bool telemetryEnabled, TestTransports transport)
         {
@@ -62,7 +62,7 @@ namespace Datadog.Trace.TestHelpers
 
         public bool TelemetryEnabled { get; }
 
-        public string RcmResponse { get; set; }
+        public Dictionary<MockTracerResponseType, MockTracerResponse> CustomResponses { get; } = new();
 
         /// <summary>
         /// Gets the filters used to filter out spans we don't want to look at for a test.
@@ -78,6 +78,8 @@ namespace Datadog.Trace.TestHelpers
         public IImmutableList<MockDataStreamsPayload> DataStreams { get; private set; } = ImmutableList<MockDataStreamsPayload>.Empty;
 
         public IImmutableList<NameValueCollection> TraceRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+
+        public IImmutableList<(Dictionary<string, string> Headers, MultipartFormDataParser Form)> TracerFlareRequests { get; private set; } = ImmutableList<(Dictionary<string, string> Headers, MultipartFormDataParser Form)>.Empty;
 
         public IImmutableList<string> Snapshots { get; private set; } = ImmutableList<string>.Empty;
 
@@ -438,8 +440,6 @@ namespace Datadog.Trace.TestHelpers
             _cancellationTokenSource.Cancel();
         }
 
-        public void SetBehaviour(AgentBehaviour behaviour) => this.behaviour = behaviour;
-
         protected void IgnoreException(Action action)
         {
             try
@@ -474,74 +474,58 @@ namespace Datadog.Trace.TestHelpers
 
         private protected MockTracerResponse HandleHttpRequest(MockHttpParser.MockHttpRequest request)
         {
-            string response;
-            int statusCode;
-            bool sendResponse;
-            var isTraceCommand = false;
+            string response = null;
+            var responseType = MockTracerResponseType.Unknown;
 
             if (TelemetryEnabled && request.PathAndQuery.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint))
             {
                 HandlePotentialTelemetryData(request);
-                response = "{}";
+                responseType = MockTracerResponseType.Telemetry;
             }
             else if (request.PathAndQuery.EndsWith("/info"))
             {
                 response = JsonConvert.SerializeObject(Configuration);
+                responseType = MockTracerResponseType.Info;
             }
             else if (request.PathAndQuery.StartsWith("/debugger/v1/input"))
             {
                 HandlePotentialDebuggerData(request);
-                response = "{}";
+                responseType = MockTracerResponseType.Debugger;
             }
             else if (request.PathAndQuery.StartsWith("/v0.6/stats"))
             {
                 HandlePotentialStatsData(request);
-                response = "{}";
+                responseType = MockTracerResponseType.Stats;
             }
             else if (request.PathAndQuery.StartsWith("/v0.7/config"))
             {
                 HandlePotentialRemoteConfig(request);
-                response = RcmResponse ?? "{}";
+                responseType = MockTracerResponseType.RemoteConfig;
             }
             else if (request.PathAndQuery.StartsWith("/v0.1/pipeline_stats"))
             {
                 HandlePotentialDataStreams(request);
-                response = "{}";
+                responseType = MockTracerResponseType.DataStreams;
             }
             else if (request.PathAndQuery.StartsWith("/evp_proxy/v2/"))
             {
                 HandleEvpProxyPayload(request);
-                response = "{}";
+                responseType = MockTracerResponseType.EvpProxy;
+            }
+            else if (request.PathAndQuery.StartsWith("/tracer_flare/v1"))
+            {
+                HandleTracerFlarePayload(request);
+                responseType = MockTracerResponseType.TracerFlare;
             }
             else
             {
                 HandlePotentialTraces(request);
-                response = "{}";
-                isTraceCommand = true;
+                responseType = MockTracerResponseType.Traces;
             }
 
-            if (isTraceCommand)
-            {
-                statusCode = 200;
-                sendResponse = true;
-            }
-            else
-            {
-                if (behaviour == AgentBehaviour.WrongAnswer)
-                {
-                    response = "WRONG_ANSWER";
-                }
-
-                sendResponse = behaviour != AgentBehaviour.NoAnswer;
-                statusCode = behaviour == AgentBehaviour.Return500 ? 500 : (behaviour == AgentBehaviour.Return404 ? 404 : 200);
-            }
-
-            return new MockTracerResponse()
-            {
-                Response = response,
-                SendResponse = sendResponse,
-                StatusCode = statusCode
-            };
+            return CustomResponses.TryGetValue(responseType, out var custom)
+                       ? custom // custom response, use that
+                       : new MockTracerResponse(response ?? "{}");
         }
 
         private void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
@@ -767,14 +751,70 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     var body = ReadStreamBody(request);
-                    var json = MessagePackSerializer.ToJson(body);
                     var headerCollection = new NameValueCollection();
                     foreach (var header in request.Headers)
                     {
                         headerCollection.Add(header.Name, header.Value);
                     }
 
-                    EventPlatformProxyPayloadReceived?.Invoke(this, new EventArgs<EvpProxyPayload>(new EvpProxyPayload(request.PathAndQuery, headerCollection, json)));
+                    var bodyAsJson = headerCollection["Content-Type"] switch
+                    {
+                        "application/msgpack" => MessagePackSerializer.ToJson(body),
+                        "application/json" => Encoding.UTF8.GetString(body),
+                        _ => Encoding.UTF8.GetString(body), // e.g. multipart form data, currently we don't do anything with this so meh
+                    };
+
+                    EventPlatformProxyPayloadReceived?.Invoke(this, new EventArgs<EvpProxyPayload>(new EvpProxyPayload(request.PathAndQuery, headerCollection, bodyAsJson)));
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+        }
+
+        private void HandleTracerFlarePayload(MockHttpParser.MockHttpRequest request)
+        {
+            // we don't send content length header in the request, so just deserialize into bytes
+            if (ShouldDeserializeTraces)
+            {
+                try
+                {
+                    var headerCollection = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var header in request.Headers)
+                    {
+                        headerCollection.Add(header.Name, header.Value);
+                    }
+
+                    var contentTypeHeader = headerCollection["Content-Type"];
+                    var contentType = MediaTypeHeaderValue.Parse(contentTypeHeader);
+                    if (contentType.MediaType != "multipart/form-data")
+                    {
+                        throw new Exception($"Unexpected media type: {contentType.MediaType} in header {contentTypeHeader}");
+                    }
+
+                    var boundary = contentType
+                                  .Parameters
+                                  .FirstOrDefault(x => string.Equals(x.Name, "boundary", StringComparison.Ordinal));
+
+                    if (boundary is null)
+                    {
+                        throw new Exception("Content-Type is missing boundary in header " + contentTypeHeader);
+                    }
+
+                    var encoding = contentType.CharSet ?? "utf-8";
+
+                    var formData = MultipartFormDataParser.Parse(request.Body.Stream, boundary.Value, Encoding.GetEncoding(encoding));
+                    TracerFlareRequests = TracerFlareRequests.Add((headerCollection, formData));
                 }
                 catch (Exception ex)
                 {
@@ -1106,6 +1146,7 @@ namespace Datadog.Trace.TestHelpers
                         catch (Exception ex)
                         {
                             Output?.WriteLine($"[HandleHttpRequests]Error processing web request to {ctx.Request.Url}: {ex}");
+                            ctx.Response.StatusCode = 500;
                             ctx.Response.Close();
                         }
                     }

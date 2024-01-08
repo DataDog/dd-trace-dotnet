@@ -144,7 +144,7 @@ internal static class DatadogLoggingFactory
             rateLimiter = new NullLogRateLimiter();
         }
 
-        return new DatadogSerilogLogger(internalLogger, rateLimiter);
+        return new DatadogSerilogLogger(internalLogger, rateLimiter, config.File?.LogDirectory);
     }
 
     private static bool IsExcludedMessage(string messageTemplateText)
