@@ -48,6 +48,9 @@ namespace Datadog.Trace.TestHelpers
             System.IO.Compression.ZipFile.ExtractToDirectory(zipFilePath, unpackedDirectory);
 
             _path = Path.Combine(unpackedDirectory, "procdump.exe");
+
+            // Remove procdump64.exe to fix some weird random issues
+            File.Delete(Path.Combine(unpackedDirectory, "procdump64.exe"));
         }
 
         public static Task MonitorCrashes(int pid)
