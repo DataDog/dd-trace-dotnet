@@ -5,19 +5,17 @@
 
 #if NETCOREAPP3_1_OR_GREATER
 
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
-using Xunit.Sdk;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [UsesVerify]
     public class YarpDistributedTracingTests : TracingIntegrationTest
     {
         private const string ServiceVersion = "1.0.0";
@@ -34,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(PackageVersions.Yarp), MemberType = typeof(PackageVersions))]
-        public void SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion)
         {
             // We expect the following trace to be generated:
             // http.request => aspnet_core.request => http.request => aspnet_core.request
@@ -55,6 +53,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spanIds = spans.Select(s => s.SpanId);
                 var parentIds = spans.Where(s => s.ParentId is not null).Select(s => s.ParentId).Cast<ulong>();
                 parentIds.Should().BeSubsetOf(spanIds);
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+
+                // TODO: Remove this fix. The aspnet_core.endpoint tag value is different starting with net7.0
+                // Since this test is not interested in generating the aspnet_core span, we'll just apply a band-aid
+                // solution to the snapshot testing
+                settings.AddSimpleScrubber("aspnet_core.endpoint: / HTTP: GET", "aspnet_core.endpoint: HTTP: GET /");
+
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseFileName(nameof(YarpDistributedTracingTests))
+                                  .DisableRequireUniquePrefix();
             }
         }
     }
