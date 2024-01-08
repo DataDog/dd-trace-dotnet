@@ -72,20 +72,8 @@ internal static class RegexBuilder
             return regex;
         }
 
-        var sb = StringBuilderCache.Acquire(regex.Length + 2);
-
-        if (!hasLineStart)
-        {
-            sb.Append('^');
-        }
-
-        sb.Append(regex);
-
-        if (!hasLineEnd)
-        {
-            sb.Append('$');
-        }
-
-        return StringBuilderCache.GetStringAndRelease(sb);
+        return hasLineStart
+                 ? (hasLineEnd ? regex : $"{regex}$")
+                 : (hasLineEnd ? $"^{regex}" : $"^{regex}$");
     }
 }
