@@ -40,7 +40,7 @@ internal static class EditorHelper
 
     public static string GetIntegrationClassName(MethodDef methodDef)
     {
-        return CleanTypeName(methodDef.DeclaringType.Name + "_" + methodDef.Name);
+        return CleanTypeName(methodDef.DeclaringType.Name + methodDef.Name);
     }
 
     public static string CleanTypeName(string typeName)
