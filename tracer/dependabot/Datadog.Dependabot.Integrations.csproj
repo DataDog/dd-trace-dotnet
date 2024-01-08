@@ -306,6 +306,11 @@
     <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.59.0 -->
     <PackageReference Include="Grpc.AspNetCore" Version="2.59.0" />
 
+    <!-- Integration: Yarp.ReverseProxy -->
+    <!-- Assembly: Yarp.ReverseProxy -->
+    <!-- Latest package https://www.nuget.org/packages/Yarp.ReverseProxy/2.1.0 -->
+    <PackageReference Include="Yarp.ReverseProxy" Version="2.1.0" />
+
   </ItemGroup>
 
 </Project>
