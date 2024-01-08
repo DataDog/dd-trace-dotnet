@@ -135,7 +135,7 @@ internal static class EditorHelper
 
                 if (i < genArgs.Count - 1)
                 {
-                    sb.Append(", ");
+                    sb.Append(",");
                 }
             }
 
