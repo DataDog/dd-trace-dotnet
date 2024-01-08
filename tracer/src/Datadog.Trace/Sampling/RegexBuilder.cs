@@ -52,12 +52,7 @@ internal static class RegexBuilder
                     timeout);
 
             default:
-                // ReSharper disable once RedundantNameQualifier ("Util." is only redundant for some target frameworks)
-                Util.ThrowHelper.ThrowArgumentOutOfRangeException(
-                    nameof(format),
-                    format,
-                    "Invalid match pattern format. Valid values are 'regex' or 'glob'.");
-                return null; // unreachable
+                return null; // should be unreachable because we validate the format earlier
         }
     }
 

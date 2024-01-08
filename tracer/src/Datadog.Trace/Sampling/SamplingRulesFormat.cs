@@ -9,6 +9,8 @@ namespace Datadog.Trace.Sampling;
 
 internal static class SamplingRulesFormat
 {
+    public const string Unknown = "unknown";
+
     public const string Regex = "regex";
 
     public const string Glob = "glob";

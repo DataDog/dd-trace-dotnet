@@ -237,7 +237,17 @@ namespace Datadog.Trace
         {
             var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
 
-            if (!string.IsNullOrWhiteSpace(settings.CustomSamplingRulesInternal))
+            // we want to log this even if settings.CustomSamplingRulesInternal is null or empty
+            if (settings.CustomSamplingRulesFormat == SamplingRulesFormat.Unknown)
+            {
+                Log.Warning(
+                    "{ConfigurationKey} configuration of {ConfigurationValue} is invalid. Ignoring all trace sampling rules.",
+                    ConfigurationKeys.CustomSamplingRulesFormat,
+                    settings.CustomSamplingRulesFormat);
+            }
+
+            if (!string.IsNullOrWhiteSpace(settings.CustomSamplingRulesInternal) &&
+                settings.CustomSamplingRulesFormat != SamplingRulesFormat.Unknown)
             {
                 foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(settings.CustomSamplingRulesInternal, settings.CustomSamplingRulesFormat))
                 {

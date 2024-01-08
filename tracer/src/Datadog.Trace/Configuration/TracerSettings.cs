@@ -202,7 +202,25 @@ namespace Datadog.Trace.Configuration
 
             CustomSamplingRulesInternal = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
 
-            CustomSamplingRulesFormat = config.WithKeys(ConfigurationKeys.CustomSamplingRulesFormat).AsString(defaultValue: Sampling.SamplingRulesFormat.Regex);
+            CustomSamplingRulesFormat = config.WithKeys(ConfigurationKeys.CustomSamplingRulesFormat)
+                                               // .AsString(defaultValue: Sampling.SamplingRulesFormat.Regex);
+                                              .GetAs(
+                                                   getDefaultValue: () => new DefaultResult<string>(Sampling.SamplingRulesFormat.Regex, "regex"),
+                                                   converter: x =>
+                                                   {
+                                                       if (x.Equals(Sampling.SamplingRulesFormat.Regex, StringComparison.OrdinalIgnoreCase))
+                                                       {
+                                                           return Sampling.SamplingRulesFormat.Regex;
+                                                       }
+
+                                                       if (x.Equals(Sampling.SamplingRulesFormat.Glob, StringComparison.OrdinalIgnoreCase))
+                                                       {
+                                                           return Sampling.SamplingRulesFormat.Glob;
+                                                       }
+
+                                                       return Sampling.SamplingRulesFormat.Unknown;
+                                                   },
+                                                   validator: null);
 
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
