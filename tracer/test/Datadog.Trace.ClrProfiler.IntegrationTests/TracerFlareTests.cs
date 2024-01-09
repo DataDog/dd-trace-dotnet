@@ -35,7 +35,7 @@ public class TracerFlareTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "5");
     }
 
-    [SkippableFact(Skip = "Temporarily disabled for release")]
+    [SkippableFact]
     [Trait("RunOnWindows", "True")]
     public async Task SendTracerFlare()
     {
