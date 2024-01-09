@@ -11,7 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Datadog.Trace.TestHelpers.Containers;
+namespace Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 
 public abstract class ContainerFixture : IAsyncLifetime
 {

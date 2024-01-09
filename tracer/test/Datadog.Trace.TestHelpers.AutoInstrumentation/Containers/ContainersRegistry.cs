@@ -10,7 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.TestHelpers.Containers;
+namespace Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 
 public static class ContainersRegistry
 {

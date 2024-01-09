@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 
-namespace Datadog.Trace.TestHelpers.Containers;
+namespace Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 
 public class AerospikeFixture : ContainerFixture
 {
