@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using CallTargetNativeTest.NoOp;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace CallTargetNativeTest
 {
@@ -106,6 +107,20 @@ namespace CallTargetNativeTest
 
             // Add extra integrations
             definitionsList.Add(new(TargetAssembly, typeof(Extras).FullName, nameof(CallTargetNativeTest.Extras.NonVoidWithBranchToLastReturn), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(Noop0ArgumentsIntegration).FullName));
+            
+            // call target bubble up exception
+            definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowBubbleUpOnBegin).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowBubbleUpOnBegin.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegration).FullName));
+            
+            definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnBegin).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnBegin.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegration).FullName));
+            
+            definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowBubbleUpOnEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowBubbleUpOnEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegration).FullName));
+            
+            definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegration).FullName));
+            
+            definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegrationAsync).FullName));
+            
+            definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegrationAsync).FullName));
+            
             
             definitionsId = Guid.NewGuid().ToString("N");
             definitions = definitionsList.ToArray();
@@ -284,6 +299,11 @@ namespace CallTargetNativeTest
                         CallSite();
                         break;
                     }
+                case "calltargetbubbleupexceptions":
+                {
+                    CallTargetBubbleUpExceptions();
+                    break;
+                }
                 case "all":
                     {
                         Argument0();
@@ -375,11 +395,28 @@ namespace CallTargetNativeTest
 #endif
         }
 
-        private static void RunMethod(Action action, bool checkInstrumented = true)
+        private static void RunMethod(Action action, bool checkInstrumented = true, bool bubblingUpException = false)
         {
             var cOut = Console.Out;
             Console.SetOut(sWriter);
-            action();
+
+            if (bubblingUpException)
+            {
+                try
+                {
+                    action();
+                    throw new Exception("No exception bubbled up when it was expected to, check that the native code filter is working properly or that your instrumentation is throwing a CallTargetBubbleUpException (or a nested one)");
+                }
+                catch (Exception e) when (CallTargetBubbleUpException.IsCallTargetBubbleUpException(e))
+                {
+                    // this is normal and expected if not, throw after action is executed
+                }
+            }
+            else
+            {
+                action();
+            }
+
             sWriter.Flush();
             var str = Encoding.UTF8.GetString(mStream.GetBuffer(), 0, (int)mStream.Length);
             mStream.SetLength(0);
