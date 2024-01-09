@@ -631,7 +631,6 @@
       <type fullname="System.Math" />
       <type fullname="System.MethodAccessException" />
       <type fullname="System.MidpointRounding" />
-      <type fullname="System.MissingMethodException" />
       <type fullname="System.MulticastDelegate" />
       <type fullname="System.NonSerializedAttribute" />
       <type fullname="System.NotImplementedException" />
