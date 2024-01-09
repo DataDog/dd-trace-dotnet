@@ -109,6 +109,7 @@ const shared::WSTRING calltarget_modification_action = WStr("CallTargetModificat
 
 const shared::WSTRING distributed_tracer_type_name = WStr("Datadog.Trace.ClrProfiler.DistributedTracer");
 const shared::WSTRING calltargetbubbleexception_tracer_type_name = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException");
+const shared::WSTRING calltargetbubbleexception_tracer_function_name = WStr("IsCallTargetBubbleUpException");
 const shared::WSTRING distributed_tracer_interface_name = WStr("Datadog.Trace.ClrProfiler.IDistributedTracer");
 const shared::WSTRING distributed_tracer_target_method_name = WStr("__GetInstanceForProfiler__");
 
