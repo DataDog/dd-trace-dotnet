@@ -9,7 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.Containers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
