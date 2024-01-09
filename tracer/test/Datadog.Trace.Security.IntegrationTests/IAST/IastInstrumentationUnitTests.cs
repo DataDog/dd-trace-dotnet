@@ -240,7 +240,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestInstrumentedUnitTests()
+    public void TestInstrumentedUnitTests(ITestOutputHelper output)
     {
         using (var agent = EnvironmentHelper.GetMockAgent())
         {
@@ -252,7 +252,7 @@ public class IastInstrumentationUnitTests : TestHelper
 #if NET462
             arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
 #else
-            if (EnvironmentTools.IsLinux())
+            if (EnvironmentTools.IsLinux() || EnvironmentTools.IsOsx())
             {
                 if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
                 {
@@ -266,8 +266,9 @@ public class IastInstrumentationUnitTests : TestHelper
 #endif
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "0"); // without this key, ci visibility is enabled for the samples, which we don't really want
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
-            SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
-            ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
+            SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "1");
+            output.WriteLine("HELLO FLAVIEN: " + Environment.GetEnvironmentVariable("MONGO_HOST"));
+            ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
     }
