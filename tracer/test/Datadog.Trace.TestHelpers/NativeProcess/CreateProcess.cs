@@ -215,7 +215,7 @@ public class CreateProcess
             throw new Exception("Process creation failed");
         }
 
-        return new SuspendedProcess(processInfo.dwProcessId, processHandle, threadHandle, standardInput, standardOutput, standardError);
+        return new SuspendedProcess(startInfo, processInfo.dwProcessId, processHandle, threadHandle, standardInput, standardOutput, standardError);
     }
 
     private static void CreatePipeWithSecurityAttributes(out SafeFileHandle hReadPipe, out SafeFileHandle hWritePipe, ref NativeMethods.SECURITY_ATTRIBUTES lpPipeAttributes, int nSize)

@@ -14,7 +14,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Datadog.Trace.TestHelpers.NativeProcess;
 
-internal class SuspendedProcess(int pid, SafeProcessHandle processHandle, SafeHandle threadHandle, StreamWriter? standardInput, StreamReader? standardOutput, StreamReader? standardError) : IDisposable
+internal class SuspendedProcess(ProcessStartInfo startInfo, int pid, SafeProcessHandle processHandle, SafeHandle threadHandle, StreamWriter? standardInput, StreamReader? standardOutput, StreamReader? standardError) : IDisposable
 {
 #if NETFRAMEWORK
     private const string StandardInputFieldName = "standardInput";
@@ -25,6 +25,8 @@ internal class SuspendedProcess(int pid, SafeProcessHandle processHandle, SafeHa
     private const string StandardOutputFieldName = "_standardOutput";
     private const string StandardErrorFieldName = "_standardError";
 #endif
+
+    private readonly ProcessStartInfo _startInfo = startInfo;
 
     private readonly SafeProcessHandle _processHandle = processHandle;
     private readonly SafeHandle _threadHandle = threadHandle;
@@ -54,9 +56,10 @@ internal class SuspendedProcess(int pid, SafeProcessHandle processHandle, SafeHa
 
         NativeMethods.ResumeThread(_threadHandle);
 
-        var process = Process.GetProcessById(Id);
+        var process = new Process { StartInfo = _startInfo };
 
-        typeof(Process).GetMethod("SetProcessHandle", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(process, new object[] { _processHandle });
+        typeof(Process).GetMethod("SetProcessHandle", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(process, [_processHandle]);
+        typeof(Process).GetMethod("SetProcessId", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(process, [Id]);
 
         if (_standardInput != null)
         {
