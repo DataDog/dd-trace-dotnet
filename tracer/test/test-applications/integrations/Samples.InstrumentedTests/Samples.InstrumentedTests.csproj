@@ -2,7 +2,7 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <OutputType>Library</OutputType>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>False</SignAssembly>
     <AssemblyOriginatorKeyFile>$(ProjectDir)../../../../../Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.3.1</ApiVersion>
     <MicrosoftTestSDKVersion Condition="$(ApiVersion.StartsWith('2.4'))">16.7.1</MicrosoftTestSDKVersion>
