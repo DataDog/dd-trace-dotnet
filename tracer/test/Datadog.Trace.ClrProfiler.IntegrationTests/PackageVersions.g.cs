@@ -99,5 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> GrpcLegacy => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.GrpcLegacy : PackageVersionsLatestSpecific.GrpcLegacy;
 
         public static IEnumerable<object[]> OpenTelemetry => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.OpenTelemetry : PackageVersionsLatestSpecific.OpenTelemetry;
+
+        public static IEnumerable<object[]> Yarp => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Yarp : PackageVersionsLatestSpecific.Yarp;
     }
 }
