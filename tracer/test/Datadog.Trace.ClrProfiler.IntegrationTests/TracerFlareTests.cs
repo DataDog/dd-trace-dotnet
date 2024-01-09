@@ -73,7 +73,7 @@ public class TracerFlareTests : TestHelper
 
     private async Task InitializeFlare(MockTracerAgent agent, LogEntryWatcher logEntryWatcher)
     {
-        var fileId = Guid.NewGuid().ToString();
+        var fileId = "flare-log-level.debug";
 
         var request = await agent.SetupRcmAndWait(Output, new[] { ((object)new { }, RcmProducts.TracerFlareInitiated, fileId) });
 
