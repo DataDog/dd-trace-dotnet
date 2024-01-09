@@ -240,7 +240,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public void TestInstrumentedUnitTests(ITestOutputHelper output)
+    public void TestInstrumentedUnitTests()
     {
         using (var agent = EnvironmentHelper.GetMockAgent())
         {
@@ -267,7 +267,7 @@ public class IastInstrumentationUnitTests : TestHelper
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "0"); // without this key, ci visibility is enabled for the samples, which we don't really want
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
             SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "1");
-            output.WriteLine("HELLO FLAVIEN: " + Environment.GetEnvironmentVariable("MONGO_HOST"));
+            Console.WriteLine("HELLO FLAVIEN: " + Environment.GetEnvironmentVariable("MONGO_HOST"));
             ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }

@@ -11,22 +11,56 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.NosqlInjection;
 
 public class MongoDbTests : InstrumentationTestsBase
 {
-    private Mock<IMongoClient> _client;
+    private MongoClient _client;
     private readonly IMongoDatabase _database;
-
+    
     private readonly string _taintedString12 = "12";
     private readonly string _taintedStringCommand = "dbstats";
     private readonly string _taintedStringAttack = "nnn\"}}, { \"Author.Name\" : { \"$ne\" : \"notTainted2";
 
+    private static string Host()
+    {
+        return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
+    }
+    
     public MongoDbTests()
     {
-        _client = MockMongoDb.MockMongoClient();
-        _database = _client.Object.GetDatabase("test-db");
+        var connectionString = $"mongodb://{Host()}:27017";
+        Console.WriteLine("Connecting to: " + connectionString);
+        _client = new MongoClient(connectionString);
+        _database = _client.GetDatabase("test-db-iast");
+
+        InitializeDatabase();
 
         // Add all tainted values
         AddTainted(_taintedString12);
         AddTainted(_taintedStringCommand);
         AddTainted(_taintedStringAttack);
+    }
+    
+    // Initialize the database with default values that will be used in the tests
+    private void InitializeDatabase()
+    {
+        // Empty the database
+        var collection = _database.GetCollection<BsonDocument>("Books");
+        var allFilter = new BsonDocument();
+        collection.DeleteMany(allFilter);
+
+        // Insert the default values
+        var newDocument = new BsonDocument
+        {
+            { "Author", new BsonDocument
+                {
+                    { "Name", "John" },
+                    { "LastName", "Perkins" }
+                }
+            },
+            { "BookName", "name" },
+            { "Category", "Economy" },
+            { "Price", "12" }
+        };
+
+        collection.InsertOne(newDocument);
     }
 
     public override void Dispose()

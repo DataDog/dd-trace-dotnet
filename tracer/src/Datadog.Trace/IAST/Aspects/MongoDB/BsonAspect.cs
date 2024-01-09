@@ -10,7 +10,6 @@ using Datadog.Trace.Iast.Helpers;
 
 namespace Datadog.Trace.Iast.Aspects.MongoDB;
 
-#if !NETFRAMEWORK
 /// <summary> BsonAspect class aspect </summary>
 [AspectClass("MongoDB.Bson", AspectType.Sink, VulnerabilityType.NoSqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
@@ -31,4 +30,3 @@ public class BsonAspect
         return MongoDbHelper.DetectVulnerability(json);
     }
 }
-#endif
