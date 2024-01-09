@@ -56,22 +56,6 @@ namespace Datadog.Trace.Iast
             return false;
         }
 
-        public void TaintWithLinkedObject(object? objectToTaint, object? linkedObject)
-        {
-            if (objectToTaint is null || linkedObject is null)
-            {
-                return;
-            }
-
-            var linkedTaintedObject = Get(linkedObject);
-            if (linkedTaintedObject is null)
-            {
-                return;
-            }
-
-            _map.Put(new TaintedObject(objectToTaint, new[] { new Range(0, 0) }) { LinkedObject = linkedTaintedObject });
-        }
-
         public void Taint(object objectToTaint, Range[] ranges)
         {
             if (objectToTaint is not null)
