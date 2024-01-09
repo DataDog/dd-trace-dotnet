@@ -76,33 +76,11 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseParameters(packageVersion);
             settings.AddDataStreamsScrubber();
-            await Verifier.Verify(PayloadsToDeduplicatedPoints(dsPoints), settings)
+            await Verifier.Verify(MockDataStreamsPayload.Normalize(dsPoints), settings)
                           .UseFileName($"{nameof(DataStreamsMonitoringAwsSqsTests)}.{nameof(SubmitsDsmMetrics)}.{frameworkName}")
                           .DisableRequireUniquePrefix();
 
             telemetry.AssertIntegrationEnabled(IntegrationId.AwsSqs);
         }
-    }
-
-    private static List<MockDataStreamsStatsPoint> PayloadsToDeduplicatedPoints(IImmutableList<MockDataStreamsPayload> dsPoints)
-    {
-        var points = new List<MockDataStreamsStatsPoint>();
-        foreach (var payload in dsPoints)
-        {
-            foreach (var bucket in payload.Stats)
-            {
-                foreach (var point in bucket.Stats)
-                {
-                    // deduplicate points that may be aggregated on the agent side, to get rid of that source of random
-                    if (!points.Any(x => x.Hash == point.Hash && x.ParentHash == point.ParentHash && x.TimestampType == point.TimestampType))
-                    {
-                        points.Add(point);
-                    }
-                }
-            }
-        }
-
-        // order in a predictable way to make sure snapshots will look the same
-        return points.OrderBy(s => s.Hash).ThenBy(s => s.ParentHash).ThenBy(s => s.TimestampType).ToList();
     }
 }
