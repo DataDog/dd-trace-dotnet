@@ -586,15 +586,15 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
                             .DisableRequireUniquePrefix();
     }
 
-    // We should exclude some headers to prevent false positives:
+    // In header injections, we should exclude some headers to prevent false positives:
     // location: it is already reported in UNVALIDATED_REDIRECT vulnerability detection.
     // Sec-WebSocket-Location, Sec-WebSocket-Accept, Upgrade, Connection: Usually the framework gets info from request
-    // access-control-allow-origin: when the header is access-control-allow-origin and the source of the tainted range is the request header origin
+    // access-control-allow-*: when the source of the tainted range is the request header origin or access-control-request-headers
     // set-cookie: We should ignore set-cookie header if the source of all the tainted ranges are cookies
     // We should exclude the injection when the tainted string only has one range which comes from a request header with the same name that the header that we are checking in the response.
     // Headers could store sensitive information, we should redact whole <header_value> if:
-    // <header_name> matches with this RegExp
-    // <header_value> matches with  this RegExp
+    // <header_name> matches with a RegExp
+    // <header_value> matches with  a RegExp
     // We should redact the sensitive information from the evidence when:
     // Tainted range is considered sensitive value
 
@@ -609,6 +609,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [InlineData("NotVulnerable", new string[] { "name", "Sec-WebSocket-Accept" }, new string[] { "value", "moreText" })]
     [InlineData("Vuln.Origin", new string[] { "name", "access-control-allow-origin", "value", "https://example.com" }, null)]
     [InlineData("NotVulnerable", new string[] { "name", "access-control-allow-origin", "origin", "NotVulnerable" }, null, true)] // Not vulnerable
+    [InlineData("NotVulnerable", new string[] { "name", "Access-Control-Allow-Headers", "Access-Control-Request-Headers", "NotVulnerable" }, null, true)] // Not vulnerable
     [InlineData("Vuln.Cookie.SensitiveValue", new string[] { "name", "set-cookie", "value", "token=glpat-eFynewhuKJFGdfGDFGdw;max-age=31536000;Secure;HttpOnly;SameSite=Strict" }, null)]
     [InlineData("NotVulnerable", null, new string[] { "name", "set-cookie", "value", "NotVulnerable%3D22%3Bmax-age%3D31536000%3BSecure%3BHttpOnly%3BSameSite%3DStrict" })]
     public async Task TestIastHeaderInjectionRequest(string testCase, string[] headers, string[] cookies, bool useValueFromOriginHeader = false)

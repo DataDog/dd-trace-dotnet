@@ -47,12 +47,12 @@ internal static class ReturnedHeadersAnalyzer
     // In header injections, we should exclude some headers to prevent false positives:
     // location: it is already reported in UNVALIDATED_REDIRECT vulnerability detection.
     // Sec-WebSocket-Location, Sec-WebSocket-Accept, Upgrade, Connection: Usually the framework gets info from request
-    // access-control-allow-origin: when the header is access-control-allow-origin and the source of the tainted range is the request header origin
+    // access-control-allow-*: when the source of the tainted range is the request header origin or access-control-request-headers
     // set-cookie: We should ignore set-cookie header if the source of all the tainted ranges are cookies
     // We should exclude the injection when the tainted string only has one range which comes from a request header with the same name that the header that we are checking in the response.
     // Headers could store sensitive information, we should redact whole <header_value> if:
-    // <header_name> matches with this RegExp
-    // <header_value> matches with  this RegExp
+    // <header_name> matches with a RegExp
+    // <header_value> matches with  a RegExp
     // We should redact the sensitive information from the evidence when:
     // Tainted range is considered sensitive value
 
@@ -118,7 +118,7 @@ internal static class ReturnedHeadersAnalyzer
                     }
                 }
 
-                if (headerKey.Equals("access-control-allow-origin", StringComparison.OrdinalIgnoreCase))
+                if (headerKey.StartsWith("access-control-allow-", StringComparison.OrdinalIgnoreCase))
                 {
                     if (ComesFromOriginHeader(taintedValue))
                     {
@@ -167,7 +167,8 @@ internal static class ReturnedHeadersAnalyzer
         foreach (var range in taintedValue.Ranges)
         {
             if (range.Source is not null && (range.Source.OriginByte != (byte)SourceTypeName.RequestHeaderValue
-                || !string.Equals(range.Source.Name, "origin", StringComparison.OrdinalIgnoreCase)))
+                || (!string.Equals(range.Source.Name, "origin", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(range.Source.Name, "access-control-request-headers", StringComparison.OrdinalIgnoreCase))))
             {
                 return false;
             }
