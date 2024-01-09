@@ -45,6 +45,7 @@ namespace Datadog.Trace.ClrProfiler
 "[AspectClass(\"MongoDB.Bson\",[None],Sink,[NoSqlInjection])] Datadog.Trace.Iast.Aspects.MongoDB.BsonAspect",
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 "  [AspectMethodReplace(\"MongoDB.Bson.IO.BsonBinaryReader::ReadString()\",\"\",[0],[False],[None],Default,[])] ReadString(System.Object)",
 "  [AspectMethodReplace(\"MongoDB.Bson.IO.BsonReader::ReadString()\",\"\",[0],[False],[None],Default,[])] ReadString(System.Object)",
 "  [AspectMethodReplace(\"MongoDB.Bson.IO.IBsonReader::ReadString()\",\"\",[0],[False],[None],Default,[])] ReadString(System.Object)",
@@ -66,6 +67,12 @@ namespace Datadog.Trace.ClrProfiler
 =======
 "  [AspectCtorReplace(\"MongoDB.Bson.IO.JsonReader::.ctor(System.String)\",\"\",[0],[False],[None],Propagation,[])] Constructor(System.String)",
 >>>>>>> 6234bca2b (Change to AspectCtorReplace)
+=======
+"  [AspectMethodInsertBefore(\"MongoDB.Bson.Serialization.BsonSerializer::Deserialize(System.String,System.Action`1<Builder>)\",\"\",[1],[False],[None],Propagation,[])] AnalyzeJsonString(System.String)",
+"  [AspectMethodInsertBefore(\"MongoDB.Bson.Serialization.BsonSerializer::Deserialize(System.String,System.Type,System.Action`1<Builder>)\",\"\",[2],[False],[None],Propagation,[])] AnalyzeJsonString(System.String)",
+"  [AspectMethodInsertBefore(\"MongoDB.Bson.BsonDocument::Parse(System.String)\",\"\",[0],[False],[None],Propagation,[])] AnalyzeJsonString(System.String)",
+"  [AspectMethodInsertBefore(\"MongoDB.Bson.IO.JsonReader::.ctor(System.String)\",\"\",[0],[False],[None],Propagation,[])] AnalyzeJsonString(System.String)",
+>>>>>>> 3273bfb6f (Change aspect implementation and add unit tests for new case)
 "[AspectClass(\"MongoDB.Driver\",[None],Sink,[NoSqlInjection])] Datadog.Trace.Iast.Aspects.MongoDB.MongoDatabaseAspect",
 "  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoDatabase::RunCommand(MongoDB.Driver.Command`1<!!0>,MongoDB.Driver.ReadPreference,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] AnalyzeCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoDatabase::RunCommandAsync(MongoDB.Driver.Command`1<!!0>,MongoDB.Driver.ReadPreference,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] AnalyzeCommand(System.Object)",

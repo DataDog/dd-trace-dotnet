@@ -5,12 +5,8 @@
 
 #nullable enable
 
-using System;
-using Datadog.Trace.Iast.Aspects.MongoDB.DuckTyping;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Helpers;
-using Datadog.Trace.Iast.Helpers.Reflection;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast.Aspects.MongoDB;
 
@@ -21,91 +17,18 @@ namespace Datadog.Trace.Iast.Aspects.MongoDB;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class BsonAspect
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BsonAspect));
-
-    private static readonly IBsonSerializerExtensionsDuckType? DeserializeExtensionDuck = ReflectionHelper.DuckTypeOriginalMethod(typeof(IBsonSerializerExtensionsDuckType), "MongoDB.Bson.Serialization.IBsonSerializerExtensions, MongoDB.Bson") as IBsonSerializerExtensionsDuckType;
-    private static readonly IBsonSerializerDuckType? DeserializeBsonDuck = ReflectionHelper.DuckTypeOriginalMethod(typeof(IBsonSerializerDuckType), "MongoDB.Bson.Serialization.BsonSerializer, MongoDB.Bson") as IBsonSerializerDuckType;
-    private static readonly IBsonDocumentDuckType? ParseDuck = ReflectionHelper.DuckTypeOriginalMethod(typeof(IBsonDocumentDuckType), "MongoDB.Bson.BsonDocument, MongoDB.Bson") as IBsonDocumentDuckType;
-    private static readonly CtorWrappers.CtorWrapper<string, object>? JsonReaderCtorWrapper = ReflectionHelper.WrapOriginalCtor<string, object>("MongoDB.Bson.IO.JsonReader::.ctor(System.String)");
-
-    /// <summary>
-    ///     MongoDB Deserialize aspect
-    /// </summary>
-    /// <param name="serializer"> the serializer </param>
-    /// <param name="context"> the context </param>
-    /// <returns> the original deserialized object </returns>
-    [AspectMethodReplace("MongoDB.Bson.Serialization.IBsonSerializerExtensions::Deserialize(MongoDB.Bson.Serialization.IBsonSerializer`1<!!0>,MongoDB.Bson.Serialization.BsonDeserializationContext)")]
-    public static object? DeserializeExtension(object serializer, object context)
-    {
-        var result = DeserializeExtensionDuck?.Deserialize(serializer, context);
-
-        try
-        {
-            // The reader can be tainted
-            var reader = context.GetType().GetProperty("Reader")?.GetValue(context);
-            MongoDbHelper.TaintObjectWithJson(result, MongoDbHelper.TaintedLinkedObject(reader));
-        }
-        catch (Exception ex) { Log.Debug(ex, "Failed to get the Reader or taint the object"); }
-
-        return result;
-    }
-
-    /// <summary>
-    ///     MongoDB Deserialize aspect
-    /// </summary>
-    /// <param name="bsonReader"> the bson reader </param>
-    /// <param name="configurator"> the configurator </param>
-    /// <returns> the original deserialized object </returns>
-    [AspectMethodReplace("MongoDB.Bson.Serialization.BsonSerializer::Deserialize(MongoDB.Bson.IO.IBsonReader,System.Action`1<Builder>)")]
-    public static object? DeserializeBson(object bsonReader, object configurator)
-    {
-        var result = DeserializeBsonDuck?.Deserialize<object>(bsonReader, configurator);
-
-        try
-        {
-            MongoDbHelper.TaintObjectWithJson(result, MongoDbHelper.TaintedLinkedObject(bsonReader));
-        }
-        catch (Exception ex) { Log.Debug(ex, "Failed to taint the object"); }
-
-        return result;
-    }
-
     /// <summary>
     ///     MongoDB Bson Parse aspect
     /// </summary>
     /// <param name="json"> the json </param>
     /// <returns> the original parsed object </returns>
-    [AspectMethodReplace("MongoDB.Bson.BsonDocument::Parse(System.String)")]
-    public static object? Parse(string json)
+    [AspectMethodInsertBefore("MongoDB.Bson.Serialization.BsonSerializer::Deserialize(System.String,System.Action`1<Builder>)", 1)]
+    [AspectMethodInsertBefore("MongoDB.Bson.Serialization.BsonSerializer::Deserialize(System.String,System.Type,System.Action`1<Builder>)", 2)]
+    [AspectMethodInsertBefore("MongoDB.Bson.BsonDocument::Parse(System.String)")]
+    [AspectMethodInsertBefore("MongoDB.Bson.IO.JsonReader::.ctor(System.String)")]
+    public static object AnalyzeJsonString(string json)
     {
-        var result = ParseDuck?.Parse(json);
-
-        try
-        {
-            MongoDbHelper.TaintObjectWithJson(result, json);
-        }
-        catch (Exception ex) { Log.Debug(ex, "Failed to taint the object"); }
-
-        return result;
-    }
-
-    /// <summary>
-    ///     MongoDB JsonReader constructor aspect
-    /// </summary>
-    /// <param name="json"> the json </param>
-    /// <returns> the JsonReader object </returns>
-    [AspectCtorReplace("MongoDB.Bson.IO.JsonReader::.ctor(System.String)")]
-    public static object? Constructor(string json)
-    {
-        var result = JsonReaderCtorWrapper?.Invoke(json);
-
-        try
-        {
-            MongoDbHelper.TaintObjectWithJson(result, json);
-        }
-        catch (Exception ex) { Log.Debug(ex, "Failed to taint the object"); }
-
-        return result;
+        return MongoDbHelper.DetectVulnerability(json);
     }
 }
 #endif

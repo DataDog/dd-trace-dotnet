@@ -17,29 +17,24 @@ internal static class MongoDbHelper
     internal static void AnalyzeBsonDocument(object command)
     {
         var bsonCommand = command.DuckCast<BsonDocumentCommandStruct>();
-        var taintedObjectDocument = IastModule.GetIastContext()?.GetTaintedObjects().Get(bsonCommand.Document);
-        if (taintedObjectDocument?.LinkedObject?.Value is not string jsonStringValue)
+        var jsonString = bsonCommand.ToString();
+        if (string.IsNullOrEmpty(jsonString))
         {
             return;
         }
 
-        IastModule.OnNoSqlQuery(jsonStringValue, IntegrationId.MongoDb);
+        DetectVulnerability(jsonString);
     }
 
     internal static void AnalyzeJsonCommand(object command)
     {
         var jsonCommand = command.DuckCast<JsonCommandStruct>();
-        IastModule.OnNoSqlQuery(jsonCommand.Json, IntegrationId.MongoDb);
+        DetectVulnerability(jsonCommand.Json);
     }
 
-    // Taint an object by linking it to a tainted string
-    internal static void TaintObjectWithJson(object? obj, object? json)
+    internal static string DetectVulnerability(string json)
     {
-        IastModule.GetIastContext()?.GetTaintedObjects().TaintWithLinkedObject(obj, json);
-    }
-
-    internal static object? TaintedLinkedObject(object? taintedObject)
-    {
-        return taintedObject == null ? null : IastModule.GetIastContext()?.GetTaintedObjects().Get(taintedObject)?.LinkedObject?.Value;
+        IastModule.OnNoSqlQuery(json, IntegrationId.MongoDb);
+        return json;
     }
 }

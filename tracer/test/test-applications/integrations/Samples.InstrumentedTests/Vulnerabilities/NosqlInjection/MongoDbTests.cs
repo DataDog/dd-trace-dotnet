@@ -142,7 +142,7 @@ public class MongoDbTests : InstrumentationTestsBase
         Assert.True(books.Count > 0);
         AssertVulnerable();
     }
-    
+
     [Fact]
     public void GivenAMongoDb_BsonDocument_JsonReaderWithContext_WhenFindAsyncWithTainted_VulnerabilityReported()
     {
@@ -172,10 +172,35 @@ public class MongoDbTests : InstrumentationTestsBase
     }
     
     [Fact]
+    public void GivenAMongoDb_BsonDocument_JsonReader_DeserializeString_WhenFindWithTainted_VulnerabilityReported()
+    {
+        var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
+        var doc = BsonSerializer.Deserialize<BsonDocument>(json);
+        var collection = _database.GetCollection<BsonDocument>("Books");
+        var find = collection.Find(doc).ToList();
+        
+        Assert.True(find.Count > 0);
+        AssertVulnerable();
+    }
+    
+    [Fact]
+    public void GivenAMongoDb_BsonDocument_JsonReader_DeserializeString2_WhenFindWithTainted_VulnerabilityReported()
+    {
+        var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
+        var doc = BsonSerializer.Deserialize(json, typeof(BsonDocument));
+        var collection = _database.GetCollection<BsonDocument>("Books");
+        var find = collection.Find((BsonDocument)doc).ToList();
+        
+        Assert.True(find.Count > 0);
+        AssertVulnerable();
+    }
+    
+    [Fact]
     public void GivenAMongoDb_BsonDocument_JsonReader_WhenFindAsyncWithTainted_VulnerabilityReported()
     {
         var json = "{ \"Price\" :\"" + _taintedString12 + "\"   }";
         var reader = new JsonReader(json);
+        
         var doc = BsonSerializer.Deserialize<BsonDocument>(reader);
         var collection = _database.GetCollection<BsonDocument>("Books");
         var find = collection.FindAsync(doc).Result.ToList();
