@@ -27,7 +27,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Util;
-using Datadog.Trace.TestHelpers.Containers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
