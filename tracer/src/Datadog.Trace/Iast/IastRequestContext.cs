@@ -102,7 +102,7 @@ internal class IastRequestContext
             // We get either string, List<object> or Dictionary<string, object>
             if (bodyExtracted is string bodyExtractedStr)
             {
-                _taintedObjects.TaintInputString(bodyExtractedStr, new Source(SourceType.GetByte(SourceTypeName.RequestBody), key, bodyExtractedStr));
+                _taintedObjects.TaintInputString(bodyExtractedStr, new Source(SourceType.RequestBody, key, bodyExtractedStr));
             }
             else
             {
@@ -120,7 +120,7 @@ internal class IastRequestContext
                         foreach (var keyValue in bodyExtractedDic)
                         {
                             AddExtractedBody(keyValue.Value, keyValue.Key);
-                            _taintedObjects.TaintInputString(keyValue.Key, new Source(SourceType.GetByte(SourceTypeName.RequestBody), key, keyValue.Key));
+                            _taintedObjects.TaintInputString(keyValue.Key, new Source(SourceType.RequestBody, key, keyValue.Key));
                         }
                     }
                 }
@@ -130,28 +130,28 @@ internal class IastRequestContext
 
     private void AddRequestParameter(string name, string value)
     {
-        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RequestParameterValue), name, value));
-        _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.RequestParameterName), name, null));
+        _taintedObjects.TaintInputString(value, new Source(SourceType.RequestParameterValue, name, value));
+        _taintedObjects.TaintInputString(name, new Source(SourceType.RequestParameterName, name, null));
     }
 
     private void AddRoutedParameter(string name, string value)
     {
-        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RoutedParameterValue), name, value));
+        _taintedObjects.TaintInputString(value, new Source(SourceType.RoutedParameterValue, name, value));
     }
 
     private void AddQueryStringRaw(string queryString)
     {
-        _taintedObjects.TaintInputString(queryString, new Source(SourceType.GetByte(SourceTypeName.RequestQuery), null, queryString));
+        _taintedObjects.TaintInputString(queryString, new Source(SourceType.RequestQuery, null, queryString));
     }
 
     private void AddQueryUrl(string url)
     {
-        _taintedObjects.TaintInputString(url, new Source(SourceType.GetByte(SourceTypeName.RequestUri), null, url));
+        _taintedObjects.TaintInputString(url, new Source(SourceType.RequestUri, null, url));
     }
 
     private void AddQueryPath(string path)
     {
-        _taintedObjects.TaintInputString(path, new Source(SourceType.GetByte(SourceTypeName.RequestPath), null, path));
+        _taintedObjects.TaintInputString(path, new Source(SourceType.RequestPath, null, path));
     }
 
     private void AddRouteData(IDictionary<string, object> routeData)
@@ -330,14 +330,14 @@ internal class IastRequestContext
 
     private void AddCookieData(string name, string value)
     {
-        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.CookieValue), name, value));
-        _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.CookieName), name, name));
+        _taintedObjects.TaintInputString(value, new Source(SourceType.CookieValue, name, value));
+        _taintedObjects.TaintInputString(name, new Source(SourceType.CookieName, name, name));
     }
 
     private void AddHeaderData(string name, string value)
     {
-        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RequestHeaderValue), name, value));
-        _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.RequestHeaderName), name, name));
+        _taintedObjects.TaintInputString(value, new Source(SourceType.RequestHeaderValue, name, value));
+        _taintedObjects.TaintInputString(name, new Source(SourceType.RequestHeaderName, name, name));
     }
 
     internal void OnExecutedSinkTelemetry(IastInstrumentedSinks sink)

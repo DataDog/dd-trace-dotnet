@@ -31,20 +31,20 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
         [Fact]
         public void CheckSourceTypeAndIastInstrumentedSourcesConsistency()
         {
-            Enum.GetValues(typeof(MetricTags.IastInstrumentedSources)).Length.Should().Be(Enum.GetValues(typeof(SourceTypeName)).Length);
-            for (int i = 0; i < Enum.GetValues(typeof(SourceTypeName)).Length; i++)
+            Enum.GetValues(typeof(MetricTags.IastInstrumentedSources)).Length.Should().Be(Enum.GetValues(typeof(SourceType)).Length);
+            for (int i = 0; i < Enum.GetValues(typeof(SourceType)).Length; i++)
             {
                 var tag = (MetricTags.IastInstrumentedSources)i;
-                tag.ToString().Should().Be(((SourceTypeName)i).ToString());
+                tag.ToString().Should().Be(((SourceType)i).ToString());
             }
         }
 
         [Fact]
         public void CheckSourceTypeGetAsTagAndGetStringConsistency()
         {
-            for (int i = 0; i < Enum.GetValues(typeof(SourceTypeName)).Length; i++)
+            foreach (SourceType sourceType in Enum.GetValues(typeof(SourceType)))
             {
-                SourceType.GetString((SourceTypeName)i).Should().Be(SourceType.GetAsTag((SourceTypeName)i).Replace("_", "."));
+                SourceTypeUtils.GetString((byte)sourceType).Should().Be(SourceTypeUtils.GetAsTag(sourceType).Replace("_", "."));
             }
         }
     }
