@@ -419,13 +419,14 @@ public sealed class TestModule
             CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler &&
             coverageHandler.GetCodeCoveragePercentage() is { } globalCoverage)
         {
-            // We only report global code coverage if we don't skip any test
-            if (!CIVisibility.HasSkippableTests())
+            // We only report global code coverage if ITR is disabled and we are in a fake session (like the internal testlogger scenario)
+            // For a normal customer session we never report the percentage of total lines on modules
+            if (!CIVisibility.Settings.IntelligentTestRunnerEnabled && _fakeSession is not null)
             {
                 // Adds the global code coverage percentage to the module
                 var codeCoveragePercentage = globalCoverage.GetTotalPercentage();
                 SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
-                _fakeSession?.SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
+                _fakeSession.SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
             }
 
             // If the code coverage path environment variable is set, we store the json file

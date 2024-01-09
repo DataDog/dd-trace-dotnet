@@ -339,8 +339,12 @@ namespace Datadog.Trace.Tools.Runner
                         if (CoverageUtils.TryCombineAndGetTotalCoverage(codeCoveragePath, outputPath, out var globalCoverage, useStdOut: false) &&
                             globalCoverage is not null)
                         {
-                            // Adds the global code coverage percentage to the session
-                            session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());
+                            // We only report the code coverage percentage if the customer manually sets the 'DD_CIVISIBILITY_CODE_COVERAGE_ENABLED' environment variable according to the new spec.
+                            if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage).ToBoolean() == true)
+                            {
+                                // Adds the global code coverage percentage to the session
+                                session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());
+                            }
                         }
                     }
                     else
