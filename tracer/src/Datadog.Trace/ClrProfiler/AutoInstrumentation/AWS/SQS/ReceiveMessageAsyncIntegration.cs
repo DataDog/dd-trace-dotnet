@@ -11,6 +11,7 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
@@ -58,8 +59,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             }
 
             // request the message attributes that a datadog instrumentation might have set when sending
-            request.MessageAttributeNames.Add(ContextPropagation.SqsKey);
-            request.AttributeNames.Add("SentTimestamp"); // TODO: check if setting twice the same attribute here is a pb
+            request.MessageAttributeNames.AddDistinct(ContextPropagation.SqsKey);
+            request.AttributeNames.AddDistinct("SentTimestamp");
 
             return new CallTargetState(scope, queueName);
         }
