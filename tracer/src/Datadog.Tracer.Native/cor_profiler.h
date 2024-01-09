@@ -250,6 +250,13 @@ public:
     friend class MethodRewriter;
     friend class fault_tolerant::FaultTolerantMethodDuplicator;
     friend class fault_tolerant::FaultTolerantRewriter;
+
+    //
+    // Getters for exception filter
+    //
+
+    bool IsCallTargetBubbleUpExceptionTypeAvailable() const;
+    bool IsCallTargetBubbleUpFunctionAvailable() const;
 };
 
 // Note: Generally you should not have a single, global callback implementation,

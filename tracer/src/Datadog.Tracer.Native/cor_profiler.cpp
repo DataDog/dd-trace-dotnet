@@ -1198,6 +1198,16 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
     return S_OK;
 }
 
+bool CorProfiler::IsCallTargetBubbleUpExceptionTypeAvailable() const
+{
+    return call_target_bubble_up_exception_available;
+}
+
+bool CorProfiler::IsCallTargetBubbleUpFunctionAvailable() const
+{
+    return call_target_bubble_up_exception_function_available;
+}
+
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 {
     if (!is_attached_)
