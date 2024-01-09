@@ -31,6 +31,7 @@ internal class TracerFlareManager : ITracerFlareManager
     private readonly IDiscoveryService _discoveryService;
     private readonly IRcmSubscriptionManager _subscriptionManager;
     private readonly TracerFlareApi _flareApi;
+    private readonly bool _enableFlare;
     private ISubscription? _subscription;
     private Timer? _resetTimer = null;
 
@@ -39,17 +40,24 @@ internal class TracerFlareManager : ITracerFlareManager
     public TracerFlareManager(
         IDiscoveryService discoveryService,
         IRcmSubscriptionManager subscriptionManager,
-        TracerFlareApi flareApi)
+        TracerFlareApi flareApi,
+        bool enableFlare = true)
     {
         _subscriptionManager = subscriptionManager;
         _flareApi = flareApi;
         _discoveryService = discoveryService;
+        _enableFlare = enableFlare;
     }
 
     public bool? CanSendTracerFlare { get; private set; } = null;
 
     public void Start()
     {
+        if (!_enableFlare)
+        {
+            return;
+        }
+
         if (Interlocked.Exchange(ref _subscription, new Subscription(RcmProductReceived, RcmProducts.TracerFlareInitiated, RcmProducts.TracerFlareRequested)) == null)
         {
             _discoveryService.SubscribeToChanges(HandleConfigUpdate);
@@ -60,6 +68,11 @@ internal class TracerFlareManager : ITracerFlareManager
 
     public void Dispose()
     {
+        if (!_enableFlare)
+        {
+            return;
+        }
+
         if (_resetTimer is not null)
         {
             // If we have a timer, we should reset debugging now
