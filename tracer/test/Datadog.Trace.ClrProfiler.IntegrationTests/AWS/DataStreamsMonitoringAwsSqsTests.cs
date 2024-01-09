@@ -42,6 +42,18 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
 
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
+        /*
+         * runs a scenario where we test:
+         *   in the same thread:
+         *    - 2 async send
+         *    - 2 async receive
+         *    - 2 async batch send of 3 messages each
+         *    - 2 async receive of 3 messages
+         *   then in 3 different threads:
+         *    - 2 async send and 2 async batch send of 3 messages
+         *    - 2 async receive of the non batch messages
+         *    - 2 async receive of 3 messages of the batch messages
+         */
         using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
 #if NETFRAMEWORK
