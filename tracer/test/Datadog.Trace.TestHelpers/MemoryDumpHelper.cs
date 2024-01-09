@@ -47,10 +47,9 @@ namespace Datadog.Trace.TestHelpers
             _output?.Report($"Procdump downloaded. Unpacking to '{unpackedDirectory}'");
             System.IO.Compression.ZipFile.ExtractToDirectory(zipFilePath, unpackedDirectory);
 
-            _path = Path.Combine(unpackedDirectory, "procdump.exe");
+            var executable = EnvironmentTools.IsTestTarget64BitProcess() ? "procdump64.exe" : "procdump.exe";
 
-            // Remove procdump64.exe to fix some weird random issues
-            File.Delete(Path.Combine(unpackedDirectory, "procdump64.exe"));
+            _path = Path.Combine(unpackedDirectory, executable);
         }
 
         public static Task MonitorCrashes(int pid)
