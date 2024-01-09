@@ -335,7 +335,6 @@ src/Datadog.Trace/Ci/Tags/IntelligentTestRunnerTags.cs
 src/Datadog.Trace/Ci/Tags/TestTags.cs
 src/Datadog.Trace/Ci/Telemetry/TelemetryHelper.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AutoInstrumentationExtensions.cs
-src/Datadog.Trace/ClrProfiler/CallTarget/CallTargetBubbleUpException.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/CallTargetInvoker.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/CallTargetInvokerException.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/CallTargetReturn.cs
