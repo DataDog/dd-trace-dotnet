@@ -7,6 +7,8 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Iast.Aspects.MongoDB.DuckTyping;
 
 namespace Datadog.Trace.Iast.Helpers;
 
@@ -14,13 +16,8 @@ internal static class MongoDbHelper
 {
     internal static void AnalyzeBsonDocument(object command)
     {
-        var document = command.GetType().GetProperty("Document")?.GetValue(command);
-        if (document == null)
-        {
-            return;
-        }
-
-        var taintedObjectDocument = IastModule.GetIastContext()?.GetTaintedObjects().Get(document);
+        var bsonCommand = command.DuckCast<BsonDocumentCommandStruct>();
+        var taintedObjectDocument = IastModule.GetIastContext()?.GetTaintedObjects().Get(bsonCommand.Document);
         if (taintedObjectDocument?.LinkedObject?.Value is not string jsonStringValue)
         {
             return;
@@ -31,21 +28,8 @@ internal static class MongoDbHelper
 
     internal static void AnalyzeJsonCommand(object command)
     {
-        var json = command.GetType().GetProperty("Json")?.GetValue(command);
-        if (json is not string jsonStringValue)
-        {
-            return;
-        }
-
-        IastModule.OnNoSqlQuery(jsonStringValue, IntegrationId.MongoDb);
-    }
-
-    internal static object? InvokeMethod(string typeName, string methodName, object[] args, Type[] argTypes)
-    {
-        var type = Type.GetType(typeName);
-        var method = type?.GetMethod(methodName, argTypes);
-        var result = method?.Invoke(null, args);
-        return result;
+        var jsonCommand = command.DuckCast<JsonCommandStruct>();
+        IastModule.OnNoSqlQuery(jsonCommand.Json, IntegrationId.MongoDb);
     }
 
     // Taint an object by linking it to a tainted string
