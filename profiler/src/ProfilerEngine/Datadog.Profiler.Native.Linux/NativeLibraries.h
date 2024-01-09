@@ -46,7 +46,7 @@ private:
 #include <memory>
 #include <future>
 #include <thread>
-#include <mutex>
+#include <shared_mutex>
 #include <chrono>
 #include <condition_variable>
 #include <vector>
@@ -77,7 +77,7 @@ private:
 
     class UnwindTables;
     std::vector<std::shared_ptr<UnwindTable>> _tables;
-    std::mutex _tablesLock;
+    std::shared_mutex _tablesLock;
 
     std::thread _tablesReloader;
     std::promise<void> _updaterPromise;

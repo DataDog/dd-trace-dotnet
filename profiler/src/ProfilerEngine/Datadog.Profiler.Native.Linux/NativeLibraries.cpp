@@ -117,7 +117,7 @@ const char* UnwindTablesStore::GetName() const
 
 std::shared_ptr<UnwindTablesStore::UnwindTable> UnwindTablesStore::FindByAddress(const void* address)
 {
-    std::unique_lock lock(_tablesLock);
+    std::shared_lock lock(_tablesLock);
     
     using store_type = typeof(_tables);
     store_type::difference_type count, step;
@@ -176,8 +176,11 @@ void UnwindTablesStore::ReloadUnwindTables()
 
 void UnwindTablesStore::LoadUnwindTables()
 {
-    std::unique_lock lock(_tablesLock);
-    _tables = Symbols::parseLibraries(false);
+    typeof(_tables) other = Symbols::parseLibraries(false);
+    {
+        std::unique_lock lock(_tablesLock);
+        _tables = std::move(other);
+    }
     
     std::ostringstream oss;
     const int native_lib_count = _tables.size();

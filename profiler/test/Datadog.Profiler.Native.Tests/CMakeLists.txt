@@ -16,11 +16,11 @@ if (IS_ALPINE)
 endif()
 
 if (RUN_ASAN)
-    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
+    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer -DDD_SANITIZERS)
 endif()
 
 if (RUN_UBSAN)
-    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all)
+    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all -DDD_SANITIZERS)
 endif()
 
 if(ISLINUX)

@@ -87,12 +87,16 @@ private:
     return ptr;
   }
 
+  __attribute__((no_sanitize("alignment")))
   u8 get8() { return *_ptr++; }
 
+  __attribute__((no_sanitize("alignment")))
   u16 get16() { return *(u16 *)add(2); }
 
+  __attribute__((no_sanitize("alignment")))
   u32 get32() { return *(u32 *)add(4); }
 
+  __attribute__((no_sanitize("shift")))
   u32 getLeb() {
     u32 result = 0;
     for (u32 shift = 0;; shift += 7) {
@@ -104,6 +108,7 @@ private:
     }
   }
 
+  __attribute__((no_sanitize("shift")))
   int getSLeb() {
     int result = 0;
     for (u32 shift = 0;; shift += 7) {

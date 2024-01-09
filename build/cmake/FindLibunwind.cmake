@@ -10,7 +10,7 @@ ExternalProject_Add(libunwind
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""
     CMAKE_ARGS -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CC_COMPILER=clang
-    BUILD_COMMAND autoreconf -i <SOURCE_DIR> && <SOURCE_DIR>/configure CXX=clang++ CC=clang --build=x86_64-unknown-linux-gnu CXXFLAGS=-fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0\ -O3\ -g CFLAGS=-fPIC\ -O3\ -g --disable-minidebuginfo --disable-zlibdebuginfo && make -j$(nproc)
+    BUILD_COMMAND autoreconf -i <SOURCE_DIR> && <SOURCE_DIR>/configure CXXFLAGS=-fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0\ -O3\ -g CFLAGS=-fPIC\ -O3\ -g --disable-minidebuginfo --disable-zlibdebuginfo && make -j$(nproc)
     BUILD_ALWAYS false
     BUILD_BYPRODUCTS ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind-${CMAKE_SYSTEM_PROCESSOR}.a
                      ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind.a

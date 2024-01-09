@@ -63,18 +63,36 @@ SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${DEPLOY_DIR})
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${DEPLOY_DIR})
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DEPLOY_DIR})
 
-# ******************************************************
-# Dependencies
-# ******************************************************
-
-FILE(GLOB LINUX_PROFILER_SRC CONFIGURE_DEPENDS "*.cpp")
 
 # ******************************************************
 # Define static target
 # ******************************************************
+
 add_library(${PROFILER_STATIC_LIB_NAME} STATIC
-    ${LINUX_PROFILER_SRC}
+    symbols_linux.cpp
+    dwarf.cpp
+    codeCache.cpp
+    mutex.cpp
+    os.cpp
 )
+
+if (ISAMD64)
+    target_sources(${PROFILER_STATIC_LIB_NAME} PRIVATE
+        stackFrame_x64.cpp
+    )
+elseif (ISX86)
+    target_sources(${PROFILER_STATIC_LIB_NAME} PRIVATE
+        stackFrame_i386.cpp
+    )
+elseif (ISARM64)
+    target_sources(${PROFILER_STATIC_LIB_NAME} PRIVATE
+        stackFrame_aarch64.cpp
+    )
+elseif (ISARM)
+    target_sources(${PROFILER_STATIC_LIB_NAME} PRIVATE
+        stackFrame_arm.cpp
+    )
+endif()
 
 set_target_properties(${PROFILER_STATIC_LIB_NAME} PROPERTIES PREFIX "")
 
