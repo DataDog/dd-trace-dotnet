@@ -927,7 +927,8 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.version: sdk-version,
       _dd.base_service: CustomServiceName,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.span_links: [{"span_id":"span_link_id","trace_id":"trace_link_id","tracestate":"app=hello","flags":"1"}]
     },
     Metrics: {
       process_id: 0,
@@ -960,7 +961,8 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.version: sdk-version,
       _dd.base_service: CustomServiceName,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.span_links: [{"span_id":"span_link_id","trace_id":"trace_link_id","tracestate":"app=hello","flags":"1"},{"span_id":"span_link_id","trace_id":"trace_link_id","flags":"1"}]
     },
     Metrics: {
       process_id: 0,

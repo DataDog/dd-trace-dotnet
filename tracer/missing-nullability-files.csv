@@ -46,6 +46,7 @@ src/Datadog.Trace/Tracer.cs
 src/Datadog.Trace/TracerConstants.cs
 src/Datadog.Trace/TracerManager.cs
 src/Datadog.Trace/TracerManagerFactory.cs
+src/Datadog.Trace/Activity/ActivityLinkConverter.cs
 src/Datadog.Trace/Agent/AgentWriter.cs
 src/Datadog.Trace/Agent/Api.cs
 src/Datadog.Trace/Agent/ClientStatsPayload.cs

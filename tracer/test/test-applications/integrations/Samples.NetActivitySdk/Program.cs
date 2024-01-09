@@ -306,10 +306,10 @@ public static class Program
 
         var activityLinkTags1 = new ActivityTagsCollection();
         activityLinkTags1.Add("some_unserializeable_object", null); // can't serialize
-        // activityLinkTags1.Add("some_int", 5);
+        activityLinkTags1.Add("some_int", 5);
         activityLinkTags1.Add("some_string", "five");
-        // activityLinkTags1.Add("some_bool", false);
-        // activityLinkTags1.Add("some_int[]", new [] { 5, 55, 555 } );
+        activityLinkTags1.Add("some_bool", false);
+        activityLinkTags1.Add("some_int[]", new [] { 5, 55, 555 } );
         activityLinkTags1.Add("some_int[][]", new [,] {{5, 55}, {555, 5555}}); // can't serialize
 
         // basic linked context
@@ -330,7 +330,7 @@ public static class Program
         activityLinks.Add(new ActivityLink(context2));
 
         using var activity = _source.StartActivity(
-            "Activity_With_ActivityLinks",
+            "ActivityWithLinks",
             ActivityKind.Server,
             default(ActivityContext),
             activityTags,
