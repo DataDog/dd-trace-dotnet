@@ -19,7 +19,7 @@ public class AerospikeFixture : ContainerFixture
 
     public override IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables()
     {
-        yield return new("AEROSPIKE_HOST", $"localhost:{Container.GetMappedPublicPort(3000)}");
+        yield return new("AEROSPIKE_HOST", $"{Container.Hostname}:{Container.GetMappedPublicPort(3000)}");
     }
 
     protected override async Task InitializeResources(Action<string, object> registerResource)
