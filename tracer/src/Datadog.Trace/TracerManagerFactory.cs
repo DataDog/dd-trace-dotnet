@@ -236,20 +236,12 @@ namespace Datadog.Trace
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {
             var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
+            var samplingRules = settings.CustomSamplingRulesInternal;
+            var samplingRulesFormat = settings.CustomSamplingRulesFormat;
 
-            // we want to log this even if settings.CustomSamplingRulesInternal is null or empty
-            if (settings.CustomSamplingRulesFormat == SamplingRulesFormat.Unknown)
+            if (!string.IsNullOrWhiteSpace(samplingRules) && samplingRulesFormat != SamplingRulesFormat.Unknown)
             {
-                Log.Warning(
-                    "{ConfigurationKey} configuration of {ConfigurationValue} is invalid. Ignoring all trace sampling rules.",
-                    ConfigurationKeys.CustomSamplingRulesFormat,
-                    settings.CustomSamplingRulesFormat);
-            }
-
-            if (!string.IsNullOrWhiteSpace(settings.CustomSamplingRulesInternal) &&
-                settings.CustomSamplingRulesFormat != SamplingRulesFormat.Unknown)
-            {
-                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(settings.CustomSamplingRulesInternal, settings.CustomSamplingRulesFormat))
+                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(samplingRules, samplingRulesFormat))
                 {
                     sampler.RegisterRule(rule);
                 }

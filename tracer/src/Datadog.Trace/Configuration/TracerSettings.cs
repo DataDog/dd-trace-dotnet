@@ -18,6 +18,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -205,21 +206,27 @@ namespace Datadog.Trace.Configuration
             CustomSamplingRulesFormat = config.WithKeys(ConfigurationKeys.CustomSamplingRulesFormat)
                                                // .AsString(defaultValue: Sampling.SamplingRulesFormat.Regex);
                                               .GetAs(
-                                                   getDefaultValue: () => new DefaultResult<string>(Sampling.SamplingRulesFormat.Regex, "regex"),
-                                                   converter: x =>
+                                                   getDefaultValue: () => new DefaultResult<string>(SamplingRulesFormat.Regex, "regex"),
+                                                   converter: value =>
                                                    {
-                                                       if (x.Equals(Sampling.SamplingRulesFormat.Regex, StringComparison.OrdinalIgnoreCase))
+                                                       // invalid values return "unknown", other values are lower-cased
+                                                       var format = SamplingRulesFormat.Normalize(value);
+
+                                                       if (format == SamplingRulesFormat.Unknown)
                                                        {
-                                                           return Sampling.SamplingRulesFormat.Regex;
+                                                           Log.Warning(
+                                                               "{ConfigurationKey} configuration of {ConfigurationValue} is invalid. Ignoring all trace sampling rules.",
+                                                               ConfigurationKeys.CustomSamplingRulesFormat,
+                                                               value);
+
+                                                           _telemetry.Record(
+                                                               key: ConfigurationKeys.CustomSamplingRulesFormat,
+                                                               value: SamplingRulesFormat.Unknown,
+                                                               recordValue: true,
+                                                               origin: ConfigurationOrigins.Calculated);
                                                        }
 
-                                                       if (x.Equals(Sampling.SamplingRulesFormat.Glob, StringComparison.OrdinalIgnoreCase))
-                                                       {
-                                                           return Sampling.SamplingRulesFormat.Glob;
-                                                       }
-
-                                                       // invalid values are converted to "unknown"
-                                                       return Sampling.SamplingRulesFormat.Unknown;
+                                                       return format;
                                                    },
                                                    validator: null);
 

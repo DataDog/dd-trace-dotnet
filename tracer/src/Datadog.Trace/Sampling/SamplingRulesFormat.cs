@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System;
+
 namespace Datadog.Trace.Sampling;
 
 internal static class SamplingRulesFormat
@@ -14,4 +16,17 @@ internal static class SamplingRulesFormat
     public const string Regex = "regex";
 
     public const string Glob = "glob";
+
+    public static string Normalize(string format)
+    {
+        if (string.IsNullOrWhiteSpace(format))
+        {
+            // default value if not specified
+            return Regex;
+        }
+
+        return Regex.Equals(format, StringComparison.OrdinalIgnoreCase) ? Regex :
+                Glob.Equals(format, StringComparison.OrdinalIgnoreCase) ? Glob :
+                                                                          Unknown;
+    }
 }

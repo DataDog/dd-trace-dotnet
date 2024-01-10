@@ -63,11 +63,8 @@ namespace Datadog.Trace.Sampling
 
         public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration, string patternFormat)
         {
-            if (string.IsNullOrWhiteSpace(configuration) ||
-                string.IsNullOrWhiteSpace(patternFormat) ||
-                patternFormat == SamplingRulesFormat.Unknown)
+            if (string.IsNullOrWhiteSpace(configuration) || patternFormat == SamplingRulesFormat.Unknown)
             {
-                // don't bother deserializing the JSON
                 return Enumerable.Empty<CustomSamplingRule>();
             }
 
