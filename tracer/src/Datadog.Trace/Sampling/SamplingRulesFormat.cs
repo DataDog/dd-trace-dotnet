@@ -25,6 +25,8 @@ internal static class SamplingRulesFormat
             return Regex;
         }
 
+        format = format.Trim();
+
         return Regex.Equals(format, StringComparison.OrdinalIgnoreCase) ? Regex :
                 Glob.Equals(format, StringComparison.OrdinalIgnoreCase) ? Glob :
                                                                           Unknown;
