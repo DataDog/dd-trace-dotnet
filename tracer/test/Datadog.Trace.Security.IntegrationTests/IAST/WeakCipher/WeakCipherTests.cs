@@ -59,12 +59,12 @@ public class WeakCipherTests : TestHelper
     [InlineData("DD_IAST_ENABLED", "false")]
     [InlineData("DD_IAST_WEAK_CIPHER_ALGORITHMS", "invalidAlgorithm")]
     [InlineData($"DD_TRACE_{nameof(IntegrationId.SymmetricAlgorithm)}_ENABLED", "false")]
-    public void IntegrationDisabled(string variableName, string variableValue)
+    public async Task IntegrationDisabled(string variableName, string variableValue)
     {
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
         SetEnvironmentVariable(variableName, variableValue);
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var process = RunSampleAndWaitForExit(agent);
+        using var process = await RunSampleAndWaitForExit(agent);
         var spans = agent.Spans; // we expect no spans
 
         Assert.Empty(spans.Where(s => s.Name.Equals(ExpectedOperationName)));

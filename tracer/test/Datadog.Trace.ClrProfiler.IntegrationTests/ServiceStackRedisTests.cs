@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
 #if NETCOREAPP3_1_OR_GREATER
                 var numberOfRuns = 3;
