@@ -10,13 +10,11 @@ using System.Text;
 using Amazon.Kinesis.Model;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Propagators;
 using FluentAssertions;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Xunit;
 
-namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AWS;
+namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AWS.Kinesis;
 
 public class ContextPropagationTests
 {
@@ -28,7 +26,7 @@ public class ContextPropagationTests
     private static readonly byte[] PersonJsonStringBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(PersonDictionary));
     private static readonly byte[] StreamNameBytes = Encoding.UTF8.GetBytes(StreamName);
 
-    private readonly SpanContext spanContext;
+    private readonly SpanContext _spanContext;
 
     public ContextPropagationTests()
     {
@@ -37,7 +35,7 @@ public class ContextPropagationTests
 
         var traceId = new TraceId(upper, lower);
         ulong spanId = 6766950223540265769;
-        spanContext = new SpanContext(traceId, spanId, 1, "test-kinesis", "serverless");
+        _spanContext = new SpanContext(traceId, spanId, 1, "test-kinesis", "serverless");
     }
 
     public static IEnumerable<object[]> MemoryStreamToDictionaryExpectedData
@@ -76,7 +74,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordsRequest>();
 
-        ContextPropagation.InjectTraceIntoRecords(proxy, spanContext);
+        ContextPropagation.InjectTraceIntoRecords(proxy, _spanContext);
 
         var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
 
@@ -89,8 +87,8 @@ public class ContextPropagationTests
         // Cast into a Dictionary<string, string> so we can read it properly
         var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(datadogDictionary.ToString());
 
-        extractedTraceContext["x-datadog-parent-id"].Should().Be(spanContext.SpanId.ToString());
-        extractedTraceContext["x-datadog-trace-id"].Should().Be(spanContext.TraceId.ToString());
+        extractedTraceContext["x-datadog-parent-id"].Should().Be(_spanContext.SpanId.ToString());
+        extractedTraceContext["x-datadog-trace-id"].Should().Be(_spanContext.TraceId.ToString());
     }
 
     [Fact]
@@ -107,7 +105,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordsRequest>();
 
-        ContextPropagation.InjectTraceIntoRecords(proxy, spanContext);
+        ContextPropagation.InjectTraceIntoRecords(proxy, _spanContext);
 
         var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
 
@@ -126,7 +124,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordRequest>();
 
-        ContextPropagation.InjectTraceIntoData(proxy, spanContext);
+        ContextPropagation.InjectTraceIntoData(proxy, _spanContext);
 
         // Naively deserialize in order to not use tracer extraction logic
         var jsonString = Encoding.UTF8.GetString(proxy.Data.ToArray());
@@ -137,8 +135,8 @@ public class ContextPropagationTests
         // Cast into a Dictionary<string, string> so we can read it properly
         var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(datadogDictionary.ToString());
 
-        extractedTraceContext["x-datadog-parent-id"].Should().Be(spanContext.SpanId.ToString());
-        extractedTraceContext["x-datadog-trace-id"].Should().Be(spanContext.TraceId.ToString());
+        extractedTraceContext["x-datadog-parent-id"].Should().Be(_spanContext.SpanId.ToString());
+        extractedTraceContext["x-datadog-trace-id"].Should().Be(_spanContext.TraceId.ToString());
     }
 
     [Fact]
@@ -157,7 +155,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordRequest>();
 
-        ContextPropagation.InjectTraceIntoData(proxy, spanContext);
+        ContextPropagation.InjectTraceIntoData(proxy, _spanContext);
 
         var data = proxy.Data;
 
