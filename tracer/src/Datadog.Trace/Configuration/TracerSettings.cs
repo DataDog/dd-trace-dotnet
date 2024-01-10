@@ -245,7 +245,7 @@ namespace Datadog.Trace.Configuration
                              .WithKeys(ConfigurationKeys.BufferSize)
                              .AsInt32(defaultValue: 1024 * 1024 * 10); // 10MB
 
-            // If Lambda/GCP we don't wanat to have a flush interval. The serverless integration
+            // If Lambda/GCP we don't want to have a flush interval. The serverless integration
             // manually calls flush and waits for the result before ending execution.
             // This can artificially increase the execution time of functions
             var defaultTraceBatchInterval = LambdaMetadata.IsRunningInLambda || IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan ? 0 : 100;
