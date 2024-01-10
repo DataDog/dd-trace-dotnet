@@ -3,13 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Net.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using OpenTracing;
 
 namespace Datadog.Trace.OpenTracing
 {
@@ -18,6 +13,8 @@ namespace Datadog.Trace.OpenTracing
     /// </summary>
     public static class OpenTracingTracerFactory
     {
+        private const string DeprecationMessage = "OpenTracing support has been deprecated and will be removed in a future release. We recommend using OpenTelemetry instead.";
+
         /// <summary>
         /// Create a new Datadog compatible ITracer implementation with the given parameters
         /// </summary>
@@ -26,25 +23,25 @@ namespace Datadog.Trace.OpenTracing
         /// <param name="isDebugEnabled">Turns on all debug logging (this may have an impact on application performance).</param>
         /// <returns>A Datadog compatible ITracer implementation</returns>
         [PublicApi]
+        [Obsolete(DeprecationMessage)]
         public static global::OpenTracing.ITracer CreateTracer(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.OpenTracingTracerFactory_CreateTracer);
             // Keep supporting this older public method by creating a TracerConfiguration
             // from default sources, overwriting the specified settings, and passing that to the constructor.
-            var configuration = TracerSettings.FromDefaultSourcesInternal();
-            GlobalSettings.SetDebugEnabledInternal(isDebugEnabled);
+            var configuration = TracerSettings.FromDefaultSources();
+            GlobalSettings.SetDebugEnabled(isDebugEnabled);
 
             if (agentEndpoint != null)
             {
-                configuration.ExporterInternal.AgentUriInternal = agentEndpoint;
+                configuration.AgentUri = agentEndpoint;
             }
 
             if (defaultServiceName != null)
             {
-                configuration.ServiceNameInternal = defaultServiceName;
+                configuration.ServiceName = defaultServiceName;
             }
 
-            Tracer.ConfigureInternal(new ImmutableTracerSettings(configuration, true));
+            Tracer.Configure(configuration);
             var tracer = Tracer.Instance;
             return new OpenTracingTracer(tracer, OpenTracingTracer.CreateDefaultScopeManager(), tracer.DefaultServiceName);
         }
@@ -55,9 +52,9 @@ namespace Datadog.Trace.OpenTracing
         /// <param name="tracer">Existing Datadog Tracer instance</param>
         /// <returns>A Datadog compatible ITracer implementation</returns>
         [PublicApi]
+        [Obsolete(DeprecationMessage)]
         public static global::OpenTracing.ITracer WrapTracer(Tracer tracer)
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.OpenTracingTracerFactory_WrapTracer);
             return new OpenTracingTracer(tracer, OpenTracingTracer.CreateDefaultScopeManager(), tracer.DefaultServiceName);
         }
     }
