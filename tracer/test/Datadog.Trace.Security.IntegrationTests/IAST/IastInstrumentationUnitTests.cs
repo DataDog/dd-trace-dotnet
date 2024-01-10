@@ -266,8 +266,7 @@ public class IastInstrumentationUnitTests : TestHelper
 #endif
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "0"); // without this key, ci visibility is enabled for the samples, which we don't really want
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
-            SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "1");
-            Console.WriteLine("HELLO FLAVIEN: " + Environment.GetEnvironmentVariable("MONGO_HOST"));
+            SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
             ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
