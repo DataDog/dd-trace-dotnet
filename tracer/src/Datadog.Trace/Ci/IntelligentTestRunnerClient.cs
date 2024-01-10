@@ -1049,6 +1049,9 @@ internal class IntelligentTestRunnerClient
 
         [JsonProperty("tests_skipping")]
         public readonly bool? TestsSkipping;
+
+        [JsonProperty("require_git")]
+        public readonly bool? RequireGit;
 #pragma warning restore CS0649
     }
 
