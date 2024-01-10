@@ -34,14 +34,14 @@ namespace Datadog.Trace.Sampling
             float rate,
             string ruleName,
             string patternFormat,
-            string serviceNameRegex,
-            string operationNameRegex)
+            string serviceNamePattern,
+            string operationNamePattern)
         {
             _samplingRate = rate;
             RuleName = ruleName;
 
-            _serviceNameRegex = RegexBuilder.Build(serviceNameRegex, patternFormat);
-            _operationNameRegex = RegexBuilder.Build(operationNameRegex, patternFormat);
+            _serviceNameRegex = RegexBuilder.Build(serviceNamePattern, patternFormat);
+            _operationNameRegex = RegexBuilder.Build(operationNamePattern, patternFormat);
 
             if (_serviceNameRegex is null &&
                 _operationNameRegex is null)
