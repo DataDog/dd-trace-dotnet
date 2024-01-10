@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
+using DotNet.Testcontainers.Configurations;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -134,6 +135,8 @@ namespace Datadog.Trace.TestHelpers.AutoInstrumentation
                         DisableParallelization = IsParallelizationDisabled(pair.Item1)
                     })
                     .ToList();
+
+                TestcontainersSettings.ResourceReaperEnabled = false;
 
                 var summary = new RunSummary();
 
