@@ -47,7 +47,7 @@ internal class IntelligentTestRunnerClient
     private const string SettingsType = "ci_app_test_service_libraries_settings";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntelligentTestRunnerClient));
-    private static readonly Regex ShaRegex = new Regex("[0-9a-f]+", RegexOptions.Compiled);
+    private static readonly Regex ShaRegex = new("[0-9a-f]+", RegexOptions.Compiled);
     private static readonly JsonSerializerSettings SerializerSettings = new() { DefaultValueHandling = DefaultValueHandling.Ignore };
 
     private readonly string _id;
@@ -517,125 +517,6 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    private async Task<SearchCommitResponse> GetCommitsAsync()
-    {
-        var gitLogOutput = await RunGitCommandAsync("log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits).ConfigureAwait(false);
-        if (gitLogOutput is null)
-        {
-            Log.Warning("ITR: 'git log...' command is null");
-            return new SearchCommitResponse(null, null, false);
-        }
-
-        var localCommits = gitLogOutput.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries);
-        if (localCommits.Length == 0)
-        {
-            Log.Debug("ITR: Local commits not found. (since 1 month ago)");
-            return new SearchCommitResponse(null, null, false);
-        }
-
-        Log.Debug<int>("ITR: Local commits = {Count}", localCommits.Length);
-        var remoteCommitsData = await SearchCommitAsync(localCommits).ConfigureAwait(false);
-        return new SearchCommitResponse(localCommits, remoteCommitsData, true);
-    }
-
-    private async Task<string[]> SearchCommitAsync(string[]? localCommits)
-    {
-        if (localCommits is null)
-        {
-            return Array.Empty<string>();
-        }
-
-        Log.Debug("ITR: Searching commits...");
-
-        Data<object>[] commitRequests;
-        if (localCommits.Length == 0)
-        {
-            commitRequests = Array.Empty<Data<object>>();
-        }
-        else
-        {
-            commitRequests = new Data<object>[localCommits.Length];
-            for (var i = 0; i < localCommits.Length; i++)
-            {
-                commitRequests[i] = new Data<object>(localCommits[i], CommitType, default);
-            }
-        }
-
-        var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, repository), SerializerSettings);
-        Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
-        var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
-
-        return await WithRetries(InternalSearchCommitAsync, jsonPushedShaBytes, MaxRetries).ConfigureAwait(false);
-
-        async Task<string[]> InternalSearchCommitAsync(byte[] state, bool finalTry)
-        {
-            var sw = Stopwatch.StartNew();
-            try
-            {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommits();
-                var request = _apiRequestFactory.Create(_searchCommitsUrl);
-                SetRequestHeader(request);
-
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug("ITR: Searching commits from: {Url}", _searchCommitsUrl.ToString());
-                }
-
-                string? responseContent;
-                try
-                {
-                    using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
-                    responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                    if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
-                    {
-                        TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(errorType);
-                    }
-
-                    CheckResponseStatusCode(response, responseContent, finalTry);
-                }
-                catch
-                {
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(MetricTags.CIVisibilityErrorType.Network);
-                    throw;
-                }
-
-                Log.Debug("ITR: JSON RS = {Json}", responseContent);
-                if (string.IsNullOrEmpty(responseContent))
-                {
-                    return Array.Empty<string>();
-                }
-
-                var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
-                if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
-                {
-                    return Array.Empty<string>();
-                }
-
-                var stringArray = new string[deserializedResult.Data.Length];
-                for (var i = 0; i < deserializedResult.Data.Length; i++)
-                {
-                    var value = deserializedResult.Data[i].Id;
-                    if (value is not null)
-                    {
-                        if (ShaRegex.Matches(value).Count != 1)
-                        {
-                            ThrowHelper.ThrowException($"The value '{value}' is not a valid Sha.");
-                        }
-
-                        stringArray[i] = value;
-                    }
-                }
-
-                return stringArray;
-            }
-            finally
-            {
-                TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(sw.Elapsed.TotalMilliseconds);
-            }
-        }
-    }
-
     public async Task<long> SendObjectsPackFileAsync(string commitSha, string[]? commitsToInclude, string[]? commitsToExclude)
     {
         Log.Debug("ITR: Packing and sending delta of commits and tree objects...");
@@ -725,6 +606,125 @@ internal class IntelligentTestRunnerClient
             finally
             {
                 TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsObjectsPackMs(sw.Elapsed.TotalMilliseconds);
+            }
+        }
+    }
+
+    private async Task<SearchCommitResponse> GetCommitsAsync()
+    {
+        var gitLogOutput = await RunGitCommandAsync("log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits).ConfigureAwait(false);
+        if (gitLogOutput is null)
+        {
+            Log.Warning("ITR: 'git log...' command is null");
+            return new SearchCommitResponse(null, null, false);
+        }
+
+        var localCommits = gitLogOutput.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries);
+        if (localCommits.Length == 0)
+        {
+            Log.Debug("ITR: Local commits not found. (since 1 month ago)");
+            return new SearchCommitResponse(null, null, false);
+        }
+
+        Log.Debug<int>("ITR: Local commits = {Count}", localCommits.Length);
+        var remoteCommitsData = await SearchCommitAsync(localCommits).ConfigureAwait(false);
+        return new SearchCommitResponse(localCommits, remoteCommitsData, true);
+
+        async Task<string[]> SearchCommitAsync(string[]? commits)
+        {
+            if (commits is null)
+            {
+                return Array.Empty<string>();
+            }
+
+            Log.Debug("ITR: Searching commits...");
+
+            Data<object>[] commitRequests;
+            if (commits.Length == 0)
+            {
+                commitRequests = Array.Empty<Data<object>>();
+            }
+            else
+            {
+                commitRequests = new Data<object>[commits.Length];
+                for (var i = 0; i < commits.Length; i++)
+                {
+                    commitRequests[i] = new Data<object>(commits[i], CommitType, default);
+                }
+            }
+
+            var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
+            var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, repository), SerializerSettings);
+            Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
+            var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
+
+            return await WithRetries(InternalSearchCommitAsync, jsonPushedShaBytes, MaxRetries).ConfigureAwait(false);
+
+            async Task<string[]> InternalSearchCommitAsync(byte[] state, bool finalTry)
+            {
+                var sw = Stopwatch.StartNew();
+                try
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommits();
+                    var request = _apiRequestFactory.Create(_searchCommitsUrl);
+                    SetRequestHeader(request);
+
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug("ITR: Searching commits from: {Url}", _searchCommitsUrl.ToString());
+                    }
+
+                    string? responseContent;
+                    try
+                    {
+                        using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                        responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                        if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                        {
+                            TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(errorType);
+                        }
+
+                        CheckResponseStatusCode(response, responseContent, finalTry);
+                    }
+                    catch
+                    {
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(MetricTags.CIVisibilityErrorType.Network);
+                        throw;
+                    }
+
+                    Log.Debug("ITR: JSON RS = {Json}", responseContent);
+                    if (string.IsNullOrEmpty(responseContent))
+                    {
+                        return Array.Empty<string>();
+                    }
+
+                    var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
+                    if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
+                    {
+                        return Array.Empty<string>();
+                    }
+
+                    var stringArray = new string[deserializedResult.Data.Length];
+                    for (var i = 0; i < deserializedResult.Data.Length; i++)
+                    {
+                        var value = deserializedResult.Data[i].Id;
+                        if (value is not null)
+                        {
+                            if (ShaRegex.Matches(value).Count != 1)
+                            {
+                                ThrowHelper.ThrowException($"The value '{value}' is not a valid Sha.");
+                            }
+
+                            stringArray[i] = value;
+                        }
+                    }
+
+                    return stringArray;
+                }
+                finally
+                {
+                    TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(sw.Elapsed.TotalMilliseconds);
+                }
             }
         }
     }
