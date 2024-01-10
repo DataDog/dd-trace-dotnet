@@ -41,7 +41,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             if (!filterContext.HttpContext.Request.Path.Value.Contains("XContentTypeHeaderMissing"))
             {
-                filterContext.HttpContext.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+                filterContext.HttpContext.Response.Headers.Append("X-Content-Type-Options", "nosniff");
             }
 
             base.OnResultExecuting(filterContext);
@@ -521,7 +521,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             if (!string.IsNullOrEmpty(xContentTypeHeaderValueUntainted))
             {
-                Response.Headers.Add("X-Content-Type-Options", xContentTypeHeaderValueUntainted);
+                Response.Headers.Append("X-Content-Type-Options", xContentTypeHeaderValue);
             }
 
             if (returnCode != (int) HttpStatusCode.OK)
@@ -602,12 +602,12 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             if (!string.IsNullOrEmpty(hstsHeaderValueUntainted))
             {
-                Response.Headers.Add("Strict-Transport-Security", hstsHeaderValueUntainted);
+                Response.Headers.Append("Strict-Transport-Security", hstsHeaderValue);
             }
 
             if (!string.IsNullOrEmpty(xForwardedProtoUntainted))
             {
-                Response.Headers.Add("X-Forwarded-Proto", xForwardedProtoUntainted);
+                Response.Headers.Append("X-Forwarded-Proto", xForwardedProto);
             }
 
             if (returnCode != (int)HttpStatusCode.OK)
@@ -623,6 +623,20 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content("StrictTransportSecurityMissing");
             }
+        }
+
+        [HttpGet("StackTraceLeak")]
+        [Route("StackTraceLeak")]
+        public ActionResult StackTraceLeak()
+        {
+            throw new Exception("StackTraceLeak");
+        }
+
+        [HttpGet("ReturnCode")]
+        [Route("ReturnCode")]
+        public ActionResult ReturnCode(int code)
+        {
+            return StatusCode(code);
         }
 
         // We should exclude some headers to prevent false positives:
