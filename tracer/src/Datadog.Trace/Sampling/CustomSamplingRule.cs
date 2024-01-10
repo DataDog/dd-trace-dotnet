@@ -54,9 +54,7 @@ namespace Datadog.Trace.Sampling
 
                 foreach (var tagPattern in tagPatterns)
                 {
-                    var regex = RegexBuilder.Build(tagPattern.Value, patternFormat);
-
-                    if (regex != null)
+                    if (RegexBuilder.Build(tagPattern.Value, patternFormat) is { } regex)
                     {
                         tagRegexList.Add(new KeyValuePair<string, Regex>(tagPattern.Key, regex));
                     }
