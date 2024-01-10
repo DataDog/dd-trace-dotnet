@@ -47,7 +47,9 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing => "vulnerability_type:xcontenttype_header_missing",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation => "vulnerability_type:trust_boundary_violation",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing => "vulnerability_type:hsts_header_missing",
+<<<<<<< HEAD
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection => "vulnerability_type:header_injection",
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak => "vulnerability_type:stacktrace_leak",
@@ -55,6 +57,10 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NosqlInjection => "vulnerability_type:nosql_injection",
 >>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
 =======
+=======
+=======
+>>>>>>> 3ea161b11 (Update vulnerability NoSql position)
+>>>>>>> 4fdd33d46 (Update vulnerability NoSql position)
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlInjection => "vulnerability_type:nosql_injection",
 >>>>>>> 4b41f7b61 (Add nosql_injection vulnerability type to telemetry metrics)
             _ => value.ToString(),
@@ -87,7 +93,9 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing,
+<<<<<<< HEAD
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak,
@@ -95,6 +103,10 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NosqlInjection,
 >>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
 =======
+=======
+=======
+>>>>>>> 3ea161b11 (Update vulnerability NoSql position)
+>>>>>>> 4fdd33d46 (Update vulnerability NoSql position)
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlInjection,
 >>>>>>> 4b41f7b61 (Add nosql_injection vulnerability type to telemetry metrics)
         };
@@ -127,7 +139,9 @@ internal static partial class IastInstrumentedSinksExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing),
+<<<<<<< HEAD
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection),
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak),
@@ -135,6 +149,10 @@ internal static partial class IastInstrumentedSinksExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NosqlInjection),
 >>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
 =======
+=======
+=======
+>>>>>>> 3ea161b11 (Update vulnerability NoSql position)
+>>>>>>> 4fdd33d46 (Update vulnerability NoSql position)
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlInjection),
 >>>>>>> 4b41f7b61 (Add nosql_injection vulnerability type to telemetry metrics)
         };
@@ -167,10 +185,16 @@ internal static partial class IastInstrumentedSinksExtensions
             "vulnerability_type:xcontenttype_header_missing",
             "vulnerability_type:trust_boundary_violation",
             "vulnerability_type:hsts_header_missing",
+<<<<<<< HEAD
             "vulnerability_type:header_injection",
+<<<<<<< HEAD
 <<<<<<< HEAD
             "vulnerability_type:stacktrace_leak",
 =======
+=======
+=======
+>>>>>>> 3ea161b11 (Update vulnerability NoSql position)
+>>>>>>> 4fdd33d46 (Update vulnerability NoSql position)
             "vulnerability_type:nosql_injection",
 >>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
         };
