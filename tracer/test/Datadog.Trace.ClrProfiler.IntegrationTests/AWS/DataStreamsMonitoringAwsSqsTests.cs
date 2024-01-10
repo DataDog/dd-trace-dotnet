@@ -57,7 +57,10 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
         using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
 #if NETFRAMEWORK
-            throw new SkipException();
+            // there is no snapshot for NetFramework so this test would fail if run
+            // but it is compiled, so it still needs to look legit for the CI
+            var expectedCount = 0;
+            var frameworkName = "NetFramework";
 #else
             var expectedCount = 28;
             var frameworkName = "NetCore";
