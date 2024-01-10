@@ -204,7 +204,6 @@ namespace Datadog.Trace.Configuration
             CustomSamplingRulesInternal = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
 
             CustomSamplingRulesFormat = config.WithKeys(ConfigurationKeys.CustomSamplingRulesFormat)
-                                               // .AsString(defaultValue: Sampling.SamplingRulesFormat.Regex);
                                               .GetAs(
                                                    getDefaultValue: () => new DefaultResult<string>(SamplingRulesFormat.Regex, "regex"),
                                                    converter: value =>
