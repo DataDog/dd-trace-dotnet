@@ -271,6 +271,12 @@ namespace Datadog.Trace.Activity
                             SetTagObject(span, $"{key}.{index}", element, allowUnrolling: false);
                             index++;
                         }
+
+                        if (index == 0)
+                        {
+                            // indicates that it was an empty array, we need to add the tag
+                            AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(value));
+                        }
                     }
                     else
                     {
