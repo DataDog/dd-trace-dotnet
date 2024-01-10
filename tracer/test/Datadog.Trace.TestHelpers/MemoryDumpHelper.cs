@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -46,45 +47,76 @@ namespace Datadog.Trace.TestHelpers
             _output?.Report($"Procdump downloaded. Unpacking to '{unpackedDirectory}'");
             System.IO.Compression.ZipFile.ExtractToDirectory(zipFilePath, unpackedDirectory);
 
-            _path = Path.Combine(unpackedDirectory, "procdump.exe");
+            var executable = EnvironmentTools.IsTestTarget64BitProcess() ? "procdump64.exe" : "procdump.exe";
+
+            _path = Path.Combine(unpackedDirectory, executable);
         }
 
-        public static void MonitorCrashes(int pid)
+        public static Task MonitorCrashes(int pid)
         {
             if (!EnvironmentTools.IsWindows() || !IsAvailable)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (_path == null)
             {
-                return;
+                return Task.CompletedTask;
             }
 
-            _ = Task.Run(() =>
-            {
-                var args = $"-ma -accepteula -e {pid} {Path.GetTempPath()}";
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-                using var dumpToolProcess = Process.Start(new ProcessStartInfo(_path, args)
+            _ = Task.Factory.StartNew(
+                () =>
                 {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                });
+                    var args = $"-ma -accepteula -e {pid} {Path.GetTempPath()}";
 
-                using var helper = new ProcessHelper(dumpToolProcess);
+                    using var dumpToolProcess = Process.Start(new ProcessStartInfo(_path, args)
+                    {
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                    });
 
-                helper.Drain();
+                    const string procdumpStarted = "Press Ctrl-C to end monitoring without terminating the process.";
 
-                if (helper.StandardOutput.Contains("Dump count reached") || !helper.StandardOutput.Contains("Dump count not reached"))
-                {
-                    _output.Report($"procdump for process {pid} exited with code {helper.Process.ExitCode}");
+                    void OnDataReceived(string output)
+                    {
+                        if (output == procdumpStarted)
+                        {
+                            tcs.TrySetResult(true);
+                        }
+                    }
 
-                    _output.Report($"[dump][stdout] {helper.StandardOutput}");
-                    _output.Report($"[dump][stderr] {helper.ErrorOutput}");
-                }
-            });
+                    using var helper = new ProcessHelper(dumpToolProcess, OnDataReceived);
+
+                    helper.Drain();
+
+                    if (helper.StandardOutput.Contains("Dump count reached") || !helper.StandardOutput.Contains("Dump count not reached"))
+                    {
+                        _output.Report($"procdump for process {pid} exited with code {helper.Process.ExitCode}");
+
+                        _output.Report($"[dump][stdout] {helper.StandardOutput}");
+                        _output.Report($"[dump][stderr] {helper.ErrorOutput}");
+                    }
+
+                    // It looks like there's a small race condition where this could happen before the OnDataReceived callback is called.
+                    // So redo the check before setting the task as cancelled.
+                    if (helper.StandardOutput.Contains(procdumpStarted))
+                    {
+                        tcs.TrySetResult(true);
+                    }
+                    else
+                    {
+                        _output.Report($"[dump] Dumping the output as binary (have fun)");
+                        _output.Report(string.Join(",", helper.StandardOutput.Select(c => (int)c)));
+                        tcs.TrySetCanceled();
+                    }
+                },
+                TaskCreationOptions.LongRunning);
+
+            return tcs.Task;
         }
 
         public static bool CaptureMemoryDump(Process process, IProgress<string> output = null)
