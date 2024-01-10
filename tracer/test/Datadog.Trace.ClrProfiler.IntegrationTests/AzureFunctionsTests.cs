@@ -120,7 +120,7 @@ public abstract class AzureFunctionsTests : TestHelper
         public async Task SubmitsTraces()
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
-            using (RunAzureFunctionAndWaitForExit(agent))
+            using (await RunAzureFunctionAndWaitForExit(agent))
             {
                 const int expectedSpanCount = 21;
                 var spans = agent.WaitForSpans(expectedSpanCount);
@@ -152,7 +152,7 @@ public abstract class AzureFunctionsTests : TestHelper
         public async Task SubmitsTraces()
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
-            using (RunAzureFunctionAndWaitForExit(agent, framework: "net6.0"))
+            using (await RunAzureFunctionAndWaitForExit(agent, framework: "net6.0"))
             {
                 const int expectedSpanCount = 21;
                 var spans = agent.WaitForSpans(expectedSpanCount);
@@ -184,7 +184,7 @@ public abstract class AzureFunctionsTests : TestHelper
         public async Task SubmitsTraces()
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
-            using (RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
+            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 const int expectedSpanCount = 21;
                 var spans = agent.WaitForSpans(expectedSpanCount);
