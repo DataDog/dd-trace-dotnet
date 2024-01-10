@@ -17,7 +17,7 @@ internal static class MongoDbHelper
     internal static void AnalyzeBsonDocument(object command)
     {
         var bsonCommand = command.DuckCast<BsonDocumentCommandStruct>();
-        var jsonString = bsonCommand.ToString();
+        var jsonString = bsonCommand.Document.ToString();
         if (string.IsNullOrEmpty(jsonString))
         {
             return;
