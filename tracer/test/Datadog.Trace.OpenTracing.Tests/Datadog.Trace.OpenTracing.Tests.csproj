@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace.OpenTracing\Datadog.Trace.OpenTracing.csproj" />
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" Aliases="DatadogTraceManual"/>
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
   </ItemGroup>
 
