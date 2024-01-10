@@ -339,7 +339,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             allLogs.Should()
                    .ContainSingle()
                    .Which.Message.Should()
-                   .Be("Unable to parse custom sampling rules");
+                   .Be("Unable to parse the trace sampling rules.");
         }
 
         [SkippableFact]
