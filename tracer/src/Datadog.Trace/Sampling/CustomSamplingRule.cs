@@ -63,12 +63,8 @@ namespace Datadog.Trace.Sampling
 
         public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration, string patternFormat)
         {
-            if (string.IsNullOrWhiteSpace(configuration))
-            {
-                return [];
-            }
-
-            if (!SamplingRulesFormat.IsValid(patternFormat, out var normalizedFormat))
+            if (string.IsNullOrWhiteSpace(configuration) ||
+                !SamplingRulesFormat.IsValid(patternFormat, out var normalizedFormat))
             {
                 return [];
             }
