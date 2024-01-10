@@ -17,18 +17,30 @@ internal static class SamplingRulesFormat
 
     public const string Glob = "glob";
 
-    public static string Normalize(string format)
+    public static bool IsValid(string? format, out string normalized)
     {
         if (string.IsNullOrWhiteSpace(format))
         {
             // default value if not specified
-            return Regex;
+            normalized = Regex;
+            return true;
         }
 
         format = format.Trim();
 
-        return Regex.Equals(format, StringComparison.OrdinalIgnoreCase) ? Regex :
-                Glob.Equals(format, StringComparison.OrdinalIgnoreCase) ? Glob :
-                                                                          Unknown;
+        if (Regex.Equals(format, StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = Regex;
+            return true;
+        }
+
+        if (Glob.Equals(format, StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = Glob;
+            return true;
+        }
+
+        normalized = Unknown;
+        return false;
     }
 }

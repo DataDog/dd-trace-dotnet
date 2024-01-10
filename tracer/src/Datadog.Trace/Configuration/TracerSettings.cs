@@ -208,10 +208,10 @@ namespace Datadog.Trace.Configuration
                                                    getDefaultValue: () => new DefaultResult<string>(SamplingRulesFormat.Regex, "regex"),
                                                    converter: value =>
                                                    {
-                                                       // invalid values return "unknown", other values are lower-cased
-                                                       var format = SamplingRulesFormat.Normalize(value);
-
-                                                       if (format == SamplingRulesFormat.Unknown)
+                                                       // We intentionally report invalid values as "valid" in the converter,
+                                                       // because we don't want to automatically fallback to the
+                                                       // default value. Instead, we log and record the invalid value separately.
+                                                       if (!SamplingRulesFormat.IsValid(value, out var normalizedFormat))
                                                        {
                                                            Log.Warning(
                                                                "{ConfigurationKey} configuration of {ConfigurationValue} is invalid. Ignoring all trace sampling rules.",
@@ -225,7 +225,7 @@ namespace Datadog.Trace.Configuration
                                                                origin: ConfigurationOrigins.Calculated);
                                                        }
 
-                                                       return format;
+                                                       return normalizedFormat;
                                                    },
                                                    validator: null);
 

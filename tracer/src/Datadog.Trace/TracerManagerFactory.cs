@@ -237,9 +237,9 @@ namespace Datadog.Trace
         {
             var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
             var samplingRules = settings.CustomSamplingRulesInternal;
-            var samplingRulesFormat = settings.CustomSamplingRulesFormat;
+            var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
 
-            if (!string.IsNullOrWhiteSpace(samplingRules) && samplingRulesFormat != SamplingRulesFormat.Unknown)
+            if (patternFormatIsValid && !string.IsNullOrWhiteSpace(samplingRules))
             {
                 foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(samplingRules, samplingRulesFormat))
                 {

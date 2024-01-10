@@ -63,7 +63,12 @@ namespace Datadog.Trace.Sampling
 
         public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration, string patternFormat)
         {
-            if (string.IsNullOrWhiteSpace(configuration) || patternFormat == SamplingRulesFormat.Unknown)
+            if (string.IsNullOrWhiteSpace(configuration))
+            {
+                return [];
+            }
+
+            if (!SamplingRulesFormat.IsValid(patternFormat, out var normalizedFormat))
             {
                 return [];
             }
@@ -88,7 +93,7 @@ namespace Datadog.Trace.Sampling
                         new CustomSamplingRule(
                             r.SampleRate,
                             r.RuleName ?? $"config-rule-{index}",
-                            patternFormat,
+                            normalizedFormat,
                             r.Service,
                             r.OperationName));
                 }
