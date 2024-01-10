@@ -193,6 +193,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for setting the format of <see cref="CustomSamplingRules"/>.
         /// Valid values are <c>regex</c> or <c>glob</c>.
+        /// If the value is not recognized, trace sampling rules are disabled.
         /// </summary>
         public const string CustomSamplingRulesFormat = "DD_TRACE_SAMPLING_RULES_FORMAT";
 

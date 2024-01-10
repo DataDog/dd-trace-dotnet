@@ -556,7 +556,8 @@ namespace Datadog.Trace.Configuration
         internal string? CustomSamplingRulesInternal { get; private set; }
 
         /// <summary>
-        /// Gets a value indicating the format for custom sampling rules ("regex" or "glob").
+        /// Gets a value indicating the format for custom trace sampling rules ("regex" or "glob").
+        /// If the value is not recognized, trace sampling rules are disabled.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRulesFormat"/>
         internal string? CustomSamplingRulesFormat { get; }
