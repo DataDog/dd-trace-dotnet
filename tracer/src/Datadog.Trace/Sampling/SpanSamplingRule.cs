@@ -93,21 +93,29 @@ namespace Datadog.Trace.Sampling
 
             try
             {
-                var rules = JsonConvert.DeserializeObject<List<SpanSamplingRuleConfig>>(configuration);
+                if (JsonConvert.DeserializeObject<List<SpanSamplingRuleConfig>>(configuration) is { Count: > 0 } rules)
+                {
+                    var samplingRules = new List<SpanSamplingRule>(rules.Count);
 
-                return rules?.Select(
-                                  rule => new SpanSamplingRule(
-                                      rule.ServiceNameGlob,
-                                      rule.OperationNameGlob,
-                                      rule.SampleRate,
-                                      rule.MaxPerSecond))
-                             ?? [];
+                    foreach (var rule in rules)
+                    {
+                        samplingRules.Add(
+                            new SpanSamplingRule(
+                                rule.ServiceNameGlob,
+                                rule.OperationNameGlob,
+                                rule.SampleRate,
+                                rule.MaxPerSecond));
+                    }
+
+                    return samplingRules;
+                }
             }
             catch (Exception e)
             {
                 Log.Error(e, "Unable to parse the span sampling rules.");
-                return [];
             }
+
+            return [];
         }
 
         /// <inheritdoc/>
