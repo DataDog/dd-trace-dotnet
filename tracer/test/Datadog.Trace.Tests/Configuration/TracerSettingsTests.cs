@@ -453,7 +453,17 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases), Trace.Sampling.SamplingRulesFormat.Regex, Strings.AllowEmpty)]
+        [InlineData("glob", SamplingRulesFormat.Glob)]     // exact match
+        [InlineData("Glob", SamplingRulesFormat.Glob)]     // case-insensitive
+        [InlineData(" glob ", SamplingRulesFormat.Glob)]   // trim whitespace
+        [InlineData("regex", SamplingRulesFormat.Regex)]   // exact match
+        [InlineData("RegEx", SamplingRulesFormat.Regex)]   // case-insensitive
+        [InlineData(" regex ", SamplingRulesFormat.Regex)] // trim whitespace
+        [InlineData("none", SamplingRulesFormat.Unknown)]  // invalid
+        [InlineData("1", SamplingRulesFormat.Unknown)]     // invalid
+        [InlineData(null, SamplingRulesFormat.Regex)]      // null or empty or whitespace defaults to regex
+        [InlineData("", SamplingRulesFormat.Regex)]        // null or empty or whitespace defaults to regex
+        [InlineData("  ", SamplingRulesFormat.Regex)]      // null or empty or whitespace defaults to regex
         public void CustomSamplingRulesFormat(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CustomSamplingRulesFormat, value));
