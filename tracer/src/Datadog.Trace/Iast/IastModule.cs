@@ -201,7 +201,7 @@ internal static class IastModule
     {
         try
         {
-            OnExecutedSinkTelemetry(IastInstrumentedSinks.SqlInjection);
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.NoSqlInjection);
             return GetScope(query, integrationId, VulnerabilityTypeName.NoSqlInjection, OperationNameNoSqlInjection, Always);
         }
         catch (Exception ex)
