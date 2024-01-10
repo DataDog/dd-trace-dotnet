@@ -71,36 +71,33 @@ namespace Datadog.Trace.Sampling
 
             try
             {
-                var rules = JsonConvert.DeserializeObject<List<CustomRuleConfig>>(configuration);
-
-                if (rules == null)
+                if (JsonConvert.DeserializeObject<List<CustomRuleConfig>>(configuration) is { Count: > 0 } rules)
                 {
-                    return [];
+                    var index = 0;
+                    var samplingRules = new List<CustomSamplingRule>(rules.Count);
+
+                    foreach (var r in rules)
+                    {
+                        index++; // Used to create a readable rule name if one is not specified
+
+                        samplingRules.Add(
+                            new CustomSamplingRule(
+                                r.SampleRate,
+                                r.RuleName ?? $"config-rule-{index}",
+                                normalizedFormat,
+                                r.Service,
+                                r.OperationName));
+                    }
+
+                    return samplingRules;
                 }
-
-                var index = 0;
-                var samplingRules = new List<CustomSamplingRule>(rules.Count);
-
-                foreach (var r in rules)
-                {
-                    index++; // Used to create a readable rule name if one is not specified
-
-                    samplingRules.Add(
-                        new CustomSamplingRule(
-                            r.SampleRate,
-                            r.RuleName ?? $"config-rule-{index}",
-                            normalizedFormat,
-                            r.Service,
-                            r.OperationName));
-                }
-
-                return samplingRules;
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Unable to parse the trace sampling rules.");
-                return [];
             }
+
+            return [];
         }
 
         public bool IsMatch(Span span)
