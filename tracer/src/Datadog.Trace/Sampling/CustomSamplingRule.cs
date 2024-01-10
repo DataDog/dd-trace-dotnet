@@ -65,7 +65,7 @@ namespace Datadog.Trace.Sampling
         {
             if (string.IsNullOrWhiteSpace(configuration) || patternFormat == SamplingRulesFormat.Unknown)
             {
-                return Enumerable.Empty<CustomSamplingRule>();
+                return [];
             }
 
             try
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Sampling
 
                 if (rules == null)
                 {
-                    return Enumerable.Empty<CustomSamplingRule>();
+                    return [];
                 }
 
                 var index = 0;
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Sampling
             catch (Exception ex)
             {
                 Log.Error(ex, "Unable to parse the trace sampling rules.");
-                return Enumerable.Empty<CustomSamplingRule>();
+                return [];
             }
         }
 

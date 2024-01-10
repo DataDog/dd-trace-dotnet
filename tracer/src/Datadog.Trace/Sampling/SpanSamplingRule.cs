@@ -88,7 +88,7 @@ namespace Datadog.Trace.Sampling
         {
             if (string.IsNullOrWhiteSpace(configuration))
             {
-                return Enumerable.Empty<SpanSamplingRule>();
+                return [];
             }
 
             try
@@ -101,12 +101,12 @@ namespace Datadog.Trace.Sampling
                                       rule.OperationNameGlob,
                                       rule.SampleRate,
                                       rule.MaxPerSecond))
-                             ?? Enumerable.Empty<SpanSamplingRule>();
+                             ?? [];
             }
             catch (Exception e)
             {
                 Log.Error(e, "Unable to parse the span sampling rules.");
-                return Enumerable.Empty<SpanSamplingRule>();
+                return [];
             }
         }
 
