@@ -84,7 +84,7 @@ namespace Datadog.Trace.AppSec
 
             ApiSecurityMaxConcurrentRequests = config
                                               .WithKeys(ConfigurationKeys.AppSec.ApiSecurityMaxConcurrentRequests)
-                                              .AsInt32(val => val >= 0)
+                                              .AsInt32(val => val >= 1)
                                               .GetValueOrDefault(1);
 
             ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled)

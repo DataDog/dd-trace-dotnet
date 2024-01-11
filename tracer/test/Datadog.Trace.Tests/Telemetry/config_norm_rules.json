@@ -401,6 +401,7 @@
   "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON": "appsec_blocked_template_json",
   "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING": "appsec_auto_user_events_tracking",
   "DD_API_SECURITY_REQUEST_SAMPLE_RATE":"api_security_request_sample_rate",
+  "DD_API_SECURITY_MAX_CONCURRENT_REQUESTS":"api_security_max_concurrent_requests",
   "DD_EXPERIMENTAL_API_SECURITY_ENABLED":"experimental_api_security_enabled",
   "DD_AZURE_APP_SERVICES": "aas_enabled",
   "DD_AAS_DOTNET_EXTENSION_VERSION": "aas_site_extensions_version",
