@@ -144,7 +144,7 @@ internal static class ReturnedHeadersAnalyzer
     {
         foreach (var range in taintedValue.Ranges)
         {
-            if (range.Source is not null && range.Source.OriginByte != (byte)SourceTypeName.CookieValue)
+            if (range.Source is not null && range.Source.Origin != SourceType.CookieValue)
             {
                 return false;
             }
@@ -158,7 +158,7 @@ internal static class ReturnedHeadersAnalyzer
         return (
             taintedValue.Ranges.Length == 1 &&
             taintedValue.Ranges[0].Source is not null &&
-            taintedValue.Ranges[0].Source!.OriginByte == (byte)SourceTypeName.RequestHeaderValue &&
+            taintedValue.Ranges[0].Source!.Origin == SourceType.RequestHeaderValue &&
             string.Equals(taintedValue.Ranges[0].Source!.Name, headerName, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -166,7 +166,7 @@ internal static class ReturnedHeadersAnalyzer
     {
         foreach (var range in taintedValue.Ranges)
         {
-            if (range.Source is not null && (range.Source.OriginByte != (byte)SourceTypeName.RequestHeaderValue
+            if (range.Source is not null && (range.Source.Origin != SourceType.RequestHeaderValue
                 || (!string.Equals(range.Source.Name, "origin", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(range.Source.Name, "access-control-request-headers", StringComparison.OrdinalIgnoreCase))))
             {
