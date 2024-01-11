@@ -108,6 +108,30 @@ namespace Datadog.Trace.Tests.Sampling
             VerifySingleRule(config, TestSpans.RequestShippingSpan, false);
         }
 
+        [Fact]
+        public void WildcardOperation_ShouldMatch_OnResource()
+        {
+            var config = """[{"service":"*", "name":"*", "resource": "/api/users/*", "sample_rate":0.5, "max_per_second":1000.5}]""";
+
+            VerifySingleRule(config, TestSpans.CartCheckoutSpan, true);
+            VerifySingleRule(config, TestSpans.AddToCartSpan, false);
+            VerifySingleRule(config, TestSpans.ShippingAuthSpan, false);
+            VerifySingleRule(config, TestSpans.ShippingRevertSpan, true);
+            VerifySingleRule(config, TestSpans.RequestShippingSpan, true);
+        }
+
+        [Fact]
+        public void WildcardOperation_ShouldMatch_OnTags()
+        {
+            var config = """[{"service":"shopping-cart-service", "name":"*", "sample_rate":0.5, "max_per_second":1000.5}]""";
+
+            VerifySingleRule(config, TestSpans.CartCheckoutSpan, true);
+            VerifySingleRule(config, TestSpans.AddToCartSpan, true);
+            VerifySingleRule(config, TestSpans.ShippingAuthSpan, false);
+            VerifySingleRule(config, TestSpans.ShippingRevertSpan, false);
+            VerifySingleRule(config, TestSpans.RequestShippingSpan, false);
+        }
+
         [Theory]
         [InlineData("*", "*", "*", true)]
         public void MatchAll_ShouldMatchAll(string serviceGlob, string operationGlob, string resourceGlob, bool shouldMatch)
