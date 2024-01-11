@@ -120,7 +120,6 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
         _iisFixture = iisFixture;
         _testName = "Security." + nameof(AspNetMvc5) + ".TelemetryEnabled" +
                  ".Classic" + ".enableIast=true";
-        SetHttpPort(iisFixture.HttpPort);
     }
 
     [Trait("Category", "EndToEnd")]
@@ -159,7 +158,11 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
                           .DisableRequireUniquePrefix();
     }
 
-    public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetClassic);
+    public async Task InitializeAsync()
+    {
+        await _iisFixture.TryStartIis(this, IisAppType.AspNetClassic);
+        SetHttpPort(_iisFixture.HttpPort);
+    }
 
     public Task DisposeAsync() => Task.CompletedTask;
 }
@@ -199,10 +202,13 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         _testName = "Security." + nameof(AspNetMvc5)
                  + (classicMode ? ".Classic" : ".Integrated")
                  + ".enableIast=" + enableIast;
-        SetHttpPort(iisFixture.HttpPort);
     }
 
-    public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+    public async Task InitializeAsync()
+    {
+        await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        SetHttpPort(_iisFixture.HttpPort);
+    }
 
     public Task DisposeAsync() => Task.CompletedTask;
 

@@ -76,7 +76,6 @@ public abstract class AspNetMvc5AsmBlockingActions : RcmBaseFramework, IClassFix
         _testName = "Security." + nameof(AspNetMvc5AsmBlockingActions)
                                 + (classicMode ? ".Classic" : ".Integrated")
                                 + ".enableSecurity=" + enableSecurity;
-        SetHttpPort(iisFixture.HttpPort);
     }
 
     [SkippableTheory]
@@ -106,7 +105,11 @@ public abstract class AspNetMvc5AsmBlockingActions : RcmBaseFramework, IClassFix
         await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, asmProduct, fileId) });
     }
 
-    public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+    public async Task InitializeAsync()
+    {
+        await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        SetHttpPort(_iisFixture.HttpPort);
+    }
 
     public Task DisposeAsync() => Task.CompletedTask;
 

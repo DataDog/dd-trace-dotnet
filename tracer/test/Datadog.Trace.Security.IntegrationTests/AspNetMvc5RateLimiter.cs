@@ -110,8 +110,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             {
                 SetEnvironmentVariable(ConfigurationKeys.AppSec.TraceRateLimit, _traceRateLimit.ToString());
             }
-
-            SetHttpPort(iisFixture.HttpPort);
         }
 
         [Trait("Category", "EndToEnd")]
@@ -128,7 +126,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             Thread.Sleep(1000);
         }
 
-        public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        public async Task InitializeAsync()
+        {
+            await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+            SetHttpPort(_iisFixture.HttpPort);
+        }
 
         public Task DisposeAsync() => Task.CompletedTask;
     }

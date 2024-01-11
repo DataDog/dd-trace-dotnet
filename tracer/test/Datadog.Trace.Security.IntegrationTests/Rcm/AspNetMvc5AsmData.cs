@@ -73,7 +73,6 @@ public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFix
         _testName = "Security." + nameof(AspNetMvc5AsmData)
                                 + (classicMode ? ".Classic" : ".Integrated")
                                 + ".enableSecurity=" + enableSecurity;
-        SetHttpPort(iisFixture.HttpPort);
     }
 
     [SkippableTheory]
@@ -137,7 +136,11 @@ public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFix
         }
     }
 
-    public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+    public async Task InitializeAsync()
+    {
+        await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        SetHttpPort(_iisFixture.HttpPort);
+    }
 
     public Task DisposeAsync() => Task.CompletedTask;
 

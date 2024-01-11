@@ -73,7 +73,6 @@ public abstract class AspNetWebApiAsmData : RcmBaseFramework, IClassFixture<IisF
         _testName = "Security." + nameof(AspNetWebApiAsmData)
                                 + (classicMode ? ".Classic" : ".Integrated")
                                 + ".enableSecurity=" + enableSecurity; // assume that arm is the same
-        SetHttpPort(iisFixture.HttpPort);
     }
 
     [SkippableTheory]
@@ -151,7 +150,11 @@ public abstract class AspNetWebApiAsmData : RcmBaseFramework, IClassFixture<IisF
         }
     }
 
-    public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+    public async Task InitializeAsync()
+    {
+        await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        SetHttpPort(_iisFixture.HttpPort);
+    }
 
     public Task DisposeAsync() => Task.CompletedTask;
 

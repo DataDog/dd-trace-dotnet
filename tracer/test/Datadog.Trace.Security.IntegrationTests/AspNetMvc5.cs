@@ -72,7 +72,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             _testName = "Security." + nameof(AspNetMvc5)
                      + (classicMode ? ".Classic" : ".Integrated")
                      + ".enableSecurity=" + enableSecurity;
-            SetHttpPort(iisFixture.HttpPort);
         }
 
         [Trait("Category", "EndToEnd")]
@@ -109,7 +108,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, SecurityEnabled ? 1 : 2, settings, userAgent: "Hello/V");
         }
 
-        public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        public async Task InitializeAsync()
+        {
+            await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+            SetHttpPort(_iisFixture.HttpPort);
+        }
 
         public Task DisposeAsync() => Task.CompletedTask;
 
