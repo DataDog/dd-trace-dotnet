@@ -86,7 +86,7 @@ internal partial class MainViewModel
             integrationSourceBuilder.Replace("$(Namespace)", EditorHelper.GetNamespace(methodDef));
             integrationSourceBuilder.Replace("$(FullName)", EditorHelper.GetMethodFullNameForComments(methodDef));
             integrationSourceBuilder.Replace("$(AssemblyName)", methodDef.DeclaringType.DefinitionAssembly.Name);
-            integrationSourceBuilder.Replace("$(TypeName)", methodDef.DeclaringType.Name);
+            integrationSourceBuilder.Replace("$(TypeName)", methodDef.DeclaringType.FullName);
             integrationSourceBuilder.Replace("$(MethodName)", methodDef.Name);
             integrationSourceBuilder.Replace("$(ReturnTypeName)", EditorHelper.GetReturnType(methodDef));
             integrationSourceBuilder.Replace("$(ParameterTypeNames)", EditorHelper.GetParameterTypeArray(methodDef));
