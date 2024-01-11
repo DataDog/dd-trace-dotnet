@@ -25,6 +25,11 @@
   "vulnerabilities": [
     {
       "type": "COMMAND_INJECTION",
+      "location": {
+        "spanId": XXX,
+        "path": "DataRazorIastPage.cshtml.cs",
+        "line": XXX
+      },
       "evidence": {
         "valueParts": [
           {

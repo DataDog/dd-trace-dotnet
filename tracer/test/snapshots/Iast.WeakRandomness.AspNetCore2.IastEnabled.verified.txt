@@ -25,6 +25,11 @@
   "vulnerabilities": [
     {
       "type": "WEAK_RANDOMNESS",
+      "location": {
+        "spanId": XXX,
+        "path": "IastController.cs",
+        "line": XXX
+      },
       "evidence": {
         "value": "System.Random"
       }

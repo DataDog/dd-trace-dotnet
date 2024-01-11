@@ -28,8 +28,8 @@
       "type": "COMMAND_INJECTION",
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
-        "method": "ExecuteCommandInternal"
+        "path": "IastController.cs",
+        "line": XXX
       },
       "evidence": {
         "valueParts": [
