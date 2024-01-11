@@ -64,6 +64,8 @@ namespace Datadog.Trace.TestHelpers
                 return Task.CompletedTask;
             }
 
+            _output.Report($"Monitoring process {pid} with {_path}");
+
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             _ = Task.Factory.StartNew(
