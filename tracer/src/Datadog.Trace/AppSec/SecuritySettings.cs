@@ -82,11 +82,18 @@ namespace Datadog.Trace.AppSec
                                  .AsDouble(val => val is <= 1 and >= 0)
                                  .GetValueOrDefault(0.1);
 
+            ApiSecurityMaxConcurrentRequests = config
+                                              .WithKeys(ConfigurationKeys.AppSec.ApiSecurityMaxConcurrentRequests)
+                                              .AsInt32(val => val >= 0)
+                                              .GetValueOrDefault(1);
+
             ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled)
                                        .AsBool(false);
         }
 
         public double ApiSecuritySampling { get; }
+
+        public int ApiSecurityMaxConcurrentRequests { get; }
 
         public bool Enabled { get; }
 
