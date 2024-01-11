@@ -62,7 +62,9 @@ namespace Datadog.Trace.Debugger.Symbols
         {
             { 0x0010, "static" },
             { 0x0020, "readonly" },
+            { 0x0030, "static readonly" },
             { 0x0040, "const" },
+            { 0x0050, "static const" },
         };
 
         public static SymbolExtractor? Create(Assembly assembly)
