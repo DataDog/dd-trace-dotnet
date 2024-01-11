@@ -26,6 +26,11 @@
   "vulnerabilities": [
     {
       "type": "SQL_INJECTION",
+      "location": {
+        "spanId": XXX,
+        "path": "IastController.cs",
+        "line": XXX
+      },
       "evidence": {
         "valueParts": [
           {

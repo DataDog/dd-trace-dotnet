@@ -17,6 +17,10 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
+      "location": {
+        "path": "Samples.Deduplication.Program",
+        "method": "ComputeHashNTimes"
+      },
       "evidence": {
         "value": "MD5"
       }

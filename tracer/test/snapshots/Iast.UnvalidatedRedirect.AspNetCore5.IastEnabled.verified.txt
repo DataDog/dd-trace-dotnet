@@ -75,6 +75,11 @@
   "vulnerabilities": [
     {
       "type": "UNVALIDATED_REDIRECT",
+      "location": {
+        "spanId": XXX,
+        "path": "IastController.cs",
+        "line": XXX
+      },
       "evidence": {
         "valueParts": [
           {

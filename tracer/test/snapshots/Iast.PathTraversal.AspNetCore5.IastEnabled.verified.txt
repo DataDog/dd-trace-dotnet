@@ -26,6 +26,11 @@
   "vulnerabilities": [
     {
       "type": "PATH_TRAVERSAL",
+      "location": {
+        "spanId": XXX,
+        "path": "IastController.cs",
+        "line": XXX
+      },
       "evidence": {
         "valueParts": [
           {
