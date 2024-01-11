@@ -36,11 +36,11 @@ internal class SourceConverter : JsonConverter<Source>
     {
         // { "origin": "http.request.parameter", "name": "$1", "value": "table" }
         JObject jo = JObject.Load(reader);
-        var origin = SourceType.FromString(jo["origin"]?.ToString());
+        var origin = SourceTypeUtils.FromString(jo["origin"]?.ToString());
         var name = jo["name"]?.ToString();
         var value = jo["value"]?.ToString();
 
-        return new Source((byte)origin, name, value);
+        return new Source(origin, name, value);
     }
 
     public override void WriteJson(JsonWriter writer, Source? source, JsonSerializer serializer)
@@ -49,7 +49,7 @@ internal class SourceConverter : JsonConverter<Source>
         {
             writer.WriteStartObject();
             writer.WritePropertyName("origin");
-            writer.WriteValue(source.Origin);
+            writer.WriteValue(SourceTypeUtils.GetString(source.Origin));
             if (source.Name != null)
             {
                 writer.WritePropertyName("name");
