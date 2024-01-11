@@ -558,7 +558,7 @@ namespace Datadog.Trace.Ci
                 var settings = Settings;
                 var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, settings));
 
-                Task? uploadRepositoryChangesTask = null;
+                Task<long>? uploadRepositoryChangesTask = null;
                 if (settings.GitUploadEnabled != false)
                 {
                     // Upload the git metadata
@@ -570,6 +570,16 @@ namespace Datadog.Trace.Ci
                 if (settings.CodeCoverageEnabled == null || settings.TestsSkippingEnabled == null)
                 {
                     var itrSettings = await lazyItrClient.Value.GetSettingsAsync().ConfigureAwait(false);
+
+                    // we check if the backend require the git metadata first
+                    if (itrSettings.RequireGit == true && uploadRepositoryChangesTask is not null)
+                    {
+                        Log.Debug("ITR: require git received, awaiting for the git repository upload.");
+                        await uploadRepositoryChangesTask.ConfigureAwait(false);
+
+                        Log.Debug("ITR: calling the configuration api again.");
+                        itrSettings = await lazyItrClient.Value.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
+                    }
 
                     if (settings.CodeCoverageEnabled == null && itrSettings.CodeCoverage.HasValue)
                     {

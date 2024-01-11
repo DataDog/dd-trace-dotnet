@@ -70,7 +70,7 @@ public class StringAspectsBenchmark
         for (int x = 0; x < size; x++)
         {
             var p = $"param{x}";
-            taintedObjects?.TaintInputString(p, new Source((byte)x, $"source{x}", p));
+            taintedObjects?.TaintInputString(p, new Source((SourceType)x, $"source{x}", p));
             res.Add(p);
         }
 
