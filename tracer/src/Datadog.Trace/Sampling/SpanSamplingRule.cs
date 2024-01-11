@@ -47,7 +47,7 @@ namespace Datadog.Trace.Sampling
             string serviceNameGlob,
             string operationNameGlob,
             string resourceNameGlob,
-            Dictionary<string, string> tagGlobs,
+            ICollection<KeyValuePair<string, string>> tagGlobs,
             float samplingRate = 1.0f,
             float? maxPerSecond = null)
         {
@@ -70,23 +70,7 @@ namespace Datadog.Trace.Sampling
             _serviceNameRegex = RegexBuilder.Build(serviceNameGlob, SamplingRulesFormat.Glob);
             _operationNameRegex = RegexBuilder.Build(operationNameGlob, SamplingRulesFormat.Glob);
             _resourceNameRegex = RegexBuilder.Build(resourceNameGlob, SamplingRulesFormat.Glob);
-
-            if (tagGlobs is { Count: > 0 })
-            {
-                var tagRegexList = new List<KeyValuePair<string, Regex>>(tagGlobs.Count);
-
-                foreach (var tagRegex in tagGlobs)
-                {
-                    var regex = RegexBuilder.Build(tagRegex.Value, SamplingRulesFormat.Glob);
-
-                    if (regex != null)
-                    {
-                        tagRegexList.Add(new KeyValuePair<string, Regex>(tagRegex.Key, regex));
-                    }
-                }
-
-                _tagRegexes = tagRegexList;
-            }
+            _tagRegexes = RegexBuilder.Build(tagGlobs, SamplingRulesFormat.Glob);
 
             if (_serviceNameRegex is null &&
                 _operationNameRegex is null &&

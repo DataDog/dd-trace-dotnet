@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -54,6 +55,28 @@ internal static class RegexBuilder
             default:
                 return null; // should be unreachable because we validate the format earlier
         }
+    }
+
+    public static List<KeyValuePair<string, Regex>> Build(ICollection<KeyValuePair<string, string>> patterns, string format)
+    {
+        if (patterns is { Count: > 0 })
+        {
+            var regexList = new List<KeyValuePair<string, Regex>>(patterns.Count);
+
+            foreach (var pattern in patterns)
+            {
+                var regex = Build(pattern.Value, format);
+
+                if (regex != null)
+                {
+                    regexList.Add(new KeyValuePair<string, Regex>(pattern.Key, regex));
+                }
+            }
+
+            return regexList;
+        }
+
+        return [];
     }
 
     private static string WrapWithLineCharacters(string regex)

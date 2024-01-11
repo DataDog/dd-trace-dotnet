@@ -38,7 +38,7 @@ namespace Datadog.Trace.Sampling
             string serviceNamePattern,
             string operationNamePattern,
             string resourceNamePattern,
-            Dictionary<string, string> tagPatterns)
+            ICollection<KeyValuePair<string, string>> tagPatterns)
         {
             _samplingRate = rate;
             RuleName = ruleName;
@@ -46,21 +46,7 @@ namespace Datadog.Trace.Sampling
             _serviceNameRegex = RegexBuilder.Build(serviceNamePattern, patternFormat);
             _operationNameRegex = RegexBuilder.Build(operationNamePattern, patternFormat);
             _resourceNameRegex = RegexBuilder.Build(resourceNamePattern, patternFormat);
-
-            if (tagPatterns is { Count: > 0 })
-            {
-                var tagRegexList = new List<KeyValuePair<string, Regex>>(tagPatterns.Count);
-
-                foreach (var tagPattern in tagPatterns)
-                {
-                    if (RegexBuilder.Build(tagPattern.Value, patternFormat) is { } regex)
-                    {
-                        tagRegexList.Add(new KeyValuePair<string, Regex>(tagPattern.Key, regex));
-                    }
-                }
-
-                _tagRegexes = tagRegexList;
-            }
+            _tagRegexes = RegexBuilder.Build(tagPatterns, patternFormat);
 
             if (_serviceNameRegex is null &&
                 _operationNameRegex is null &&
