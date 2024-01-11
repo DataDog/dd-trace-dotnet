@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -48,7 +47,7 @@ namespace Datadog.Trace.Sampling
             string serviceNameGlob,
             string operationNameGlob,
             string resourceNameGlob,
-            KeyValuePair<string, string>[] tagGlobs,
+            Dictionary<string, string> tagGlobs,
             float samplingRate = 1.0f,
             float? maxPerSecond = null)
         {
@@ -72,9 +71,9 @@ namespace Datadog.Trace.Sampling
             _operationNameRegex = RegexBuilder.Build(operationNameGlob, SamplingRulesFormat.Glob);
             _resourceNameRegex = RegexBuilder.Build(resourceNameGlob, SamplingRulesFormat.Glob);
 
-            if (tagGlobs is { Length: > 0 })
+            if (tagGlobs is { Count: > 0 })
             {
-                var tagRegexList = new List<KeyValuePair<string, Regex>>(tagGlobs.Length);
+                var tagRegexList = new List<KeyValuePair<string, Regex>>(tagGlobs.Count);
 
                 foreach (var tagRegex in tagGlobs)
                 {
@@ -197,7 +196,7 @@ namespace Datadog.Trace.Sampling
             public string ResourceNameGlob { get; set; }
 
             [JsonProperty(PropertyName = "tags")]
-            public KeyValuePair<string, string>[] TagGlobs { get; set; }
+            public Dictionary<string, string> TagGlobs { get; set; }
 
             [JsonProperty(PropertyName = "sample_rate")]
             public float SampleRate { get; set; } = 1.0f; // default to accept all

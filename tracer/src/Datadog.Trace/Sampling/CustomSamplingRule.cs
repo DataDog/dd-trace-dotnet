@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -39,7 +38,7 @@ namespace Datadog.Trace.Sampling
             string serviceNamePattern,
             string operationNamePattern,
             string resourceNamePattern,
-            KeyValuePair<string, string>[] tagPatterns)
+            Dictionary<string, string> tagPatterns)
         {
             _samplingRate = rate;
             RuleName = ruleName;
@@ -48,9 +47,9 @@ namespace Datadog.Trace.Sampling
             _operationNameRegex = RegexBuilder.Build(operationNamePattern, patternFormat);
             _resourceNameRegex = RegexBuilder.Build(resourceNamePattern, patternFormat);
 
-            if (tagPatterns is { Length: > 0 })
+            if (tagPatterns is { Count: > 0 })
             {
-                var tagRegexList = new List<KeyValuePair<string, Regex>>(tagPatterns.Length);
+                var tagRegexList = new List<KeyValuePair<string, Regex>>(tagPatterns.Count);
 
                 foreach (var tagPattern in tagPatterns)
                 {
@@ -183,7 +182,7 @@ namespace Datadog.Trace.Sampling
             public string Resource { get; set; }
 
             [JsonProperty(PropertyName = "tags")]
-            public KeyValuePair<string, string>[] Tags { get; set; }
+            public Dictionary<string, string> Tags { get; set; }
         }
     }
 }
