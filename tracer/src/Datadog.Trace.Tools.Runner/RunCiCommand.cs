@@ -178,6 +178,17 @@ namespace Datadog.Trace.Tools.Runner
 
                         // we skip the framework info because we are interested in the target projects info not the runner one.
                         var itrSettings = await lazyItrClient.Value.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
+
+                        // we check if the backend require the git metadata first
+                        if (itrSettings.RequireGit == true)
+                        {
+                            Log.Debug("RunCiCommand: require git received, awaiting for the git repository upload.");
+                            await uploadRepositoryChangesTask.ConfigureAwait(false);
+
+                            Log.Debug("RunCiCommand: calling the configuration api again.");
+                            itrSettings = await lazyItrClient.Value.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
+                        }
+
                         codeCoverageEnabled = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
                         testSkippingEnabled = itrSettings.TestsSkipping == true;
                     }
