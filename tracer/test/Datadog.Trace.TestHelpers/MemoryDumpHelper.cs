@@ -69,7 +69,7 @@ namespace Datadog.Trace.TestHelpers
             _ = Task.Factory.StartNew(
                 () =>
                 {
-                    var args = $"-ma -accepteula -e {pid} {Path.GetTempPath()}";
+                    var args = $"-ma -accepteula -e 1 -f C0000005.ACCESS_VIOLATION {pid} {Path.GetTempPath()}";
 
                     using var dumpToolProcess = Process.Start(new ProcessStartInfo(_path, args)
                     {
