@@ -40,9 +40,9 @@ internal static class StackWalker
 
     private static readonly Dictionary<string, bool> ExcludedAssemblyCache = new Dictionary<string, bool>();
 
-    public static StackFrameInfo GetFrame()
+    public static StackFrameInfo GetFrame(StackTrace? externalStack = null)
     {
-        var stackTrace = new StackTrace(DefaultSkipFrames, true);
+        var stackTrace = externalStack ?? new StackTrace(DefaultSkipFrames, true);
 
         foreach (var frame in stackTrace.GetFrames())
         {
