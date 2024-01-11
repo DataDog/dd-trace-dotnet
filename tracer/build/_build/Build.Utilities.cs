@@ -314,6 +314,30 @@ partial class Build
         .Description("Updates verified snapshots files with received ones")
         .Executes(ReplaceReceivedFilesInSnapshots);
 
+    Target CleanSnapshots => _ => _
+      .DependentFor(
+           RunOsxIntegrationTests, BuildAndRunOsxIntegrationTests,
+           RunLinuxIntegrationTests, BuildAndRunLinuxIntegrationTests,
+           RunWindowsIntegrationTests, BuildAndRunWindowsIntegrationTests,
+           RunDebuggerIntegrationTests, BuildAndRunDebuggerIntegrationTests,
+           RunWindowsAzureFunctionsTests, BuildAndRunWindowsAzureFunctionsTests,
+           RunWindowsTracerIisIntegrationTests,
+           RunWindowsSecurityIisIntegrationTests,
+           RunWindowsMsiIntegrationTests
+       )
+      .Description("Cleans snapshots produced by previous test runs")
+      .Executes(() =>
+       {
+           var snapshotsDirectory = TestsDirectory / "snapshots";
+           var files = snapshotsDirectory.GlobFiles("*.received.*");
+
+           foreach (var file in files)
+           {
+               File.Delete(file.ToString());
+               Logger.Information("removed snapshot result from a previous execution: " + file);
+           }
+       });
+
     Target PrintSnapshotsDiff  => _ => _
       .Description("Prints snapshots differences from the current tests")
       .AssuredAfterFailure()
