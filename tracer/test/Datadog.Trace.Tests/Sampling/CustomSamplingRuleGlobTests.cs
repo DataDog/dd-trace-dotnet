@@ -53,9 +53,9 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Constructs_With_ResourceName()
         {
-            var config = """[{"sample_rate":0.3, resource: "/api/v1/user/123"}]""";
-            var matchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v1/*" };
-            var nonMatchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v2/*" };
+            var config = """[{"sample_rate":0.3, resource: "/api/v1/*"}]""";
+            var matchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v1/user/123" };
+            var nonMatchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v2/user/123" };
 
             VerifyRate(config, 0.3f);
             VerifySingleRule(config, matchingSpan, isMatch: true);
