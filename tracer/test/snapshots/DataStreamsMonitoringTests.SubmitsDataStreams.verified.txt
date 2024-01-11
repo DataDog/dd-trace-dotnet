@@ -1,7 +1,7 @@
 {
   Env: integration_tests,
   Service: Samples.DataStreams.Kafka,
-  TracerVersion: 2.x.x.x,
+  TracerVersion: <snip>,
   Lang: dotnet,
   Stats: [
     {

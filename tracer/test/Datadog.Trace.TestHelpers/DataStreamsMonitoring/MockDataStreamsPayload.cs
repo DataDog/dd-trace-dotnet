@@ -50,7 +50,11 @@ public class MockDataStreamsPayload
                    .And.OnlyContain(x => x.PrimaryTag == payload.PrimaryTag)
                    .And.OnlyContain(x => x.TracerVersion == payload.TracerVersion);
 
-        var statsBucket = new List<MockDataStreamsStatsPoint>();
+        var currentBucket = new MockDataStreamsBucket { Duration = 10_000_000_000, Start = 1661520120000000000UL };
+        var originBucket = new MockDataStreamsBucket { Duration = 10_000_000_000, Start = 1661520120000000000UL };
+
+        var currentBucketStats = new List<MockDataStreamsStatsPoint>();
+        var originBucketStats = new List<MockDataStreamsStatsPoint>();
         var backlogs = new List<MockDataStreamsBacklog>();
         foreach (var mockPayload in dataStreams)
         {
@@ -61,11 +65,12 @@ public class MockDataStreamsPayload
 
                 if (bucket.Stats != null)
                 {
-                    foreach (var stat in bucket.Stats)
+                    var buckets = bucket.Stats.First().TimestampType == "current" ? currentBucketStats : originBucketStats;
+                    foreach (var bucketStat in bucket.Stats)
                     {
-                        if (!statsBucket.Any(x => x.Hash == stat.Hash && x.ParentHash == stat.ParentHash && x.TimestampType == stat.TimestampType))
+                        if (!buckets.Any(x => x.Hash == bucketStat.Hash && x.ParentHash == bucketStat.ParentHash))
                         {
-                            statsBucket.Add(stat);
+                            buckets.Add(bucketStat);
                         }
                     }
                 }
@@ -79,7 +84,10 @@ public class MockDataStreamsPayload
 
         // order and reset tag offset values, since
         // there's no guarantee that messages will be routed the same way on every run.
-        payload.Stats = new[] { new MockDataStreamsBucket { Duration = 10_000_000_000, Start = 1661520120000000000UL, Backlogs = GroupBacklogs(backlogs), Stats = StableSort(statsBucket) } };
+        currentBucket.Backlogs = GroupBacklogs(backlogs);
+        currentBucket.Stats = StableSort(currentBucketStats);
+        originBucket.Stats = StableSort(originBucketStats);
+        payload.Stats = new[] { currentBucket, originBucket };
         // redact the tracer version as we don't want to regenerate snapshots on every version change
         payload.TracerVersion = "<snip>";
         return payload;
@@ -92,7 +100,6 @@ public class MockDataStreamsPayload
                   .OrderBy(x => GetRootHashName(x, points))
                   .ThenBy(x => GetHashDepth(x, points))
                   .ThenBy(x => x.Hash)
-                  .ThenBy(x => x.TimestampType)
                   .ToArray();
         }
 

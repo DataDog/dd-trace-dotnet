@@ -22,6 +22,152 @@
         },
         {
           EdgeTags: [
+            direction:out,
+            topic:MyAsyncSQSQueue2,
+            type:sqs
+          ],
+          Hash: 3050662557753554578,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:out,
+            topic:MyAsyncSQSQueue2,
+            type:sqs
+          ],
+          Hash: 259194136856182253,
+          ParentHash: 3050662557753554578,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:out,
+            topic:MyAsyncSQSQueue2,
+            type:sqs
+          ],
+          Hash: 5404698761231379539,
+          ParentHash: 259194136856182253,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:out,
+            topic:MyAsyncSQSQueue,
+            type:sqs
+          ],
+          Hash: 16264089125033314072,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            topic:MyAsyncSQSQueue,
+            type:sqs
+          ],
+          Hash: 1683312031548079124,
+          ParentHash: 16264089125033314072,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            topic:MyAsyncSQSQueue2,
+            type:sqs
+          ],
+          Hash: 5506846081348465530,
+          ParentHash: 16264089125033314072,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            topic:MyAsyncSQSQueue2,
+            type:sqs
+          ],
+          Hash: 15579909628989406077,
+          ParentHash: 5506846081348465530,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            topic:MyAsyncSQSQueue2,
+            type:sqs
+          ],
+          Hash: 3989911314076112475,
+          ParentHash: 15579909628989406077,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            topic:MyAsyncSQSQueue2,
+            type:sqs
+          ],
+          Hash: 16534601073286278717,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            topic:MyAsyncSQSQueue2,
+            type:sqs
+          ],
+          Hash: 15593460580625897238,
+          ParentHash: 16534601073286278717,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            topic:MyAsyncSQSQueue2,
+            type:sqs
+          ],
+          Hash: 3172059909761244043,
+          ParentHash: 15593460580625897238,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        }
+      ]
+    },
+    {
+      Start: 1661520120000000000,
+      Duration: 10000000000,
+      Stats: [
+        {
+          EdgeTags: [
             direction:in,
             topic:MyAsyncSQSQueue,
             type:sqs
@@ -42,32 +188,7 @@
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
-          TimestampType: current
-        },
-        {
-          EdgeTags: [
-            direction:out,
-            topic:MyAsyncSQSQueue2,
-            type:sqs
-          ],
-          Hash: 3050662557753554578,
-          PathwayLatency: /w==,
-          EdgeLatency: /w==,
-          PayloadSize: /w==,
           TimestampType: origin
-        },
-        {
-          EdgeTags: [
-            direction:out,
-            topic:MyAsyncSQSQueue2,
-            type:sqs
-          ],
-          Hash: 259194136856182253,
-          ParentHash: 3050662557753554578,
-          PathwayLatency: /w==,
-          EdgeLatency: /w==,
-          PayloadSize: /w==,
-          TimestampType: current
         },
         {
           EdgeTags: [
@@ -93,19 +214,6 @@
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
-          TimestampType: current
-        },
-        {
-          EdgeTags: [
-            direction:out,
-            topic:MyAsyncSQSQueue2,
-            type:sqs
-          ],
-          Hash: 5404698761231379539,
-          ParentHash: 259194136856182253,
-          PathwayLatency: /w==,
-          EdgeLatency: /w==,
-          PayloadSize: /w==,
           TimestampType: origin
         },
         {
@@ -118,32 +226,7 @@
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
-          TimestampType: current
-        },
-        {
-          EdgeTags: [
-            direction:out,
-            topic:MyAsyncSQSQueue,
-            type:sqs
-          ],
-          Hash: 16264089125033314072,
-          PathwayLatency: /w==,
-          EdgeLatency: /w==,
-          PayloadSize: /w==,
           TimestampType: origin
-        },
-        {
-          EdgeTags: [
-            direction:in,
-            topic:MyAsyncSQSQueue,
-            type:sqs
-          ],
-          Hash: 1683312031548079124,
-          ParentHash: 16264089125033314072,
-          PathwayLatency: /w==,
-          EdgeLatency: /w==,
-          PayloadSize: /w==,
-          TimestampType: current
         },
         {
           EdgeTags: [
@@ -169,33 +252,7 @@
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
-          TimestampType: current
-        },
-        {
-          EdgeTags: [
-            direction:in,
-            topic:MyAsyncSQSQueue2,
-            type:sqs
-          ],
-          Hash: 5506846081348465530,
-          ParentHash: 16264089125033314072,
-          PathwayLatency: /w==,
-          EdgeLatency: /w==,
-          PayloadSize: /w==,
           TimestampType: origin
-        },
-        {
-          EdgeTags: [
-            direction:in,
-            topic:MyAsyncSQSQueue2,
-            type:sqs
-          ],
-          Hash: 15579909628989406077,
-          ParentHash: 5506846081348465530,
-          PathwayLatency: /w==,
-          EdgeLatency: /w==,
-          PayloadSize: /w==,
-          TimestampType: current
         },
         {
           EdgeTags: [
@@ -221,32 +278,7 @@
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
-          TimestampType: current
-        },
-        {
-          EdgeTags: [
-            direction:in,
-            topic:MyAsyncSQSQueue2,
-            type:sqs
-          ],
-          Hash: 3989911314076112475,
-          ParentHash: 15579909628989406077,
-          PathwayLatency: /w==,
-          EdgeLatency: /w==,
-          PayloadSize: /w==,
           TimestampType: origin
-        },
-        {
-          EdgeTags: [
-            direction:in,
-            topic:MyAsyncSQSQueue2,
-            type:sqs
-          ],
-          Hash: 16534601073286278717,
-          PathwayLatency: /w==,
-          EdgeLatency: /w==,
-          PayloadSize: /w==,
-          TimestampType: current
         },
         {
           EdgeTags: [
@@ -271,33 +303,7 @@
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
-          TimestampType: current
-        },
-        {
-          EdgeTags: [
-            direction:in,
-            topic:MyAsyncSQSQueue2,
-            type:sqs
-          ],
-          Hash: 15593460580625897238,
-          ParentHash: 16534601073286278717,
-          PathwayLatency: /w==,
-          EdgeLatency: /w==,
-          PayloadSize: /w==,
           TimestampType: origin
-        },
-        {
-          EdgeTags: [
-            direction:in,
-            topic:MyAsyncSQSQueue2,
-            type:sqs
-          ],
-          Hash: 3172059909761244043,
-          ParentHash: 15593460580625897238,
-          PathwayLatency: /w==,
-          EdgeLatency: /w==,
-          PayloadSize: /w==,
-          TimestampType: current
         },
         {
           EdgeTags: [
