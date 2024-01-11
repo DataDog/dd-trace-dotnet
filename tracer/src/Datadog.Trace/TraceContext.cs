@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.AppSec;
@@ -17,6 +18,7 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace
 {
@@ -99,6 +101,8 @@ namespace Datadog.Trace
         /// </summary>
         internal IastRequestContext IastRequestContext => _iastRequestContext;
 
+        internal List<object> WafSecurityEvents { get; set; }
+
         internal void EnableIastInRequest()
         {
             if (Volatile.Read(ref _iastRequestContext) is null)
@@ -148,6 +152,11 @@ namespace Datadog.Trace
                     {
                         IastRequestContext.AddIastDisabledFlagToSpan(span);
                     }
+                }
+
+                if (Security.Instance.Enabled && WafSecurityEvents != null)
+                {
+                    Tags.SetTag(Datadog.Trace.Tags.AppSecJson, "{\"triggers\":" + JsonConvert.SerializeObject(WafSecurityEvents) + "}");
                 }
 
                 if (_isApiSecurity)
