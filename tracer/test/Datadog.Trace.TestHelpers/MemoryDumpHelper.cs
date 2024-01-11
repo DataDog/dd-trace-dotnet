@@ -69,7 +69,7 @@ namespace Datadog.Trace.TestHelpers
             _ = Task.Factory.StartNew(
                 () =>
                 {
-                    var args = $"-ma -accepteula -e {pid} {Path.GetTempPath()}";
+                    var args = $"-ma -accepteula -g -e {pid} {Path.GetTempPath()}";
 
                     using var dumpToolProcess = Process.Start(new ProcessStartInfo(_path, args)
                     {
@@ -95,7 +95,8 @@ namespace Datadog.Trace.TestHelpers
 
                     if (helper.StandardOutput.Contains("Dump count reached") || !helper.StandardOutput.Contains("Dump count not reached"))
                     {
-                        _output.Report($"procdump for process {pid} exited with code {helper.Process.ExitCode}");
+                        _output.Report($"[dump] procdump for process {pid} exited with code {helper.Process.ExitCode}");
+                        _output.Report($"[dump] Using {_path}");
 
                         _output.Report($"[dump][stdout] {helper.StandardOutput}");
                         _output.Report($"[dump][stderr] {helper.ErrorOutput}");
@@ -109,8 +110,6 @@ namespace Datadog.Trace.TestHelpers
                     }
                     else
                     {
-                        _output.Report($"[dump] Dumping the output as binary (have fun)");
-                        _output.Report(string.Join(",", helper.StandardOutput.Select(c => (int)c)));
                         tcs.TrySetCanceled();
                     }
                 },
