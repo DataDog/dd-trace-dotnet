@@ -20,6 +20,7 @@ namespace Datadog.Trace.PlatformHelpers
     internal static class ContainerMetadata
     {
         private const string ControlGroupsFilePath = "/proc/self/cgroup";
+        private const string ControlGroupsNamespacesFilePath = "/proc/self/ns/cgroup";
         private const string DefaultControlGroupsMountPath = "/sys/fs/cgroup";
         private const string ContainerRegex = @"[0-9a-f]{64}";
         // The second part is the PCF/Garden regexp. We currently assume no suffix ($) to avoid matching pod UIDs
@@ -29,8 +30,13 @@ namespace Datadog.Trace.PlatformHelpers
         private const string ContainerIdRegex = @"(" + UuidRegex + "|" + ContainerRegex + "|" + TaskRegex + @")(?:\.scope)?$";
         private const string CgroupRegex = @"^\d+:(.*):(.+)$";
 
+        // From https://github.com/torvalds/linux/blob/5859a2b1991101d6b978f3feb5325dad39421f29/include/linux/proc_ns.h#L41-L49
+        // Currently, host namespace inode number are hardcoded, which can be used to detect
+        // if we're running in host namespace or not (does not work when running in DinD)
+        private const long HostCgroupNamespaceInode = 0xEFFFFFFB;
+
         private static readonly Lazy<string> ContainerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
-        private static readonly Lazy<string> CgroupV2Inode = new Lazy<string>(GetCgroupV2InodeInternal, LazyThreadSafetyMode.ExecutionAndPublication);
+        private static readonly Lazy<string> CgroupInode = new Lazy<string>(GetCgroupInodeInternal, LazyThreadSafetyMode.ExecutionAndPublication);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContainerMetadata));
 
@@ -49,8 +55,9 @@ namespace Datadog.Trace.PlatformHelpers
         /// Return values may be:
         /// <list type="bullet">
         /// <item>"cid-&lt;containerID&gt;" if the container id is available.</item>
-        /// <item>"in-&lt;inode&gt;" if the container is running on cgroup v2.</item>
-        /// <item><c>null</c> if the container is running on cgroup v1 or an incompatible OS.</item>
+        /// <item>"in-&lt;inode&gt;" if the cgroup node controller's inode is available.
+        ///        We use the memory controller on cgroupv1 and the root cgroup on cgroupv2.</item>
+        /// <item><c>null</c> if neither are available.</item>
         /// </list>
         /// </summary>
         /// <returns>The entity id or <c>null</c>.</returns>
@@ -60,9 +67,9 @@ namespace Datadog.Trace.PlatformHelpers
             {
                 return $"cid-{containerId}";
             }
-            else if (CgroupV2Inode.Value is string cgroupV2Inode)
+            else if (CgroupInode.Value is string cgroupInode)
             {
-                return $"in-{cgroupV2Inode}";
+                return $"in-{cgroupInode}";
             }
             else
             {
@@ -103,7 +110,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         /// <param name="controlGroupsMountPath">Path to the cgroup mount point.</param>
         /// <param name="lines">Lines of text from a cgroup file.</param>
-        /// <returns>The cgroup v2 node inode if found; otherwise, <c>null</c>.</returns>
+        /// <returns>The cgroup node controller's inode if found; otherwise, <c>null</c>.</returns>
         public static string ExtractInodeFromCgroupLines(string controlGroupsMountPath, IEnumerable<string> lines)
         {
             var tuples = lines.Select(ParseControllerAndPathFromCgroupLine)
@@ -117,27 +124,9 @@ namespace Datadog.Trace.PlatformHelpers
                 string cgroupNodePath = target.Item2;
                 var path = Path.Combine(controlGroupsMountPath, controller, cgroupNodePath);
 
-                using var process = new Process();
-                process.StartInfo.FileName = "stat";
-                process.StartInfo.Arguments = $"-c '%i' {path}";
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.RedirectStandardOutput = true;
-                process.StartInfo.RedirectStandardError = true;
-                process.StartInfo.CreateNoWindow = true;
-                process.Start();
-
-                string output = process.StandardOutput.ReadToEnd();
-                var isExited = process.WaitForExit(1000);
-
-                if (!isExited)
+                if (TryStat(path, out long output))
                 {
-                    Log.Warning("\"{FileName} {Arguments}\" did not end after 1 second.", process.StartInfo.FileName, process.StartInfo.Arguments);
-                    continue;
-                }
-
-                if (process.ExitCode == 0 && long.TryParse(output, out _))
-                {
-                    return output;
+                    return output.ToString();
                 }
             }
 
@@ -179,14 +168,25 @@ namespace Datadog.Trace.PlatformHelpers
             return null;
         }
 
-        private static string GetCgroupV2InodeInternal()
+        private static string GetCgroupInodeInternal()
         {
             try
             {
                 var isLinux = string.Equals(FrameworkDescription.Instance.OSPlatform, "Linux", StringComparison.OrdinalIgnoreCase);
+                if (!isLinux)
+                {
+                    return null;
+                }
 
-                if (isLinux &&
-                    File.Exists(ControlGroupsFilePath))
+                // If we're running in the host cgroup namespace, do not get the inode.
+                // This would indicate that we're not in a container and the inode we'd
+                // return is not related to a container.
+                if (IsHostCgroupNamespaceInternal())
+                {
+                    return null;
+                }
+
+                if (File.Exists(ControlGroupsFilePath))
                 {
                     var lines = File.ReadLines(ControlGroupsFilePath);
                     return ExtractInodeFromCgroupLines(DefaultControlGroupsMountPath, lines);
@@ -198,6 +198,44 @@ namespace Datadog.Trace.PlatformHelpers
             }
 
             return null;
+        }
+
+        private static bool IsHostCgroupNamespaceInternal()
+        {
+            return File.Exists(ControlGroupsNamespacesFilePath) && TryStat(ControlGroupsNamespacesFilePath, out long output) && output == HostCgroupNamespaceInode;
+        }
+
+        private static bool TryStat(string path, out long result)
+        {
+            result = 0;
+
+            try
+            {
+                using var process = new Process();
+                process.StartInfo.FileName = "stat";
+                process.StartInfo.Arguments = $"-c '%i' {path}";
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.StartInfo.CreateNoWindow = true;
+                process.Start();
+
+                string output = process.StandardOutput.ReadToEnd();
+                var isExited = process.WaitForExit(1000);
+
+                if (!isExited)
+                {
+                    Log.Warning("\"{FileName} {Arguments}\" did not end after 1 second.", process.StartInfo.FileName, process.StartInfo.Arguments);
+                    return false;
+                }
+
+                return process.ExitCode == 0 && long.TryParse(output, out result);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error running stat.");
+                return false;
+            }
         }
     }
 }
