@@ -458,6 +458,24 @@ internal static class IastModule
         var vulnerability = (hash is null) ?
             new Vulnerability(vulnerabilityType, location, new Evidence(evidenceValue, tainted?.Ranges), integrationId) :
             new Vulnerability(vulnerabilityType, (int)hash, location, new Evidence(evidenceValue, tainted?.Ranges), integrationId);
+        // Print the stack trace to the console for debugging purposes
+        var stackTrace = new StackTrace(0, true);
+        Log.Information("Stack trace debugging: {StackTrace}", stackTrace);
+
+        // Sometimes we do not have the file/line but we have the method/class.
+        var stackFrame = frameInfo.StackFrame;
+        var filename = stackFrame?.GetFileName();
+        var line = string.IsNullOrEmpty(filename) ? 0 : (stackFrame?.GetFileLineNumber() ?? 0);
+        var vulnerability = new Vulnerability(
+            vulnerabilityType,
+            new Location(
+                stackFile: filename,
+                methodName: string.IsNullOrEmpty(filename) ? stackFrame?.GetMethod()?.Name : null,
+                line: line > 0 ? line : null,
+                spanId: currentSpan?.SpanId,
+                methodTypeName: string.IsNullOrEmpty(filename) ? GetMethodTypeName(stackFrame) : null),
+            new Evidence(evidenceValue, tainted?.Ranges),
+            integrationId);
 
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
