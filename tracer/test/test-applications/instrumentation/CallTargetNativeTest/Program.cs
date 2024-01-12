@@ -381,6 +381,8 @@ namespace CallTargetNativeTest
                         // GenericParentAbstractMethod();
                         Extras();
                         //.
+                        CallTargetBubbleUpExceptions();
+                        //.
                         CallSite();
                         break;
                     }
