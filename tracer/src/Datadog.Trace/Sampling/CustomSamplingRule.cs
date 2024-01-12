@@ -118,28 +118,13 @@ namespace Datadog.Trace.Sampling
                 return false;
             }
 
-            try
-            {
-                // if a regex is null (not specified), it always matches.
-                // stop as soon as we find a non-match.
-                return (_serviceNameRegex is null || _serviceNameRegex.Match(span.ServiceName).Success) &&
-                       (_operationNameRegex is null || _operationNameRegex.Match(span.OperationName).Success) &&
-                       (_resourceNameRegex is null || _resourceNameRegex.Match(span.ResourceName).Success) &&
-                       (_tagRegexes is null || _tagRegexes.Count == 0 || SamplingRuleHelper.MatchSpanByTags(span, _tagRegexes));
-            }
-            catch (RegexMatchTimeoutException e)
-            {
-                // flag regex so we don't try to use it again
-                _regexTimedOut = true;
-
-                Log.Error(
-                    e,
-                    """Regex timed out when trying to match value "{Input}" against pattern "{Pattern}".""",
-                    e.Input,
-                    e.Pattern);
-
-                return false;
-            }
+            return SamplingRuleHelper.IsMatch(
+                span,
+                serviceNameRegex: _serviceNameRegex,
+                operationNameRegex: _operationNameRegex,
+                resourceNameRegex: _resourceNameRegex,
+                tagRegexes: _tagRegexes,
+                out _regexTimedOut);
         }
 
         public float GetSamplingRate(Span span)

@@ -33,6 +33,7 @@ namespace Datadog.Trace.Sampling
         private readonly List<KeyValuePair<string, Regex>> _tagRegexes;
 
         private readonly IRateLimiter _limiter;
+        private bool _regexTimedOut;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanSamplingRule"/> class.
@@ -128,23 +129,25 @@ namespace Datadog.Trace.Sampling
         /// <inheritdoc/>
         public bool IsMatch(Span span)
         {
-            if (span is null)
-            {
-                return false;
-            }
-
             if (_alwaysMatch)
             {
                 // the rule is a catch-all
                 return true;
             }
 
-            // if a regex is null (not specified), it always matches.
-            // stop as soon as we find a non-match.
-            return (_serviceNameRegex is null || _serviceNameRegex.Match(span.ServiceName).Success) &&
-                   (_operationNameRegex is null || _operationNameRegex.Match(span.OperationName).Success) &&
-                   (_resourceNameRegex is null || _resourceNameRegex.Match(span.ResourceName).Success) &&
-                   (_tagRegexes is null || _tagRegexes.Count == 0 || SamplingRuleHelper.MatchSpanByTags(span, _tagRegexes));
+            if (_regexTimedOut)
+            {
+                // the regex had a valid format, but it timed out previously. stop trying to use it.
+                return false;
+            }
+
+            return SamplingRuleHelper.IsMatch(
+                span,
+                serviceNameRegex: _serviceNameRegex,
+                operationNameRegex: _operationNameRegex,
+                resourceNameRegex: _resourceNameRegex,
+                tagRegexes: _tagRegexes,
+                out _regexTimedOut);
         }
 
         /// <inheritdoc/>

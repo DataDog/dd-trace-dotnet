@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Datadog.Trace.Logging;
 
 #if NETCOREAPP3_1_OR_GREATER
 using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
@@ -17,9 +18,50 @@ namespace Datadog.Trace.Sampling;
 
 #nullable enable
 
-internal class SamplingRuleHelper
+internal static class SamplingRuleHelper
 {
-    public static bool MatchSpanByTags(Span span, List<KeyValuePair<string, Regex>> tagRegexes)
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SamplingRuleHelper));
+
+    public static bool IsMatch(
+        Span span,
+        Regex? serviceNameRegex,
+        Regex? operationNameRegex,
+        Regex? resourceNameRegex,
+        List<KeyValuePair<string, Regex>>? tagRegexes,
+        out bool timedOut)
+    {
+        timedOut = false;
+
+        if (span == null!)
+        {
+            return false;
+        }
+
+        try
+        {
+            // if a regex is null (not specified), it always matches.
+            // stop as soon as we find a non-match.
+            return (serviceNameRegex is null || serviceNameRegex.Match(span.ServiceName).Success) &&
+                   (operationNameRegex is null || operationNameRegex.Match(span.OperationName).Success) &&
+                   (resourceNameRegex is null || resourceNameRegex.Match(span.ResourceName).Success) &&
+                   (tagRegexes is null || tagRegexes.Count == 0 || MatchSpanByTags(span, tagRegexes));
+        }
+        catch (RegexMatchTimeoutException e)
+        {
+            // flag rule so we don't try to use one of its regexes again
+            timedOut = true;
+
+            Log.Error(
+                e,
+                """Regex timed out when trying to match value "{Input}" against pattern "{Pattern}".""",
+                e.Input,
+                e.Pattern);
+
+            return false;
+        }
+    }
+
+    private static bool MatchSpanByTags(Span span, List<KeyValuePair<string, Regex>> tagRegexes)
     {
         foreach (var pair in tagRegexes)
         {
