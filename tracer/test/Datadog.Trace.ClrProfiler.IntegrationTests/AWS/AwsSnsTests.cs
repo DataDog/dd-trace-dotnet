@@ -53,10 +53,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
 #if NETFRAMEWORK
-                var expectedCount = 3;
+                var expectedCount = 8;
                 var frameworkName = "NetFramework";
 #else
-                var expectedCount = 3;
+                var expectedCount = 4;
                 var frameworkName = "NetCore";
 #endif
                 var spans = agent.WaitForSpans(expectedCount);
@@ -68,7 +68,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.UseFileName($"{nameof(AwsSnsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
+                var suffix = GetSnapshotSuffix(packageVersion);
+
+                settings.UseFileName($"{nameof(AwsSnsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}{suffix}");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_sns");
                 settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_sns");
                 settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_sns");
@@ -89,6 +91,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 await VerifyHelper.VerifySpans(spans, settings);
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.AwsSns);
+
+                static string GetSnapshotSuffix(string packageVersion)
+                    => packageVersion switch
+                    {
+                        // Lower versions than specified don't contain PublishBatch method
+                        null or "" => ".pre3.7.101.88",
+                        { } v when new Version(v) < new Version("3.7.101.88") => ".pre3.7.101.88",
+                        _ => string.Empty
+                    };
             }
         }
     }

@@ -597,5 +597,22 @@
       "1.0.1",
       "1.*.*"
     ]
+  },
+  {
+    "IntegrationName": "Yarp",
+    "SampleProjectName": "Samples.Yarp.DistributedTracing",
+    "NugetPackageSearchName": "Yarp.ReverseProxy",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "3.0.0",
+    "SpecificVersions": [
+      "1.0.*",
+      "1.1.0",
+      "2.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "2.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp3.1", "net5.0"]
+    }
+    ]
   }
 ]

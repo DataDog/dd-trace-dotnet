@@ -214,6 +214,15 @@ partial class Build
             throw new InvalidOperationException($"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
         }
 
+        if (testDescription.EnvironmentVariables != null)
+        {
+            foreach (var (key, value) in testDescription.EnvironmentVariables)
+            {
+                // Use TryAdd to avoid overriding the environment variables set by the caller
+                envVariables.TryAdd(key, value);
+            }
+        }
+
         if (Framework == null)
         {
             foreach (var targetFramework in testDescription.SupportedFrameworks)
@@ -329,6 +338,7 @@ class ExplorationTestDescription
 
     public TargetFramework[] SupportedFrameworks { get; set; }
     public OSPlatform[] SupportedOSPlatforms { get; set; }
+    public (string key, string value)[] EnvironmentVariables { get; set; }
 
     public bool IsFrameworkSupported(TargetFramework targetFramework)
     {
@@ -433,6 +443,8 @@ class ExplorationTestDescription
                 PathToUnitTestProject = "src/UnitTests",
                 SupportedFrameworks = new[] { TargetFramework.NET6_0 },
                 SupportedOSPlatforms = new[] { OSPlatform.Windows },
+                // Workaround for https://github.com/dotnet/runtime/issues/95653
+                EnvironmentVariables = new[] { ("DD_CLR_ENABLE_INLINING", "0") },
             },
             //ExplorationTestName.ilspy => new ExplorationTestDescription()
             //{

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- NuGet -->
-    <Version>2.44.0</Version>
+    <Version>2.46.0</Version>
     <Title>Datadog APM</Title>
     <Description>Instrumentation library for Datadog APM.</Description>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -37,6 +37,7 @@
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />
+    <Reference Include="System.IO.Compression" />
   </ItemGroup>
 
   <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
@@ -62,7 +63,6 @@
     <None Remove="AppSec\Waf\ConfigFiles\rule-set.json" />
     <EmbeddedResource Include="AppSec\Waf\ConfigFiles\rule-set.json" />
     <None Remove="AppSec\Waf\ConfigFiles\apisecurity-config.json" />
-    <EmbeddedResource Include="AppSec\Waf\ConfigFiles\apisecurity-config.json" />
   </ItemGroup>
 
   <!-- Below this point is reserved for vendor items -->

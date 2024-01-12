@@ -210,6 +210,7 @@
    </assembly>
    <assembly fullname="System.Diagnostics.DiagnosticSource">
       <type fullname="System.Diagnostics.DiagnosticListener" />
+      <type fullname="System.Diagnostics.DistributedContextPropagator" />
    </assembly>
    <assembly fullname="System.Diagnostics.Process">
       <type fullname="System.Diagnostics.DataReceivedEventArgs" />
@@ -249,6 +250,9 @@
       <type fullname="System.IO.Compression.CompressionMode" />
       <type fullname="System.IO.Compression.DeflateStream" />
       <type fullname="System.IO.Compression.GZipStream" />
+      <type fullname="System.IO.Compression.ZipArchive" />
+      <type fullname="System.IO.Compression.ZipArchiveEntry" />
+      <type fullname="System.IO.Compression.ZipArchiveMode" />
    </assembly>
    <assembly fullname="System.IO.FileSystem">
       <type fullname="System.IO.Directory" />
@@ -315,6 +319,8 @@
    </assembly>
    <assembly fullname="System.Memory">
       <type fullname="System.Buffers.Binary.BinaryPrimitives" />
+      <type fullname="System.Buffers.StandardFormat" />
+      <type fullname="System.Buffers.Text.Utf8Formatter" />
       <type fullname="System.MemoryExtensions" />
       <type fullname="System.Runtime.InteropServices.MemoryMarshal" />
    </assembly>
@@ -326,6 +332,7 @@
       <type fullname="System.Net.Http.Headers.HttpRequestHeaders" />
       <type fullname="System.Net.Http.Headers.HttpResponseHeaders" />
       <type fullname="System.Net.Http.Headers.MediaTypeHeaderValue" />
+      <type fullname="System.Net.Http.Headers.NameValueHeaderValue" />
       <type fullname="System.Net.Http.HttpClient" />
       <type fullname="System.Net.Http.HttpClientHandler" />
       <type fullname="System.Net.Http.HttpContent" />
@@ -344,6 +351,7 @@
       <type fullname="System.Net.IPHostEntry" />
    </assembly>
    <assembly fullname="System.Net.Primitives">
+      <type fullname="System.Net.DecompressionMethods" />
       <type fullname="System.Net.DnsEndPoint" />
       <type fullname="System.Net.EndPoint" />
       <type fullname="System.Net.HttpStatusCode" />
@@ -356,6 +364,7 @@
       <type fullname="System.Net.Sockets.AddressFamily" />
       <type fullname="System.Net.Sockets.SocketError" />
       <type fullname="System.Net.Sockets.SocketException" />
+      <type fullname="System.Net.TransportContext" />
    </assembly>
    <assembly fullname="System.Net.Requests">
       <type fullname="System.Net.HttpWebRequest" />
@@ -936,6 +945,7 @@
       <type fullname="System.Threading.Monitor" />
       <type fullname="System.Threading.Mutex" />
       <type fullname="System.Threading.ReaderWriterLockSlim" />
+      <type fullname="System.Threading.SemaphoreSlim" />
       <type fullname="System.Threading.SpinWait" />
       <type fullname="System.Threading.SynchronizationContext" />
       <type fullname="System.Threading.ThreadLocal`1" />
@@ -991,4 +1001,5 @@
    </assembly>
    <assembly fullname="xunit.execution.desktop" />
    <assembly fullname="xunit.execution.dotnet" />
+   <assembly fullname="Yarp.ReverseProxy" />
 </linker>

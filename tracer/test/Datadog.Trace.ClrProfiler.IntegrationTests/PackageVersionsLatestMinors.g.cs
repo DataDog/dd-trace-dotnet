@@ -3885,5 +3885,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> Yarp =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETCOREAPP3_1
+                new object[] { "1.0.1" },
+                new object[] { "1.1.2" },
+#endif
+#if NET5_0
+                new object[] { "1.0.1" },
+                new object[] { "1.1.2" },
+#endif
+#if NET6_0
+                new object[] { "1.0.1" },
+                new object[] { "1.1.2" },
+                new object[] { "2.0.1" },
+                new object[] { "2.1.0" },
+#endif
+#if NET7_0
+                new object[] { "1.0.1" },
+                new object[] { "1.1.2" },
+                new object[] { "2.0.1" },
+                new object[] { "2.1.0" },
+#endif
+#if NET8_0
+                new object[] { "1.0.1" },
+                new object[] { "1.1.2" },
+                new object[] { "2.0.1" },
+                new object[] { "2.1.0" },
+#endif
+#endif
+            };
+
     }
 }

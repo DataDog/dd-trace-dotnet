@@ -13,6 +13,104 @@
 
 
 
+
+
+## [Release 2.45.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.45.0)
+
+## Summary
+
+* [Tracing] Fix trace context propagation when instrumenting a YARP reverse proxy
+* [dd-dotnet tool] Detect when aspnetcore out-of-process is not initialized
+* [ASM] Update waf 1.15.1 and rules 1.10.0
+* [ASM] Fix incorrect encoding of route data in WAF
+
+## Changes
+
+### Tracer
+* [Tracing] Fix trace context propagation when instrumenting a YARP reverse proxy (#5025)
+* [Tracer] Update SNS integration (#4712)
+* Add `PushStream` support to `IApiRequest` and support chunked-encoding (#4989)
+* Add peer.hostname tag to grpc clients (#4992)
+* Make custom sampling rules case-insensitive (#4999)
+
+### ASM
+* [ASM] Update waf 1.15.1 and rules 1.10.0 (#4958)
+* [ASM] Fix path params not being all transformed to waf encodable values (#5011)
+* [ASM] Division by zero could happen if param was 0 and apisecurity is enabled (#4975)
+
+### Tools
+* Detect when aspnetcore out-of-process is not initialized (#5012)
+
+### Build / Test
+* [ASM][IAST] Fix macOS build for IAST Instrumented tests (#4993)
+* [Build] Fix Tracer Native Build on MacOS ARM64 (#4969)
+* Change the echo output in Samples.Console (#4982)
+* More workarounds for Rider/NuGet bug (#4986)
+* Try to fix the RedirectInput test (#4998)
+* Explicitly sort files before generating missing nullability csv (#5000)
+* speedup CI step verify_files_without_nullability (#5003)
+* Disable inlining on automapper tests (#5004)
+* Remove SA1010 exclusions (#5007)
+* Make sure OsX ITests don't require dd_dotnet stuff (#5009)
+* little quality of life improvements on integration tests (#5016)
+* Fix OSX solution filter (#5027)
+* Small fixes for `MockTracerAgent` and `MockHttpParser` parsing (#4988)
+* Refactor `MockTracerAgent` to allow sending custom responses for any endpoint (#4997)
+
+### Miscellaneous
+* Making RCM async (#4996)
+* Add helpers for creating a sentinel file and for zipping debug logs (#4987)
+* Add `TracerFlareApi` implementation for sending requests to endpoint (#4990)
+* Add remote-configuration + manager support for tracer flare (#4991)
+* Add nullable annotations to the datadog logging files (#4994)
+* Add install signature to app-started telemetry event (#5002)
+* Restore log level after tracer flare (#5017)
+* Temporarily disable the tracer flare functionality (#5036)
+
+[Changes since 2.44.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.44.0...v2.45.0)
+
+## [Release 2.44.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.44.0)
+
+## Summary
+
+- [Tracer] Add support for NUnit 4.0. and Aersospike 7.0.0+
+- [Tracer] Add workaround for NGEN bug in .NET runtime
+- [Tracer] Add logs inject + agentless logging support for Microsoft.Extensions.Telemetry
+- [ASM] Missing HSTS header and unvalidated redirect vulnerability detection
+- [Dynamic Instrumentation] Added type support for PII redaction
+
+## Changes
+
+### Tracer
+* Add global tags to dynamic config (#4901)
+* Revert "Add CorProfilerInfo7::ApplyMetadata call" (#4945)
+* Add logs injection + direct log shipping for Microsoft.Extensions.Telemetry (#4951)
+* Add support for NUnit 4 (#4959)
+* Un-skip manual instrumentation tests and fix flake (#4960)
+* Stop caching exceptions in lazy (#4962)
+* Add support for aerospike v7 (#4974)
+* [IAST] Added missing nullable enable (#4977)
+
+### ASM
+* [ASM] Hsts header missing vulnerability (#4873)
+* [IAST] Unvalidated redirect vulnerability detection (#4925)
+* Add fix for null key in `SecurityCoordinator` (#4961)
+* [IAST] Hardcoded Secrets location bugfix (#4965)
+* [ASM] Add client IP feature to the AspNetMvc integration (#4970)
+
+### Dynamic Instrumentation
+* [Dynamic Instrumentation] Added type support for PII redaction (#4941)
+
+### Build / Test
+* Increase the dd-dotnet artifact tests timeout to 30 seconds. (#4947)
+* Remove test environment variable in Samples.Console (#4948)
+* [Build/Test] Add GitHub Action to track files without nullable reference types (#4954)
+* [Test Package Versions Bump] Updating package versions (#4956)
+* Add workaround for Rider bug (#4976)
+
+
+[Changes since 2.43.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.43.0...v2.44.0)
+
 ## [Release 2.43.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.43.0)
 
 ## Summary

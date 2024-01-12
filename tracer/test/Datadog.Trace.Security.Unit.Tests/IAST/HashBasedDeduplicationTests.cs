@@ -15,7 +15,7 @@ public class HashBasedDeduplicationTests
     public void GivenTheSameVulnerabilityInstance_WhenAddedToDeduplication_OnlyOneIsStored()
     {
         var instance = new HashBasedDeduplication();
-        var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
+        var ranges1 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
         var vulnerability = new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges1));
         Assert.True(instance.Add(vulnerability));
         Assert.False(instance.Add(vulnerability));
@@ -25,8 +25,8 @@ public class HashBasedDeduplicationTests
     public void GivenTwoIdenticalVulnerabilities_WhenAddedToDeduplication_OnlyOneIsStored()
     {
         var instance = new HashBasedDeduplication();
-        var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
-        var ranges2 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
+        var ranges1 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
+        var ranges2 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges1))));
         Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges2))));
     }
@@ -67,8 +67,8 @@ public class HashBasedDeduplicationTests
     public void GivenTwoDifferentVulnerabilitiesByEvidenceRangeStart_WhenAddedToDeduplication_OnlyOneIsStored()
     {
         var instance = new HashBasedDeduplication();
-        var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
-        var ranges2 = new Range[] { new Range(2, 1, new Source(0, "sourceName", "sourceValue")) };
+        var ranges1 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
+        var ranges2 = new Range[] { new Range(2, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges2))));
         Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges1))));
     }
@@ -77,8 +77,8 @@ public class HashBasedDeduplicationTests
     public void GivenTwoDifferentVulnerabilitiesByEvidenceRangeLength_WhenAddedToDeduplication_OneIsStored()
     {
         var instance = new HashBasedDeduplication();
-        var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
-        var ranges2 = new Range[] { new Range(1, 2, new Source(0, "sourceName", "sourceValue")) };
+        var ranges1 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
+        var ranges2 = new Range[] { new Range(1, 2, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges2))));
         Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges1))));
     }
@@ -87,8 +87,8 @@ public class HashBasedDeduplicationTests
     public void GivenTwoDifferentVulnerabilitiesByEvidenceSourceOrigin_WhenAddedToDeduplication_OneIsStored()
     {
         var instance = new HashBasedDeduplication();
-        var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
-        var ranges2 = new Range[] { new Range(1, 1, new Source(1, "sourceName", "sourceValue")) };
+        var ranges1 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
+        var ranges2 = new Range[] { new Range(1, 1, new Source(SourceType.RequestPath, "sourceName", "sourceValue")) };
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges2))));
         Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges1))));
     }
@@ -97,8 +97,8 @@ public class HashBasedDeduplicationTests
     public void GivenTwoDifferentVulnerabilitiesByEvidenceSourceName_WhenAddedToDeduplication_OneIsStored()
     {
         var instance = new HashBasedDeduplication();
-        var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
-        var ranges2 = new Range[] { new Range(1, 1, new Source(0, "sourceName2", "sourceValue")) };
+        var ranges1 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
+        var ranges2 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName2", "sourceValue")) };
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges2))));
         Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges1))));
     }
@@ -107,8 +107,8 @@ public class HashBasedDeduplicationTests
     public void GivenTwoDifferentVulnerabilitiesByEvidenceSourceValue_WhenAddedToDeduplication_OneIsStored()
     {
         var instance = new HashBasedDeduplication();
-        var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
-        var ranges2 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue2")) };
+        var ranges1 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
+        var ranges2 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue2")) };
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges2))));
         Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges1))));
     }
@@ -117,8 +117,8 @@ public class HashBasedDeduplicationTests
     public void GivenTwoDifferentVulnerabilitiesByEvidenceRangeSizeTwoElements_WhenAddedToDeduplication_OneIsStored()
     {
         var instance = new HashBasedDeduplication();
-        var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue1")), new Range(1, 1, new Source(0, "sourceName", "sourceValue1")) };
-        var ranges2 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue1")), new Range(1, 1, new Source(0, "sourceName", "sourceValue2")) };
+        var ranges1 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue1")), new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue1")) };
+        var ranges2 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue1")), new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue2")) };
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges2))));
         Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges1))));
     }
@@ -127,8 +127,8 @@ public class HashBasedDeduplicationTests
     public void GivenTwoDifferentVulnerabilitiesByEvidenceRangeSize_WhenAddedToDeduplication_OnlyOneIsStored()
     {
         var instance = new HashBasedDeduplication();
-        var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
-        var ranges2 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue2")), new Range(1, 1, new Source(0, "sourceName", "sourceValue2")) };
+        var ranges1 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
+        var ranges2 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue2")), new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue2")) };
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges2))));
         Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 0, null), new Evidence("MD5", ranges1))));
     }
@@ -137,7 +137,7 @@ public class HashBasedDeduplicationTests
     public void GivenTwoDifferentVulnerabilitiesBySpanId_WhenAddedToDeduplication_OnlyOneIsStored()
     {
         var instance = new HashBasedDeduplication();
-        var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
+        var ranges1 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 1, null), new Evidence("MD5", ranges1))));
         Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", null, 23, 33, null), new Evidence("MD5", ranges1))));
     }
@@ -146,7 +146,7 @@ public class HashBasedDeduplicationTests
     public void GivenTwoDifferentVulnerabilitiesByMethod_WhenAddedToDeduplication_BothAreStored()
     {
         var instance = new HashBasedDeduplication();
-        var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
+        var ranges1 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, "method1", null, 33, null), new Evidence("MD5", ranges1))));
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, "method2", null, 33, null), new Evidence("MD5", ranges1))));
     }
@@ -155,7 +155,7 @@ public class HashBasedDeduplicationTests
     public void GivenTwoDifferentVulnerabilitiesByMethodType_WhenAddedToDeduplication_BothAreStored()
     {
         var instance = new HashBasedDeduplication();
-        var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
+        var ranges1 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, "method1", null, 33, "type1"), new Evidence("MD5", ranges1))));
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, "method1", null, 33, "type2"), new Evidence("MD5", ranges1))));
     }
@@ -164,7 +164,7 @@ public class HashBasedDeduplicationTests
     public void GivenTwoDifferentVulnerabilitiesEqualMethodType_WhenAddedToDeduplication_OneIsStored()
     {
         var instance = new HashBasedDeduplication();
-        var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
+        var ranges1 = new Range[] { new Range(1, 1, new Source(SourceType.RequestBody, "sourceName", "sourceValue")) };
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, "method1", null, 33, "type1"), new Evidence("MD5", ranges1))));
         Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, "method1", null, 33, "type1"), new Evidence("MD5", ranges1))));
     }

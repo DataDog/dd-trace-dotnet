@@ -256,6 +256,7 @@ public class DiscoveryServiceTests
             dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",
             eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
             telemetryProxyEndpoint: "telemetryProxyEndpoint",
+            tracerFlareEndpoint: "tracerFlareEndpoint",
             clientDropP0: false);
 
         // same config
@@ -267,6 +268,7 @@ public class DiscoveryServiceTests
             dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",
             eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
             telemetryProxyEndpoint: "telemetryProxyEndpoint",
+            tracerFlareEndpoint: "tracerFlareEndpoint",
             clientDropP0: false);
 
         // different
@@ -278,6 +280,7 @@ public class DiscoveryServiceTests
             dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",
             eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
             telemetryProxyEndpoint: "telemetryProxyEndpoint",
+            tracerFlareEndpoint: "tracerFlareEndpoint",
             clientDropP0: false);
 
         config1.Equals(config2).Should().BeTrue();

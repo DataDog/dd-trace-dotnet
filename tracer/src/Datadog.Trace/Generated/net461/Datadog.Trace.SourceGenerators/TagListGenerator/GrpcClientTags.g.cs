@@ -20,12 +20,19 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] HostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
 #endif
+        // PeerHostnameBytes = MessagePack.Serialize("peer.hostname");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> PeerHostnameBytes => new byte[] { 173, 112, 101, 101, 114, 46, 104, 111, 115, 116, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] PeerHostnameBytes = new byte[] { 173, 112, 101, 101, 114, 46, 104, 111, 115, 116, 110, 97, 109, 101 };
+#endif
 
         public override string? GetTag(string key)
         {
             return key switch
             {
                 "out.host" => Host,
+                "peer.hostname" => PeerHostname,
                 _ => base.GetTag(key),
             };
         }
@@ -36,6 +43,9 @@ namespace Datadog.Trace.Tagging
             {
                 case "out.host": 
                     Host = value;
+                    break;
+                case "peer.hostname": 
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(GrpcClientTags));
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -50,6 +60,11 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("out.host", Host, HostBytes));
             }
 
+            if (PeerHostname is not null)
+            {
+                processor.Process(new TagItem<string>("peer.hostname", PeerHostname, PeerHostnameBytes));
+            }
+
             base.EnumerateTags(ref processor);
         }
 
@@ -59,6 +74,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("out.host (tag):")
                   .Append(Host)
+                  .Append(',');
+            }
+
+            if (PeerHostname is not null)
+            {
+                sb.Append("peer.hostname (tag):")
+                  .Append(PeerHostname)
                   .Append(',');
             }
 

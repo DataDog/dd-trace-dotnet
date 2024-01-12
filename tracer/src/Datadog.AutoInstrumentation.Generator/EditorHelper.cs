@@ -40,7 +40,7 @@ internal static class EditorHelper
 
     public static string GetIntegrationClassName(MethodDef methodDef)
     {
-        return CleanTypeName(methodDef.DeclaringType.Name + "_" + methodDef.Name);
+        return CleanTypeName(methodDef.DeclaringType.Name + methodDef.Name);
     }
 
     public static string CleanTypeName(string typeName)
@@ -86,13 +86,13 @@ internal static class EditorHelper
         var parameters = methodDef.Parameters.Where(p => !p.IsHiddenThisParameter).ToArray();
         if (parameters.Length == 0)
         {
-            return "new string[0]";
+            return "[]";
         }
 
         var sb = new StringBuilder();
-        sb.Append("new[] { ")
+        sb.Append('[')
             .Append(string.Join(", ", parameters.Select(p => CreateTypeName(p.Type))))
-            .Append(" }");
+            .Append(']');
         return sb.ToString();
     }
 
@@ -135,7 +135,7 @@ internal static class EditorHelper
 
                 if (i < genArgs.Count - 1)
                 {
-                    sb.Append(", ");
+                    sb.Append(",");
                 }
             }
 

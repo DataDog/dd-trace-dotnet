@@ -65,7 +65,7 @@ public class Diagnostics
         "CodeQuality",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "Exceptions should be passed in the Exception Parameter");
+        description: "Exceptions should be passed in the Exception Parameter.");
 
     internal static readonly DiagnosticDescriptor TemplateRule = new(
         TemplateDiagnosticId,
@@ -74,7 +74,7 @@ public class Diagnostics
         category: "CodeQuality",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "Checks for errors in the MessageTemplate");
+        description: "Checks for errors in the MessageTemplate.");
 
     internal static readonly DiagnosticDescriptor PropertyBindingRule = new(
         PropertyBindingDiagnosticId,
@@ -83,7 +83,7 @@ public class Diagnostics
         category: "CodeQuality",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "Checks whether properties and arguments match up");
+        description: "Checks whether properties and arguments match up.");
 
     internal static readonly DiagnosticDescriptor ConstantMessageTemplateRule = new(
         ConstantMessageTemplateDiagnosticId,
@@ -92,7 +92,7 @@ public class Diagnostics
         category: "CodeQuality",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "MessageTemplate must be a constant value to ensure caching and avoid interpolation issues");
+        description: "MessageTemplate must be a constant value to ensure caching and avoid interpolation issues.");
 
     internal static readonly DiagnosticDescriptor UniquePropertyNameRule = new(
         UniquePropertyNameDiagnosticId,
@@ -101,7 +101,7 @@ public class Diagnostics
         category: "CodeQuality",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "All property names in a MessageTemplate must be unique");
+        description: "All property names in a MessageTemplate must be unique.");
 
     internal static readonly DiagnosticDescriptor PascalPropertyNameRule = new(
         PascalPropertyNameDiagnosticId,
@@ -110,7 +110,7 @@ public class Diagnostics
         category: "CodeQuality",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Property names in a MessageTemplates should be Pascal Case for consistency");
+        description: "Property names in a MessageTemplates should be Pascal Case for consistency.");
 
     internal static readonly DiagnosticDescriptor DestructureAnonymousObjectsRule = new(
         DestructureAnonymousObjectsDiagnosticId,
@@ -119,7 +119,7 @@ public class Diagnostics
         category: "CodeQuality",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "Anonymous objects should use the '@' hint to ensure they are destructed");
+        description: "Anonymous objects should use the '@' hint to ensure they are destructed.");
 
     internal static readonly DiagnosticDescriptor UseCorrectContextualLoggerRule = new(
         UseCorrectContextualLoggerDiagnosticId,
@@ -128,14 +128,14 @@ public class Diagnostics
         category: "CodeQuality",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Logger instances should use the current class for context");
+        description: "Logger instances should use the current class for context.");
 
     internal static readonly DiagnosticDescriptor UseDatadogLoggerRule = new(
         UseDatadogLoggerDiagnosticId,
         title: "Incorrect logger type",
-        messageFormat: "Incorrect use of Serilog ILogger. Use IDatadogLogger instead",
+        messageFormat: "Incorrect use of Serilog ILogger. Use IDatadogLogger instead.",
         category: "CodeQuality",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "You should use the IDatadogLogger wrapper for logging");
+        description: "You should use the IDatadogLogger wrapper for logging.");
 }

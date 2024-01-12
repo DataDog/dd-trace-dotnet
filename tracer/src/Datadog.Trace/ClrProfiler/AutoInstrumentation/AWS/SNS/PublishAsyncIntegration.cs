@@ -15,7 +15,7 @@ using Datadog.Trace.Tagging;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
     /// <summary>
-    /// AWSSDK.SNS PublishAsync calltarget instrumentation
+    /// AWSSDK.SNS PublishAsync CallTarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "AWSSDK.SimpleNotificationService",
@@ -40,41 +40,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
         /// <param name="request">The request for the SNS operation</param>
         /// <param name="cancellationToken">CancellationToken value</param>
-        /// <returns>Calltarget state value</returns>
+        /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TPublishRequest>(TTarget instance, TPublishRequest request, CancellationToken cancellationToken)
+            where TPublishRequest : IPublishRequest, IDuckType
         {
-            if (request is null)
+            if (request.Instance is null)
             {
                 return CallTargetState.GetDefault();
             }
 
-            var requestProxy = request.DuckCast<IPublishRequest>();
-
             var scope = AwsSnsCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, out var tags);
-            if (tags is not null && requestProxy.TopicArn is not null)
+            if (tags is not null && request.TopicArn is not null)
             {
-                tags.TopicArn = requestProxy.TopicArn;
-                tags.TopicName = AwsSnsCommon.GetTopicName(requestProxy.TopicArn);
+                tags.TopicArn = request.TopicArn;
+                tags.TopicName = AwsSnsCommon.GetTopicName(request.TopicArn);
             }
 
             if (scope?.Span.Context is { } context)
             {
-                ContextPropagation.InjectHeadersIntoMessage<TPublishRequest>(requestProxy, context);
+                ContextPropagation.InjectHeadersIntoMessage<TTarget, TPublishRequest>(request, context);
             }
 
             return new CallTargetState(scope);
         }
 
-        /// <summary>
-        /// OnAsyncMethodEnd callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TResponse">Type of the response, in an async scenario will be T of Task of T</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="response">Response instance</param>
-        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-        /// <param name="state">Calltarget state value</param>
-        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);

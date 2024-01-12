@@ -23,7 +23,7 @@ jobs:
         run: Get-ChildItem –Path ".\tracer\missing-nullability-files.csv" | Remove-Item
 
       - name: "Regenerating missing-nullability-files.csv"
-        run: .\tracer\build.ps1 BuildTracerHome CreateMissingNullabilityFile
+        run: .\tracer\build.ps1 CreateMissingNullabilityFile
 
       - name: "Verify no changes in missing-nullability-files.csv"
         run: |

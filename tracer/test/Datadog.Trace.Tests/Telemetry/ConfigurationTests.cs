@@ -1,4 +1,4 @@
-﻿// <copyright file="ConfigurationTests.cs" company="Datadog">
+// <copyright file="ConfigurationTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -46,6 +46,9 @@ public class ConfigurationTests
         // Internal env vars that we only ever read from environment
         "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH",
         "DD_DOTNET_TRACER_HOME",
+        "DD_INSTRUMENTATION_INSTALL_ID",
+        "DD_INSTRUMENTATION_INSTALL_TYPE",
+        "DD_INSTRUMENTATION_INSTALL_TIME"
     };
 
     [Fact]

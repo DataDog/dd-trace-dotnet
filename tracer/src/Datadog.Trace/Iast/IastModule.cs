@@ -63,10 +63,10 @@ internal static class IastModule
                 foreach (var range in tainted.Ranges)
                 {
                     if (range.Source is null) { continue; }
-                    var origin = (SourceTypeName)range.Source.OriginByte;
-                    // TODO: reenable when SourceTypeName.Database gets defined -> if (origin == SourceTypeName.Database) { continue; }
-                    if (origin == SourceTypeName.RequestPath) { continue; }
-                    if (origin == SourceTypeName.RequestHeaderValue && range.Source.Name == "Host") { continue; }
+                    var origin = range.Source.Origin;
+                    // TODO: reenable when SourceTypeName.Database gets defined -> if (origin == SourceType.Database) { continue; }
+                    if (origin == SourceType.RequestPath) { continue; }
+                    if (origin == SourceType.RequestHeaderValue && range.Source.Name == "Host") { continue; }
 
                     return true;
                 }
@@ -86,8 +86,8 @@ internal static class IastModule
             foreach (var range in tainted.Ranges)
             {
                 if (range.Source is null) { return false; }
-                var origin = (SourceTypeName)range.Source.OriginByte;
-                if (origin != SourceTypeName.RequestHeaderValue || !ReferrerHeaderName.Equals(range.Source.Name, StringComparison.OrdinalIgnoreCase))
+                var origin = range.Source.Origin;
+                if (origin != SourceType.RequestHeaderValue || !ReferrerHeaderName.Equals(range.Source.Name, StringComparison.OrdinalIgnoreCase))
                 {
                     return false;
                 }

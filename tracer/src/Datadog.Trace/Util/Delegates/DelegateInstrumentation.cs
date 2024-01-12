@@ -824,17 +824,17 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
+                    if (SetContinuation is { } setContinuation)
+                    {
+                        returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
+                    }
+
                     returnValue = Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
                 }
                 catch (Exception innerException)
                 {
                     Callbacks.OnException(sender, innerException);
                 }
-            }
-
-            if (SetContinuation is { } setContinuation)
-            {
-                returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
             }
 
             return returnValue;
@@ -894,17 +894,17 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
+                    if (SetContinuation is { } setContinuation)
+                    {
+                        returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
+                    }
+
                     returnValue = Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
                 }
                 catch (Exception innerException)
                 {
                     Callbacks.OnException(sender, innerException);
                 }
-            }
-
-            if (SetContinuation is { } setContinuation)
-            {
-                returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
             }
 
             return returnValue;
@@ -965,17 +965,17 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
+                    if (SetContinuation is { } setContinuation)
+                    {
+                        returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
+                    }
+
                     returnValue = Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
                 }
                 catch (Exception innerException)
                 {
                     Callbacks.OnException(sender, innerException);
                 }
-            }
-
-            if (SetContinuation is { } setContinuation)
-            {
-                returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
             }
 
             return returnValue;
@@ -1037,17 +1037,17 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
+                    if (SetContinuation is { } setContinuation)
+                    {
+                        returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
+                    }
+
                     returnValue = Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
                 }
                 catch (Exception innerException)
                 {
                     Callbacks.OnException(sender, innerException);
                 }
-            }
-
-            if (SetContinuation is { } setContinuation)
-            {
-                returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
             }
 
             return returnValue;
@@ -1110,17 +1110,17 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
+                    if (SetContinuation is { } setContinuation)
+                    {
+                        returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
+                    }
+
                     returnValue = Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
                 }
                 catch (Exception innerException)
                 {
                     Callbacks.OnException(sender, innerException);
                 }
-            }
-
-            if (SetContinuation is { } setContinuation)
-            {
-                returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
             }
 
             return returnValue;
@@ -1184,17 +1184,17 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
+                    if (SetContinuation is { } setContinuation)
+                    {
+                        returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
+                    }
+
                     returnValue = Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
                 }
                 catch (Exception innerException)
                 {
                     Callbacks.OnException(sender, innerException);
                 }
-            }
-
-            if (SetContinuation is { } setContinuation)
-            {
-                returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
             }
 
             return returnValue;

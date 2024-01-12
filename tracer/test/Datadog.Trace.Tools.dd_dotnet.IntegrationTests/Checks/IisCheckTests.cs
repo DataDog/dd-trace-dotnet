@@ -132,7 +132,41 @@ public class IisCheckTests : TestHelper
 
             console.Output.Should().Contain(Resources.OutOfProcess);
             console.Output.Should().NotContain(Resources.AspNetCoreProcessNotFound);
+            console.Output.Should().NotContain(Resources.AspNetCoreOutOfProcessNotFound);
             console.Output.Should().Contain(Resources.IisNoIssue);
+        }
+        finally
+        {
+            Process.Start("powershell", $"{buildPs1} GacRemove --framework net461").WaitForExit();
+        }
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task OutOfProcessNotInitialized()
+    {
+        EnsureWindowsAndX64();
+
+        var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
+
+        try
+        {
+            // GacFixture is not compatible with .NET Core, use the Nuke target instead
+            Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
+
+            using var iisFixture = await StartIis(IisAppType.AspNetCoreOutOfProcess, sendRequest: false);
+
+            using var console = ConsoleHelper.Redirect();
+
+            var result = await CheckIisCommand.ExecuteAsync(
+                             "sample",
+                             iisFixture.IisExpress.ConfigFile,
+                             iisFixture.IisExpress.Process.Id,
+                             MockRegistryService());
+
+            result.Should().Be(1);
+
+            console.Output.Should().Contain(Resources.AspNetCoreOutOfProcessNotFound);
         }
         finally
         {
@@ -245,7 +279,7 @@ public class IisCheckTests : TestHelper
         return registryService.Object;
     }
 
-    private async Task<IisFixture> StartIis(IisAppType appType)
+    private async Task<IisFixture> StartIis(IisAppType appType, bool sendRequest = true)
     {
         var fixture = new IisFixture { ShutdownPath = "/shutdown" };
 
@@ -259,9 +293,12 @@ public class IisCheckTests : TestHelper
             throw;
         }
 
-        // Send a request to initialize the app
-        using var httpClient = new HttpClient();
-        await httpClient.GetAsync($"http://localhost:{fixture.HttpPort}/");
+        if (sendRequest)
+        {
+            // Send a request to initialize the app
+            using var httpClient = new HttpClient();
+            await httpClient.GetAsync($"http://localhost:{fixture.HttpPort}/");
+        }
 
         return fixture;
     }

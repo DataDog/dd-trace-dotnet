@@ -1081,7 +1081,7 @@ services:
     ports:
       - "4566:4566"
     volumes:
-      - "./.localstack:/tmp/localstack"
+      - "./.localstack:/tmp"
 
   elasticsearch7_osx_arm64:
     image: elasticsearch:7.10.1

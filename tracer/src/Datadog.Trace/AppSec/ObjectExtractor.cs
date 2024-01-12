@@ -44,7 +44,6 @@ namespace Datadog.Trace.AppSec
         {
             var visited = new HashSet<object>();
             var item = ExtractType(body.GetType(), body, 0, visited);
-
             return item;
         }
 
@@ -174,6 +173,13 @@ namespace Datadog.Trace.AppSec
                 return ExtractDictionary(value, itemType, depth, visited);
             }
 
+            // case of System.Web.Routing.RouteValueDictionary and types inheriting IDictionary
+            var iDictionaryType = typeof(IDictionary<string, object>);
+            if (iDictionaryType.IsAssignableFrom(itemType))
+            {
+                return ExtractDictionary(value, iDictionaryType, depth, visited);
+            }
+
             if (WafProcessableTypes.Contains(itemType))
             {
                 return value;
@@ -199,9 +205,19 @@ namespace Datadog.Trace.AppSec
             var keyProp = tkvp.GetProperty("Key");
             var valueProp = tkvp.GetProperty("Value");
 
-            var sourceDict = (ICollection)value;
-            var dictSize = Math.Min(WafConstants.MaxContainerSize, sourceDict.Count);
-            var items = new Dictionary<string, object>(dictSize);
+            var sourceDict = value as IEnumerable;
+
+            Dictionary<string, object> items;
+            // some types, like System.Web.Routing.RouteValueDictionary don't inherit ICollection, but ICollection<,> which never inherits ICollection but IEnumerable instead.
+            if (value is ICollection sourceColl)
+            {
+                var dictSize = Math.Min(WafConstants.MaxContainerSize, sourceColl.Count);
+                items = new Dictionary<string, object>(dictSize);
+            }
+            else
+            {
+                items = new Dictionary<string, object>();
+            }
 
             foreach (var item in sourceDict)
             {

@@ -55,20 +55,10 @@ namespace Datadog.Trace.AppSec.Waf
         internal static InitResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? embeddedRulesetPath = null, JToken? rulesFromRcm = null, bool setupWafSchemaExtraction = false)
         {
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
-            var isCompatible = wafConfigurator.CheckVersionCompatibility();
-            if (!isCompatible)
-            {
-                return InitResult.FromIncompatibleWaf();
-            }
 
             // set the log level and setup the logger
             wafLibraryInvoker.SetupLogging(GlobalSettings.Instance.DebugEnabledInternal);
             var jtokenRoot = rulesFromRcm ?? WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath)!;
-            if (setupWafSchemaExtraction)
-            {
-                var schemaConfig = WafConfigurator.DeserializeSchemaExtractionConfig();
-                jtokenRoot.Children().Last().AddAfterSelf(schemaConfig!.Children());
-            }
 
             var argCache = new List<Obj>();
             var configObj = Encoder.Encode(jtokenRoot, wafLibraryInvoker, argCache, applySafetyLimits: false);
@@ -190,7 +180,8 @@ namespace Datadog.Trace.AppSec.Waf
         }
 
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)
-        public WafReturnCode Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds) => _wafLibraryInvoker.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+        public WafReturnCode Run(IntPtr contextHandle, IntPtr rawPersistentData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds)
+            => _wafLibraryInvoker.Run(contextHandle, rawPersistentData, IntPtr.Zero, ref retNative, timeoutMicroSeconds);
 
         internal static List<RuleData> MergeRuleData(IEnumerable<RuleData> res)
         {

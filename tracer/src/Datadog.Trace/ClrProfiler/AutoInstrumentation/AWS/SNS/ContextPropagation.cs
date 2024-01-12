@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
@@ -34,12 +35,40 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             messageAttributes[SnsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(stream);
         }
 
-        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext)
+        public static void InjectHeadersIntoBatch<TClientMarker, TBatchRequest>(TBatchRequest request, SpanContext context)
+            where TBatchRequest : IPublishBatchRequest
         {
-            // add distributed tracing headers to the message
+            // Skip adding Trace Context if entries don't exist or empty.
+            if (request.PublishBatchRequestEntries is not { Count: > 0 })
+            {
+                return;
+            }
+
+            foreach (var t in request.PublishBatchRequestEntries)
+            {
+                var entry = t?.DuckCast<IContainsMessageAttributes>();
+
+                if (entry != null)
+                {
+                    InjectHeadersIntoMessage<TClientMarker, IContainsMessageAttributes>(entry, context);
+                }
+            }
+        }
+
+        public static void InjectHeadersIntoMessage<TClientMarker, TMessageRequest>(TMessageRequest carrier, SpanContext context)
+            where TMessageRequest : IContainsMessageAttributes
+        {
+            // Skip adding Trace Context if there is no more space left to inject.
+            // AWS SNS Message Attributes limit is 10.
+            if (carrier.MessageAttributes is { Count: >= 10 })
+            {
+                return;
+            }
+
+            // Add distributed tracing headers to the message.
             if (carrier.MessageAttributes == null)
             {
-                carrier.MessageAttributes = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributes();
+                carrier.MessageAttributes = CachedMessageHeadersHelper<TClientMarker>.CreateMessageAttributes();
             }
             else
             {
@@ -75,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             }
 
             // Inject the tracing headers
-            Inject<TMessageRequest>(spanContext, carrier.MessageAttributes);
+            Inject<TClientMarker>(context, carrier.MessageAttributes);
         }
 
         private readonly struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>

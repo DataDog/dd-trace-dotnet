@@ -106,6 +106,7 @@ static const WSTRING _fixedMethodExcludeFilters[] = {
     WStr("System.ServiceModel*"),
     WStr("System.Web.Http*"),
     WStr("MongoDB.*"),
+    WStr("JetBrains*"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedMethodAttributeExcludeFilters[] = {
