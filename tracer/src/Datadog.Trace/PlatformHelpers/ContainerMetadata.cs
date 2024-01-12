@@ -28,7 +28,7 @@ namespace Datadog.Trace.PlatformHelpers
         private const string UuidRegex = @"[0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{12}|(?:[0-9a-f]{8}(?:-[0-9a-f]{4}){4}$)";
         private const string TaskRegex = @"[0-9a-f]{32}-\d+";
         private const string ContainerIdRegex = @"(" + UuidRegex + "|" + ContainerRegex + "|" + TaskRegex + @")(?:\.scope)?$";
-        private const string CgroupRegex = @"^\d+:(.*):(.+)$";
+        private const string CgroupRegex = @"^\d+:([^:]*):(.+)$";
 
         // From https://github.com/torvalds/linux/blob/5859a2b1991101d6b978f3feb5325dad39421f29/include/linux/proc_ns.h#L41-L49
         // Currently, host namespace inode number are hardcoded, which can be used to detect
@@ -105,7 +105,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// <summary>
         /// Uses regular expression to try to extract controller/cgroup-node-path pairs from the specified string
         /// then, using these pairs, will return the first inode found from the concatenated path
-        /// <paramref name="controlGroupsMountPath"/>/controller/cgroupNodePath.
+        /// <paramref name="controlGroupsMountPath"/>/controller/cgroup-node-path.
         /// If no inode could be found, this will return <c>null</c>.
         /// </summary>
         /// <param name="controlGroupsMountPath">Path to the cgroup mount point.</param>
@@ -124,7 +124,7 @@ namespace Datadog.Trace.PlatformHelpers
                 string cgroupNodePath = target.Item2;
                 var path = Path.Combine(controlGroupsMountPath, controller, cgroupNodePath);
 
-                if (TryStat(path, out long output))
+                if (TryGetInode(path, out long output))
                 {
                     return output.ToString();
                 }
@@ -202,10 +202,10 @@ namespace Datadog.Trace.PlatformHelpers
 
         private static bool IsHostCgroupNamespaceInternal()
         {
-            return File.Exists(ControlGroupsNamespacesFilePath) && TryStat(ControlGroupsNamespacesFilePath, out long output) && output == HostCgroupNamespaceInode;
+            return File.Exists(ControlGroupsNamespacesFilePath) && TryGetInode(ControlGroupsNamespacesFilePath, out long output) && output == HostCgroupNamespaceInode;
         }
 
-        private static bool TryStat(string path, out long result)
+        private static bool TryGetInode(string path, out long result)
         {
             result = 0;
 
@@ -233,7 +233,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Error running stat.");
+                Log.Warning(ex, "Error obtaining inode.");
                 return false;
             }
         }

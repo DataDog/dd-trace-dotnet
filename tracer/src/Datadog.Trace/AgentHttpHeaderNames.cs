@@ -45,7 +45,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// The unique identifier of the container where the traced application is running, either as the container id
-        /// or the inode number.
+        /// or the cgroup node controller's inode.
         /// This differs from <see cref="ContainerId"/> which is always the container id, which may not always be
         /// accessible due to new Pod Security Standards starting in Kubernetes 1.25.
         /// </summary>
