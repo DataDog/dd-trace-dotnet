@@ -572,6 +572,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             var returnedName = Combine(headerName, cookieName?.Value, defaultHeaderName);
             var returnedValue = UseValueFromOriginHeader ? originValue.ToString() : Combine(headerValue, cookieValue?.Value, defaultHeaderValue);
             Response.Headers.Add(returnedName, returnedValue);
+            Response.Headers.Add("extraName", "extraValue");
             return Content($"returned header {returnedName},{returnedValue}");
         }
 

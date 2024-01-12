@@ -15,6 +15,7 @@ using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using Samples.Security.Data;
 
@@ -677,7 +678,15 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             var returnedName = Combine(headerName, cookieName, defaultHeaderName);
             var returnedValue = UseValueFromOriginHeader ? originValue.ToString() : Combine(headerValue, cookieValue, defaultHeaderValue);
-            Response.Headers.Add(returnedName, returnedValue);
+
+            if (returnedName != "extraName")
+            {
+                Response.Headers.Add(returnedName, returnedValue);
+            }
+            else
+            {
+                Response.Headers.Add("extraName", new StringValues(new[] { returnedValue, "extraValue" }));
+            }
             return Content($"returned header {returnedName},{returnedValue}");
         }
 

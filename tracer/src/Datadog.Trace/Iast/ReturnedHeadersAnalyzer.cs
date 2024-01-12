@@ -65,73 +65,37 @@ internal static class ReturnedHeadersAnalyzer
         try
         {
             IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.HeaderInjection);
+            var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
+            var iastRequestContext = currentSpan?.Context?.TraceContext?.IastRequestContext;
 
-            var tracer = Tracer.Instance;
-            var currentSpan = (tracer.ActiveScope as Scope)?.Span;
-            var traceContext = currentSpan?.Context?.TraceContext;
+            if (iastRequestContext is null)
+            {
+                return;
+            }
 
 #if NETFRAMEWORK
-            foreach (var headerKey in responseHeaders.AllKeys)
-#else
-            foreach (var headerKey in responseHeaders.Keys)
-#endif
+            for (int i = 0; i < responseHeaders.Count; i++)
             {
-                if (string.IsNullOrWhiteSpace(headerKey))
+                var headerKey = responseHeaders.GetKey(i);
+                var headerValues = responseHeaders.GetValues(i);
+#else
+            foreach (var headerKeyValue in responseHeaders)
+            {
+                var headerKey = headerKeyValue.Key;
+                var headerValues = headerKeyValue.Value;
+#endif
+                if (string.IsNullOrWhiteSpace(headerKey) || IsHeaderInjectionException(headerKey))
                 {
                     continue;
                 }
 
-                bool isHeaderInjectionException = false;
-                foreach (var excludeType in headerInjectionExceptions)
+                foreach (var headerValue in headerValues)
                 {
-                    if (excludeType.Equals((string)headerKey, StringComparison.OrdinalIgnoreCase))
+                    if (IsHeaderInjectionVulnerable(headerKey, headerValue, iastRequestContext))
                     {
-                        isHeaderInjectionException = true;
-                        break;
+                        IastModule.OnHeaderInjection(integrationId, headerKey, headerValue);
                     }
                 }
-
-                if (isHeaderInjectionException)
-                {
-                    continue;
-                }
-
-                string headerValue = responseHeaders[headerKey];
-
-                if (string.IsNullOrWhiteSpace(headerValue))
-                {
-                    continue;
-                }
-
-                var taintedValue = traceContext?.IastRequestContext?.GetTainted(headerValue);
-
-                if (taintedValue is null || taintedValue.Ranges.Length == 0)
-                {
-                    continue;
-                }
-
-                if (headerKey.Equals("set-cookie", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (OnlyCookieValueSources(taintedValue))
-                    {
-                        continue;
-                    }
-                }
-
-                if (headerKey.StartsWith("access-control-allow-", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (ComesFromOriginHeader(taintedValue))
-                    {
-                        continue;
-                    }
-                }
-
-                if (IsPropagationHeader(headerKey, taintedValue))
-                {
-                    continue;
-                }
-
-                IastModule.OnHeaderInjection(integrationId, headerKey, headerValue);
             }
         }
         catch (Exception error)
@@ -140,7 +104,43 @@ internal static class ReturnedHeadersAnalyzer
         }
     }
 
-    private static bool OnlyCookieValueSources(TaintedObject taintedValue)
+    private static bool IsHeaderInjectionVulnerable(string headerKey, string headerValue, IastRequestContext iastrequestContext)
+    {
+        if (string.IsNullOrWhiteSpace(headerValue))
+        {
+            return false;
+        }
+
+        var taintedValue = iastrequestContext.GetTainted(headerValue);
+
+        if (taintedValue is null ||
+            taintedValue.Ranges.Length == 0 ||
+            (headerKey.Equals("set-cookie", StringComparison.OrdinalIgnoreCase) && OnlyContainsCookieValueSources(taintedValue)) ||
+            (headerKey.StartsWith("access-control-allow-", StringComparison.OrdinalIgnoreCase) && ComesFromOriginHeader(taintedValue)) ||
+            IsPropagationHeader(headerKey, taintedValue))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsHeaderInjectionException(string headerKey)
+    {
+        bool isHeaderInjectionException = false;
+        foreach (var excludeType in headerInjectionExceptions)
+        {
+            if (excludeType.Equals(headerKey, StringComparison.OrdinalIgnoreCase))
+            {
+                isHeaderInjectionException = true;
+                break;
+            }
+        }
+
+        return (isHeaderInjectionException);
+    }
+
+    private static bool OnlyContainsCookieValueSources(TaintedObject taintedValue)
     {
         foreach (var range in taintedValue.Ranges)
         {
