@@ -617,6 +617,16 @@ namespace Datadog.Trace.Configuration
         internal IConfigurationTelemetry Telemetry { get; }
 
         /// <summary>
+        /// Gets a value indicating whether remote configuration is potentially available.
+        /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios
+        /// </summary>
+        internal bool IsRemoteConfigurationAvailable =>
+            !(IsRunningInAzureAppService
+           || IsRunningInAzureFunctionsConsumptionPlan
+           || IsRunningInGCPFunctions
+           || LambdaMetadata.IsRunningInLambda);
+
+        /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources
         /// returned by <see cref="GlobalConfigurationSource.Instance"/>.
         /// </summary>

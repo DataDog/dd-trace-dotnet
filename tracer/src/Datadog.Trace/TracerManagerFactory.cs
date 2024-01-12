@@ -156,31 +156,40 @@ namespace Datadog.Trace
 
             dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName);
 
-            if (remoteConfigurationManager == null)
+            if (settings.IsRemoteConfigurationAvailable)
             {
-                var sw = Stopwatch.StartNew();
+                if (remoteConfigurationManager == null)
+                {
+                    var sw = Stopwatch.StartNew();
 
-                var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
-                var rcmApi = RemoteConfigurationApiFactory.Create(settings.ExporterInternal, rcmSettings, discoveryService);
+                    var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
+                    var rcmApi = RemoteConfigurationApiFactory.Create(settings.ExporterInternal, rcmSettings, discoveryService);
 
-                // Service Name must be lowercase, otherwise the agent will not be able to find the service
-                var serviceName = TraceUtil.NormalizeTag(settings.ServiceNameInternal ?? defaultServiceName);
+                    // Service Name must be lowercase, otherwise the agent will not be able to find the service
+                    var serviceName = TraceUtil.NormalizeTag(settings.ServiceNameInternal ?? defaultServiceName);
 
-                remoteConfigurationManager =
-                    RemoteConfigurationManager.Create(
-                        discoveryService,
-                        rcmApi,
-                        rcmSettings,
-                        serviceName,
-                        settings,
-                        gitMetadataTagsProvider,
-                        RcmSubscriptionManager.Instance);
+                    remoteConfigurationManager =
+                        RemoteConfigurationManager.Create(
+                            discoveryService,
+                            rcmApi,
+                            rcmSettings,
+                            serviceName,
+                            settings,
+                            gitMetadataTagsProvider,
+                            RcmSubscriptionManager.Instance);
 
-                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
+                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
+                }
+
+                dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance);
+                tracerFlareManager ??= new TracerFlareManager(discoveryService, RcmSubscriptionManager.Instance, telemetry, TracerFlareApi.Create(settings.ExporterInternal));
             }
-
-            dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance);
-            tracerFlareManager ??= new TracerFlareManager(discoveryService, RcmSubscriptionManager.Instance, telemetry, TracerFlareApi.Create(settings.ExporterInternal));
+            else
+            {
+                remoteConfigurationManager ??= new NullRemoteConfigurationManager();
+                dynamicConfigurationManager ??= new NullDynamicConfigurationManager();
+                tracerFlareManager ??= new NullTracerFlareManager();
+            }
 
             return CreateTracerManagerFrom(
                 settings,
