@@ -5,7 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -20,14 +20,17 @@ namespace Datadog.Trace.PlatformHelpers
     internal static class ContainerMetadata
     {
         private const string ControlGroupsFilePath = "/proc/self/cgroup";
+        private const string DefaultControlGroupsMountPath = "/sys/fs/cgroup";
         private const string ContainerRegex = @"[0-9a-f]{64}";
         // The second part is the PCF/Garden regexp. We currently assume no suffix ($) to avoid matching pod UIDs
         // See https://github.com/DataDog/datadog-agent/blob/7.40.x/pkg/util/cgroups/reader.go#L50
         private const string UuidRegex = @"[0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{12}|(?:[0-9a-f]{8}(?:-[0-9a-f]{4}){4}$)";
         private const string TaskRegex = @"[0-9a-f]{32}-\d+";
         private const string ContainerIdRegex = @"(" + UuidRegex + "|" + ContainerRegex + "|" + TaskRegex + @")(?:\.scope)?$";
+        private const string CgroupRegex = @"^\d+:(.*):(.+)$";
 
         private static readonly Lazy<string> ContainerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
+        private static readonly Lazy<string> CgroupV2Inode = new Lazy<string>(GetCgroupV2InodeInternal, LazyThreadSafetyMode.ExecutionAndPublication);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContainerMetadata));
 
@@ -42,13 +45,39 @@ namespace Datadog.Trace.PlatformHelpers
         }
 
         /// <summary>
+        /// Gets the unique identifier of the container executing the code.
+        /// Return values may be:
+        /// <list type="bullet">
+        /// <item>"cid-&lt;containerID&gt;" if the container id is available.</item>
+        /// <item>"in-&lt;inode&gt;" if the container is running on cgroup v2.</item>
+        /// <item><c>null</c> if the container is running on cgroup v1 or an incompatible OS.</item>
+        /// </list>
+        /// </summary>
+        /// <returns>The entity id or <c>null</c>.</returns>
+        public static string GetEntityId()
+        {
+            if (ContainerId.Value is string containerId)
+            {
+                return $"cid-{containerId}";
+            }
+            else if (CgroupV2Inode.Value is string cgroupV2Inode)
+            {
+                return $"in-{cgroupV2Inode}";
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Uses regular expression to try to extract a container id from the specified string.
         /// </summary>
         /// <param name="lines">Lines of text from a cgroup file.</param>
         /// <returns>The container id if found; otherwise, <c>null</c>.</returns>
-        public static string ParseCgroupLines(IEnumerable<string> lines)
+        public static string ParseContainerIdFromCgroupLines(IEnumerable<string> lines)
         {
-            return lines.Select(ParseCgroupLine)
+            return lines.Select(ParseContainerIdFromCgroupLine)
                         .FirstOrDefault(id => !string.IsNullOrWhiteSpace(id));
         }
 
@@ -57,12 +86,73 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         /// <param name="line">A single line from a cgroup file.</param>
         /// <returns>The container id if found; otherwise, <c>null</c>.</returns>
-        public static string ParseCgroupLine(string line)
+        public static string ParseContainerIdFromCgroupLine(string line)
         {
             var lineMatch = Regex.Match(line, ContainerIdRegex);
 
             return lineMatch.Success
                        ? lineMatch.Groups[1].Value
+                       : null;
+        }
+
+        /// <summary>
+        /// Uses regular expression to try to extract controller/cgroup-node-path pairs from the specified string
+        /// then, using these pairs, will return the first inode found from the concatenated path
+        /// <paramref name="controlGroupsMountPath"/>/controller/cgroupNodePath.
+        /// If no inode could be found, this will return <c>null</c>.
+        /// </summary>
+        /// <param name="controlGroupsMountPath">Path to the cgroup mount point.</param>
+        /// <param name="lines">Lines of text from a cgroup file.</param>
+        /// <returns>The cgroup v2 node inode if found; otherwise, <c>null</c>.</returns>
+        public static string ExtractInodeFromCgroupLines(string controlGroupsMountPath, IEnumerable<string> lines)
+        {
+            var tuples = lines.Select(ParseControllerAndPathFromCgroupLine)
+                               .Where(tuple => !string.IsNullOrEmpty(tuple.Item2) && (tuple.Item1 == string.Empty || string.Equals(tuple.Item1, "memory", StringComparison.OrdinalIgnoreCase)));
+
+            foreach (var target in tuples)
+            {
+                string controller = target.Item1;
+                string cgroupNodePath = target.Item2;
+                var path = Path.Combine(controlGroupsMountPath, controller, cgroupNodePath);
+
+                using var process = new Process();
+                process.StartInfo.FileName = "stat";
+                process.StartInfo.Arguments = $"-c '%i' {path}";
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.StartInfo.CreateNoWindow = true;
+                process.Start();
+
+                string output = process.StandardOutput.ReadToEnd();
+                var isExited = process.WaitForExit(1000);
+
+                if (!isExited)
+                {
+                    Log.Warning("\"{FileName} {Arguments}\" did not end after 1 second.", process.StartInfo.FileName, process.StartInfo.Arguments);
+                    continue;
+                }
+
+                if (process.ExitCode == 0 && long.TryParse(output, out _))
+                {
+                    return output;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Uses regular expression to try to extract a controller/cgroup-node-path pair from the specified string.
+        /// </summary>
+        /// <param name="line">A single line from a cgroup file.</param>
+        /// <returns>The controller/cgroup-node-path pair if found; otherwise, <c>null</c>.</returns>
+        public static Tuple<string, string> ParseControllerAndPathFromCgroupLine(string line)
+        {
+            var lineMatch = Regex.Match(line, CgroupRegex);
+
+            return lineMatch.Success
+                       ? new(lineMatch.Groups[1].Value, lineMatch.Groups[2].Value)
                        : null;
         }
 
@@ -76,12 +166,33 @@ namespace Datadog.Trace.PlatformHelpers
                     File.Exists(ControlGroupsFilePath))
                 {
                     var lines = File.ReadLines(ControlGroupsFilePath);
-                    return ParseCgroupLines(lines);
+                    return ParseContainerIdFromCgroupLines(lines);
                 }
             }
             catch (Exception ex)
             {
                 Log.Warning(ex, "Error reading cgroup file. Will not report container id.");
+            }
+
+            return null;
+        }
+
+        private static string GetCgroupV2InodeInternal()
+        {
+            try
+            {
+                var isLinux = string.Equals(FrameworkDescription.Instance.OSPlatform, "Linux", StringComparison.OrdinalIgnoreCase);
+
+                if (isLinux &&
+                    File.Exists(ControlGroupsFilePath))
+                {
+                    var lines = File.ReadLines(ControlGroupsFilePath);
+                    return ExtractInodeFromCgroupLines(DefaultControlGroupsMountPath, lines);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error reading cgroup file. Will not report inode.");
             }
 
             return null;
