@@ -583,9 +583,9 @@ internal class IntelligentTestRunnerClient
 
                 try
                 {
-                    using var response = await multipartRequest.PostAsync(
+                    using var response = await multipartRequest.PostAsync([
                                                                     new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
-                                                                    new MultipartFormItem("packfile", "application/octet-stream", null, fileStream))
+                                                                    new MultipartFormItem("packfile", "application/octet-stream", null, fileStream)])
                                                                .ConfigureAwait(false);
                     var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
                     if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
