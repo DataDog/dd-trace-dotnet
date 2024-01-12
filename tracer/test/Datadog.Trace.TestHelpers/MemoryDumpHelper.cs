@@ -31,6 +31,12 @@ namespace Datadog.Trace.TestHelpers
                 return;
             }
 
+            if (!EnvironmentTools.IsTestTarget64BitProcess())
+            {
+                // We currently have an issue with procdump on x86
+                return;
+            }
+
             // We don't know if procdump is available, so download it fresh
             const string url = "https://download.sysinternals.com/files/Procdump.zip";
             var client = new HttpClient();
