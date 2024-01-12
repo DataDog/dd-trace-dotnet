@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 
 namespace Datadog.Trace.Tests.PlatformHelpers
@@ -210,10 +211,15 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             Assert.Equal(expected, actual);
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetInodes))]
         public void Parse_Inode_From_Cgroup_File(string file, string relativePathToCreate, bool isSuccess)
         {
+            if (!EnvironmentTools.IsLinux())
+            {
+                throw new SkipException("Obtaining the inode is only supported on Linux");
+            }
+
             // arrange
             var lines = SplitLines(file);
 
