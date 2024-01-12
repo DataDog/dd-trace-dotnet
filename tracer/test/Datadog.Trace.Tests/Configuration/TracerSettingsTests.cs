@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -467,9 +468,35 @@ namespace Datadog.Trace.Tests.Configuration
         public void CustomSamplingRulesFormat(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CustomSamplingRulesFormat, value));
-            var settings = new TracerSettings(source);
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry);
 
+            // verify setting
             settings.CustomSamplingRulesFormat.Should().Be(expected);
+
+            // verify telemetry
+            var entries = telemetry.GetQueueForTesting().Where(e => e is { Key: ConfigurationKeys.CustomSamplingRulesFormat });
+
+            foreach (var entry in entries)
+            {
+                switch (entry.Origin)
+                {
+                    case ConfigurationOrigins.Default:
+                        // setting not specified, so the default value is used
+                        entry.StringValue.Should().Be(SamplingRulesFormat.Regex);
+                        break;
+                    case ConfigurationOrigins.Code:
+                        // setting specified in code
+                        entry.StringValue.Should().Be(value);
+                        break;
+                    case ConfigurationOrigins.Calculated:
+                        // setting specified in code, but invalid
+                        entry.StringValue.Should().Be(SamplingRulesFormat.Unknown);
+                        break;
+                    default:
+                        throw new Exception($"Unexpected origin: {entry.Origin}");
+                }
+            }
         }
 
         [Theory]
