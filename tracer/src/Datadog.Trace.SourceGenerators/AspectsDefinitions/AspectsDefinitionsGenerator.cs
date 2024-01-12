@@ -158,7 +158,7 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
             var arguments = attribute.ConstructorArguments.Select(a => GetArgument(a)).ToArray();
             var type = Resolve(attribute);
             if (type == null) { return null; }
-            var res = Activator.CreateInstance(type, arguments);
+            var res = Helpers.CreateAttributeInstance(type, arguments); // Activator.CreateInstance(type, arguments);
             return res;
         }
         catch (Exception err)
