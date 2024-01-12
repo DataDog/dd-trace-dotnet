@@ -29,19 +29,16 @@ internal class LiveDebuggerFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebuggerFactory));
 
-    public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName, ITelemetryController telemetry)
+    public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName, ITelemetryController telemetry, DebuggerSettings debuggerSettings)
     {
-        var settings = DebuggerSettings.FromDefaultSource();
-        if (!settings.Enabled)
+        if (!debuggerSettings.Enabled)
         {
-            telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
-            Log.Information("Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
-            return LiveDebugger.Create(settings, string.Empty, null, null, null, null, null, null, null, null);
+            return LiveDebugger.Create(debuggerSettings, string.Empty, null, null, null, null, null, null, null, null);
         }
 
-        var snapshotSlicer = SnapshotSlicer.Create(settings);
-        var snapshotStatusSink = SnapshotSink.Create(settings, snapshotSlicer);
-        var probeStatusSink = ProbeStatusSink.Create(serviceName, settings);
+        var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
+        var snapshotStatusSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+        var probeStatusSink = ProbeStatusSink.Create(serviceName, debuggerSettings);
 
         var apiFactory = AgentTransportStrategy.Get(
             tracerSettings.ExporterInternal,
@@ -53,14 +50,14 @@ internal class LiveDebuggerFactory
 
         var batchApi = AgentBatchUploadApi.Create(apiFactory, discoveryService);
         var batchUploader = BatchUploader.Create(batchApi);
-        var debuggerSink = DebuggerSink.Create(snapshotStatusSink, probeStatusSink, batchUploader, settings);
+        var debuggerSink = DebuggerSink.Create(snapshotStatusSink, probeStatusSink, batchUploader, debuggerSettings);
 
         var lineProbeResolver = LineProbeResolver.Create();
-        var probeStatusPoller = ProbeStatusPoller.Create(probeStatusSink, settings);
+        var probeStatusPoller = ProbeStatusPoller.Create(probeStatusSink, debuggerSettings);
 
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.EnvironmentInternal, tracerSettings.ServiceVersionInternal);
 
-        var symbolsUploader = CreateSymbolsUploader(discoveryService, remoteConfigurationManager, tracerSettings, serviceName, settings);
+        var symbolsUploader = CreateSymbolsUploader(discoveryService, remoteConfigurationManager, tracerSettings, serviceName, debuggerSettings);
 
         IDogStatsd statsd;
         if (FrameworkDescription.Instance.IsWindows()
@@ -75,7 +72,7 @@ internal class LiveDebuggerFactory
         }
 
         telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
-        return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, symbolsUploader, probeStatusPoller, configurationUpdater, statsd);
+        return LiveDebugger.Create(debuggerSettings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, symbolsUploader, probeStatusPoller, configurationUpdater, statsd);
     }
 
     private static ISymbolsUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName, DebuggerSettings settings)

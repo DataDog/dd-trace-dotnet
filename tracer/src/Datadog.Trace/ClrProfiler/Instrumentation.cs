@@ -371,7 +371,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 try
                 {
-                    InitRemoteConfigurationManagement(tracer);
+                    InitLiveDebugger(tracer);
                 }
                 catch (Exception e)
                 {
@@ -446,10 +446,29 @@ namespace Datadog.Trace.ClrProfiler
         }
 #endif
 
-        private static void InitRemoteConfigurationManagement(Tracer tracer)
+        private static void InitLiveDebugger(Tracer tracer)
         {
+            var settings = tracer.Settings;
+            var debuggerSettings = DebuggerSettings.FromDefaultSource();
+
+            if (!settings.IsRemoteConfigurationAvailable)
+            {
+                // live debugger requires RCM, so there's no point trying to initialize it if RCM is not available
+                if (debuggerSettings.Enabled)
+                {
+                    Log.Warning("Live Debugger is enabled but remote configuration is not available in this environment, so live debugger cannot be enabled.");
+                }
+                else
+                {
+                    Log.Information("Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
+                }
+
+                tracer.TracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
+                return;
+            }
+
             // Service Name must be lowercase, otherwise the agent will not be able to find the service
-            var serviceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceNameInternal ?? tracer.DefaultServiceName);
+            var serviceName = TraceUtil.NormalizeTag(settings.ServiceNameInternal ?? tracer.DefaultServiceName);
             var discoveryService = tracer.TracerManager.DiscoveryService;
 
             Task.Run(
@@ -464,7 +483,7 @@ namespace Datadog.Trace.ClrProfiler
 
                     if (isDiscoverySuccessful)
                     {
-                        var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, tracer.Settings, serviceName, tracer.TracerManager.Telemetry);
+                        var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings);
 
                         Log.Debug("Initializing live debugger.");
 
