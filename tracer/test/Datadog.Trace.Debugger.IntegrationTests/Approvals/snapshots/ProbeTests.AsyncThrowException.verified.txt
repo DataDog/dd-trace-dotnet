@@ -22,6 +22,38 @@
                 "value": "RunAsync"
               }
             },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233079"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "Exception from RunAsync.Method"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": {
+                    "type": "String",
+                    "value": "   at Samples.Probes.TestRuns.SmokeTests.AsyncThrowException.Method(String caller) in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\SmokeTests\\AsyncThrowException.cs:line 19"
+                  }
+                },
+                "type": "InvalidOperationException",
+                "value": "InvalidOperationException"
+              }
+            },
             "throwable": {
               "message": "Exception from RunAsync.Method",
               "stacktrace": [],
