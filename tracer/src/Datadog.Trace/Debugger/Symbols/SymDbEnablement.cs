@@ -4,10 +4,13 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+
 namespace Datadog.Trace.Debugger.Symbols
 {
     internal class SymDbEnablement
     {
+        [JsonProperty("upload_symbols")]
         public bool UploadSymbols { get; set; }
     }
 }
