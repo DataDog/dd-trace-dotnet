@@ -67,6 +67,13 @@ internal static class SamplingRuleHelper
         {
             var tagName = pair.Key;
             var tagRegex = pair.Value;
+
+            if (tagRegex is null)
+            {
+                // if a regex is null (not specified), it always matches.
+                continue;
+            }
+
             var tagValue = GetSpanTag(span, tagName);
 
             if (tagValue is null || !tagRegex.Match(tagValue).Success)
