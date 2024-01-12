@@ -25,6 +25,11 @@
   "vulnerabilities": [
     {
       "type": "LDAP_INJECTION",
+      "location": {
+        "spanId": XXX,
+        "path": "IastController.cs",
+        "line": XXX
+      },
       "evidence": {
         "valueParts": [
           {
