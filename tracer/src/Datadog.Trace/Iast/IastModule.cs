@@ -460,7 +460,8 @@ internal static class IastModule
             new Vulnerability(vulnerabilityType, (int)hash, location, new Evidence(evidenceValue, tainted?.Ranges), integrationId);
         // Print the stack trace to the console for debugging purposes
         var stackTrace = new StackTrace(0, true);
-        Log.Information("Stack trace debugging: {StackTrace}", stackTrace);
+        Log.Warning("Stack trace debugging: {StackTrace}", stackTrace);
+        Console.Error.WriteLine("Stack trace debugging: {0}", stackTrace);
 
         // Sometimes we do not have the file/line but we have the method/class.
         var stackFrame = frameInfo.StackFrame;
