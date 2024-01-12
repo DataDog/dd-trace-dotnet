@@ -67,7 +67,7 @@ void ShowLastError(const char* msg, DWORD error = ::GetLastError())
     printf("%s (%u)\n", msg, error);
 }
 
-void SendRegistrationCommand(IpcClient* pClient, int pid, bool add)
+bool SendRegistrationCommand(IpcClient* pClient, int pid, bool add)
 {
     RegistrationProcessMessage message;
     if (add)
@@ -83,20 +83,37 @@ void SendRegistrationCommand(IpcClient* pClient, int pid, bool add)
     if (code != NamedPipesCode::Success)
     {
         ShowLastError("Failed to write to pipe", code);
-        return;
+        return false;
     }
 
     IpcHeader response;
     code = pClient->Read(&response, sizeof(response));
     if (code == NamedPipesCode::Success)
     {
+        bool success = (response.ResponseCode == (uint8_t)ResponseId::OK);
         if (add)
         {
-            std::cout << "Registered!\n";
+            if (success)
+            {
+                std::cout << "Registered!\n";
+            }
+            else
+            {
+                std::cout << "Registration failed...\n";
+                return false;
+            }
         }
         else
         {
-            std::cout << "Unregistered!\n";
+            if (success)
+            {
+                std::cout << "Unregistered!\n";
+            }
+            else
+            {
+                std::cout << "Unregistration failed...\n";
+                return false;
+            }
         }
     }
     else
@@ -125,7 +142,10 @@ void SendRegistrationCommand(IpcClient* pClient, int pid, bool add)
         {
             std::cout << "Unregistration failed...\n";
         }
+        return false;
     }
+
+    return true;
 }
 
 

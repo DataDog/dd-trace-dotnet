@@ -175,6 +175,7 @@ inline std::int64_t OpSysTools::GetHighPrecisionNanoseconds()
 #endif
 }
 
+// TODO: remove if not needed
 inline std::int64_t OpSysTools::ConvertTicks(uint64_t ticks)
 {
 #ifdef _WINDOWS

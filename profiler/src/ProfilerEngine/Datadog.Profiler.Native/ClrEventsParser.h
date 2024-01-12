@@ -250,7 +250,6 @@ private:
         );
     GCDetails& GetCurrentGC();
     void InitializeGC(uint64_t timestamp, GCDetails& gc, GCStartPayload& payload);
-    void ClearCurrentGC();
     static void ResetGC(GCDetails& gc);
     static uint64_t GetCurrentTimestamp();
 

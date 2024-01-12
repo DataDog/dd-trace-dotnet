@@ -111,7 +111,6 @@ bool EtwEventDumper::BuildClrEvent(
         {
             buffer << "Lock-" << id;
         }
-        return false;
     }
     else if (keyword == KEYWORD_STACKWALK)
     {

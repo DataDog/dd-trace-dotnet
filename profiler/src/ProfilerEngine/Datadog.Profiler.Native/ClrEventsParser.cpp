@@ -37,7 +37,8 @@ ClrEventsParser::ClrEventsParser(
     _pContentionListener{pContentionListener},
     _pGCSuspensionsListener{pGCSuspensionsListener}
 {
-    ClearCurrentGC();
+    ResetGC(_gcInProgress);
+    ResetGC(_currentBGC);
 }
 
 void ClrEventsParser::Register(IGarbageCollectionsListener* pGarbageCollectionsListener)
@@ -318,18 +319,6 @@ GCDetails& ClrEventsParser::GetCurrentGC()
     }
 
     return _currentBGC;
-}
-
-void ClrEventsParser::ClearCurrentGC()
-{
-    if (_gcInProgress.Number != -1)
-    {
-        ResetGC(_gcInProgress);
-    }
-    else
-    {
-        ResetGC(_currentBGC);
-    }
 }
 
 void ClrEventsParser::ResetGC(GCDetails& gc)
