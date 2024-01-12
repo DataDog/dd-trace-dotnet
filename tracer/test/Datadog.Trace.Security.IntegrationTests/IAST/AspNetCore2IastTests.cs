@@ -155,6 +155,26 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
+
+    [Fact]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestStackTraceLeak()
+    {
+        SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+        var filename = "Iast.StackTraceLeak.AspNetCore2";
+        var url = "/Iast/StackTraceLeak";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 public class AspNetCore2IastTestsFullSamplingDisabled : AspNetCore2IastTestsFullSampling

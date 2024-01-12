@@ -5,8 +5,6 @@
 
 #nullable enable
 
-#if NETSTANDARD || NETCOREAPP3_1
-
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -18,6 +16,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
 /// <summary>
 /// DeveloperExceptionPageMiddleware integration
 /// </summary>
+
+#if !NETFRAMEWORK
+
 [InstrumentMethod(
     AssemblyName = "Microsoft.AspNetCore.Diagnostics",
     TypeName = "Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware",
@@ -46,5 +47,4 @@ public static class DeveloperExceptionPageMiddlewareIntegration
         return StackTraceLeakIntegrationCommon.OnExceptionLeak(IntegrationId.StackTraceLeak, exception);
     }
 }
-
 #endif

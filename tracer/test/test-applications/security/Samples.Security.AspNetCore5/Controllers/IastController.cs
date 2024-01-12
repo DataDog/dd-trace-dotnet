@@ -630,7 +630,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("StackTraceLeak")]
         public ActionResult StackTraceLeak()
         {
-            throw new SystemException("we have a StackTraceLeak");
+            throw new SystemException("Custom exception message");
         }
 
         [HttpGet("ReturnCode")]

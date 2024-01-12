@@ -37,11 +37,11 @@ public static class HttpResponseIntegration
     /// OnMethodBegin callback
     /// </summary>
     /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="context">The context of the error.</param>
     /// <param name="exception">The exception to be shown.</param>
+    /// <param name="dontShowSensitiveErrors">The dontShowSensitiveErrors parameter of WriteErrorMessage.</param>
     /// <typeparam name="TTarget">Type of the target</typeparam>
     /// <returns>Calltarget state value</returns>
-    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, HttpContext context, Exception exception)
+    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, Exception exception, bool dontShowSensitiveErrors)
     {
         return StackTraceLeakIntegrationCommon.OnExceptionLeak(IntegrationId.StackTraceLeak, exception);
     }
