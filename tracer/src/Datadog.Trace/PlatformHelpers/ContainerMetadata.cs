@@ -107,7 +107,9 @@ namespace Datadog.Trace.PlatformHelpers
         public static string ExtractInodeFromCgroupLines(string controlGroupsMountPath, IEnumerable<string> lines)
         {
             var tuples = lines.Select(ParseControllerAndPathFromCgroupLine)
-                               .Where(tuple => !string.IsNullOrEmpty(tuple.Item2) && (tuple.Item1 == string.Empty || string.Equals(tuple.Item1, "memory", StringComparison.OrdinalIgnoreCase)));
+                               .Where(tuple => tuple is not null
+                                               && !string.IsNullOrEmpty(tuple.Item2)
+                                               && (tuple.Item1 == string.Empty || string.Equals(tuple.Item1, "memory", StringComparison.OrdinalIgnoreCase)));
 
             foreach (var target in tuples)
             {
