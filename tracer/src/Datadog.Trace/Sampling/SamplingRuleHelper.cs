@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Logging;
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -27,7 +28,7 @@ internal static class SamplingRuleHelper
         Regex? serviceNameRegex,
         Regex? operationNameRegex,
         Regex? resourceNameRegex,
-        List<KeyValuePair<string, Regex>>? tagRegexes,
+        List<KeyValuePair<string, Regex?>>? tagRegexes,
         out bool timedOut)
     {
         timedOut = false;
@@ -41,10 +42,10 @@ internal static class SamplingRuleHelper
         {
             // if a regex is null (not specified), it always matches.
             // stop as soon as we find a non-match.
-            return (serviceNameRegex is null || serviceNameRegex.Match(span.ServiceName).Success) &&
-                   (operationNameRegex is null || operationNameRegex.Match(span.OperationName).Success) &&
-                   (resourceNameRegex is null || resourceNameRegex.Match(span.ResourceName).Success) &&
-                   (tagRegexes is null || tagRegexes.Count == 0 || MatchSpanByTags(span, tagRegexes));
+            return IsMatch(serviceNameRegex, span.ServiceName) &&
+                   IsMatch(operationNameRegex, span.OperationName) &&
+                   IsMatch(resourceNameRegex, span.ResourceName) &&
+                   MatchSpanByTags(span, tagRegexes);
         }
         catch (RegexMatchTimeoutException e)
         {
@@ -61,8 +62,31 @@ internal static class SamplingRuleHelper
         }
     }
 
-    private static bool MatchSpanByTags(Span span, List<KeyValuePair<string, Regex>> tagRegexes)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsMatch(Regex? regex, string? input)
     {
+        if (regex is null)
+        {
+            // if a regex is null (not specified), it always matches.
+            return true;
+        }
+
+        if (input is null)
+        {
+            return false;
+        }
+
+        return regex.Match(input).Success;
+    }
+
+    private static bool MatchSpanByTags(Span span, List<KeyValuePair<string, Regex?>>? tagRegexes)
+    {
+        if (tagRegexes is null || tagRegexes.Count == 0)
+        {
+            // if a regex is null (not specified), it always matches.
+            return true;
+        }
+
         foreach (var pair in tagRegexes)
         {
             var tagName = pair.Key;
