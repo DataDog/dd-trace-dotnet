@@ -119,7 +119,12 @@ namespace Datadog.Trace.Tests.PlatformHelpers
 
         public const string InodeCgroupV2 =
             """
-            "0::/system.slice/docker-abcdef0123456789abcdef0123456789.scope"
+            0::/system.slice/docker-abcdef0123456789abcdef0123456789.scope
+            """;
+
+        public const string InodeCgroupV2EmptyNodePath =
+            """
+            0::/
             """;
 
         public const string InodeCgroupV1 =
@@ -133,14 +138,6 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         public const string InodeCgroupV1UnrecognizedController =
             """
             3:cpu:/system.slice/docker-abcdef0123456789abcdef0123456789.scope
-            2:net_cls,net_prio:c
-            1:name=systemd:b
-            0::a
-            """;
-
-        public const string InodeCgroupV1PathDoesNotExist =
-            """
-            3:memory:/system.slice/docker-abcdef0123456789abcdef0123456789.scope
             2:net_cls,net_prio:c
             1:name=systemd:b
             0::a
@@ -163,9 +160,10 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         public static IEnumerable<object[]> GetInodes()
         {
             yield return new object[] { InodeCgroupV2, "system.slice/docker-abcdef0123456789abcdef0123456789.scope", true };
-            yield return new object[] { InodeCgroupV1, "system.slice/docker-abcdef0123456789abcdef0123456789.scope", true };
+            yield return new object[] { InodeCgroupV2EmptyNodePath, string.Empty, true };
+            yield return new object[] { InodeCgroupV1, "memory/system.slice/docker-abcdef0123456789abcdef0123456789.scope", true };
             yield return new object[] { InodeCgroupV1, "dummy.scope", false };
-            yield return new object[] { InodeCgroupV1UnrecognizedController, "system.slice/docker-abcdef0123456789abcdef0123456789.scope", true };
+            yield return new object[] { InodeCgroupV1UnrecognizedController, "cpu/system.slice/docker-abcdef0123456789abcdef0123456789.scope", false };
             yield return new object[] { InodeCgroupV1NoEntries, "dummy.scope", false };
         }
 
@@ -247,7 +245,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         {
             using var process = new Process();
             process.StartInfo.FileName = "stat";
-            process.StartInfo.Arguments = $"-c '%i' {path}";
+            process.StartInfo.Arguments = $"--printf=%i {path}";
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.RedirectStandardError = true;
