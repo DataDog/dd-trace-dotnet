@@ -122,9 +122,9 @@ namespace Datadog.Trace.PlatformHelpers
             {
                 string controller = target.Item1;
                 string cgroupNodePath = target.Item2;
-                var path = Path.Combine(controlGroupsMountPath, controller, cgroupNodePath);
+                var path = Path.Combine(controlGroupsMountPath, controller, cgroupNodePath.TrimStart('/'));
 
-                if (TryGetInode(path, out long output))
+                if (Directory.Exists(path) && TryGetInode(path, out long output))
                 {
                     return output.ToString();
                 }
@@ -213,7 +213,7 @@ namespace Datadog.Trace.PlatformHelpers
             {
                 using var process = new Process();
                 process.StartInfo.FileName = "stat";
-                process.StartInfo.Arguments = $"-c '%i' {path}";
+                process.StartInfo.Arguments = $"--printf=%i {path}";
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.RedirectStandardError = true;

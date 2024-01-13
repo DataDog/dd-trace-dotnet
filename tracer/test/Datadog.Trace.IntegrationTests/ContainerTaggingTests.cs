@@ -77,8 +77,7 @@ namespace Datadog.Trace.IntegrationTests
                 else if (expectedEntitydId is not null)
                 {
                     // Note: This line hasn't been executed by CI yet
-                    throw new Exception("""Got to assertion where expectedEntitydId.StartsWith("in-").Should().BeTrue();""");
-                    // expectedEntitydId.StartsWith("in-").Should().BeTrue();
+                    expectedEntitydId.StartsWith("in-").Should().BeTrue();
                 }
             }
         }
