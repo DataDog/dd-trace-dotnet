@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
     ParameterTypeNames = new[] { "Microsoft.AspNetCore.Diagnostics.ErrorContext" },
     MethodName = "DisplayException",
     ReturnTypeName = ClrNames.Task,
-    MinimumVersion = "5.0.0.0",
+    MinimumVersion = "3.0.0.0",
     MaximumVersion = "6.*.*.*",
     IntegrationName = nameof(IntegrationId.StackTraceLeak),
     InstrumentationCategory = InstrumentationCategory.Iast)]

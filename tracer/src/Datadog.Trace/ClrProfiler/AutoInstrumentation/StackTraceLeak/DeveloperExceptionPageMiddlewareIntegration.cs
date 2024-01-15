@@ -5,6 +5,8 @@
 
 #nullable enable
 
+#if !NETFRAMEWORK
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -16,9 +18,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
 /// <summary>
 /// DeveloperExceptionPageMiddleware integration
 /// </summary>
-
-#if !NETFRAMEWORK
-
 [InstrumentMethod(
     AssemblyName = "Microsoft.AspNetCore.Diagnostics",
     TypeName = "Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware",
@@ -26,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
     MethodName = "DisplayException",
     ReturnTypeName = ClrNames.Task,
     MinimumVersion = "2.0.0.0",
-    MaximumVersion = "3.*.*.*",
+    MaximumVersion = "2.*.*.*",
     IntegrationName = nameof(IntegrationId.StackTraceLeak),
     InstrumentationCategory = InstrumentationCategory.Iast)]
 
