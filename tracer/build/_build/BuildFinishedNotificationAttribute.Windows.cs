@@ -125,5 +125,8 @@ public partial class BuildFinishedNotificationAttribute
         }
     }
 }
-
+#else
+public partial class BuildFinishedNotificationAttribute
+{
+}
 #endif
