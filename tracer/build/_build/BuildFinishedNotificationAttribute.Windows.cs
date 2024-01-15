@@ -78,12 +78,10 @@ public partial class BuildFinishedNotificationAttribute
             Enabled = false;
             Logger.Error("Failed to initialize notifications");
         }
-#endif
     }
 
     public void OnBuildFinished(NukeBuild build)
     {
-#if IS_WINDOWS
         if (!Enabled)
         {
             return;
@@ -124,9 +122,5 @@ public partial class BuildFinishedNotificationAttribute
             stream.CopyToFile(target.LocalPath);
         }
     }
-}
-#else
-public partial class BuildFinishedNotificationAttribute
-{
 }
 #endif
