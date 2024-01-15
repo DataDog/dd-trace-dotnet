@@ -463,6 +463,27 @@ internal static class IastModule
         Log.Warning("Stack trace debugging: {StackTrace}", stackTrace);
         Console.Error.WriteLine("Stack trace debugging: {0}", stackTrace);
 
+        var stackFrameSelected = frameInfo.StackFrame;
+        var stackFrameMethod = stackFrameSelected?.GetMethod();
+        var filename = stackFrameSelected?.GetFileName();
+        var line = string.IsNullOrEmpty(filename) ? 0 : (stackFrameSelected?.GetFileLineNumber() ?? 0);
+        var methodeTypeName = string.IsNullOrEmpty(filename) ? GetMethodTypeName(stackFrameSelected) : null;
+
+        Log.Warning("Stack frame debugging 2: {StackFrame}", stackFrameSelected);
+        Log.Warning("Stack frame debugging method: {StackFrameMethod} - {Method}", stackFrameMethod, stackFrameMethod?.Name);
+        Log.Warning("Stack frame debugging filename: {Filename}", filename);
+        Log.Warning("Stack frame debugging line: {Line}", line.ToString());
+        Log.Warning("Stack frame debugging method type name: {MethodTypeName}", methodeTypeName);
+
+        Console.Error.WriteLine("Stack frame debugging 2: {0}", stackFrameSelected);
+        Console.Error.WriteLine("Stack frame debugging method: {0} - {1}", stackFrameMethod, stackFrameMethod?.Name);
+        Console.Error.WriteLine("Stack frame debugging filename: {0}", filename);
+        Console.Error.WriteLine("Stack frame debugging line: {0}", line);
+        Console.Error.WriteLine("Stack frame debugging method type name: {0}", methodeTypeName);
+
+        return IastModuleResponse.Empty;
+
+        /*
         // Sometimes we do not have the file/line but we have the method/class.
         var stackFrame = frameInfo.StackFrame;
         var filename = stackFrame?.GetFileName();
@@ -492,6 +513,7 @@ internal static class IastModule
         }
 
         return IastModuleResponse.Empty;
+        */
     }
 
     private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, List<Vulnerability> vulnerabilities)
