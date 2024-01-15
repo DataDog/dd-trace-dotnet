@@ -36,10 +36,9 @@ internal class GzipCompressedContent : HttpContent
     protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
     {
         Log.Debug("GZip compressing payload...");
-#pragma warning disable CA2007
-        await using var gzip = new GZipStream(stream, CompressionMode.Compress, true);
-#pragma warning restore CA2007
+        using var gzip = new GZipStream(stream, CompressionMode.Compress, leaveOpen: true);
         await _content.CopyToAsync(gzip).ConfigureAwait(false);
+        await gzip.FlushAsync().ConfigureAwait(false);
     }
 
     protected override bool TryComputeLength(out long length)

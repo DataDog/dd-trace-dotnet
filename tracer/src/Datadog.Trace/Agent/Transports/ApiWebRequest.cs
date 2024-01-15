@@ -92,8 +92,9 @@ namespace Datadog.Trace.Agent.Transports
                 if (multipartCompression == MultipartCompression.GZip)
                 {
                     Log.Debug("Using MultipartCompression.GZip");
-                    using var gzip = new GZipStream(reqStream, CompressionMode.Compress, true);
+                    using var gzip = new GZipStream(reqStream, CompressionMode.Compress, leaveOpen: true);
                     await WriteToStreamAsync(items, gzip).ConfigureAwait(false);
+                    await gzip.FlushAsync().ConfigureAwait(false);
                     Log.Debug("Compressing multipart payload...");
                 }
                 else
