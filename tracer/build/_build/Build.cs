@@ -23,7 +23,7 @@ using Logger = Serilog.Log;
 // #pragma warning disable SA1400
 // #pragma warning disable SA1401
 
-[ShutdownDotNetAfterServerBuild, WindowsBuildFinishedNotification]
+[ShutdownDotNetAfterServerBuild, BuildFinishedNotification]
 partial class Build : NukeBuild
 {
     /// Support plugins are available for:

@@ -1,4 +1,5 @@
 ﻿
+#if IS_WINDOWS
 #nullable enable
 
 using System;
@@ -7,15 +8,13 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-#if IS_WINDOWS
 using Microsoft.Toolkit.Uwp.Notifications;
-#endif
 using NuGet.Packaging;
 using Nuke.Common;
 using Nuke.Common.Execution;
 using Logger = Serilog.Log;
 
-public class WindowsBuildFinishedNotificationAttribute : BuildExtensionAttributeBase, IOnBuildFinished
+public partial class BuildFinishedNotificationAttribute
 {
     private static readonly bool Enabled = false;
 
@@ -25,9 +24,8 @@ public class WindowsBuildFinishedNotificationAttribute : BuildExtensionAttribute
 
     private static bool resourcesAvailable = false;
 
-    static WindowsBuildFinishedNotificationAttribute()
+    static BuildFinishedNotificationAttribute()
     {
-#if IS_WINDOWS
         try
         {
             if (bool.TryParse(Environment.GetEnvironmentVariable("NUKE_NOTIFY"), out var notify))
@@ -114,7 +112,6 @@ public class WindowsBuildFinishedNotificationAttribute : BuildExtensionAttribute
         builder
             .AddText(message)
             .Show();
-#endif
     }
 
 
@@ -129,3 +126,4 @@ public class WindowsBuildFinishedNotificationAttribute : BuildExtensionAttribute
     }
 }
 
+#endif
