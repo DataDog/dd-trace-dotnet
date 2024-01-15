@@ -156,7 +156,7 @@ namespace Datadog.Trace
 
             dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName);
 
-            if (settings.IsRemoteConfigurationAvailable)
+            if (ShouldEnableRemoteConfiguration(settings))
             {
                 if (remoteConfigurationManager == null)
                 {
@@ -224,6 +224,9 @@ namespace Datadog.Trace
         {
             return new GitMetadataTagsProvider(settings, scopeManager, TelemetryFactory.Config);
         }
+
+        protected virtual bool ShouldEnableRemoteConfiguration(ImmutableTracerSettings settings)
+            => settings.IsRemoteConfigurationAvailable;
 
         /// <summary>
         ///  Can be overriden to create a different <see cref="TracerManager"/>, e.g. <see cref="Ci.CITracerManager"/>
