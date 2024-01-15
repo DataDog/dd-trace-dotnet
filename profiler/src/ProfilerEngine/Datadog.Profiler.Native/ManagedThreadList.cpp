@@ -284,11 +284,7 @@ bool ManagedThreadList::TryGetThreadInfo(uint32_t osThreadId, std::shared_ptr<Ma
     }
 
     auto elem = _lookupByOsThreadId.find(osThreadId);
-    if (elem == _lookupByOsThreadId.end())
-    {
-        return false;
-    }
-    else
+    if (elem != _lookupByOsThreadId.end())
     {
         ppThreadInfo = elem->second;
         return true;

@@ -65,7 +65,7 @@ uint64_t TimestampToEpochNS(uint64_t eventTimestamp)
     t.tm_sec = st.wSecond;
     time_t timeSinceEpoch = mktime(&t);
 
-    return timeSinceEpoch * 1000'000'000;
+    return timeSinceEpoch * 1000'000'000 + st.wMilliseconds * 1'000'000;  // don't loose the milliseconds accuracy
 }
 
 void EtwEventsManager::OnEvent(
@@ -112,7 +112,7 @@ void EtwEventsManager::OnEvent(
             }
 
             auto pThreadInfo = GetOrCreate(tid);
-            pThreadInfo->ContentionStartTimestamp = TimestampToEpochNS(systemTimestamp);
+            pThreadInfo->ContentionStartTimestamp = systemTimestamp;
             pThreadInfo->LastEventId = EventId::ContentionStart;
         }
         else if (id == EVENT_CONTENTION_STOP)
@@ -128,8 +128,8 @@ void EtwEventsManager::OnEvent(
                 pThreadInfo->ClearLastEventId();
                 if (pThreadInfo->ContentionStartTimestamp != 0)
                 {
-                    auto timestamp = TimestampToEpochNS(systemTimestamp);
-                    auto duration = timestamp - pThreadInfo->ContentionStartTimestamp;
+                    auto timestamp = TimestampToEpochNS(systemTimestamp); // systemTimestamp is in 100ns units
+                    auto duration = (systemTimestamp - pThreadInfo->ContentionStartTimestamp) * 100;
                     pThreadInfo->ContentionStartTimestamp = 0;
 
                     _pContentionListener->OnContention(timestamp, tid, duration, pThreadInfo->ContentionCallStack);
@@ -138,6 +138,10 @@ void EtwEventsManager::OnEvent(
             else
             {
                 // this should never happen
+                if (_isDebugLogEnabled)
+                {
+                    std::cout << "Missing thread info..." << std::endl;
+                }
             }
         }
     }
@@ -179,7 +183,7 @@ ThreadInfo* EtwEventsManager::GetOrCreate(uint32_t tid)
     {
         ThreadInfo threadInfo;
         threadInfo.ThreadId = tid;
-        pInfo = &(_threadsInfo[tid] = threadInfo);
+        pInfo = &(_threadsInfo[tid] = std::move(threadInfo));
     }
 
     return pInfo;

@@ -6,15 +6,15 @@
 
 void ProfilerLogger::Info(std::string line) const
 {
-    Log::Info(line);
+    Log::Info(std::move(line));
 }
 
 void ProfilerLogger::Warn(std::string line) const
 {
-    Log::Warn(line);
+    Log::Warn(std::move(line));
 }
 
 void ProfilerLogger::Error(std::string line) const
 {
-    Log::Error(line);
+    Log::Error(std::move(line));
 }
