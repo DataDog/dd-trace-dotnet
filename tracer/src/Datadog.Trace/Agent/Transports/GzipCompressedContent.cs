@@ -35,7 +35,7 @@ internal class GzipCompressedContent : HttpContent
 
     protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
     {
-        Log.Debug("Compressing multipart payload...");
+        Log.Debug("GZip compressing payload...");
         using var gzip = new GZipStream(stream, CompressionMode.Compress, true);
         await _content.CopyToAsync(gzip).ConfigureAwait(false);
     }
