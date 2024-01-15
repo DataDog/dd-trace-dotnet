@@ -34,12 +34,11 @@ internal class HeaderInjectionTokenizer : ITokenizer
         if (separatorStart > 0)
         {
             var separatorEnd = separatorStart + IastModule.HeaderInjectionEvidenceSeparator.Length;
-            var valuePart = evidence.Substring(separatorEnd);
 
             if (_keyPattern.IsMatch(evidence.Substring(0, separatorStart)) ||
-                _valuePattern.IsMatch(valuePart))
+                _valuePattern.IsMatch(evidence, separatorEnd))
             {
-                return [new Range(separatorEnd, valuePart.Length)];
+                return [new Range(separatorEnd, evidence.Length - separatorEnd)];
             }
         }
 
