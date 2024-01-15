@@ -35,6 +35,9 @@ internal class HeaderInjectionTokenizer : ITokenizer
         {
             var separatorEnd = separatorStart + IastModule.HeaderInjectionEvidenceSeparator.Length;
 
+            // If the key patterns applies to the key or the value pattern applies to the value,
+            // we should redact the value
+
             if (_keyPattern.IsMatch(evidence.Substring(0, separatorStart)) ||
                 _valuePattern.IsMatch(evidence, separatorEnd))
             {
