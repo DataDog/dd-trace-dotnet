@@ -19,7 +19,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         public bool ShouldBlock { get; }
 
-        List<object>? Data { get; }
+        IReadOnlyCollection<object>? Data { get; }
 
         List<string> Actions { get; }
 

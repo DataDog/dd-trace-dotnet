@@ -35,13 +35,13 @@ internal readonly partial struct SecurityCoordinator
 
     public void MarkBlocked() => _httpTransport.MarkBlocked();
 
-    private static void LogMatchesIfDebugEnabled(List<object>? results, bool blocked)
+    private static void LogMatchesIfDebugEnabled(IReadOnlyCollection<object>? results, bool blocked)
     {
         if (Log.IsEnabled(LogEventLevel.Debug) && results != null)
         {
-            for (var i = 0; i < results.Count; i++)
+            foreach (var result in results)
             {
-                if (results[i] is Dictionary<string, object?> match)
+                if (result is Dictionary<string, object?> match)
                 {
                     if (blocked)
                     {
@@ -54,7 +54,7 @@ internal readonly partial struct SecurityCoordinator
                 }
                 else
                 {
-                    Log.Debug("{Result} not of expected type", results[i]);
+                    Log.Debug("{Result} not of expected type", result);
                 }
             }
         }

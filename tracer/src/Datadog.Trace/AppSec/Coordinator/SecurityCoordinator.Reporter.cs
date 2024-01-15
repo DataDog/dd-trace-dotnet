@@ -107,13 +107,9 @@ internal readonly partial struct SecurityCoordinator
             LogMatchesIfDebugEnabled(result.Data, blocked);
 
             var traceContext = _localRootSpan.Context.TraceContext;
-            if (traceContext.WafSecurityEvents == null)
+            if (result.Data != null)
             {
-                traceContext.WafSecurityEvents = result.Data;
-            }
-            else if (result.Data != null)
-            {
-                traceContext.WafSecurityEvents.AddRange(result.Data);
+                traceContext.WafSecurityEvents.Add(result.Data);
             }
 
             var clientIp = _localRootSpan.GetTag(Tags.HttpClientIp);

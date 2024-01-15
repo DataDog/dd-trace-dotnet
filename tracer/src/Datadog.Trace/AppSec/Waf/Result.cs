@@ -35,7 +35,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public bool ShouldReportSchema { get; }
 
-        public List<object>? Data { get; }
+        public IReadOnlyCollection<object>? Data { get; }
 
         public List<string> Actions { get; }
 
