@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -30,6 +31,7 @@ internal class TracerFlareManager : ITracerFlareManager
 
     private readonly IDiscoveryService _discoveryService;
     private readonly IRcmSubscriptionManager _subscriptionManager;
+    private readonly ITelemetryController _telemetryController;
     private readonly TracerFlareApi _flareApi;
     private ISubscription? _subscription;
     private Timer? _resetTimer = null;
@@ -39,9 +41,11 @@ internal class TracerFlareManager : ITracerFlareManager
     public TracerFlareManager(
         IDiscoveryService discoveryService,
         IRcmSubscriptionManager subscriptionManager,
+        ITelemetryController telemetryController,
         TracerFlareApi flareApi)
     {
         _subscriptionManager = subscriptionManager;
+        _telemetryController = telemetryController;
         _flareApi = flareApi;
         _discoveryService = discoveryService;
     }
