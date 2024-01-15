@@ -39,7 +39,7 @@ public class TracerFlareTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task SendTracerFlare()
     {
-        using var agent = EnvironmentHelper.GetMockAgent();
+        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
         var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
         using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory);
         using var sample = StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
@@ -69,6 +69,12 @@ public class TracerFlareTests : TestHelper
 
         var zip = new ZipArchive(flareFile.Data, ZipArchiveMode.Read);
         zip.Entries.Should().NotBeNullOrEmpty();
+        zip.Entries
+           .Should()
+           .Contain(x => x.Name.StartsWith("dotnet-tracer-managed-"))
+           .And.Contain(x => x.Name.StartsWith("dotnet-native-loader-"))
+           .And.Contain(x => x.Name.StartsWith("dotnet-tracer-native-"))
+           .And.Contain(x => x.Name.StartsWith("dotnet-tracer-telemetry-"));
     }
 
     private async Task InitializeFlare(MockTracerAgent agent, LogEntryWatcher logEntryWatcher)
