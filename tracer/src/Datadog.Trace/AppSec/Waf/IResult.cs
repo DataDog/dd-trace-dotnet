@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 
@@ -17,7 +19,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         public bool ShouldBlock { get; }
 
-        List<object> Data { get; }
+        List<object>? Data { get; }
 
         List<string> Actions { get; }
 
@@ -27,7 +29,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         bool Timeout { get; }
 
-        Dictionary<string, object> Derivatives { get; }
+        Dictionary<string, object?> Derivatives { get; }
 
         bool ShouldReportSchema { get; }
 

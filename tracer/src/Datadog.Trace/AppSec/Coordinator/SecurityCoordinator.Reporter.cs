@@ -111,7 +111,7 @@ internal readonly partial struct SecurityCoordinator
             {
                 traceContext.WafSecurityEvents = result.Data;
             }
-            else
+            else if (result.Data != null)
             {
                 traceContext.WafSecurityEvents.AddRange(result.Data);
             }

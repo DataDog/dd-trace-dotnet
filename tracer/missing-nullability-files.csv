@@ -308,7 +308,6 @@ src/Datadog.Trace/Agent/Transports/SocketHandlerRequestFactory.cs
 src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Core.cs
 src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Framework.cs
 src/Datadog.Trace/AppSec/Coordinator/HttpTransportBase.cs
-src/Datadog.Trace/AppSec/Waf/IResult.cs
 src/Datadog.Trace/AppSec/Waf/IWaf.cs
 src/Datadog.Trace/AppSec/Waf/Obj.cs
 src/Datadog.Trace/AppSec/Waf/ObjType.cs
