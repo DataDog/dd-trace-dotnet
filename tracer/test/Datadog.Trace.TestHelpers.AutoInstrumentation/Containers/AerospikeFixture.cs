@@ -24,6 +24,8 @@ public class AerospikeFixture : ContainerFixture
 
     protected override async Task InitializeResources(Action<string, object> registerResource)
     {
+        // pinning to a known good version because the latest version
+        // (6.3.0.5 at time of issue) causes 'Server memory error' and flake
         var container = new ContainerBuilder()
                        .WithImage("aerospike/aerospike-server:6.2.0.6")
                        .WithPortBinding(3000, true)
