@@ -285,7 +285,7 @@ namespace Datadog.Trace.TestHelpers
                 redirectStandardInput: true,
                 processToProfile: appType == IisAppType.AspNetCoreOutOfProcess ? "dotnet.exe" : iisExpress);
 
-            var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
+            var semaphore = new SemaphoreSlim(0, 1);
 
             _ = Task.Factory.StartNew(
                 () =>
@@ -296,7 +296,7 @@ namespace Datadog.Trace.TestHelpers
 
                         if (line.Contains("IIS Express is running"))
                         {
-                            wh.Set();
+                            semaphore.Release();
                         }
                     }
                 },
@@ -312,7 +312,7 @@ namespace Datadog.Trace.TestHelpers
                 },
                 TaskCreationOptions.LongRunning);
 
-            wh.WaitOne(5000);
+            await semaphore.WaitAsync(TimeSpan.FromSeconds(10));
 
             // Wait for iis express to finish starting up
             var retries = 5;
@@ -334,7 +334,7 @@ namespace Datadog.Trace.TestHelpers
                     throw new Exception("Gave up waiting for IIS Express.");
                 }
 
-                Thread.Sleep(1500);
+                await Task.Delay(1500);
             }
 
             return (process, newConfig);
