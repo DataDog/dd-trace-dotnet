@@ -31,7 +31,6 @@ internal class TracerFlareManager : ITracerFlareManager
     private readonly IDiscoveryService _discoveryService;
     private readonly IRcmSubscriptionManager _subscriptionManager;
     private readonly TracerFlareApi _flareApi;
-    private readonly bool _enableFlare;
     private ISubscription? _subscription;
     private Timer? _resetTimer = null;
 
@@ -40,24 +39,17 @@ internal class TracerFlareManager : ITracerFlareManager
     public TracerFlareManager(
         IDiscoveryService discoveryService,
         IRcmSubscriptionManager subscriptionManager,
-        TracerFlareApi flareApi,
-        bool enableFlare = true)
+        TracerFlareApi flareApi)
     {
         _subscriptionManager = subscriptionManager;
         _flareApi = flareApi;
         _discoveryService = discoveryService;
-        _enableFlare = enableFlare;
     }
 
     public bool? CanSendTracerFlare { get; private set; } = null;
 
     public void Start()
     {
-        if (!_enableFlare)
-        {
-            return;
-        }
-
         if (Interlocked.Exchange(ref _subscription, new Subscription(RcmProductReceived, RcmProducts.TracerFlareInitiated, RcmProducts.TracerFlareRequested)) == null)
         {
             _discoveryService.SubscribeToChanges(HandleConfigUpdate);
@@ -68,11 +60,6 @@ internal class TracerFlareManager : ITracerFlareManager
 
     public void Dispose()
     {
-        if (!_enableFlare)
-        {
-            return;
-        }
-
         if (_resetTimer is not null)
         {
             // If we have a timer, we should reset debugging now
@@ -131,22 +118,35 @@ internal class TracerFlareManager : ITracerFlareManager
     {
         try
         {
-            // This product means "prepare for sending a tracer flare."
-            // We may consider doing more than just enabling debug mode in the future
-            _wasDebugLogEnabled = GlobalSettings.Instance.DebugEnabledInternal;
-            GlobalSettings.SetDebugEnabledInternal(true);
+            var debugRequested = false;
+            foreach (var remoteConfig in config)
+            {
+                if (IsEnableDebugConfig(remoteConfig.Path))
+                {
+                    debugRequested = true;
+                    break;
+                }
+            }
 
-            // The timer is a fallback, in case we never receive a "send flare" product
-            var timer = new Timer(
-                _ => ResetDebugging(),
-                state: null,
-                dueTime: TimeSpan.FromMinutes(RevertGlobalDebugMinutes),
-                period: Timeout.InfiniteTimeSpan);
+            if (debugRequested)
+            {
+                // This product means "prepare for sending a tracer flare."
+                // We may consider doing more than just enabling debug mode in the future
+                _wasDebugLogEnabled = GlobalSettings.Instance.DebugEnabledInternal;
+                GlobalSettings.SetDebugEnabledInternal(true);
 
-            var previous = Interlocked.Exchange(ref _resetTimer, timer);
-            previous?.Dispose();
+                // The timer is a fallback, in case we never receive a "send flare" product
+                var timer = new Timer(
+                    _ => ResetDebugging(),
+                    state: null,
+                    dueTime: TimeSpan.FromMinutes(RevertGlobalDebugMinutes),
+                    period: Timeout.InfiniteTimeSpan);
 
-            Log.Debug(TracerFlareInitializationLog);
+                var previous = Interlocked.Exchange(ref _resetTimer, timer);
+                previous?.Dispose();
+
+                Log.Debug(TracerFlareInitializationLog);
+            }
 
             return AcknowledgeAll(config);
         }
@@ -162,12 +162,25 @@ internal class TracerFlareManager : ITracerFlareManager
     {
         try
         {
-            // This product means "tracer flare is over, revert log levels"
-            ResetDebugging();
-            var timer = Interlocked.Exchange(ref _resetTimer, null);
-            timer?.Dispose();
+            var enableDebugDeleted = false;
+            foreach (var removedConfig in config)
+            {
+                if (IsEnableDebugConfig(removedConfig))
+                {
+                    enableDebugDeleted = true;
+                    break;
+                }
+            }
 
-            Log.Information(TracerFlareCompleteLog);
+            if (enableDebugDeleted)
+            {
+                // This product means "tracer flare is over, revert log levels"
+                ResetDebugging();
+                var timer = Interlocked.Exchange(ref _resetTimer, null);
+                timer?.Dispose();
+
+                Log.Information(TracerFlareCompleteLog);
+            }
 
             // TODO: I don't know if we need to "accept" removed config?
             var result = new ApplyDetails[config.Count];
@@ -329,7 +342,13 @@ internal class TracerFlareManager : ITracerFlareManager
         }
     }
 
-    private ApplyDetails[] AcknowledgeAll(List<RemoteConfiguration> config)
+    private static bool IsEnableDebugConfig(RemoteConfigurationPath remoteConfigPath)
+    {
+        return remoteConfigPath.Id.Equals("flare-log-level.debug", StringComparison.Ordinal)
+            || remoteConfigPath.Id.Equals("flare-log-level.trace", StringComparison.Ordinal);
+    }
+
+    private static ApplyDetails[] AcknowledgeAll(List<RemoteConfiguration> config)
     {
         var result = new ApplyDetails[config.Count];
         for (var i = 0; i < config.Count; i++)
@@ -340,7 +359,7 @@ internal class TracerFlareManager : ITracerFlareManager
         return result;
     }
 
-    private ApplyDetails[] ErrorAll(List<RemoteConfiguration> config, Exception ex)
+    private static ApplyDetails[] ErrorAll(List<RemoteConfiguration> config, Exception ex)
     {
         var result = new ApplyDetails[config.Count];
         for (var i = 0; i < config.Count; i++)
