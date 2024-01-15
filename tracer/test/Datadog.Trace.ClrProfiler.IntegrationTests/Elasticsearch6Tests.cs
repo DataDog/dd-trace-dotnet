@@ -42,6 +42,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
+            await RunTestAndAssertTelemetry(
+                async () => await TestInstrumentation(packageVersion, metadataSchemaVersion),
+                IntegrationId.ElasticsearchNet);
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "ArmUnsupported")]
+        public void IntegrationDisabled()
+        {
+            using var telemetry = this.ConfigureTelemetry();
+            string packageVersion = PackageVersions.ElasticSearch6.First()[0] as string;
+            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.ElasticsearchNet)}_ENABLED", "false");
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            var spans = agent.WaitForSpans(1).Where(s => s.Type == "elasticsearch").ToList();
+
+            Assert.Empty(spans);
+            telemetry.AssertIntegrationDisabled(IntegrationId.ElasticsearchNet);
+        }
+
+        private async Task<MockTelemetryAgent> TestInstrumentation(string packageVersion, string metadataSchemaVersion)
+        {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-elasticsearch" : ServiceName;
@@ -187,24 +210,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
                 ValidateSpans(spans, (span) => span.Resource, expected);
-                telemetry.AssertIntegrationEnabled(IntegrationId.ElasticsearchNet);
+                return telemetry;
             }
-        }
-
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("Category", "ArmUnsupported")]
-        public void IntegrationDisabled()
-        {
-            using var telemetry = this.ConfigureTelemetry();
-            string packageVersion = PackageVersions.ElasticSearch6.First()[0] as string;
-            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.ElasticsearchNet)}_ENABLED", "false");
-            using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = agent.WaitForSpans(1).Where(s => s.Type == "elasticsearch").ToList();
-
-            Assert.Empty(spans);
-            telemetry.AssertIntegrationDisabled(IntegrationId.ElasticsearchNet);
         }
     }
 }
