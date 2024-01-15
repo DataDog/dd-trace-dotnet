@@ -717,6 +717,7 @@
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter`1" />
       <type fullname="System.Runtime.CompilerServices.TupleElementNamesAttribute" />
       <type fullname="System.Runtime.CompilerServices.TypeForwardedFromAttribute" />
+      <type fullname="System.Runtime.CompilerServices.ValueTaskAwaiter" />
       <type fullname="System.Runtime.ExceptionServices.ExceptionDispatchInfo" />
       <type fullname="System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs" />
       <type fullname="System.Runtime.ExceptionServices.HandleProcessCorruptedStateExceptionsAttribute" />
