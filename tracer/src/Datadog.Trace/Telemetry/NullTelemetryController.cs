@@ -4,11 +4,8 @@
 // </copyright>
 
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.Iast.Settings;
-using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry
 {
@@ -48,5 +45,7 @@ namespace Datadog.Trace.Telemetry
         {
             return Task.CompletedTask;
         }
+
+        public Task DumpTelemetry(string filePath) => Task.CompletedTask;
     }
 }

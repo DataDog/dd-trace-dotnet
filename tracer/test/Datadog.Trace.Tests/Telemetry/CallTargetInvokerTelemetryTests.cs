@@ -140,6 +140,8 @@ namespace Datadog.Trace.Tests.Telemetry
             public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error)
             {
             }
+
+            public Task DumpTelemetry(string filePath) => Task.CompletedTask;
         }
     }
 }

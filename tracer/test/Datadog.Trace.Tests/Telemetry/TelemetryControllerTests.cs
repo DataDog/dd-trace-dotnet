@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,6 +16,8 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Telemetry.Transports;
+using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -182,7 +185,145 @@ public class TelemetryControllerTests
         await controller.DisposeAsync();
     }
 
-    private async Task<List<TelemetryData>> WaitForRequestStarted(TestTelemetryTransport transport, TimeSpan timeout)
+    [Fact]
+    public async Task TelemetryControllerDumpsAllTelemetryToFile()
+    {
+        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+
+        var controller = new TelemetryController(
+            new ConfigurationTelemetry(),
+            new DependencyTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
+            transportManager,
+            _flushInterval);
+
+        // before the controller is started, nothing should be written when we try to dump telemetry
+        var tempFile = Path.GetTempFileName();
+        await controller.DumpTelemetry(tempFile);
+        File.ReadAllText(tempFile).Should().BeNullOrEmpty();
+
+        // after starting telemetry
+        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.Start();
+
+        await WaitForRequestStarted(transport, _timeout);
+
+        // dump the data
+        await controller.DumpTelemetry(tempFile);
+        var rawData = File.ReadAllText(tempFile)
+                             .Should()
+                             .NotBeNullOrEmpty()
+                             .And.Subject;
+
+        // this should always be a batch
+        var dump1 = Deserialize(rawData);
+
+        // Should contain integrations and deps, but not product (as no extra products enabled)
+        var (integrations, deps, products) = GetPayloads(dump1);
+        integrations.Should().NotBeNullOrEmpty();
+        deps.Should().NotBeNullOrEmpty();
+        products.Should().BeNull();
+
+        // wait for another one
+        await WaitFor(transport, _timeout, TelemetryRequestTypes.AppHeartbeat);
+
+        // Dumped data should be basically the same, except it has a timestamp and seqID in it, so can't directly compare
+        File.Delete(tempFile);
+        await controller.DumpTelemetry(tempFile);
+        var dump2 = Deserialize(File.ReadAllText(tempFile));
+
+        // Ignore timestamp and seq when comparing the data, but otherwise should be identical to first one
+        dump2.Should()
+             .BeEquivalentTo(
+                  new
+                  {
+                      // json.SeqId,
+                      // json.TracerTime,
+                      dump1.RequestType,
+                      dump1.Payload,
+                      dump1.Application,
+                      dump1.Host,
+                      dump1.ApiVersion,
+                      dump1.RuntimeId,
+                      dump1.NamingSchemaVersion
+                  });
+
+        // record a change in telemetry
+        controller.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
+
+        // should have changed
+        File.Delete(tempFile);
+        await controller.DumpTelemetry(tempFile);
+        var dump3 = Deserialize(File.ReadAllText(tempFile));
+        // metadata should be the same, but payload should be different
+        dump3.Should()
+             .BeEquivalentTo(
+                  new
+                  {
+                      // json.SeqId,
+                      // json.TracerTime,
+                      dump1.RequestType,
+                      // json.Payload,
+                      dump1.Application,
+                      dump1.Host,
+                      dump1.ApiVersion,
+                      dump1.RuntimeId,
+                      dump1.NamingSchemaVersion
+                  });
+
+        // dump3 contains product change data too
+        (integrations, deps, products) = GetPayloads(dump3);
+        integrations.Should().NotBeNullOrEmpty();
+        deps.Should().NotBeNullOrEmpty();
+        products.Should().NotBeNull();
+
+        // clean up
+        File.Delete(tempFile);
+        await controller.DisposeAsync();
+    }
+
+    private static (ICollection<IntegrationTelemetryData> Integrations, ICollection<DependencyTelemetryData> Dependencies, ProductsData Products) GetPayloads(TelemetryData data)
+    {
+        var messageBatch = data.Payload.Should()
+                               .BeOfType<MessageBatchPayload>().Subject;
+
+        var integrations = messageBatch
+                          .Select(x => x.Payload)
+                          .OfType<AppIntegrationsChangedPayload>()
+                          .FirstOrDefault()
+                         ?.Integrations;
+
+        var dependencies = messageBatch
+                          .Select(x => x.Payload)
+                          .OfType<AppDependenciesLoadedPayload>()
+                          .FirstOrDefault()
+                         ?.Dependencies;
+
+        var products = messageBatch
+                      .Select(x => x.Payload)
+                      .OfType<AppProductChangePayload>()
+                      .FirstOrDefault()
+                     ?.Products;
+
+        return (integrations, dependencies, products);
+    }
+
+    private static TelemetryData Deserialize(string rawData)
+    {
+        MockTelemetryAgent.TelemetryConverter.V2Serializers.TryGetValue(TelemetryRequestTypes.MessageBatch, out var serializer)
+                          .Should()
+                          .BeTrue();
+        var tr = new StringReader(rawData);
+        using var jsonTextReader = new JsonTextReader(tr);
+        return serializer.Deserialize<TelemetryData>(jsonTextReader);
+    }
+
+    private Task<List<TelemetryData>> WaitForRequestStarted(TestTelemetryTransport transport, TimeSpan timeout)
+        => WaitFor(transport, timeout, TelemetryRequestTypes.AppStarted);
+
+    private async Task<List<TelemetryData>> WaitFor(TestTelemetryTransport transport, TimeSpan timeout, string requestType)
     {
         var deadline = DateTimeOffset.UtcNow.Add(timeout);
         // The Task.Delay happens to give back control after the deadline so the test can fail randomly
@@ -193,7 +334,7 @@ public class TelemetryControllerTests
             nbTries++;
             var data = transport.GetData();
 
-            if (data.Any(x => ContainsMessage(x, TelemetryRequestTypes.AppStarted)))
+            if (data.Any(x => ContainsMessage(x, requestType)))
             {
                 return data;
             }
