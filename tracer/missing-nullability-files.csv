@@ -41,7 +41,6 @@ src/Datadog.Trace/TaggingUtils.cs
 src/Datadog.Trace/Tags.AppSec.cs
 src/Datadog.Trace/Tags.cs
 src/Datadog.Trace/TimeConstants.cs
-src/Datadog.Trace/TraceContext.cs
 src/Datadog.Trace/Tracer.cs
 src/Datadog.Trace/TracerConstants.cs
 src/Datadog.Trace/TracerManager.cs
