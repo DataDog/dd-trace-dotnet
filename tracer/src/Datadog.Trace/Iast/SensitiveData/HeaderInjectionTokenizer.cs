@@ -38,7 +38,7 @@ internal class HeaderInjectionTokenizer : ITokenizer
             if (_keyPattern.IsMatch(evidence.Substring(0, separatorStart)) ||
                 _valuePattern.IsMatch(valuePart))
             {
-                result.Add(new Range(separatorEnd, valuePart.Length));
+                return [new Range(separatorEnd, valuePart.Length)];
             }
         }
 
