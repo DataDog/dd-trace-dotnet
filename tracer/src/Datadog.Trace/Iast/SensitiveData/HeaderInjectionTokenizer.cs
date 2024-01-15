@@ -18,8 +18,10 @@ namespace Datadog.Trace.Iast.SensitiveData;
 /// </summary>
 internal class HeaderInjectionTokenizer : ITokenizer
 {
-    private static Regex _keyPattern = new Regex(@"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    private static Regex _valuePattern = new Regex(@"(?i)(?:bearer\s+[a-z0-9\._\-]+|glpat-[\w\-]{20}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=\-]+\.ey[I-L][\w=\-]+(?:\.[\w.+/=\-]+)?|(?:[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY[\-]{5}|ssh-rsa\s*[a-z0-9/\.+]{100,}))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    // We should add this timeout to all the sensitive data tokenizers and have a common timeout
+    private static TimeSpan _timeout = TimeSpan.FromMilliseconds(100);
+    private static Regex _keyPattern = new Regex(@"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)", RegexOptions.Compiled | RegexOptions.IgnoreCase, _timeout);
+    private static Regex _valuePattern = new Regex(@"(?i)(?:bearer\s+[a-z0-9\._\-]+|glpat-[\w\-]{20}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=\-]+\.ey[I-L][\w=\-]+(?:\.[\w.+/=\-]+)?|(?:[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY[\-]{5}|ssh-rsa\s*[a-z0-9/\.+]{100,}))", RegexOptions.Compiled | RegexOptions.IgnoreCase, _timeout);
 
     public HeaderInjectionTokenizer()
     {
