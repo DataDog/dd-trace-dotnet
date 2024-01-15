@@ -18,7 +18,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
-[CollectionDefinition(nameof(DynamicConfigurationTests), DisableParallelization = true)]
+[Collection(nameof(DynamicConfigurationTests))]
 public class TracerFlareTests : TestHelper
 {
     private const string CaseId = "abc123";

@@ -31,5 +31,7 @@ namespace Datadog.Trace.TestHelpers
         {
             info.AddValue(nameof(Values), JsonConvert.SerializeObject(Values));
         }
+
+        public Dictionary<string, string> ToDictionary() => new(Values);
     }
 }

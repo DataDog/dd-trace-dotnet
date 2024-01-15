@@ -101,9 +101,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         [SkippableTheory]
         [MemberData(nameof(GetParserData))]
-        public void CustomTestConfigurationParser(IDictionary<string, string> tags, Dictionary<string, string> expected)
+        public void CustomTestConfigurationParser(SerializableDictionary tags, SerializableDictionary expected)
         {
-            Assert.Equal((IEnumerable<KeyValuePair<string, string>>)expected, IntelligentTestRunnerClient.GetCustomTestsConfigurations(tags));
+            Assert.Equal(expected, IntelligentTestRunnerClient.GetCustomTestsConfigurations(tags?.ToDictionary()));
         }
     }
 }
