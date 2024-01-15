@@ -29,7 +29,6 @@ internal class HeaderInjectionTokenizer : ITokenizer
 
     public List<Range> GetTokens(string evidence, IntegrationId? integrationId = null)
     {
-        var result = new List<Range>();
         var separatorStart = evidence.IndexOf(IastModule.HeaderInjectionEvidenceSeparator);
 
         if (separatorStart > 0)
@@ -44,6 +43,6 @@ internal class HeaderInjectionTokenizer : ITokenizer
             }
         }
 
-        return result;
+        return [];
     }
 }
