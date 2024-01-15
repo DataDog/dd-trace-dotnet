@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
                 if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
                 {
-                    var queueName = (string)state.State;
+                    var edgeTags = new[] { "direction:in", $"topic:{(string)state.State}", "type:sqs" };
                     foreach (var o in response.Messages)
                     {
                         var message = o.DuckCast<IMessage>();
@@ -90,17 +90,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                             continue; // should not happen
                         }
 
-                        var adapter = new ContextPropagation.MessageAttributesAdapter(message.Attributes);
-                        state.Scope.Span.Context.MergePathwayContext(dataStreamsManager.ExtractPathwayContext(adapter));
-
                         var sentTime = 0;
                         if (message.Attributes != null && message.Attributes.TryGetValue("SentTimestamp", out var sentTimeStr) && sentTimeStr != null)
                         {
                             int.TryParse(sentTimeStr, out sentTime);
                         }
 
-                        var edgeTags = new[] { "direction:in", $"topic:{queueName}", "type:sqs" };
-                        state.Scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: sentTime);
+                        var adapter = new ContextPropagation.MessageAttributesAdapter(message.Attributes);
+                        var parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
+                        state.Scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
                     }
                 }
             }
