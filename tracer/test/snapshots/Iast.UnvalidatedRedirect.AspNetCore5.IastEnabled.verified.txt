@@ -77,8 +77,8 @@
       "type": "UNVALIDATED_REDIRECT",
       "location": {
         "spanId": XXX,
-        "path": "IastController.cs",
-        "line": XXX
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "UnvalidatedRedirect"
       },
       "evidence": {
         "valueParts": [

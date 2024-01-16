@@ -27,8 +27,8 @@
       "type": "PATH_TRAVERSAL",
       "location": {
         "spanId": XXX,
-        "path": "IastController.cs",
-        "line": XXX
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "GetFileContent"
       },
       "evidence": {
         "valueParts": [

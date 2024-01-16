@@ -28,8 +28,8 @@
       "type": "TRUST_BOUNDARY_VIOLATION",
       "location": {
         "spanId": XXX,
-        "path": "IastController.cs",
-        "line": XXX
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "TrustBoundaryViolation"
       },
       "evidence": {
         "valueParts": [
@@ -44,8 +44,8 @@
       "type": "TRUST_BOUNDARY_VIOLATION",
       "location": {
         "spanId": XXX,
-        "path": "IastController.cs",
-        "line": XXX
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "TrustBoundaryViolation"
       },
       "evidence": {
         "valueParts": [
@@ -60,8 +60,8 @@
       "type": "TRUST_BOUNDARY_VIOLATION",
       "location": {
         "spanId": XXX,
-        "path": "IastController.cs",
-        "line": XXX
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "TrustBoundaryViolation"
       },
       "evidence": {
         "valueParts": [

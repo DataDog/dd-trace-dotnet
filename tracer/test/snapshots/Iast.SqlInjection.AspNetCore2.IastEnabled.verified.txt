@@ -27,8 +27,8 @@
       "type": "SQL_INJECTION",
       "location": {
         "spanId": XXX,
-        "path": "IastController.cs",
-        "line": XXX
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "SqlQuery"
       },
       "evidence": {
         "valueParts": [

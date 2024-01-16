@@ -27,8 +27,8 @@
       "type": "WEAK_RANDOMNESS",
       "location": {
         "spanId": XXX,
-        "path": "IastController.cs",
-        "line": XXX
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "WeakRandomness"
       },
       "evidence": {
         "value": "System.Random"

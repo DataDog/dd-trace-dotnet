@@ -27,8 +27,8 @@
       "type": "COMMAND_INJECTION",
       "location": {
         "spanId": XXX,
-        "path": "DataRazorIastPage.cshtml.cs",
-        "line": XXX
+        "path": "Samples.Security.AspNetCore2.Pages.DataRazorIastPageModel",
+        "method": "OnPost"
       },
       "evidence": {
         "valueParts": [

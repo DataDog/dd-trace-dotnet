@@ -39,6 +39,11 @@
     },
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
+      "location": {
+        "spanId": XXX,
+        "path": "IastController.cs",
+        "line": XXX
+      },
       "evidence": {
         "valueParts": [
           {
@@ -82,11 +87,6 @@
     },
     {
       "type": "NO_SAMESITE_COOKIE",
-      "location": {
-        "spanId": XXX,
-        "path": "IastController.cs",
-        "line": XXX
-      },
       "evidence": {
         "value": "ASP.NET_SessionId"
       }
