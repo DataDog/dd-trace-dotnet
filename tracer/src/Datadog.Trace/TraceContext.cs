@@ -33,7 +33,7 @@ namespace Datadog.Trace
         private readonly TraceClock _clock;
 
         private IastRequestContext? _iastRequestContext;
-        private bool _isApiSecurity;
+        private AppSecRequestContext? _appSecRequestContext;
 
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
@@ -105,7 +105,15 @@ namespace Datadog.Trace
         /// </summary>
         internal IastRequestContext? IastRequestContext => _iastRequestContext;
 
-        internal ConcurrentBag<IReadOnlyCollection<object>> WafSecurityEvents { get; } = new();
+        internal void AddWafSecurityEvents(IReadOnlyCollection<object> events)
+        {
+            if (Volatile.Read(ref _appSecRequestContext) is null)
+            {
+                Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
+            }
+
+            _appSecRequestContext!.AddWafSecurityEvents(events);
+        }
 
         internal void EnableIastInRequest()
         {
@@ -158,20 +166,9 @@ namespace Datadog.Trace
                     }
                 }
 
-                if (!WafSecurityEvents.IsEmpty)
+                if (_appSecRequestContext != null)
                 {
-                    var allEvents = new List<object>();
-                    foreach (var events in WafSecurityEvents)
-                    {
-                        allEvents.Add(events);
-                    }
-
-                    Tags.SetTag(Datadog.Trace.Tags.AppSecJson, "{\"triggers\":" + JsonConvert.SerializeObject(allEvents) + "}");
-                }
-
-                if (_isApiSecurity)
-                {
-                    Security.Instance.ApiSecurity.ReleaseRequest();
+                    _appSecRequestContext.CloseWebSpan(Tags);
                 }
             }
 
@@ -284,7 +281,12 @@ namespace Datadog.Trace
 
         public void MarkApiSecurity()
         {
-            _isApiSecurity = true;
+            if (Volatile.Read(ref _appSecRequestContext) is null)
+            {
+                Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
+            }
+
+            _appSecRequestContext!.MarkApiSecurity();
         }
     }
 }
