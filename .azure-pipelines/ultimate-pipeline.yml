@@ -3076,9 +3076,11 @@ stages:
       displayName: RunBenchmarks
       env:
         DD_CIVISIBILITY_AGENTLESS_ENABLED: true
-        DD_PROFILING_ENABLED: true
+        DD_PROFILING_ENABLED: false
         DD_API_KEY: $(ddApiKey)
         DD_DOTNET_TRACER_HOME: $(monitoringHome)
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
     - publish: tracer/build_data/benchmarks
       artifact: benchmarks_results_$(agent)
