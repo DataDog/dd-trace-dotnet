@@ -39,8 +39,7 @@ namespace Datadog.Trace.Iast
                 // 0 - 9 are cached only
                 if (!_largeNumericCache)
                 {
-                    if (arg.Length > 1 || !char.IsDigit(arg[0])) { return false; }
-                    return true;
+                    return arg.Length == 1 && char.IsDigit(arg[0]);
                 }
 
                 // 0 - 299 are cached
