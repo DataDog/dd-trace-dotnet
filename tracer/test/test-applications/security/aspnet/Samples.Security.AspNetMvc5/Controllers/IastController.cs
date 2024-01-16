@@ -584,25 +584,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("StackTraceLeak")]
         public ActionResult StackTraceLeak()
         {
-            StackTrace stackTrace = new StackTrace(true);
-            StackFrame[] stackFrames = stackTrace.GetFrames();
-
-            foreach (StackFrame stackFrame in stackFrames)
-            {
-                Console.WriteLine(stackFrame);
-            }
-
-            try 
-            {
-                var ex = new Exception("StackTraceLeak");
-                throw ex;
-            }
-            catch (Exception ex)
-            {
-                var stack = ex.StackTrace.ToString();
-                Console.WriteLine(stack);
-                throw ex;
-            }
+            throw new SystemException("Custom exception message");
         }
     }
 }

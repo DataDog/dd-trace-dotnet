@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
 [InstrumentMethod(
     AssemblyName = "System.Web",
     TypeName = "System.Web.HttpResponse",
-    ParameterTypeNames = new[] { "System.Web.HttpContext", "System.Exception" },
+    ParameterTypeNames = new[] { ClrNames.Exception, ClrNames.Bool },
     MethodName = "WriteErrorMessage",
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "4.0.0",
@@ -43,7 +43,12 @@ public static class HttpResponseIntegration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, Exception exception, bool dontShowSensitiveErrors)
     {
-        return StackTraceLeakIntegrationCommon.OnExceptionLeak(IntegrationId.StackTraceLeak, exception);
+        if (HttpRuntime.UsingIntegratedPipeline && !dontShowSensitiveErrors)
+        {
+            return StackTraceLeakIntegrationCommon.OnExceptionLeak(IntegrationId.StackTraceLeak, exception);
+        }
+
+        return CallTargetState.GetDefault();
     }
 }
 

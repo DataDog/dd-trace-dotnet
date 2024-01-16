@@ -88,6 +88,16 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     {
         await TestIastHeaderInjectionRequestVulnerability(testCase, headers, cookies, useValueFromOriginHeader);
     }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/StackTraceLeak")]
+    public async Task TestStackTraceLeak(string test, string url)
+    {
+        await TestStrictTransportSecurityHeaderMissingVulnerability(test, url);
+    }
 }
 
 [Collection("IisTests")]
@@ -453,12 +463,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
                           .DisableRequireUniquePrefix();
     }
 
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/StackTraceLeak")]
-    public async Task TestStackTraceLeak(string test, string url)
+    protected async Task TestStrictTransportSecurityHeaderMissingVulnerability(string test, string url)
     {
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
