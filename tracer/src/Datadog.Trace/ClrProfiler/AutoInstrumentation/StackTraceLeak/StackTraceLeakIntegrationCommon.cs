@@ -11,6 +11,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
 
+#nullable enable
 internal static class StackTraceLeakIntegrationCommon
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StackTraceLeakIntegrationCommon));
