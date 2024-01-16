@@ -351,6 +351,7 @@
       <type fullname="System.Net.IPHostEntry" />
    </assembly>
    <assembly fullname="System.Net.Primitives">
+      <type fullname="System.Net.DecompressionMethods" />
       <type fullname="System.Net.DnsEndPoint" />
       <type fullname="System.Net.EndPoint" />
       <type fullname="System.Net.HttpStatusCode" />

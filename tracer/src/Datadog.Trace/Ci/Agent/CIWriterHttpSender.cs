@@ -255,7 +255,7 @@ namespace Datadog.Trace.Ci.Agent
                 {
                     if (request is IMultipartApiRequest multipartRequest)
                     {
-                        return multipartRequest.PostAsync(payloadArray);
+                        return multipartRequest.PostAsync(payloadArray, payload.UseEvpProxy ? MultipartCompression.None : MultipartCompression.GZip);
                     }
 
                     MultipartApiRequestNotSupported.Throw();

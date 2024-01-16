@@ -479,6 +479,126 @@ public class FuncInstrumentationTests
         value.Should().Be(4);
     }
 
+    [Fact]
+    public async Task Async1WithAsyncExceptionTest()
+    {
+        var result = new StrongBox<int>(0);
+        var callbacks = new Async1Callbacks();
+        Func<string, Task<int>> func = async (arg1) =>
+        {
+            callbacks.Count.Value++;
+            // force an exception
+            int x = 0, y = 0, z = 0;
+            z = x / y;
+            await Task.Yield();
+            return 42;
+        };
+        func = func.Instrument(callbacks);
+        await Assert.ThrowsAsync<DivideByZeroException>(
+            async () =>
+            {
+                result = new StrongBox<int>(await func("Arg01").ConfigureAwait(false));
+            }).ConfigureAwait(false);
+
+        callbacks.Count.Value.Should().Be(4);
+
+        var value = 0;
+        CustomFunc<string, Task<int>> func2 = async (arg1) =>
+        {
+            Interlocked.Increment(ref value).Should().Be(2);
+            // force an exception
+            int x = 0, y = 0, z = 0;
+            z = x / y;
+            await Task.Yield();
+            return 42;
+        };
+        func2 = DelegateInstrumentation.Wrap(func2, new DelegateFunc1Callbacks(
+                                                 (target, arg1) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(4);
+                                                     return returnValue;
+                                                 },
+                                                 onDelegateAsyncEnd: async (sender, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                     await Task.Delay(100).ConfigureAwait(false);
+                                                     return ((int)returnValue) + 1;
+                                                 }));
+
+        await Assert.ThrowsAsync<DivideByZeroException>(
+            async () =>
+            {
+                result = new StrongBox<int>(await func2("Arg01").ConfigureAwait(false));
+            }).ConfigureAwait(false);
+
+        value.Should().Be(4);
+    }
+
+    [Fact]
+    public async Task Async1WithExceptionTest()
+    {
+        var result = new StrongBox<int>(0);
+        var callbacks = new Async1Callbacks();
+        Func<string, Task<int>> func = (arg1) =>
+        {
+            callbacks.Count.Value++;
+            // force an exception
+            int x = 0, y = 0, z = 0;
+            z = x / y;
+            return Task.FromResult(42);
+        };
+        func = func.Instrument(callbacks);
+        await Assert.ThrowsAsync<DivideByZeroException>(
+            async () =>
+            {
+                result = new StrongBox<int>(await func("Arg01").ConfigureAwait(false));
+            }).ConfigureAwait(false);
+
+        callbacks.Count.Value.Should().Be(4);
+
+        var value = 0;
+        CustomFunc<string, Task<int>> func2 = (arg1) =>
+        {
+            Interlocked.Increment(ref value).Should().Be(2);
+            // force an exception
+            int x = 0, y = 0, z = 0;
+            z = x / y;
+            return Task.FromResult(42);
+        };
+        func2 = DelegateInstrumentation.Wrap(func2, new DelegateFunc1Callbacks(
+                                                 (target, arg1) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(4);
+                                                     return returnValue;
+                                                 },
+                                                 onDelegateAsyncEnd: async (sender, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                     await Task.Delay(100).ConfigureAwait(false);
+                                                     return ((int)returnValue) + 1;
+                                                 }));
+
+        await Assert.ThrowsAsync<DivideByZeroException>(
+            async () =>
+            {
+                result = new StrongBox<int>(await func2("Arg01").ConfigureAwait(false));
+            }).ConfigureAwait(false);
+
+        value.Should().Be(4);
+    }
+
     public readonly struct Async1Callbacks : IBegin1Callbacks, IReturnCallback, IReturnAsyncCallback
     {
         public Async1Callbacks()
