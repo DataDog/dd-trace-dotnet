@@ -26,6 +26,10 @@
           "type": "integer",
           "description": "The specific Azure DevOps Build ID to use"
         },
+        "BenchmarkCategory": {
+          "type": "string",
+          "description": "Override the default category filter for running benchmarks. (Optional)"
+        },
         "BuildConfiguration": {
           "type": "string",
           "description": "Configuration to build - Default is 'Release'",

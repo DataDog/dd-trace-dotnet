@@ -11,6 +11,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkAgent5]
+    [BenchmarkCategory(Constants.TracerCategory)]
     public class ElasticsearchBenchmark
     {
         private static readonly RequestPipeline Pipeline = new RequestPipeline();

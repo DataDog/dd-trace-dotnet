@@ -14,6 +14,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkAgent4]
+    [BenchmarkCategory(Constants.TracerCategory)]
     public class Log4netBenchmark
     {
         private static readonly Tracer LogInjectionTracer;
