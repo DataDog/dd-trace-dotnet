@@ -157,28 +157,46 @@ HRESULT TracerTokens::EnsureBaseCalltargetTokens()
     
 
     // *** Ensure Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException type ref, might not be available if tracer version is < 2.22
-    if (trace::profiler->IsCallTargetBubbleUpExceptionTypeAvailable() && bubbleUpExceptionTypeRef == mdTypeRefNil)
+    if (profiler->IsCallTargetBubbleUpExceptionTypeAvailable() && bubbleUpExceptionTypeRef == mdTypeRefNil)
     {
         const ModuleMetadata* module_metadata = GetMetadata();
-        const auto defined_call_target_bubble_up_exception_type = module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef,
+        const auto defined_calltargetbubbleup_byname_hrresult = module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef,
                                                             calltargetbubbleexception_tracer_type_name.c_str(),
                                                             &bubbleUpExceptionTypeRef);
-        if (SUCCEEDED(defined_call_target_bubble_up_exception_type) && trace::profiler->IsCallTargetBubbleUpFunctionAvailable() && bubbleUpExceptionFunctionRef == mdMemberRefNil)
+        if (SUCCEEDED(defined_calltargetbubbleup_byname_hrresult))
         {
-            // now reference the method IsCallTargetBubbleUpException in the type's reference
-            COR_SIGNATURE createInstanceSig[32];
-            COR_SIGNATURE* sigBuilder = createInstanceSig;
-            sigBuilder += CorSigCompressData(IMAGE_CEE_CS_CALLCONV_DEFAULT, sigBuilder); // static
-            sigBuilder += CorSigCompressData(1, sigBuilder); // arguments count
-            sigBuilder += CorSigCompressElementType(ELEMENT_TYPE_BOOLEAN, sigBuilder);     // return type
-            sigBuilder += CorSigCompressElementType(ELEMENT_TYPE_CLASS, sigBuilder); // argument type
-            sigBuilder += CorSigCompressToken(exTypeRef, sigBuilder);
-            
-            const auto defined_call_target_bubble_up_exception_function = module_metadata->metadata_emit->DefineMemberRef(
-                    bubbleUpExceptionTypeRef, calltargetbubbleexception_tracer_function_name.c_str(), createInstanceSig,
-                    sigBuilder - createInstanceSig, &bubbleUpExceptionFunctionRef);
-            Logger::Debug("Defined function ", calltargetbubbleexception_tracer_function_name, " on ",
-                          calltargetbubbleexception_tracer_type_name, " type: ", defined_call_target_bubble_up_exception_function);
+            if (profiler->IsCallTargetBubbleUpFunctionAvailable() && bubbleUpExceptionFunctionRef == mdMemberRefNil)
+            {
+                // now reference the method IsCallTargetBubbleUpException in the type's reference
+                COR_SIGNATURE createInstanceSig[32];
+                COR_SIGNATURE* sigBuilder = createInstanceSig;
+                sigBuilder += CorSigCompressData(IMAGE_CEE_CS_CALLCONV_DEFAULT, sigBuilder); // static
+                sigBuilder += CorSigCompressData(1, sigBuilder);                             // arguments count
+                sigBuilder += CorSigCompressElementType(ELEMENT_TYPE_BOOLEAN, sigBuilder);   // return type
+                sigBuilder += CorSigCompressElementType(ELEMENT_TYPE_CLASS, sigBuilder);     // argument type
+                sigBuilder += CorSigCompressToken(exTypeRef, sigBuilder);
+
+                const auto defined_iscalltargetbubbleup_member_hrresult = module_metadata->metadata_emit->
+                    DefineMemberRef(
+                        bubbleUpExceptionTypeRef, calltargetbubbleexception_tracer_function_name.c_str(),
+                        createInstanceSig,
+                        sigBuilder - createInstanceSig, &bubbleUpExceptionFunctionRef);
+               
+                if (SUCCEEDED(defined_iscalltargetbubbleup_member_hrresult))
+                {
+                    Logger::Debug("Defined function ", calltargetbubbleexception_tracer_function_name, " on ",
+                             calltargetbubbleexception_tracer_type_name, " type: ",
+                             defined_iscalltargetbubbleup_member_hrresult);
+                }
+                else
+                {
+                    bubbleUpExceptionFunctionRef = mdMemberRefNil;
+                }
+            }
+        }
+        else
+        {
+            bubbleUpExceptionTypeRef = mdTypeRefNil;
         }
     }
     return hr;

@@ -393,7 +393,8 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     // *** Filter exception
     ILInstr* filter = nullptr;
     ILInstr* beginMethodCatchFirstInstr = nullptr;
-    if (m_corProfiler->call_target_bubble_up_exception_available)
+    mdTypeRef bubbleup_exception_typeref = tracerTokens->GetBubbleUpExceptionTypeRef();
+    if (m_corProfiler->call_target_bubble_up_exception_available && bubbleup_exception_typeref != mdTypeRefNil)
     {
         filter = CreateFilterForException(&reWriterWrapper, tracerTokens->GetExceptionTypeRef(),
                                           tracerTokens->GetBubbleUpExceptionTypeRef(),
@@ -789,7 +790,7 @@ TracerMethodRewriter::GetResourceNameAndOperationName(const ComPtr<IMetaDataImpo
 }
 
 ILInstr* trace::TracerMethodRewriter::CreateFilterForException(ILRewriterWrapper* rewriter, mdTypeRef exception,
-                                                               mdTypeRef type_ref, mdMemberRef containsCallTargetBubbleUp, ULONG exceptionValueIndex)
+                                                               mdTypeRef type_ref, mdMemberRef containsCallTargetBubbleUpMemberRef, ULONG exceptionValueIndex)
 {
     ILInstr* filter = rewriter->CreateInstr(CEE_ISINST);
     filter->m_Arg32 = exception;
@@ -802,9 +803,9 @@ ILInstr* trace::TracerMethodRewriter::CreateFilterForException(ILRewriterWrapper
     isException->m_pTarget = storeExceptionInIndex;
     rewriter->LoadLocal(exceptionValueIndex);
 
-    if (m_corProfiler->call_target_bubble_up_exception_function_available)
+    if (m_corProfiler->call_target_bubble_up_exception_function_available && containsCallTargetBubbleUpMemberRef != mdMemberRefNil)
     {
-        rewriter->CallMember(containsCallTargetBubbleUp, false);
+        rewriter->CallMember(containsCallTargetBubbleUpMemberRef, false);
     }
     else
     {
