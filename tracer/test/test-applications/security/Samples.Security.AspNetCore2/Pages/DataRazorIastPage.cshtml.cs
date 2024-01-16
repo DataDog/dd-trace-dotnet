@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Samples.Security.AspNetCore5.Models;
@@ -21,7 +20,6 @@ namespace Samples.Security.AspNetCore2.Pages
         [BindProperty]
         public MyModel MyModelInstance { get; set; }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
         public IActionResult OnPost()
         {
             if (MyModelInstance.Property == "Execute")

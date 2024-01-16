@@ -8,7 +8,6 @@ using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
@@ -91,7 +90,6 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("SqlQuery")]
         [Route("SqlQuery")]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         public IActionResult SqlQuery(string username, string query)
         {
             try
@@ -124,7 +122,6 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("ExecuteCommand")]
         [Route("ExecuteCommand")]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         public IActionResult ExecuteCommand(string file, string argumentLine)
         {
             return ExecuteCommandInternal(file, argumentLine);
@@ -156,7 +153,6 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         //It uses Newtonsoft by default for netcore 2.1
         [Route("ExecuteQueryFromBodyQueryData")]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         public ActionResult ExecuteQueryFromBodyQueryData([FromBody] QueryData query)
         {
             try
@@ -276,7 +272,6 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("ExecuteCommandFromHeader")]
         [Route("ExecuteCommandFromHeader")]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         public IActionResult ExecuteCommandFromHeader()
         {
             return ExecuteCommandInternal(Request.Headers["file"], Request.Headers["argumentLine"]);
@@ -284,7 +279,6 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("ExecuteCommandFromCookie")]
         [Route("ExecuteCommandFromCookie")]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         public IActionResult ExecuteCommandFromCookie()
         {
             return ExecuteCommandInternal(Request.Cookies["file"], Request.Cookies["argumentLine"]);
