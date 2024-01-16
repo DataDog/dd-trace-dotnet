@@ -114,7 +114,7 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
     const auto& module_info = GetModuleInfo(m_corProfiler->info_, module_id);
     const auto assembly_name = module_info.assembly.name;
 
-    if (!IsCoreLibOr3rdParty(assembly_name))
+    if (!IsCoreLibOr3rdParty(assembly_name) && !module_info.IsDynamic())
     {
         ComPtr<IUnknown> metadataInterfaces;
         auto hr = m_corProfiler->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
