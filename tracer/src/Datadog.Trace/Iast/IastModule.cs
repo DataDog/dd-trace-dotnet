@@ -513,7 +513,6 @@ internal static class IastModule
         }
 
         return IastModuleResponse.Empty;
-        */
     }
 
     private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, List<Vulnerability> vulnerabilities)
