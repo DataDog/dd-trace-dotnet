@@ -34,7 +34,7 @@ namespace Datadog.Trace.Iast
             bool IsFiltered(string arg)
             {
                 // Try to bail out ASAP
-                if (arg.Length == 0) { return true; }
+                if (string.IsNullOrEmpty(arg)) { return true; }
 
                 // 0 - 9 are cached only
                 if (!_largeNumericCache)
