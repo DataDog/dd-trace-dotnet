@@ -76,4 +76,59 @@ public class TaintedObjectsTests
         Assert.Equal(tainted1, taintedObjects.Get(tainted1).Value);
         Assert.Null(taintedObjects.Get(tainted2));
     }
+
+    [Fact]
+    public void GivenInputStrings_WhenTainted_DigitsAreFiltered()
+    {
+        TaintedObjects taintedObjects = new();
+        Source source = new Source(SourceType.RequestBody, "name", "value");
+
+        void TaintInput(bool mustBeTainted, string s)
+        {
+            if (mustBeTainted)
+            {
+                Assert.True(taintedObjects.TaintInputString(s, source), s + " should be tainted");
+            }
+            else
+            {
+                Assert.False(taintedObjects.TaintInputString(s, source), s + " should NOT be tainted");
+            }
+        }
+
+        TaintInput(false, string.Empty);
+
+        TaintInput(false, "0");
+        TaintInput(false, "1");
+        TaintInput(false, "2");
+        TaintInput(false, "3");
+        TaintInput(false, "4");
+        TaintInput(false, "5");
+        TaintInput(false, "6");
+        TaintInput(false, "7");
+        TaintInput(false, "8");
+        TaintInput(false, "9");
+
+#if NET8_0_OR_GREATER
+        bool largeCache = true;
+#else
+        bool largeCache = false;
+
+#endif
+        TaintInput(!largeCache, "10");
+        TaintInput(!largeCache, "100");
+        TaintInput(!largeCache, "200");
+        TaintInput(!largeCache, "299");
+
+        TaintInput(true, "300");
+        TaintInput(true, "500");
+        TaintInput(true, "1000");
+
+        TaintInput(true, "N");
+        TaintInput(true, "No");
+        TaintInput(true, "5N");
+        TaintInput(true, "5ot");
+        TaintInput(true, "50t");
+        TaintInput(true, "Not");
+        TaintInput(true, "Not Numeric");
+    }
 }
