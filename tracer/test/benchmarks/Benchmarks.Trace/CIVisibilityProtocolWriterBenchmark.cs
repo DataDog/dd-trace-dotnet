@@ -10,6 +10,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkAgent1]
+    [BenchmarkCategory(Constants.TracerCategory)]
     public class CIVisibilityProtocolWriterBenchmark
     {
         private const int SpanCount = 1000;

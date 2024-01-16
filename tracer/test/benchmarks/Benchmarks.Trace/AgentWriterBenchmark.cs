@@ -14,6 +14,8 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkAgent1]
+    [BenchmarkCategory(Constants.TracerCategory)]
+
     public class AgentWriterBenchmark
     {
         private const int SpanCount = 1000;

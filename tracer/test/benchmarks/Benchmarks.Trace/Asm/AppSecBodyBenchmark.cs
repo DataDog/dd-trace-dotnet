@@ -24,6 +24,7 @@ namespace Benchmarks.Trace.Asm
 {
     [MemoryDiagnoser]
     [BenchmarkAgent2]
+    [BenchmarkCategory(Constants.AppSecCategory)]
     public class AppSecBodyBenchmark
     {
         private static readonly Security _security;

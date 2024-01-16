@@ -9,6 +9,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkAgent6]
+    [BenchmarkCategory(Constants.TracerCategory)]
     public class TraceAnnotationsBenchmark
     {
         private static readonly RuntimeMethodHandle MethodHandle;
