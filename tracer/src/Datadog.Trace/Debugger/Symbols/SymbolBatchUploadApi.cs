@@ -90,9 +90,11 @@ namespace Datadog.Trace.Debugger.Symbols
 
             while (retries < maxRetries)
             {
-                using var response = await multipartRequest.PostAsync(
-                                         new MultipartFormItem("file", MimeTypes.Json, "file.json", symbols),
-                                         new MultipartFormItem("event", MimeTypes.Json, "event.json", _eventMetadata)).
+                using var response = await multipartRequest.PostAsync(new MultipartFormItem[]
+                                                            {
+                                                                new("file", MimeTypes.Json, "file.json", symbols),
+                                                                new("event", MimeTypes.Json, "event.json", _eventMetadata)
+                                                            }).
                                                             ConfigureAwait(false);
 
                 if (response.StatusCode is >= 200 and <= 299)
