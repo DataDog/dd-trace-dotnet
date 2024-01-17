@@ -15,6 +15,8 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -30,6 +32,7 @@ internal class TracerFlareManager : ITracerFlareManager
 
     private readonly IDiscoveryService _discoveryService;
     private readonly IRcmSubscriptionManager _subscriptionManager;
+    private readonly ITelemetryController _telemetryController;
     private readonly TracerFlareApi _flareApi;
     private ISubscription? _subscription;
     private Timer? _resetTimer = null;
@@ -39,9 +42,11 @@ internal class TracerFlareManager : ITracerFlareManager
     public TracerFlareManager(
         IDiscoveryService discoveryService,
         IRcmSubscriptionManager subscriptionManager,
+        ITelemetryController telemetryController,
         TracerFlareApi flareApi)
     {
         _subscriptionManager = subscriptionManager;
+        _telemetryController = telemetryController;
         _flareApi = flareApi;
         _discoveryService = discoveryService;
     }
@@ -94,7 +99,7 @@ internal class TracerFlareManager : ITracerFlareManager
         if (configByProduct.TryGetValue(RcmProducts.TracerFlareInitiated, out var initiatedConfig)
          && initiatedConfig.Count > 0)
         {
-            results = HandleTracerFlareInitiated(initiatedConfig);
+            results = await HandleTracerFlareInitiated(initiatedConfig).ConfigureAwait(false);
         }
 
         if (configByProduct.TryGetValue(RcmProducts.TracerFlareRequested, out var requestedConfig)
@@ -114,7 +119,7 @@ internal class TracerFlareManager : ITracerFlareManager
         return results ?? [];
     }
 
-    private ApplyDetails[] HandleTracerFlareInitiated(List<RemoteConfiguration> config)
+    private async Task<ApplyDetails[]> HandleTracerFlareInitiated(List<RemoteConfiguration> config)
     {
         try
         {
@@ -146,6 +151,18 @@ internal class TracerFlareManager : ITracerFlareManager
                 previous?.Dispose();
 
                 Log.Debug(TracerFlareInitializationLog);
+
+                // dump the telemetry (assuming we have somewhere to dump it)
+                if (Log.FileLogDirectory is { } logDir)
+                {
+                    // the filename here is chosen so that it will get cleaned up in the normal log rotation
+                    ProcessHelpers.GetCurrentProcessInformation(out _, out _, out var pid);
+                    var rid = Tracer.RuntimeId;
+                    var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                    var telemetryPath = Path.Combine(logDir, $"dotnet-tracer-telemetry-{pid}-{rid}-{timestamp}.log");
+                    Log.Debug("Requesting telemetry dump to {FileName}", telemetryPath);
+                    await _telemetryController.DumpTelemetry(telemetryPath).ConfigureAwait(false);
+                }
             }
 
             return AcknowledgeAll(config);
