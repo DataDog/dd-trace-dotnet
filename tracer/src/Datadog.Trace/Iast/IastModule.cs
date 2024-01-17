@@ -295,7 +295,7 @@ internal static class IastModule
         var evidence = ex.Source + ", " + ex.GetType().Name;
         // We report the stack of the exception instead of the current stack
         var stack = new StackTrace(ex, true);
-        return GetScope(evidence, integrationId, VulnerabilityTypeName.StacktraceLeak, OperationNameStacktraceLeak, externalStack: stack);
+        return GetScope(evidence, integrationId, VulnerabilityTypeName.StackTraceLeak, OperationNameStackTraceLeak, externalStack: stack);
     }
 
     public static IastModuleResponse OnHashingAlgorithm(string? algorithm, IntegrationId integrationId)
