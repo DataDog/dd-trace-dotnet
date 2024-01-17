@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -20,7 +21,7 @@ namespace Datadog.Trace.TestHelpers
 
         private static string _corFlagsExe;
 
-        public static Process StartProcessWithProfiler(
+        public static async Task<Process> StartProcessWithProfiler(
             string executable,
             EnvironmentHelper environmentHelper,
             MockTracerAgent agent,
@@ -78,7 +79,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 using var suspendedProcess = NativeProcess.CreateProcess.StartSuspendedProcess(startInfo);
 
-                MemoryDumpHelper.MonitorCrashes(suspendedProcess.Id).Wait();
+                await MemoryDumpHelper.MonitorCrashes(suspendedProcess.Id);
 
                 return suspendedProcess.ResumeProcess();
             }

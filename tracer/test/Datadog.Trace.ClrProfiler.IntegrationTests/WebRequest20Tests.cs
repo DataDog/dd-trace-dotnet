@@ -6,6 +6,7 @@
 #if NETFRAMEWORK
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -28,19 +29,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void SubmitsTracesV0() => RunTest("v0");
+        public Task SubmitsTracesV0() => RunTest("v0");
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void SubmitsTracesV1() => RunTest("v1");
+        public Task SubmitsTracesV1() => RunTest("v1");
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void TracingDisabled_DoesNotSubmitsTraces()
+        public async Task TracingDisabled_DoesNotSubmitsTraces()
         {
             SetInstrumentationVerification();
 
@@ -48,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
+            using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
             {
                 var spans = agent.Spans.Where(s => s.Type == SpanTypes.Http);
                 Assert.Empty(spans);
@@ -65,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private void RunTest(string metadataSchemaVersion)
+        private async Task RunTest(string metadataSchemaVersion)
         {
             int expectedSpanCount = 45;
 
@@ -78,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
                 agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
                 var spans = agent.WaitForSpans(expectedSpanCount);

@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
 
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 const int expectedProcessorSpanCount = 91;
                 agent.SpanFilters.Add(s =>

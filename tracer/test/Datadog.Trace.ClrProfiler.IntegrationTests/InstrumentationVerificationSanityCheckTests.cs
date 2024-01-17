@@ -3,8 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Specialized;
 using System.IO;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -23,14 +23,14 @@ public class InstrumentationVerificationSanityCheckTests : TestHelper
 
     [Fact]
     [Trait("Category", "LinuxUnsupported")] // Linux support is not implemented yet
-    public void WriteInstrumentationToDisk_IsEnabled_FilesGetWrittenToTheAppropriateFolder()
+    public async Task WriteInstrumentationToDisk_IsEnabled_FilesGetWrittenToTheAppropriateFolder()
     {
         // Arrange
         SetEnvironmentVariable(InstrumentationVerification.InstrumentationVerificationEnabled, "true");
 
         // Act
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var processResult = RunSampleAndWaitForExit(agent);
+        using var processResult = await RunSampleAndWaitForExit(agent);
 
         // Assert
         var folderFullPath = InstrumentationVerification.FindInstrumentationLogsFolder(processResult.Process, EnvironmentHelper.LogDirectory);
@@ -44,14 +44,14 @@ public class InstrumentationVerificationSanityCheckTests : TestHelper
 
     [Fact]
     [Trait("Category", "LinuxUnsupported")] // Linux support is not implemented yet
-    public void WriteInstrumentationToDisk_IsDisabled_NothingGetsWrittenToDisk()
+    public async Task WriteInstrumentationToDisk_IsDisabled_NothingGetsWrittenToDisk()
     {
         // Arrange
         SetEnvironmentVariable(InstrumentationVerification.InstrumentationVerificationEnabled, "false");
 
         // Act
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var processResult = RunSampleAndWaitForExit(agent);
+        using var processResult = await RunSampleAndWaitForExit(agent);
 
         // Assert
         InstrumentationVerification.FindInstrumentationLogsFolder(processResult.Process, EnvironmentHelper.LogDirectory)
@@ -61,11 +61,11 @@ public class InstrumentationVerificationSanityCheckTests : TestHelper
 
     [Fact]
     [Trait("Category", "LinuxUnsupported")] // Linux support is not implemented yet
-    public void WriteInstrumentationToDisk_IsNotSpecified_DefaultsToFalseAndNothingGetsWrittenToDisk()
+    public async Task WriteInstrumentationToDisk_IsNotSpecified_DefaultsToFalseAndNothingGetsWrittenToDisk()
     {
         // Act
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var processResult = RunSampleAndWaitForExit(agent);
+        using var processResult = await RunSampleAndWaitForExit(agent);
 
         // Assert
         processResult.Process.StartInfo.

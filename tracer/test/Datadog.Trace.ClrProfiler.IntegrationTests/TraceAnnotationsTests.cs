@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // FIXME: Could be fixed with an upgrade to the NuGet package (after .NET 8?)
             MockTelemetryAgent telemetry = _enableTelemetry ? this.ConfigureTelemetry() : null;
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent))
+            using (await RunSampleAndWaitForExit(agent))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
@@ -166,7 +166,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void IntegrationDisabled()
+        public async Task IntegrationDisabled()
         {
             // Don't bother with telemetry in version mismatch scenarios because older versions may only support V1 telemetry
             // which we no longer support in our mock telemetry agent
@@ -176,7 +176,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_TRACE_ANNOTATIONS_ENABLED", "false");
 
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent);
+            using var process = await RunSampleAndWaitForExit(agent);
             var spans = agent.Spans;
 
             Assert.Empty(spans);

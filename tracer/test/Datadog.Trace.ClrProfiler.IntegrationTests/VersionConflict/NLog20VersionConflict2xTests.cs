@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -32,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void InjectsLogsWhenEnabled()
+        public async Task InjectsLogsWhenEnabled()
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
 
@@ -41,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = MockTracerAgent.Create(Output, agentPort))
-            using (RunSampleAndWaitForExit(agent))
+            using (await RunSampleAndWaitForExit(agent))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
