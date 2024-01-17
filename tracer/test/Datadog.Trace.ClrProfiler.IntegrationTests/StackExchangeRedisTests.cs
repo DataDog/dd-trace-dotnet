@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var a = new AssertionScope();
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 var calculatedVersion = GetPackageVersion(packageVersion);
 

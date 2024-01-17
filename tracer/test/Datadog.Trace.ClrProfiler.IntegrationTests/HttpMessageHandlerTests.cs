@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
@@ -68,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(IntegrationConfigWithObfuscation))]
-        public void HttpClient_SubmitsTraces(
+        public async Task HttpClient_SubmitsTraces(
             InstrumentationOptions instrumentation,
             bool socketsHandlerEnabled,
             bool queryStringCaptureEnabled,
@@ -104,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var telemetry = this.ConfigureTelemetry();
                 using (var agent = EnvironmentHelper.GetMockAgent())
-                using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+                using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
                 {
                     agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
                     var spans = agent.WaitForSpans(expectedSpanCount);
@@ -189,7 +190,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(IntegrationConfig))]
-        public void TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
+        public async Task TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
             try
             {
@@ -200,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 int httpPort = TcpPortProvider.GetOpenPort();
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
-                using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
+                using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
                 {
                     var spans = agent.Spans.Where(s => s.Type == SpanTypes.Http);
                     Assert.Empty(spans);

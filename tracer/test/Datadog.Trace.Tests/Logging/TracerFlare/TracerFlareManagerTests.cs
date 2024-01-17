@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Tests.Agent;
 using FluentAssertions;
@@ -39,6 +40,7 @@ public class TracerFlareManagerTests
         var manager = new TracerFlareManager(
             discoveryService,
             Mock.Of<IRcmSubscriptionManager>(),
+            NullTelemetryController.Instance,
             new TracerFlareApi(Mock.Of<IApiRequestFactory>()));
 
         manager.Start();
@@ -56,6 +58,7 @@ public class TracerFlareManagerTests
         var manager = new TracerFlareManager(
             discoveryService,
             Mock.Of<IRcmSubscriptionManager>(),
+            NullTelemetryController.Instance,
             new TracerFlareApi(Mock.Of<IApiRequestFactory>()));
 
         manager.Start();
@@ -88,6 +91,7 @@ public class TracerFlareManagerTests
         var manager = new TracerFlareManager(
             new DiscoveryServiceMock(),
             Mock.Of<IRcmSubscriptionManager>(),
+            NullTelemetryController.Instance,
             new TracerFlareApi(requestMock.Object));
 
         var result = await manager.TrySendDebugLogs(ConfigPath, Encoding.UTF8.GetBytes(config), _requestId, _logsDir);
@@ -108,6 +112,7 @@ public class TracerFlareManagerTests
         var manager = new TracerFlareManager(
             new DiscoveryServiceMock(),
             Mock.Of<IRcmSubscriptionManager>(),
+            NullTelemetryController.Instance,
             new TracerFlareApi(requestMock.Object));
 
         var result = await manager.TrySendDebugLogs(ConfigPath, Encoding.UTF8.GetBytes(config), _requestId, _logsDir);
@@ -125,6 +130,7 @@ public class TracerFlareManagerTests
         var manager = new TracerFlareManager(
             new DiscoveryServiceMock(),
             Mock.Of<IRcmSubscriptionManager>(),
+            NullTelemetryController.Instance,
             new TracerFlareApi(requestMock.Object));
 
         // pre-create the sentinel, to simulate another tracer catching it
@@ -146,6 +152,7 @@ public class TracerFlareManagerTests
         var manager = new TracerFlareManager(
             new DiscoveryServiceMock(),
             Mock.Of<IRcmSubscriptionManager>(),
+            NullTelemetryController.Instance,
             new TracerFlareApi(requestFactory));
 
         // Create a new sentinel to make sure there's no flake

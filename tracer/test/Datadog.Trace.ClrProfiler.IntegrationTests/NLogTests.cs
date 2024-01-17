@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Formatting;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -246,7 +247,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void InjectsLogsWhenEnabled(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType)
+        public async Task InjectsLogsWhenEnabled(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetInstrumentationVerification();
@@ -260,7 +261,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedCorrelatedSpanCount = 1;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, arguments: string.Join(" ", new object[] { context, configType })))
+            using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, arguments: string.Join(" ", new object[] { context, configType })))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
@@ -277,7 +278,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void DoesNotInjectLogsWhenDisabled(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType)
+        public async Task DoesNotInjectLogsWhenDisabled(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType)
         {
             if (configType != ConfigurationType.LogsInjection)
             {
@@ -296,7 +297,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedCorrelatedSpanCount = 0;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, arguments: string.Join(" ", new object[] { context, configType })))
+            using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, arguments: string.Join(" ", new object[] { context, configType })))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
@@ -314,7 +315,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void DirectlyShipsLogs(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType)
+        public async Task DirectlyShipsLogs(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType)
         {
             if (enableLogShipping != DirectLogSubmission.Enable) { throw new Xunit.SkipException("Direct log submission disabled does not apply to this test"); }
 
@@ -328,7 +329,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, arguments: string.Join(" ", new object[] { context, configType }));
+            using var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, arguments: string.Join(" ", new object[] { context, configType }));
 
             ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 

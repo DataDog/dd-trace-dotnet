@@ -104,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
-            using var process = RunSampleAndWaitForExit(agent);
+            using var process = await RunSampleAndWaitForExit(agent);
 
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName, timeoutInMilliseconds: 40000);
 

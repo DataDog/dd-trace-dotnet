@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 const int expectedSpanCount = 35;
                 var spans = agent.WaitForSpans(expectedSpanCount);
@@ -137,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 const int expectedSpanCount = 35;
                 var spans = agent.WaitForSpans(expectedSpanCount);
@@ -166,11 +166,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
-        public void IntegrationDisabled(string packageVersion)
+        public async Task IntegrationDisabled(string packageVersion)
         {
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.Spans;
 

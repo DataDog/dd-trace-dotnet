@@ -60,22 +60,22 @@ public class AspNetMvc5AsmRulesToggleClassicWithoutSecurity : AspNetMvc5AsmRules
     }
 }
 
-public abstract class AspNetMvc5AsmRulesToggle : RcmBaseFramework, IClassFixture<IisFixture>
+public abstract class AspNetMvc5AsmRulesToggle : RcmBaseFramework, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
     private readonly string _testName;
+    private readonly bool _classicMode;
 
     public AspNetMvc5AsmRulesToggle(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
         : base("AspNetMvc5", output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
         SetSecurity(enableSecurity);
 
+        _classicMode = classicMode;
         _iisFixture = iisFixture;
-        _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
         _testName = "Security." + nameof(AspNetMvc5AsmRulesToggle)
                                 + (classicMode ? ".Classic" : ".Integrated")
                                 + ".enableSecurity=" + enableSecurity;
-        SetHttpPort(iisFixture.HttpPort);
     }
 
     [SkippableFact]
@@ -108,6 +108,14 @@ public abstract class AspNetMvc5AsmRulesToggle : RcmBaseFramework, IClassFixture
         await VerifySpans(spans.ToImmutableList(), settings);
         await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, asmProduct, fileId) });
     }
+
+    public async Task InitializeAsync()
+    {
+        await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        SetHttpPort(_iisFixture.HttpPort);
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     protected override string GetTestName() => _testName;
 }

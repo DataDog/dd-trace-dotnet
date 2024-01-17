@@ -57,22 +57,22 @@ public class AspNetMvc5AsmDataClassicWithoutSecurity : AspNetMvc5AsmData
     }
 }
 
-public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFixture>
+public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
     private readonly string _testName;
+    private readonly bool _classicMode;
 
     public AspNetMvc5AsmData(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
         : base("AspNetMvc5", output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
         SetSecurity(enableSecurity);
 
+        _classicMode = classicMode;
         _iisFixture = iisFixture;
-        _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
         _testName = "Security." + nameof(AspNetMvc5AsmData)
                                 + (classicMode ? ".Classic" : ".Integrated")
                                 + ".enableSecurity=" + enableSecurity;
-        SetHttpPort(iisFixture.HttpPort);
     }
 
     [SkippableTheory]
@@ -135,6 +135,14 @@ public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFix
             SetClientIp(MainIp);
         }
     }
+
+    public async Task InitializeAsync()
+    {
+        await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        SetHttpPort(_iisFixture.HttpPort);
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     protected override string GetTestName() => _testName;
 }

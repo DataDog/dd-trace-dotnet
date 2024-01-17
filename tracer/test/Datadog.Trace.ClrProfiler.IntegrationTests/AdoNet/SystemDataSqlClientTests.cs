@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
             spans.Count.Should().Be(expectedSpanCount);
@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void IntegrationDisabled()
+        public async Task IntegrationDisabled()
         {
             const int totalSpanCount = 21;
             const string expectedOperationName = "sql-server.query";
@@ -116,7 +116,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             string packageVersion = PackageVersions.SystemDataSqlClient.First()[0] as string;
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);

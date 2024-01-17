@@ -57,22 +57,22 @@ public class AspNetWebFormsAsmDataClassicWithoutSecurity : AspNetWebFormsAsmData
     }
 }
 
-public abstract class AspNetWebFormsAsmData : RcmBaseFramework, IClassFixture<IisFixture>
+public abstract class AspNetWebFormsAsmData : RcmBaseFramework, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
     private readonly string _testName;
+    private readonly bool _classicMode;
 
     public AspNetWebFormsAsmData(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
         : base("WebForms", output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
         SetSecurity(enableSecurity);
 
+        _classicMode = classicMode;
         _iisFixture = iisFixture;
-        _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
         _testName = "Security." + nameof(AspNetWebFormsAsmData)
                                 + (classicMode ? ".Classic" : ".Integrated")
                                 + ".enableSecurity=" + enableSecurity;
-        SetHttpPort(iisFixture.HttpPort);
     }
 
     [SkippableTheory]
@@ -141,6 +141,14 @@ public abstract class AspNetWebFormsAsmData : RcmBaseFramework, IClassFixture<Ii
             SetClientIp(MainIp);
         }
     }
+
+    public async Task InitializeAsync()
+    {
+        await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        SetHttpPort(_iisFixture.HttpPort);
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     protected override string GetTestName() => _testName;
 }
