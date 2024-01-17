@@ -292,7 +292,7 @@ internal static class IastModule
     public static IastModuleResponse OnStackTraceLeak(Exception ex, IntegrationId integrationId)
     {
         OnExecutedSinkTelemetry(IastInstrumentedSinks.StackTraceLeak);
-        var evidence = ex.Source + ", " + ex.GetType().Name;
+        var evidence = $"{ex.Source},{ex.GetType().Name}";
         // We report the stack of the exception instead of the current stack
         var stack = new StackTrace(ex, true);
         return GetScope(evidence, integrationId, VulnerabilityTypeName.StackTraceLeak, OperationNameStackTraceLeak, externalStack: stack);
