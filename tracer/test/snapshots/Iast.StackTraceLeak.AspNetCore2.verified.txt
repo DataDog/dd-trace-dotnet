@@ -11,9 +11,9 @@
       aspnet_core.route: iast/stacktraceleak,
       component: aspnet_core,
       env: integration_tests,
-      error.msg: we have a StackTraceLeak,
+      error.msg: Custom exception message,
       error.stack:
-System.SystemException: we have a StackTraceLeak
+System.SystemException: Custom exception message
 at Samples.Security.AspNetCore5.Controllers.IastController.StackTraceLeak(),
       error.type: System.SystemException,
       http.method: GET,
