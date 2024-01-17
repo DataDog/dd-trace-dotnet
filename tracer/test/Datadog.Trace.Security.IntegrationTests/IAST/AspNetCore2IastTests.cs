@@ -88,6 +88,7 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
     public AspNetCore2IastTestsFullSamplingEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore2IastTestsEnabled", isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 200)
     {
+        SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
     }
 
     [SkippableTheory]
@@ -161,7 +162,6 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
     [Trait("RunOnWindows", "True")]
     public async Task TestStackTraceLeak()
     {
-        SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
         var filename = "Iast.StackTraceLeak.AspNetCore2";
         var url = "/Iast/StackTraceLeak";
         IncludeAllHttpSpans = true;

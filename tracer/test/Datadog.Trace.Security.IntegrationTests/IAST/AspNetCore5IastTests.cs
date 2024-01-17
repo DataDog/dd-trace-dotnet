@@ -159,6 +159,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     public AspNetCore5IastTestsFullSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsEnabled")
     {
+        SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
     }
 
     // When the request is finished without this X-Content-Type-Options: nosniff header and the content-type of the request looks
@@ -239,7 +240,6 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     [Trait("RunOnWindows", "True")]
     public async Task TestStackTraceLeak()
     {
-        SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
         var filename = "Iast.StackTraceLeak.AspNetCore5";
         var url = "/Iast/StackTraceLeak";
         IncludeAllHttpSpans = true;
