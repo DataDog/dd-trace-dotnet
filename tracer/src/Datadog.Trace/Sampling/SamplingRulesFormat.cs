@@ -17,9 +17,9 @@ internal static class SamplingRulesFormat
 
     public const string Glob = "glob";
 
-    public static bool IsValid(string? format, out string normalized)
+    public static bool IsValid(string format, out string normalized)
     {
-        if (format is null || string.IsNullOrWhiteSpace(format))
+        if (format == null!)
         {
             // default value if not specified
             normalized = Regex;

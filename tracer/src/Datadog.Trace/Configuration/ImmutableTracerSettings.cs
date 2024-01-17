@@ -303,7 +303,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the format for custom sampling rules ("regex" or "glob").
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRulesFormat"/>
-        internal string? CustomSamplingRulesFormat { get; }
+        internal string CustomSamplingRulesFormat { get; }
 
         /// <summary>
         /// Gets a value indicating the span sampling rules.

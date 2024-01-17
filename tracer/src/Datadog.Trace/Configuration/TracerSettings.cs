@@ -566,7 +566,7 @@ namespace Datadog.Trace.Configuration
         /// If the value is not recognized, trace sampling rules are disabled.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRulesFormat"/>
-        internal string? CustomSamplingRulesFormat { get; }
+        internal string CustomSamplingRulesFormat { get; }
 
         /// <summary>
         /// Gets a value indicating span sampling rules.
