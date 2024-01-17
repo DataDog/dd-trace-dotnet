@@ -4553,7 +4553,7 @@ stages:
             versionSpec: '3.9'
         displayName: Install python 3.9
 
-      - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
+      - script: git clone --depth 1 --branch steven/dotnet-otel-arrays https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
 
       - task: DownloadPipelineArtifact@2
