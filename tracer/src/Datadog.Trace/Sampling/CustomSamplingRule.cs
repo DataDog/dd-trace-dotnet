@@ -63,15 +63,10 @@ namespace Datadog.Trace.Sampling
 
         public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration, string patternFormat)
         {
-            if (string.IsNullOrWhiteSpace(configuration) ||
-                !SamplingRulesFormat.IsValid(patternFormat, out var normalizedFormat))
-            {
-                return [];
-            }
-
             try
             {
-                if (JsonConvert.DeserializeObject<List<CustomRuleConfig>>(configuration) is { Count: > 0 } rules)
+                if (!string.IsNullOrWhiteSpace(configuration) &&
+                    JsonConvert.DeserializeObject<List<CustomRuleConfig>>(configuration) is { Count: > 0 } rules)
                 {
                     var index = 0;
                     var samplingRules = new List<CustomSamplingRule>(rules.Count);
@@ -84,7 +79,7 @@ namespace Datadog.Trace.Sampling
                             new CustomSamplingRule(
                                 r.SampleRate,
                                 r.RuleName ?? $"config-rule-{index}",
-                                normalizedFormat,
+                                patternFormat,
                                 r.Service,
                                 r.OperationName));
                     }

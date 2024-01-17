@@ -86,14 +86,10 @@ namespace Datadog.Trace.Sampling
         /// <returns><see cref="IEnumerable{T}"/> of <see cref="SpanSamplingRule"/>.</returns>
         public static IEnumerable<SpanSamplingRule> BuildFromConfigurationString(string configuration)
         {
-            if (string.IsNullOrWhiteSpace(configuration))
-            {
-                return [];
-            }
-
             try
             {
-                if (JsonConvert.DeserializeObject<List<SpanSamplingRuleConfig>>(configuration) is { Count: > 0 } rules)
+                if (!string.IsNullOrWhiteSpace(configuration) &&
+                    JsonConvert.DeserializeObject<List<SpanSamplingRuleConfig>>(configuration) is { Count: > 0 } rules)
                 {
                     var samplingRules = new List<SpanSamplingRule>(rules.Count);
 
