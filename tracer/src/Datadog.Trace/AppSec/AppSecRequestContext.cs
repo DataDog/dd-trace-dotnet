@@ -15,17 +15,18 @@ internal class AppSecRequestContext
 {
     private readonly object _sync = new();
     private readonly List<object> _wafSecurityEvents = new();
-    private bool _isApiSecurity = false;
+    private bool _isApiSecurity;
 
     internal void CloseWebSpan(TraceTagCollection tags)
     {
-        string triggers;
         lock (_sync)
         {
-            triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
+            if (_wafSecurityEvents.Count > 0)
+            {
+                var triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
+                tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
+            }
         }
-
-        tags.SetTag(Datadog.Trace.Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
 
         if (_isApiSecurity)
         {

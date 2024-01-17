@@ -6,12 +6,10 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
@@ -22,7 +20,6 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace
 {
@@ -38,6 +35,14 @@ namespace Datadog.Trace
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
         private int? _samplingPriority;
+        // _rootSpan was chosen at some point to be used as the key for a lock that protects
+        // * _spans
+        // * _openSpans
+        // although it's a nullable field, the _rootSpan must always be set before operations on
+        // _spans & _samplingPriority take place, so it's okay to use it as a lock key
+        // even though we need to override the nullable warnings in some places.
+        // The reason _rootSpan was chosen is unknown, we're assuming it's to avoid
+        // allocation a separate field for the lock
         private Span? _rootSpan;
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection? tags = null)
