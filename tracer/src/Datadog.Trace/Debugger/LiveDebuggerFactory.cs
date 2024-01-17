@@ -33,6 +33,7 @@ internal class LiveDebuggerFactory
     {
         if (!debuggerSettings.Enabled)
         {
+            Log.Information("Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
             return LiveDebugger.Create(debuggerSettings, string.Empty, null, null, null, null, null, null, null, null);
         }
 

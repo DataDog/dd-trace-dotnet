@@ -7,13 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Helpers;
@@ -21,7 +19,6 @@ using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -457,10 +454,6 @@ namespace Datadog.Trace.ClrProfiler
                 if (debuggerSettings.Enabled)
                 {
                     Log.Warning("Live Debugger is enabled but remote configuration is not available in this environment, so live debugger cannot be enabled.");
-                }
-                else
-                {
-                    Log.Information("Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
                 }
 
                 tracer.TracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
