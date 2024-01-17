@@ -236,10 +236,12 @@ namespace Datadog.Trace
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {
             var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
+            var samplingRules = settings.CustomSamplingRulesInternal;
+            var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
 
-            if (!string.IsNullOrWhiteSpace(settings.CustomSamplingRulesInternal))
+            if (patternFormatIsValid && !string.IsNullOrWhiteSpace(samplingRules))
             {
-                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(settings.CustomSamplingRulesInternal))
+                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(samplingRules, samplingRulesFormat))
                 {
                     sampler.RegisterRule(rule);
                 }

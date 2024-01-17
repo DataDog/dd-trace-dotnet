@@ -307,6 +307,7 @@
   "DD_TRACE_RATE_LIMIT": "trace_rate_limit",
   "DD_MAX_TRACES_PER_SECOND": "trace_rate_limit",
   "DD_TRACE_SAMPLING_RULES": "trace_sample_rules",
+  "DD_TRACE_SAMPLING_RULES_FORMAT": "trace_sample_rules_format",
   "DD_SPAN_SAMPLING_RULES": "span_sample_rules",
   "DD_TRACE_SAMPLE_RATE": "trace_sample_rate",
   "DD_APM_ENABLE_RARE_SAMPLER": "trace_rare_sampler_enabled",

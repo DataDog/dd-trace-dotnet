@@ -191,11 +191,18 @@ namespace Datadog.Trace.Configuration
         public const string CustomSamplingRules = "DD_TRACE_SAMPLING_RULES";
 
         /// <summary>
-        /// Configuration key for setting custom <em>span</em> sampling rules based on regular expressions.
+        /// Configuration key for setting the format of <see cref="CustomSamplingRules"/>.
+        /// Valid values are <c>regex</c> or <c>glob</c>.
+        /// If the value is not recognized, trace sampling rules are disabled.
+        /// </summary>
+        public const string CustomSamplingRulesFormat = "DD_TRACE_SAMPLING_RULES_FORMAT";
+
+        /// <summary>
+        /// Configuration key for setting custom <em>span</em> sampling rules based on glob patterns.
         /// Comma separated list of span sampling rules.
         /// The rule is matched in order of specification. The first match in a list is used.
         /// The supported glob pattern characters are '*' and '?'.
-        /// A '*' mactches any contiguous substring.
+        /// A '*' matches any contiguous substring.
         /// A '?' matches exactly one character.
         ///
         /// Per entry:
