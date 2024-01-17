@@ -208,7 +208,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             private async Task EnsureServerStarted(ITestOutputHelper output)
             {
-                var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
+                var mutex = new AsyncMutex();
 
                 _process.OutputDataReceived += (sender, args) =>
                 {
@@ -216,7 +216,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         if (args.Data.Contains("Webserver started"))
                         {
-                            wh.Set();
+                            mutex.Set();
                         }
 
                         output.WriteLine($"[webserver][stdout] {args.Data}");
@@ -234,7 +234,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 _process.BeginErrorReadLine();
 
-                wh.WaitOne(5000);
+                await mutex.WaitAsync(TimeSpan.FromSeconds(5));
 
                 var maxMillisecondsToWait = 30_000;
                 var intervalMilliseconds = 500;
@@ -258,7 +258,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         break;
                     }
 
-                    Thread.Sleep(intervalMilliseconds);
+                    await Task.Delay(intervalMilliseconds);
                 }
 
                 if (!serverReady)

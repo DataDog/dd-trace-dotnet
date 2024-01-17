@@ -59,7 +59,7 @@ public abstract class AzureFunctionsTests : TestHelper
 
         using var helper = new ProcessHelper(process);
 
-        return WaitForProcessResult(helper, expectedExitCode);
+        return await WaitForProcessResult(helper, expectedExitCode);
     }
 
     protected async Task AssertInProcessSpans(IImmutableList<MockSpan> spans)

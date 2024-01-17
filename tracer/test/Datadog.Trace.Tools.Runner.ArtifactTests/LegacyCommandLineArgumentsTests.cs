@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -19,14 +20,14 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
     public class LegacyCommandLineArgumentsTests : RunnerTests
     {
         [Fact]
-        public void InvalidArgument()
+        public async Task InvalidArgument()
         {
             // This test makes sure that wrong arguments will return a non-zero exit code
 
             using var helper = StartProcess("--dummy-wrong-argument");
 
-            helper.Process.WaitForExit();
-            helper.Drain();
+            await helper.Process.WaitForExitAsync();
+            await helper.Drain();
 
             using var scope = StartAssertionScope(helper);
 
@@ -36,14 +37,14 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
         [Theory]
         [InlineData(' ')]
         [InlineData('=')]
-        public void SetCi(char separator)
+        public async Task SetCi(char separator)
         {
             var commandLine = $"--set-ci --dd-env{separator}TestEnv --dd-service{separator}TestService --dd-version{separator}TestVersion --tracer-home{separator}TestTracerHome --agent-url{separator}TestAgentUrl --env-vars{separator}VAR1=A,VAR2=B";
 
             using var helper = StartProcess(commandLine, ("TF_BUILD", "1"));
 
-            helper.Process.WaitForExit();
-            helper.Drain();
+            await helper.Process.WaitForExitAsync();
+            await helper.Drain();
 
             helper.Process.ExitCode.Should().Be(0);
 
@@ -70,14 +71,14 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
         }
 
         [Fact]
-        public void LocateTracerHome()
+        public async Task LocateTracerHome()
         {
             var commandLine = "--set-ci";
 
             using var helper = StartProcess(commandLine, ("TF_BUILD", "1"));
 
-            helper.Process.WaitForExit();
-            helper.Drain();
+            await helper.Process.WaitForExitAsync();
+            await helper.Drain();
 
             helper.Process.ExitCode.Should().Be(0);
             helper.StandardOutput.Should().NotContainEquivalentOf("error");

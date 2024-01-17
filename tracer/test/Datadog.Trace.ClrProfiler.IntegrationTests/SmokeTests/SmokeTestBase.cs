@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 {
                     using var helper = new ProcessHelper(process);
 
-                    var ranToCompletion = process.WaitForExit(MaxTestRunMilliseconds) && helper.Drain(MaxTestRunMilliseconds / 2);
+                    var ranToCompletion = await process.WaitForExitAsync(MaxTestRunMilliseconds) && await helper.Drain(MaxTestRunMilliseconds / 2);
                     var standardOutput = helper.StandardOutput;
                     standardError = helper.ErrorOutput;
 

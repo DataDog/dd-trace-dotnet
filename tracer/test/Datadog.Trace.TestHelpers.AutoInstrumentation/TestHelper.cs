@@ -113,8 +113,8 @@ namespace Datadog.Trace.TestHelpers
 
             using var helper = new ProcessHelper(process);
 
-            process.WaitForExit();
-            helper.Drain();
+            await process.WaitForExitAsync();
+            await helper.Drain();
             var exitCode = process.ExitCode;
 
             Output.WriteLine($"Exit Code: " + exitCode);
@@ -170,17 +170,17 @@ namespace Datadog.Trace.TestHelpers
             var process = await StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID);
             using var helper = new ProcessHelper(process);
 
-            return WaitForProcessResult(helper);
+            return await WaitForProcessResult(helper);
         }
 
-        public ProcessResult WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0)
+        public async Task<ProcessResult> WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0)
         {
             // this is _way_ too long, but we want to be v. safe
             // the goal is just to make sure we kill the test before
             // the whole CI run times out
             var process = helper.Process;
             var timeoutMs = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
-            var ranToCompletion = process.WaitForExit(timeoutMs) && helper.Drain(timeoutMs / 2);
+            var ranToCompletion = await process.WaitForExitAsync(timeoutMs) && await helper.Drain(timeoutMs / 2);
 
             var standardOutput = helper.StandardOutput;
 
@@ -198,7 +198,7 @@ namespace Datadog.Trace.TestHelpers
 
             if (!ranToCompletion && !process.HasExited)
             {
-                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process);
+                var tookMemoryDump = await MemoryDumpHelper.CaptureMemoryDump(process);
                 process.Kill();
                 throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump}. Killing process.");
             }

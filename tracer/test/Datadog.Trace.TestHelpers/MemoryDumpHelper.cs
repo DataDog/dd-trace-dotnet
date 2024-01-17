@@ -6,7 +6,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -72,8 +71,8 @@ namespace Datadog.Trace.TestHelpers
 
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            _ = Task.Factory.StartNew(
-                () =>
+            _ = Task.Run(
+                async () =>
                 {
                     var args = $"-ma -accepteula -g -e {pid} {Path.GetTempPath()}";
 
@@ -97,7 +96,7 @@ namespace Datadog.Trace.TestHelpers
 
                     using var helper = new ProcessHelper(dumpToolProcess, OnDataReceived);
 
-                    helper.Drain();
+                    await helper.Drain();
 
                     if (helper.StandardOutput.Contains("Dump count reached") || !helper.StandardOutput.Contains("Dump count not reached"))
                     {
@@ -118,13 +117,12 @@ namespace Datadog.Trace.TestHelpers
                     {
                         tcs.TrySetCanceled();
                     }
-                },
-                TaskCreationOptions.LongRunning);
+                });
 
             return tcs.Task;
         }
 
-        public static bool CaptureMemoryDump(Process process, IProgress<string> output = null)
+        public static async Task<bool> CaptureMemoryDump(Process process, IProgress<string> output = null)
         {
             if (!IsAvailable)
             {
@@ -134,7 +132,7 @@ namespace Datadog.Trace.TestHelpers
             try
             {
                 var args = EnvironmentTools.IsWindows() ? $"-ma -accepteula {process.Id} {Path.GetTempPath()}" : process.Id.ToString();
-                return CaptureMemoryDump(args, output ?? _output);
+                return await CaptureMemoryDump(args, output ?? _output);
             }
             catch (Exception ex)
             {
@@ -143,7 +141,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private static bool CaptureMemoryDump(string args, IProgress<string> output)
+        private static async Task<bool> CaptureMemoryDump(string args, IProgress<string> output)
         {
             output?.Report($"Capturing memory dump using '{_path} {args}'");
 
@@ -153,11 +151,11 @@ namespace Datadog.Trace.TestHelpers
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-            });
+            })!;
 
             using var helper = new ProcessHelper(dumpToolProcess);
-            dumpToolProcess.WaitForExit(30_000);
-            helper.Drain();
+            await dumpToolProcess.WaitForExitAsync(30_000);
+            await helper.Drain();
             output?.Report($"[dump][stdout] {helper.StandardOutput}");
             output?.Report($"[dump][stderr] {helper.ErrorOutput}");
 

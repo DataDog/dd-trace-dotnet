@@ -29,7 +29,7 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Helpers
         {
             using var httpWebResponse = await WebRequest.CreateHttp(_stopUrl).GetResponseAsync();
             var timeout = 10_000;
-            var isExited = Process.WaitForExit(timeout);
+            var isExited = await Process.WaitForExitAsync(timeout);
 
             if (!isExited)
             {
