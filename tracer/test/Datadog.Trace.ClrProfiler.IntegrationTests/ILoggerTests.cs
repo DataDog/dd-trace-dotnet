@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.Formatting;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -34,9 +35,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void InjectsLogs(bool enableLogShipping)
+        public async Task InjectsLogs(bool enableLogShipping)
         {
-            RunLogsInjectionTests(enableLogShipping, packageVersion: string.Empty);
+            await RunLogsInjectionTests(enableLogShipping, packageVersion: string.Empty);
         }
 
         [SkippableTheory]
@@ -45,9 +46,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("SupportsInstrumentationVerification", "True")]
         [InlineData(true)]
         [InlineData(false)]
-        public void DirectlyShipsLogs(bool filterStartupLogs)
+        public async Task DirectlyShipsLogs(bool filterStartupLogs)
         {
-            RunDirectlyShipsLogs(filterStartupLogs, packageVersion: string.Empty);
+            await RunDirectlyShipsLogs(filterStartupLogs, packageVersion: string.Empty);
         }
     }
 
@@ -69,9 +70,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void InjectsLogs(bool enableLogShipping, string packageVersion)
+        public async Task InjectsLogs(bool enableLogShipping, string packageVersion)
         {
-            RunLogsInjectionTests(enableLogShipping, packageVersion);
+            await RunLogsInjectionTests(enableLogShipping, packageVersion);
         }
 
         [SkippableTheory]
@@ -79,9 +80,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void DirectlyShipsLogs(bool filterStartupLogs, string packageVersion)
+        public async Task DirectlyShipsLogs(bool filterStartupLogs, string packageVersion)
         {
-            RunDirectlyShipsLogs(filterStartupLogs, packageVersion);
+            await RunDirectlyShipsLogs(filterStartupLogs, packageVersion);
         }
     }
 #endif
@@ -109,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
         }
 
-        protected void RunLogsInjectionTests(bool enableLogShipping, string packageVersion)
+        protected async Task RunLogsInjectionTests(bool enableLogShipping, string packageVersion)
         {
             // One of the traces starts by manual opening a span when the background service starts,
             // and then it sends a HTTP request to the server.
@@ -134,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
+            using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 spans.Should().HaveCountGreaterOrEqualTo(1);
@@ -144,7 +145,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        protected void RunDirectlyShipsLogs(bool filterStartupLogs, string packageVersion)
+        protected async Task RunDirectlyShipsLogs(bool filterStartupLogs, string packageVersion)
         {
             SetInstrumentationVerification();
             var hostName = "integration_ilogger_tests";
@@ -158,7 +159,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0);
+            using var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0);
 
             ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 

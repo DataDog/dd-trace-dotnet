@@ -31,13 +31,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void MetricsDisabled()
+        public async Task MetricsDisabled()
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "0");
             using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
 
-            using var processResult = RunSampleAndWaitForExit(agent);
+            using var processResult = await RunSampleAndWaitForExit(agent);
             var requests = agent.StatsdRequests;
 
             Assert.True(requests.Count == 0, "Received metrics despite being disabled. Metrics received: " + string.Join("\n", requests));
@@ -47,22 +47,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void UdpSubmitsMetrics()
+        public async Task UdpSubmitsMetrics()
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             EnvironmentHelper.EnableDefaultTransport();
-            RunTest();
+            await RunTest();
         }
 
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "False")]
-        public void UdsSubmitsMetrics()
+        public async Task UdsSubmitsMetrics()
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             EnvironmentHelper.EnableUnixDomainSockets();
-            RunTest();
+            await RunTest();
         }
 #endif
 
@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 try
                 {
                     attemptsRemaining--;
-                    RunTest();
+                    await RunTest();
                     return;
                 }
                 catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
@@ -94,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private void RunTest()
+        private async Task RunTest()
         {
             var inputServiceName = "12_$#Samples.$RuntimeMetrics";
             SetEnvironmentVariable("DD_SERVICE", inputServiceName);
@@ -103,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_TAGS", "some:value"); // Should be added to the metrics
 
             using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
-            using var processResult = RunSampleAndWaitForExit(agent);
+            using var processResult = await RunSampleAndWaitForExit(agent);
             var requests = agent.StatsdRequests;
 
             // Check if we receive 2 kinds of metrics:

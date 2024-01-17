@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _output = output;
             _testName = nameof(OwinWebApi2Tests)
                       + (enableRouteTemplateExpansion ? ".WithExpansion" :
-                        (enableRouteTemplateResourceNames ?  ".WithFF" : ".NoFF"));
+                        (enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF"));
         }
 
         public static TheoryData<string, int, int> Data() => new()
@@ -160,18 +160,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     return;
                 }
 
-                lock (this)
+                if (_process is null)
                 {
-                    if (_process is null)
-                    {
-                        var initialAgentPort = TcpPortProvider.GetOpenPort();
-                        HttpPort = TcpPortProvider.GetOpenPort();
+                    var initialAgentPort = TcpPortProvider.GetOpenPort();
+                    HttpPort = TcpPortProvider.GetOpenPort();
 
-                        Agent = MockTracerAgent.Create(output, initialAgentPort);
-                        Agent.SpanFilters.Add(IsNotServerLifeCheck);
-                        output.WriteLine($"Starting OWIN sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
-                        _process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
-                    }
+                    Agent = MockTracerAgent.Create(output, initialAgentPort);
+                    Agent.SpanFilters.Add(IsNotServerLifeCheck);
+                    output.WriteLine($"Starting OWIN sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
+                    _process = await helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
                 }
 
                 await EnsureServerStarted(output);
@@ -179,26 +176,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             public void Dispose()
             {
-                lock (this)
+                if (_process is not null)
                 {
-                    if (_process is not null)
+                    try
                     {
-                        try
+                        if (!_process.HasExited)
                         {
-                            if (!_process.HasExited)
-                            {
-                                SubmitRequest(null, "/shutdown").GetAwaiter().GetResult();
+                            SubmitRequest(null, "/shutdown").GetAwaiter().GetResult();
 
-                                _process.Kill();
-                            }
+                            _process.Kill();
                         }
-                        catch
-                        {
-                            // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
-                        }
-
-                        _process.Dispose();
                     }
+                    catch
+                    {
+                        // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
+                    }
+
+                    _process.Dispose();
                 }
 
                 Agent?.Dispose();

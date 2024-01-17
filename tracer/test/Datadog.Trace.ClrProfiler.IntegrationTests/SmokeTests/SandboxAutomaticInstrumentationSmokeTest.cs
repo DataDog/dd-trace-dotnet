@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,9 +19,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         [SkippableFact]
         [Trait("Category", "Smoke")]
-        public void Fails()
+        public async Task Fails()
         {
-            CheckForSmoke(shouldDeserializeTraces: false, expectedExitCode: 0);
+            await CheckForSmoke(shouldDeserializeTraces: false, expectedExitCode: 0);
         }
     }
 }

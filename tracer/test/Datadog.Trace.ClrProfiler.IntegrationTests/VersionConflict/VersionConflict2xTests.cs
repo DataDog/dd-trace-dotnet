@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -20,13 +21,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         }
 
         [SkippableFact]
-        public void SubmitTraces()
+        public async Task SubmitTraces()
         {
             // 1 manual span + 2 http spans
             const int expectedSpanCount = 3;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent))
+            using (var processResult = await RunSampleAndWaitForExit(agent))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount);
 

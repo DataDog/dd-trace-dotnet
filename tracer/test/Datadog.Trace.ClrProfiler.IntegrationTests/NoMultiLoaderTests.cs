@@ -6,6 +6,7 @@
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using DiffEngine;
@@ -24,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SingleLoaderTest()
+        public async Task SingleLoaderTest()
         {
             string tmpFile = Path.GetTempFileName();
             // Using obsolete variable so we can be sure it will only
@@ -34,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Clear any existing log path values, as these take precedence over DD_TRACE_LOG_PATH
             SetEnvironmentVariable(Configuration.ConfigurationKeys.LogDirectory, string.Empty);
 
-            using ProcessResult processResult = RunSampleAndWaitForExit(MockTracerAgent.Create(Output, 9696, doNotBindPorts: true));
+            using ProcessResult processResult = await RunSampleAndWaitForExit(MockTracerAgent.Create(Output, 9696, doNotBindPorts: true));
             string[] logFileContent = File.ReadAllLines(tmpFile);
             int numOfLoadersLoad = logFileContent.Count(line => line.Contains("Datadog.Trace.ClrProfiler.Managed.Loader loaded"));
             Assert.Equal(1, numOfLoadersLoad);
