@@ -32,9 +32,7 @@ if [ "$1" = "windows" ]; then
     rm -f baseline_windows.json
     rm -f calltarget_ngen_windows.json
     rm -f trace_stats_windows.json
-    rm -f manual_only_windows.json
     rm -f manual_and_automatic_windows.json
-    rm -f version_conflict_windows.json
     
     echo "Running windows throughput tests"
 
@@ -52,25 +50,15 @@ if [ "$1" = "windows" ]; then
 
     echo "Running manual instrumentation throughput tests"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile windows --json manual_only_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha 
-    dd-trace --crank-import="manual_only_windows.json"
-
     crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_and_automatic --profile windows --json manual_and_automatic_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_and_automatic --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="manual_and_automatic_windows.json"
-
-    if [ "$2" = "True" ]; then
-      crank --config Samples.AspNetCoreSimpleController.yml --scenario version_conflict --profile windows --json version_conflict_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=version_conflict --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
-      dd-trace --crank-import="version_conflict_windows.json"
-    fi
 
 elif [ "$1" = "linux" ]; then
     echo "Cleaning previous results"
     rm -f baseline_linux.json
     rm -f calltarget_ngen_linux.json
     rm -f trace_stats_linux.json
-    rm -f manual_only_linux.json
     rm -f manual_and_automatic_linux.json
-    rm -f version_conflict_linux.json
 
     echo "Running Linux x64 throughput tests"
 
@@ -88,25 +76,15 @@ elif [ "$1" = "linux" ]; then
 
     echo "Running manual instrumentation throughput tests"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile linux --json manual_only_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="manual_only_linux.json"
-
     crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_and_automatic --profile linux --json manual_and_automatic_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_and_automatic --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="manual_and_automatic_linux.json"
-
-    if [ "$2" = "True" ]; then
-      crank --config Samples.AspNetCoreSimpleController.yml --scenario version_conflict --profile linux --json version_conflict_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=version_conflict --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-      dd-trace --crank-import="version_conflict_linux.json"
-    fi
 
 elif [ "$1" = "linux_arm64" ]; then
     echo "Cleaning previous results"
     rm -f baseline_linux_arm64.json
     rm -f calltarget_ngen_linux_arm64.json
     rm -f trace_stats_linux_arm64.json
-    rm -f manual_only_linux_arm64.json
     rm -f manual_and_automatic_linux_arm64.json
-    rm -f version_conflict_linux_arm64.json
 
     echo "Running Linux arm64 throughput tests"
 
@@ -124,16 +102,9 @@ elif [ "$1" = "linux_arm64" ]; then
 
     echo "Running manual instrumentation throughput tests"
     
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile linux_arm64 --json manual_only_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="manual_only_linux_arm64.json"
-
     crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_and_automatic --profile linux_arm64 --json manual_and_automatic_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_and_automatic --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="manual_and_automatic_linux_arm64.json"
 
-    if [ "$2" = "True" ]; then
-      crank --config Samples.AspNetCoreSimpleController.yml --scenario version_conflict --profile linux_arm64 --json version_conflict_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=version_conflict --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
-      dd-trace --crank-import="version_conflict_linux_arm64.json"
-    fi
 else
     echo "Unknown argument $1"
     exit 1
