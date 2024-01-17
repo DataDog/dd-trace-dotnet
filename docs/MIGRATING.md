@@ -1,6 +1,10 @@
-# Migration to .NET Tracer v2
+## Migration guid
 
-## .NET Tracer v2.0 contents
+This document includes high level steps describing how to migrate between high level version of the Datadog .NET Client Library (.NET Tracer)
+
+## Migrating from v1.x.x to v2.x.x
+
+### .NET Tracer v2.0 contents
 
 The .NET Tracer v2.0:
 
@@ -10,9 +14,9 @@ The .NET Tracer v2.0:
 
 For a more complete overview, please refer to our [release notes on GitHub](https://github.com/DataDog/dd-trace-dotnet/releases).
 
-## Upgrading from 1.x to 2.0
+### Upgrading from 1.x to 2.0
 
-### Code changes
+#### Code changes
 
 Most of our api changes do not require any changes to your code, but some patterns are no longer supported or recommended. Please refer to [Datadog.Trace documentation](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#upgrading-from-1x-to-20) for full details:
 - [Singleton `Tracer` instances](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#supported-net-versions)
@@ -26,7 +30,7 @@ Most of our api changes do not require any changes to your code, but some patter
 - [Incorrect integration names are ignored](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#incorrect-integration-names-are-ignored)
 - [Automatic instrumentation changes](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#automatic-instrumentation-changes)
 
-### What if you are relying on .NET Framework lower than 4.6.1
+#### What if you are relying on .NET Framework lower than 4.6.1
 
 If you are currently targeting version < 4.6.1, we suggest you upgrade in line with [Microsoft's guidance](https://docs.microsoft.com/en-us/lifecycle/products/microsoft-net-framework). On our end, we will support fixing major bugs on top of Tracer v1.31.
 
@@ -39,25 +43,25 @@ Regarding custom instrumentation, NuGet package version 2.0 and above will no lo
 - .NET 5 or above
 - .NET Standard 2.0 or above (includes .NET Core 2.0 and above)
 
-### Rollout strategy when using automatic and custom instrumentation
+#### Rollout strategy when using automatic and custom instrumentation
 
 If your application uses both automatic and custom instrumentation, your application traces may be disconnected until both components are upgraded to v2.x. If you are unable to upgrade both components simultaneously, follow the steps below to upgrade the components in the recommended order.
 
 **Note:** To minimize application overhead, align the versions of the automatic and custom instrumentation. Using two different versions of the 2.x .NET Tracer will still result in complete traces but it requires additional overhead, so Datadog recommends minimizing the amount of time that the versions are mismatched.
 
-#### .NET Core and .NET 5+
+##### .NET Core and .NET 5+
 
-##### If you were using v1.28.8 or greater
+###### If you were using v1.28.8 or greater
 
 On .NET Core, to avoid disconnected traces during the upgrade process:
 
 1. Upgrade _Datadog.Trace_ NuGet package to the latest version of the tracer
 2. Upgrade the automatic instrumentation package to the matching version of the tracer
 
-##### If you were using v1.28.7 or lower
+###### If you were using v1.28.7 or lower
 
 In this upgrade scenario **you should upgrade the automatic instrumentation first** and then upgrade the _Datadog.Trace_ NuGet package. If the components are not upgraded in the correct order, the automatic instrumentation may fail to produce traces.
 
-#### .NET Framework
+##### .NET Framework
 
 On .NET Framework there will be disconnected traces between automatic and custom instrumentation until both packages are upgraded to 2.x. In this upgrade scenario, Datadog recommends upgrading the MSI and NuGet package in whichever order is easiest for your application.
