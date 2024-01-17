@@ -93,11 +93,6 @@ internal abstract class AspectAttribute : Attribute
 
     public VulnerabilityType[] VulnerabilityTypes { get; private set; }
 
-    public override string ToString()
-    {
-        return string.Format("[{0}({1})]", GetType().Name.Replace("Attribute", string.Empty), string.Join(",", parameters.Select(i => ConvertToString(i)).ToArray()));
-    }
-
     internal static List<string> GetAssemblyList(string expression)
     {
         if (string.IsNullOrEmpty(expression))
