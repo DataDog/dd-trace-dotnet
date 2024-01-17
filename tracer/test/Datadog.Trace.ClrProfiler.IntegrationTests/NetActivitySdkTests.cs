@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -62,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent))
             {
-                const int expectedSpanCount = 47;
+                const int expectedSpanCount = 50;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
@@ -71,8 +72,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var myServiceNameSpans = spans.Where(s => s.Service == "MyServiceName");
 
                 ValidateIntegrationSpans(myServiceNameSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
-
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+                var spanIdRegex = new Regex("\"span_id\":\"[0-9a-fA-F]+\"");
+                var traceIdRegex = new Regex("\"trace_id\":\"[0-9a-fA-F]+\"");
+                settings.AddRegexScrubber(spanIdRegex, "\"span_id\":\"span_link_id\"");
+                settings.AddRegexScrubber(traceIdRegex, "\"trace_id\":\"trace_link_id\"");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(nameof(NetActivitySdkTests));
 

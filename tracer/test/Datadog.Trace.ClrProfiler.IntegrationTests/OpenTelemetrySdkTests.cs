@@ -54,6 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "telemetry.sdk.name",
             "telemetry.sdk.language",
             "telemetry.sdk.version",
+            "_dd.span_links",
             // excluding all OperationName mapping tags
             "http.request.method",
             "db.system",
@@ -125,6 +126,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var filename = nameof(OpenTelemetrySdkTests) + GetSuffix(packageVersion, legacyOperationNames);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+                var spanIdRegex = new Regex("\"span_id\":\"[0-9a-fA-F]+\"");
+                var traceIdRegex = new Regex("\"trace_id\":\"[0-9a-fA-F]+\"");
+                settings.AddRegexScrubber(spanIdRegex, "\"span_id\":\"span_link_id\"");
+                settings.AddRegexScrubber(traceIdRegex, "\"trace_id\":\"trace_link_id\"");
                 settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(filename)
@@ -162,6 +167,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
+                var spanIdRegex = new Regex("\"span_id\":\"[0-9a-fA-F]+\"");
+                var traceIdRegex = new Regex("\"trace_id\":\"[0-9a-fA-F]+\"");
+                settings.AddRegexScrubber(spanIdRegex, "\"span_id\":\"span_link_id\"");
+                settings.AddRegexScrubber(traceIdRegex, "\"trace_id\":\"trace_link_id\"");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(filename)
                                   .DisableRequireUniquePrefix();
