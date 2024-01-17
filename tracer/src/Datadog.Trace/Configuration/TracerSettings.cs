@@ -210,24 +210,25 @@ namespace Datadog.Trace.Configuration
                                                    {
                                                        // We intentionally report invalid values as "valid" in the converter,
                                                        // because we don't want to automatically fallback to the
-                                                       // default value. Instead, we log and record the invalid value separately.
+                                                       // default value.
                                                        if (!SamplingRulesFormat.IsValid(value, out var normalizedFormat))
                                                        {
                                                            Log.Warning(
                                                                "{ConfigurationKey} configuration of {ConfigurationValue} is invalid. Ignoring all trace sampling rules.",
                                                                ConfigurationKeys.CustomSamplingRulesFormat,
                                                                value);
-
-                                                           _telemetry.Record(
-                                                               key: ConfigurationKeys.CustomSamplingRulesFormat,
-                                                               value: SamplingRulesFormat.Unknown,
-                                                               recordValue: true,
-                                                               origin: ConfigurationOrigins.Calculated);
                                                        }
 
                                                        return normalizedFormat;
                                                    },
                                                    validator: null);
+
+            // record final value of CustomSamplingRulesFormat in telemetry
+            _telemetry.Record(
+                    key: ConfigurationKeys.CustomSamplingRulesFormat,
+                    value: CustomSamplingRulesFormat,
+                    recordValue: true,
+                    origin: ConfigurationOrigins.Calculated);
 
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
