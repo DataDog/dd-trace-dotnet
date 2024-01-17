@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int aspnetCorePort = TcpPortProvider.GetOpenPort();
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: aspnetCorePort))
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: aspnetCorePort))
             {
                 var spans = agent.WaitForSpans(expectedSpans, 1_000);
                 spans.Count.Should().Be(expectedSpans);

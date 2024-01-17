@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent))
+            using (await RunSampleAndWaitForExit(agent))
             {
                 const int expectedSpanCount = 47;
                 var spans = agent.WaitForSpans(expectedSpanCount);

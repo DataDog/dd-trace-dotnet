@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 
@@ -103,6 +104,9 @@ namespace Datadog.Trace.Telemetry
 
             return assembliesToRecord;
         }
+
+        // Not the best implementation, but we don't call this often enough to worry about
+        public List<DependencyTelemetryData> GetFullData() => _assemblies.Keys.ToList();
 
         private static bool IsTempPathPattern(string assemblyName)
         {

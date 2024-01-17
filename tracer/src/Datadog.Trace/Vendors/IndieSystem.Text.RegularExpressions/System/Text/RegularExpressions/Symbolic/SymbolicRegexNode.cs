@@ -1955,7 +1955,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions.Symbolic
 
                 default:
                     return false;
-            };
+            }
         }
 
         /// <summary>Computes the set that includes all elements that can start a match.</summary>

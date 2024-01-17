@@ -37,6 +37,16 @@ internal class ProductsTelemetryCollector
             return null;
         }
 
+        return BuildProductsData();
+    }
+
+    /// <summary>
+    /// Gets all the product data recorded so far
+    /// </summary>
+    public ProductsData? GetFullData() => BuildProductsData();
+
+    private ProductsData? BuildProductsData()
+    {
         var results = Interlocked.Exchange(ref _productsByType, new ProductDetail?[3]);
 
         var appsec = results[(int)TelemetryProductType.AppSec] is { } a ? new ProductData(a.Enabled, a.Error) : null;

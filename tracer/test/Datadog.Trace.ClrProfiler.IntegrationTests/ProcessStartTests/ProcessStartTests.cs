@@ -39,6 +39,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
 
-        public void IntegrationDisabled() => IntegrationDisabledMethod();
+        public Task IntegrationDisabled() => IntegrationDisabledMethod();
     }
 }

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -23,13 +24,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesV0() => RunTest("v0");
+        public Task SubmitsTracesV0() => RunTest("v0");
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesV1() => RunTest("v1");
+        public Task SubmitsTracesV1() => RunTest("v1");
 
-        private void RunTest(string metadataSchemaVersion)
+        private async Task RunTest(string metadataSchemaVersion)
         {
             // ALWAYS: 91 spans
             // - FakeCommand: 21 spans (3 groups * 7 spans)
@@ -50,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent);
+            using var process = await RunSampleAndWaitForExit(agent);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
 

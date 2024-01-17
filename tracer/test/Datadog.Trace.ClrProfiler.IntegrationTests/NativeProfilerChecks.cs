@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.IO;
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -21,11 +22,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void RunChecksProject()
+        public async Task RunChecksProject()
         {
             SetInstrumentationVerification();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent))
+            using (var processResult = await RunSampleAndWaitForExit(agent))
             {
                 var exitCode = processResult.ExitCode;
                 if (exitCode == 139)

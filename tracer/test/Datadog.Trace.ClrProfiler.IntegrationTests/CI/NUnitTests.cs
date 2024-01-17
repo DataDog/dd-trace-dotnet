@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
@@ -48,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [MemberData(nameof(PackageVersions.NUnit), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
-        public void SubmitTraces(string packageVersion)
+        public async Task SubmitTraces(string packageVersion)
         {
             if (new Version(FrameworkDescription.Instance.ProductVersion).Major >= 5)
             {
@@ -68,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 {
                     // We remove the evp_proxy endpoint to force the APM protocol compatibility
                     agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2")).ToArray();
-                    using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
+                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                     {
                         spans = agent.WaitForSpans(ExpectedSpanCount)
                                      .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
