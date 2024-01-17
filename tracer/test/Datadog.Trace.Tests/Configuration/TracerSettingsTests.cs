@@ -462,9 +462,9 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(" regex ", SamplingRulesFormat.Regex)] // trim whitespace
         [InlineData("none", SamplingRulesFormat.Unknown)]  // invalid
         [InlineData("1", SamplingRulesFormat.Unknown)]     // invalid
-        [InlineData(null, SamplingRulesFormat.Regex)]      // null or empty or whitespace defaults to regex
-        [InlineData("", SamplingRulesFormat.Regex)]        // null or empty or whitespace defaults to regex
-        [InlineData("  ", SamplingRulesFormat.Regex)]      // null or empty or whitespace defaults to regex
+        [InlineData("", SamplingRulesFormat.Unknown)]      // empty is invalid
+        [InlineData("  ", SamplingRulesFormat.Unknown)]    // whitespace is invalid
+        [InlineData(null, SamplingRulesFormat.Regex)]      // null defaults to regex
         public void CustomSamplingRulesFormat(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CustomSamplingRulesFormat, value));
@@ -475,7 +475,17 @@ namespace Datadog.Trace.Tests.Configuration
             settings.CustomSamplingRulesFormat.Should().Be(expected);
 
             // verify telemetry
-            var entries = telemetry.GetQueueForTesting().Where(e => e is { Key: ConfigurationKeys.CustomSamplingRulesFormat });
+            var entries = telemetry.GetQueueForTesting()
+                                   .Where(e => e is { Key: ConfigurationKeys.CustomSamplingRulesFormat })
+                                   .OrderByDescending(e => e.SeqId)
+                                   .ToList();
+
+            // verify that we have 2 entries for this setting, one from code/default
+            // and one calculated (the actual value we're using)
+            entries.Should().HaveCount(2);
+
+            // verify that the entry with the highest SeqId has the actual value we're using
+            entries[0].StringValue.Should().Be(expected);
 
             foreach (var entry in entries)
             {
@@ -486,12 +496,12 @@ namespace Datadog.Trace.Tests.Configuration
                         entry.StringValue.Should().Be(SamplingRulesFormat.Regex);
                         break;
                     case ConfigurationOrigins.Code:
-                        // setting specified in code
+                        // original setting
                         entry.StringValue.Should().Be(value);
                         break;
                     case ConfigurationOrigins.Calculated:
-                        // setting specified in code, but invalid
-                        entry.StringValue.Should().Be(SamplingRulesFormat.Unknown);
+                        // the actual setting used after normalization
+                        entry.StringValue.Should().Be(expected);
                         break;
                     default:
                         throw new Exception($"Unexpected origin: {entry.Origin}");

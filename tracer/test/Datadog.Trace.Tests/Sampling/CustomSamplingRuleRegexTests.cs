@@ -124,14 +124,6 @@ namespace Datadog.Trace.Tests.Sampling
             Assert.Empty(rules);
         }
 
-        [Fact]
-        public void Unknown_Rules_Format_Does_Not_Register()
-        {
-            var config = """[{"sample_rate":0.5, "service":".*cart.*"}, {"sample_rate":1, "service":".*shipping.*", "name":"authorize"}, {"sample_rate":0.1, "service":".*shipping.*"}, {"sample_rate":0.05}]""";
-            var rules = CustomSamplingRule.BuildFromConfigurationString(config, "unknown").ToArray();
-            rules.Should().HaveCount(0);
-        }
-
         private static void VerifyRate(string config, float expectedRate)
         {
             var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex).Single();
