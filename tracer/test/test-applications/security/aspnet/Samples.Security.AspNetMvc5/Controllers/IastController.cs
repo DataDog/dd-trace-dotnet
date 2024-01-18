@@ -581,6 +581,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             return new string(original.AsEnumerable().ToArray());
         }
+
         [Route("StackTraceLeak")]
         public ActionResult StackTraceLeak()
         {

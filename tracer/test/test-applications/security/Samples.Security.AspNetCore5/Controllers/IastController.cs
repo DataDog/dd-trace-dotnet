@@ -633,13 +633,6 @@ namespace Samples.Security.AspNetCore5.Controllers
             throw new SystemException("Custom exception message");
         }
 
-        [HttpGet("ReturnCode")]
-        [Route("ReturnCode")]
-        public ActionResult ReturnCode(int code)
-        {
-            return StatusCode(code);
-        }
-
         // We should exclude some headers to prevent false positives:
         // location: it is already reported in UNVALIDATED_REDIRECT vulnerability detection.
         // Sec-WebSocket-Location, Sec-WebSocket-Accept, Upgrade, Connection: Usually the framework gets info from request
