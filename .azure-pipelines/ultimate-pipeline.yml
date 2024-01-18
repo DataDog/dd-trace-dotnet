@@ -3140,7 +3140,7 @@ stages:
     - publish: tracer/build_data/benchmarks
       artifact: benchmarks_results
 
-    - script: tracer\build.cmd CompareBenchmarksResults
+    - script: tracer\build.cmd CompareBenchmarksResults -BenchmarkCategory 'tracer'
       continueOnError: true
       displayName: Compare Benchmarks
       condition: and(succeeded(), eq(variables.isPullRequest, true))
@@ -3220,9 +3220,9 @@ stages:
         
         # upload the combined results for simplicity in other pipelines
         - publish: tracer/build_data/benchmarks
-          artifact: benchmarks_results
+          artifact: benchmarks_appsec_results
 
-        - script: tracer\build.cmd CompareBenchmarksResults
+        - script: tracer\build.cmd CompareBenchmarksResults -BenchmarkCategory 'appsec'
           continueOnError: true
           displayName: Compare AppSec Benchmarks
           condition: and(succeeded(), eq(variables.isPullRequest, true))
