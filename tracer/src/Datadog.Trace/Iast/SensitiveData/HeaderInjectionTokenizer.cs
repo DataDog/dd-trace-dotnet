@@ -19,14 +19,15 @@ namespace Datadog.Trace.Iast.SensitiveData;
 /// </summary>
 internal class HeaderInjectionTokenizer : ITokenizer
 {
-    // We should add this timeout to all the sensitive data tokenizers and have a common timeout
-    private static readonly IDatadogLogger _logger = DatadogLogging.GetLoggerFor(typeof(HeaderInjectionTokenizer));
-    private static TimeSpan _timeout = TimeSpan.FromMilliseconds(100);
-    private static Regex _keyPattern = new Regex(@"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)", RegexOptions.Compiled | RegexOptions.IgnoreCase, _timeout);
-    private static Regex _valuePattern = new Regex(@"(?i)(?:bearer\s+[a-z0-9\._\-]+|glpat-[\w\-]{20}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=\-]+\.ey[I-L][\w=\-]+(?:\.[\w.+/=\-]+)?|(?:[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY[\-]{5}|ssh-rsa\s*[a-z0-9/\.+]{100,}))", RegexOptions.Compiled | RegexOptions.IgnoreCase, _timeout);
+    private const string _keyPattern = @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)";
+    private const string _valuePattern = @"(?i)(?:bearer\s+[a-z0-9\._\-]+|glpat-[\w\-]{20}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=\-]+\.ey[I-L][\w=\-]+(?:\.[\w.+/=\-]+)?|(?:[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY[\-]{5}|ssh-rsa\s*[a-z0-9/\.+]{100,}))";
+    private Regex _keyRegex;
+    private Regex _valueRegex;
 
-    public HeaderInjectionTokenizer()
+    public HeaderInjectionTokenizer(TimeSpan timeout)
     {
+        _keyRegex = new Regex(_keyPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase, timeout);
+        _valueRegex = new Regex(_valuePattern, RegexOptions.Compiled | RegexOptions.IgnoreCase, timeout);
     }
 
     public List<Range> GetTokens(string evidence, IntegrationId? integrationId = null)
@@ -40,17 +41,10 @@ internal class HeaderInjectionTokenizer : ITokenizer
             // If the key patterns applies to the key or the value pattern applies to the value,
             // we should redact the value
 
-            try
+            if (_keyRegex.IsMatch(evidence.Substring(0, separatorStart)) ||
+                _valueRegex.IsMatch(evidence, separatorEnd))
             {
-                if (_keyPattern.IsMatch(evidence.Substring(0, separatorStart)) ||
-                    _valuePattern.IsMatch(evidence, separatorEnd))
-                {
-                    return [new Range(separatorEnd, evidence.Length - separatorEnd)];
-                }
-            }
-            catch (RegexMatchTimeoutException)
-            {
-                _logger.Warning("Regex match timeout in HeaderInjectionTokenizer.");
+                return [new Range(separatorEnd, evidence.Length - separatorEnd)];
             }
         }
 

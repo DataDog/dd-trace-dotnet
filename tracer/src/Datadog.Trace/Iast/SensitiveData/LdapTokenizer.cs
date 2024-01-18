@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast.Settings;
 
 #nullable enable
 
@@ -19,12 +20,18 @@ namespace Datadog.Trace.Iast.SensitiveData;
 /// </summary>
 internal class LdapTokenizer : ITokenizer
 {
-    private static Regex _pattern = new Regex(@"\(.*?(?:~=|=|<=|>=)(?<LITERAL>[^)]+)\)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+    private const string _ldapPattern = @"\(.*?(?:~=|=|<=|>=)(?<LITERAL>[^)]+)\)";
+    private Regex _ldapRegex;
+
+    public LdapTokenizer(TimeSpan timeout)
+    {
+        _ldapRegex = new Regex(_ldapPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline, timeout);
+    }
 
     public List<Range> GetTokens(string value, IntegrationId? integrationId = null)
     {
         var res = new List<Range>(5);
-        foreach (Match? match in _pattern.Matches(value))
+        foreach (Match? match in _ldapRegex.Matches(value))
         {
             if (match != null && match.Success)
             {

@@ -21,18 +21,9 @@ internal class EvidenceRedactor
 {
     private readonly Regex _keysRegex;
     private readonly Regex _valuesRegex;
-    private readonly TimeSpan _timeout;
     private readonly IDatadogLogger? _logger;
-
-    private Dictionary<string, ITokenizer> _tokenizers = new Dictionary<string, ITokenizer>
-    {
-        { VulnerabilityTypeName.SqlInjection, new SqlInjectionTokenizer() },
-        { VulnerabilityTypeName.LdapInjection, new LdapTokenizer() },
-        { VulnerabilityTypeName.CommandInjection, new CommandTokenizer() },
-        { VulnerabilityTypeName.Ssrf, new UrlTokenizer() },
-        { VulnerabilityTypeName.UnvalidatedRedirect, new UrlTokenizer() },
-        { VulnerabilityTypeName.HeaderInjection, new HeaderInjectionTokenizer() },
-    };
+    private TimeSpan _timeout;
+    private Dictionary<string, ITokenizer> _tokenizers;
 
     public EvidenceRedactor(string keysPattern, string valuesPattern, TimeSpan timeout, IDatadogLogger? logger = null)
     {
@@ -50,6 +41,17 @@ internal class EvidenceRedactor
 
         _keysRegex = new(keysPattern, options, _timeout);
         _valuesRegex = new(valuesPattern, options, _timeout);
+
+        var urlTokenizer = new UrlTokenizer(_timeout);
+        _tokenizers = new Dictionary<string, ITokenizer>
+        {
+            { VulnerabilityTypeName.SqlInjection, new SqlInjectionTokenizer(_timeout) },
+            { VulnerabilityTypeName.LdapInjection, new LdapTokenizer(_timeout) },
+            { VulnerabilityTypeName.CommandInjection, new CommandTokenizer(_timeout) },
+            { VulnerabilityTypeName.Ssrf, urlTokenizer },
+            { VulnerabilityTypeName.UnvalidatedRedirect, urlTokenizer },
+            { VulnerabilityTypeName.HeaderInjection, new HeaderInjectionTokenizer(_timeout) },
+        };
     }
 
     public bool IsKeySensitive(string? key)
@@ -81,9 +83,9 @@ internal class EvidenceRedactor
         {
             return _valuesRegex.IsMatch(value);
         }
-        catch (Exception err)
+        catch (RegexMatchTimeoutException err)
         {
-            _logger?.Error("Timeout in Evidence Values Redaction Regex. {V}", err.ToString());
+            _logger?.Error(err, "Regex timed out when trying to match value {Input} against pattern {Pattern}.", err.Input, err.Pattern);
             return false;
         }
     }
@@ -108,7 +110,14 @@ internal class EvidenceRedactor
 
         if (_tokenizers.TryGetValue(vulnerability.Type, out var tokenizer))
         {
-            sensitive = tokenizer.GetTokens(evidenceValue!, vulnerability.GetIntegrationId());
+            try
+            {
+                sensitive = tokenizer.GetTokens(evidenceValue!, vulnerability.GetIntegrationId());
+            }
+            catch (RegexMatchTimeoutException ex)
+            {
+                _logger?.Error(ex, "Regex timed out when trying to match value {Input} against pattern {Pattern}.", ex.Input, ex.Pattern);
+            }
         }
 
         // We can skip new vulnerabilities creation for vulnerability types without redaction
