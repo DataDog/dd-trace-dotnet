@@ -14,14 +14,6 @@ namespace Datadog.Trace.Tests.Sampling
     [Collection(nameof(Datadog.Trace.Tests.Sampling))]
     public class SpanSamplingRuleTests
     {
-        // copied these from CustomSamplingRule - maybe should combine or share?
-        private static readonly ulong Id = 1;
-        private static readonly Span CartCheckoutSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shopping-cart-service"), DateTimeOffset.Now) { OperationName = "checkout" };
-        private static readonly Span AddToCartSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shopping-cart-service"), DateTimeOffset.Now) { OperationName = "cart-add" };
-        private static readonly Span ShippingAuthSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shipping-auth-service"), DateTimeOffset.Now) { OperationName = "authorize" };
-        private static readonly Span ShippingRevertSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shipping-auth-service"), DateTimeOffset.Now) { OperationName = "authorize-revert" };
-        private static readonly Span RequestShippingSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "request-shipping"), DateTimeOffset.Now) { OperationName = "submit" };
-
         [Theory]
         [InlineData(null)]
         [InlineData("")] // empty
@@ -71,11 +63,11 @@ namespace Datadog.Trace.Tests.Sampling
         {
             var config = "[{\"service\":\"shopping-cart*\", \"name\":\"checkou?\", \"sample_rate\":0.5, \"max_per_second\":1000.5}]";
 
-            VerifySingleRule(config, CartCheckoutSpan, true);
-            VerifySingleRule(config, AddToCartSpan, false);
-            VerifySingleRule(config, ShippingAuthSpan, false);
-            VerifySingleRule(config, ShippingRevertSpan, false);
-            VerifySingleRule(config, RequestShippingSpan, false);
+            VerifySingleRule(config, TestSpans.CartCheckoutSpan, true);
+            VerifySingleRule(config, TestSpans.AddToCartSpan, false);
+            VerifySingleRule(config, TestSpans.ShippingAuthSpan, false);
+            VerifySingleRule(config, TestSpans.ShippingRevertSpan, false);
+            VerifySingleRule(config, TestSpans.RequestShippingSpan, false);
         }
 
         [Fact]
@@ -83,11 +75,11 @@ namespace Datadog.Trace.Tests.Sampling
         {
             var config = "[{\"service\":\"*\", \"name\":\"authorize\", \"sample_rate\":0.5, \"max_per_second\":1000.5}]";
 
-            VerifySingleRule(config, CartCheckoutSpan, false);
-            VerifySingleRule(config, AddToCartSpan, false);
-            VerifySingleRule(config, ShippingAuthSpan, true);
-            VerifySingleRule(config, ShippingRevertSpan, false);
-            VerifySingleRule(config, RequestShippingSpan, false);
+            VerifySingleRule(config, TestSpans.CartCheckoutSpan, false);
+            VerifySingleRule(config, TestSpans.AddToCartSpan, false);
+            VerifySingleRule(config, TestSpans.ShippingAuthSpan, true);
+            VerifySingleRule(config, TestSpans.ShippingRevertSpan, false);
+            VerifySingleRule(config, TestSpans.RequestShippingSpan, false);
         }
 
         [Fact]
@@ -95,11 +87,11 @@ namespace Datadog.Trace.Tests.Sampling
         {
             var config = "[{\"service\":\"shopping-cart-service\", \"name\":\"*\", \"sample_rate\":0.5, \"max_per_second\":1000.5}]";
 
-            VerifySingleRule(config, CartCheckoutSpan, true);
-            VerifySingleRule(config, AddToCartSpan, true);
-            VerifySingleRule(config, ShippingAuthSpan, false);
-            VerifySingleRule(config, ShippingRevertSpan, false);
-            VerifySingleRule(config, RequestShippingSpan, false);
+            VerifySingleRule(config, TestSpans.CartCheckoutSpan, true);
+            VerifySingleRule(config, TestSpans.AddToCartSpan, true);
+            VerifySingleRule(config, TestSpans.ShippingAuthSpan, false);
+            VerifySingleRule(config, TestSpans.ShippingRevertSpan, false);
+            VerifySingleRule(config, TestSpans.RequestShippingSpan, false);
         }
 
         [Theory]
@@ -107,11 +99,11 @@ namespace Datadog.Trace.Tests.Sampling
         public void MatchAll_ShouldMatchAll(string serviceGlob, string operationGlob, bool shouldMatch)
         {
             var rule = new SpanSamplingRule(serviceGlob, operationGlob);
-            rule.IsMatch(CartCheckoutSpan).Should().Be(shouldMatch);
-            rule.IsMatch(AddToCartSpan).Should().Be(shouldMatch);
-            rule.IsMatch(ShippingAuthSpan).Should().Be(shouldMatch);
-            rule.IsMatch(ShippingRevertSpan).Should().Be(shouldMatch);
-            rule.IsMatch(RequestShippingSpan).Should().Be(shouldMatch);
+            rule.IsMatch(TestSpans.CartCheckoutSpan).Should().Be(shouldMatch);
+            rule.IsMatch(TestSpans.AddToCartSpan).Should().Be(shouldMatch);
+            rule.IsMatch(TestSpans.ShippingAuthSpan).Should().Be(shouldMatch);
+            rule.IsMatch(TestSpans.ShippingRevertSpan).Should().Be(shouldMatch);
+            rule.IsMatch(TestSpans.RequestShippingSpan).Should().Be(shouldMatch);
         }
 
         [Fact]
@@ -136,7 +128,7 @@ namespace Datadog.Trace.Tests.Sampling
             var config = "[{\"service\":\"test\", \"name\":\"test\"}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            rule.IsMatch(CartCheckoutSpan).Should().BeFalse();
+            rule.IsMatch(TestSpans.CartCheckoutSpan).Should().BeFalse();
         }
 
         [Fact]
@@ -145,7 +137,7 @@ namespace Datadog.Trace.Tests.Sampling
             var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.0}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            rule.ShouldSample(CartCheckoutSpan).Should().BeFalse();
+            rule.ShouldSample(TestSpans.CartCheckoutSpan).Should().BeFalse();
         }
 
         [Fact]
@@ -154,8 +146,8 @@ namespace Datadog.Trace.Tests.Sampling
             var config = "[{\"service\":\"*\", \"name\":\"*\"}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            rule.IsMatch(CartCheckoutSpan).Should().BeTrue();
-            rule.ShouldSample(CartCheckoutSpan).Should().BeTrue();
+            rule.IsMatch(TestSpans.CartCheckoutSpan).Should().BeTrue();
+            rule.ShouldSample(TestSpans.CartCheckoutSpan).Should().BeTrue();
         }
 
         [Fact]
