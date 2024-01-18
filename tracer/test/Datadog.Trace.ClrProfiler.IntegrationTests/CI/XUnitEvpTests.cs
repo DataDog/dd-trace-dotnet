@@ -34,6 +34,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             SetServiceName("xunit-tests-evp");
             SetServiceVersion("1.0.0");
+#pragma warning disable CS0618 // Type or member is obsolete
+            EnableDebugMode();
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         [SkippableTheory]
