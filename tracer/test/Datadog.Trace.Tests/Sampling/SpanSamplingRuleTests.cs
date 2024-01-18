@@ -123,7 +123,18 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void WildcardOperation_ShouldMatch_OnTags()
         {
-            var config = """[{"service":"shopping-cart-service", "name":"*", "sample_rate":0.5, "max_per_second":1000.5}]""";
+            var config = """
+                         [{
+                            "service":"*",
+                            "name":"*",
+                            "tags": {
+                                "tag1": "value*",
+                                "tag2": "40?",
+                            },
+                            "sample_rate":0.5,
+                            "max_per_second":1000.5
+                         }]
+                         """;
 
             VerifySingleRule(config, TestSpans.CartCheckoutSpan, true);
             VerifySingleRule(config, TestSpans.AddToCartSpan, true);
