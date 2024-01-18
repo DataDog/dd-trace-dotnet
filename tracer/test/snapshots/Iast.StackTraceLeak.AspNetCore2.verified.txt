@@ -34,7 +34,7 @@ at Samples.Security.AspNetCore5.Controllers.IastController.StackTraceLeak(),
     {
       "type": "STACKTRACE_LEAK",
       "evidence": {
-        "value": "Samples.Security.AspNetCore2, SystemException"
+        "value": "Samples.Security.AspNetCore2,SystemException"
       }
     }
   ]
