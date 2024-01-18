@@ -131,7 +131,6 @@ src/Datadog.Trace/ContinuousProfiler/ProfilerStatus.cs
 src/Datadog.Trace/DatabaseMonitoring/DatabaseMonitoringPropagator.cs
 src/Datadog.Trace/DataStreamsMonitoring/CheckpointKind.cs
 src/Datadog.Trace/Debugger/ILineProbeResolver.cs
-src/Datadog.Trace/Debugger/LineProbeResolver.cs
 src/Datadog.Trace/Debugger/LiveDebugger.cs
 src/Datadog.Trace/Debugger/ProbeLocationType.cs
 src/Datadog.Trace/DiagnosticListeners/AspNetCoreDiagnosticObserver.cs
@@ -173,8 +172,6 @@ src/Datadog.Trace/HttpOverStreams/IHttpContent.cs
 src/Datadog.Trace/Iast/Iast.cs
 src/Datadog.Trace/Iast/ITaintedMap.cs
 src/Datadog.Trace/Iast/SourceType.cs
-src/Datadog.Trace/PDBs/DatadogPdbReader.cs
-src/Datadog.Trace/PDBs/SymbolMethodExtensions.cs
 src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs
 src/Datadog.Trace/PlatformHelpers/AzureContext.cs
 src/Datadog.Trace/PlatformHelpers/ContainerMetadata.cs

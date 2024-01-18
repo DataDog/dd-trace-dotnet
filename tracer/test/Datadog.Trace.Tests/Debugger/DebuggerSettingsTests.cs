@@ -90,6 +90,20 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData("0")]
         [InlineData("")]
         [InlineData(null)]
+        public void InvalidMaxSymbolSizeToUpload_DefaultUsed(string value)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseBatchSizeInBytes, value }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.SymbolDatabaseBatchSizeInBytes.Should().Be(100000);
+        }
+
+        [Theory]
+        [InlineData("-1")]
+        [InlineData("0")]
+        [InlineData("")]
+        [InlineData(null)]
         public void InvalidDiagnosticsInterval_DefaultUsed(string value)
         {
             var settings = new DebuggerSettings(

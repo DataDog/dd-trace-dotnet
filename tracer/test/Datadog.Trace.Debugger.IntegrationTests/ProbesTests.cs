@@ -703,7 +703,12 @@ public class ProbesTests : TestHelper
 
         if (testDescription.TestType == typeof(AsyncInstanceMethod) && !EnvironmentTools.IsWindows())
         {
-            throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+            throw new SkipException("Should run only on Windows. Different approvals between Windows/Linux.");
+        }
+
+        if (testDescription.TestType == typeof(AsyncVoid) && !EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("Should run only on Windows. Different approvals between Windows/Linux.");
         }
 
         if (!testDescription.IsOptimized && _unoptimizedNotSupportedTypes.Contains(testDescription.TestType))

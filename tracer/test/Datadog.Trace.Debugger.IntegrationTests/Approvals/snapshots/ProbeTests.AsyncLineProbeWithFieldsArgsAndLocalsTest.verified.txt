@@ -433,9 +433,145 @@
                 "type": "String",
                 "value": "Ralph (99)Samples.Probes.TestRuns.Shared.GenericRalphMethod99Ralph"
               },
+              "adr": {
+                "type": "String",
+                "value": "Ralph (99)Samples.Probes.TestRuns.Shared.GenericRalphMethod99Ralph"
+              },
+              "children": {
+                "fields": {
+                  "m_task": {
+                    "fields": {
+                      "m_action": {
+                        "isNull": "true",
+                        "type": "Delegate"
+                      },
+                      "m_contingentProperties": {
+                        "isNull": "true",
+                        "type": "ContingentProperties"
+                      },
+                      "m_continuationObject": {
+                        "type": "Object",
+                        "value": "Object"
+                      },
+                      "m_stateFlags": {
+                        "type": "Int32",
+                        "value": "117441536"
+                      },
+                      "m_stateObject": {
+                        "isNull": "true",
+                        "type": "Object"
+                      },
+                      "m_taskId": {
+                        "type": "Int32",
+                        "value": "0"
+                      },
+                      "m_taskScheduler": {
+                        "isNull": "true",
+                        "type": "TaskScheduler"
+                      }
+                    },
+                    "type": "Task",
+                    "value": "Task"
+                  }
+                },
+                "type": "TaskAwaiter",
+                "value": "TaskAwaiter"
+              },
               "output": {
                 "type": "String",
                 "value": "Ralph (99)Samples.Probes.TestRuns.Shared.GenericRalph"
+              },
+              "person": {
+                "type": "Double",
+                "value": "99"
+              },
+              "place": {
+                "fields": {
+                  "_person": {
+                    "fields": {
+                      "_shouldCloned": {
+                        "type": "Int32",
+                        "value": "99"
+                      },
+                      "Adrs": {
+                        "fields": {
+                          "City": {
+                            "notCapturedReason": "depth",
+                            "type": "Place",
+                            "value": "Place"
+                          },
+                          "HomeType": {
+                            "type": "BuildingType",
+                            "value": "Duplex"
+                          },
+                          "Number": {
+                            "type": "Int32",
+                            "value": "15"
+                          },
+                          "Street": {
+                            "type": "String",
+                            "value": "Harlem"
+                          }
+                        },
+                        "type": "Address",
+                        "value": "Address"
+                      },
+                      "Age": {
+                        "type": "Double",
+                        "value": "99"
+                      },
+                      "Children": {
+                        "elements": [
+                          {
+                            "fields": {
+                              "_shouldCloned": {
+                                "type": "Int32",
+                                "value": "31"
+                              },
+                              "Adrs": {
+                                "notCapturedReason": "depth",
+                                "type": "Address",
+                                "value": "Address"
+                              },
+                              "Age": {
+                                "type": "Double",
+                                "value": "31"
+                              },
+                              "Children": {
+                                "isNull": "true",
+                                "type": "List`1"
+                              },
+                              "Id": {
+                                "type": "Guid",
+                                "value": "ScrubbedValue"
+                              },
+                              "Name": {
+                                "type": "String",
+                                "value": "Ralph Jr."
+                              }
+                            },
+                            "type": "Person",
+                            "value": "Person"
+                          }
+                        ],
+                        "size": 1,
+                        "type": "List`1"
+                      },
+                      "Id": {
+                        "type": "Guid",
+                        "value": "ScrubbedValue"
+                      },
+                      "Name": {
+                        "type": "String",
+                        "value": "Ralph"
+                      }
+                    },
+                    "type": "Person",
+                    "value": "Person"
+                  }
+                },
+                "type": "NestedAsyncGenericStruct",
+                "value": "NestedAsyncGenericStruct"
               }
             }
           }
@@ -1487,9 +1623,115 @@
                 }
               },
               "locals": {
+                "adr": {
+                  "isNull": "true",
+                  "type": "String"
+                },
+                "children": {
+                  "fields": {
+                    "m_task": {
+                      "isNull": "true",
+                      "type": "Task"
+                    }
+                  },
+                  "type": "TaskAwaiter",
+                  "value": "TaskAwaiter"
+                },
                 "output": {
                   "isNull": "true",
                   "type": "String"
+                },
+                "person": {
+                  "type": "Double",
+                  "value": "0"
+                },
+                "place": {
+                  "fields": {
+                    "_person": {
+                      "fields": {
+                        "_shouldCloned": {
+                          "type": "Int32",
+                          "value": "99"
+                        },
+                        "Adrs": {
+                          "fields": {
+                            "City": {
+                              "notCapturedReason": "depth",
+                              "type": "Place",
+                              "value": "Place"
+                            },
+                            "HomeType": {
+                              "type": "BuildingType",
+                              "value": "Duplex"
+                            },
+                            "Number": {
+                              "type": "Int32",
+                              "value": "15"
+                            },
+                            "Street": {
+                              "type": "String",
+                              "value": "Harlem"
+                            }
+                          },
+                          "type": "Address",
+                          "value": "Address"
+                        },
+                        "Age": {
+                          "type": "Double",
+                          "value": "99"
+                        },
+                        "Children": {
+                          "elements": [
+                            {
+                              "fields": {
+                                "_shouldCloned": {
+                                  "type": "Int32",
+                                  "value": "31"
+                                },
+                                "Adrs": {
+                                  "notCapturedReason": "depth",
+                                  "type": "Address",
+                                  "value": "Address"
+                                },
+                                "Age": {
+                                  "type": "Double",
+                                  "value": "31"
+                                },
+                                "Children": {
+                                  "isNull": "true",
+                                  "type": "List`1"
+                                },
+                                "Id": {
+                                  "type": "Guid",
+                                  "value": "ScrubbedValue"
+                                },
+                                "Name": {
+                                  "type": "String",
+                                  "value": "Ralph Jr."
+                                }
+                              },
+                              "type": "Person",
+                              "value": "Person"
+                            }
+                          ],
+                          "size": 1,
+                          "type": "List`1"
+                        },
+                        "Id": {
+                          "type": "Guid",
+                          "value": "ScrubbedValue"
+                        },
+                        "Name": {
+                          "type": "String",
+                          "value": "Ralph"
+                        }
+                      },
+                      "type": "Person",
+                      "value": "Person"
+                    }
+                  },
+                  "type": "NestedAsyncGenericStruct",
+                  "value": "NestedAsyncGenericStruct"
                 }
               }
             }
@@ -1742,9 +1984,115 @@
                 }
               },
               "locals": {
+                "adr": {
+                  "isNull": "true",
+                  "type": "String"
+                },
+                "children": {
+                  "fields": {
+                    "m_task": {
+                      "isNull": "true",
+                      "type": "Task"
+                    }
+                  },
+                  "type": "TaskAwaiter",
+                  "value": "TaskAwaiter"
+                },
                 "output": {
                   "type": "String",
                   "value": "Ralph (99)Samples.Probes.TestRuns.Shared.GenericRalph"
+                },
+                "person": {
+                  "type": "Double",
+                  "value": "0"
+                },
+                "place": {
+                  "fields": {
+                    "_person": {
+                      "fields": {
+                        "_shouldCloned": {
+                          "type": "Int32",
+                          "value": "99"
+                        },
+                        "Adrs": {
+                          "fields": {
+                            "City": {
+                              "notCapturedReason": "depth",
+                              "type": "Place",
+                              "value": "Place"
+                            },
+                            "HomeType": {
+                              "type": "BuildingType",
+                              "value": "Duplex"
+                            },
+                            "Number": {
+                              "type": "Int32",
+                              "value": "15"
+                            },
+                            "Street": {
+                              "type": "String",
+                              "value": "Harlem"
+                            }
+                          },
+                          "type": "Address",
+                          "value": "Address"
+                        },
+                        "Age": {
+                          "type": "Double",
+                          "value": "99"
+                        },
+                        "Children": {
+                          "elements": [
+                            {
+                              "fields": {
+                                "_shouldCloned": {
+                                  "type": "Int32",
+                                  "value": "31"
+                                },
+                                "Adrs": {
+                                  "notCapturedReason": "depth",
+                                  "type": "Address",
+                                  "value": "Address"
+                                },
+                                "Age": {
+                                  "type": "Double",
+                                  "value": "31"
+                                },
+                                "Children": {
+                                  "isNull": "true",
+                                  "type": "List`1"
+                                },
+                                "Id": {
+                                  "type": "Guid",
+                                  "value": "ScrubbedValue"
+                                },
+                                "Name": {
+                                  "type": "String",
+                                  "value": "Ralph Jr."
+                                }
+                              },
+                              "type": "Person",
+                              "value": "Person"
+                            }
+                          ],
+                          "size": 1,
+                          "type": "List`1"
+                        },
+                        "Id": {
+                          "type": "Guid",
+                          "value": "ScrubbedValue"
+                        },
+                        "Name": {
+                          "type": "String",
+                          "value": "Ralph"
+                        }
+                      },
+                      "type": "Person",
+                      "value": "Person"
+                    }
+                  },
+                  "type": "NestedAsyncGenericStruct",
+                  "value": "NestedAsyncGenericStruct"
                 }
               }
             }
@@ -1997,9 +2345,145 @@
                 }
               },
               "locals": {
+                "adr": {
+                  "isNull": "true",
+                  "type": "String"
+                },
+                "children": {
+                  "fields": {
+                    "m_task": {
+                      "fields": {
+                        "m_action": {
+                          "isNull": "true",
+                          "type": "Delegate"
+                        },
+                        "m_contingentProperties": {
+                          "isNull": "true",
+                          "type": "ContingentProperties"
+                        },
+                        "m_continuationObject": {
+                          "type": "Object",
+                          "value": "Object"
+                        },
+                        "m_stateFlags": {
+                          "type": "Int32",
+                          "value": "117441536"
+                        },
+                        "m_stateObject": {
+                          "isNull": "true",
+                          "type": "Object"
+                        },
+                        "m_taskId": {
+                          "type": "Int32",
+                          "value": "0"
+                        },
+                        "m_taskScheduler": {
+                          "isNull": "true",
+                          "type": "TaskScheduler"
+                        }
+                      },
+                      "type": "Task",
+                      "value": "Task"
+                    }
+                  },
+                  "type": "TaskAwaiter",
+                  "value": "TaskAwaiter"
+                },
                 "output": {
                   "type": "String",
                   "value": "Ralph (99)Samples.Probes.TestRuns.Shared.GenericRalph"
+                },
+                "person": {
+                  "type": "Double",
+                  "value": "0"
+                },
+                "place": {
+                  "fields": {
+                    "_person": {
+                      "fields": {
+                        "_shouldCloned": {
+                          "type": "Int32",
+                          "value": "99"
+                        },
+                        "Adrs": {
+                          "fields": {
+                            "City": {
+                              "notCapturedReason": "depth",
+                              "type": "Place",
+                              "value": "Place"
+                            },
+                            "HomeType": {
+                              "type": "BuildingType",
+                              "value": "Duplex"
+                            },
+                            "Number": {
+                              "type": "Int32",
+                              "value": "15"
+                            },
+                            "Street": {
+                              "type": "String",
+                              "value": "Harlem"
+                            }
+                          },
+                          "type": "Address",
+                          "value": "Address"
+                        },
+                        "Age": {
+                          "type": "Double",
+                          "value": "99"
+                        },
+                        "Children": {
+                          "elements": [
+                            {
+                              "fields": {
+                                "_shouldCloned": {
+                                  "type": "Int32",
+                                  "value": "31"
+                                },
+                                "Adrs": {
+                                  "notCapturedReason": "depth",
+                                  "type": "Address",
+                                  "value": "Address"
+                                },
+                                "Age": {
+                                  "type": "Double",
+                                  "value": "31"
+                                },
+                                "Children": {
+                                  "isNull": "true",
+                                  "type": "List`1"
+                                },
+                                "Id": {
+                                  "type": "Guid",
+                                  "value": "ScrubbedValue"
+                                },
+                                "Name": {
+                                  "type": "String",
+                                  "value": "Ralph Jr."
+                                }
+                              },
+                              "type": "Person",
+                              "value": "Person"
+                            }
+                          ],
+                          "size": 1,
+                          "type": "List`1"
+                        },
+                        "Id": {
+                          "type": "Guid",
+                          "value": "ScrubbedValue"
+                        },
+                        "Name": {
+                          "type": "String",
+                          "value": "Ralph"
+                        }
+                      },
+                      "type": "Person",
+                      "value": "Person"
+                    }
+                  },
+                  "type": "NestedAsyncGenericStruct",
+                  "value": "NestedAsyncGenericStruct"
                 }
               }
             }

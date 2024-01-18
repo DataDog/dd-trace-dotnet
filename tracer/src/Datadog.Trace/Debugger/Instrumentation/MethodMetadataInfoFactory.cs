@@ -10,7 +10,6 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 
 namespace Datadog.Trace.Debugger.Instrumentation
 {
@@ -56,50 +55,18 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             try
             {
-                using var pdbReader = DatadogPdbReader.CreatePdbReader(method.Module.Assembly);
-                if (pdbReader == null)
-                {
-                    return null; // PDB file could not be loaded
-                }
-
-                var symbolMethod = pdbReader.ReadMethodSymbolInfo(method.MetadataToken);
-                if (symbolMethod == null)
-                {
-                    return null; // Method was not found in PDB file
-                }
-
                 var methodBody = method.GetMethodBody();
                 if (methodBody == null)
                 {
                     return null; // Could not read method body, so we can't verify locals
                 }
 
-                var localVariables = symbolMethod.GetLocalVariables();
-                int localVariablesCount = methodBody.LocalVariables.Count;
-                string[] localNames = new string[localVariablesCount];
-                foreach (var local in localVariables)
-                {
-                    if (local.Attributes.HasFlag(PdbLocalAttributes.DebuggerHidden))
-                    {
-                        continue;
-                    }
-
-                    if (local.Index > localVariablesCount)
-                    {
-                        // PDB information is inconsistent with the locals that are actually in the metadata.
-                        // This might be caused by code obfuscation tools that try to remove/modify locals, and neglect to update the PDB.
-                        // We'll simply ignore these additional locals in the hope that things will work out for the best.
-                        continue;
-                    }
-
-                    localNames[local.Index] = local.Name;
-                }
-
-                return localNames;
+                using var pdbReader = DatadogMetadataReader.CreatePdbReader(method.Module.Assembly);
+                return pdbReader?.GetLocalVariableNames(method.MetadataToken, methodBody.LocalVariables.Count, true);
             }
             catch (Exception e)
             {
-                Log.Error(e, "Failed to obtain local variable names from PDB for {Name}", method.Name);
+                Log.Error(e, "Failed to obtain local variable names from PDB for {Type}.{Name}", method.DeclaringType?.Name, method.Name);
                 return null;
             }
         }
