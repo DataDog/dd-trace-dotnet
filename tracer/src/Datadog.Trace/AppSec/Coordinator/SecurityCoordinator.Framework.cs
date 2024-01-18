@@ -10,12 +10,12 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Web;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AspNet;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -168,25 +168,60 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
+    /// <summary>
+    /// What this is doing is:
+    /// var httpException = new HttpResponseException(statuscode of the delegate)
+    /// httpException._innerException = new BlockException()
+    /// httpException.Response loaded
+    /// </summary>
+    /// <param name="method">dynamic method</param>
+    /// <returns>beginning of the il to be shared</returns>
     private static ILGenerator? GetBaseIlForThrowingHttpResponseException(DynamicMethod method)
     {
+        // new HttpResponseException(statuscode)
         var exceptionType = Type.GetType("System.Web.Http.HttpResponseException, System.Web.Http");
+
         if (exceptionType == null)
         {
             return null;
         }
 
+        var blockException = typeof(BlockException);
+        var blockExceptionCtor = blockException.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, Array.Empty<Type>(), null);
         var exceptionCtor = exceptionType.GetConstructor(new[] { typeof(HttpStatusCode) });
         var exceptionResponseProperty = exceptionType.GetProperty("Response");
+        var setValueMethod = typeof(FieldInfo).GetMethod("SetValue", new[] { typeof(object), typeof(object) });
+        var getTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle");
+        var getFieldMethod = typeof(Type).GetMethod("GetField", new[] { typeof(string), typeof(BindingFlags) }, null);
+        var getBaseType = typeof(Type).GetProperty("BaseType");
 
         var il = method.GetILGenerator();
         il.DeclareLocal(exceptionType);
         // status code loading
         il.Emit(OpCodes.Ldarg_0);
+        // new HttpResponseException(statuscode)
         il.Emit(OpCodes.Newobj, exceptionCtor);
         il.Emit(OpCodes.Stloc_0);
         il.Emit(OpCodes.Ldloc_0);
+        // typeof(HttpResponseException)
+        il.Emit(OpCodes.Ldtoken, exceptionType);
+        il.EmitCall(OpCodes.Call, getTypeFromHandle, null);
+        // .BaseType
+        il.EmitCall(OpCodes.Callvirt, getBaseType.GetMethod, null);
+
+        // .GetField("_innerException", BindingFlags.Instance | BindingFlags.NonPublic)
+        il.Emit(OpCodes.Ldstr, "_innerException");
+        il.Emit(OpCodes.Ldc_I4_S, (int)(BindingFlags.Instance | BindingFlags.NonPublic));
+        il.EmitCall(OpCodes.Callvirt, getFieldMethod, null);
+
+        il.Emit(OpCodes.Ldloc_0); // loads httpexception
+        il.Emit(OpCodes.Newobj, blockExceptionCtor); // loads blockexception
+        il.EmitCall(OpCodes.Callvirt, setValueMethod, null);
+
+        il.Emit(OpCodes.Ldloc_0);
+        // httpResponseException.Response
         il.EmitCall(OpCodes.Callvirt, exceptionResponseProperty.GetMethod, null);
+
         return il;
     }
 
