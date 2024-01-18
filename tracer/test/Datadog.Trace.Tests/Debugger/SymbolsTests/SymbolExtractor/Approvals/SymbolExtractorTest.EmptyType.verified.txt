@@ -1,4 +1,4 @@
-{
+﻿{
   "service": "test",
   "env": "test",
   "version": "0",

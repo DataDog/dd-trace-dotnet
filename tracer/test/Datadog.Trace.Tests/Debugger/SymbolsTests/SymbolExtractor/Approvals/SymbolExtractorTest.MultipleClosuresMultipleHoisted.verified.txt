@@ -12,25 +12,30 @@
       "scopes": [
         {
           "scope_type": "class",
-          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsMultipleClosures",
-          "start_line": 14,
-          "end_line": 30,
+          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleClosuresMultipleHoisted",
+          "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
+          "start_line": 15,
+          "end_line": 999,
           "language_specifics": {
             "super_classes": [
               "System.Object"
-            ]
+            ],
+            "pdb_exist": true
           },
           "scopes": [
             {
               "scope_type": "method",
               "name": "Foo",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsMultipleClosures.cs",
-              "start_line": 14,
-              "end_line": 30,
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
+              "start_line": 15,
+              "end_line": 999,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Void",
-                "start_column": 9,
-                "end_column": 10
+                "start_column": 999,
+                "end_column": 999
               },
               "symbols": [
                 {
@@ -44,28 +49,22 @@
                   "type": "System.Int32",
                   "symbol_type": "arg",
                   "line": 0
-                },
-                {
-                  "name": "res",
-                  "type": "System.Int32",
-                  "symbol_type": "local",
-                  "line": 14
                 }
               ],
               "scopes": [
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsMultipleClosures.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 16,
-                  "end_line": 16,
+                  "end_line": 999,
                   "language_specifics": {
                     "access_modifiers": [
-                      "Assembly"
+                      "sanitized"
                     ],
                     "return_type": "System.Bool",
-                    "start_column": 46,
-                    "end_column": 57
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -79,16 +78,16 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsMultipleClosures.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 17,
-                  "end_line": 17,
+                  "end_line": 999,
                   "language_specifics": {
                     "access_modifiers": [
-                      "Assembly"
+                      "sanitized"
                     ],
                     "return_type": "System.Int32",
-                    "start_column": 47,
-                    "end_column": 53
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -102,16 +101,16 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsMultipleClosures.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 20,
-                  "end_line": 20,
+                  "end_line": 999,
                   "language_specifics": {
                     "access_modifiers": [
-                      "Assembly"
+                      "sanitized"
                     ],
                     "return_type": "System.Int32",
-                    "start_column": 44,
-                    "end_column": 50
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -125,16 +124,16 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsMultipleClosures.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 21,
-                  "end_line": 21,
+                  "end_line": 999,
                   "language_specifics": {
                     "access_modifiers": [
-                      "Assembly"
+                      "sanitized"
                     ],
                     "return_type": "System.Int32",
-                    "start_column": 44,
-                    "end_column": 46
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -148,16 +147,16 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsMultipleClosures.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 22,
-                  "end_line": 22,
+                  "end_line": 999,
                   "language_specifics": {
                     "access_modifiers": [
-                      "Assembly"
+                      "sanitized"
                     ],
                     "return_type": "System.Int32",
-                    "start_column": 63,
-                    "end_column": 82
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -177,16 +176,16 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsMultipleClosures.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 23,
-                  "end_line": 23,
+                  "end_line": 999,
                   "language_specifics": {
                     "access_modifiers": [
-                      "Assembly"
+                      "sanitized"
                     ],
                     "return_type": "System.Bool",
-                    "start_column": 46,
-                    "end_column": 60
+                    "start_column": 999,
+                    "end_column": 999
                   },
                   "symbols": [
                     {
@@ -194,6 +193,24 @@
                       "type": "System.Int32",
                       "symbol_type": "arg",
                       "line": 0
+                    }
+                  ]
+                },
+                {
+                  "scope_type": "local",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
+                  "start_line": 15,
+                  "end_line": 999,
+                  "language_specifics": {
+                    "start_column": 999,
+                    "end_column": 999
+                  },
+                  "symbols": [
+                    {
+                      "name": "res",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 15
                     }
                   ]
                 }
@@ -205,6 +222,9 @@
               "start_line": 0,
               "end_line": 0,
               "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
                 "return_type": "System.Void"
               }
             }
