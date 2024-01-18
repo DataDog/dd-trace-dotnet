@@ -9,13 +9,36 @@ namespace Datadog.Trace.Tests.Sampling;
 
 public static class TestSpans
 {
-    internal static readonly Span CartCheckoutSpan = new Span(new SpanContext(1, 1, serviceName: "shopping-cart-service"), DateTimeOffset.Now) { OperationName = "checkout", ResourceName = "/api/users/1" };
+    internal static readonly Span CartCheckoutSpan;
 
-    internal static readonly Span AddToCartSpan = new Span(new SpanContext(1, 1, serviceName: "shopping-cart-service"), DateTimeOffset.Now) { OperationName = "cart-add", ResourceName = "/api/cart" };
+    internal static readonly Span AddToCartSpan;
 
-    internal static readonly Span ShippingAuthSpan = new Span(new SpanContext(1, 1, serviceName: "shipping-auth-service"), DateTimeOffset.Now) { OperationName = "authorize", ResourceName = "/api/items/1" };
+    internal static readonly Span ShippingAuthSpan;
 
-    internal static readonly Span ShippingRevertSpan = new Span(new SpanContext(1, 1, serviceName: "shipping-auth-service"), DateTimeOffset.Now) { OperationName = "authorize-revert", ResourceName = "/api/users/2" };
+    internal static readonly Span ShippingRevertSpan;
 
-    internal static readonly Span RequestShippingSpan = new Span(new SpanContext(1, 1, serviceName: "request-shipping"), DateTimeOffset.Now) { OperationName = "submit", ResourceName = "/api/users/3" };
+    internal static readonly Span RequestShippingSpan;
+
+    static TestSpans()
+    {
+        var now = DateTimeOffset.Now;
+
+        CartCheckoutSpan = new Span(new SpanContext(1, 1, serviceName: "shopping-cart-service"), now) { OperationName = "checkout", ResourceName = "/api/users/1" };
+        CartCheckoutSpan.SetTag("tag1", "value1");
+        CartCheckoutSpan.SetMetric("tag2", 401);
+
+        AddToCartSpan = new Span(new SpanContext(1, 1, serviceName: "shopping-cart-service"), now) { OperationName = "cart-add", ResourceName = "/api/cart" };
+        AddToCartSpan.SetTag("tag1", "value2");
+        AddToCartSpan.SetMetric("tag2", 402);
+
+        ShippingAuthSpan = new Span(new SpanContext(1, 1, serviceName: "shipping-auth-service"), now) { OperationName = "authorize", ResourceName = "/api/items/1" };
+        ShippingAuthSpan.SetTag("tag1", "value3");
+        ShippingAuthSpan.SetMetric("tag2", 410);
+
+        ShippingRevertSpan = new Span(new SpanContext(1, 1, serviceName: "shipping-auth-service"), now) { OperationName = "authorize-revert", ResourceName = "/api/users/2" };
+        ShippingRevertSpan.SetTag("tag1", "value4");
+
+        RequestShippingSpan = new Span(new SpanContext(1, 1, serviceName: "request-shipping"), now) { OperationName = "submit", ResourceName = "/api/users/3" };
+        RequestShippingSpan.SetMetric("tag2", 403);
+    }
 }
