@@ -4,6 +4,8 @@
 // </copyright>
 
 #nullable enable
+using Datadog.Trace.Ci;
+
 namespace Datadog.Trace.Configuration;
 
 internal class GitMetadata
@@ -13,7 +15,7 @@ internal class GitMetadata
     public GitMetadata(string commitSha, string repositoryUrl)
     {
         CommitSha = commitSha;
-        RepositoryUrl = repositoryUrl;
+        RepositoryUrl = CIEnvironmentValues.RemoveSensitiveInformationFromUrl(repositoryUrl);
     }
 
     public string CommitSha { get; }

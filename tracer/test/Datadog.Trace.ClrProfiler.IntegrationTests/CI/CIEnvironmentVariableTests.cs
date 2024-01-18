@@ -59,6 +59,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             Assert.Equal(expected, Regex.Match(value, CIEnvironmentValues.RepositoryUrlPattern).Length == value.Length);
         }
 
+        [InlineData(null, null)]
+        [InlineData("", "")]
+        [InlineData("Hello World", "Hello World")]
+        [InlineData("user@host", "host")]
+        [InlineData("https://username@github.com/username/repository.git", "https://github.com/username/repository.git")]
+        [InlineData("https://username:password@github.com/username/repository.git", "https://github.com/username/repository.git")]
+        [InlineData("user@host:path/to/repo", "host:path/to/repo")]
+        [InlineData("ssh://user@host:path/to/repo", "ssh://host:path/to/repo")]
+        [InlineData("ssh://user@host:23/path/to/repo", "ssh://host:23/path/to/repo")]
+        [InlineData("ftp://user@host:23/path/to/repo", "ftp://host:23/path/to/repo")]
+        [SkippableTheory]
+        public void CleanSensitiveDataFromRepositoryUrl(string value, string expected)
+        {
+            CIEnvironmentValues.Instance.RemoveSensitiveInformationFromUrl(value).Should().Be(expected);
+        }
+
         [SkippableTheory]
         [MemberData(nameof(GetJsonItems))]
         public void CheckEnvironmentVariables(JsonDataItem jsonData)
