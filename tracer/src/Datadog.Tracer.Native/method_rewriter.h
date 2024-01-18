@@ -40,7 +40,7 @@ public:
 class TracerMethodRewriter : public MethodRewriter
 {
 private:
-    ILInstr* CreateFilterForException(ILRewriterWrapper* rewriter, mdTypeRef exception, mdTypeRef type_ref, ULONG exceptionValueIndex);
+    ILInstr* CreateFilterForException(ILRewriterWrapper* rewriter, mdTypeRef exception, mdTypeRef type_ref, mdMethodDef containsCallTargetBubbleUpException, ULONG exceptionValueIndex);
 
 public:
 
