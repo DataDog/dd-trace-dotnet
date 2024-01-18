@@ -130,5 +130,9 @@ public class TaintedObjectsTests
         TaintInput(true, "50t");
         TaintInput(true, "Not");
         TaintInput(true, "Not Numeric");
+
+        TaintInput(true, "-1");
+        TaintInput(true, "-29");
+        TaintInput(true, "-35");
     }
 }
