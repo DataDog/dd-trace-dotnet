@@ -23,25 +23,9 @@ public class StringAspectsBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;
 
-    static StringAspectsBenchmark()
-    {
-    }
-
-    public IEnumerable<List<string>> IastEnabledContext()
-    {
-        return IastContext(true);
-    }
-
-    public IEnumerable<List<string>> IastDisabledContext()
-    {
-        return IastContext(false);
-    }
-
-    public IEnumerable<List<string>> IastContext(bool enabled)
-    {
-        yield return InitTaintedContext(10, enabled);
-    }
-
+    private List<string> _initTaintedContextTrue;
+    private List<string> _initTaintedContextFalse;
+    
     private static List<string> InitTaintedContext(int size, bool initTainted = true)
     {
         TaintedObjects taintedObjects = null;
@@ -79,10 +63,16 @@ public class StringAspectsBenchmark
 
     const int Iterations = 100;
 
-    [Benchmark]
-    [ArgumentsSource(nameof(IastDisabledContext))]
-    public void StringConcatBenchmark(List<string> parameters)
+    [IterationSetup(Target = nameof(StringConcatBenchmark))]
+    public void InitTaintedContextWhenFalse()
     {
+        _initTaintedContextFalse = InitTaintedContext(10, false);
+    }
+
+    [Benchmark]
+    public void StringConcatBenchmark()
+    {
+        var parameters = _initTaintedContextFalse;
         var list = new List<string>(parameters.Count);
         var arr = parameters.ToArray();
         for (int x = 0; x < Iterations; x++)
@@ -93,10 +83,16 @@ public class StringAspectsBenchmark
         System.Diagnostics.Trace.WriteLine($"{list.Count} elements computed");
     }
 
-    [Benchmark]
-    [ArgumentsSource(nameof(IastEnabledContext))]
-    public void StringConcatAspectBenchmark(List<string> parameters)
+    [IterationSetup(Target = nameof(StringConcatAspectBenchmark))]
+    public void InitTaintedContextWhenTrue()
     {
+        _initTaintedContextTrue = InitTaintedContext(10, true);
+    }
+
+    [Benchmark]
+    public void StringConcatAspectBenchmark()
+    {
+        var parameters = _initTaintedContextTrue;
         var list = new List<string>(parameters.Count);
         var arr = parameters.ToArray();
         for (int x = 0; x < Iterations; x++)

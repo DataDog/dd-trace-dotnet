@@ -30,6 +30,15 @@
     <!-- https://www.nuget.org/packages/IndieSystem.Text.RegularExpressions/0.6 -->
     <PackageReference Include="IndieSystem.Text.RegularExpressions" Version="0.6" />
 
+    <!-- https://www.nuget.org/packages/System.Collections.Immutable/1.0.0 -->
+    <PackageReference Include="System.Collections.Immutable" Version="7.0.0" />
+
+    <!-- https://www.nuget.org/packages/System.Memory/1.0.0 -->
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+
+    <!-- https://www.nuget.org/packages/System.Reflection.Metadata/1.0.0 -->
+    <PackageReference Include="System.Reflection.Metadata" Version="7.0.2" />
+
   </ItemGroup>
 
 </Project>
