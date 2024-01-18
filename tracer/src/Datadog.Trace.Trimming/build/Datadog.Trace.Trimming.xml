@@ -961,7 +961,6 @@
       <type fullname="System.Text.RegularExpressions.Match" />
       <type fullname="System.Text.RegularExpressions.MatchCollection" />
       <type fullname="System.Text.RegularExpressions.Regex" />
-      <type fullname="System.Text.RegularExpressions.RegexMatchTimeoutException" />
       <type fullname="System.Text.RegularExpressions.RegexOptions" />
    </assembly>
    <assembly fullname="System.Threading">
