@@ -1,4 +1,4 @@
-## Migration guid
+## Migration guide
 
 This document includes high level steps describing how to migrate between high level version of the Datadog .NET Client Library (.NET Tracer)
 
