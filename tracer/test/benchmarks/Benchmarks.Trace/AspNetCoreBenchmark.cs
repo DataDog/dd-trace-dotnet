@@ -18,7 +18,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkAgent1]    
-    [BenchmarkCategory("tracer")]
+    [BenchmarkCategory(Constants.TracerCategory)]
     public class AspNetCoreBenchmark
     {
         private static readonly HttpClient Client;
