@@ -16,6 +16,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Primitives;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using Newtonsoft.Json;
 using Samples.Security.Data;
 
@@ -54,6 +56,7 @@ namespace Samples.Security.AspNetCore5.Controllers
     public class IastController : ControllerBase
     {
         static SQLiteConnection dbConnection = null;
+        static IMongoDatabase mongoDb = null;
 
         public IActionResult Index()
         {
@@ -118,6 +121,42 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return BadRequest($"No query or username was provided");
+        }
+        
+        [HttpGet("NoSqlQueryMongoDb")]
+        [Route("NoSqlQueryMongoDb")]
+        public IActionResult NoSqlQueryMongoDb(string price, string query)
+        {
+            try
+            {
+                if (mongoDb is null)
+                {
+                    mongoDb = IastControllerHelper.CreateMongoDb();
+                }
+
+                if (!string.IsNullOrEmpty(price))
+                {
+                    var taintedQuery = "{ \"Price\" :\"" + price + "\"}";
+                    var document = BsonDocument.Parse(taintedQuery);
+                    var collection = mongoDb.GetCollection<BsonDocument>("Books");
+                    var find = collection.Find(document).ToList();
+                    return Content($"Found {find.Count} books with price {price}");
+                }
+
+                if (!string.IsNullOrEmpty(query))
+                {
+                    var document = BsonDocument.Parse(query);
+                    var collection = mongoDb.GetCollection<BsonDocument>("Books");
+                    var find = collection.Find(document).ToList();
+                    return Content($"Found {find.Count} books with query {query}");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return BadRequest($"No price or query was provided");
         }
 
         [HttpGet("ExecuteCommand")]

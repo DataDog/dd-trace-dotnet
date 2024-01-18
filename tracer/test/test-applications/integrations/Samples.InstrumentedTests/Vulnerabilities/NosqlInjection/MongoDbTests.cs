@@ -18,11 +18,6 @@ public class MongoDbTests : InstrumentationTestsBase
     private readonly string _taintedStringCommand = "dbstats";
     private readonly string _taintedStringAttack = "nnn\"}}, { \"Author.Name\" : { \"$ne\" : \"notTainted2";
 
-    private static string Host()
-    {
-        return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
-    }
-    
     public MongoDbTests()
     {
         _client = MockMongoDb.MockMongoClient();

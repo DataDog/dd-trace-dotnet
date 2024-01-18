@@ -1,6 +1,8 @@
 using System;
 using System.Data.SQLite;
 using System.Text;
+using MongoDB.Driver;
+using Moq;
 
 namespace Samples.Security.Data
 {
@@ -58,6 +60,12 @@ namespace Samples.Security.Data
                 err = err.InnerException;
             }
             return res;
+        }
+        
+        public static IMongoDatabase CreateMongoDb()
+        {
+            var client = MockMongoDb.MockMongoClient();
+            return client.Object.GetDatabase("test-db");
         }
     }
 }
