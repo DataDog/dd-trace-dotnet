@@ -58,7 +58,13 @@ namespace Datadog.Trace.AppSec.Waf
             return new Context(contextHandle, waf, wafLibraryInvoker, encoder);
         }
 
-        public unsafe IResult? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
+        public IResult? Run(IDictionary<string, object> addressData, ulong timeoutMicroSeconds)
+            => RunInternal(addressData, null, timeoutMicroSeconds);
+
+        public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds)
+            => RunInternal(null, ephemeralAddressData, timeoutMicroSeconds);
+
+        private unsafe IResult? RunInternal(IDictionary<string, object>? persistantAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds)
         {
             if (_disposed)
             {
@@ -75,8 +81,12 @@ namespace Datadog.Trace.AppSec.Waf
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                var parameters = Encoder.FormatArgs(addresses);
-                Log.Debug("DDAS-0010-00: Executing AppSec In-App WAF with parameters: {Parameters}", parameters);
+                var persistantParameters = persistantAddressData == null ? string.Empty : Encoder.FormatArgs(persistantAddressData);
+                var ephemeralParameters = ephemeralAddressData == null ? string.Empty : Encoder.FormatArgs(ephemeralAddressData);
+                Log.Debug(
+                    "DDAS-0010-00: Executing AppSec In-App WAF with persistant parameters: {PersistantParameters}, ephemeral parameters: {EphemeralParameters}",
+                    persistantParameters,
+                    ephemeralParameters);
             }
 
             // not restart cause it's the total runtime over runs, and we run several * during request
@@ -88,8 +98,27 @@ namespace Datadog.Trace.AppSec.Waf
                 var pwArgs = args.Result;
                 _argCache.Add(args);
 
-                // WARNING: DO NOT DISPOSE pwArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
-                code = _waf.Run(_contextHandle, pwArgs, ref retNative, timeoutMicroSeconds);
+                if (pwPersistantArgs == IntPtr.Zero && pwEphemeralArgs == IntPtr.Zero)
+                {
+                    Log.Error("Both pwPersistantArgs and pwEphemeralArgs are null");
+                }
+
+                // WARNING: DO NOT DISPOSE pwPersistantArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
+                code = _waf.Run(_contextHandle, pwPersistantArgs, pwEphemeralArgs,  ref retNative, timeoutMicroSeconds);
+
+                // pwEphemeralArgs follow a different lifecycle and should be disposed immediately
+                if (ephemeralArgCache != null)
+                {
+                    Encoder.Pool.Return(ephemeralArgCache);
+                }
+
+                if (ephemeralArgCacheLegacy != null)
+                {
+                    foreach (var obj in ephemeralArgCacheLegacy)
+                    {
+                        obj.Dispose();
+                    }
+                }
             }
 
             _stopwatch.Stop();
@@ -106,6 +135,23 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             return result;
+        }
+
+        private IntPtr EncodeLegacy(IDictionary<string, object> persistantAddressData, List<Obj> argCache)
+        {
+            IntPtr pwPersistantArgs;
+            var args = EncoderLegacy.Encode(persistantAddressData, applySafetyLimits: true, wafLibraryInvoker: _wafLibraryInvoker, argCache: argCache);
+            pwPersistantArgs = args.RawPtr;
+            return pwPersistantArgs;
+        }
+
+        private unsafe IntPtr EncodeUnsafe(IDictionary<string, object> persistantAddressData, List<IntPtr> argCache)
+        {
+            IntPtr pwPersistantArgs;
+            var pool = Encoder.Pool;
+            var args = Encoder.Encode(persistantAddressData, applySafetyLimits: true, argToFree: argCache, pool: pool);
+            pwPersistantArgs = (IntPtr)(&args);
+            return pwPersistantArgs;
         }
 
         public void Dispose(bool disposing)
