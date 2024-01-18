@@ -223,7 +223,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             // we test two different ways of obtaining a cookie
             var argumentValue = Request.Cookies["argumentLine"].Values[0];
-            var t = Request.Headers[0];
             return ExecuteCommandInternal(Request.Cookies["file"].Value, argumentValue);
         }
 

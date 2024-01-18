@@ -42,7 +42,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             if (!filterContext.HttpContext.Request.Path.Value.Contains("XContentTypeHeaderMissing"))
             {
-                filterContext.HttpContext.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+                filterContext.HttpContext.Response.Headers.Add("X-Content-Type-Options", "nosniff");
             }
 
             base.OnResultExecuting(filterContext);
@@ -522,7 +522,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             if (!string.IsNullOrEmpty(xContentTypeHeaderValueUntainted))
             {
-                Response.Headers.Append("X-Content-Type-Options", xContentTypeHeaderValue);
+                Response.Headers.Add("X-Content-Type-Options", xContentTypeHeaderValueUntainted);
             }
 
             if (returnCode != (int) HttpStatusCode.OK)
@@ -603,12 +603,12 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             if (!string.IsNullOrEmpty(hstsHeaderValueUntainted))
             {
-                Response.Headers.Append("Strict-Transport-Security", hstsHeaderValue);
+                Response.Headers.Add("Strict-Transport-Security", hstsHeaderValueUntainted);
             }
 
             if (!string.IsNullOrEmpty(xForwardedProtoUntainted))
             {
-                Response.Headers.Append("X-Forwarded-Proto", xForwardedProto);
+                Response.Headers.Add("X-Forwarded-Proto", xForwardedProtoUntainted);
             }
 
             if (returnCode != (int)HttpStatusCode.OK)
