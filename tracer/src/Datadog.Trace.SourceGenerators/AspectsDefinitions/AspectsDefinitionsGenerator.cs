@@ -30,15 +30,11 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
         // RegisterSource(context, "AspectAttribute");
         // RegisterSource(context, "AspectClassAttribute");
         // RegisterSource(context, "AspectCtorReplaceAttribute");
-        // RegisterSource(context, "AspectFilter");
         // RegisterSource(context, "AspectMethodInsertAfterAttribute");
         // RegisterSource(context, "AspectMethodInsertBeforeAttribute");
         // RegisterSource(context, "AspectMethodReplaceAttribute");
-        // RegisterSource(context, "AspectType");
-        // RegisterSource(context, "VulnerabilityType");
-        // RegisterSource(context, "VulnerabilityTypeName");
 
-        var aspectsClassesToGenerate = context.SyntaxProvider
+        IncrementalValuesProvider<Result<(ClassAspects Aspects, bool IsValid)>> aspectsClassesToGenerate = context.SyntaxProvider
                                      .ForAttributeWithMetadataName(
                                           "Datadog.Trace.Iast.Dataflow.AspectClassAttribute",
                                           predicate: (node, _) => node is ClassDeclarationSyntax,
