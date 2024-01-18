@@ -1,4 +1,4 @@
-{
+﻿{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -12,9 +12,9 @@
       "scopes": [
         {
           "scope_type": "class",
-          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.ComprehensiveLinqWithoutClosure",
-          "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\ComprehensiveLinqWithoutClosure.cs",
-          "start_line": 15,
+          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LocalFunctionWithClosure",
+          "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LocalFunctionWithClosure.cs",
+          "start_line": 14,
           "end_line": 999,
           "language_specifics": {
             "super_classes": [
@@ -26,8 +26,8 @@
             {
               "scope_type": "method",
               "name": "Foo",
-              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\ComprehensiveLinqWithoutClosure.cs",
-              "start_line": 15,
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LocalFunctionWithClosure.cs",
+              "start_line": 14,
               "end_line": 999,
               "language_specifics": {
                 "access_modifiers": [
@@ -41,49 +41,51 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\ComprehensiveLinqWithoutClosure.cs",
-                  "start_line": 19,
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LocalFunctionWithClosure.cs",
+                  "start_line": 18,
                   "end_line": 999,
                   "language_specifics": {
                     "access_modifiers": [
                       "sanitized"
                     ],
-                    "return_type": "System.Bool",
+                    "annotations": [
+                      "static"
+                    ],
+                    "return_type": "System.Void",
                     "start_column": 999,
                     "end_column": 999
                   },
-                  "symbols": [
+                  "scopes": [
                     {
-                      "name": "i",
-                      "type": "System.Int32",
-                      "symbol_type": "arg",
-                      "line": 0
+                      "scope_type": "local",
+                      "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LocalFunctionWithClosure.cs",
+                      "start_line": 18,
+                      "end_line": 999,
+                      "language_specifics": {
+                        "start_column": 999,
+                        "end_column": 999
+                      },
+                      "symbols": [
+                        {
+                          "name": "s",
+                          "type": "System.Int32",
+                          "symbol_type": "local",
+                          "line": 18
+                        }
+                      ]
                     }
                   ]
                 },
                 {
                   "scope_type": "local",
-                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\ComprehensiveLinqWithoutClosure.cs",
-                  "start_line": 15,
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LocalFunctionWithClosure.cs",
+                  "start_line": 14,
                   "end_line": 999,
                   "language_specifics": {
                     "start_column": 999,
                     "end_column": 999
                   },
-                  "symbols": [
-                    {
-                      "name": "rand",
-                      "type": "System.Int32",
-                      "symbol_type": "local",
-                      "line": 15
-                    },
-                    {
-                      "name": "numbers",
-                      "type": "System.Collections.Generic.IEnumerable`1<System.Int32>",
-                      "symbol_type": "local",
-                      "line": 15
-                    }
-                  ]
+                  "symbols": []
                 }
               ]
             },
