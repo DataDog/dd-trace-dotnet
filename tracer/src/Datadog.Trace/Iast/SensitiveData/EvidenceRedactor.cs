@@ -52,6 +52,7 @@ internal class EvidenceRedactor
             { VulnerabilityTypeName.Ssrf, urlTokenizer },
             { VulnerabilityTypeName.UnvalidatedRedirect, urlTokenizer },
             { VulnerabilityTypeName.HeaderInjection, new HeaderInjectionTokenizer(_timeout) },
+            { VulnerabilityTypeName.NoSqlMongoDbInjection, new NoSqlInjectionRedactor() },
         };
     }
 

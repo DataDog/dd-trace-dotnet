@@ -36,6 +36,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodInsertBefore(\"Microsoft.AspNetCore.Mvc.ControllerBase::LocalRedirectPreserveMethod(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String)",
 "  [AspectMethodInsertBefore(\"Microsoft.AspNetCore.Mvc.ControllerBase::LocalRedirectPermanentPreserveMethod(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String)",
 "[AspectClass(\"Microsoft.EntityFrameworkCore.Relational\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.EntityFrameworkCoreAspect",
+<<<<<<< HEAD
 "  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Object[])\",\"\",[1],[False],[None],Default,[])] ReviewSqlString(System.String)",
 "  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Collections.Generic.IEnumerable`1<System.Object>)\",\"\",[1],[False],[None],Default,[])] ReviewSqlString(System.String)",
 "  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])] ReviewSqlString(System.String)",
@@ -68,16 +69,33 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectCtorReplace(\"MongoDB.Bson.IO.JsonReader::.ctor(System.String)\",\"\",[0],[False],[None],Propagation,[])] Constructor(System.String)",
 >>>>>>> 6234bca2b (Change to AspectCtorReplace)
 =======
+=======
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Object[])\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Collections.Generic.IEnumerable`1<System.Object>)\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Threading.CancellationToken)\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Object[])\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Collections.Generic.IEnumerable`1<System.Object>,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalQueryableExtensions::FromSqlRaw(Microsoft.EntityFrameworkCore.DbSet`1<!!0>,System.String,System.Object[])\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
+"[AspectClass(\"MongoDB.Bson\",[None],Sink,[NoSqlMongoDbInjection])] Datadog.Trace.Iast.Aspects.MongoDB.BsonAspect",
+>>>>>>> cb21d5ac3 (Rename NoSqlInjection to NoSqlMongoDbInjection)
 "  [AspectMethodInsertBefore(\"MongoDB.Bson.Serialization.BsonSerializer::Deserialize(System.String,System.Action`1<Builder>)\",\"\",[1],[False],[None],Propagation,[])] AnalyzeJsonString(System.String)",
 "  [AspectMethodInsertBefore(\"MongoDB.Bson.Serialization.BsonSerializer::Deserialize(System.String,System.Type,System.Action`1<Builder>)\",\"\",[2],[False],[None],Propagation,[])] AnalyzeJsonString(System.String)",
 "  [AspectMethodInsertBefore(\"MongoDB.Bson.BsonDocument::Parse(System.String)\",\"\",[0],[False],[None],Propagation,[])] AnalyzeJsonString(System.String)",
 "  [AspectMethodInsertBefore(\"MongoDB.Bson.IO.JsonReader::.ctor(System.String)\",\"\",[0],[False],[None],Propagation,[])] AnalyzeJsonString(System.String)",
+<<<<<<< HEAD
 >>>>>>> 3273bfb6f (Change aspect implementation and add unit tests for new case)
 "[AspectClass(\"MongoDB.Driver\",[None],Sink,[NoSqlInjection])] Datadog.Trace.Iast.Aspects.MongoDB.MongoDatabaseAspect",
 "  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoDatabase::RunCommand(MongoDB.Driver.Command`1<!!0>,MongoDB.Driver.ReadPreference,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] AnalyzeCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoDatabase::RunCommandAsync(MongoDB.Driver.Command`1<!!0>,MongoDB.Driver.ReadPreference,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] AnalyzeCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoCollectionExtensions::Find(MongoDB.Driver.IMongoCollection`1<!!0>,MongoDB.Driver.FilterDefinition`1<!!0>,MongoDB.Driver.FindOptions)\",\"\",[1],[False],[None],Default,[])] AnalyzeCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoCollectionExtensions::FindAsync(MongoDB.Driver.IMongoCollection`1<!!0>,MongoDB.Driver.FilterDefinition`1<!!0>,MongoDB.Driver.FindOptions`2<!!0,!!0>,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] AnalyzeCommand(System.Object)",
+=======
+"[AspectClass(\"MongoDB.Driver\",[None],Sink,[NoSqlMongoDbInjection])] Datadog.Trace.Iast.Aspects.MongoDB.MongoDatabaseAspect",
+"  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoDatabase::RunCommand(MongoDB.Driver.Command`1<!!0>,MongoDB.Driver.ReadPreference,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Propagation,[])] AnalyzeCommand(System.Object)",
+"  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoDatabase::RunCommandAsync(MongoDB.Driver.Command`1<!!0>,MongoDB.Driver.ReadPreference,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Propagation,[])] AnalyzeCommand(System.Object)",
+"  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoCollectionExtensions::Find(MongoDB.Driver.IMongoCollection`1<!!0>,MongoDB.Driver.FilterDefinition`1<!!0>,MongoDB.Driver.FindOptions)\",\"\",[1],[False],[None],Propagation,[])] AnalyzeCommand(System.Object)",
+"  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoCollectionExtensions::FindAsync(MongoDB.Driver.IMongoCollection`1<!!0>,MongoDB.Driver.FilterDefinition`1<!!0>,MongoDB.Driver.FindOptions`2<!!0,!!0>,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Propagation,[])] AnalyzeCommand(System.Object)",
+>>>>>>> cb21d5ac3 (Rename NoSqlInjection to NoSqlMongoDbInjection)
 "[AspectClass(\"System,System.Runtime\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.UriAspect",
 "  [AspectCtorReplace(\"System.Uri::.ctor(System.String)\",\"\",[0],[False],[StringLiteral_1],Default,[])] Init(System.String)",
 "  [AspectCtorReplace(\"System.Uri::.ctor(System.Uri,System.String,System.Boolean)\",\"\",[0],[False],[None],Default,[])] Init(System.Uri,System.String,System.Boolean)",

@@ -11,7 +11,7 @@ using Datadog.Trace.Iast.Helpers;
 namespace Datadog.Trace.Iast.Aspects.MongoDB;
 
 /// <summary> BsonAspect class aspect </summary>
-[AspectClass("MongoDB.Bson", AspectType.Sink, VulnerabilityType.NoSqlInjection)]
+[AspectClass("MongoDB.Bson", AspectType.Sink, VulnerabilityType.NoSqlMongoDbInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class BsonAspect

@@ -389,6 +389,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "vulnerability_type:trust_boundary_violation" }),
             new(new[] { "vulnerability_type:hsts_header_missing" }),
 <<<<<<< HEAD
+<<<<<<< HEAD
             new(new[] { "vulnerability_type:header_injection" }),
 <<<<<<< HEAD
             new(new[] { "vulnerability_type:stacktrace_leak" }),
@@ -401,6 +402,9 @@ internal partial class MetricsTelemetryCollector
 =======
 =======
             new(new[] { "vulnerability_type:nosql_injection" }),
+=======
+            new(new[] { "vulnerability_type:nosql_mongodb_injection" }),
+>>>>>>> cb21d5ac3 (Rename NoSqlInjection to NoSqlMongoDbInjection)
             // request.tainted, index = 329
 >>>>>>> 3ea161b11 (Update vulnerability NoSql position)
 >>>>>>> 4fdd33d46 (Update vulnerability NoSql position)

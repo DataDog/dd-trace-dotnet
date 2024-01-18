@@ -34,7 +34,7 @@ internal static class MongoDbHelper
 
     internal static string DetectVulnerability(string json)
     {
-        IastModule.OnNoSqlQuery(json, IntegrationId.MongoDb);
+        IastModule.OnNoSqlMongoDbQuery(json, IntegrationId.MongoDb);
         return json;
     }
 }

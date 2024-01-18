@@ -280,7 +280,7 @@ internal static class MetricTags
         [Description("vulnerability_type:hsts_header_missing")] HstsHeaderMissing = 16,
         [Description("vulnerability_type:header_injection")] HeaderInjection = 17,
         [Description("vulnerability_type:stacktrace_leak")] StackTraceLeak = 18,
-        [Description("vulnerability_type:nosql_injection")] NosqlInjection = 19,
+        [Description("vulnerability_type:nosql_mongodb_injection")] NoSqlMongoDbInjection = 19,
     }
 
     public enum CIVisibilityTestFramework

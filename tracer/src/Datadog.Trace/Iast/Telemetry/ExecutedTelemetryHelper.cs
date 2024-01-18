@@ -146,7 +146,7 @@ internal class ExecutedTelemetryHelper
             IastInstrumentedSinks.HstsHeaderMissing => BasicExecutedTag + SinkExecutedTag + "hsts_header_missing",
             IastInstrumentedSinks.HeaderInjection => BasicExecutedTag + SinkExecutedTag + "header_injection",
             IastInstrumentedSinks.StackTraceLeak => BasicExecutedTag + SinkExecutedTag + "stacktrace_leak",
-            IastInstrumentedSinks.NoSqlInjection => BasicExecutedTag + SinkExecutedTag + "nosql_injection",
+            IastInstrumentedSinks.NoSqlMongoDbInjection => BasicExecutedTag + SinkExecutedTag + "nosql_mongodb_injection",
             IastInstrumentedSinks.None => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
             _ => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
         };
