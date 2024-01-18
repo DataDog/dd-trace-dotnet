@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [SkippableTheory]
         public void CleanSensitiveDataFromRepositoryUrl(string value, string expected)
         {
-            CIEnvironmentValues.Instance.RemoveSensitiveInformationFromUrl(value).Should().Be(expected);
+            CIEnvironmentValues.RemoveSensitiveInformationFromUrl(value).Should().Be(expected);
         }
 
         [SkippableTheory]
