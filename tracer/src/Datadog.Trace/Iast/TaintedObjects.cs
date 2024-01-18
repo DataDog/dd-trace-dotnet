@@ -42,13 +42,15 @@ namespace Datadog.Trace.Iast
                     return arg.Length == 1 && char.IsDigit(arg[0]);
                 }
 
-                // 0 - 299 are cached
-                if (arg.Length > 3) { return false; }
-                if (!char.IsDigit(arg[0])) { return false; }
-                if (arg.Length > 1 && !char.IsDigit(arg[1])) { return false; }
-                if (arg.Length > 2 && (!char.IsDigit(arg[2]) || arg[0] - '0' >= 3)) { return false; }
-
-                return true;
+            return arg.Length switch
+            {
+                > 3 => false, // Only 0 - 299 are cached
+                _ when !char.IsDigit(arg[0]) => false, // Not a number
+                > 1 when !char.IsDigit(arg[1]) => false, // Not a number
+                > 2 when !char.IsDigit(arg[2]) => false, // Not a number
+                > 2 when arg[0] - '0' >= 3 => false, // Bigger than 299
+                _ => true
+            };
             }
 
             return false;
