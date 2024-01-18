@@ -133,15 +133,20 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         [Theory]
-        [InlineData("*", "*", "*", true)]
-        public void MatchAll_ShouldMatchAll(string serviceGlob, string operationGlob, string resourceGlob, bool shouldMatch)
+        [InlineData("*", "*", "*")]
+        public void MatchAll_ShouldMatchAll(string serviceGlob, string operationGlob, string resourceGlob)
         {
-            var rule = new SpanSamplingRule(serviceGlob, operationGlob, resourceGlob, tagGlobs: null);
-            rule.IsMatch(TestSpans.CartCheckoutSpan).Should().Be(shouldMatch);
-            rule.IsMatch(TestSpans.AddToCartSpan).Should().Be(shouldMatch);
-            rule.IsMatch(TestSpans.ShippingAuthSpan).Should().Be(shouldMatch);
-            rule.IsMatch(TestSpans.ShippingRevertSpan).Should().Be(shouldMatch);
-            rule.IsMatch(TestSpans.RequestShippingSpan).Should().Be(shouldMatch);
+            var rule = new SpanSamplingRule(
+                serviceNameGlob: serviceGlob,
+                operationNameGlob: operationGlob,
+                resourceNameGlob: resourceGlob,
+                tagGlobs: null);
+
+            rule.IsMatch(TestSpans.CartCheckoutSpan).Should().Be(true);
+            rule.IsMatch(TestSpans.AddToCartSpan).Should().Be(true);
+            rule.IsMatch(TestSpans.ShippingAuthSpan).Should().Be(true);
+            rule.IsMatch(TestSpans.ShippingRevertSpan).Should().Be(true);
+            rule.IsMatch(TestSpans.RequestShippingSpan).Should().Be(true);
         }
 
         [Fact]
