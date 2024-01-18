@@ -7,6 +7,7 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -416,6 +417,53 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
+    }
+
+    [SkippableTheory]
+    [Trait("RunOnWindows", "True")]
+    [InlineData("Vuln.SensitiveValue", new string[] { "name", "myName", "value", ":bearer secret" }, null)]
+    public async Task TestIastHeaderInjectionRequest(string testCase, string[] headers, string[] cookies, bool useValueFromOriginHeader = false)
+    {
+        var notVulnerable = testCase.StartsWith("notvulnerable", StringComparison.OrdinalIgnoreCase) || !IastEnabled;
+        var filename = "Iast.HeaderInjection.AspNetCore2." + (notVulnerable ? "NotVuln" : testCase) +
+            (useValueFromOriginHeader ? ".origin" : string.Empty);
+        if (!notVulnerable && RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        if (!IastEnabled) { filename += ".IastDisabled"; }
+        var url = $"/Iast/HeaderInjection?useValueFromOriginHeader={useValueFromOriginHeader}";
+        IncludeAllHttpSpans = true;
+
+        Dictionary<string, string> headersDic = new();
+        Dictionary<string, string> cookiesDic = new();
+
+        if (headers != null)
+        {
+            for (int i = 0; i < headers.Length; i = i + 2)
+            {
+                headersDic.Add(headers[i], headers[i + 1]);
+            }
+        }
+
+        if (cookies != null)
+        {
+            for (int i = 0; i < cookies.Length; i = i + 2)
+            {
+                cookiesDic.Add(cookies[i], cookies[i + 1]);
+            }
+        }
+
+        AddCookies(cookiesDic);
+        AddHeaders(headersDic);
+
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, 1, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
     }
 }
 

@@ -31,6 +31,7 @@ internal class EvidenceRedactor
         { VulnerabilityTypeName.CommandInjection, new CommandTokenizer() },
         { VulnerabilityTypeName.Ssrf, new UrlTokenizer() },
         { VulnerabilityTypeName.UnvalidatedRedirect, new UrlTokenizer() },
+        { VulnerabilityTypeName.HeaderInjection, new HeaderInjectionTokenizer() },
     };
 
     public EvidenceRedactor(string keysPattern, string valuesPattern, TimeSpan timeout, IDatadogLogger? logger = null)
@@ -110,7 +111,7 @@ internal class EvidenceRedactor
             sensitive = tokenizer.GetTokens(evidenceValue!, vulnerability.GetIntegrationId());
         }
 
-        // We can skip new vulnerabilities creeation for vulnerability types without redaction
+        // We can skip new vulnerabilities creation for vulnerability types without redaction
         if (sensitive == null)
         {
             return vulnerability;

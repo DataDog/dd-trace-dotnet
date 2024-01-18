@@ -33,6 +33,16 @@
         return fetch(url, { method: 'GET',headers: {'Content-Type': 'application/json'}, credentials: 'same-origin'});
     }
 
+        window.GetCookieHeaderData = function (cookie, headerName, headerValue, headerName2, headerValue2, url) {
+        document.cookie = cookie;
+        let headers = {
+            'Content-Type': 'application/json',
+            [headerName]: headerValue,
+            [headerName2]: headerValue2
+        };
+        return fetch(url, { method: 'GET', headers: headers, credentials: 'same-origin' });
+    }
+
 </script>
 
 <div>
@@ -99,6 +109,8 @@
     <div><a href="/Iast/StrictTransportSecurity?contentType=text/html&returnCode=200&hstsHeaderValue=max-age=-10;value&xForwardedProto=https">GET /Iast/HstsHeader?contentType=text/html&returnCode=200&hstsHeaderValue=invalid&xForwardedProto=https</a></div>
 
 	<div><a href="/Iast/UnvalidatedRedirect?param=value">GET /Iast/UnvalidatedRedirect</a></div>
+
+    <div><a href="javascript:GetCookieHeaderData('file=value1', 'name', 'myName', 'value', 'myValue', '/Iast/HeaderInjection')">GET /HeaderInjection</a></div>
 
     <div>
         @Html.Raw(Context.Request.Query["q"])
