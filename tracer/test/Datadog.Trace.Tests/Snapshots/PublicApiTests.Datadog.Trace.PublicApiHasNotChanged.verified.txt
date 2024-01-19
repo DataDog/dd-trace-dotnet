@@ -395,13 +395,13 @@ namespace Datadog.Trace
         string Type { get; set; }
         void Finish();
         void Finish(System.DateTimeOffset finishTimestamp);
-        string GetTag(string key);
+        string? GetTag(string key);
         void SetException(System.Exception exception);
-        Datadog.Trace.ISpan SetTag(string key, string value);
+        Datadog.Trace.ISpan SetTag(string key, string? value);
     }
     public interface ISpanContext
     {
-        string ServiceName { get; }
+        string? ServiceName { get; }
         ulong SpanId { get; }
         ulong TraceId { get; }
     }
@@ -411,7 +411,7 @@ namespace Datadog.Trace
     }
     public interface ITracer
     {
-        Datadog.Trace.IScope ActiveScope { get; }
+        Datadog.Trace.IScope? ActiveScope { get; }
         Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
         Datadog.Trace.IScope StartActive(string operationName);
         Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.SpanCreationSettings settings);
@@ -446,7 +446,7 @@ namespace Datadog.Trace
     public struct SpanCreationSettings
     {
         public bool? FinishOnClose { get; set; }
-        public Datadog.Trace.ISpanContext Parent { get; set; }
+        public Datadog.Trace.ISpanContext? Parent { get; set; }
         public System.DateTimeOffset? StartTime { get; set; }
     }
     public static class SpanExtensions
