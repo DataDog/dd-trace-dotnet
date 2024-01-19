@@ -1249,6 +1249,11 @@ partial class Build
                                    project: AzureDevopsProjectId,
                                    buildId: build.Id,
                                    artifactName: artifactName);
+
+                    if (artifact is null)
+                    {
+                        continue;
+                    }
                     artifacts.Add(artifact);
                 }   
 
