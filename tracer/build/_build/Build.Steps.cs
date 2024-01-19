@@ -693,6 +693,9 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
+            // We don't produce an x86-only MSI any more
+            var architectures = ArchitecturesForPlatformForTracer.Where(x => x != MSBuildTargetPlatform.x86);
+            
             MSBuild(s => s
                     .SetTargetPath(SharedDirectory / "src" / "msi-installer" / "WindowsInstaller.wixproj")
                     .SetConfiguration(BuildConfiguration)
@@ -700,7 +703,7 @@ partial class Build
                     .AddProperty("RunWixToolsOutOfProc", true)
                     .SetProperty("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetMaxCpuCount(null)
-                    .CombineWith(ArchitecturesForPlatformForTracer, (o, arch) => o
+                    .CombineWith(architectures, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
                         .SetTargetPlatform(arch)),
                 degreeOfParallelism: 2);
