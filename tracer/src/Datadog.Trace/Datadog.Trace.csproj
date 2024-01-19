@@ -138,4 +138,10 @@
     <DefineConstants>$(DefineConstants);THREAD_SAFE</DefineConstants>
   </PropertyGroup>
 
+  <!--MessagePack-->
+  <!-- Make MessagePack compatible with NativeAOT -->
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);ENABLE_IL2CPP</DefineConstants>
+  </PropertyGroup>
+
 </Project>
