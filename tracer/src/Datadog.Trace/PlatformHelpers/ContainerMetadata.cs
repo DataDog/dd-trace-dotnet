@@ -5,12 +5,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.PlatformHelpers
 {
@@ -151,28 +151,12 @@ namespace Datadog.Trace.PlatformHelpers
         internal static bool TryGetInode(string path, out long result)
         {
             result = 0;
+            var context = SynchronizationContext.Current;
 
             try
             {
-                using var process = new Process();
-                process.StartInfo.FileName = "stat";
-                process.StartInfo.Arguments = $"--printf=%i {path}";
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.RedirectStandardOutput = true;
-                process.StartInfo.RedirectStandardError = true;
-                process.StartInfo.CreateNoWindow = true;
-                process.Start();
-
-                string output = process.StandardOutput.ReadToEnd();
-                var isExited = process.WaitForExit(1000);
-
-                if (!isExited)
-                {
-                    Log.Warning("\"{FileName} {Arguments}\" did not end after 1 second.", process.StartInfo.FileName, process.StartInfo.Arguments);
-                    return false;
-                }
-
-                return process.ExitCode == 0 && long.TryParse(output, out result);
+                var statCommand = ProcessHelpers.RunCommand(new ProcessHelpers.Command("stat", $"--printf=%i {path}"));
+                return long.TryParse(statCommand?.Output, out result);
             }
             catch (Exception ex)
             {
