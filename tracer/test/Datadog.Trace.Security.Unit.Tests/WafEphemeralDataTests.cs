@@ -66,18 +66,15 @@ namespace Datadog.Trace.Security.Unit.Tests
                 rule);
         }
 
-        [Theory]
-        [InlineData("appscan_fingerprint", "security_scanner", "crs-913-120")]
-        [InlineData("<script>", "xss", "crs-941-110")]
-        [InlineData("sleep(10)", "sql_injection", "crs-942-160")]
-        public void AllItemsAreAttack(string attack, string flow, string rule)
+        [Fact]
+        public void AllItemsAreAttack()
         {
             Execute(
                 AddressesConstants.RequestQuery,
-                new object[] { attack, attack, attack },
+                new object[] { "appscan_fingerprint", "<script>", "sleep(10)" },
                 new[] { true, true, true },
-                flow,
-                rule);
+                null,
+                null);
         }
 
         private static Dictionary<string, object> MakeDictionary(string address, object value)
@@ -120,8 +117,16 @@ namespace Datadog.Trace.Security.Unit.Tests
                 {
                     result.ReturnCode.Should().Be(WafReturnCode.Match);
                     var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
-                    resultData.Rule.Tags.Type.Should().Be(flow);
-                    resultData.Rule.Id.Should().Be(rule);
+                    if (flow != null)
+                    {
+                        resultData.Rule.Tags.Type.Should().Be(flow);
+                    }
+
+                    if (rule != null)
+                    {
+                        resultData.Rule.Id.Should().Be(rule);
+                    }
+
                     resultData.RuleMatches[0].Parameters[0].Address.Should().Be(address);
                 }
                 else

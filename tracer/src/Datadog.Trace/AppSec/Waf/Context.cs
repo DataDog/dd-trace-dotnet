@@ -137,23 +137,6 @@ namespace Datadog.Trace.AppSec.Waf
             return result;
         }
 
-        private IntPtr EncodeLegacy(IDictionary<string, object> persistantAddressData, List<Obj> argCache)
-        {
-            IntPtr pwPersistantArgs;
-            var args = EncoderLegacy.Encode(persistantAddressData, applySafetyLimits: true, wafLibraryInvoker: _wafLibraryInvoker, argCache: argCache);
-            pwPersistantArgs = args.RawPtr;
-            return pwPersistantArgs;
-        }
-
-        private unsafe IntPtr EncodeUnsafe(IDictionary<string, object> persistantAddressData, List<IntPtr> argCache)
-        {
-            IntPtr pwPersistantArgs;
-            var pool = Encoder.Pool;
-            var args = Encoder.Encode(persistantAddressData, applySafetyLimits: true, argToFree: argCache, pool: pool);
-            pwPersistantArgs = (IntPtr)(&args);
-            return pwPersistantArgs;
-        }
-
         public void Dispose(bool disposing)
         {
             if (_disposed)
