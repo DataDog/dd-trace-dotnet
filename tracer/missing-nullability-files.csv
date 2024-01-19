@@ -11,12 +11,8 @@ src/Datadog.Trace/HttpHeaderNames.cs
 src/Datadog.Trace/IDatadogOpenTracingTracer.cs
 src/Datadog.Trace/IDatadogTracer.cs
 src/Datadog.Trace/ILockedTracer.cs
-src/Datadog.Trace/IScope.cs
 src/Datadog.Trace/IScopeManager.cs
 src/Datadog.Trace/IScopeRawAccess.cs
-src/Datadog.Trace/ISpan.cs
-src/Datadog.Trace/ISpanContext.cs
-src/Datadog.Trace/ITracer.cs
 src/Datadog.Trace/Metrics.cs
 src/Datadog.Trace/NativeLoader.cs
 src/Datadog.Trace/OSPlatformName.cs
@@ -28,7 +24,6 @@ src/Datadog.Trace/Scope.IScope.cs
 src/Datadog.Trace/Span.cs
 src/Datadog.Trace/Span.ISpan.cs
 src/Datadog.Trace/SpanContext.cs
-src/Datadog.Trace/SpanCreationSettings.cs
 src/Datadog.Trace/SpanExtensions.Core.cs
 src/Datadog.Trace/SpanExtensions.cs
 src/Datadog.Trace/SpanExtensions.Framework.cs
