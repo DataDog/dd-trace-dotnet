@@ -220,17 +220,7 @@ public sealed class TestModule
     public static TestModule Create(string name)
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Module);
-        return InternalCreate(name);
-    }
-
-    /// <summary>
-    /// Create a new Test Module
-    /// </summary>
-    /// <param name="name">Test module name</param>
-    /// <returns>New test module instance</returns>
-    internal static TestModule InternalCreate(string name)
-    {
-        return new TestModule(name, null, null, null);
+        return InternalCreate(name, framework: null, frameworkVersion: null, startDate: null);
     }
 
     /// <summary>
@@ -244,19 +234,7 @@ public sealed class TestModule
     public static TestModule Create(string name, string framework, string frameworkVersion)
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Module);
-        return InternalCreate(name, framework, frameworkVersion);
-    }
-
-    /// <summary>
-    /// Create a new Test Module
-    /// </summary>
-    /// <param name="name">Test module name</param>
-    /// <param name="framework">Testing framework name</param>
-    /// <param name="frameworkVersion">Testing framework version</param>
-    /// <returns>New test module instance</returns>
-    internal static TestModule InternalCreate(string name, string framework, string frameworkVersion)
-    {
-        return new TestModule(name, framework, frameworkVersion, null);
+        return InternalCreate(name, framework, frameworkVersion, startDate: null);
     }
 
     /// <summary>
@@ -280,9 +258,19 @@ public sealed class TestModule
     /// <param name="name">Test module name</param>
     /// <param name="framework">Testing framework name</param>
     /// <param name="frameworkVersion">Testing framework version</param>
+    /// <returns>New test module instance</returns>
+    internal static TestModule InternalCreate(string name, string? framework, string? frameworkVersion)
+        => InternalCreate(name, framework, frameworkVersion, null);
+
+    /// <summary>
+    /// Create a new Test Module
+    /// </summary>
+    /// <param name="name">Test module name</param>
+    /// <param name="framework">Testing framework name</param>
+    /// <param name="frameworkVersion">Testing framework version</param>
     /// <param name="startDate">Test session start date</param>
     /// <returns>New test module instance</returns>
-    internal static TestModule InternalCreate(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
+    internal static TestModule InternalCreate(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
     {
         return new TestModule(name, framework, frameworkVersion, startDate);
     }
