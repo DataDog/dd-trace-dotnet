@@ -61,9 +61,16 @@ public class AssemblyResolverCtorIntegration
         return CallTargetReturn.GetDefault();
     }
 
-    internal static async Task WaitForCallToBeCompletedAsync()
+    internal static Task WaitForCallToBeCompletedAsync()
     {
         if (_callHasBeenCompletedTaskCompletionSource?.Task is { IsCompleted: false } callTask)
+        {
+            return InternalWaitForCallToBeCompletedAsync(callTask);
+        }
+
+        return Task.CompletedTask;
+
+        static async Task InternalWaitForCallToBeCompletedAsync(Task<bool> callTask)
         {
             Common.Log.Debug("Waiting for Microsoft.VisualStudio.TestPlatform.Common.Utilities.AssemblyResolver.ctor to be completed...");
             await callTask.ConfigureAwait(false);
