@@ -2375,9 +2375,6 @@ partial class Build
                new (@".*DD_GIT_COMMIT_SHA must be a full-length git SHA.*", RegexOptions.Compiled),
                new (@".*Timeout occurred when flushing spans.*", RegexOptions.Compiled),
                new (@".*ITR: .*", RegexOptions.Compiled),
-               // Error caused for race condition on TestPlatform SDK triggered by CI Visibility
-               // https://github.com/microsoft/vstest/blob/v16.7.1/src/Microsoft.TestPlatform.Common/Utilities/AssemblyResolver.cs#L67-L70
-               new (@".*Error detecting and reconfiguring git repository for shallow clone. System.IO.FileLoadException: Could not load file or assembly.*", RegexOptions.Compiled),
                // This one is annoying but we _think_ due to a dodgy named pipes implementation, so ignoring for now
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),
