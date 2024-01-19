@@ -537,6 +537,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("dbm_propagation_mode");
                     writer.WriteValue(instanceSettings.DbmPropagationMode.ToString());
 
+                    writer.WritePropertyName("remote_configuration_available");
+                    writer.WriteValue(instanceSettings.IsRemoteConfigurationAvailable);
+
                     writer.WritePropertyName("header_tags");
                     WriteDictionary(instanceSettings.HeaderTagsInternal);
 
