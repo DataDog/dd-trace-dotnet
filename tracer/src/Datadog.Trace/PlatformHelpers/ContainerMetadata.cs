@@ -113,20 +113,21 @@ namespace Datadog.Trace.PlatformHelpers
         /// <returns>The cgroup node controller's inode if found; otherwise, <c>null</c>.</returns>
         public static string ExtractInodeFromCgroupLines(string controlGroupsMountPath, IEnumerable<string> lines)
         {
-            var tuples = lines.Select(ParseControllerAndPathFromCgroupLine)
-                               .Where(tuple => tuple is not null
-                                               && !string.IsNullOrEmpty(tuple.Item2)
-                                               && (tuple.Item1 == string.Empty || string.Equals(tuple.Item1, "memory", StringComparison.OrdinalIgnoreCase)));
-
-            foreach (var target in tuples)
+            foreach (var line in lines)
             {
-                string controller = target.Item1;
-                string cgroupNodePath = target.Item2;
-                var path = Path.Combine(controlGroupsMountPath, controller, cgroupNodePath.TrimStart('/'));
-
-                if (Directory.Exists(path) && TryGetInode(path, out long output))
+                var tuple = ParseControllerAndPathFromCgroupLine(line);
+                if (tuple is not null
+                    && !string.IsNullOrEmpty(tuple.Item2)
+                    && (tuple.Item1 == string.Empty || string.Equals(tuple.Item1, "memory", StringComparison.OrdinalIgnoreCase)))
                 {
-                    return output.ToString();
+                    string controller = tuple.Item1;
+                    string cgroupNodePath = tuple.Item2;
+                    var path = Path.Combine(controlGroupsMountPath, controller, cgroupNodePath.TrimStart('/'));
+
+                    if (Directory.Exists(path) && TryGetInode(path, out long output))
+                    {
+                        return output.ToString();
+                    }
                 }
             }
 
@@ -145,6 +146,39 @@ namespace Datadog.Trace.PlatformHelpers
             return lineMatch.Success
                        ? new(lineMatch.Groups[1].Value, lineMatch.Groups[2].Value)
                        : null;
+        }
+
+        internal static bool TryGetInode(string path, out long result)
+        {
+            result = 0;
+
+            try
+            {
+                using var process = new Process();
+                process.StartInfo.FileName = "stat";
+                process.StartInfo.Arguments = $"--printf=%i {path}";
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.StartInfo.CreateNoWindow = true;
+                process.Start();
+
+                string output = process.StandardOutput.ReadToEnd();
+                var isExited = process.WaitForExit(1000);
+
+                if (!isExited)
+                {
+                    Log.Warning("\"{FileName} {Arguments}\" did not end after 1 second.", process.StartInfo.FileName, process.StartInfo.Arguments);
+                    return false;
+                }
+
+                return process.ExitCode == 0 && long.TryParse(output, out result);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error obtaining inode.");
+                return false;
+            }
         }
 
         private static string GetContainerIdInternal()
@@ -203,39 +237,6 @@ namespace Datadog.Trace.PlatformHelpers
         private static bool IsHostCgroupNamespaceInternal()
         {
             return File.Exists(ControlGroupsNamespacesFilePath) && TryGetInode(ControlGroupsNamespacesFilePath, out long output) && output == HostCgroupNamespaceInode;
-        }
-
-        private static bool TryGetInode(string path, out long result)
-        {
-            result = 0;
-
-            try
-            {
-                using var process = new Process();
-                process.StartInfo.FileName = "stat";
-                process.StartInfo.Arguments = $"--printf=%i {path}";
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.RedirectStandardOutput = true;
-                process.StartInfo.RedirectStandardError = true;
-                process.StartInfo.CreateNoWindow = true;
-                process.Start();
-
-                string output = process.StandardOutput.ReadToEnd();
-                var isExited = process.WaitForExit(1000);
-
-                if (!isExited)
-                {
-                    Log.Warning("\"{FileName} {Arguments}\" did not end after 1 second.", process.StartInfo.FileName, process.StartInfo.Arguments);
-                    return false;
-                }
-
-                return process.ExitCode == 0 && long.TryParse(output, out result);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Error obtaining inode.");
-                return false;
-            }
         }
     }
 }

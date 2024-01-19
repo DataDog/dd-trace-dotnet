@@ -225,7 +225,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             string sysFsCgroupPath = Path.Combine(Path.GetTempPath(), $"temp-sysfscgroup-{Guid.NewGuid():n}");
             string controllerCgroupPath = Path.Combine(sysFsCgroupPath, relativePathToCreate);
             Directory.CreateDirectory(controllerCgroupPath);
-            string expected = isSuccess ? GetInodeFromPath(controllerCgroupPath) : null;
+            string expected = isSuccess && ContainerMetadata.TryGetInode(controllerCgroupPath, out long inode) ? inode.ToString() : null;
 
             // act
             string actual = ContainerMetadata.ExtractInodeFromCgroupLines(sysFsCgroupPath, lines);
@@ -239,28 +239,6 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             {
                 Directory.Delete(sysFsCgroupPath, recursive: true);
             }
-        }
-
-        private string GetInodeFromPath(string path)
-        {
-            using var process = new Process();
-            process.StartInfo.FileName = "stat";
-            process.StartInfo.Arguments = $"--printf=%i {path}";
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.RedirectStandardOutput = true;
-            process.StartInfo.RedirectStandardError = true;
-            process.StartInfo.CreateNoWindow = true;
-            process.Start();
-
-            string output = process.StandardOutput.ReadToEnd();
-            process.WaitForExit(1000);
-
-            if (process.ExitCode == 0 && long.TryParse(output, out _))
-            {
-                return output;
-            }
-
-            return null;
         }
     }
 }
