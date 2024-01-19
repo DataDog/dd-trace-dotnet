@@ -1,4 +1,4 @@
-{
+﻿{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -12,8 +12,8 @@
       "scopes": [
         {
           "scope_type": "class",
-          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LocalConstants",
-          "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LocalConstants.cs",
+          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.SameLocalNameDifferentScope",
+          "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\SameLocalNameDifferentScope.cs",
           "start_line": 14,
           "end_line": 999,
           "language_specifics": {
@@ -26,7 +26,7 @@
             {
               "scope_type": "method",
               "name": "Foo",
-              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LocalConstants.cs",
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\SameLocalNameDifferentScope.cs",
               "start_line": 14,
               "end_line": 999,
               "language_specifics": {
@@ -48,7 +48,7 @@
               "scopes": [
                 {
                   "scope_type": "local",
-                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LocalConstants.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\SameLocalNameDifferentScope.cs",
                   "start_line": 14,
                   "end_line": 999,
                   "language_specifics": {
@@ -66,7 +66,7 @@
                 },
                 {
                   "scope_type": "local",
-                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LocalConstants.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\SameLocalNameDifferentScope.cs",
                   "start_line": 14,
                   "end_line": 999,
                   "language_specifics": {
@@ -78,19 +78,13 @@
                       "name": "number",
                       "type": "System.Double",
                       "symbol_type": "local",
-                      "line": 18
-                    },
-                    {
-                      "name": "foo",
-                      "type": "System.String",
-                      "symbol_type": "local",
-                      "line": 18
+                      "line": 17
                     }
                   ]
                 },
                 {
                   "scope_type": "local",
-                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LocalConstants.cs",
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\SameLocalNameDifferentScope.cs",
                   "start_line": 14,
                   "end_line": 999,
                   "language_specifics": {
@@ -99,10 +93,10 @@
                   },
                   "symbols": [
                     {
-                      "name": "bar",
-                      "type": "System.String",
+                      "name": "number",
+                      "type": "System.Double",
                       "symbol_type": "local",
-                      "line": 25
+                      "line": 23
                     }
                   ]
                 }
@@ -111,7 +105,7 @@
             {
               "scope_type": "method",
               "name": "Print",
-              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LocalConstants.cs",
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\SameLocalNameDifferentScope.cs",
               "start_line": 31,
               "end_line": 999,
               "language_specifics": {
@@ -132,12 +126,6 @@
                 {
                   "name": "number",
                   "type": "System.Double",
-                  "symbol_type": "arg",
-                  "line": 0
-                },
-                {
-                  "name": "name",
-                  "type": "System.String",
                   "symbol_type": "arg",
                   "line": 0
                 }

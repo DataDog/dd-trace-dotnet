@@ -248,6 +248,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        public async Task CallTargetBubbleUpExceptionIntegrations()
+        {
+            SetInstrumentationVerification();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "calltargetbubbleupexceptions");
+            processResult.ExitCode.Should().Be(0);
+            var beginMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: BeginMethod\\(0\\)<CallTargetNativeTest.NoOp.CallTargetBubbleUpExceptionsIntegration").Count;
+            var endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod(Async)?\\([0|1]\\)<CallTargetNativeTest.NoOp.CallTargetBubbleUpExceptionsIntegration, CallTargetNativeTest").Count;
+            beginMethodCount.Should().Be(6);
+            endMethodCount.Should().Be(6);
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public async Task CategorizedCallTargetIntegrations()
         {
             SetInstrumentationVerification();

@@ -42,7 +42,7 @@ public class SymbolExtractorTest
         Assert.True(root.Scopes.Count == 1);
         Assert.True(root.Scopes.First().Scopes.Length == 1);
         Assert.True(root.Scopes.First().Scopes.First().Name == type.FullName);
-        var settings = ConfigureVerifySettings(assembly.GetName().Name, type.FullName);
+        var settings = ConfigureVerifySettings(type.Name);
         var toVerify = GetStringToVerify(root);
         await Verifier.Verify(toVerify, settings);
     }
@@ -62,7 +62,7 @@ public class SymbolExtractorTest
         Assert.True(root.Scopes.Count == 1);
         Assert.True(root.Scopes.First().Scopes.Length == 1);
         Assert.True(root.Scopes.First().Scopes.First().Name == type.FullName);
-        var settings = ConfigureVerifySettings(assembly.GetName().Name, type.FullName);
+        var settings = ConfigureVerifySettings(type.Name);
         var toVerify = GetStringToVerify(root);
         await Verifier.Verify(toVerify, settings);
     }
@@ -143,10 +143,10 @@ public class SymbolExtractorTest
         }
     }
 
-    private VerifySettings ConfigureVerifySettings(string assemblyName, string className)
+    private VerifySettings ConfigureVerifySettings(string className)
     {
         var settings = new VerifySettings();
-        settings.UseFileName($"{nameof(SymbolExtractorTest)}.{assemblyName}.{className}");
+        settings.UseFileName($"{nameof(SymbolExtractorTest)}.{className}");
         settings.DisableRequireUniquePrefix();
         settings.UseDirectory("SymbolExtractor/Approvals");
         return settings;

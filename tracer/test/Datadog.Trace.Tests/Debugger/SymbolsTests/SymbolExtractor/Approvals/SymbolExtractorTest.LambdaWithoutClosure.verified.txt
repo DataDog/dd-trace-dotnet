@@ -1,4 +1,4 @@
-{
+﻿{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -12,8 +12,8 @@
       "scopes": [
         {
           "scope_type": "class",
-          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithStaticFieldClosure",
-          "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithStaticFieldClosure.cs",
+          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithoutClosure",
+          "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithoutClosure.cs",
           "start_line": 14,
           "end_line": 999,
           "language_specifics": {
@@ -22,43 +22,12 @@
             ],
             "pdb_exist": true
           },
-          "symbols": [
-            {
-              "name": "i",
-              "type": "System.Int32",
-              "symbol_type": "static_field",
-              "line": 0,
-              "language_specifics": {
-                "access_modifiers": [
-                  "private"
-                ],
-                "annotations": [
-                  "static"
-                ]
-              }
-            }
-          ],
           "scopes": [
             {
               "scope_type": "method",
-              "name": ".ctor",
-              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithStaticFieldClosure.cs",
-              "start_line": 14,
-              "end_line": 999,
-              "language_specifics": {
-                "access_modifiers": [
-                  "sanitized"
-                ],
-                "return_type": "System.Void",
-                "start_column": 999,
-                "end_column": 999
-              }
-            },
-            {
-              "scope_type": "method",
               "name": "Foo",
-              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithStaticFieldClosure.cs",
-              "start_line": 21,
+              "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithoutClosure.cs",
+              "start_line": 14,
               "end_line": 999,
               "language_specifics": {
                 "access_modifiers": [
@@ -72,8 +41,8 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithStaticFieldClosure.cs",
-                  "start_line": 25,
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithoutClosure.cs",
+                  "start_line": 18,
                   "end_line": 999,
                   "language_specifics": {
                     "access_modifiers": [
@@ -86,8 +55,8 @@
                   "scopes": [
                     {
                       "scope_type": "local",
-                      "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithStaticFieldClosure.cs",
-                      "start_line": 25,
+                      "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithoutClosure.cs",
+                      "start_line": 18,
                       "end_line": 999,
                       "language_specifics": {
                         "start_column": 999,
@@ -98,7 +67,7 @@
                           "name": "s",
                           "type": "System.Int32",
                           "symbol_type": "local",
-                          "line": 25
+                          "line": 18
                         }
                       ]
                     }
@@ -106,8 +75,8 @@
                 },
                 {
                   "scope_type": "local",
-                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithStaticFieldClosure.cs",
-                  "start_line": 21,
+                  "source_file": "tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithoutClosure.cs",
+                  "start_line": 14,
                   "end_line": 999,
                   "language_specifics": {
                     "start_column": 999,
@@ -118,17 +87,29 @@
                       "name": "rand",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 21
+                      "line": 14
                     },
                     {
                       "name": "action",
                       "type": "System.Action",
                       "symbol_type": "local",
-                      "line": 21
+                      "line": 14
                     }
                   ]
                 }
               ]
+            },
+            {
+              "scope_type": "method",
+              "name": ".ctor",
+              "start_line": 0,
+              "end_line": 0,
+              "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
+                "return_type": "System.Void"
+              }
             }
           ]
         }
