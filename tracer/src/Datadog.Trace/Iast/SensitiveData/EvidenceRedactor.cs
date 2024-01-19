@@ -19,6 +19,7 @@ namespace Datadog.Trace.Iast.SensitiveData;
 
 internal class EvidenceRedactor
 {
+    private static bool _timeoutExceptionErrorShown = true;
     private readonly Regex _keysRegex;
     private readonly Regex _valuesRegex;
     private readonly IDatadogLogger? _logger;
@@ -65,10 +66,10 @@ internal class EvidenceRedactor
         {
             return _keysRegex.IsMatch(key);
         }
-        catch (Exception err)
+        catch (RegexMatchTimeoutException err)
         {
-            _logger?.Error("Timeout in Evidence Key Redaction Regex. {V}", err.ToString());
-            return false;
+            LogTimeoutError(err);
+            return true;
         }
     }
 
@@ -85,8 +86,21 @@ internal class EvidenceRedactor
         }
         catch (RegexMatchTimeoutException err)
         {
-            _logger?.Error(err, "Regex timed out when trying to match value {Input} against pattern {Pattern}.", err.Input, err.Pattern);
-            return false;
+            LogTimeoutError(err);
+            return true;
+        }
+    }
+
+    private void LogTimeoutError(RegexMatchTimeoutException err)
+    {
+        if (!_timeoutExceptionErrorShown)
+        {
+            _logger?.Warning(err, "Regex timed out when trying to match value against pattern {Pattern}.", err.Pattern);
+            _timeoutExceptionErrorShown = true;
+        }
+        else
+        {
+            _logger?.Debug(err, "Regex timed out when trying to match value against pattern {Pattern}.", err.Pattern);
         }
     }
 
@@ -116,8 +130,9 @@ internal class EvidenceRedactor
             }
             catch (RegexMatchTimeoutException ex)
             {
-                _logger?.Error(ex, "Regex timed out when trying to match value {Input} against pattern {Pattern}.", ex.Input, ex.Pattern);
-                return vulnerability;
+                LogTimeoutError(ex);
+                // We redact the whole vulnerability if the tokenizer times out
+                return new Vulnerability(vulnerability.Type, vulnerability.Location, new Evidence(evidenceValue!, vulnerability.Evidence?.Ranges, vulnerability.Evidence?.Ranges), vulnerability.GetIntegrationId());
             }
         }
 
