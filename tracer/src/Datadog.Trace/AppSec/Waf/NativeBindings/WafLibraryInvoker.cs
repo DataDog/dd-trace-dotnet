@@ -213,10 +213,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
 
             // tracer >= 2.34.0 needs waf >= 1.11 cause it passes a ddwafobject for diagnostics instead of a ruleset info struct which causes unpredictable unmanaged crashes
-            if ((tracerVersion is { Minor: >= 34, Major: >= 2 } && wafMajor == 1 && wafMinor <= 10) ||
-                (tracerVersion is { Minor: >= 38, Major: >= 2 } && wafMajor == 1 && wafMinor < 13) ||
-                (tracerVersion is { Minor: >= 44, Major: >= 2 } && wafMajor == 1 && wafMinor < 15) ||
-                (tracerVersion is { Minor: >= 51, Major: >= 2 } && wafMajor == 1 && wafMinor < 17))
+            if ((tracerVersion is { Minor: >= 34, Major: 2 } or { Major: > 2 } && wafMajor == 1 && wafMinor <= 10) ||
+                (tracerVersion is { Minor: >= 38, Major: 2 } or { Major: > 2 } && wafMajor == 1 && wafMinor < 13) ||
+                (tracerVersion is { Minor: >= 44, Major: 2 } or { Major: > 2 } && wafMajor == 1 && wafMinor < 15) ||
+                (tracerVersion is { Minor: >= 51, Major: 2 } or { Major: > 2 } && wafMajor == 1 && wafMinor < 17))
             {
                 Log.Warning("Waf version {WafVersion} is not compatible with tracer version {TracerVersion}", versionWaf, tracerVersion);
                 return false;
