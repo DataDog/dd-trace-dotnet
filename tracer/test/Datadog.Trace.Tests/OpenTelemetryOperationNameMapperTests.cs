@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -15,37 +16,36 @@ namespace Datadog.Trace.Tests
     public class OpenTelemetryOperationNameMapperTests
     {
         // Note: These test cases were copy/pasted from parametric tests (with some find/replace to make it work here)
-        public static IEnumerable<object[]> NameData =>
-            new List<object[]>
-            {
-                // expected_operation_name, span_kind, tags_related_to_operation_name
-                new object[] { "http.server.request", SpanKinds.Server, new Dictionary<string, string>() { { "http.request.method", "GET" } } },
-                new object[] { "http.client.request", SpanKinds.Client, new Dictionary<string, string>() { { "http.request.method", "GET" } } },
-                new object[] { "redis.query", SpanKinds.Client, new Dictionary<string, string>() { { "db.system", "Redis" } } },
-                new object[] { "kafka.receive", SpanKinds.Client, new Dictionary<string, string>() { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
-                new object[] { "kafka.receive", SpanKinds.Server, new Dictionary<string, string>() { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
-                new object[] { "kafka.receive", SpanKinds.Producer, new Dictionary<string, string>() { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
-                new object[] { "kafka.receive", SpanKinds.Consumer, new Dictionary<string, string>() { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
-                new object[] { "aws.s3.request", SpanKinds.Client, new Dictionary<string, string>() { { "rpc.system", "aws-api" }, { "rpc.service", "S3" } } },
-                new object[] { "aws.client.request", SpanKinds.Client, new Dictionary<string, string>() { { "rpc.system", "aws-api" } } },
-                new object[] { "grpc.client.request", SpanKinds.Client, new Dictionary<string, string>() { { "rpc.system", "GRPC" } } },
-                new object[] { "grpc.server.request", SpanKinds.Server, new Dictionary<string, string>() { { "rpc.system", "GRPC" } } },
-                new object[] { "aws.my-function.invoke", SpanKinds.Client, new Dictionary<string, string>() { { "faas.invoked_provider", "aws" }, { "faas.invoked_name", "My-Function" } } },
-                new object[] { "datasource.invoke", SpanKinds.Server, new Dictionary<string, string>() { { "faas.trigger", "Datasource" } } },
-                new object[] { "graphql.server.request", SpanKinds.Server, new Dictionary<string, string>() { { "graphql.operation.type", "query" } } },
-                new object[] { "amqp.server.request", SpanKinds.Server, new Dictionary<string, string>() { { "network.protocol.name", "Amqp" } } },
-                new object[] { "server.request", SpanKinds.Server, new Dictionary<string, string>() },
-                new object[] { "amqp.client.request", SpanKinds.Client, new Dictionary<string, string>() { { "network.protocol.name", "Amqp" } } },
-                new object[] { "client.request", SpanKinds.Client, new Dictionary<string, string>() },
-                new object[] { "internal", SpanKinds.Internal, new Dictionary<string, string>() },
-                new object[] { "consumer", SpanKinds.Consumer, new Dictionary<string, string>() },
-                new object[] { "producer", SpanKinds.Producer, new Dictionary<string, string>() },
-                new object[] { "internal", null, new Dictionary<string, string>() },
-            };
+        public static TheoryData<string, string, SerializableDictionary> NameData => new()
+        {
+            // expected_operation_name, span_kind, tags_related_to_operation_name
+            { "http.server.request", SpanKinds.Server, new SerializableDictionary { { "http.request.method", "GET" } } },
+            { "http.client.request", SpanKinds.Client, new SerializableDictionary { { "http.request.method", "GET" } } },
+            { "redis.query", SpanKinds.Client, new SerializableDictionary { { "db.system", "Redis" } } },
+            { "kafka.receive", SpanKinds.Client, new SerializableDictionary { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+            { "kafka.receive", SpanKinds.Server, new SerializableDictionary { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+            { "kafka.receive", SpanKinds.Producer, new SerializableDictionary { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+            { "kafka.receive", SpanKinds.Consumer, new SerializableDictionary { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+            { "aws.s3.request", SpanKinds.Client, new SerializableDictionary { { "rpc.system", "aws-api" }, { "rpc.service", "S3" } } },
+            { "aws.client.request", SpanKinds.Client, new SerializableDictionary { { "rpc.system", "aws-api" } } },
+            { "grpc.client.request", SpanKinds.Client, new SerializableDictionary { { "rpc.system", "GRPC" } } },
+            { "grpc.server.request", SpanKinds.Server, new SerializableDictionary { { "rpc.system", "GRPC" } } },
+            { "aws.my-function.invoke", SpanKinds.Client, new SerializableDictionary { { "faas.invoked_provider", "aws" }, { "faas.invoked_name", "My-Function" } } },
+            { "datasource.invoke", SpanKinds.Server, new SerializableDictionary { { "faas.trigger", "Datasource" } } },
+            { "graphql.server.request", SpanKinds.Server, new SerializableDictionary { { "graphql.operation.type", "query" } } },
+            { "amqp.server.request", SpanKinds.Server, new SerializableDictionary { { "network.protocol.name", "Amqp" } } },
+            { "server.request", SpanKinds.Server, new SerializableDictionary() },
+            { "amqp.client.request", SpanKinds.Client, new SerializableDictionary() { { "network.protocol.name", "Amqp" } } },
+            { "client.request", SpanKinds.Client, new SerializableDictionary() },
+            { "internal", SpanKinds.Internal, new SerializableDictionary() },
+            { "consumer", SpanKinds.Consumer, new SerializableDictionary() },
+            { "producer", SpanKinds.Producer, new SerializableDictionary() },
+            { "internal", null, new SerializableDictionary() },
+        };
 
         [Theory]
         [MemberData(nameof(NameData))]
-        public void OperationName_ShouldBeSet_BasedOnTags(string expectedOperationName, string expectedActivityKind, Dictionary<string, string> tags)
+        public void OperationName_ShouldBeSet_BasedOnTags(string expectedOperationName, string expectedActivityKind, SerializableDictionary tags)
         {
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new OpenTelemetryTags());
 
