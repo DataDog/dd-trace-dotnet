@@ -21,9 +21,7 @@
       http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -45,9 +43,7 @@
       http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -112,9 +108,7 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequest(),
       http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   }
 ]

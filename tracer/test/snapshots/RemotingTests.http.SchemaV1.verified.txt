@@ -34,9 +34,7 @@
       rpc.method: SetString,
       rpc.system: dotnet_remoting,
       span.kind: client,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -52,9 +50,7 @@
       rpc.method: SetString,
       rpc.system: dotnet_remoting,
       span.kind: client,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -75,8 +71,6 @@
       peer.service: localhost,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -104,8 +98,6 @@ at System.Net.HttpWebRequest.GetResponse(),
       peer.service: localhost,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -180,9 +172,7 @@ at Samples.Remoting.RemoteClass.SetString(String input),
     Tags: {
       env: integration_tests,
       language: dotnet,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   }
 ]

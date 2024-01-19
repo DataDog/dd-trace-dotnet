@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -129,9 +129,7 @@
       graphql.source: query HeroQuery{hero {name appearsIn}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -153,9 +151,7 @@
       graphql.source: query HeroQuery{hero {name appearsIn}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -175,9 +171,7 @@
       graphql.source: subscription NotImplementedSub{throwNotImplementedException {name}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -217,9 +211,7 @@ errors: [
       graphql.source: subscription NotImplementedSub{throwNotImplementedException {name}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -266,9 +258,7 @@ errors: [
       graphql.source: query HumanError{human(id:1){name apearsIn}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -288,9 +278,7 @@ errors: [
       graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -312,9 +300,7 @@ errors: [
       graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     },
     Metrics: {
       _dd.top_level: 1.0

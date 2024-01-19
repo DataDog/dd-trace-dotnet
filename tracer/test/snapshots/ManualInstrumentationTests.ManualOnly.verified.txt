@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -29,9 +29,7 @@
     ParentId: Id_2,
     Tags: {
       env: integration_tests,
-      language: dotnet,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      language: dotnet
     }
   },
   {
@@ -88,9 +86,7 @@
     Tags: {
       env: updated-env,
       language: dotnet,
-      Updated-key: Updated Value,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      Updated-key: Updated Value
     }
   },
   {
@@ -146,9 +142,7 @@
     ParentId: Id_12,
     Tags: {
       env: integration_tests,
-      language: dotnet,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      language: dotnet
     }
   },
   {
@@ -203,9 +197,7 @@
     ParentId: Id_17,
     Tags: {
       env: integration_tests,
-      language: dotnet,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      language: dotnet
     }
   },
   {
@@ -295,9 +287,7 @@
 CustomException: Exception of type 'CustomException' was thrown.
 ,
       error.type: CustomException,
-      language: dotnet,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      language: dotnet
     },
     Metrics: {
       Some-Number: 123.0
@@ -312,9 +302,7 @@ CustomException: Exception of type 'CustomException' was thrown.
     ParentId: Id_25,
     Tags: {
       env: integration_tests,
-      language: dotnet,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      language: dotnet
     }
   },
   {
@@ -353,9 +341,7 @@ CustomException: Exception of type 'CustomException' was thrown.
     ParentId: Id_28,
     Tags: {
       env: integration_tests,
-      language: dotnet,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      language: dotnet
     }
   },
   {
@@ -367,9 +353,7 @@ CustomException: Exception of type 'CustomException' was thrown.
     ParentId: Id_29,
     Tags: {
       env: integration_tests,
-      language: dotnet,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      language: dotnet
     }
   },
   {
@@ -429,9 +413,7 @@ CustomException: Exception of type 'CustomException' was thrown.
     ParentId: Id_34,
     Tags: {
       env: integration_tests,
-      language: dotnet,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      language: dotnet
     }
   },
   {
@@ -443,9 +425,7 @@ CustomException: Exception of type 'CustomException' was thrown.
     ParentId: Id_35,
     Tags: {
       env: integration_tests,
-      language: dotnet,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      language: dotnet
     }
   },
   {
@@ -506,9 +486,7 @@ CustomException: Exception of type 'CustomException' was thrown.
     ParentId: Id_40,
     Tags: {
       env: integration_tests,
-      language: dotnet,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      language: dotnet
     }
   },
   {
@@ -520,9 +498,7 @@ CustomException: Exception of type 'CustomException' was thrown.
     ParentId: Id_41,
     Tags: {
       env: integration_tests,
-      language: dotnet,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      language: dotnet
     }
   },
   {

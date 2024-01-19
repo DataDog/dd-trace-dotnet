@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -43,9 +43,7 @@
       http.url: http://localhost:00000/Guid_4/,
       out.host: localhost,
       runtime-id: Guid_2,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0

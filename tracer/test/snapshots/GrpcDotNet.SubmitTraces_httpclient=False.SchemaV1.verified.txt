@@ -45,8 +45,6 @@
       peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -104,9 +102,7 @@
       grpc.status.code: 0,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -155,8 +151,6 @@
       peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -214,9 +208,7 @@
       grpc.status.code: 0,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -267,8 +259,6 @@
       peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -328,9 +318,7 @@
       grpc.status.code: 1,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -381,8 +369,6 @@
       peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -442,9 +428,7 @@
       grpc.status.code: 15,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -495,8 +479,6 @@
       peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -556,9 +538,7 @@
       grpc.status.code: 5,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -609,8 +589,6 @@
       peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -674,9 +652,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 2,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -727,8 +703,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -788,9 +762,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 1,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -841,8 +813,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -902,9 +872,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 15,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -955,8 +923,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -1016,9 +982,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 5,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -1069,8 +1033,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -1134,9 +1096,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 2,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -1185,8 +1145,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -1244,9 +1202,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 0,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -1295,8 +1251,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -1354,9 +1308,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 0,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -1405,8 +1357,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -1464,9 +1414,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 0,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -1515,8 +1463,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       peer.service: Greeter,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -1576,9 +1522,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 4,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -1627,8 +1571,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       peer.service: Greeter,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: rpc.service
     }
   },
@@ -1688,9 +1630,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 4,
       language: dotnet,
       servermeta: other-server-value,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   }
 ]
