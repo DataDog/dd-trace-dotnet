@@ -895,6 +895,12 @@ partial class Build
 
              var (oldBuild, _) = await FindAndDownloadAzureArtifacts(buildHttpClient, "refs/heads/master", build => { return new [] { "benchmarks_results", "benchmarks_appsec_results" }; }, masterDir, buildReason: null);
 
+             if (oldBuild is null)
+             {
+                    Logger.Warning("Old build is null");
+                    return;
+             }
+
              var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName);
 
              await ReplaceCommentInPullRequest(prNumber, $"## Benchmarks Report for {BenchmarkCategory}", markdown);
