@@ -63,9 +63,14 @@ public class AssemblyResolverCtorIntegration
 
     internal static Task WaitForCallToBeCompletedAsync()
     {
-        if (_callHasBeenCompletedTaskCompletionSource?.Task is { IsCompleted: false } callTask)
+        if (_callHasBeenCompletedTaskCompletionSource?.Task is { } callTask)
         {
-            return InternalWaitForCallToBeCompletedAsync(callTask);
+            if (!callTask.IsCompleted)
+            {
+                return InternalWaitForCallToBeCompletedAsync(callTask);
+            }
+
+            Common.Log.Debug("Microsoft.VisualStudio.TestPlatform.Common.Utilities.AssemblyResolver.ctor already ran.");
         }
 
         return Task.CompletedTask;
