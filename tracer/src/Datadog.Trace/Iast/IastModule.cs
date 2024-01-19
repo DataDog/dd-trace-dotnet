@@ -589,4 +589,18 @@ internal static class IastModule
         var hash = ("HEADER_INJECTION:" + headerName).GetStaticHashCode();
         GetScope(evidence, integrationId, VulnerabilityTypeName.HeaderInjection, OperationNameHeaderInjection, Always, false, hash);
     }
+
+    internal static IastModuleResponse OnXpathInjection(string xpath)
+    {
+        try
+        {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.XPathInjection);
+            return GetScope(xpath, IntegrationId.XpathInjection, VulnerabilityTypeName.XPathInjection, OperationNameXPathInjection, Always);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for xpath injection.");
+            return IastModuleResponse.Empty;
+        }
+    }
 }
