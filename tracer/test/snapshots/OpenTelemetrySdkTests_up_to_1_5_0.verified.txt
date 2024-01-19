@@ -48,9 +48,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -72,9 +70,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -96,9 +92,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -121,9 +115,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -146,9 +138,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -171,9 +161,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: producer,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -196,9 +184,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: consumer,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -221,9 +207,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -245,9 +229,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -269,9 +251,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -293,9 +273,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -318,9 +296,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -342,9 +318,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -366,9 +340,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -390,9 +362,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -413,9 +383,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -437,9 +405,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -460,9 +426,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: client,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -483,9 +447,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -506,9 +468,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: consumer,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -529,9 +489,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: producer,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -554,9 +512,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: server,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     },
     Metrics: {
       _dd.top_level: 1.0,
@@ -623,9 +579,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -646,9 +600,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -669,9 +621,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -692,9 +642,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -718,9 +666,7 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -748,9 +694,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -772,9 +716,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -795,9 +737,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {

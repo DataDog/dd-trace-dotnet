@@ -37,9 +37,7 @@
       http.url: http://localhost:00000/,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -66,9 +64,7 @@
       http.url: http://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      tablename: MyTableName
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -95,9 +91,7 @@
       http.url: http://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      tablename: MyTableName
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -124,9 +118,7 @@
       http.url: http://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      tablename: MyTableName
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -153,9 +145,7 @@
       http.url: http://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      tablename: MyTableName
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -182,9 +172,7 @@
       http.url: http://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      tablename: MyTableName
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -211,9 +199,7 @@
       http.url: http://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      tablename: MyTableName
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -240,9 +226,7 @@
       http.url: http://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      tablename: MyTableName
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -265,9 +249,7 @@
       http.url: http://localhost:00000/,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -290,9 +272,7 @@
       http.url: http://localhost:00000/,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -315,9 +295,7 @@
       http.url: http://localhost:00000/,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -340,9 +318,7 @@
       http.url: http://localhost:00000/,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -365,9 +341,7 @@
       http.url: http://localhost:00000/,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -390,9 +364,7 @@
       http.url: http://localhost:00000/,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -415,9 +387,7 @@
       http.url: http://localhost:00000/,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -440,9 +410,7 @@
       http.url: http://localhost:00000/,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
