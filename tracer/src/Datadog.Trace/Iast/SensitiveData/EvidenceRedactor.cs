@@ -117,6 +117,7 @@ internal class EvidenceRedactor
             catch (RegexMatchTimeoutException ex)
             {
                 _logger?.Error(ex, "Regex timed out when trying to match value {Input} against pattern {Pattern}.", ex.Input, ex.Pattern);
+                return vulnerability;
             }
         }
 
