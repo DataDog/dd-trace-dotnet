@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -27,6 +26,8 @@ namespace Datadog.Trace.Sampling
         // TODO consider moving toward these https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/SimpleRegex.cs
         private readonly Regex _serviceNameRegex;
         private readonly Regex _operationNameRegex;
+        private readonly Regex _resourceNameRegex;
+        private readonly List<KeyValuePair<string, Regex>> _tagRegexes;
 
         private bool _regexTimedOut;
 
@@ -35,16 +36,22 @@ namespace Datadog.Trace.Sampling
             string ruleName,
             string patternFormat,
             string serviceNamePattern,
-            string operationNamePattern)
+            string operationNamePattern,
+            string resourceNamePattern,
+            ICollection<KeyValuePair<string, string>> tagPatterns)
         {
             _samplingRate = rate;
             RuleName = ruleName;
 
             _serviceNameRegex = RegexBuilder.Build(serviceNamePattern, patternFormat);
             _operationNameRegex = RegexBuilder.Build(operationNamePattern, patternFormat);
+            _resourceNameRegex = RegexBuilder.Build(resourceNamePattern, patternFormat);
+            _tagRegexes = RegexBuilder.Build(tagPatterns, patternFormat);
 
             if (_serviceNameRegex is null &&
-                _operationNameRegex is null)
+                _operationNameRegex is null &&
+                _resourceNameRegex is null &&
+                (_tagRegexes is null || _tagRegexes.Count == 0))
             {
                 // if no patterns were specified, this rule always matches (i.e. catch-all)
                 _alwaysMatch = true;
@@ -81,7 +88,9 @@ namespace Datadog.Trace.Sampling
                                 r.RuleName ?? $"config-rule-{index}",
                                 patternFormat,
                                 r.Service,
-                                r.OperationName));
+                                r.OperationName,
+                                r.Resource,
+                                r.Tags));
                     }
 
                     return samplingRules;
@@ -109,26 +118,13 @@ namespace Datadog.Trace.Sampling
                 return false;
             }
 
-            try
-            {
-                // if a regex is null (not specified), it always matches.
-                // stop as soon as we find a non-match.
-                return (_serviceNameRegex?.Match(span.ServiceName).Success ?? true) &&
-                       (_operationNameRegex?.Match(span.OperationName).Success ?? true);
-            }
-            catch (RegexMatchTimeoutException e)
-            {
-                // flag regex so we don't try to use it again
-                _regexTimedOut = true;
-
-                Log.Error(
-                    e,
-                    """Regex timed out when trying to match value "{Input}" against pattern "{Pattern}".""",
-                    e.Input,
-                    e.Pattern);
-
-                return false;
-            }
+            return SamplingRuleHelper.IsMatch(
+                span,
+                serviceNameRegex: _serviceNameRegex,
+                operationNameRegex: _operationNameRegex,
+                resourceNameRegex: _resourceNameRegex,
+                tagRegexes: _tagRegexes,
+                out _regexTimedOut);
         }
 
         public float GetSamplingRate(Span span)
@@ -152,6 +148,12 @@ namespace Datadog.Trace.Sampling
 
             [JsonProperty(PropertyName = "service")]
             public string Service { get; set; }
+
+            [JsonProperty(PropertyName = "resource")]
+            public string Resource { get; set; }
+
+            [JsonProperty(PropertyName = "tags")]
+            public Dictionary<string, string> Tags { get; set; }
         }
     }
 }

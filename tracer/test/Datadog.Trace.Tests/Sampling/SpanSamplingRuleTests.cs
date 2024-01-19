@@ -20,7 +20,14 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData(" ")] // whitespace
         public void Constructor_ShouldThrow_ArgumentException_WhenServiceNameGlob_EmptyOrNull(string serviceNameGlob)
         {
-            var ctor = () => new SpanSamplingRule(serviceNameGlob, "*", 1.0f, null);
+            var ctor = () => new SpanSamplingRule(
+                serviceNameGlob: serviceNameGlob,
+                operationNameGlob: "*",
+                resourceNameGlob: null,
+                tagGlobs: null,
+                samplingRate: 1.0f,
+                maxPerSecond: null);
+
             ctor.Should().Throw<ArgumentException>().WithParameterName("serviceNameGlob");
         }
 
@@ -30,7 +37,14 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData(" ")] // whitespace
         public void Constructor_ShouldThrow_ArgumentException_WhenOperationNameGlob_EmptyOrNull(string operationNameGlob)
         {
-            var ctor = () => new SpanSamplingRule("*", operationNameGlob, 1.0f, null);
+            var ctor = () => new SpanSamplingRule(
+                "*",
+                operationNameGlob,
+                resourceNameGlob: null,
+                tagGlobs: null,
+                samplingRate: 1.0f,
+                maxPerSecond: null);
+
             ctor.Should().Throw<ArgumentException>().WithParameterName("operationNameGlob");
         }
 
@@ -44,8 +58,8 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         [Theory]
-        [InlineData("[{\"service\":\"shopping-cart*\", \"name\":\"checkou?\", \"sample_rate\":0.5}]")]
-        [InlineData("[{\"service\":\"shopping-cart*\", \"name\":\"checkou?\", \"max_per_second\":1000.5}]")]
+        [InlineData("""[{"service":"shopping-cart*", "name":"checkou?", "sample_rate":0.5}]""")]
+        [InlineData("""[{"service":"shopping-cart*", "name":"checkou?", "max_per_second":1000.5}]""")]
         public void BuildFromConfigurationString_ShouldHandle_MissingOptionals(string config)
         {
             SpanSamplingRule.BuildFromConfigurationString(config).Should().ContainSingle();
@@ -61,7 +75,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void BuildFromConfigurationString_Should_ReturnSingleRule()
         {
-            var config = "[{\"service\":\"shopping-cart*\", \"name\":\"checkou?\", \"sample_rate\":0.5, \"max_per_second\":1000.5}]";
+            var config = """[{"service":"shopping-cart*", "name":"checkou?", "sample_rate":0.5, "max_per_second":1000.5}]""";
 
             VerifySingleRule(config, TestSpans.CartCheckoutSpan, true);
             VerifySingleRule(config, TestSpans.AddToCartSpan, false);
@@ -73,7 +87,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void WildcardService_ShouldMatch_OnOperation()
         {
-            var config = "[{\"service\":\"*\", \"name\":\"authorize\", \"sample_rate\":0.5, \"max_per_second\":1000.5}]";
+            var config = """[{"service":"*", "name":"authorize", "sample_rate":0.5, "max_per_second":1000.5}]""";
 
             VerifySingleRule(config, TestSpans.CartCheckoutSpan, false);
             VerifySingleRule(config, TestSpans.AddToCartSpan, false);
@@ -85,7 +99,42 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void WildcardOperation_ShouldMatch_OnService()
         {
-            var config = "[{\"service\":\"shopping-cart-service\", \"name\":\"*\", \"sample_rate\":0.5, \"max_per_second\":1000.5}]";
+            var config = """[{"service":"shopping-cart-service", "name":"*", "sample_rate":0.5, "max_per_second":1000.5}]""";
+
+            VerifySingleRule(config, TestSpans.CartCheckoutSpan, true);
+            VerifySingleRule(config, TestSpans.AddToCartSpan, true);
+            VerifySingleRule(config, TestSpans.ShippingAuthSpan, false);
+            VerifySingleRule(config, TestSpans.ShippingRevertSpan, false);
+            VerifySingleRule(config, TestSpans.RequestShippingSpan, false);
+        }
+
+        [Fact]
+        public void WildcardOperation_ShouldMatch_OnResource()
+        {
+            var config = """[{"service":"*", "name":"*", "resource": "/api/users/*", "sample_rate":0.5, "max_per_second":1000.5}]""";
+
+            VerifySingleRule(config, TestSpans.CartCheckoutSpan, true);
+            VerifySingleRule(config, TestSpans.AddToCartSpan, false);
+            VerifySingleRule(config, TestSpans.ShippingAuthSpan, false);
+            VerifySingleRule(config, TestSpans.ShippingRevertSpan, true);
+            VerifySingleRule(config, TestSpans.RequestShippingSpan, true);
+        }
+
+        [Fact]
+        public void WildcardOperation_ShouldMatch_OnTags()
+        {
+            var config = """
+                         [{
+                            "service":"*",
+                            "name":"*",
+                            "tags": {
+                                "tag1": "value*",
+                                "tag2": "40?",
+                            },
+                            "sample_rate":0.5,
+                            "max_per_second":1000.5
+                         }]
+                         """;
 
             VerifySingleRule(config, TestSpans.CartCheckoutSpan, true);
             VerifySingleRule(config, TestSpans.AddToCartSpan, true);
@@ -95,21 +144,30 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         [Theory]
-        [InlineData("*", "*", true)]
-        public void MatchAll_ShouldMatchAll(string serviceGlob, string operationGlob, bool shouldMatch)
+        [InlineData("*", "*", "*")]
+        public void MatchAll_ShouldMatchAll(string serviceGlob, string operationGlob, string resourceGlob)
         {
-            var rule = new SpanSamplingRule(serviceGlob, operationGlob);
-            rule.IsMatch(TestSpans.CartCheckoutSpan).Should().Be(shouldMatch);
-            rule.IsMatch(TestSpans.AddToCartSpan).Should().Be(shouldMatch);
-            rule.IsMatch(TestSpans.ShippingAuthSpan).Should().Be(shouldMatch);
-            rule.IsMatch(TestSpans.ShippingRevertSpan).Should().Be(shouldMatch);
-            rule.IsMatch(TestSpans.RequestShippingSpan).Should().Be(shouldMatch);
+            var rule = new SpanSamplingRule(
+                serviceNameGlob: serviceGlob,
+                operationNameGlob: operationGlob,
+                resourceNameGlob: resourceGlob,
+                tagGlobs: null);
+
+            rule.IsMatch(TestSpans.CartCheckoutSpan).Should().Be(true);
+            rule.IsMatch(TestSpans.AddToCartSpan).Should().Be(true);
+            rule.IsMatch(TestSpans.ShippingAuthSpan).Should().Be(true);
+            rule.IsMatch(TestSpans.ShippingRevertSpan).Should().Be(true);
+            rule.IsMatch(TestSpans.RequestShippingSpan).Should().Be(true);
         }
 
         [Fact]
         public void IsMatch_ShouldReturnFalse_ForNullSpan()
         {
-            var rule = new SpanSamplingRule("*", "*");
+            var rule = new SpanSamplingRule(
+                serviceNameGlob: "*",
+                operationNameGlob: "*",
+                resourceNameGlob: "*",
+                tagGlobs: null);
 
             rule.IsMatch(null).Should().BeFalse();
         }
@@ -117,7 +175,11 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void ShouldSample_ShouldReturnFalse_ForNullSpan()
         {
-            var rule = new SpanSamplingRule("*", "*");
+            var rule = new SpanSamplingRule(
+                serviceNameGlob: "*",
+                operationNameGlob: "*",
+                resourceNameGlob: "*",
+                tagGlobs: null);
 
             rule.ShouldSample(null).Should().BeFalse();
         }
@@ -125,7 +187,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void IsMatch_ShouldReturnFalse_WhenServiceAndOperationDontMatch()
         {
-            var config = "[{\"service\":\"test\", \"name\":\"test\"}]";
+            var config = """[{"service":"test", "name":"test"}]""";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
             rule.IsMatch(TestSpans.CartCheckoutSpan).Should().BeFalse();
@@ -134,7 +196,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void ShouldSample_ShouldReturnFalse_WhenSamplerIsZero()
         {
-            var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.0}]";
+            var config = """[{"service":"*", "name":"*", "sample_rate":0.0}]""";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
             rule.ShouldSample(TestSpans.CartCheckoutSpan).Should().BeFalse();
@@ -143,7 +205,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void ShouldSample_ShouldReturnTrue_WhenEverythingMatches()
         {
-            var config = "[{\"service\":\"*\", \"name\":\"*\"}]";
+            var config = """[{"service":"*", "name":"*"}]""";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
             rule.IsMatch(TestSpans.CartCheckoutSpan).Should().BeTrue();
@@ -153,7 +215,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void MaxPerSecond_ShouldDefaultTo_NullWhenAbsent()
         {
-            var config = "[{\"service\":\"*\", \"name\":\"*\"}]";
+            var config = """[{"service":"*", "name":"*"}]""";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
             rule.MaxPerSecond.Should().BeNull();
@@ -162,7 +224,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void SampleRate_ShouldDefaultTo_OneWhenAbsent()
         {
-            var config = "[{\"service\":\"*\", \"name\":\"*\"}]";
+            var config = """[{"service":"*", "name":"*"}]""";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
             rule.SamplingRate.Should().Be(1.0f);
