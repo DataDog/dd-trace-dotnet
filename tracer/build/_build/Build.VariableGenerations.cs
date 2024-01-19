@@ -208,15 +208,17 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsWindowsMsiMatrix(params TargetFramework[] targetFrameworks)
             {
-                var targetPlatforms = new[] { "x86", "x64" };
+                var targetPlatforms = new[] { 
+                    (targetPlaform: "x64", enable32Bit: false),
+                    (targetPlaform: "x64", enable32Bit: true),
+                };
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
                 {
-                    foreach (var targetPlatform in targetPlatforms)
+                    foreach (var (targetPlatform, enable32Bit) in targetPlatforms)
                     {
-                        var enable32bit = targetPlatform == "x86";
-                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit });
+                        matrix.Add($"{targetPlatform}_{(enable32Bit ? "32bit" : "64bit")}_{framework}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32Bit });
                     }
                 }
 
@@ -1022,7 +1024,6 @@ partial class Build : NukeBuild
                     var platforms = new(MSBuildTargetPlatform platform, bool enable32Bit)[] {
                         (MSBuildTargetPlatform.x64, false),
                         (MSBuildTargetPlatform.x64, true),
-                        (MSBuildTargetPlatform.x86, true)
                     };
                     var runtimeImages = new (string publishFramework, string runtimeTag)[]
                     {
