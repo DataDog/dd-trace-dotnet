@@ -1247,29 +1247,26 @@ partial class Build
         foreach (var build in completedBuilds.OrderByDescending(x => x.Id).ThenByDescending(x=>x.FinishTime))
         {
             var artifactsName = getArtifactsName(build);
-            try
+
+            foreach (var artifactName in artifactsName)
             {
-                foreach (var artifactName in artifactsName)
+                try
                 {
                     var artifact = await buildHttpClient.GetArtifactAsync(
-                                   project: AzureDevopsProjectId,
-                                   buildId: build.Id,
-                                   artifactName: artifactName);
-
-                    if (artifact is null)
-                    {
-                        continue;
-                    }
+                                       project: AzureDevopsProjectId,
+                                       buildId: build.Id,
+                                       artifactName: artifactName);
                     artifacts.Add(artifact);
-                }   
+                }
+                catch (ArtifactNotFoundException)
+                {
+                    Console.WriteLine($"Could not find {artifactName} artifact for build {build.Id}. Skipping");
+                }
+            }   
 
-                artifactBuild = build;
-                break;
-            }
-            catch (ArtifactNotFoundException)
-            {
-                Console.WriteLine($"Could not find {string.Join(',', artifactsName)} artifact for build {build.Id}. Skipping");
-            }
+            artifactBuild = build;
+            break;
+        
         }
 
         if (artifacts.Count == 0)
