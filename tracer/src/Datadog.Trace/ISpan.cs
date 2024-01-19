@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 
 namespace Datadog.Trace
@@ -63,7 +65,7 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key.</param>
         /// <param name="value">The tag's value.</param>
         /// <returns>This span to allow method chaining.</returns>
-        ISpan SetTag(string key, string value);
+        ISpan SetTag(string key, string? value);
 
         /// <summary>
         /// Record the end time of the span and flushes it to the backend.
@@ -89,6 +91,6 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="key">The tag's key</param>
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
-        string GetTag(string key);
+        string? GetTag(string key);
     }
 }

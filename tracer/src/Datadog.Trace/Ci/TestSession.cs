@@ -137,22 +137,7 @@ public sealed class TestSession
     public static TestSession GetOrCreate(string command)
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Session);
-        return InternalGetOrCreate(command);
-    }
-
-    /// <summary>
-    /// Get or create a new Test Session
-    /// </summary>
-    /// <param name="command">Test session command</param>
-    /// <returns>New test session instance</returns>
-    internal static TestSession InternalGetOrCreate(string command)
-    {
-        if (Current is { } current)
-        {
-            return current;
-        }
-
-        return new TestSession(command, null, null, null, false);
+        return InternalGetOrCreate(command, workingDirectory: null, framework: null, startDate: null);
     }
 
     /// <summary>
@@ -165,23 +150,7 @@ public sealed class TestSession
     public static TestSession GetOrCreate(string command, string workingDirectory)
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Session);
-        return InternalGetOrCreate(command, workingDirectory);
-    }
-
-    /// <summary>
-    /// Get or create a new Test Session
-    /// </summary>
-    /// <param name="command">Test session command</param>
-    /// <param name="workingDirectory">Test session working directory</param>
-    /// <returns>New test session instance</returns>
-    internal static TestSession InternalGetOrCreate(string command, string workingDirectory)
-    {
-        if (Current is { } current)
-        {
-            return current;
-        }
-
-        return new TestSession(command, workingDirectory, null, null, false);
+        return InternalGetOrCreate(command, workingDirectory, framework: null, startDate: null);
     }
 
     /// <summary>
@@ -195,24 +164,7 @@ public sealed class TestSession
     public static TestSession GetOrCreate(string command, string workingDirectory, string framework)
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Session);
-        return InternalGetOrCreate(command, workingDirectory, framework);
-    }
-
-    /// <summary>
-    /// Get or create a new Test Session
-    /// </summary>
-    /// <param name="command">Test session command</param>
-    /// <param name="workingDirectory">Test session working directory</param>
-    /// <param name="framework">Testing framework name</param>
-    /// <returns>New test session instance</returns>
-    internal static TestSession InternalGetOrCreate(string command, string workingDirectory, string framework)
-    {
-        if (Current is { } current)
-        {
-            return current;
-        }
-
-        return new TestSession(command, workingDirectory, framework, null, false);
+        return InternalGetOrCreate(command, workingDirectory, framework, startDate: null);
     }
 
     /// <summary>
@@ -228,24 +180,6 @@ public sealed class TestSession
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Session);
         return InternalGetOrCreate(command, workingDirectory, framework, startDate);
-    }
-
-    /// <summary>
-    /// Get or create a new Test Session
-    /// </summary>
-    /// <param name="command">Test session command</param>
-    /// <param name="workingDirectory">Test session working directory</param>
-    /// <param name="framework">Testing framework name</param>
-    /// <param name="startDate">Test session start date</param>
-    /// <returns>New test session instance</returns>
-    internal static TestSession InternalGetOrCreate(string command, string workingDirectory, string framework, DateTimeOffset startDate)
-    {
-        if (Current is { } current)
-        {
-            return current;
-        }
-
-        return new TestSession(command, workingDirectory, framework, startDate, false);
     }
 
     /// <summary>
@@ -273,7 +207,7 @@ public sealed class TestSession
     /// <param name="startDate">Test session start date</param>
     /// <param name="propagateEnvironmentVariables">Propagate session data through environment variables (out of proc session)</param>
     /// <returns>New test session instance</returns>
-    internal static TestSession InternalGetOrCreate(string command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
+    internal static TestSession InternalGetOrCreate(string command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables = false)
     {
         if (Current is { } current)
         {
