@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace
 {
     /// <summary>
@@ -23,6 +25,6 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the service name to propagate to child spans.
         /// </summary>
-        string ServiceName { get; }
+        string? ServiceName { get; }
     }
 }
