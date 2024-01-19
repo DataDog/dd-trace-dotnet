@@ -964,7 +964,7 @@ partial class Build
                  // current (not released version)
                  var version = new Version(Version);
                  var versionsToCheck = 3;
-                 while (versionsToCheck > 0)
+                 while (versionsToCheck > 0 && version.Minor > 0)
                  {
                      // only looking back across minor releases (ignoring patch etc)
                      versionsToCheck--;
