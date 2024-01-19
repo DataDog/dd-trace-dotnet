@@ -569,7 +569,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter Category=Lambda --code-coverage ${runCodeCoverage:-true}
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-net6.0} --filter Category=Lambda --code-coverage ${runCodeCoverage:-true}
     volumes:
       - ./:/project
     cap_add:
