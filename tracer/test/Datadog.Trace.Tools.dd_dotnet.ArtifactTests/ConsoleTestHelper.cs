@@ -26,7 +26,7 @@ public abstract class ConsoleTestHelper : ToolTestHelper
         return StartConsole(EnvironmentHelper, enableProfiler, environmentVariables);
     }
 
-    protected (string Executable, string Args) PrepareSampleApp(EnvironmentHelper environmentHelper)
+    protected async Task<(string Executable, string Args)> PrepareSampleApp(EnvironmentHelper environmentHelper)
     {
         var sampleAppPath = environmentHelper.GetSampleApplicationPath();
         var executable = EnvironmentHelper.IsCoreClr() ? environmentHelper.GetSampleExecutionSource() : sampleAppPath;
@@ -38,7 +38,7 @@ public abstract class ConsoleTestHelper : ToolTestHelper
          && !EnvironmentHelper.IsCoreClr()
          && !EnvironmentTools.IsTestTarget64BitProcess())
         {
-            ProfilerHelper.SetCorFlags(executable, Output, !EnvironmentTools.IsTestTarget64BitProcess());
+            await ProfilerHelper.SetCorFlags(executable, Output, !EnvironmentTools.IsTestTarget64BitProcess());
         }
 
         return (executable, args);
@@ -46,7 +46,7 @@ public abstract class ConsoleTestHelper : ToolTestHelper
 
     protected async Task<ProcessHelper> StartConsole(EnvironmentHelper environmentHelper, bool enableProfiler, params (string Key, string Value)[] environmentVariables)
     {
-        var (executable, args) = PrepareSampleApp(environmentHelper);
+        var (executable, args) = await PrepareSampleApp(environmentHelper);
 
         args += " wait";
 
