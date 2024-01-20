@@ -486,7 +486,13 @@ namespace Datadog.Trace.Ci
             // **********
             // Remove sensitive info from repository url
             // **********
-            Repository = RemoveSensitiveInformationFromUrl(Repository);
+            if (Uri.TryCreate(Repository, UriKind.Absolute, out Uri repository))
+            {
+                if (!string.IsNullOrEmpty(repository.UserInfo))
+                {
+                    Repository = repository.GetComponents(UriComponents.Fragment | UriComponents.Query | UriComponents.Path | UriComponents.Port | UriComponents.Host | UriComponents.Scheme, UriFormat.SafeUnescaped);
+                }
+            }
 
             // **********
             // Expand ~ in Paths
