@@ -11,9 +11,7 @@
       http.url: http://localhost:00000/createextraservice/?serviceName=extraVegetables,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.base_service: Samples.Security.AspNetCore5,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: Samples.Security.AspNetCore5
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -67,9 +65,7 @@
       http.url: http://localhost:00000/createextraservice/?serviceName=ExTrAvEgEtAbLeS,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.base_service: Samples.Security.AspNetCore5,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: Samples.Security.AspNetCore5
     },
     Metrics: {
       _dd.top_level: 1.0
