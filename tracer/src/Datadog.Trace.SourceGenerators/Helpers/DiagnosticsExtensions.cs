@@ -25,7 +25,7 @@ internal static class DiagnosticsExtensions
             diagnostics,
             static (context, info) =>
             {
-                context.ReportDiagnostic(Diagnostic.Create(info.Descriptor, info.Location));
+                context.ReportDiagnostic(Diagnostic.Create(info.Descriptor, info.Location?.ToLocation()));
             });
     }
 }
