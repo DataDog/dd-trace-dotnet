@@ -35,21 +35,24 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
             context.SyntaxProvider.ForAttributeWithMetadataName(
                 InstrumentedMethodAttribute,
                 predicate: static (node, _) => node is ClassDeclarationSyntax,
-                transform: static (ctx, ct) => GetCallTargetDefinitionSources(ctx, ct));
+                transform: static (ctx, ct) => GetCallTargetDefinitionSources(ctx, ct))
+                   .WithTrackingName(TrackingNames.CallTargetDefinitionSource);
 
         // Get all the `[AdoNetTargetSignature] attributes inside the AdoNetClientInstrumentMethodsAttribute type
         IncrementalValuesProvider<Result<EquatableArray<(string ClassName, AdoNetSignature Signature)>>> adoNetSignatures =
             context.SyntaxProvider.ForAttributeWithMetadataName(
                         AdoNetInstrumentAttribute + "+AdoNetTargetSignatureAttribute", // metadata name uses `+`
                         predicate: static (node, _) => node is ClassDeclarationSyntax,
-                        transform: static (ctx, ct) => GetAdoNetSignatures(ctx, ct));
+                        transform: static (ctx, ct) => GetAdoNetSignatures(ctx, ct))
+                   .WithTrackingName(TrackingNames.AdoNetSignatures);
 
         // Get all the [AdoNetClientInstrumentMethods]  assembly attributes
         IncrementalValuesProvider<Result<EquatableArray<AssemblyCallTargetDefinitionSource>>> assemblyCallTargetDefinitions =
             context.SyntaxProvider.ForAttributeWithMetadataName(
                         AdoNetInstrumentAttribute,
                         predicate: static (node, _) => node is CompilationUnitSyntax,
-                        transform: static (ctx, ct) => GetAssemblyCallTargetDefinitionSources(ctx, ct));
+                        transform: static (ctx, ct) => GetAssemblyCallTargetDefinitionSources(ctx, ct))
+                   .WithTrackingName(TrackingNames.AssemblyCallTargetDefinitionSource);
 
         // merge the adonet signatures
         IncrementalValueProvider<ImmutableArray<(string ClassName, AdoNetSignature Signature)>> allSignatures =
@@ -61,27 +64,32 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
             assemblyCallTargetDefinitions
                .SelectMany(static (result, _) => result.Value)
                .Combine(allSignatures)
-               .Select((tuple, _) => MergeAdoNetAttributes(tuple.Left, tuple.Right));
+               .Select((tuple, _) => MergeAdoNetAttributes(tuple.Left, tuple.Right))
+               .WithTrackingName(TrackingNames.AdoNetCallTargetDefinitionSource);
 
         context.ReportDiagnostics(
             callTargetDefinitions
                .Where(static m => m.Errors.Count > 0)
-               .SelectMany(static (x, _) => x.Errors));
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.CallTargetDiagnostics));
 
         context.ReportDiagnostics(
             adoNetSignatures
                .Where(static m => m.Errors.Count > 0)
-               .SelectMany(static (x, _) => x.Errors));
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.AdoNetDiagnostics));
 
         context.ReportDiagnostics(
             assemblyCallTargetDefinitions
                .Where(static m => m.Errors.Count > 0)
-               .SelectMany(static (x, _) => x.Errors));
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.AssemblyDiagnostics));
 
         context.ReportDiagnostics(
             adoNetCallTargetDefinitions
                .Where(static m => m.Errors.Count > 0)
-               .SelectMany(static (x, _) => x.Errors));
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.AdoNetMergeDiagnostics));
 
         var allCallTargetDefinitions =
             callTargetDefinitions

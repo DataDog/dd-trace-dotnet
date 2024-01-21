@@ -39,16 +39,19 @@ public class PublicApiGenerator : IIncrementalGenerator
                         GeneratePublicApiAttribute,
                         static (node, _) => node is PropertyDeclarationSyntax,
                         static (context, ct) => GetPublicApiProperties(context, ct))
-                   .Where(static m => m is not null)!;
+                   .Where(static m => m is not null)!
+                   .WithTrackingName(TrackingNames.PostTransform);
 
         context.ReportDiagnostics(
             properties
                .Where(static m => m.Errors.Count > 0)
-               .SelectMany(static (x, _) => x.Errors));
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.Diagnostics));
 
         var allValidProperties = properties
                      .Where(static m => m.Value.IsValid)
                      .Select(static (x, _) => x.Value.PropertyTag)
+                     .WithTrackingName(TrackingNames.ValidValues)
                      .Collect();
 
         context.RegisterSourceOutput(allValidProperties, Execute);
