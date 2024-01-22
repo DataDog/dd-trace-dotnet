@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using Datadog.Trace.Iast.Dataflow;
 
@@ -12,7 +13,7 @@ namespace Datadog.Trace.Iast.Aspects;
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 
-public partial class XPathExtensionAspect
+public class XPathExtensionAspect
 {
     /// <summary>
     /// Launches a spath injection vulnerability if the input is tainted

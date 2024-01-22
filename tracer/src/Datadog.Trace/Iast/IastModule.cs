@@ -38,6 +38,7 @@ internal static class IastModule
     private const string OperationNameTrustBoundaryViolation = "trust_boundary_violation";
     private const string OperationNameUnvalidatedRedirect = "unvalidated_redirect";
     private const string OperationNameHeaderInjection = "header_injection";
+    private const string OperationNameXPathInjection = "xpath_injection";
     private const string ReferrerHeaderName = "Referrer";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
