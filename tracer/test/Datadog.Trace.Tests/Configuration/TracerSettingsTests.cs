@@ -707,8 +707,8 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, "true", true)]
         [InlineData(null, "0", false)]
         [InlineData(null, "false", false)]
-        [InlineData(null, null, false)]
-        [InlineData("", "", false)]
+        [InlineData(null, null, true)]
+        [InlineData("", "", true)]
         public void IsActivityListenerEnabled(string value, string fallbackValue, bool expected)
         {
             const string fallbackKey = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";

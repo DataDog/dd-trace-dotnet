@@ -621,7 +621,7 @@ namespace Datadog.Trace.Configuration
             public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
 
             /// <summary>
-            /// Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
+            /// Enables support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
             /// </summary>
             public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";
 
