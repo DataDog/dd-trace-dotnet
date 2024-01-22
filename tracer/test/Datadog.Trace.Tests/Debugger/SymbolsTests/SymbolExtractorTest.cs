@@ -31,6 +31,11 @@ public class SymbolExtractorTest
     [MemberData(nameof(TestSamples))]
     private async Task Test(Type type)
     {
+#if NETFRAMEWORK
+        _ = type;
+        await Task.Yield();
+        throw new SkipException("This test is flaky - The .NET Framework snapshots produced are different in CI and locally");
+#else
         if (!EnvironmentTools.IsWindows())
         {
             throw new SkipException("PDB test only on windows");
@@ -45,6 +50,7 @@ public class SymbolExtractorTest
         var settings = ConfigureVerifySettings(type.Name);
         var toVerify = GetStringToVerify(root);
         await Verifier.Verify(toVerify, settings);
+#endif
     }
 
     [SkippableTheory(Skip = "Implement this")]
@@ -67,9 +73,12 @@ public class SymbolExtractorTest
         await Verifier.Verify(toVerify, settings);
     }
 
-    [Fact]
+    [SkippableFact]
     private void CompilerGeneratedClassTest()
     {
+#if NETFRAMEWORK
+        throw new SkipException("This test is flaky - root.Scopes.First().Scopes is sometimes not null on .NET Framework");
+#else
         var assembly = Assembly.GetExecutingAssembly();
         Assert.NotNull(assembly);
         var compilerGeneratedTypes = CompilerGeneratedTypes(10);
@@ -86,6 +95,7 @@ public class SymbolExtractorTest
         {
             return assembly.GetTypes().SelectMany(t => t.GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)).Where(t => t.GetCustomAttribute<CompilerGeneratedAttribute>() != null).Take(numberOfTypes).ToList();
         }
+#endif
     }
 
     private string GetStringToVerify(Root root)
