@@ -494,7 +494,6 @@ namespace Datadog.Trace.Agent
             }
 
             // Add the current keep rate to the root span
-            var traceContext = spans.Array![spans.Offset].Context.TraceContext;
             var rootSpan = spans.Array![spans.Offset].Context.TraceContext?.RootSpan;
 
             if (rootSpan is not null)
@@ -512,6 +511,7 @@ namespace Datadog.Trace.Agent
 
                 if (IsLogLevelDebugEnabled)
                 {
+                    var traceContext = spans.Array![spans.Offset].Context.TraceContext;
                     // foreach span write out the enhanced debug information
                     LogRootSpanDebugInformation(traceContext, rootSpan);
                     LogSpanDebugInformation(traceContext, spans);
