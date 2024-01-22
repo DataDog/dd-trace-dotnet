@@ -159,29 +159,6 @@ namespace Datadog.Trace.Agent
                     new object[] { span.Context.RawSpanId, span.Context.ParentIdInternal, span.Context.RawTraceId, span.ServiceName, span.ResourceName, span.OperationName, traceContext.SamplingPriority, span.Tags, traceContext.Tags, span.ToString() });
         }
 
-        private string GetSpanInfoForDebugLog(Span span)
-        {
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            sb.AppendLine($"TraceId64: {span.Context.TraceId128.Lower}");
-            sb.AppendLine($"TraceId128: {span.Context.TraceId128}");
-            sb.AppendLine($"RawTraceId: {span.Context.RawTraceId}");
-            sb.AppendLine($"ParentId: {span.Context.ParentIdInternal}");
-            sb.AppendLine($"SpanId: {span.Context.SpanId}");
-            sb.AppendLine($"RawSpanId: {span.Context.RawSpanId}");
-            sb.AppendLine($"Origin: {span.Context.Origin}");
-            sb.AppendLine($"ServiceName: {span.ServiceName}");
-            sb.AppendLine($"OperationName: {span.OperationName}");
-            sb.AppendLine($"Resource: {span.ResourceName}");
-            sb.AppendLine($"Type: {span.Type}");
-            sb.AppendLine($"Start: {span.StartTime.ToString("O")}");
-            sb.AppendLine($"Duration: {span.Duration}");
-            sb.AppendLine($"End: {span.StartTime.Add(span.Duration).ToString("O")}");
-            sb.AppendLine($"Error: {span.Error}");
-            sb.AppendLine($"Meta: {span.Tags}");
-
-            return StringBuilderCache.GetStringAndRelease(sb);
-        }
-
         public async Task FlushAndCloseAsync()
         {
             if (!_processExit.TrySetResult(true))
