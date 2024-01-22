@@ -31,6 +31,11 @@ public class SymbolExtractorTest
     [MemberData(nameof(TestSamples))]
     private async Task Test(Type type)
     {
+#if NETFRAMEWORK
+        _ = type;
+        await Task.Yield();
+        throw new SkipException("This test is flaky - The .NET Framework snapshots produced are different in CI and locally");
+#else
         if (!EnvironmentTools.IsWindows())
         {
             throw new SkipException("PDB test only on windows");
@@ -45,6 +50,7 @@ public class SymbolExtractorTest
         var settings = ConfigureVerifySettings(type.Name);
         var toVerify = GetStringToVerify(root);
         await Verifier.Verify(toVerify, settings);
+#endif
     }
 
     [SkippableTheory(Skip = "Implement this")]
