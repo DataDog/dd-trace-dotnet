@@ -226,7 +226,7 @@ public class DataStreamsManagerTests
         // checking that points are in the expected order
         points[0].EdgeTags.Should().Contain("in");
         points[1].EdgeTags.Should().Contain("out");
-        points[1].EdgeTags.Should().Contain("out");
+        points[2].EdgeTags.Should().Contain("out");
         // both produces should be considered as children of the consume
         points[1].ParentHash.Should().BeEquivalentTo(points[0].Hash);
         points[2].ParentHash.Should().BeEquivalentTo(points[0].Hash);
