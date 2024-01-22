@@ -150,11 +150,7 @@ public class SymbolExtractorTest
     private VerifySettings ConfigureVerifySettings(string className)
     {
         var settings = new VerifySettings();
-        var suffix = string.Empty;
-#if NETFRAMEWORK
-        suffix = ".netfx";
-#endif
-        settings.UseFileName($"{nameof(SymbolExtractorTest)}.{className}{suffix}");
+        settings.UseFileName($"{nameof(SymbolExtractorTest)}.{className}");
         settings.DisableRequireUniquePrefix();
         settings.UseDirectory("SymbolExtractor/Approvals");
         return settings;
