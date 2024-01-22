@@ -5,63 +5,57 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+
+#if NETCOREAPP3_1_OR_GREATER
+using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
+#else
+using System.Text.RegularExpressions;
+#endif
 
 namespace Datadog.Trace.Sampling
 {
     internal class CustomSamplingRule : ISamplingRule
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CustomSamplingRule>();
-        private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
         private readonly float _samplingRate;
+        private readonly bool _alwaysMatch;
+
+        // TODO consider moving toward these https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/SimpleRegex.cs
         private readonly Regex _serviceNameRegex;
         private readonly Regex _operationNameRegex;
+        private readonly Regex _resourceNameRegex;
+        private readonly List<KeyValuePair<string, Regex>> _tagRegexes;
 
-        private bool _hasPoisonedRegex;
+        private bool _regexTimedOut;
 
         public CustomSamplingRule(
             float rate,
             string ruleName,
-            string serviceNameRegex,
-            string operationNameRegex)
+            string patternFormat,
+            string serviceNamePattern,
+            string operationNamePattern,
+            string resourceNamePattern,
+            ICollection<KeyValuePair<string, string>> tagPatterns)
         {
             _samplingRate = rate;
-
-            try
-            {
-                _serviceNameRegex = serviceNameRegex is null
-                    ? null
-                    : new(
-                        WrapWithLineCharacters(serviceNameRegex),
-                        RegexOptions.Compiled | RegexOptions.IgnoreCase,
-                        RegexTimeout);
-            }
-            catch (ArgumentException e)
-            {
-                Log.Error(e, "Custom sampling rule regex for service name was invalid.");
-                throw;
-            }
-
-            try
-            {
-                _operationNameRegex = operationNameRegex is null
-                                      ? null
-                                      : new(
-                                          WrapWithLineCharacters(operationNameRegex),
-                                          RegexOptions.Compiled | RegexOptions.IgnoreCase,
-                                          RegexTimeout);
-            }
-            catch (ArgumentException e)
-            {
-                Log.Error(e, "Custom sampling rule regex for operation name was invalid.");
-                throw;
-            }
-
             RuleName = ruleName;
+
+            _serviceNameRegex = RegexBuilder.Build(serviceNamePattern, patternFormat);
+            _operationNameRegex = RegexBuilder.Build(operationNamePattern, patternFormat);
+            _resourceNameRegex = RegexBuilder.Build(resourceNamePattern, patternFormat);
+            _tagRegexes = RegexBuilder.Build(tagPatterns, patternFormat);
+
+            if (_serviceNameRegex is null &&
+                _operationNameRegex is null &&
+                _resourceNameRegex is null &&
+                (_tagRegexes is null || _tagRegexes.Count == 0))
+            {
+                // if no patterns were specified, this rule always matches (i.e. catch-all)
+                _alwaysMatch = true;
+            }
         }
 
         public string RuleName { get; }
@@ -74,19 +68,29 @@ namespace Datadog.Trace.Sampling
         /// </summary>
         public int Priority { get; protected set; } = 1;
 
-        public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration)
+        public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration, string patternFormat)
         {
             try
             {
-                if (!string.IsNullOrEmpty(configuration))
+                if (!string.IsNullOrWhiteSpace(configuration) &&
+                    JsonConvert.DeserializeObject<List<CustomRuleConfig>>(configuration) is { Count: > 0 } rules)
                 {
                     var index = 0;
-                    var rules = JsonConvert.DeserializeObject<List<CustomRuleConfig>>(configuration);
-                    var samplingRules = new List<CustomSamplingRule>();
+                    var samplingRules = new List<CustomSamplingRule>(rules.Count);
+
                     foreach (var r in rules)
                     {
                         index++; // Used to create a readable rule name if one is not specified
-                        samplingRules.Add(new CustomSamplingRule(r.SampleRate, r.RuleName ?? $"config-rule-{index}", r.Service, r.OperationName));
+
+                        samplingRules.Add(
+                            new CustomSamplingRule(
+                                r.SampleRate,
+                                r.RuleName ?? $"config-rule-{index}",
+                                patternFormat,
+                                r.Service,
+                                r.OperationName,
+                                r.Resource,
+                                r.Tags));
                     }
 
                     return samplingRules;
@@ -94,68 +98,39 @@ namespace Datadog.Trace.Sampling
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Unable to parse custom sampling rules");
+                Log.Error(ex, "Unable to parse the trace sampling rules.");
             }
 
-            return Enumerable.Empty<CustomSamplingRule>();
+            return [];
         }
 
         public bool IsMatch(Span span)
         {
-            if (_hasPoisonedRegex)
+            if (_alwaysMatch)
             {
-                return false;
-            }
-
-            // special case where if both regex are null we match
-            if (_serviceNameRegex is null && _operationNameRegex is null)
-            {
+                // the rule is a catch-all
                 return true;
             }
 
-            try
+            if (_regexTimedOut)
             {
-                // if the regex is null, we will always match it as we don't care
-                var serviceMatch = _serviceNameRegex?.Match(span.ServiceName).Success ?? true;
-                var operationMatch = _operationNameRegex?.Match(span.OperationName).Success ?? true;
-                return serviceMatch && operationMatch;
-            }
-            catch (RegexMatchTimeoutException e)
-            {
-                _hasPoisonedRegex = true;
-                Log.Error(
-                    e,
-                    "Timeout when trying to match against {Value} on {Pattern}.",
-                    e.Input,
-                    e.Pattern);
+                // the regex had a valid format, but it timed out previously. stop trying to use it.
                 return false;
             }
+
+            return SamplingRuleHelper.IsMatch(
+                span,
+                serviceNameRegex: _serviceNameRegex,
+                operationNameRegex: _operationNameRegex,
+                resourceNameRegex: _resourceNameRegex,
+                tagRegexes: _tagRegexes,
+                out _regexTimedOut);
         }
 
         public float GetSamplingRate(Span span)
         {
             span.SetMetric(Metrics.SamplingRuleDecision, _samplingRate);
             return _samplingRate;
-        }
-
-        private static string WrapWithLineCharacters(string regex)
-        {
-            if (regex == null)
-            {
-                return regex;
-            }
-
-            if (!regex.StartsWith("^"))
-            {
-                regex = "^" + regex;
-            }
-
-            if (!regex.EndsWith("$"))
-            {
-                regex = regex + "$";
-            }
-
-            return regex;
         }
 
         [Serializable]
@@ -173,6 +148,12 @@ namespace Datadog.Trace.Sampling
 
             [JsonProperty(PropertyName = "service")]
             public string Service { get; set; }
+
+            [JsonProperty(PropertyName = "resource")]
+            public string Resource { get; set; }
+
+            [JsonProperty(PropertyName = "tags")]
+            public Dictionary<string, string> Tags { get; set; }
         }
     }
 }

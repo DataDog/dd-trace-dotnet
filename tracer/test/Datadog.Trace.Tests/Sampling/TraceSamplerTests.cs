@@ -19,6 +19,7 @@ namespace Datadog.Trace.Tests.Sampling
         private const string ServiceName = "my-service-name";
         private const string Env = "my-test-env";
         private const string OperationName = "test";
+        private const string ResourceName = "test-resource-name";
 
         private static readonly Dictionary<string, float> MockAgentRates = new() { { $"service:{ServiceName},env:{Env}", FallbackRate } };
 
@@ -38,7 +39,17 @@ namespace Datadog.Trace.Tests.Sampling
         public void RateLimiter_Denies_All_Traces()
         {
             var sampler = new TraceSampler(new DenyAll());
-            sampler.RegisterRule(new CustomSamplingRule(1, "Allow_all", ".*", ".*"));
+
+            sampler.RegisterRule(
+                new CustomSamplingRule(
+                    rate: 1,
+                    ruleName: "Allow_all",
+                    patternFormat: SamplingRulesFormat.Regex,
+                    serviceNamePattern: ".*",
+                    operationNamePattern: ".*",
+                    resourceNamePattern: ".*",
+                    tagPatterns: null));
+
             RunSamplerTest(
                 sampler,
                 iterations: 500,
@@ -51,7 +62,17 @@ namespace Datadog.Trace.Tests.Sampling
         public void Keep_Everything_Rule()
         {
             var sampler = new TraceSampler(new NoLimits());
-            sampler.RegisterRule(new CustomSamplingRule(1, "Allow_all", ".*", ".*"));
+
+            sampler.RegisterRule(
+                new CustomSamplingRule(
+                    rate: 1,
+                    ruleName: "Allow_all",
+                    patternFormat: SamplingRulesFormat.Regex,
+                    serviceNamePattern: ".*",
+                    operationNamePattern: ".*",
+                    resourceNamePattern: ".*",
+                    tagPatterns: null));
+
             RunSamplerTest(
                 sampler,
                 iterations: 500,
@@ -64,7 +85,17 @@ namespace Datadog.Trace.Tests.Sampling
         public void Keep_Nothing_Rule()
         {
             var sampler = new TraceSampler(new NoLimits());
-            sampler.RegisterRule(new CustomSamplingRule(0, "Allow_nothing", ".*", ".*"));
+
+            sampler.RegisterRule(
+                new CustomSamplingRule(
+                    rate: 0,
+                    ruleName: "Allow_nothing",
+                    patternFormat: SamplingRulesFormat.Regex,
+                    serviceNamePattern: ".*",
+                    operationNamePattern: ".*",
+                    resourceNamePattern: ".*",
+                    tagPatterns: null));
+
             RunSamplerTest(
                 sampler,
                 iterations: 500,
@@ -77,7 +108,17 @@ namespace Datadog.Trace.Tests.Sampling
         public void Keep_Half_Rule()
         {
             var sampler = new TraceSampler(new NoLimits());
-            sampler.RegisterRule(new CustomSamplingRule(0.5f, "Allow_half", ".*", ".*"));
+
+            sampler.RegisterRule(
+                new CustomSamplingRule(
+                    rate: 0.5f,
+                    ruleName: "Allow_half",
+                    patternFormat: SamplingRulesFormat.Regex,
+                    serviceNamePattern: ".*",
+                    operationNamePattern: ".*",
+                    resourceNamePattern: ".*",
+                    tagPatterns: null));
+
             RunSamplerTest(
                 sampler,
                 iterations: 50_000, // Higher number for lower variance
@@ -142,6 +183,7 @@ namespace Datadog.Trace.Tests.Sampling
             {
                 using var scope = (Scope)tracer.StartActive(OperationName);
                 scope.Span.Context.TraceContext.Environment = Env;
+                scope.Span.ResourceName = ResourceName;
 
                 var decision = sampler.MakeSamplingDecision(scope.Span);
 

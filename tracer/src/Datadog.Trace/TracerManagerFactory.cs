@@ -156,31 +156,45 @@ namespace Datadog.Trace
 
             dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName);
 
-            if (remoteConfigurationManager == null)
+            if (ShouldEnableRemoteConfiguration(settings))
             {
-                var sw = Stopwatch.StartNew();
+                if (remoteConfigurationManager == null)
+                {
+                    var sw = Stopwatch.StartNew();
 
-                var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
-                var rcmApi = RemoteConfigurationApiFactory.Create(settings.ExporterInternal, rcmSettings, discoveryService);
+                    var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
+                    var rcmApi = RemoteConfigurationApiFactory.Create(settings.ExporterInternal, rcmSettings, discoveryService);
 
-                // Service Name must be lowercase, otherwise the agent will not be able to find the service
-                var serviceName = TraceUtil.NormalizeTag(settings.ServiceNameInternal ?? defaultServiceName);
+                    // Service Name must be lowercase, otherwise the agent will not be able to find the service
+                    var serviceName = TraceUtil.NormalizeTag(settings.ServiceNameInternal ?? defaultServiceName);
 
-                remoteConfigurationManager =
-                    RemoteConfigurationManager.Create(
-                        discoveryService,
-                        rcmApi,
-                        rcmSettings,
-                        serviceName,
-                        settings,
-                        gitMetadataTagsProvider,
-                        RcmSubscriptionManager.Instance);
+                    remoteConfigurationManager =
+                        RemoteConfigurationManager.Create(
+                            discoveryService,
+                            rcmApi,
+                            rcmSettings,
+                            serviceName,
+                            settings,
+                            gitMetadataTagsProvider,
+                            RcmSubscriptionManager.Instance);
 
-                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
+                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
+                }
+
+                dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance);
+                tracerFlareManager ??= new TracerFlareManager(discoveryService, RcmSubscriptionManager.Instance, telemetry, TracerFlareApi.Create(settings.ExporterInternal));
             }
+            else
+            {
+                remoteConfigurationManager ??= new NullRemoteConfigurationManager();
+                dynamicConfigurationManager ??= new NullDynamicConfigurationManager();
+                tracerFlareManager ??= new NullTracerFlareManager();
 
-            dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance);
-            tracerFlareManager ??= new TracerFlareManager(discoveryService, RcmSubscriptionManager.Instance, telemetry, TracerFlareApi.Create(settings.ExporterInternal));
+                if (RcmSubscriptionManager.Instance.HasAnySubscription)
+                {
+                    Log.Debug($"{nameof(RcmSubscriptionManager)} has subscriptions but remote configuration is not available in this scenario.");
+                }
+            }
 
             return CreateTracerManagerFrom(
                 settings,
@@ -211,6 +225,9 @@ namespace Datadog.Trace
             return new GitMetadataTagsProvider(settings, scopeManager, TelemetryFactory.Config);
         }
 
+        protected virtual bool ShouldEnableRemoteConfiguration(ImmutableTracerSettings settings)
+            => settings.IsRemoteConfigurationAvailable;
+
         /// <summary>
         ///  Can be overriden to create a different <see cref="TracerManager"/>, e.g. <see cref="Ci.CITracerManager"/>
         /// </summary>
@@ -236,10 +253,12 @@ namespace Datadog.Trace
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {
             var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
+            var samplingRules = settings.CustomSamplingRulesInternal;
+            var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
 
-            if (!string.IsNullOrWhiteSpace(settings.CustomSamplingRulesInternal))
+            if (patternFormatIsValid && !string.IsNullOrWhiteSpace(samplingRules))
             {
-                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(settings.CustomSamplingRulesInternal))
+                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(samplingRules, samplingRulesFormat))
                 {
                     sampler.RegisterRule(rule);
                 }

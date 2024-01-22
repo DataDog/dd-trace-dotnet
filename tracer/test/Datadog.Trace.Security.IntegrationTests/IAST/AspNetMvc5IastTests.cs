@@ -68,6 +68,26 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
         var testName = "Security." + nameof(AspNetMvc5) + ".Integrated.IastEnabled";
         await TestStrictTransportSecurityHeaderMissingVulnerability(contentType, returnCode, hstsHeaderValue, xForwardedProto, testName);
     }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("Vuln.SensitiveName", new string[] { "name", "private_token" }, new string[] { "value", "ShouldBeRedacted" })]
+    [InlineData("Vuln.SensitiveValue", new string[] { "name", "myName", "value", ":bearer secret" }, null)]
+    [InlineData("Vuln.SensitiveValueComplex", new string[] { "name", "myName", "value", ":bear" }, new string[] { "value", "er%20secret" })]
+    [InlineData("NotVulnerable", new string[] { "propagation", "noVulnValue" }, null)]
+    [InlineData("Vuln.NoSensitive", new string[] { "name", "Name", "value", "value" }, new string[] { "value", "moreText" })]
+    [InlineData("NotVulnerable", new string[] { "name", "Sec-WebSocket-Accept" }, new string[] { "value", "moreText" })]
+    [InlineData("Vuln.Origin", new string[] { "name", "access-control-allow-origin", "value", "https://example.com" }, null)]
+    [InlineData("NotVulnerable", new string[] { "name", "access-control-allow-origin", "origin", "NotVulnerable" }, null, true)] // Not vulnerable
+    [InlineData("Vuln.Cookie.SensitiveValue", new string[] { "name", "set-cookie", "value", "token=glpat-eFynewhuKJFGdfGDFGdw;max-age=31536000;Secure;HttpOnly;SameSite=Strict" }, null)]
+    [InlineData("NotVulnerable", null, new string[] { "name", "set-cookie", "value", "NotVulnerable%3D22%3Bmax-age%3D31536000%3BSecure%3BHttpOnly%3BSameSite%3DStrict" })]
+    [InlineData("Vuln.MultipleHeaderValues", new string[] { "name", "extraName", "value", "value2" }, null)]
+    public async Task TestIastHeaderInjectionRequest(string testCase, string[] headers, string[] cookies, bool useValueFromOriginHeader = false)
+    {
+        await TestIastHeaderInjectionRequestVulnerability(testCase, headers, cookies, useValueFromOriginHeader);
+    }
 }
 
 [Collection("IisTests")]
@@ -450,6 +470,47 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
+    }
+
+    protected async Task TestIastHeaderInjectionRequestVulnerability(string testCase, string[] headers, string[] cookies, bool useValueFromOriginHeader = false)
+    {
+        var notVulnerable = testCase.StartsWith("notvulnerable", StringComparison.OrdinalIgnoreCase) || !_enableIast;
+        var filename = "Iast.HeaderInjection.AspNetMvc." + (notVulnerable ? "NotVuln" : testCase) +
+            (useValueFromOriginHeader ? ".origin" : string.Empty);
+        if (!_enableIast) { filename += ".IastDisabled"; }
+        var url = $"/Iast/HeaderInjection?useValueFromOriginHeader={useValueFromOriginHeader}";
+        IncludeAllHttpSpans = true;
+
+        Dictionary<string, string> headersDic = new();
+        Dictionary<string, string> cookiesDic = new();
+
+        if (headers != null)
+        {
+            for (int i = 0; i < headers.Length; i = i + 2)
+            {
+                headersDic.Add(headers[i], headers[i + 1]);
+            }
+        }
+
+        if (cookies != null)
+        {
+            for (int i = 0; i < cookies.Length; i = i + 2)
+            {
+                cookiesDic.Add(cookies[i], cookies[i + 1]);
+            }
+        }
+
+        AddCookies(cookiesDic);
+        AddHeaders(headersDic);
+
+        var spans = await SendRequestsAsync(_iisFixture.Agent, 1, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
     }
 
     protected async Task TestXContentVulnerability(string contentType, int returnCode, string xContentTypeHeaderValue, string testName)

@@ -17,6 +17,7 @@ using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
+using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;
@@ -37,10 +38,11 @@ public class LiveDebuggerTests
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
+        var symbolsUploader = new SymbolsUploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create("env", "version");
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         probeStatusPoller.Called.Should().BeTrue();
@@ -59,10 +61,11 @@ public class LiveDebuggerTests
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
+        var symbolsUploader = new SymbolsUploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         lineProbeResolver.Called.Should().BeFalse();
@@ -82,6 +85,7 @@ public class LiveDebuggerTests
                 new AgentConfiguration(
                     configurationEndpoint: "configurationEndpoint",
                     debuggerEndpoint: "debuggerEndpoint",
+                    symbolDbEndpoint: "symbolDbEndpoint",
                     agentVersion: "agentVersion",
                     statsEndpoint: "traceStatsEndpoint",
                     dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
@@ -181,6 +185,18 @@ public class LiveDebuggerTests
 
         public void Dispose()
         {
+        }
+    }
+
+    private class SymbolsUploaderMock : ISymbolsUploader
+    {
+        public void Dispose()
+        {
+        }
+
+        public Task StartExtractingAssemblySymbolsAsync()
+        {
+            return Task.CompletedTask;
         }
     }
 

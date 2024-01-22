@@ -18,6 +18,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -202,6 +203,33 @@ namespace Datadog.Trace.Configuration
 
             CustomSamplingRulesInternal = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
 
+            CustomSamplingRulesFormat = config.WithKeys(ConfigurationKeys.CustomSamplingRulesFormat)
+                                              .GetAs(
+                                                   getDefaultValue: () => new DefaultResult<string>(SamplingRulesFormat.Regex, "regex"),
+                                                   converter: value =>
+                                                   {
+                                                       // We intentionally report invalid values as "valid" in the converter,
+                                                       // because we don't want to automatically fallback to the
+                                                       // default value.
+                                                       if (!SamplingRulesFormat.IsValid(value, out var normalizedFormat))
+                                                       {
+                                                           Log.Warning(
+                                                               "{ConfigurationKey} configuration of {ConfigurationValue} is invalid. Ignoring all trace sampling rules.",
+                                                               ConfigurationKeys.CustomSamplingRulesFormat,
+                                                               value);
+                                                       }
+
+                                                       return normalizedFormat;
+                                                   },
+                                                   validator: null);
+
+            // record final value of CustomSamplingRulesFormat in telemetry
+            _telemetry.Record(
+                    key: ConfigurationKeys.CustomSamplingRulesFormat,
+                    value: CustomSamplingRulesFormat,
+                    recordValue: true,
+                    origin: ConfigurationOrigins.Calculated);
+
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
             GlobalSamplingRateInternal = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble();
@@ -224,7 +252,7 @@ namespace Datadog.Trace.Configuration
                              .WithKeys(ConfigurationKeys.BufferSize)
                              .AsInt32(defaultValue: 1024 * 1024 * 10); // 10MB
 
-            // If Lambda/GCP we don't wanat to have a flush interval. The serverless integration
+            // If Lambda/GCP we don't want to have a flush interval. The serverless integration
             // manually calls flush and waits for the result before ending execution.
             // This can artificially increase the execution time of functions
             var defaultTraceBatchInterval = LambdaMetadata.IsRunningInLambda || IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan ? 0 : 100;
@@ -533,6 +561,13 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_CustomSamplingRules_Set)]
         [ConfigKey(ConfigurationKeys.CustomSamplingRules)]
         internal string? CustomSamplingRulesInternal { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating the format for custom trace sampling rules ("regex" or "glob").
+        /// If the value is not recognized, trace sampling rules are disabled.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.CustomSamplingRulesFormat"/>
+        internal string CustomSamplingRulesFormat { get; }
 
         /// <summary>
         /// Gets a value indicating span sampling rules.

@@ -22,6 +22,7 @@ namespace Datadog.Trace.Debugger
         public const int DefaultMaxNumberOfFieldsToCopy = 20;
 
         private const int DefaultUploadBatchSize = 100;
+        public const int DefaultSymbolBatchSizeInBytes = 100000;
         private const int DefaultDiagnosticsIntervalSeconds = 60 * 60; // 1 hour
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
 
@@ -48,6 +49,21 @@ namespace Datadog.Trace.Debugger
                              .WithKeys(ConfigurationKeys.Debugger.UploadBatchSize)
                              .AsInt32(DefaultUploadBatchSize, batchSize => batchSize > 0)
                              .Value;
+
+            SymbolDatabaseBatchSizeInBytes = config
+                                         .WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseBatchSizeInBytes)
+                                         .AsInt32(DefaultSymbolBatchSizeInBytes, batchSize => batchSize > 0)
+                                         .Value;
+
+            var includeLibraries = config
+                                     .WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseIncludes)
+                                     .AsString()?
+                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                      Enumerable.Empty<string>();
+
+            SymbolDatabaseIncludes = new HashSet<string>(includeLibraries, StringComparer.OrdinalIgnoreCase);
+
+            SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(false);
 
             DiagnosticsIntervalSeconds = config
                                         .WithKeys(ConfigurationKeys.Debugger.DiagnosticsInterval)
@@ -83,6 +99,12 @@ namespace Datadog.Trace.Debugger
         public int MaximumDepthOfMembersToCopy { get; }
 
         public int UploadBatchSize { get; }
+
+        public int SymbolDatabaseBatchSizeInBytes { get; }
+
+        public bool SymbolDatabaseUploadEnabled { get; }
+
+        public HashSet<string> SymbolDatabaseIncludes { get; }
 
         public int DiagnosticsIntervalSeconds { get; }
 

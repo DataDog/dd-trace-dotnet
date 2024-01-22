@@ -71,5 +71,6 @@ namespace Datadog.Trace.Configuration
         Remoting,
         TrustBoundaryViolation,
         UnvalidatedRedirect,
+        TestPlatformAssemblyResolver,
     }
 }
