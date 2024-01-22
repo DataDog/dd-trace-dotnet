@@ -151,7 +151,6 @@ namespace Datadog.Trace.PlatformHelpers
         internal static bool TryGetInode(string path, out long result)
         {
             result = 0;
-            var context = SynchronizationContext.Current;
 
             try
             {
