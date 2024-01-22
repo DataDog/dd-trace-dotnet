@@ -140,14 +140,14 @@ namespace Datadog.Trace.Tests
 
                 ExpectedActivityKind = data[1]?.ToString() ?? string.Empty;
 
-                Tags = data[2] is null ? new Dictionary<string, string>() : (Dictionary<string, string>)data[2];
+                Tags = data[2] is null ? new SerializableDictionary() : (SerializableDictionary)data[2];
             }
 
             public string ExpectedOperationName { get; }
 
             public string ExpectedActivityKind { get; }
 
-            public Dictionary<string, string> Tags { get; }
+            public SerializableDictionary Tags { get; }
         }
     }
 }

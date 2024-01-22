@@ -171,18 +171,18 @@ public class ExceptionRedactorTests
 
     public static class TestData
     {
-        public static TheoryData<object> MethodsToRedact() => new()
-        {
+        public static List<object> MethodsToRedact() =>
+        [
             typeof(AssertionExtensions).GetMethod(nameof(AssertionExtensions.Should), types: new[] { typeof(object) }),
             typeof(Xunit.Assert).GetMethod(nameof(Assert.False), types: new[] { typeof(bool) }),
             typeof(VerifyTests.VerifierSettings).GetMethod(nameof(VerifyTests.VerifierSettings.DisableClipboard)),
             typeof(VerifyTests.VerifierSettings).GetProperty(nameof(VerifyTests.VerifierSettings.StrictJson))?.GetMethod,
             typeof(VerifyTests.VerifierSettings).GetProperty(nameof(VerifyTests.VerifierSettings.StrictJson))?.SetMethod,
             typeof(VerifyTests.SerializationSettings).GetConstructor(Array.Empty<Type>()),
-        };
+        ];
 
-        public static TheoryData<object> MethodsToNotRedact() => new()
-        {
+        public static List<object> MethodsToNotRedact() =>
+        [
             typeof(ExceptionRedactorTests.TestData).GetMethod(nameof(NoParameters)),
             typeof(Datadog.Trace.Tracer).GetMethod(nameof(Tracer.UnsafeSetTracerInstance), BindingFlags.Static | BindingFlags.NonPublic),
             typeof(Datadog.Trace.Tracer).GetProperty(nameof(Tracer.Instance))?.GetMethod,
@@ -204,19 +204,19 @@ public class ExceptionRedactorTests
             typeof(Microsoft.CodeAnalysis.DiagnosticDescriptor).GetProperty(nameof(Microsoft.CodeAnalysis.DiagnosticDescriptor.Id))?.GetMethod,
             typeof(Microsoft.Extensions.DependencyInjection.ServiceCollection).GetMethod(nameof(Microsoft.Extensions.DependencyInjection.ServiceCollection.Contains), types: new[] { typeof(Microsoft.Extensions.DependencyInjection.ServiceDescriptor) }),
 #endif
-        };
+        ];
 
-        public static IEnumerable<(StackTrace StackTrace, string ExpectedToString)> ToStringTestData()
-        {
-            yield return (new StackTrace(InvokeException()), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.ThrowException()");
-            yield return (new StackTrace(new Exception()), string.Empty);
-            yield return (NoParameters(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.NoParameters()");
-            yield return (OneParameter(1), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.OneParameter(Int32 x)");
-            yield return (TwoParameters(1, null), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.TwoParameters(Int32 x, String y)");
-            yield return (Generic<int>(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.Generic[T]()");
-            yield return (Generic<int, string>(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.Generic[T1,T2]()");
-            yield return (new ClassWithConstructor().StackTrace, "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.ClassWithConstructor..ctor()");
-        }
+        public static List<(StackTrace StackTrace, string ExpectedToString)> ToStringTestData() =>
+        [
+            (new StackTrace(InvokeException()), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.ThrowException()"),
+            (new StackTrace(new Exception()), string.Empty),
+            (NoParameters(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.NoParameters()"),
+            (OneParameter(1), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.OneParameter(Int32 x)"),
+            (TwoParameters(1, null), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.TwoParameters(Int32 x, String y)"),
+            (Generic<int>(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.Generic[T]()"),
+            (Generic<int, string>(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.Generic[T1,T2]()"),
+            (new ClassWithConstructor().StackTrace, "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.ClassWithConstructor..ctor()"),
+        ];
 
         [MethodImpl(MethodImplOptions.NoOptimization | MethodImplOptions.NoInlining)]
         public static unsafe StackTrace FunctionPointerParameter(delegate*<void> x) => new();
