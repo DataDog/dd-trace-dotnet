@@ -48,9 +48,7 @@
       component: aspnet_core,
       env: integration_tests,
       language: dotnet,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   }
 ]
