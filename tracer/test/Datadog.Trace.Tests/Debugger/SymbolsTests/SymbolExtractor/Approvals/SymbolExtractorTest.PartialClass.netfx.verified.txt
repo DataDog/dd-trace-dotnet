@@ -1,0 +1,112 @@
+{
+  "service": "test",
+  "env": "test",
+  "version": "0",
+  "language": "dotnet",
+  "scopes": [
+    {
+      "scope_type": "assembly",
+      "name": "Datadog.Trace.Tests",
+      "start_line": 0,
+      "end_line": 0,
+      "scopes": [
+        {
+          "scope_type": "class",
+          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.PartialClass",
+          "start_line": 0,
+          "end_line": 0,
+          "language_specifics": {
+            "super_classes": [
+              "System.Object"
+            ],
+            "pdb_exist": false
+          },
+          "symbols": [
+            {
+              "name": "_s",
+              "type": "System.String",
+              "symbol_type": "field",
+              "line": 0,
+              "language_specifics": {
+                "access_modifiers": [
+                  "private"
+                ],
+                "annotations": [
+                  "readonly"
+                ]
+              }
+            },
+            {
+              "name": "_s2",
+              "type": "System.String",
+              "symbol_type": "field",
+              "line": 0,
+              "language_specifics": {
+                "access_modifiers": [
+                  "private"
+                ],
+                "annotations": [
+                  "readonly"
+                ]
+              }
+            }
+          ],
+          "scopes": [
+            {
+              "scope_type": "method",
+              "name": ".ctor",
+              "start_line": 0,
+              "end_line": 0,
+              "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
+                "return_type": "System.Void"
+              }
+            },
+            {
+              "scope_type": "method",
+              "name": "Foo",
+              "start_line": 0,
+              "end_line": 0,
+              "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
+                "return_type": "System.Void"
+              },
+              "symbols": [
+                {
+                  "name": "i",
+                  "type": "System.Int32",
+                  "symbol_type": "arg",
+                  "line": 0
+                }
+              ]
+            },
+            {
+              "scope_type": "method",
+              "name": "Bar",
+              "start_line": 0,
+              "end_line": 0,
+              "language_specifics": {
+                "access_modifiers": [
+                  "sanitized"
+                ],
+                "return_type": "System.Void"
+              },
+              "symbols": [
+                {
+                  "name": "i",
+                  "type": "System.Int32",
+                  "symbol_type": "arg",
+                  "line": 0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
