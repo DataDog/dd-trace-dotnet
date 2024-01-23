@@ -284,7 +284,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             // SCI tags will be sent only once per trace
-            if (model.IsLocalRoot || model.IsChunkOrphan)
+            if (model.IsFirstSpanInChunk)
             {
                 var gitCommitShaRawBytes = MessagePackStringCache.GetGitCommitShaBytes(model.TraceChunk.GitCommitSha);
                 if (gitCommitShaRawBytes is not null)
