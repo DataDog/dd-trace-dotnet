@@ -408,7 +408,8 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     {
         var filename = IastEnabled ? "Iast.NoSqlMongoDbInjection.AspNetCore5.IastEnabled" : "Iast.NoSqlMongoDbInjection.AspNetCore5.IastDisabled";
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
-        var url = "/Iast/NoSqlQueryMongoDb?price=42";
+        const string value = "1\", \"$or\": [{\"Price\": {\"$gt\": 1000}}], \"other\": \"1";
+        var url = $"/Iast/NoSqlQueryMongoDb?price={value}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
