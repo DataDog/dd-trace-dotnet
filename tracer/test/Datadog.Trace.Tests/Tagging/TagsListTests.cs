@@ -234,12 +234,13 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Theory]
-        [InlineData(SpanKinds.Client, null)]
-        [InlineData(SpanKinds.Server, TracerConstants.Language)]
-        [InlineData(SpanKinds.Producer, null)]
-        [InlineData(SpanKinds.Consumer, TracerConstants.Language)]
-        [InlineData("other", TracerConstants.Language)]
-        public async Task Serialize_LanguageTag_AutomaticInstrumentation(string spanKind, string expectedLanguage)
+        [InlineData(SpanKinds.Client)]
+        [InlineData(SpanKinds.Server)]
+        [InlineData(SpanKinds.Producer)]
+        [InlineData(SpanKinds.Consumer)]
+        [InlineData(SpanKinds.Internal)]
+        [InlineData("other")]
+        public async Task Serialize_LanguageTag_AutomaticInstrumentation(string spanKind)
         {
             const int customTagCount = 15;
 
@@ -254,15 +255,7 @@ namespace Datadog.Trace.Tests.Tagging
             await _tracer.FlushAsync();
             var traceChunks = _testApi.Wait();
             var deserializedSpan = traceChunks.Single().Single();
-
-            if (expectedLanguage == null)
-            {
-                deserializedSpan.Tags.Should().NotContainKey(Tags.Language);
-            }
-            else
-            {
-                deserializedSpan.Tags.Should().Contain(Tags.Language, expectedLanguage);
-            }
+            deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
         }
 
         private static void SetupForSerializationTest(Span span, int customTagCount)
