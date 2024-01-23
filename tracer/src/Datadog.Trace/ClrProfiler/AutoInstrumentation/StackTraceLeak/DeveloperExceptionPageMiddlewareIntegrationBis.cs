@@ -51,9 +51,12 @@ public static class DeveloperExceptionPageMiddlewareIntegrationBis
     /// <param name="errorContext">The context of the error.</param>
     /// <typeparam name="TTarget">Type of the target</typeparam>
     /// <returns>Calltarget state value</returns>
-    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object errorContext)
+    internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext errorContext)
+        where TContext : ErrorContextStruct
     {
-        var exception = errorContext.DuckCast<ErrorContextStruct>().Exception;
+        // In the current implementation ErrorContext is always non-null, as is Exception
+        // so this should be safe
+        var exception = errorContext.Exception;
         return StackTraceLeakIntegrationCommon.OnExceptionLeak(IntegrationId.StackTraceLeak, exception);
     }
 
