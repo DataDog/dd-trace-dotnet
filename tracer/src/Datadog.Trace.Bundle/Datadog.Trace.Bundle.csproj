@@ -9,8 +9,7 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
-    <NoWarn>NU5100;NU5128;NU1901;NU1902;NU1903;NU1904</NoWarn>
+    <NoWarn>NU5100;NU5128</NoWarn>
     <PackageOutputPath Condition="'$(PackageOutputPath)' == '' ">bin\$(Configuration)\packages</PackageOutputPath>
   </PropertyGroup>
 

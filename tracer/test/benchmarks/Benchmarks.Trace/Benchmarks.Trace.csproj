@@ -13,8 +13,7 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
-    <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
-    <NoWarn>1591;NU1901;NU1902;NU1903;NU1904</NoWarn>
+    <NoWarn>1591</NoWarn>
 
      <!-- Tell Visual Studio to not create a new launchSettings.json file, even though we have AspNetCore assets -->
     <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
