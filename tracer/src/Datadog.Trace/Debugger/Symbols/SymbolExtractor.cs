@@ -36,7 +36,7 @@ namespace Datadog.Trace.Debugger.Symbols
             MetadataReader = metadataReader.MetadataReader;
         }
 
-        protected DatadogMetadataReader DatadogMetadataReader { get; }
+        internal DatadogMetadataReader DatadogMetadataReader { get; }
 
         protected MetadataReader MetadataReader { get; }
 

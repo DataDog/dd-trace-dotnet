@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Debugger.Symbols.Model;
+using Datadog.Trace.Pdb;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using VerifyTests;
@@ -27,15 +28,10 @@ public class SymbolExtractorTest
     public static IEnumerable<object[]> TestSamples =>
         typeof(SymbolExtractorTest).Assembly.GetTypes().Where(t => t.Namespace == TestSamplesNamespace && !t.Name.StartsWith("<") && !t.IsNested).Select(type => new object[] { type });
 
-    [SkippableTheory]
+    [SkippableTheory(typeof(NoPdbException), typeof(SkipException))]
     [MemberData(nameof(TestSamples))]
     private async Task Test(Type type)
     {
-#if NETFRAMEWORK
-        _ = type;
-        await Task.Yield();
-        throw new SkipException("This test is flaky - The .NET Framework snapshots produced are different in CI and locally");
-#else
         if (!EnvironmentTools.IsWindows())
         {
             throw new SkipException("PDB test only on windows");
@@ -43,13 +39,7 @@ public class SymbolExtractorTest
 
         var assembly = Assembly.GetAssembly(type);
         Assert.NotNull(assembly);
-
-        var (root, error) = GetSymbols(assembly, type.FullName);
-        if (error is NoPdbException)
-        {
-            throw new SkipException("PDB does not exist");
-        }
-
+        var root = GetSymbols(assembly, type.FullName);
         Assert.NotNull(root.Scopes);
         Assert.True(root.Scopes.Count == 1);
         Assert.True(root.Scopes.First().Scopes.Length == 1);
@@ -57,7 +47,6 @@ public class SymbolExtractorTest
         var settings = ConfigureVerifySettings(type.Name);
         var toVerify = GetStringToVerify(root);
         await Verifier.Verify(toVerify, settings);
-#endif
     }
 
     [SkippableTheory(Skip = "Implement this")]
@@ -71,13 +60,7 @@ public class SymbolExtractorTest
 
         var assembly = Assembly.GetAssembly(type);
         Assert.NotNull(assembly);
-
-        var (root, error) = GetSymbols(assembly, type.FullName);
-        if (error is NoPdbException)
-        {
-            throw new SkipException("PDB does not exist");
-        }
-
+        var root = GetSymbols(assembly, type.FullName);
         Assert.NotNull(root.Scopes);
         Assert.True(root.Scopes.Count == 1);
         Assert.True(root.Scopes.First().Scopes.Length == 1);
@@ -90,9 +73,6 @@ public class SymbolExtractorTest
     [SkippableFact]
     private void CompilerGeneratedClassTest()
     {
-#if NETFRAMEWORK
-        throw new SkipException("This test is flaky - root.Scopes.First().Scopes is sometimes not null on .NET Framework");
-#else
         var assembly = Assembly.GetExecutingAssembly();
         Assert.NotNull(assembly);
         var compilerGeneratedTypes = CompilerGeneratedTypes(10);
@@ -100,13 +80,7 @@ public class SymbolExtractorTest
         foreach (var generatedType in compilerGeneratedTypes)
         {
             Assert.NotNull(generatedType);
-
-            var (root, error) = GetSymbols(assembly, generatedType.FullName);
-            if (error is NoPdbException)
-            {
-                throw new SkipException("PDB does not exist");
-            }
-
+            var root = GetSymbols(assembly, generatedType.FullName);
             Assert.NotNull(root.Scopes);
             Assert.True(root.Scopes.Count == 1);
             Assert.Null(root.Scopes.First().Scopes);
@@ -116,7 +90,6 @@ public class SymbolExtractorTest
         {
             return assembly.GetTypes().SelectMany(t => t.GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)).Where(t => t.GetCustomAttribute<CompilerGeneratedAttribute>() != null).Take(numberOfTypes).ToList();
         }
-#endif
     }
 
     private string GetStringToVerify(Root root)
@@ -183,21 +156,21 @@ public class SymbolExtractorTest
         return settings;
     }
 
-    private (Root Symbols, Exception Error) GetSymbols(Assembly assembly, string className)
+    private Root GetSymbols(Assembly assembly, string className)
     {
         var root = GetRoot();
         var extractor = SymbolExtractor.Create(assembly);
         Assert.NotNull(extractor);
-        if (extractor is not SymbolPdbExtractor)
+        if (extractor is not SymbolPdbExtractor || extractor.DatadogMetadataReader.PdbReaderType == PdbReaderType.Dnlib)
         {
-            return (null, new NoPdbException());
+            throw new NoPdbException("PDB does not exist");
         }
 
         var assemblyScope = extractor.GetAssemblySymbol();
         var classSymbol = extractor.GetClassSymbols(className);
         assemblyScope.Scopes = classSymbol.HasValue ? new[] { classSymbol.Value } : null;
         root.Scopes = new[] { assemblyScope };
-        return (root, null);
+        return root;
     }
 
     private Root GetRoot()
@@ -215,5 +188,9 @@ public class SymbolExtractorTest
 
     private class NoPdbException : Exception
     {
+        public NoPdbException(string message)
+            : base(message)
+        {
+        }
     }
 }
