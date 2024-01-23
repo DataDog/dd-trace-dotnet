@@ -404,14 +404,10 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, envRawBytes);
             }
 
-            // add "language=dotnet" tag to all spans, except those that
-            // represents a downstream service or external dependency
-            if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
-            {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
-            }
+            // add "language=dotnet" tag to all spans
+            count++;
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
 
             // add "version" tags to all spans whose service name is the default service name
             if (string.Equals(span.Context.ServiceNameInternal, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
@@ -426,7 +422,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            // SCI tags will be sent only once per trace
+            // SCI tags will be sent only once per trace chunk
             if (model.IsFirstSpanInChunk)
             {
                 var gitCommitShaRawBytes = MessagePackStringCache.GetGitCommitShaBytes(model.TraceChunk.GitCommitSha);
