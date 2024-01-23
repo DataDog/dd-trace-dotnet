@@ -28,6 +28,7 @@
     Tags: {
       component: Remoting,
       env: integration_tests,
+      language: dotnet,
       rpc.method: SetString,
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
@@ -47,6 +48,7 @@
     Tags: {
       component: Remoting,
       env: integration_tests,
+      language: dotnet,
       rpc.method: SetString,
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
@@ -70,6 +72,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/RemoteServer,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client
@@ -98,6 +101,7 @@ at System.Net.HttpWebRequest.GetResponse(),
       http.method: POST,
       http.status_code: 500,
       http.url: http://localhost:00000/RemoteServer,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client
