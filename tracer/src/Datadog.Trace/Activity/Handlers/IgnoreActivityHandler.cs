@@ -19,6 +19,7 @@ namespace Datadog.Trace.Activity.Handlers
         [
             "Couchbase.DotnetSdk.RequestTracer",
             "Couchbase.DotnetSdk.OpenTelemetryRequestTracer",
+            "Grpc.Net.Client",
             "HttpHandlerDiagnosticListener",
             "Microsoft.AspNetCore",
             "Microsoft.EntityFrameworkCore",
