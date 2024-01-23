@@ -3150,11 +3150,19 @@ stages:
         GITHUB_TOKEN: $(GITHUB_TOKEN)
         
 - stage: appsec_benchmarks
-  condition: and(succeeded(), eq(variables.isMainRepository, true), or(eq(variables.isAppSecChanged, 'True'), eq(variables.force_appsec_benchmarks_run, 'true')))
+  condition: and(
+    succeeded(), 
+    eq(variables.isMainRepository, true), 
+    or(
+        eq(variables.isAppSecChanged, 'True'), 
+        eq(variables.force_appsec_benchmarks_run, 'true')
+      )
+    )
   dependsOn: [build_windows_tracer, build_windows_profiler, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    isAppSecChanged: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'] ]
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
