@@ -12,6 +12,7 @@
       couchbase.operation.key: my-document-key,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -41,6 +42,7 @@
 Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException: Exception of type 'Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException' was thrown.
 at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object state, CancellationTokenPair tokenPair),
       error.type: Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -64,6 +66,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       couchbase.operation.key: my-document-key,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -87,6 +90,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       couchbase.operation.key: ,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -110,6 +114,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       couchbase.operation.key: ,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -133,6 +138,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       couchbase.operation.key: obfuscated,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -156,6 +162,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       couchbase.operation.key: obfuscated,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -179,6 +186,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       couchbase.operation.key: default,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -202,6 +210,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       couchbase.operation.key: default,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -226,6 +235,7 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       couchbase.operation.key: my-document-key,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },

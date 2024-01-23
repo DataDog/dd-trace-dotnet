@@ -265,6 +265,7 @@
       amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 62,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -288,6 +289,7 @@
       amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 62,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -311,6 +313,7 @@
       amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 62,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -334,6 +337,7 @@
       amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 62,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -356,6 +360,7 @@
       amqp.exchange: test-exchange-name,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -377,6 +382,7 @@
       amqp.exchange: test-exchange-name,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -398,6 +404,7 @@
       amqp.exchange: test-exchange-name,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -419,6 +426,7 @@
       amqp.exchange: test-exchange-name,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -442,6 +450,7 @@
       amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -465,6 +474,7 @@
       amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -488,6 +498,7 @@
       amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -511,6 +522,7 @@
       amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -532,6 +544,7 @@
       amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -553,6 +566,7 @@
       amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -574,6 +588,7 @@
       amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -595,6 +610,7 @@
       amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -877,6 +893,7 @@
       amqp.routing_key: AmqQueue_1
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 61,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -900,6 +917,7 @@
       amqp.routing_key: AmqQueue_2
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 61,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -923,6 +941,7 @@
       amqp.routing_key: AmqQueue_3
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 61,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -946,6 +965,7 @@
       amqp.routing_key: AmqQueue_4
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 61,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -968,6 +988,7 @@
       amqp.queue: ,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -989,6 +1010,7 @@
       amqp.queue: ,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -1010,6 +1032,7 @@
       amqp.queue: ,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -1031,6 +1054,7 @@
       amqp.queue: ,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -1381,6 +1405,7 @@
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -1404,6 +1429,7 @@
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -1427,6 +1453,7 @@
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -1450,6 +1477,7 @@
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -1473,6 +1501,7 @@
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -1496,6 +1525,7 @@
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -1519,6 +1549,7 @@
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -1542,6 +1573,7 @@
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -1565,6 +1597,7 @@
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -1588,6 +1621,7 @@
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -1611,6 +1645,7 @@
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -1634,6 +1669,7 @@
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
@@ -2219,6 +2255,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -2242,6 +2279,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -2265,6 +2303,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -2288,6 +2327,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -2311,6 +2351,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -2334,6 +2375,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -2357,6 +2399,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
@@ -2380,6 +2423,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
