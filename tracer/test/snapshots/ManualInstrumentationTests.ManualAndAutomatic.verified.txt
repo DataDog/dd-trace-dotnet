@@ -45,6 +45,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/Guid_2/?q=1.Initial,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client
@@ -121,6 +122,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/Guid_2/?q=2.Reconfigured,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
@@ -248,6 +250,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/Guid_2/?q=4.DefaultsReinstated,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client
@@ -370,6 +373,7 @@ CustomException: Exception of type 'CustomException' was thrown.
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/Guid_2/?q=5.Ext,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client
@@ -442,6 +446,7 @@ CustomException: Exception of type 'CustomException' was thrown.
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/Guid_2/?q=6.Ext,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client
@@ -533,6 +538,7 @@ CustomException: Exception of type 'CustomException' was thrown.
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/Guid_2/?q=7.Ext,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client
@@ -625,6 +631,7 @@ CustomException: Exception of type 'CustomException' was thrown.
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/Guid_2/?q=8.Ext,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client
