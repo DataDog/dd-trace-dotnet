@@ -38,6 +38,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -65,6 +66,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -86,6 +88,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -108,6 +111,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -130,6 +134,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -152,6 +157,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -174,6 +180,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -201,6 +208,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -227,6 +235,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -253,6 +262,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -279,6 +289,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -305,6 +316,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -331,6 +343,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -357,6 +370,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -383,6 +397,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -409,6 +424,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -435,6 +451,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -461,6 +478,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -487,6 +505,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -513,6 +532,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -539,6 +559,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -565,6 +586,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -591,6 +613,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -617,6 +640,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -643,6 +667,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -669,6 +694,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -695,6 +721,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -721,6 +748,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -747,6 +775,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -773,6 +802,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -799,6 +829,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -825,6 +856,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -851,6 +883,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -897,6 +930,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -924,6 +958,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -945,6 +980,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -967,6 +1003,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -989,6 +1026,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -1011,6 +1049,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -1033,6 +1072,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -1060,6 +1100,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1086,6 +1127,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1112,6 +1154,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1138,6 +1181,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1164,6 +1208,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1190,6 +1235,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1216,6 +1262,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1242,6 +1289,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1268,6 +1316,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1294,6 +1343,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1320,6 +1370,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1346,6 +1397,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1372,6 +1424,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1398,6 +1451,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1424,6 +1478,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1450,6 +1505,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1476,6 +1532,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1502,6 +1559,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1528,6 +1586,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1554,6 +1613,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1580,6 +1640,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1606,6 +1667,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1632,6 +1694,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1658,6 +1721,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1684,6 +1748,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1710,6 +1775,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
