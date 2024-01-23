@@ -43,7 +43,14 @@ public class SymbolExtractorTest
 
         var assembly = Assembly.GetAssembly(type);
         Assert.NotNull(assembly);
-        var root = GetSymbols(assembly, type.FullName);
+
+        var (root, error) = GetSymbols(assembly, type.FullName);
+        if (error is NoPdbException)
+        {
+            throw new SkipException("PDB does not exist");
+        }
+
+        Assert.NotNull(root.Scopes);
         Assert.True(root.Scopes.Count == 1);
         Assert.True(root.Scopes.First().Scopes.Length == 1);
         Assert.True(root.Scopes.First().Scopes.First().Name == type.FullName);
@@ -64,7 +71,14 @@ public class SymbolExtractorTest
 
         var assembly = Assembly.GetAssembly(type);
         Assert.NotNull(assembly);
-        var root = GetSymbols(assembly, type.FullName);
+
+        var (root, error) = GetSymbols(assembly, type.FullName);
+        if (error is NoPdbException)
+        {
+            throw new SkipException("PDB does not exist");
+        }
+
+        Assert.NotNull(root.Scopes);
         Assert.True(root.Scopes.Count == 1);
         Assert.True(root.Scopes.First().Scopes.Length == 1);
         Assert.True(root.Scopes.First().Scopes.First().Name == type.FullName);
@@ -86,7 +100,14 @@ public class SymbolExtractorTest
         foreach (var generatedType in compilerGeneratedTypes)
         {
             Assert.NotNull(generatedType);
-            var root = GetSymbols(assembly, generatedType.FullName);
+
+            var (root, error) = GetSymbols(assembly, generatedType.FullName);
+            if (error is NoPdbException)
+            {
+                throw new SkipException("PDB does not exist");
+            }
+
+            Assert.NotNull(root.Scopes);
             Assert.True(root.Scopes.Count == 1);
             Assert.Null(root.Scopes.First().Scopes);
         }
@@ -162,16 +183,21 @@ public class SymbolExtractorTest
         return settings;
     }
 
-    private Root GetSymbols(Assembly assembly, string className)
+    private (Root Symbols, Exception Error) GetSymbols(Assembly assembly, string className)
     {
         var root = GetRoot();
         var extractor = SymbolExtractor.Create(assembly);
         Assert.NotNull(extractor);
+        if (extractor is not SymbolPdbExtractor)
+        {
+            return (null, new NoPdbException());
+        }
+
         var assemblyScope = extractor.GetAssemblySymbol();
         var classSymbol = extractor.GetClassSymbols(className);
         assemblyScope.Scopes = classSymbol.HasValue ? new[] { classSymbol.Value } : null;
         root.Scopes = new[] { assemblyScope };
-        return root;
+        return (root, null);
     }
 
     private Root GetRoot()
@@ -185,5 +211,9 @@ public class SymbolExtractorTest
         };
 
         return root;
+    }
+
+    private class NoPdbException : Exception
+    {
     }
 }
