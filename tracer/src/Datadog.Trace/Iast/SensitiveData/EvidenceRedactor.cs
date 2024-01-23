@@ -19,7 +19,7 @@ namespace Datadog.Trace.Iast.SensitiveData;
 
 internal class EvidenceRedactor
 {
-    private static bool _timeoutExceptionErrorShown = true;
+    private static bool _showTimeoutExceptionError = true;
     private readonly Regex _keysRegex;
     private readonly Regex _valuesRegex;
     private readonly IDatadogLogger? _logger;
