@@ -11,12 +11,12 @@ namespace Datadog.Trace.Iast.Dataflow;
 internal sealed class AspectMethodInsertAfterAttribute : AspectAttribute
 {
     public AspectMethodInsertAfterAttribute(string targetMethod)
-        : base(targetMethod)
+        : base(targetMethod, string.Empty, new int[0], new bool[0], new AspectFilter[0], AspectType.Default)
     {
     }
 
     public AspectMethodInsertAfterAttribute(string targetMethod, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
-        : base(targetMethod, aspectType, vulnerabilityTypes)
+        : base(targetMethod, string.Empty, new int[0], new bool[0], new AspectFilter[0], aspectType, vulnerabilityTypes)
     {
     }
 }
