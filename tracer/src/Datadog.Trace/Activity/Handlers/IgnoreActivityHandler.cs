@@ -16,22 +16,23 @@ namespace Datadog.Trace.Activity.Handlers
     internal class IgnoreActivityHandler : IActivityHandler
     {
         private static readonly string[] SourcesNames =
-        {
+        [
             "Couchbase.DotnetSdk.RequestTracer",
+            "Couchbase.DotnetSdk.OpenTelemetryRequestTracer",
             "HttpHandlerDiagnosticListener",
             "Microsoft.AspNetCore",
             "Microsoft.EntityFrameworkCore",
             "MySqlConnector",
             "Npgsql",
             "System.Net.Http.Desktop",
-            "SqlClientDiagnosticListener",
-        };
+            "SqlClientDiagnosticListener"
+        ];
 
         private static readonly string[] IgnoreOperationNamesStartingWith =
-        {
+        [
             "System.Net.Http.",
-            "Microsoft.AspNetCore.",
-        };
+            "Microsoft.AspNetCore."
+        ];
 
         public static bool ShouldIgnoreByOperationName<T>(T activity)
             where T : IActivity
