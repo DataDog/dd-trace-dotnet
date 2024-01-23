@@ -28,6 +28,7 @@ namespace Datadog.Trace.Debugger.Sink.Models
                 {
                     Status.RECEIVED => $"Received probe {probeId}.",
                     Status.INSTALLED => $"Installed probe {probeId}.",
+                    Status.EMITTING => $"Emitted probe {probeId}.",
                     Status.BLOCKED => $"Blocked probe {probeId}.",
                     Status.ERROR => $"Error installing probe {probeId}.",
                     _ => throw new ArgumentOutOfRangeException(nameof(status), $"Not expected status value: {status}"),
