@@ -24,8 +24,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
     ParameterTypeNames = new[] { "Microsoft.AspNetCore.Http.HttpContext", ClrNames.Exception },
     MethodName = "DisplayException",
     ReturnTypeName = ClrNames.Task,
-    MinimumVersion = "2.0.0.0",
-    MaximumVersion = "2.*.*.*",
+    MinimumVersion = "2.0.0",
+    MaximumVersion = "2.*.*",
     IntegrationName = nameof(IntegrationId.StackTraceLeak),
     InstrumentationCategory = InstrumentationCategory.Iast)]
 
