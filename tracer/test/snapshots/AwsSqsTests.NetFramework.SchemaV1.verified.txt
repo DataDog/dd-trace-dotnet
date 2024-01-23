@@ -38,6 +38,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -61,6 +62,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -78,6 +80,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
@@ -98,6 +101,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
@@ -118,6 +122,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
@@ -138,6 +143,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
@@ -158,6 +164,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
@@ -183,6 +190,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -205,6 +213,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -227,6 +236,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -249,6 +259,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -271,6 +282,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -293,6 +305,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -315,6 +328,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -337,6 +351,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -359,6 +374,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -381,6 +397,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -403,6 +420,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -425,6 +443,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -447,6 +466,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -469,6 +489,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -491,6 +512,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -513,6 +535,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -535,6 +558,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -557,6 +581,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -579,6 +604,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -601,6 +627,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -623,6 +650,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -645,6 +673,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -667,6 +696,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -689,6 +719,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -711,6 +742,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -733,6 +765,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -775,6 +808,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -798,6 +832,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -815,6 +850,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
@@ -835,6 +871,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
@@ -855,6 +892,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
@@ -875,6 +913,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
@@ -895,6 +934,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
@@ -920,6 +960,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -942,6 +983,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -964,6 +1006,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -986,6 +1029,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1008,6 +1052,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1030,6 +1075,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1052,6 +1098,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1074,6 +1121,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1096,6 +1144,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1118,6 +1167,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1140,6 +1190,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1162,6 +1213,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1184,6 +1236,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1206,6 +1259,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1228,6 +1282,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1250,6 +1305,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1272,6 +1328,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1294,6 +1351,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1316,6 +1374,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1338,6 +1397,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1360,6 +1420,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1382,6 +1443,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1404,6 +1466,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1426,6 +1489,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1448,6 +1512,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   },
@@ -1470,6 +1535,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       span.kind: client
     }
   }

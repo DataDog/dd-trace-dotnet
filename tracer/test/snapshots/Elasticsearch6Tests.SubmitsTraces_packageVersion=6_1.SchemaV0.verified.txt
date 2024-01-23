@@ -12,6 +12,7 @@
       elasticsearch.method: HEAD,
       elasticsearch.url: http://localhost:00000/_alias/test_index_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -37,6 +38,7 @@
       elasticsearch.method: HEAD,
       elasticsearch.url: http://localhost:00000/_alias/test_index_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -62,6 +64,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/test_index/_bulk,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -87,6 +90,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/test_index/_bulk,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -112,6 +116,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_aliases,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -137,6 +142,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_aliases,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -162,6 +168,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/aliases,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -187,6 +194,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/aliases,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -212,6 +220,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/allocation,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -237,6 +246,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/allocation,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -262,6 +272,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/count,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -287,6 +298,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/count,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -312,6 +324,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/fielddata,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -337,6 +350,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/fielddata,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -362,6 +376,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/health,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -387,6 +402,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/health,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -412,6 +428,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -437,6 +454,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -462,6 +480,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/indices,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -487,6 +506,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/indices,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -512,6 +532,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/master,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -537,6 +558,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/master,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -562,6 +584,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/nodeattrs,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -587,6 +610,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/nodeattrs,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -612,6 +636,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/nodes,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -637,6 +662,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/nodes,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -662,6 +688,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/pending_tasks,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -687,6 +714,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/pending_tasks,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -712,6 +740,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/plugins,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -737,6 +766,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/plugins,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -762,6 +792,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/recovery,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -787,6 +818,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/recovery,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -812,6 +844,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/repositories,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -837,6 +870,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/repositories,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -862,6 +896,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/segments,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -887,6 +922,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/segments,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -912,6 +948,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/shards,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -937,6 +974,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/shards,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -962,6 +1000,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/tasks,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -987,6 +1026,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/tasks,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1012,6 +1052,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/templates,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1037,6 +1078,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/templates,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1062,6 +1104,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/thread_pool,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1087,6 +1130,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cat/thread_pool,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1112,6 +1156,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_xpack/security/user/test_user_1/_password,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1137,6 +1182,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_xpack/security/user/test_user_1/_password,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1162,6 +1208,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/test_index_1/_close,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1187,6 +1234,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/test_index_1/_close,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1212,6 +1260,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/_close,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1237,6 +1286,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/_close,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1262,6 +1312,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_cluster/allocation/explain,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1287,6 +1338,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_cluster/allocation/explain,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1312,6 +1364,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cluster/settings,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1337,6 +1390,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cluster/settings,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1362,6 +1416,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cluster/health,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1387,6 +1442,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cluster/health,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1412,6 +1468,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cluster/pending_tasks,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1437,6 +1494,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cluster/pending_tasks,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1462,6 +1520,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_cluster/settings,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1487,6 +1546,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_cluster/settings,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1512,6 +1572,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_cluster/reroute,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1537,6 +1598,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_cluster/reroute,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1562,6 +1624,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cluster/state,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1587,6 +1650,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cluster/state,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1612,6 +1676,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cluster/stats,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1637,6 +1702,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_cluster/stats,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1662,6 +1728,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/elastic-net-example/post/_count,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1687,6 +1754,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/elastic-net-example/post/_count,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1712,6 +1780,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/test_index/post/2/_create,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1737,6 +1806,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/elastic-net-example/post/3/_create,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1762,6 +1832,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/test_index/post/2/_create,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1787,6 +1858,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/elastic-net-example/post/3/_create,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1812,6 +1884,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/test_index_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1837,6 +1910,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/test_index_4,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1862,6 +1936,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/test_index_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1887,6 +1962,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/test_index_4,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1912,6 +1988,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/test_index_1/_alias/test_index_3,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1937,6 +2014,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/test_index_1/_alias/test_index_2,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1962,6 +2040,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/test_index_1/_alias/test_index_3,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -1987,6 +2066,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/test_index_1/_alias/test_index_2,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2012,6 +2092,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/test_index/_delete_by_query?size=0,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2037,6 +2118,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/test_index/_delete_by_query?size=0,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2062,6 +2144,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/test_index_4,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2087,6 +2170,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/test_index_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2112,6 +2196,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/test_index_4,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2137,6 +2222,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/test_index_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2162,6 +2248,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/_template/test_template_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2187,6 +2274,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/_template/test_template_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2212,6 +2300,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2237,6 +2326,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2262,6 +2352,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/_xpack/security/role/test_role_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2287,6 +2378,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/_xpack/security/role/test_role_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2312,6 +2404,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/_xpack/security/role_mapping/test_role_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2337,6 +2430,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/_xpack/security/role_mapping/test_role_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2362,6 +2456,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/_xpack/security/user/test_user_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2387,6 +2482,7 @@
       elasticsearch.method: DELETE,
       elasticsearch.url: http://localhost:00000/_xpack/security/user/test_user_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2412,6 +2508,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_xpack/security/user/test_user_1/_disable,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2437,6 +2534,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_xpack/security/user/test_user_1/_disable,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2462,6 +2560,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/_flush,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2487,6 +2586,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/_flush,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2512,6 +2612,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/_forecast,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2537,6 +2638,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/_forecast,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2562,6 +2664,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/test_index_1/_alias,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2587,6 +2690,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_alias,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2612,6 +2716,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/test_index_1/_alias,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2637,6 +2742,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_alias,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2662,6 +2768,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/results/records,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2687,6 +2794,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/results/records,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2712,6 +2820,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/results/buckets,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2737,6 +2846,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/results/buckets,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2762,6 +2872,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/results/categories/,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2787,6 +2898,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/results/categories/,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2812,6 +2924,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/results/influencers,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2837,6 +2950,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/results/influencers,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2862,6 +2976,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2887,6 +3002,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2912,6 +3028,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/_stats,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2937,6 +3054,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/_stats,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2962,6 +3080,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/model_snapshots,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -2987,6 +3106,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/model_snapshots,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3012,6 +3132,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/results/overall_buckets,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3037,6 +3158,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/results/overall_buckets,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3062,6 +3184,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_xpack/security/role/test_role_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3087,6 +3210,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_xpack/security/role/test_role_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3112,6 +3236,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_xpack/security/role_mapping/test_role_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3137,6 +3262,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_xpack/security/role_mapping/test_role_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3162,6 +3288,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_xpack/security/user/test_user_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3187,6 +3314,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_xpack/security/user/test_user_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3212,6 +3340,7 @@
       elasticsearch.method: HEAD,
       elasticsearch.url: http://localhost:00000/test_index_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3237,6 +3366,7 @@
       elasticsearch.method: HEAD,
       elasticsearch.url: http://localhost:00000/test_index_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3262,6 +3392,7 @@
       elasticsearch.method: HEAD,
       elasticsearch.url: http://localhost:00000/_template/test_template_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3287,6 +3418,7 @@
       elasticsearch.method: HEAD,
       elasticsearch.url: http://localhost:00000/_template/test_template_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3312,6 +3444,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_shard_stores,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3337,6 +3470,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/_shard_stores,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3362,6 +3496,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/test_index_1/_stats,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3387,6 +3522,7 @@
       elasticsearch.method: GET,
       elasticsearch.url: http://localhost:00000/test_index_1/_stats,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3412,6 +3548,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/test_index_1/_open,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3437,6 +3574,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/test_index_1/_open,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3462,6 +3600,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/_open,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3487,6 +3626,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job/_open,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3512,6 +3652,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/test_index_1/_alias/test_index_3,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3537,6 +3678,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/test_index_1/_alias/test_index_3,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3562,6 +3704,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_template/test_template_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3587,6 +3730,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_template/test_template_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3612,6 +3756,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3637,6 +3782,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/test_job,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3662,6 +3808,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_xpack/security/role/test_role_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3687,6 +3834,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_xpack/security/role/test_role_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3712,6 +3860,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_xpack/security/role_mapping/test_role_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3737,6 +3886,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_xpack/security/role_mapping/test_role_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3762,6 +3912,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_xpack/security/user/test_user_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3787,6 +3938,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/_xpack/security/user/test_user_1,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3812,6 +3964,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/elastic-net-example/post/_search?typed_keys=true,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3837,6 +3990,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/elastic-net-example/post/_search?typed_keys=true,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3862,6 +4016,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/test_index_1/_split/test_index_4,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3887,6 +4042,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/test_index_1/_split/test_index_4,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3912,6 +4068,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/test_index_1/_settings,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3937,6 +4094,7 @@
       elasticsearch.method: PUT,
       elasticsearch.url: http://localhost:00000/test_index_1/_settings,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3962,6 +4120,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/_validate,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
@@ -3987,6 +4146,7 @@
       elasticsearch.method: POST,
       elasticsearch.url: http://localhost:00000/_xpack/ml/anomaly_detectors/_validate,
       env: integration_tests,
+      language: dotnet,
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client
