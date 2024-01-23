@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -39,6 +39,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -68,6 +69,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
@@ -91,6 +93,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -114,6 +117,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -137,6 +141,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -160,6 +165,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -183,6 +189,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client
@@ -212,6 +219,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -241,6 +249,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -270,6 +279,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -299,6 +309,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
@@ -328,6 +339,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
@@ -357,6 +369,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -386,6 +399,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -415,6 +429,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -444,6 +459,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -473,6 +489,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
@@ -502,6 +519,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
@@ -531,6 +549,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -560,6 +579,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -589,6 +609,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -618,6 +639,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -647,6 +669,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -676,6 +699,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -705,6 +729,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -734,6 +759,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
@@ -763,6 +789,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
@@ -792,6 +819,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
@@ -821,6 +849,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
@@ -850,6 +879,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
@@ -879,6 +909,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
@@ -908,6 +939,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
@@ -937,6 +969,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
