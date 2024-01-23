@@ -103,6 +103,25 @@ public class AspNetCore5IastTestsSpanTelemetryIastEnabled : AspNetCore5IastTests
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
+
+    [Fact]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestStackTraceLeak()
+    {
+        var filename = "Iast.StackTraceLeak.AspNetCore5.NotVulnerable";
+        var url = "/Iast/StackTraceLeak";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 public class AspNetCore5IastTestsOneVulnerabilityPerRequestIastEnabled : AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled
