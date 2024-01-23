@@ -12,6 +12,7 @@ using System.Net.Http;
 using System.DirectoryServices;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -574,6 +575,24 @@ namespace Samples.Security.AspNetCore5.Controllers
             Response.Headers.Add(returnedName, returnedValue);
             Response.Headers.Add("extraName", "extraValue");
             return Content($"returned header {returnedName},{returnedValue}");
+        }
+
+        private readonly string xmlContent = @"<?xml version=""1.0"" encoding=""ISO-8859-1""?>
+                <data><user><name>jaime</name><password>1234</password><account>administrative_account</account></user>
+                <user><name>tom</name><password>12345</password><account>toms_acccount</account></user>
+                <user><name>guest</name><password>anonymous1234</password><account>guest_account</account></user>
+                </data>";
+
+        [Route("XpathInjection")]
+        public ActionResult XpathInjection(string user, string password)
+        {
+            var findUserXPath = "/data/user[name/text()='" + user + "' and password/text()='" + password + "}']";
+            var doc = new XmlDocument();
+            doc.LoadXml(xmlContent);
+            var result = doc.SelectSingleNode(findUserXPath);
+            return result is null ?
+                Content($"Invalid user/password") :
+                Content($"User " + result.ChildNodes[0].InnerText + " successfully logged.");
         }
 
         static string CopyStringAvoidTainting(string original)
