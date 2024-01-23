@@ -96,7 +96,7 @@ internal class EvidenceRedactor
         if (!_timeoutExceptionErrorShown)
         {
             _logger?.Warning(err, "Regex timed out when trying to match value against pattern {Pattern}.", err.Pattern);
-            _timeoutExceptionErrorShown = true;
+            _showTimeoutExceptionError = false;
         }
         else
         {
