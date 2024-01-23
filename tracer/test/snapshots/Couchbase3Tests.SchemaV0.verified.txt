@@ -12,6 +12,7 @@
       couchbase.operation.key: my-document-key,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -38,6 +39,7 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       error.msg: KeyNotFound,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -62,6 +64,7 @@
       couchbase.operation.key: my-document-key,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -86,6 +89,7 @@
       couchbase.operation.key: ,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -110,6 +114,7 @@
       couchbase.operation.key: ,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -134,6 +139,7 @@
       couchbase.operation.key: obfuscated,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -158,6 +164,7 @@
       couchbase.operation.key: obfuscated,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -182,6 +189,7 @@
       couchbase.operation.key: obfuscated,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -206,6 +214,7 @@
       couchbase.operation.key: obfuscated,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -230,6 +239,7 @@
       couchbase.operation.key: default,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -254,6 +264,7 @@
       couchbase.operation.key: default,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -279,6 +290,7 @@
       couchbase.operation.key: my-document-key,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
