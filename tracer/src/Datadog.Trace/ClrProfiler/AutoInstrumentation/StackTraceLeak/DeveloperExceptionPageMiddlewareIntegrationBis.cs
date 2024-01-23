@@ -44,27 +44,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class DeveloperExceptionPageMiddlewareIntegrationBis
 {
+    internal interface IErrorContext
+    {
+        public Exception Exception { get; }
+    }
+
     /// <summary>
     /// OnMethodBegin callback
     /// </summary>
     /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
     /// <param name="errorContext">The context of the error.</param>
     /// <typeparam name="TTarget">Type of the target</typeparam>
+    /// <typeparam name="TContext">ErrorContext type</typeparam>
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext errorContext)
-        where TContext : ErrorContextStruct
+        where TContext : IErrorContext
     {
         // In the current implementation ErrorContext is always non-null, as is Exception
         // so this should be safe
         var exception = errorContext.Exception;
         return StackTraceLeakIntegrationCommon.OnExceptionLeak(IntegrationId.StackTraceLeak, exception);
-    }
-
-    [DuckCopy]
-    internal struct ErrorContextStruct
-    {
-        [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
-        public Exception Exception;
     }
 }
 
