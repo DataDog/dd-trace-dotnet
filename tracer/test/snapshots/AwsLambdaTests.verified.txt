@@ -1100,6 +1100,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerNoParamSync,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_1,
       span.kind: client
@@ -1121,6 +1122,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerOneParamSync,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_2,
       span.kind: client
@@ -1142,6 +1144,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerTwoParamsSync,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_3,
       span.kind: client
@@ -1163,6 +1166,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerNoParamAsync,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_4,
       span.kind: client
@@ -1184,6 +1188,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerOneParamAsync,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_5,
       span.kind: client
@@ -1205,6 +1210,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerTwoParamsAsync,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_6,
       span.kind: client
@@ -1226,6 +1232,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerNoParamVoid,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_7,
       span.kind: client
@@ -1247,6 +1254,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerOneParamVoid,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_8,
       span.kind: client
@@ -1268,6 +1276,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerTwoParamsVoid,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_9,
       span.kind: client
@@ -1289,6 +1298,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerNoParamSyncWithContext,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_10,
       span.kind: client
@@ -1310,6 +1320,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerOneParamSyncWithContext,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_11,
       span.kind: client
@@ -1331,6 +1342,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerTwoParamsSyncWithContext,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_12,
       span.kind: client
@@ -1352,6 +1364,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/BaseHandlerNoParamSync,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_13,
       span.kind: client
@@ -1373,6 +1386,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/BaseHandlerTwoParamsSync,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_14,
       span.kind: client
@@ -1394,6 +1408,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/BaseHandlerOneParamSyncWithContext,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_15,
       span.kind: client
@@ -1415,6 +1430,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/BaseHandlerOneParamAsync,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_16,
       span.kind: client
@@ -1436,6 +1452,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/BaseHandlerTwoParamsVoid,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_17,
       span.kind: client
@@ -1457,6 +1474,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerStructParam,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_18,
       span.kind: client
@@ -1478,6 +1496,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerNestedClassParam,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_19,
       span.kind: client
@@ -1499,6 +1518,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerNestedStructParam,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_20,
       span.kind: client
@@ -1520,6 +1540,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerGenericDictionaryParam,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_21,
       span.kind: client
@@ -1541,6 +1562,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerNestedGenericDictionaryParam,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_22,
       span.kind: client
@@ -1562,6 +1584,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerDoublyNestedGenericDictionaryParam,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_23,
       span.kind: client
@@ -1586,6 +1609,7 @@
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandler,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_24,
       span.kind: client
@@ -1610,6 +1634,7 @@
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandlerAsync,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_25,
       span.kind: client
@@ -1634,6 +1659,7 @@
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandlerAsyncTask,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_26,
       span.kind: client
@@ -1658,6 +1684,7 @@
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandler,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_27,
       span.kind: client
@@ -1682,6 +1709,7 @@
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandlerAsync,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_28,
       span.kind: client
@@ -1706,6 +1734,7 @@
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandlerAsyncTask,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_29,
       span.kind: client
@@ -1727,6 +1756,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/GenericBaseType1,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_30,
       span.kind: client
@@ -1748,6 +1778,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/GenericBaseType2,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_31,
       span.kind: client
@@ -1769,6 +1800,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/VirtualGenericBaseType3,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_32,
       span.kind: client
@@ -1790,6 +1822,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/VirtualGenericBaseType4,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_33,
       span.kind: client
@@ -1811,6 +1844,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/AbstractGenericBaseType5,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_34,
       span.kind: client
@@ -1832,6 +1866,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/AbstractGenericBaseType6,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_35,
       span.kind: client
@@ -1853,6 +1888,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/ComplexNestedGeneric,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_36,
       span.kind: client
@@ -1874,6 +1910,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/ComplexNestedGeneric,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_37,
       span.kind: client
@@ -1895,6 +1932,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/ToplevelStatements,
+      language: dotnet,
       out.host: serverless-dummy-api,
       runtime-id: Guid_38,
       span.kind: client
