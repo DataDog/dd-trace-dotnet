@@ -67,29 +67,43 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 {
+                    const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
                     agent.EventPlatformProxyPayloadReceived += (sender, e) =>
                     {
-                        if (e.Value.PathAndQuery != "/evp_proxy/v2/api/v2/citestcycle")
+                        if (e.Value.PathAndQuery == "/evp_proxy/v2/api/v2/libraries/tests/services/setting")
                         {
+                            e.Value.Response = new MockTracerResponse("{\"data\":{\"id\":\"b5a855bffe6c0b2ae5d150fb6ad674363464c816\",\"type\":\"ci_app_tracers_test_service_settings\",\"attributes\":{\"code_coverage\":false,\"efd_enabled\":false,\"flaky_test_retries_enabled\":false,\"itr_enabled\":true,\"require_git\":false,\"tests_skipping\":true}}} ", 200);
                             return;
                         }
 
-                        var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
-                        if (payload.Events?.Length > 0)
+                        if (e.Value.PathAndQuery == "/evp_proxy/v2/api/v2/ci/tests/skippable")
                         {
-                            foreach (var @event in payload.Events)
+                            e.Value.Response = new MockTracerResponse($"{{\"data\":[],\"meta\":{{\"correlation_id\":\"{correlationId}\"}}}}", 200);
+                            return;
+                        }
+
+                        if (e.Value.PathAndQuery == "/evp_proxy/v2/api/v2/citestcycle")
+                        {
+                            var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
+                            if (payload.Events?.Length > 0)
                             {
-                                if (@event.Type == SpanTypes.Test)
+                                foreach (var @event in payload.Events)
                                 {
-                                    tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(@event.Content.ToString()));
-                                }
-                                else if (@event.Type == SpanTypes.TestSuite)
-                                {
-                                    testSuites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(@event.Content.ToString()));
-                                }
-                                else if (@event.Type == SpanTypes.TestModule)
-                                {
-                                    testModules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(@event.Content.ToString()));
+                                    if (@event.Content.ToString() is { } eventContent)
+                                    {
+                                        if (@event.Type == SpanTypes.Test)
+                                        {
+                                            tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent));
+                                        }
+                                        else if (@event.Type == SpanTypes.TestSuite)
+                                        {
+                                            testSuites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(eventContent));
+                                        }
+                                        else if (@event.Type == SpanTypes.TestModule)
+                                        {
+                                            testModules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(eventContent));
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -136,6 +150,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                             // check the name
                             Assert.Equal("xunit.test", targetTest.Name);
+
+                            // check correlationId
+                            Assert.Equal(correlationId, targetTest.CorrelationId);
 
                             // check the CIEnvironmentValues decoration.
                             CheckCIEnvironmentValuesDecoration(targetTest);
