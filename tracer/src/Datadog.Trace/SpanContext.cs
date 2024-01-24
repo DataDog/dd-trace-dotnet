@@ -438,37 +438,10 @@ namespace Datadog.Trace
         /// <param name="edgeTags">The edge tags for this checkpoint. NOTE: These MUST be sorted alphabetically</param>
         /// <param name="payloadSizeBytes">Payload size in bytes</param>
         /// <param name="timeInQueueMs">Edge start time extracted from the message metadata. Used only if this is start of the pathway</param>
-        internal void SetCheckpoint(DataStreamsManager manager, CheckpointKind checkpointKind, string[] edgeTags, long payloadSizeBytes, long timeInQueueMs)
+        /// <param name="parent">TODO</param>
+        internal void SetCheckpoint(DataStreamsManager manager, CheckpointKind checkpointKind, string[] edgeTags, long payloadSizeBytes, long timeInQueueMs, PathwayContext? parent)
         {
-            PathwayContext = manager.SetCheckpoint(PathwayContext, checkpointKind, edgeTags, payloadSizeBytes, timeInQueueMs);
-        }
-
-        /// <summary>
-        /// Merges two DataStreams <see cref="PathwayContext"/>
-        /// Should be called when a pathway context is extracted from an incoming span
-        /// Used to merge contexts in a "fan in" scenario.
-        /// </summary>
-        internal void MergePathwayContext(PathwayContext? pathwayContext)
-        {
-            if (pathwayContext is null)
-            {
-                return;
-            }
-
-            if (PathwayContext is null)
-            {
-                PathwayContext = pathwayContext;
-                return;
-            }
-
-            // This is purposely not thread safe
-            // The code randomly chooses between the two PathwayContexts.
-            // If there is a race, then that's okay
-            // Randomly select between keeping the current context (0) or replacing (1)
-            if (ThreadSafeRandom.Shared.Next(2) == 1)
-            {
-                PathwayContext = pathwayContext;
-            }
+            PathwayContext = manager.SetCheckpoint(parent, checkpointKind, edgeTags, payloadSizeBytes, timeInQueueMs);
         }
 
         internal static class Keys
