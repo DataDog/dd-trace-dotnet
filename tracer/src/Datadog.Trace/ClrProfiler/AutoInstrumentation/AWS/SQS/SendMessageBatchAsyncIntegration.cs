@@ -11,7 +11,6 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
@@ -64,15 +63,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             if (scope?.Span?.Context != null && requestProxy.Entries.Count > 0 && !string.IsNullOrEmpty(queueName))
             {
                 var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-                if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
+                var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
+                foreach (var e in requestProxy.Entries)
                 {
-                    var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
-                    foreach (var e in requestProxy.Entries)
-                    {
-                        var entry = e.DuckCast<IContainsMessageAttributes>();
-                        scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-                        ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context, dataStreamsManager);
-                    }
+                    var entry = e.DuckCast<IContainsMessageAttributes>();
+                    // this has no effect is DSM is disabled
+                    scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                    // this needs to be done for context propagation even when DSM is disabled
+                    // (when DSM is enabled, it injects the pathway context on top of the trace context)
+                    ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context, dataStreamsManager);
                 }
             }
 

@@ -62,15 +62,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             if (scope?.Span?.Context != null && requestProxy.Entries.Count > 0 && !string.IsNullOrEmpty(queueName))
             {
                 var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-                if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
+                var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
+                foreach (var e in requestProxy.Entries)
                 {
-                    var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
-                    foreach (var e in requestProxy.Entries)
-                    {
-                        var entry = e.DuckCast<IContainsMessageAttributes>();
-                        scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-                        ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context, dataStreamsManager);
-                    }
+                    var entry = e.DuckCast<IContainsMessageAttributes>();
+                    scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                    ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context, dataStreamsManager);
                 }
             }
 
