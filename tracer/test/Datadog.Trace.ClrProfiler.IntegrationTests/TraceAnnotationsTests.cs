@@ -6,12 +6,9 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -25,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class TraceAnnotationsAutomaticOnlyTests : TraceAnnotationsTests
     {
         public TraceAnnotationsAutomaticOnlyTests(ITestOutputHelper output)
-            : base("TraceAnnotations", twoAssembliesLoaded: false, enableTelemetry: true, ignoreGitMetadata: false, output)
+            : base("TraceAnnotations", twoAssembliesLoaded: false, enableTelemetry: true, output)
         {
         }
     }
@@ -33,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class TraceAnnotationsVersionMismatchAfterFeatureTests : TraceAnnotationsTests
     {
         public TraceAnnotationsVersionMismatchAfterFeatureTests(ITestOutputHelper output)
-            : base("TraceAnnotations.VersionMismatch.AfterFeature", twoAssembliesLoaded: true, enableTelemetry: false, ignoreGitMetadata: false, output)
+            : base("TraceAnnotations.VersionMismatch.AfterFeature", twoAssembliesLoaded: true, enableTelemetry: false, output)
         {
         }
     }
@@ -41,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class TraceAnnotationsVersionMismatchBeforeFeatureTests : TraceAnnotationsTests
     {
         public TraceAnnotationsVersionMismatchBeforeFeatureTests(ITestOutputHelper output)
-            : base("TraceAnnotations.VersionMismatch.BeforeFeature", twoAssembliesLoaded: true, enableTelemetry: false, ignoreGitMetadata: false, output)
+            : base("TraceAnnotations.VersionMismatch.BeforeFeature", twoAssembliesLoaded: true, enableTelemetry: false, output)
         {
 #if NET8_0_OR_GREATER
             // The .NET 8 runtime is more aggressive in optimising structs
@@ -59,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class TraceAnnotationsVersionMismatchNewerNuGetTests : TraceAnnotationsTests
     {
         public TraceAnnotationsVersionMismatchNewerNuGetTests(ITestOutputHelper output)
-            : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: false, enableTelemetry: false, ignoreGitMetadata: true, output)
+            : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: false, enableTelemetry: false, output)
         {
         }
     }
@@ -71,16 +68,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private readonly bool _twoAssembliesLoaded;
         private readonly bool _enableTelemetry;
-        private readonly bool _ignoreGitMetadata;
 
-        public TraceAnnotationsTests(string sampleAppName, bool twoAssembliesLoaded, bool enableTelemetry, bool ignoreGitMetadata, ITestOutputHelper output)
+        public TraceAnnotationsTests(string sampleAppName, bool twoAssembliesLoaded, bool enableTelemetry, ITestOutputHelper output)
             : base(sampleAppName, output)
         {
             SetServiceVersion("1.0.0");
 
             _twoAssembliesLoaded = twoAssembliesLoaded;
             _enableTelemetry = enableTelemetry;
-            _ignoreGitMetadata = ignoreGitMetadata;
         }
 
         [Trait("Category", "EndToEnd")]
@@ -161,22 +156,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // Run snapshot verification
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                if (_ignoreGitMetadata)
-                {
-                    settings.ModifySerialization(
-                        s =>
-                        {
-                            // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` in the mismatch version tests
-                            s.MemberConverter<MockSpan, Dictionary<string, string>>(
-                                x => x.Tags,
-                                (_, tags) =>
-                                    tags
-                                       .Where(kvp => kvp.Key != Trace.Tags.GitRepositoryUrl && kvp.Key != Trace.Tags.GitCommitSha)
-                                       .Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
-                                       .ToDictionary(x => x.Key, x => x.Value));
-                        });
-                }
-
                 await Verifier.Verify(orderedSpans, settings)
                               .UseMethodName("_");
             }
