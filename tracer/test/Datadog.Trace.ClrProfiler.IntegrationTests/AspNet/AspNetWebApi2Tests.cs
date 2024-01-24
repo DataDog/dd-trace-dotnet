@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class AspNetWebApi2Tests : TracingIntegrationTest, IClassFixture<IisFixture>
+    public abstract class AspNetWebApi2Tests : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private static readonly Expectations ClassicExpectations = CreateExpectations(classicMode: true);
         private static readonly Expectations IntegratedExpectations = CreateExpectations(classicMode: false);
@@ -123,6 +123,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
         private readonly Expectations _expectations;
+        private readonly bool _classicMode;
 
         public AspNetWebApi2Tests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableRouteTemplateResourceNames, bool enableRouteTemplateExpansion = false, bool virtualApp = false)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
@@ -132,6 +133,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, enableRouteTemplateExpansion.ToString());
 
             _expectations = classicMode ? ClassicExpectations : IntegratedExpectations;
+            _classicMode = classicMode;
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
             if (virtualApp)
@@ -139,12 +141,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.VirtualApplicationPath = "/my-app";
             }
 
-            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetWebApi2Tests)
                       + (virtualApp ? ".VirtualApp" : string.Empty)
                       + (classicMode ? ".Classic" : ".Integrated")
                       + (enableRouteTemplateExpansion ? ".WithExpansion" :
-                        (enableRouteTemplateResourceNames ?  ".WithFF" : ".NoFF"));
+                        (enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF"));
         }
 
         protected virtual string ExpectedServiceName => "sample";
@@ -231,13 +232,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                           .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={statusCode}")
                           .DisableRequireUniquePrefix(); // sharing snapshots between web api and owin
         }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 
     [UsesVerify]
-    public abstract class AspNetWebApi2ModuleOnlyTests : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetWebApi2ModuleOnlyTests : TestHelper, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
+        private readonly bool _classicMode;
 
         public AspNetWebApi2ModuleOnlyTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableRouteTemplateResourceNames, bool virtualApp = false)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
@@ -248,6 +254,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Disable the WebApi2 part, so we can't back propagate any details to the tracing module
             SetEnvironmentVariable(ConfigurationKeys.DisabledIntegrations, nameof(Configuration.IntegrationId.AspNetWebApi2));
 
+            _classicMode = classicMode;
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
             if (virtualApp)
@@ -255,7 +262,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.VirtualApplicationPath = "/my-app";
             }
 
-            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetWebApi2Tests)
                       + "ModuleOnly"
                       + (virtualApp ? ".VirtualApp" : string.Empty);
@@ -300,6 +306,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                           .DisableRequireUniquePrefix()
                           .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={(int)statusCode}");
         }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 }
 #endif

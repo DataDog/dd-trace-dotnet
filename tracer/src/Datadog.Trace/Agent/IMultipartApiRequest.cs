@@ -6,11 +6,12 @@
 #nullable enable
 
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.Transports;
 
 namespace Datadog.Trace.Agent
 {
     internal interface IMultipartApiRequest
     {
-        Task<IApiResponse> PostAsync(params MultipartFormItem[] items);
+        Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None);
     }
 }

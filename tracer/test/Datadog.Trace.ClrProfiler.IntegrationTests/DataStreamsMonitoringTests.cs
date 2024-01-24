@@ -1,4 +1,4 @@
-﻿// <copyright file="DataStreamsMonitoringTests.cs" company="Datadog">
+// <copyright file="DataStreamsMonitoringTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -69,7 +69,7 @@ public class DataStreamsMonitoringTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-        using var processResult = RunSampleAndWaitForExit(agent);
+        using var processResult = await RunSampleAndWaitForExit(agent);
 
         using var assertionScope = new AssertionScope();
         var payload = MockDataStreamsPayload.Normalize(agent.DataStreams);
@@ -122,7 +122,7 @@ public class DataStreamsMonitoringTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-        using var processResult = RunSampleAndWaitForExit(agent, arguments: "--fan-in");
+        using var processResult = await RunSampleAndWaitForExit(agent, arguments: "--fan-in");
 
         using var assertionScope = new AssertionScope();
 
@@ -140,12 +140,12 @@ public class DataStreamsMonitoringTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")]
-    public void WhenDisabled_DoesNotSubmitDataStreams()
+    public async Task WhenDisabled_DoesNotSubmitDataStreams()
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "0");
 
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var processResult = RunSampleAndWaitForExit(agent);
+        using var processResult = await RunSampleAndWaitForExit(agent);
 
         using var assertionScope = new AssertionScope();
         // We don't expect any streams here, so no point waiting for ages
@@ -156,13 +156,13 @@ public class DataStreamsMonitoringTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")]
-    public void WhenNotSupported_DoesNotSubmitDataStreams()
+    public async Task WhenNotSupported_DoesNotSubmitDataStreams()
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
 
         using var agent = EnvironmentHelper.GetMockAgent();
         agent.Configuration = new MockTracerAgent.AgentConfiguration { Endpoints = Array.Empty<string>() };
-        using var processResult = RunSampleAndWaitForExit(agent);
+        using var processResult = await RunSampleAndWaitForExit(agent);
 
         using var assertionScope = new AssertionScope();
         var dataStreams = agent.DataStreams;

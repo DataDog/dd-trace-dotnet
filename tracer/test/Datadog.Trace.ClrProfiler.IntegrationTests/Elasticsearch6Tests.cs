@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var expected = new List<string>();
                 var version = string.IsNullOrEmpty(packageVersion) ? null : new Version(packageVersion);
@@ -194,13 +194,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void IntegrationDisabled()
+        public async Task IntegrationDisabled()
         {
             using var telemetry = this.ConfigureTelemetry();
             string packageVersion = PackageVersions.ElasticSearch6.First()[0] as string;
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.ElasticsearchNet)}_ENABLED", "false");
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(1).Where(s => s.Type == "elasticsearch").ToList();
 
             Assert.Empty(spans);

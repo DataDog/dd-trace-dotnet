@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -23,13 +24,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesV0() => RunTest("v0");
+        public Task SubmitsTracesV0() => RunTest("v0");
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesV1() => RunTest("v1");
+        public Task SubmitsTracesV1() => RunTest("v1");
 
-        private void RunTest(string metadataSchemaVersion)
+        private async Task RunTest(string metadataSchemaVersion)
         {
             const int expectedSpanCount = 17;
             const string dbType = "postgres";
@@ -40,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-{dbType}" : EnvironmentHelper.FullSampleName;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent))
+            using (await RunSampleAndWaitForExit(agent))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 Assert.Equal(expectedSpanCount, spans.Count);

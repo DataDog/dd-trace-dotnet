@@ -4,15 +4,19 @@ using System.ComponentModel;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.DirectoryServices;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using Samples.Security.Data;
 
@@ -512,9 +516,13 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("XContentTypeHeaderMissing")]
         public ActionResult XContentTypeHeaderMissing(string contentType = "text/html", int returnCode = 200, string xContentTypeHeaderValue = "")
         {
-            if (!string.IsNullOrEmpty(xContentTypeHeaderValue))
+            // We don't want a header injection vulnerability here, so we untaint the header values.
+            var xContentTypeHeaderValueUntainted = CopyStringAvoidTainting(xContentTypeHeaderValue);
+            var contentTypeUntainted = CopyStringAvoidTainting(contentType);
+
+            if (!string.IsNullOrEmpty(xContentTypeHeaderValueUntainted))
             {
-                Response.Headers.Add("X-Content-Type-Options", xContentTypeHeaderValue);
+                Response.Headers.Add("X-Content-Type-Options", xContentTypeHeaderValueUntainted);
             }
 
             if (returnCode != (int) HttpStatusCode.OK)
@@ -522,9 +530,9 @@ namespace Samples.Security.AspNetCore5.Controllers
                 return StatusCode(returnCode);
             }
 
-            if (!string.IsNullOrEmpty(contentType))
+            if (!string.IsNullOrEmpty(contentTypeUntainted))
             {
-                return Content("XContentTypeHeaderMissing", contentType);
+                return Content("XContentTypeHeaderMissing", contentTypeUntainted);
             }
             else
             {
@@ -587,14 +595,20 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("StrictTransportSecurity")]
         public ActionResult StrictTransportSecurity(string contentType = "text/html", int returnCode = 200, string hstsHeaderValue = "", string xForwardedProto ="")
         {
-            if (!string.IsNullOrEmpty(hstsHeaderValue))
+            // We don't want a header injection vulnerability here, so we untaint the header values by
+            // using reflection to access the private field "m_string" from the String class.
+            var hstsHeaderValueUntainted = CopyStringAvoidTainting(hstsHeaderValue);
+            var xForwardedProtoUntainted = CopyStringAvoidTainting(xForwardedProto);
+            var contentTypeUntainted = CopyStringAvoidTainting(contentType);
+
+            if (!string.IsNullOrEmpty(hstsHeaderValueUntainted))
             {
-                Response.Headers.Add("Strict-Transport-Security", hstsHeaderValue);
+                Response.Headers.Add("Strict-Transport-Security", hstsHeaderValueUntainted);
             }
 
-            if (!string.IsNullOrEmpty(xForwardedProto))
+            if (!string.IsNullOrEmpty(xForwardedProtoUntainted))
             {
-                Response.Headers.Add("X-Forwarded-Proto", xForwardedProto);
+                Response.Headers.Add("X-Forwarded-Proto", xForwardedProtoUntainted);
             }
 
             if (returnCode != (int)HttpStatusCode.OK)
@@ -602,14 +616,91 @@ namespace Samples.Security.AspNetCore5.Controllers
                 return StatusCode(returnCode);
             }
 
-            if (!string.IsNullOrEmpty(contentType))
+            if (!string.IsNullOrEmpty(contentTypeUntainted))
             {
-                return Content("StrictTransportSecurityMissing", contentType);
+                return Content("StrictTransportSecurityMissing", contentTypeUntainted);
             }
             else
             {
                 return Content("StrictTransportSecurityMissing");
             }
+        }
+
+        [HttpGet("StackTraceLeak")]
+        [Route("StackTraceLeak")]
+        public ActionResult StackTraceLeak()
+        {
+            throw new SystemException("Custom exception message");
+        }
+
+        // We should exclude some headers to prevent false positives:
+        // location: it is already reported in UNVALIDATED_REDIRECT vulnerability detection.
+        // Sec-WebSocket-Location, Sec-WebSocket-Accept, Upgrade, Connection: Usually the framework gets info from request
+        // access-control-allow-origin: when the header is access-control-allow-origin and the source of the tainted range is the request header origin
+        // set-cookie: We should ignore set-cookie header if the source of all the tainted ranges are cookies
+        // We should exclude the injection when the tainted string only has one range which comes from a request header with the same name that the header that we are checking in the response.
+        // Headers could store sensitive information, we should redact whole <header_value> if:
+        // <header_name> matches with this RegExp
+        // <header_value> matches with  this RegExp
+        // We should redact the sensitive information from the evidence when:
+        // Tainted range is considered sensitive value
+
+        [HttpGet("HeaderInjection")]
+        [Route("HeaderInjection")]
+        public ActionResult HeaderInjection(bool UseValueFromOriginHeader = false)
+        {
+            string defaultHeaderName = "defaultName";
+            string defaultHeaderValue = "defaultValue";
+
+            string Combine(string name1, string name2, string defaultValue)
+            {
+                var null1 = string.IsNullOrWhiteSpace(name1);
+                var null2 = string.IsNullOrWhiteSpace(name2);
+
+                if (null1 && null2)
+                {
+                    return defaultValue;
+                }
+                if (!null1 && !null2) 
+                { 
+                    return name1 + name2;
+                }
+                else
+                {
+                    return null1 ? name2 : name1;
+                }
+            }
+
+            var originValue = Request.Headers["origin"];
+            var headerValue = Request.Headers["value"];
+            var cookieValue = Request.Cookies["value"];
+            var headerName = Request.Headers["name"];
+            var cookieName = Request.Cookies["name"];
+            string propagationHeader = Request.Headers["propagation"];
+
+            if (!string.IsNullOrEmpty(propagationHeader))
+            {
+                Response.Headers.Add("propagation", propagationHeader);
+                return Content($"returned propagation header");
+            }
+
+            var returnedName = Combine(headerName, cookieName, defaultHeaderName);
+            var returnedValue = UseValueFromOriginHeader ? originValue.ToString() : Combine(headerValue, cookieValue, defaultHeaderValue);
+
+            if (returnedName != "extraName")
+            {
+                Response.Headers.Add(returnedName, returnedValue);
+            }
+            else
+            {
+                Response.Headers.Add("extraName", new StringValues(new[] { returnedValue, "extraValue" }));
+            }
+            return Content($"returned header {returnedName},{returnedValue}");
+        }
+
+        static string CopyStringAvoidTainting(string original)
+        {
+            return new string(original.AsEnumerable().ToArray());
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 internal class DataStreamsManager
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
-    private static readonly AsyncLocal<CheckpointInfo> PreviousCheckpoint = new();
+    private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
     private readonly NodeHashBase _nodeHashBase;
     private bool _isEnabled;
     private IDataStreamsWriter? _writer;
@@ -149,7 +149,7 @@ internal class DataStreamsManager
     /// Sets a checkpoint using the provided <see cref="PathwayContext"/>
     /// NOTE: <paramref name="edgeTags"/> must be in correct sort order
     /// </summary>
-    /// <param name="parentPathway">The current pathway</param>
+    /// <param name="parentPathway">The pathway from upstream, if known</param>
     /// <param name="checkpointKind">Is this a Produce or Consume operation?</param>
     /// <param name="edgeTags">Edge tags to set for the new pathway. MUST be sorted in alphabetical order</param>
     /// <param name="payloadSizeBytes">Payload size in bytes</param>
@@ -170,15 +170,18 @@ internal class DataStreamsManager
         try
         {
             var previousContext = parentPathway;
-            if (previousContext == null && PreviousCheckpoint.Value != null && PreviousCheckpoint.Value.Kind != checkpointKind)
+            if (previousContext == null && LastConsumePathway.Value != null && checkpointKind == CheckpointKind.Produce)
             {
-                previousContext = PreviousCheckpoint.Value.Context;
+                // We only enter here on produce: when we consume, the only thing that matters is the parent we'd have read from the inbound message, not what happened before.
+                // We want to use the context from the previous consume (but we'll give priority to the parent passed in param if set).
+                previousContext = LastConsumePathway.Value;
             }
 
             var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
             // We should use timeInQueue to offset the edge / pathway start if this is a beginning of a pathway
             // This allows tracking edge / pathway latency for pipelines starting with a queue (no producer instrumented upstream)
             // by relying on the message timestamp.
+            // ReSharper disable once ArrangeRedundantParentheses
             var edgeStartNs = previousContext == null && timeInQueueMs > 0 ? nowNs - (timeInQueueMs * 1_000_000) : nowNs;
             var pathwayStartNs = previousContext?.PathwayStart ?? edgeStartNs;
 
@@ -212,9 +215,9 @@ internal class DataStreamsManager
             }
 
             // overwrite the previous checkpoint, so it can be used in the future if needed
-            if (PreviousCheckpoint.Value == null || (PreviousCheckpoint.Value.Kind != checkpointKind))
+            if (checkpointKind == CheckpointKind.Consume)
             {
-                PreviousCheckpoint.Value = new CheckpointInfo(pathway, checkpointKind);
+                LastConsumePathway.Value = pathway;
             }
 
             return pathway;
@@ -228,18 +231,5 @@ internal class DataStreamsManager
             Volatile.Write(ref _isEnabled, false);
             return null;
         }
-    }
-
-    private class CheckpointInfo
-    {
-        public CheckpointInfo(PathwayContext context, CheckpointKind kind)
-        {
-            Context = context;
-            Kind = kind;
-        }
-
-        public PathwayContext Context { get; }
-
-        public CheckpointKind Kind { get; }
     }
 }

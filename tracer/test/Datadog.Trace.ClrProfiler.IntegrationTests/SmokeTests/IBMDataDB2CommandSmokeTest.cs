@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,9 +19,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         [SkippableFact]
         [Trait("Category", "Smoke")]
-        public void HasSpans()
+        public async Task HasSpans()
         {
-            CheckForSmoke();
+            await CheckForSmoke();
             Assert.True(Spans.Count > 0);
         }
     }

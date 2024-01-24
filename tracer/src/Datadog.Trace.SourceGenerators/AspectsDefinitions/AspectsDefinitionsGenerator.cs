@@ -4,15 +4,16 @@
 // </copyright>
 
 #nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.SourceGenerators.AspectsDefinitions;
+using Datadog.Trace.SourceGenerators.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
@@ -21,181 +22,226 @@ using Microsoft.CodeAnalysis.Text;
 [Generator]
 public class AspectsDefinitionsGenerator : IIncrementalGenerator
 {
+    private const string NullLiteral = "null";
+
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-#if DEBUG__
-        if (!Debugger.IsAttached)
-        {
-            Debugger.Launch();
-        }
-#endif
+        // RegisterSource(context, "AspectAttribute");
+        // RegisterSource(context, "AspectClassAttribute");
+        // RegisterSource(context, "AspectCtorReplaceAttribute");
+        // RegisterSource(context, "AspectMethodInsertAfterAttribute");
+        // RegisterSource(context, "AspectMethodInsertBeforeAttribute");
+        // RegisterSource(context, "AspectMethodReplaceAttribute");
 
-        // Register the attribute source
+        IncrementalValuesProvider<Result<(ClassAspects Aspects, bool IsValid)>> aspectsClassesToGenerate = context.SyntaxProvider
+                                     .ForAttributeWithMetadataName(
+                                          "Datadog.Trace.Iast.Dataflow.AspectClassAttribute",
+                                          predicate: (node, _) => node is ClassDeclarationSyntax,
+                                          transform: GetAspectsToGenerate)
+                                     .Where(static m => m is not null);
 
-        IncrementalValuesProvider<ClassDeclarationSyntax> classDeclarations =
-            context.SyntaxProvider.CreateSyntaxProvider(
-                        static (node, token) => IsAttributedClass(node, token),
-                        static (syntaxContext, token) => GetPotentialClassesForGeneration(syntaxContext, token))
-                   .Where(static m => m is not null)!;
+        context.ReportDiagnostics(
+            aspectsClassesToGenerate
+               .Where(static m => m.Errors.Count > 0)
+               .SelectMany(static (x, _) => x.Errors));
 
-        IncrementalValuesProvider<AttributeData> assemblyAttributes =
-           context.CompilationProvider.SelectMany(static (compilation, _) => compilation.Assembly.GetAttributes());
+        IncrementalValuesProvider<ClassAspects> validClassesToGenerate = aspectsClassesToGenerate
+                                  .Where(static m => m.Value.IsValid)
+                                  .Select(static (x, _) => x.Value.Aspects);
 
-        IncrementalValueProvider<(Compilation Left, ImmutableArray<ClassDeclarationSyntax> Right)> compilationAndClasses =
-           context.CompilationProvider
-                  .Combine(classDeclarations.Collect());
+        IncrementalValueProvider<ImmutableArray<ClassAspects>> allClassesToGenerate = validClassesToGenerate.Collect();
 
-        IncrementalValueProvider<IReadOnlyList<string>> detailsToRender =
-           compilationAndClasses.Select(static (x, ct) => GetDefinitionsToWrite(x.Left, x.Right, ct));
-        context.RegisterSourceOutput(detailsToRender, static (spc, source) => Execute(source, spc));
+        context.RegisterSourceOutput(
+            allClassesToGenerate,
+            static (spc, classToGenerate) => Execute(in classToGenerate, spc));
     }
 
-    private static bool IsAttributedClass(SyntaxNode node, CancellationToken cancellationToken)
-        => node is ClassDeclarationSyntax c && c.AttributeLists.Count > 0;
-
-    private static ClassDeclarationSyntax? GetPotentialClassesForGeneration(GeneratorSyntaxContext context, CancellationToken cancellationToken)
+    private static void Execute(in ImmutableArray<ClassAspects> aspectClasses, SourceProductionContext context)
     {
-        var classDeclarationSyntax = (ClassDeclarationSyntax)context.Node;
+        var sb = new StringBuilder();
+        sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeader);
+        sb.AppendLine("""
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
-        foreach (AttributeListSyntax attributeListSyntax in classDeclarationSyntax.AttributeLists)
+namespace Datadog.Trace.ClrProfiler
+{
+    internal static partial class AspectDefinitions
+    {
+        public static string[] Aspects = new string[] {
+""");
+
+        foreach (var aspectClass in aspectClasses.OrderBy(p => p.AspectClass, StringComparer.Ordinal))
         {
-            foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
+            sb.AppendLine(FormatLine(aspectClass.AspectClass));
+            foreach (var aspect in aspectClass.Aspects)
             {
-                if (attributeSyntax.Name.ToString().Contains("AspectClass") || attributeSyntax.Name.ToString() == Constants.AspectClassAttributeName)
-                {
-                    return classDeclarationSyntax;
-                }
+                sb.AppendLine(FormatLine(aspect));
             }
         }
 
-        return null;
+        sb.AppendLine("""
+        };
     }
+}
+""");
 
-    private static IReadOnlyList<string> GetDefinitionsToWrite(Compilation compilation, ImmutableArray<ClassDeclarationSyntax> classes, CancellationToken ct)
-    {
-        if (classes.IsDefaultOrEmpty)
+        context.AddSource("AspectsDefinitions.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+
+        string FormatLine(string line)
         {
-            // nothing to do yet
-            return Array.Empty<string>();
+            return $"\"{line.Replace("\"", "\\\"")}\",";
         }
-
-        return GetAspectSources(compilation, classes.Distinct(), ct);
     }
 
-    private static void Execute(IReadOnlyList<string> definitions, SourceProductionContext context)
+    private static Result<(ClassAspects Aspects, bool IsValid)> GetAspectsToGenerate(GeneratorAttributeSyntaxContext context, CancellationToken ct)
     {
-        string source = GetSource(definitions);
-        context.AddSource("AspectsDefinitions.g.cs", SourceText.From(source, Encoding.UTF8));
-    }
-
-    private static IReadOnlyList<string> GetAspectSources(Compilation compilation, IEnumerable<ClassDeclarationSyntax> classes, CancellationToken cancellationToken)
-    {
-        INamedTypeSymbol? aspectClassAttribute = compilation.GetTypeByMetadataName(Constants.AspectClassAttributeFullName);
-        if (aspectClassAttribute is null)
+        INamedTypeSymbol? classSymbol = context.TargetSymbol as INamedTypeSymbol;
+        if (classSymbol is null)
         {
             // nothing to do if this type isn't available
-            return Array.Empty<string>();
+            return new Result<(ClassAspects, bool)>((default, false), default);
         }
 
-        var results = new List<string>();
+        ct.ThrowIfCancellationRequested();
+        List<DiagnosticInfo>? diagnostics = null;
 
-        List<(string, INamedTypeSymbol)> classSymbols = new List<(string, INamedTypeSymbol)>();
-
-        foreach (ClassDeclarationSyntax classDec in classes)
+        string aspectClass = string.Empty;
+        foreach (AttributeData attribute in classSymbol.GetAttributes())
         {
-            // stop if we're asked to
-            cancellationToken.ThrowIfCancellationRequested();
-
-            SemanticModel sm = compilation.GetSemanticModel(classDec.SyntaxTree);
-            INamedTypeSymbol? classSymbol = sm.GetDeclaredSymbol(classDec, cancellationToken) as INamedTypeSymbol;
-            Debug.Assert(classSymbol is not null, "Instrumented class is not present");
-            var boundAttributes = classSymbol!.GetAttributes();
-
-            // Process InstrumentMethodAttribute first
-            foreach (AttributeData attributeData in boundAttributes)
+            if (attribute.AttributeClass is null) { continue; }
+            if (attribute.AttributeClass.Name == "AspectClassAttribute")
             {
-                if (!aspectClassAttribute.Equals(attributeData.AttributeClass, SymbolEqualityComparer.Default))
-                {
-                    continue;
-                }
+                var line = GetAspectLine(attribute);
+                aspectClass = line + " " + classSymbol.ToString();
 
-                var instance = CreateInstance(attributeData);
-                if (instance != null)
+                break;
+            }
+        }
+
+        var aspects = new List<string>();
+        foreach (var member in classSymbol.GetMembers())
+        {
+            if (member is not IMethodSymbol method)
+            {
+                continue;
+            }
+
+            foreach (var attribute in member.GetAttributes())
+            {
+                if (attribute.AttributeClass is null) { continue; }
+                if (attribute.AttributeClass.Name.StartsWith("Aspect"))
                 {
-                    string className = GetFullName(classSymbol);
-                    classSymbols.Add((instance.ToString() + " " + className, classSymbol));
+                    var line = GetAspectLine(attribute);
+                    aspects.Add("  " + line + " " + GetFullName(method));
                 }
             }
         }
 
-        foreach (var classSymbol in classSymbols.OrderBy(c => c.Item1, StringComparer.Ordinal))
+        var errors = diagnostics is { Count: > 0 }
+                         ? new EquatableArray<DiagnosticInfo>(diagnostics.ToArray())
+                         : default;
+
+        return new Result<(ClassAspects, bool)>((new ClassAspects(aspectClass, aspects), true), errors);
+    }
+
+    private static string GetAspectLine(AttributeData data)
+    {
+        if (data is null || data.AttributeClass is null) { return string.Empty; }
+
+        var arguments = data.ConstructorArguments.Select(GetArgument).ToArray();
+
+        return data.AttributeClass.Name switch
         {
-            results.Add(classSymbol.Item1);
-            foreach (var member in classSymbol.Item2.GetMembers())
+            // Coments are to have the original attributes overloads present
+            // AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, AspectType defaultAspectType = AspectType.Propagation, VulnerabilityType[] defaultVulnerabilityTypes)
+            "AspectClassAttribute" => arguments.Length switch
             {
-                var memberAttributes = member.GetAttributes();
-                foreach (var memberAttribute in memberAttributes)
-                {
-                    var attribute = CreateInstance(memberAttribute);
-                    if (attribute != null)
-                    {
-                        string functionName = GetFullName(member);
-                        results.Add("  " + attribute.ToString() + " " + functionName);
-                    }
-                }
+                // AspectClassAttribute(string defaultAssembly)
+                1 => $"[AspectClass({arguments[0]},[None],Propagation,[])]",
+                // AspectClassAttribute(string defaultAssembly, AspectType defaultAspectType, params VulnerabilityType[] defaultVulnerabilityTypes)
+                3 => $"[AspectClass({arguments[0]},[None],{arguments[1]},{Check(arguments[2])})]",
+                // AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, AspectType defaultAspectType = AspectType.Propagation, params VulnerabilityType[] defaultVulnerabilityTypes)
+                4 => $"[AspectClass({arguments[0]},{arguments[1]},{arguments[2]},{Check(arguments[3])})]",
+                _ => throw new ArgumentException($"Could not find AspectClassAttribute overload with {arguments.Length} parameters")
+            },
+            // AspectAttribute(string targetMethod, string targetType, int[] paramShift, bool[] boxParam, AspectFilter[] filters, AspectType aspectType = AspectType.Propagation, VulnerabilityType[] vulnerabilityTypes)
+            "AspectCtorReplaceAttribute" => arguments.Length switch
+            {
+                // AspectCtorReplaceAttribute(string targetMethod)
+                1 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[None],Default,[])]",
+                // AspectCtorReplaceAttribute(string targetMethod, params AspectFilter[] filters)
+                2 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1])},Default,[])]",
+                // AspectCtorReplaceAttribute(string targetMethod, AspectType aspectType = AspectType.Default, params VulnerabilityType[] vulnerabilityTypes)
+                3 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[None],{arguments[1]},{Check(arguments[2])})]",
+                // AspectCtorReplaceAttribute(string targetMethod, AspectFilter[] filters, AspectType aspectType = AspectType.Default, params VulnerabilityType[] vulnerabilityTypes)
+                4 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[{arguments[1]}],{arguments[2]},{Check(arguments[3])})]",
+                _ => throw new ArgumentException($"Could not find AspectCtorReplaceAttribute overload with {arguments.Length} parameters")
+            },
+            "AspectMethodReplaceAttribute" => arguments.Length switch
+            {
+                // AspectMethodReplaceAttribute(string targetMethod)
+                1 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],[None],Default,[])]",
+                // AspectMethodReplaceAttribute(string targetMethod, params AspectFilter[] filters)
+                2 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1], "[None]")},Default,[])]",
+                // AspectMethodReplaceAttribute(string targetMethod, string targetType, params AspectFilter[] filters)
+                3 => $"[AspectMethodReplace({arguments[0]},{arguments[1]},[0],[False],{Check(arguments[2], "[None]")},Default,[])]",
+                // AspectMethodReplaceAttribute(string targetMethod, AspectFilter[] filters, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
+                4 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],[{Check(arguments[1], "[0]")}],arguments[2],{Check(arguments[2])})]",
+                _ => throw new ArgumentException($"Could not find AspectMethodReplaceAttribute overload with {arguments.Length} parameters")
+            },
+            "AspectMethodInsertBeforeAttribute" => arguments.Length switch
+            {
+                // AspectMethodInsertBeforeAttribute(string targetMethod, params int[] paramShift)
+                2 => $"[AspectMethodInsertBefore({arguments[0]},\"\",{MakeSameSize(Check(arguments[1]))},[None],Default,[])]",
+                // AspectMethodInsertBeforeAttribute(string targetMethod, int[] paramShift, bool[] boxParam)
+                3 => $"[AspectMethodInsertBefore({arguments[0]},\"\",[{arguments[1]}],[{arguments[2]}],[None],Default,[])]",
+                _ => throw new ArgumentException($"Could not find AspectMethodInsertBeforeAttribute overload with {arguments.Length} parameters")
+            },
+            "AspectMethodInsertAfterAttribute" => arguments.Length switch
+            {
+                // AspectMethodInsertAfterAttribute(string targetMethod)
+                1 => $"[AspectMethodInsertAfter({arguments[0]},\"\",[0],[False],[None],Default,[])]",
+                // AspectMethodInsertAfterAttribute(string targetMethod, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
+                3 => $"[AspectMethodInsertAfter({arguments[0]},\"\",[0],[False],[None],{arguments[1]},{Check(arguments[2])})]",
+                _ => throw new ArgumentException($"Could not find AspectMethodInsertAfterAttribute overload with {arguments.Length} parameters")
+            },
+            _ => throw new Exception()
+        };
+
+        string Check(string val, string ifEmpty = "[]")
+        {
+            return (string.IsNullOrEmpty(val) || val == NullLiteral || val == "[]") ? ifEmpty : val;
+        }
+
+        string MakeSameSize(string val, string ifEmpty = "[0]", string defaultValue = "False")
+        {
+            val = Check(val, ifEmpty);
+            int count = val.Count(c => c == ',');
+            string values = string.Empty;
+            for (int x = 0; x < count + 1; x++)
+            {
+                values += defaultValue;
+                if (x < count) { values += ","; }
             }
-        }
 
-        return results;
-    }
-
-    private static object? CreateInstance(AttributeData? attribute)
-    {
-        if (attribute == null) { return null; }
-        try
-        {
-            var arguments = attribute.ConstructorArguments.Select(a => GetArgument(a)).ToArray();
-            var type = Resolve(attribute);
-            if (type == null) { return null; }
-            var res = Activator.CreateInstance(type, arguments);
-            return res;
-        }
-        catch (Exception err)
-        {
-            Console.WriteLine("Error: " + err.ToString());
-            throw;
+            return $"{val},[{values}]";
         }
     }
 
-    private static object? GetArgument(TypedConstant customAttributeArgument)
-    {
-        if (customAttributeArgument.Kind == TypedConstantKind.Primitive)
-        {
-            return customAttributeArgument.Value;
-        }
-        else if (customAttributeArgument.Kind == TypedConstantKind.Enum)
-        {
-            var type = Resolve(customAttributeArgument);
-            return Enum.ToObject(type, customAttributeArgument.Value);
-        }
-        else if (customAttributeArgument.Kind == TypedConstantKind.Array)
-        {
-            var elementType = Resolve(customAttributeArgument);
-            var values = customAttributeArgument.Values;
-            return values.Select(a => a.Value).ToArray(elementType);
-        }
-
-        return null;
-    }
-
-    private static Type Resolve(AttributeData? attribute)
-    {
-        Type[] aspects = new Type[] { typeof(AspectClassAttribute), typeof(AspectMethodReplaceAttribute), typeof(AspectMethodInsertBeforeAttribute), typeof(AspectMethodInsertAfterAttribute), typeof(AspectCtorReplaceAttribute) };
-        var name = attribute?.AttributeClass?.Name ?? string.Empty;
-        var aspect = aspects.First(a => a.Name == name);
-        return aspect;
-    }
+    private static DiagnosticInfo CreateInfo(SyntaxNode? currentNode)
+    => new(
+        new DiagnosticDescriptor(
+            "AG1",
+            "AspectsGenerator Error",
+            "Error message",
+            category: Datadog.Trace.SourceGenerators.Constants.Usage,
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true),
+        currentNode?.GetLocation());
 
     private static Type? Resolve(TypedConstant? constant)
     {
@@ -221,46 +267,48 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
         return name;
     }
 
-    private static string GetFullName(ISymbol? member)
+    private static string GetFullName(IMethodSymbol method)
     {
-        if (member != null && member is IMethodSymbol methodSymbol)
+        string arguments = string.Join(",", method.Parameters.Select(a => GetFullName(a.Type, false)));
+        return $"{method.Name}({arguments})";
+    }
+
+    private static string GetArgument(TypedConstant customAttributeArgument)
+    {
+        if (customAttributeArgument.Type is null) { return NullLiteral; }
+        else if (customAttributeArgument.Kind == TypedConstantKind.Primitive)
         {
-            string arguments = string.Join(",", methodSymbol.Parameters.Select(a => GetFullName(a.Type, false)));
-            return $"{member.Name}({arguments})";
+            var value = customAttributeArgument.Value?.ToString() ?? NullLiteral;
+            if (customAttributeArgument.Type!.Name == "String") { return $"\"{value}\""; }
+            return value;
+        }
+        else if (customAttributeArgument.Kind == TypedConstantKind.Enum)
+        {
+            if (customAttributeArgument.Type!.Name == "AspectFilter") { return ((AspectFilter)customAttributeArgument.Value!).ToString(); }
+            else if (customAttributeArgument.Type!.Name == "AspectType") { return ((AspectType)customAttributeArgument.Value!).ToString(); }
+            else if (customAttributeArgument.Type!.Name == "VulnerabilityType") { return ((VulnerabilityType)customAttributeArgument.Value!).ToString(); }
+            var type = Resolve(customAttributeArgument);
+            return Enum.ToObject(type, customAttributeArgument.Value).ToString();
+        }
+        else if (customAttributeArgument.Kind == TypedConstantKind.Array)
+        {
+            var elementType = Resolve(customAttributeArgument);
+            var values = customAttributeArgument.Values;
+            return $"[{string.Join(",", values.Select(GetArgument))}]";
         }
 
         return string.Empty;
     }
 
-    private static string GetSource(IReadOnlyList<string> definitions)
+    internal record struct ClassAspects
     {
-        var sb = new StringBuilder();
-        sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeader);
-        sb.AppendLine("""
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+        public readonly string AspectClass;
+        public readonly EquatableArray<string> Aspects;
 
-namespace Datadog.Trace.ClrProfiler
-{
-    internal static partial class AspectDefinitions
-    {
-        public static string[] Aspects = new string[] {
-""");
-
-        foreach (var definition in definitions)
+        public ClassAspects(string aspectClass, IEnumerable<string> aspects)
         {
-            sb.Append("\"");
-            sb.Append(definition.Replace("\"", "\\\""));
-            sb.AppendLine("\",");
+            AspectClass = aspectClass;
+            Aspects = new EquatableArray<string>(aspects.ToArray());
         }
-
-        sb.AppendLine("""
-        };
-    }
-}
-""");
-        return sb.ToString();
     }
 }

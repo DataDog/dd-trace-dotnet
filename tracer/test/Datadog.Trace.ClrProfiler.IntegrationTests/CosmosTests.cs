@@ -17,7 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [UsesVerify]
-    public class CosmosTests : TracingIntegrationTest
+    public class CosmosTests : TracingIntegrationTest, IAsyncLifetime
     {
         private const string ExpectedOperationName = "cosmosdb.query";
 
@@ -25,13 +25,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("CosmosDb", output)
         {
             SetServiceVersion("1.0.0");
-
-            // for some reason, the emulator needs a warm up run when piloted by the x86 client
-            if (!EnvironmentTools.IsTestTarget64BitProcess())
-            {
-                using var agent = EnvironmentHelper.GetMockAgent();
-                using var processResult = RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}");
-            }
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -57,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
                 spans.Count.Should().BeGreaterOrEqualTo(expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");
@@ -72,5 +65,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 telemetry.AssertIntegrationEnabled(IntegrationId.CosmosDb);
             }
         }
+
+        public async Task InitializeAsync()
+        {
+            // For some reason, the emulator needs a warm up run when piloted by the x86 client
+            if (!EnvironmentTools.IsTestTarget64BitProcess())
+            {
+                using var agent = EnvironmentHelper.GetMockAgent();
+                using var processResult = await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}");
+            }
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 }

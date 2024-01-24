@@ -79,7 +79,7 @@ namespace Datadog.Trace.TestHelpers
         {
         }
 
-        public Process StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false)
+        public async Task<Process> StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false)
         {
             // get path to sample app that the profiler will attach to
             string sampleAppPath = EnvironmentHelper.GetTestCommandForSampleApplicationPath(packageVersion, framework);
@@ -94,7 +94,7 @@ namespace Datadog.Trace.TestHelpers
             string appPath = testCli.StartsWith("dotnet") || forceVsTestParam ? $"vstest {sampleAppPath}" : sampleAppPath;
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine("ApplicationPath: " + appPath);
-            var process = ProfilerHelper.StartProcessWithProfiler(
+            var process = await ProfilerHelper.StartProcessWithProfiler(
                 exec,
                 EnvironmentHelper,
                 agent,
@@ -107,9 +107,9 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public ProcessResult RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false)
+        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false)
         {
-            var process = StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam);
+            var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam);
 
             using var helper = new ProcessHelper(process);
 
@@ -136,7 +136,7 @@ namespace Datadog.Trace.TestHelpers
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
-        public Process StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool? enableSecurity = null, string externalRulesFile = null, bool usePublishWithRID = false)
+        public async Task<Process> StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool? enableSecurity = null, string externalRulesFile = null, bool usePublishWithRID = false)
         {
             // get path to sample app that the profiler will attach to
             var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework, usePublishWithRID);
@@ -149,7 +149,7 @@ namespace Datadog.Trace.TestHelpers
             var executable = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
             var args = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
 
-            var process = ProfilerHelper.StartProcessWithProfiler(
+            var process = await ProfilerHelper.StartProcessWithProfiler(
                 executable,
                 EnvironmentHelper,
                 agent,
@@ -165,9 +165,9 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public ProcessResult RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false)
+        public async Task<ProcessResult> RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false)
         {
-            var process = StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID);
+            var process = await StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID);
             using var helper = new ProcessHelper(process);
 
             return WaitForProcessResult(helper);
@@ -215,7 +215,7 @@ namespace Datadog.Trace.TestHelpers
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
-        public (Process Process, string ConfigFile) StartIISExpress(MockTracerAgent agent, int iisPort, IisAppType appType, string subAppPath)
+        public async Task<(Process Process, string ConfigFile)> StartIISExpress(MockTracerAgent agent, int iisPort, IisAppType appType, string subAppPath)
         {
             var iisExpress = EnvironmentHelper.GetIisExpressPath();
 
@@ -277,7 +277,7 @@ namespace Datadog.Trace.TestHelpers
 
             Output.WriteLine($"[webserver] starting {iisExpress} {string.Join(" ", args)}");
 
-            var process = ProfilerHelper.StartProcessWithProfiler(
+            var process = await ProfilerHelper.StartProcessWithProfiler(
                 iisExpress,
                 EnvironmentHelper,
                 agent,
@@ -285,36 +285,34 @@ namespace Datadog.Trace.TestHelpers
                 redirectStandardInput: true,
                 processToProfile: appType == IisAppType.AspNetCoreOutOfProcess ? "dotnet.exe" : iisExpress);
 
-            var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
+            var semaphore = new SemaphoreSlim(0, 1);
 
-            Task.Factory.StartNew(
+            _ = Task.Factory.StartNew(
                 () =>
                 {
-                    string line;
-                    while ((line = process.StandardOutput.ReadLine()) != null)
+                    while (process.StandardOutput.ReadLine() is { } line)
                     {
                         Output.WriteLine($"[webserver][stdout] {line}");
 
                         if (line.Contains("IIS Express is running"))
                         {
-                            wh.Set();
+                            semaphore.Release();
                         }
                     }
                 },
                 TaskCreationOptions.LongRunning);
 
-            Task.Factory.StartNew(
+            _ = Task.Factory.StartNew(
                 () =>
                 {
-                    string line;
-                    while ((line = process.StandardError.ReadLine()) != null)
+                    while (process.StandardError.ReadLine() is { } line)
                     {
                         Output.WriteLine($"[webserver][stderr] {line}");
                     }
                 },
                 TaskCreationOptions.LongRunning);
 
-            wh.WaitOne(5000);
+            await semaphore.WaitAsync(TimeSpan.FromSeconds(10));
 
             // Wait for iis express to finish starting up
             var retries = 5;
@@ -336,7 +334,7 @@ namespace Datadog.Trace.TestHelpers
                     throw new Exception("Gave up waiting for IIS Express.");
                 }
 
-                Thread.Sleep(1500);
+                await Task.Delay(1500);
             }
 
             return (process, newConfig);

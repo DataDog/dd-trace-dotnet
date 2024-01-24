@@ -178,6 +178,17 @@ namespace Datadog.Trace.Tools.Runner
 
                         // we skip the framework info because we are interested in the target projects info not the runner one.
                         var itrSettings = await lazyItrClient.Value.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
+
+                        // we check if the backend require the git metadata first
+                        if (itrSettings.RequireGit == true)
+                        {
+                            Log.Debug("RunCiCommand: require git received, awaiting for the git repository upload.");
+                            await uploadRepositoryChangesTask.ConfigureAwait(false);
+
+                            Log.Debug("RunCiCommand: calling the configuration api again.");
+                            itrSettings = await lazyItrClient.Value.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
+                        }
+
                         codeCoverageEnabled = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
                         testSkippingEnabled = itrSettings.TestsSkipping == true;
                     }
@@ -340,7 +351,7 @@ namespace Datadog.Trace.Tools.Runner
                             globalCoverage is not null)
                         {
                             // We only report the code coverage percentage if the customer manually sets the 'DD_CIVISIBILITY_CODE_COVERAGE_ENABLED' environment variable according to the new spec.
-                            if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage).ToBoolean() == true)
+                            if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage)?.ToBoolean() == true)
                             {
                                 // Adds the global code coverage percentage to the session
                                 session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());

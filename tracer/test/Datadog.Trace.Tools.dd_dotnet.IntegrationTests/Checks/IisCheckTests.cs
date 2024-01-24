@@ -285,7 +285,7 @@ public class IisCheckTests : TestHelper
 
         try
         {
-            fixture.TryStartIis(this, appType);
+            await fixture.TryStartIis(this, appType);
         }
         catch (Exception)
         {

@@ -23,7 +23,7 @@ internal class ApiSecurity
 
     public ApiSecurity(SecuritySettings securitySettings)
     {
-        _overheadController = new(1, (int)(securitySettings.ApiSecuritySampling * 100));
+        _overheadController = new(securitySettings.ApiSecurityMaxConcurrentRequests, (int)(securitySettings.ApiSecuritySampling * 100));
         // todo: later, will be enabled by default, depending on if Security is enabled
         _enabled = securitySettings.ApiSecurityEnabled;
     }

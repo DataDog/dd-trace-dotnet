@@ -82,6 +82,12 @@ namespace Datadog.Trace.Configuration
             internal const string ApiSecurityRequestSampleRate = "DD_API_SECURITY_REQUEST_SAMPLE_RATE";
 
             /// <summary>
+            /// Configuration key for the maximum number of requests
+            /// to be analyzed by api security concurrently. Defaults to 1.
+            /// </summary>
+            internal const string ApiSecurityMaxConcurrentRequests = "DD_API_SECURITY_MAX_CONCURRENT_REQUESTS";
+
+            /// <summary>
             /// Unless set to true or 1, tracers don’t collect schemas. After the experiment, the environment variable will be removed and schema collection will be enabled only when ASM is enabled
             /// </summary>
             internal const string ApiExperimentalSecurityEnabled = "DD_EXPERIMENTAL_API_SECURITY_ENABLED";

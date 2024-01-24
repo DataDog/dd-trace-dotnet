@@ -217,6 +217,8 @@ internal static class MetricTags
         [Description("integration_name:remoting")]Remoting,
         [Description("integration_name:trustboundaryviolation")] TrustBoundaryViolation,
         [Description("integration_name:unvalidatedredirect")] UnvalidatedRedirect,
+        [Description("integration_name:testplatformassemblyresolver")] TestPlatformAssemblyResolver,
+        [Description("integration_name:stacktraceleak")] StackTraceLeak,
     }
 
     public enum InstrumentationError
@@ -276,6 +278,8 @@ internal static class MetricTags
         [Description("vulnerability_type:xcontenttype_header_missing")] XContentTypeHeaderMissing = 14,
         [Description("vulnerability_type:trust_boundary_violation")] TrustBoundaryViolation = 15,
         [Description("vulnerability_type:hsts_header_missing")] HstsHeaderMissing = 16,
+        [Description("vulnerability_type:header_injection")] HeaderInjection = 17,
+        [Description("vulnerability_type:stacktrace_leak")] StackTraceLeak = 18,
     }
 
     public enum CIVisibilityTestFramework

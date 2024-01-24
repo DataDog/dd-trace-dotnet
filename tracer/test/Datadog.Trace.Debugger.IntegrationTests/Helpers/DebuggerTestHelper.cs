@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.TestHelpers;
@@ -59,14 +60,14 @@ internal static class DebuggerTestHelper
         return type;
     }
 
-    internal static DebuggerSampleProcessHelper StartSample(TestHelper helper, MockTracerAgent agent, string testName)
+    internal static async Task<DebuggerSampleProcessHelper> StartSample(TestHelper helper, MockTracerAgent agent, string testName)
     {
         var listenPort = TcpPortProvider.GetOpenPort();
 
         var localHost = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "http://127.0.0.1" : "http://localhost";
         var listenUrl = $"{localHost}:{listenPort}/";
 
-        var process = helper.StartSample(agent, $"--test-name {testName} --listen-url {listenUrl}", string.Empty, aspNetCorePort: 5000);
+        var process = await helper.StartSample(agent, $"--test-name {testName} --listen-url {listenUrl}", string.Empty, aspNetCorePort: 5000);
         var processHelper = new DebuggerSampleProcessHelper(listenUrl, process);
 
         return processHelper;
@@ -198,9 +199,9 @@ internal static class DebuggerTestHelper
 
     private static ProbeDefinition WithLineProbeWhere(this ProbeDefinition snapshot, Type type, LineProbeTestDataAttribute line)
     {
-        using var reader = DatadogPdbReader.CreatePdbReader(type.Assembly);
-        var symbolMethod = reader.ReadMethodSymbolInfo(type.GetMethods().First().MetadataToken);
-        var filePath = symbolMethod.SequencePoints.First().Document.URL;
+        using var reader = DatadogMetadataReader.CreatePdbReader(type.Assembly);
+        var sequencePoints = reader?.GetMethodSequencePoints(type.GetMethods().First().MetadataToken);
+        var filePath = sequencePoints?.First().URL;
         var where = new Where { SourceFile = filePath, Lines = new[] { line.LineNumber.ToString() } };
         snapshot.Where = where;
         return snapshot;

@@ -22,4 +22,9 @@ internal interface IDependencyTelemetryCollector
     /// </summary>
     /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
     List<DependencyTelemetryData>? GetData();
+
+    /// <summary>
+    /// Gets all the assembly data recorded so far
+    /// </summary>
+    List<DependencyTelemetryData>? GetFullData();
 }

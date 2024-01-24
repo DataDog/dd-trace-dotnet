@@ -10,6 +10,7 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
 {
@@ -45,6 +46,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
                     var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
                     if (dataStreams.IsEnabled && exception == null && scope != null)
                     {
+                        var adapter = new IbmMqHeadersAdapter(msg);
+                        PathwayContext? pathwayContext = null;
+                        try
+                        {
+                            pathwayContext = dataStreams.ExtractPathwayContextAsBase64String(adapter);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error extracting PathwayContext from IbmMq message");
+                        }
+
                         var edgeTags = new[] { "direction:in", $"topic:{instance.Name}", $"type:{IbmMqConstants.QueueType}" };
 
                         scope.Span.SetDataStreamsCheckpoint(
@@ -52,7 +64,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
                             CheckpointKind.Consume,
                             edgeTags,
                             msg.MessageLength,
-                            0);
+                            timeInQueueMs: 0,
+                            pathwayContext);
                         // we need to inject new context, since message objects can theoretically be reused
                         // hence we need to make sure the parent hash changes properly
                         dataStreams.InjectPathwayContextAsBase64String(scope.Span.Context.PathwayContext, new IbmMqHeadersAdapter(msg));

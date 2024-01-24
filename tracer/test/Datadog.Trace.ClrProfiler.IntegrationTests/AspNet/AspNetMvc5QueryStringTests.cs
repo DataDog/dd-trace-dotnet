@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class AspNetMvc5QueryStringTests : TracingIntegrationTest, IClassFixture<IisFixture>
+    public abstract class AspNetMvc5QueryStringTests : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
@@ -52,7 +52,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
-            _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetMvc5QueryStringTests)
                       + (enableQueryStringReporting ? ".WithQueryString" : ".WithoutQueryString");
         }
@@ -87,6 +86,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                           .UseMethodName("_")
                           .UseTypeName(_testName);
         }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 }
 

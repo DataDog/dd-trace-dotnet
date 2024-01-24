@@ -22,7 +22,7 @@ internal static class PropagationModuleImpl
     {
         try
         {
-            IastModule.OnExecutedSourceTelemetry((IastInstrumentedSources)source.OriginByte);
+            IastModule.OnExecutedSourceTelemetry((IastInstrumentedSources)source.Origin);
 
             if (input is null || input == string.Empty)
             {

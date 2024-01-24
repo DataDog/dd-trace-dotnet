@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.46.0</Version>
+    <Version>2.47.0</Version>
     <Title>Datadog APM Auto-instrumentation Launcher</Title>
     <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
     <Description>Auto-instrumentation dotnet tool for Datadog APM</Description>
@@ -53,6 +53,7 @@
     the */** trick here ensures that there's at least one subdirectory, which indicates the files comes
     from a source generator as opposed to something that is coming from some other tool. -->
     <Compile Remove="$(GeneratedFolder)/*/**/*.cs" />
+    <None Include="$(GeneratedFolder)/*/**/*.cs" />
     <Compile Update="Configuration\ConfigurationKeys.*.cs" DependentUpon="ConfigurationKeys.cs" />
   </ItemGroup>
 
