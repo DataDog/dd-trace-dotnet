@@ -131,7 +131,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 if (mongoDb is null)
                 {
-                    mongoDb = IastControllerHelper.CreateMongoDb();
+                    mongoDb = MongoDbHelper.CreateMongoDb();
                 }
 
                 if (!string.IsNullOrEmpty(price))
