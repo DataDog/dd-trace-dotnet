@@ -3154,14 +3154,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     isAppSecChanged: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'] ]
-  condition: and(
-    succeeded(), 
-    eq(variables.isMainRepository, true), 
-    or(
-        eq(variables.isAppSecChanged, 'True'), 
-        eq(variables.force_appsec_benchmarks_run, 'true')
-      )
-    )
+  condition: and(succeeded(), eq(variables.isMainRepository, true))
   dependsOn: [build_windows_tracer, build_windows_profiler, merge_commit_id]
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -3171,6 +3164,10 @@ stages:
     #### Windows
 
     - job: Windows
+      condition: or(
+          eq(variables.isAppSecChanged, 'True'),
+          eq(variables.force_appsec_benchmarks_run, 'true')
+        )
       strategy:
         matrix:
           BenchmarkAgent7:
