@@ -31,6 +31,11 @@ at Samples.Security.AspNetCore5.Controllers.IastController.StackTraceLeak(),
   "vulnerabilities": [
     {
       "type": "STACKTRACE_LEAK",
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore2.Controllers.IastController",
+        "method": "StackTraceLeak"
+      },
       "evidence": {
         "value": "Samples.Security.AspNetCore2,SystemException"
       }
