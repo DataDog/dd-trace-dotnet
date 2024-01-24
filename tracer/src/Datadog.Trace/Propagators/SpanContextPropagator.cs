@@ -254,7 +254,7 @@ namespace Datadog.Trace.Propagators
                     var cacheKey = new Key(headerName, defaultTagPrefix);
                     var tagNameResult = _defaultTagMappingCache.GetOrAdd(cacheKey, key =>
                     {
-                        if (key.HeaderName.TryConvertToNormalizedTagName(normalizePeriodsAndSpaces: true, out var normalizedHeaderTagName))
+                        if (key.HeaderName.TryConvertToNormalizedTagName(normalizeSpaces: true, out var normalizedHeaderTagName))
                         {
                             return key.TagPrefix + "." + normalizedHeaderTagName;
                         }

@@ -95,7 +95,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// <param name="normalizePeriodsAndSpaces">True if we replace dots and spaces with underscores</param>
         /// <param name="normalizedTagName">If the method returns true, the normalized tag name</param>
         /// <returns>Returns whether the conversion was successful</returns>
-        public static bool TryConvertToNormalizedTagName(this string value, bool normalizePeriodsAndSpaces, out string normalizedTagName)
+        public static bool TryConvertToNormalizedTagName(this string value, bool normalizeSpaces, out string normalizedTagName)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
@@ -119,7 +119,7 @@ namespace Datadog.Trace.ExtensionMethods
                 {
                     case (>= 'a' and <= 'z') or (>= '0' and <= '9') or '_' or ':' or '/' or '-':
                         continue;
-                    case '.' or ' ' when !normalizePeriodsAndSpaces:
+                    case ' ' when !normalizeSpaces:
                         continue;
                     default:
                         sb[x] = '_';

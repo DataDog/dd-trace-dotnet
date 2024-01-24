@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData(" original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________", true, "original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________")]
         public void TryConvertToNormalizedTagName(string input, bool expectedConversionSuccess, string expectedTagName)
         {
-            bool actualConversionSuccess = input.TryConvertToNormalizedTagName(normalizePeriodsAndSpaces: false, out string actualTagName);
+            bool actualConversionSuccess = input.TryConvertToNormalizedTagName(normalizeSpaces: false, out string actualTagName);
             Assert.Equal(expectedConversionSuccess, actualConversionSuccess);
 
             if (actualConversionSuccess)
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData(" Some Header ", false, "some header")] // always trim whitespace
         public void TryConvertToNormalizedTagName_NormalizePeriodsAndSpaces(string input, bool normalizePeriodsAndSpaces, string expectedTagName)
         {
-            input.TryConvertToNormalizedTagName(normalizePeriodsAndSpaces: normalizePeriodsAndSpaces, out var actualTagName).Should().BeTrue();
+            input.TryConvertToNormalizedTagName(normalizeSpaces: normalizePeriodsAndSpaces, out var actualTagName).Should().BeTrue();
 
             Assert.Equal(expectedTagName, actualTagName);
         }
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData(" original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________", true, "original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________")]
         public void TryConvertToNormalizedHeaderTagName(string input, bool expectedConversionSuccess, string expectedTagName)
         {
-            bool actualConversionSuccess = input.TryConvertToNormalizedTagName(normalizePeriodsAndSpaces: true, out string actualTagName);
+            bool actualConversionSuccess = input.TryConvertToNormalizedTagName(normalizeSpaces: true, out string actualTagName);
             Assert.Equal(expectedConversionSuccess, actualConversionSuccess);
 
             if (actualConversionSuccess)
