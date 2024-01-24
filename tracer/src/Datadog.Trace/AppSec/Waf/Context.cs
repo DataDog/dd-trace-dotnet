@@ -29,18 +29,18 @@ namespace Datadog.Trace.AppSec.Waf
         private readonly List<Obj> _argCacheLegacy;
         private readonly Stopwatch _stopwatch;
         private readonly WafLibraryInvoker _wafLibraryInvoker;
-        private readonly bool _useLegacyEncoder;
+        private readonly bool _useUnsafeEncoder;
 
         private bool _disposed;
         private ulong _totalRuntimeOverRuns;
 
         // Beware this class is created on a thread but can be disposed on another so don't trust the lock is not going to be held
-        private Context(IntPtr contextHandle, Waf waf, WafLibraryInvoker wafLibraryInvoker, bool useLegacyEncoder)
+        private Context(IntPtr contextHandle, Waf waf, WafLibraryInvoker wafLibraryInvoker, bool useUnsafeEncoder)
         {
             _contextHandle = contextHandle;
             _waf = waf;
             _wafLibraryInvoker = wafLibraryInvoker;
-            _useLegacyEncoder = useLegacyEncoder;
+            _useUnsafeEncoder = useUnsafeEncoder;
             _stopwatch = new Stopwatch();
             _argCache = new(64);
             _argCacheLegacy = new();
@@ -48,7 +48,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         ~Context() => Dispose(false);
 
-        public static IContext? GetContext(IntPtr contextHandle, Waf waf, WafLibraryInvoker wafLibraryInvoker, bool useLegacyEncoder)
+        public static IContext? GetContext(IntPtr contextHandle, Waf waf, WafLibraryInvoker wafLibraryInvoker, bool useUnsafeEncoder)
         {
             // in high concurrency, the waf passed as argument here could have been disposed just above in between creation / waf update so last test here
             if (waf.Disposed)
@@ -57,7 +57,7 @@ namespace Datadog.Trace.AppSec.Waf
                 return null;
             }
 
-            return new Context(contextHandle, waf, wafLibraryInvoker, useLegacyEncoder);
+            return new Context(contextHandle, waf, wafLibraryInvoker, useUnsafeEncoder);
         }
 
         public unsafe IResult? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
@@ -87,16 +87,16 @@ namespace Datadog.Trace.AppSec.Waf
             lock (_stopwatch)
             {
                 IntPtr pwArgs;
-                if (_useLegacyEncoder)
-                {
-                    var args = EncoderLegacy.Encode(addresses, applySafetyLimits: true, wafLibraryInvoker: _wafLibraryInvoker, argCache: _argCacheLegacy);
-                    pwArgs = args.RawPtr;
-                }
-                else
+                if (_useUnsafeEncoder)
                 {
                     var pool = Encoder.Pool;
                     var args = Encoder.Encode(addresses, applySafetyLimits: true, argToFree: _argCache, pool: pool);
                     pwArgs = (IntPtr)(&args);
+                }
+                else
+                {
+                    var args = EncoderLegacy.Encode(addresses, applySafetyLimits: true, wafLibraryInvoker: _wafLibraryInvoker, argCache: _argCacheLegacy);
+                    pwArgs = args.RawPtr;
                 }
 
                 // WARNING: DO NOT DISPOSE pwArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
@@ -129,17 +129,17 @@ namespace Datadog.Trace.AppSec.Waf
             _disposed = true;
 
             // WARNING do not move this above, this should only be disposed in the end of the context's life
-            if (_useLegacyEncoder)
+            if (_useUnsafeEncoder)
+            {
+                Encoder.Pool.Return(_argCache);
+                _argCache.Clear();
+            }
+            else
             {
                 foreach (var arg in _argCacheLegacy)
                 {
                     arg.Dispose();
                 }
-            }
-            else
-            {
-                Encoder.Pool.Return(_argCache);
-                _argCache.Clear();
             }
 
             lock (_stopwatch)

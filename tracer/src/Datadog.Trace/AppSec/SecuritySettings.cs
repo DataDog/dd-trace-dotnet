@@ -89,7 +89,7 @@ namespace Datadog.Trace.AppSec
 
             ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled)
                                        .AsBool(false);
-            UseLegacyEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseLegacyEncoder)
+            UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
                                      .AsBool(false);
         }
 
@@ -99,7 +99,7 @@ namespace Datadog.Trace.AppSec
 
         public bool Enabled { get; }
 
-        public bool UseLegacyEncoder { get; }
+        public bool UseUnsafeEncoder { get; }
 
         public bool CanBeToggled { get; }
 

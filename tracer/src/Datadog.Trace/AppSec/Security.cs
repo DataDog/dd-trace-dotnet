@@ -211,7 +211,7 @@ namespace Datadog.Trace.AppSec
 
                 if (Enabled && _configurationStatus.IncomingUpdateState.WafKeysToApply.Any())
                 {
-                    updateResult = _waf?.UpdateWafFromConfigurationStatus(_configurationStatus, _settings.UseLegacyEncoder);
+                    updateResult = _waf?.UpdateWafFromConfigurationStatus(_configurationStatus, _settings.UseUnsafeEncoder);
                     if (updateResult?.Success ?? false)
                     {
                         if (!string.IsNullOrEmpty(updateResult.RuleFileVersion))
@@ -392,7 +392,7 @@ namespace Datadog.Trace.AppSec
                 _wafLibraryInvoker = _libraryInitializationResult.WafLibraryInvoker;
             }
 
-            _wafInitResult = Waf.Waf.Create(_wafLibraryInvoker!, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _configurationStatus.RulesByFile.Values.FirstOrDefault()?.All, setupWafSchemaExtraction: _settings.ApiSecurityEnabled, _settings.UseLegacyEncoder);
+            _wafInitResult = Waf.Waf.Create(_wafLibraryInvoker!, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _configurationStatus.RulesByFile.Values.FirstOrDefault()?.All, setupWafSchemaExtraction: _settings.ApiSecurityEnabled, _settings.UseUnsafeEncoder);
             if (_wafInitResult.Success)
             {
                 // we don't reapply configurations to the waf here because it's all done in the subscription function, as new data might have been received at the same time as the enable command, we don't want to update twice (here and in the subscription)
@@ -475,7 +475,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal IContext? CreateAdditiveContext() => _waf?.CreateContext(_settings.UseLegacyEncoder);
+        internal IContext? CreateAdditiveContext() => _waf?.CreateContext(_settings.UseUnsafeEncoder);
 
         private void RunShutdown()
         {

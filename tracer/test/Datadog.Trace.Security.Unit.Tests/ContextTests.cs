@@ -30,14 +30,14 @@ public class ContextTests : WafLibraryRequiredTest
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void MultipleContextsRun(bool useLegacyEncoder)
+    public void MultipleContextsRun(bool useUnsafeEncoder)
     {
-        if (!useLegacyEncoder)
+        if (useUnsafeEncoder)
         {
             AppSec.WafEncoding.Encoder.SetPoolSize(0);
         }
 
-        var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, setupWafSchemaExtraction: true, useLegacyEncoder: useLegacyEncoder);
+        var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, setupWafSchemaExtraction: true, useUnsafeEncoder: useUnsafeEncoder);
         using var waf = initResult.Waf;
         waf.Should().NotBeNull();
 
@@ -93,7 +93,7 @@ public class ContextTests : WafLibraryRequiredTest
                     for (var i = 0; i < 1000; i++)
                     {
                         var next = r.Next();
-                        using var context = waf.CreateContext(useLegacyEncoder);
+                        using var context = waf.CreateContext(useUnsafeEncoder);
                         if (context == null)
                         {
                             i--;
