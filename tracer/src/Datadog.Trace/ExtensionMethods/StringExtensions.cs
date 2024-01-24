@@ -78,23 +78,26 @@ namespace Datadog.Trace.ExtensionMethods
         }
 
         /// <summary>
-        /// Datadog tag requirements:
-        /// 1. Tag must start with a letter
-        /// 2. Tag cannot exceed 200 characters
-        /// 3. If the first two requirements are met, then valid characters will be retained while all other characters will be converted to underscores. Valid characters include:
+        /// Datadog tag name requirements:
+        /// 1. Tag must start with a letter.
+        /// 2. Tag cannot exceed 200 characters.
+        /// 3. If the first two requirements are met, then valid characters will be retained
+        ///    while all other characters will be converted to underscores. Valid characters include:
         ///    - Alphanumerics
         ///    - Underscores
         ///    - Minuses
         ///    - Colons
         ///    - Slashes
-        ///
-        /// 4. Optionally, periods and spaces can be replaced by underscores.
+        /// 4. Optionally, spaces can be replaced by underscores.
         /// Note: This method will trim leading/trailing whitespace before checking the requirements.
         /// </summary>
-        /// <param name="value">Input string to convert into tag name</param>
-        /// <param name="normalizePeriodsAndSpaces">True if we replace dots and spaces with underscores</param>
-        /// <param name="normalizedTagName">If the method returns true, the normalized tag name</param>
-        /// <returns>Returns whether the conversion was successful</returns>
+        /// <param name="value">Input string to convert into a tag name.</param>
+        /// <param name="normalizeSpaces">
+        ///     True to replace spaces with underscores.
+        ///     Controlled by feature flag <c>DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED</c>.
+        /// </param>
+        /// <param name="normalizedTagName">If the method returns <c>true</c>, the normalized tag name. Otherwise, <c>null</c>.</param>
+        /// <returns>Returns a value indicating whether the conversion was successful.</returns>
         public static bool TryConvertToNormalizedTagName(this string value, bool normalizeSpaces, out string normalizedTagName)
         {
             if (string.IsNullOrWhiteSpace(value))
