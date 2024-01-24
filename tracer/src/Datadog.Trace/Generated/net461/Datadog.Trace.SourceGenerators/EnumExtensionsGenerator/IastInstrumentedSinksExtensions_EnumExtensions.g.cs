@@ -17,7 +17,7 @@ internal static partial class IastInstrumentedSinksExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 19;
+    public const int Length = 20;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks"/> value.
@@ -48,30 +48,8 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation => "vulnerability_type:trust_boundary_violation",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing => "vulnerability_type:hsts_header_missing",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection => "vulnerability_type:header_injection",
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak => "vulnerability_type:stacktrace_leak",
-=======
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NosqlInjection => "vulnerability_type:nosql_injection",
->>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
-=======
-=======
-=======
->>>>>>> 3ea161b11 (Update vulnerability NoSql position)
->>>>>>> 4fdd33d46 (Update vulnerability NoSql position)
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlInjection => "vulnerability_type:nosql_injection",
-<<<<<<< HEAD
->>>>>>> 4b41f7b61 (Add nosql_injection vulnerability type to telemetry metrics)
-=======
-=======
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection => "vulnerability_type:nosql_mongodb_injection",
->>>>>>> cb21d5ac3 (Rename NoSqlInjection to NoSqlMongoDbInjection)
->>>>>>> 6cfb3a6ae (Rename NoSqlInjection to NoSqlMongoDbInjection)
-=======
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection => "vulnerability_type:nosql_mongodb_injection",
->>>>>>> f460758e6 (Fix rebase issues)
             _ => value.ToString(),
         };
 
@@ -103,30 +81,8 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection,
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak,
-=======
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NosqlInjection,
->>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
-=======
-=======
-=======
->>>>>>> 3ea161b11 (Update vulnerability NoSql position)
->>>>>>> 4fdd33d46 (Update vulnerability NoSql position)
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlInjection,
-<<<<<<< HEAD
->>>>>>> 4b41f7b61 (Add nosql_injection vulnerability type to telemetry metrics)
-=======
-=======
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection,
->>>>>>> cb21d5ac3 (Rename NoSqlInjection to NoSqlMongoDbInjection)
->>>>>>> 6cfb3a6ae (Rename NoSqlInjection to NoSqlMongoDbInjection)
-=======
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection,
->>>>>>> f460758e6 (Fix rebase issues)
         };
 
     /// <summary>
@@ -158,30 +114,8 @@ internal static partial class IastInstrumentedSinksExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection),
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak),
-=======
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NosqlInjection),
->>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
-=======
-=======
-=======
->>>>>>> 3ea161b11 (Update vulnerability NoSql position)
->>>>>>> 4fdd33d46 (Update vulnerability NoSql position)
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlInjection),
-<<<<<<< HEAD
->>>>>>> 4b41f7b61 (Add nosql_injection vulnerability type to telemetry metrics)
-=======
-=======
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection),
->>>>>>> cb21d5ac3 (Rename NoSqlInjection to NoSqlMongoDbInjection)
->>>>>>> 6cfb3a6ae (Rename NoSqlInjection to NoSqlMongoDbInjection)
-=======
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection),
->>>>>>> f460758e6 (Fix rebase issues)
         };
 
     /// <summary>
@@ -213,25 +147,7 @@ internal static partial class IastInstrumentedSinksExtensions
             "vulnerability_type:trust_boundary_violation",
             "vulnerability_type:hsts_header_missing",
             "vulnerability_type:header_injection",
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
             "vulnerability_type:stacktrace_leak",
-=======
-=======
-=======
->>>>>>> 3ea161b11 (Update vulnerability NoSql position)
->>>>>>> 4fdd33d46 (Update vulnerability NoSql position)
-            "vulnerability_type:nosql_injection",
-<<<<<<< HEAD
->>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
-=======
-=======
             "vulnerability_type:nosql_mongodb_injection",
->>>>>>> cb21d5ac3 (Rename NoSqlInjection to NoSqlMongoDbInjection)
->>>>>>> 6cfb3a6ae (Rename NoSqlInjection to NoSqlMongoDbInjection)
-=======
-            "vulnerability_type:nosql_mongodb_injection",
->>>>>>> f460758e6 (Fix rebase issues)
         };
 }

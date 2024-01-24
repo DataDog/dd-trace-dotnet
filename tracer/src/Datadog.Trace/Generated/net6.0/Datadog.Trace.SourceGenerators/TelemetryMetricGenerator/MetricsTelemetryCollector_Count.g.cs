@@ -11,11 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
-<<<<<<< HEAD
-    private const int CountLength = 335;
-=======
-    private const int CountLength = 333;
->>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
+    private const int CountLength = 336;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> values.
@@ -389,28 +385,9 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "vulnerability_type:trust_boundary_violation" }),
             new(new[] { "vulnerability_type:hsts_header_missing" }),
             new(new[] { "vulnerability_type:header_injection" }),
-<<<<<<< HEAD
-<<<<<<< HEAD
             new(new[] { "vulnerability_type:stacktrace_leak" }),
-            // request.tainted, index = 334
-=======
-            new(new[] { "vulnerability_type:nosql_injection" }),
-            // request.tainted, index = 332
-<<<<<<< HEAD
->>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
-=======
-=======
-            new(new[] { "vulnerability_type:nosql_injection" }),
-=======
             new(new[] { "vulnerability_type:nosql_mongodb_injection" }),
->>>>>>> cb21d5ac3 (Rename NoSqlInjection to NoSqlMongoDbInjection)
-            // request.tainted, index = 329
->>>>>>> 3ea161b11 (Update vulnerability NoSql position)
->>>>>>> 4fdd33d46 (Update vulnerability NoSql position)
-=======
-            new(new[] { "vulnerability_type:nosql_mongodb_injection" }),
-            // request.tainted, index = 332
->>>>>>> f460758e6 (Fix rebase issues)
+            // request.tainted, index = 335
             new(null),
         };
 
@@ -420,11 +397,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-<<<<<<< HEAD
-        = new int[]{ 4, 66, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 66, 1, 22, 3, 1, 1, 5, 12, 1, 19, 1, };
-=======
-        = new int[]{ 4, 65, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 65, 1, 22, 3, 1, 1, 5, 12, 1, 19, 1, };
->>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
+        = new int[]{ 4, 66, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 66, 1, 22, 3, 1, 1, 5, 12, 1, 20, 1, };
 
     public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
     {
@@ -616,10 +589,6 @@ internal partial class MetricsTelemetryCollector
 
     public void RecordCountIastRequestTainted(int increment = 1)
     {
-<<<<<<< HEAD
-        Interlocked.Add(ref _buffer.Count[334], increment);
-=======
-        Interlocked.Add(ref _buffer.Count[332], increment);
->>>>>>> f0cff5354 (Add nosql vulnerability + mongodb driver)
+        Interlocked.Add(ref _buffer.Count[335], increment);
     }
 }
