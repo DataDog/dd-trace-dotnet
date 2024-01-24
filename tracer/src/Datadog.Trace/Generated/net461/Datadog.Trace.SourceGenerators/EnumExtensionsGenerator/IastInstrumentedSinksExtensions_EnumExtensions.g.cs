@@ -17,7 +17,7 @@ internal static partial class IastInstrumentedSinksExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 18;
+    public const int Length = 19;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks"/> value.
@@ -48,6 +48,7 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation => "vulnerability_type:trust_boundary_violation",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing => "vulnerability_type:hsts_header_missing",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection => "vulnerability_type:header_injection",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak => "vulnerability_type:stacktrace_leak",
             _ => value.ToString(),
         };
 
@@ -79,6 +80,7 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak,
         };
 
     /// <summary>
@@ -110,6 +112,7 @@ internal static partial class IastInstrumentedSinksExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak),
         };
 
     /// <summary>
@@ -141,5 +144,6 @@ internal static partial class IastInstrumentedSinksExtensions
             "vulnerability_type:trust_boundary_violation",
             "vulnerability_type:hsts_header_missing",
             "vulnerability_type:header_injection",
+            "vulnerability_type:stacktrace_leak",
         };
 }

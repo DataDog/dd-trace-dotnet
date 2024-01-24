@@ -48,6 +48,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { ClrNames.Activity, "System.Diagnostics.Activity" };
             yield return new object[] { ClrNames.Process, "System.Diagnostics.Process" };
             yield return new object[] { ClrNames.ByteArray, typeof(byte[]) };
+            yield return new object[] { ClrNames.Exception, typeof(Exception) };
         }
 
         [Fact]

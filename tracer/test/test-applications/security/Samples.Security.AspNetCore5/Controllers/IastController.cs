@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -623,6 +624,13 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content("StrictTransportSecurityMissing");
             }
+        }
+
+        [HttpGet("StackTraceLeak")]
+        [Route("StackTraceLeak")]
+        public ActionResult StackTraceLeak()
+        {
+            throw new SystemException("Custom exception message");
         }
 
         // We should exclude some headers to prevent false positives:
