@@ -29,6 +29,7 @@ namespace Datadog.Trace.Ci
         private static CIVisibilitySettings? _settings;
         private static int _firstInitialization = 1;
         private static Task? _skippableTestsTask;
+        private static string? _skippableTestsCorrelationId;
         private static Dictionary<string, Dictionary<string, IList<SkippableTest>>>? _skippableTestsBySuiteAndName;
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
@@ -316,10 +317,9 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        internal static bool HasSkippableTests()
-        {
-            return _skippableTestsBySuiteAndName?.Count > 0;
-        }
+        internal static bool HasSkippableTests() => _skippableTestsBySuiteAndName?.Count > 0;
+
+        internal static string? GetSkippableTestsCorrelationId() => _skippableTestsCorrelationId;
 
         internal static string GetServiceNameFromRepository(string repository)
         {
@@ -615,10 +615,10 @@ namespace Datadog.Trace.Ci
                 if (settings.TestsSkippingEnabled == true)
                 {
                     var skippeableTests = await lazyItrClient.Value.GetSkippableTestsAsync().ConfigureAwait(false);
-                    Log.Information<int>("ITR: SkippableTests = {Length}.", skippeableTests.Length);
+                    Log.Information<string?, int>("ITR: CorrelationId = {CorrelationId}, SkippableTests = {Length}.", skippeableTests.CorrelationId, skippeableTests.Tests.Length);
 
                     var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippableTest>>>();
-                    foreach (var item in skippeableTests)
+                    foreach (var item in skippeableTests.Tests)
                     {
                         if (!skippableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
                         {
@@ -635,6 +635,7 @@ namespace Datadog.Trace.Ci
                         name.Add(item);
                     }
 
+                    _skippableTestsCorrelationId = skippeableTests.CorrelationId;
                     _skippableTestsBySuiteAndName = skippableTestsBySuiteAndName;
                     Log.Debug("ITR: SkippableTests dictionary has been built.");
                 }
