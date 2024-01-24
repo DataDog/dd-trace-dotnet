@@ -16,9 +16,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -45,9 +43,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -74,9 +70,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -103,9 +97,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -129,7 +121,9 @@
       graphql.source: query HeroQuery{hero {name appearsIn}},
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -165,7 +159,9 @@
       graphql.source: subscription NotImplementedSub{throwNotImplementedException {name}},
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -246,7 +242,9 @@ errors: [
       graphql.source: query HumanError{human(id:1){name apearsIn}},
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -263,7 +261,9 @@ errors: [
       graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
