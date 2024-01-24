@@ -17,7 +17,7 @@ namespace Datadog.Trace.AppSec.Waf
     {
         public string Version { get; }
 
-        public IContext CreateContext(bool settingsUseUnsafeEncoder = false);
+        public IContext CreateContext();
 
         internal WafReturnCode Run(IntPtr contextHandle, IntPtr rawPersistentData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
 

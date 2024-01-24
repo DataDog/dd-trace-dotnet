@@ -475,7 +475,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal IContext? CreateAdditiveContext() => _waf?.CreateContext(_settings.UseUnsafeEncoder);
+        internal IContext? CreateAdditiveContext() => _waf?.CreateContext();
 
         private void RunShutdown()
         {

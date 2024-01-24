@@ -22,6 +22,13 @@ namespace Datadog.Trace.Tests.Util;
 
 public class UnmanagedMemoryPoolTests
 {
+    private readonly Encoder _encoder;
+
+    public UnmanagedMemoryPoolTests()
+    {
+        _encoder = new Encoder();
+    }
+
     [Fact]
     public void TestRentReturn()
     {
@@ -89,7 +96,7 @@ public class UnmanagedMemoryPoolTests
 
         try
         {
-            var pwArgs = Encoder.Encode(addresses, applySafetyLimits: true, argToFree: argCache, pool: pool);
+            var pwArgs = _encoder.Encode(addresses, applySafetyLimits: true, argToFree: argCache, pool: pool);
         }
         finally
         {
@@ -153,7 +160,7 @@ public class UnmanagedMemoryPoolTests
                     {
                         try
                         {
-                            var pwArgs = Encoder.Encode(addresses, applySafetyLimits: false, argToFree: argCache, pool: pool);
+                            var pwArgs = _encoder.Encode(addresses, applySafetyLimits: false, argToFree: argCache, pool: pool);
                         }
                         finally
                         {

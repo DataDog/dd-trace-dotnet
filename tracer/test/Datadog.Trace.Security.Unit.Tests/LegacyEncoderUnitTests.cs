@@ -16,6 +16,13 @@ namespace Datadog.Trace.Security.Unit.Tests;
 
 public class LegacyEncoderUnitTests : WafLibraryRequiredTest
 {
+    private readonly EncoderLegacy _legacyEncoder;
+
+    public LegacyEncoderUnitTests()
+    {
+        _legacyEncoder = new EncoderLegacy(WafLibraryInvoker);
+    }
+
     [SkippableTheory]
     [InlineData(WafConstants.MaxStringLength - 1, WafConstants.MaxStringLength - 1)]
     [InlineData(WafConstants.MaxStringLength, WafConstants.MaxStringLength)]
@@ -24,8 +31,8 @@ public class LegacyEncoderUnitTests : WafLibraryRequiredTest
     {
         var target = new string('c', length);
 
-        using var intermediate = EncoderLegacy.Encode(target, WafLibraryInvoker, applySafetyLimits: true);
-        var result = intermediate.InnerStruct.Decode() as string;
+        using var intermediate = _legacyEncoder.Encode(target, applySafetyLimits: true);
+        var result = intermediate.ResultDdwafObject.Decode() as string;
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, result.Length);
@@ -39,8 +46,8 @@ public class LegacyEncoderUnitTests : WafLibraryRequiredTest
     {
         var target = Enumerable.Repeat((object)"test", length).ToList();
 
-        using var intermediate = EncoderLegacy.Encode(target, WafLibraryInvoker, applySafetyLimits: true);
-        var result = intermediate.InnerStruct.Decode() as List<object>;
+        using var intermediate = _legacyEncoder.Encode(target, applySafetyLimits: true);
+        var result = intermediate.ResultDdwafObject.Decode() as List<object>;
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, result.Count);
@@ -58,8 +65,8 @@ public class LegacyEncoderUnitTests : WafLibraryRequiredTest
             arrayList.Add("dog");
         }
 
-        using var intermediate = EncoderLegacy.Encode(arrayList, WafLibraryInvoker, applySafetyLimits: true);
-        var result = intermediate.InnerStruct.Decode() as List<object>;
+        using var intermediate = _legacyEncoder.Encode(arrayList, applySafetyLimits: true);
+        var result = intermediate.ResultDdwafObject.Decode() as List<object>;
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, result.Count);
@@ -73,8 +80,8 @@ public class LegacyEncoderUnitTests : WafLibraryRequiredTest
     {
         var target = Enumerable.Range(0, length).ToDictionary(x => x.ToString(), _ => (object)"test");
 
-        using var intermediate = EncoderLegacy.Encode(target, WafLibraryInvoker, applySafetyLimits: true);
-        var result = intermediate.InnerStruct.Decode() as Dictionary<string, object>;
+        using var intermediate = _legacyEncoder.Encode(target, applySafetyLimits: true);
+        var result = intermediate.ResultDdwafObject.Decode() as Dictionary<string, object>;
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, result.Count);
@@ -88,8 +95,8 @@ public class LegacyEncoderUnitTests : WafLibraryRequiredTest
     {
         var target = Enumerable.Range(0, length).Select(x => new KeyValuePair<string, object>(x.ToString(), (object)"test"));
 
-        using var intermediate = EncoderLegacy.Encode(target, WafLibraryInvoker, applySafetyLimits: true);
-        var result = intermediate.InnerStruct.Decode() as Dictionary<string, object>;
+        using var intermediate = _legacyEncoder.Encode(target, applySafetyLimits: true);
+        var result = intermediate.ResultDdwafObject.Decode() as Dictionary<string, object>;
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, result.Count);
@@ -103,8 +110,8 @@ public class LegacyEncoderUnitTests : WafLibraryRequiredTest
     {
         var target = MakeNestedList(length);
 
-        using var intermediate = EncoderLegacy.Encode(target, WafLibraryInvoker, applySafetyLimits: true);
-        var result = intermediate.InnerStruct.Decode() as List<object>;
+        using var intermediate = _legacyEncoder.Encode(target, applySafetyLimits: true);
+        var result = intermediate.ResultDdwafObject.Decode() as List<object>;
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, CountNestedListDepth(result));
@@ -118,8 +125,8 @@ public class LegacyEncoderUnitTests : WafLibraryRequiredTest
     {
         var target = MakeNestedMap(length);
 
-        using var intermediate = EncoderLegacy.Encode(target, WafLibraryInvoker, applySafetyLimits: true);
-        var result = intermediate.InnerStruct.Decode() as Dictionary<string, object>;
+        using var intermediate = _legacyEncoder.Encode(target, applySafetyLimits: true);
+        var result = intermediate.ResultDdwafObject.Decode() as Dictionary<string, object>;
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, CountNestedMapDepth(result));

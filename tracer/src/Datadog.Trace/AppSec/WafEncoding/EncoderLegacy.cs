@@ -18,10 +18,16 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.WafEncoding
 {
-    internal static class EncoderLegacy
+    internal class EncoderLegacy : IEncoder
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EncoderLegacy));
         private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
+        private readonly WafLibraryInvoker _wafLibraryInvoker;
+
+        public EncoderLegacy(WafLibraryInvoker wafLibraryInvoker)
+        {
+            _wafLibraryInvoker = wafLibraryInvoker;
+        }
 
         public static ObjType DecodeArgsType(DDWAF_OBJ_TYPE t)
         {
@@ -42,7 +48,12 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
         private static string TruncateLongString(string s) => s.Length > WafConstants.MaxStringLength ? s.Substring(0, WafConstants.MaxStringLength) : s;
 
-        public static Obj Encode(object o, WafLibraryInvoker wafLibraryInvoker, List<Obj>? argCache = null, bool applySafetyLimits = true) => EncodeInternal(o, argCache, WafConstants.MaxContainerDepth, applySafetyLimits, wafLibraryInvoker);
+        public IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
+        {
+            var argCache = new List<Obj>();
+            var result = EncodeInternal(o, argCache, remainingDepth, applySafetyLimits, _wafLibraryInvoker);
+            return new EncodeResult(result, argCache);
+        }
 
         private static Obj EncodeUnknownType(object o, WafLibraryInvoker wafLibraryInvoker)
         {
@@ -293,6 +304,31 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
             sb.Append(" ]");
             return sb;
+        }
+
+        public class EncodeResult : IEncodeResult
+        {
+            private readonly Obj _obj;
+            private readonly IList<Obj> _argCache;
+
+            internal EncodeResult(Obj obj, IList<Obj> argCache)
+            {
+                _obj = obj;
+                _argCache = argCache;
+                Result = _obj.RawPtr;
+            }
+
+            public IntPtr Result { get; }
+
+            public DdwafObjectStruct ResultDdwafObject => _obj.InnerStruct;
+
+            public void Dispose()
+            {
+                foreach (var arg in _argCache)
+                {
+                    arg.Dispose();
+                }
+            }
         }
     }
 }

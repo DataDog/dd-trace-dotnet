@@ -24,10 +24,14 @@ namespace Datadog.Trace.Security.Unit.Tests;
 public class FuzzEncoder : WafLibraryRequiredTest
 {
     private readonly ITestOutputHelper _outputHelper;
+    private readonly Encoder _encoder;
+    private readonly EncoderLegacy _encoderLegacy;
 
     public FuzzEncoder(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
+        _encoder = new Encoder();
+        _encoderLegacy = new EncoderLegacy(WafLibraryInvoker!);
     }
 
     [Fact]
@@ -49,19 +53,19 @@ public class FuzzEncoder : WafLibraryRequiredTest
                 using var jsonReader = new JsonTextReader(streamReader);
                 var root = JToken.ReadFrom(jsonReader);
 
-                using var result = Encoder.Encode(root, applySafetyLimits: true);
+                using var result = _encoder.Encode(root, applySafetyLimits: true);
 
                 // check the object is valid
-                Assert.NotEqual(DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID, result.Result.Type);
+                Assert.NotEqual(DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID, result.ResultDdwafObject.Type);
 
                 var argCache = new List<Obj>();
-                using var resultObj = EncoderLegacy.Encode(root, WafLibraryInvoker!, applySafetyLimits: true, argCache: argCache);
+                using var resultObj = _encoderLegacy.Encode(root, applySafetyLimits: true);
                 foreach (var arg in argCache)
                 {
                     arg.Dispose();
                 }
 
-                Assert.NotEqual(DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID, result.Result.Type);
+                Assert.NotEqual(DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID, result.ResultDdwafObject.Type);
             }
             catch (Exception ex)
             {

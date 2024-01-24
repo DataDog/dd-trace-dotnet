@@ -30,12 +30,14 @@ namespace Datadog.Trace.AppSec.Waf
 
         private readonly WafLibraryInvoker _wafLibraryInvoker;
         private readonly Concurrency.ReaderWriterLock _wafLocker = new();
+        private readonly IEncoder _encoder;
         private IntPtr _wafHandle;
 
-        internal Waf(IntPtr wafHandle, WafLibraryInvoker wafLibraryInvoker)
+        internal Waf(IntPtr wafHandle, WafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
         {
             _wafLibraryInvoker = wafLibraryInvoker;
             _wafHandle = wafHandle;
+            _encoder = encoder;
         }
 
         internal bool Disposed { get; private set; }
@@ -65,24 +67,25 @@ namespace Datadog.Trace.AppSec.Waf
             var jtokenRoot = rulesFromRcm ?? WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath)!;
 
             IntPtr rulesObj;
-            List<Obj>? legacyArgsToDispose = null;
             DdwafConfigStruct configWafStruct = default;
-            Encoder.EncodeResult result = default;
+            IEncodeResult? result = null;
+            IEncoder encoder;
             var keyRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterKeyRegex);
             var valueRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterValueRegex);
             configWafStruct.KeyRegex = keyRegex;
             configWafStruct.ValueRegex = valueRegex;
             if (useUnsafeEncoder)
             {
-                result = Encoder.Encode(jtokenRoot, applySafetyLimits: false);
-                rulesObj = (IntPtr)(&result.Result);
+                encoder = new Encoder();
+                result = encoder.Encode(jtokenRoot, applySafetyLimits: false);
+                rulesObj = result.Result;
                 configWafStruct.FreeWafFunction = IntPtr.Zero;
             }
             else
             {
-                legacyArgsToDispose = new List<Obj>();
-                var configObjWrapper = EncoderLegacy.Encode(jtokenRoot, applySafetyLimits: false, wafLibraryInvoker: wafLibraryInvoker, argCache: legacyArgsToDispose);
-                rulesObj = configObjWrapper.RawPtr;
+                encoder = new EncoderLegacy(wafLibraryInvoker);
+                var configObjWrapper = encoder.Encode(jtokenRoot, applySafetyLimits: false);
+                rulesObj = configObjWrapper.Result;
                 configWafStruct.FreeWafFunction = wafLibraryInvoker.ObjectFreeFuncPtr;
             }
 
@@ -90,7 +93,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             try
             {
-                var initResult = wafConfigurator.Configure(rulesObj, configWafStruct, ref diagnostics, rulesFromRcm == null ? embeddedRulesetPath : "RemoteConfig");
+                var initResult = wafConfigurator.Configure(rulesObj, encoder, configWafStruct, ref diagnostics, rulesFromRcm == null ? embeddedRulesetPath : "RemoteConfig");
                 initResult.EmbeddedRules = jtokenRoot;
                 return initResult;
             }
@@ -113,19 +116,12 @@ namespace Datadog.Trace.AppSec.Waf
 
                 if (useUnsafeEncoder)
                 {
-                    result.Dispose();
-                }
-                else
-                {
-                    foreach (var arg in legacyArgsToDispose!)
-                    {
-                        arg.Dispose();
-                    }
+                    result?.Dispose();
                 }
             }
         }
 
-        private UpdateResult UpdateWafAndDisposeItems(IntPtr updateData, List<Obj> argsToDispose)
+        private UpdateResult UpdateWafAndDisposeItems(IEncodeResult updateData)
         {
             UpdateResult? res = null;
             DdwafObjectStruct? diagnostics = null;
@@ -133,7 +129,7 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 diagnostics = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
                 var diagnosticsValue = diagnostics.Value;
-                var newHandle = _wafLibraryInvoker.Update(_wafHandle, updateData, ref diagnosticsValue);
+                var newHandle = _wafLibraryInvoker.Update(_wafHandle, updateData.Result, ref diagnosticsValue);
                 if (newHandle != IntPtr.Zero)
                 {
                     var oldHandle = _wafHandle;
@@ -162,10 +158,7 @@ namespace Datadog.Trace.AppSec.Waf
                     _wafLibraryInvoker.ObjectFreePtr(ref diagValue.Array);
                 }
 
-                foreach (var arg in argsToDispose)
-                {
-                    arg.Dispose();
-                }
+                updateData.Dispose();
             }
 
             return res;
@@ -180,10 +173,9 @@ namespace Datadog.Trace.AppSec.Waf
         /// <summary>
         /// Requires a non disposed waf handle
         /// </summary>
-        /// <param name="useUnsafeEncoder">whether or not to use the unsafe encoder</param>
         /// <returns>Context object to perform matching using the provided WAF instance</returns>
         /// <exception cref="Exception">Exception</exception>
-        public IContext? CreateContext(bool useUnsafeEncoder = false)
+        public IContext? CreateContext()
         {
             if (Disposed)
             {
@@ -209,7 +201,7 @@ namespace Datadog.Trace.AppSec.Waf
                 throw new Exception(InitContextError);
             }
 
-            return Context.GetContext(contextHandle, this, _wafLibraryInvoker, useUnsafeEncoder);
+            return Context.GetContext(contextHandle, this, _wafLibraryInvoker, _encoder);
         }
 
         private unsafe UpdateResult Update(IDictionary<string, object> arguments, bool useUnsafeEncoder = false)
@@ -217,19 +209,15 @@ namespace Datadog.Trace.AppSec.Waf
             UpdateResult updated;
             try
             {
-                IntPtr result;
                 if (useUnsafeEncoder)
                 {
-                    using var encodedArgs = Encoder.Encode(arguments, applySafetyLimits: false);
-                    result = (IntPtr)(&encodedArgs.Result);
-                    updated = UpdateWafAndDisposeItems(result, new());
+                    using var encodedArgs = _encoder.Encode(arguments, applySafetyLimits: false);
+                    updated = UpdateWafAndDisposeItems(encodedArgs);
                 }
                 else
                 {
-                    List<Obj> argToDispose = new();
-                    var obj = EncoderLegacy.Encode(arguments, _wafLibraryInvoker, argCache: argToDispose, applySafetyLimits: false);
-                    result = obj.RawPtr;
-                    updated = UpdateWafAndDisposeItems(result, argToDispose);
+                    var obj = _encoder.Encode(arguments, applySafetyLimits: false);
+                    updated = UpdateWafAndDisposeItems(obj);
                 }
 
                 // only if rules are provided will the waf give metrics

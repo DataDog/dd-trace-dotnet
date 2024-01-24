@@ -20,7 +20,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.WafEncoding
 {
-    internal static class Encoder
+    internal class Encoder : IEncoder
     {
         private const int MaxBytesForMaxStringLength = (WafConstants.MaxStringLength * 4) + 1;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
@@ -53,14 +53,22 @@ namespace Datadog.Trace.AppSec.WafEncoding
             _poolSize = poolSize;
         }
 
-        public static EncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
+        public static string FormatArgs(object o)
+        {
+            // zero capacity because we don't know the size in advance
+            var sb = StringBuilderCache.Acquire(0);
+            FormatArgsInternal(o, sb);
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        public IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
         {
             var lstPointers = new List<IntPtr>();
             var pool = Pool;
             return new EncodeResult(lstPointers, pool, Encode(o, lstPointers, remainingDepth, key, applySafetyLimits, pool: pool));
         }
 
-        public static unsafe DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true, UnmanagedMemoryPool? pool = null)
+        public unsafe DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true, UnmanagedMemoryPool? pool = null)
         {
             pool ??= Pool;
 
@@ -493,14 +501,6 @@ namespace Datadog.Trace.AppSec.WafEncoding
             return ddwafObjectStruct;
         }
 
-        public static string FormatArgs(object o)
-        {
-            // zero capacity because we don't know the size in advance
-            var sb = StringBuilderCache.Acquire(0);
-            FormatArgsInternal(o, sb);
-            return StringBuilderCache.GetStringAndRelease(sb);
-        }
-
         private static void FormatArgsInternal(object o, StringBuilder sb)
         {
             if (o is ArrayList arrayList)
@@ -609,22 +609,28 @@ namespace Datadog.Trace.AppSec.WafEncoding
             return sb;
         }
 
-        public readonly ref struct EncodeResult
+        public class EncodeResult : IEncodeResult
         {
             private readonly List<IntPtr> _pointers;
-            private readonly UnmanagedMemoryPool _pool;
-            public readonly DdwafObjectStruct Result;
+            private readonly UnmanagedMemoryPool _innerPool;
+            private readonly GCHandle _handle;
 
             internal EncodeResult(List<IntPtr> pointers, UnmanagedMemoryPool pool, DdwafObjectStruct result)
             {
                 _pointers = pointers;
-                _pool = pool;
-                Result = result;
+                _innerPool = pool;
+                ResultDdwafObject = result;
+                _handle = GCHandle.Alloc(result, GCHandleType.Pinned);
             }
+
+            public IntPtr Result => _handle.AddrOfPinnedObject();
+
+            public DdwafObjectStruct ResultDdwafObject { get; }
 
             public void Dispose()
             {
-                _pool.Return(_pointers);
+                _handle.Free();
+                _innerPool.Return(_pointers);
                 _pointers.Clear();
             }
         }

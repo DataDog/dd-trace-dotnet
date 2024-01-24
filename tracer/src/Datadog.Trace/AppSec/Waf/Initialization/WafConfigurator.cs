@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -111,7 +112,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return root;
         }
 
-        internal InitResult Configure(IntPtr rulesObj, DdwafConfigStruct configStruct, ref DdwafObjectStruct diagnostics, string? rulesFile)
+        internal InitResult Configure(IntPtr rulesObj, IEncoder encoder, DdwafConfigStruct configStruct, ref DdwafObjectStruct diagnostics, string? rulesFile)
         {
             var wafHandle = _wafLibraryInvoker.Init(rulesObj, ref configStruct, ref diagnostics);
             if (wafHandle == IntPtr.Zero)
@@ -119,7 +120,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 Log.Warning("DDAS-0005-00: WAF initialization failed.");
             }
 
-            var initResult = InitResult.From(diagnostics, wafHandle, _wafLibraryInvoker);
+            var initResult = InitResult.From(diagnostics, wafHandle, _wafLibraryInvoker, encoder);
             if (initResult.HasErrors)
             {
                 var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);

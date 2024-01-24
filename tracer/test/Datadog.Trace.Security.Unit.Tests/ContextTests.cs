@@ -89,11 +89,11 @@ public class ContextTests : WafLibraryRequiredTest
                         },
                         { Tags.HttpClientIp, "127.0.0.1" },
                     };
-                    Random r = new Random();
+                    var r = new Random();
                     for (var i = 0; i < 1000; i++)
                     {
                         var next = r.Next();
-                        using var context = waf.CreateContext(useUnsafeEncoder);
+                        using var context = waf.CreateContext();
                         if (context == null)
                         {
                             i--;
