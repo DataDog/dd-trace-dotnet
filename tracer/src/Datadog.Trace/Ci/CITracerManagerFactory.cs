@@ -80,6 +80,8 @@ namespace Datadog.Trace.Ci
             return new CISampler();
         }
 
+        protected override bool ShouldEnableRemoteConfiguration(ImmutableTracerSettings settings) => false;
+
         protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
             // Check for agentless scenario

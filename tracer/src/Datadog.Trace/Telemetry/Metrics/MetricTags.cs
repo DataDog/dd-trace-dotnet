@@ -217,6 +217,7 @@ internal static class MetricTags
         [Description("integration_name:remoting")]Remoting,
         [Description("integration_name:trustboundaryviolation")] TrustBoundaryViolation,
         [Description("integration_name:unvalidatedredirect")] UnvalidatedRedirect,
+        [Description("integration_name:testplatformassemblyresolver")] TestPlatformAssemblyResolver,
     }
 
     public enum InstrumentationError

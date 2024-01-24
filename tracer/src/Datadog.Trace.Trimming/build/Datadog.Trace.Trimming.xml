@@ -91,6 +91,7 @@
       <type fullname="Microsoft.Net.Http.Headers.SameSiteMode" />
       <type fullname="Microsoft.Net.Http.Headers.SetCookieHeaderValue" />
    </assembly>
+   <assembly fullname="Microsoft.VisualStudio.TestPlatform.Common" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.TestFramework" />
    <assembly fullname="MongoDB.Driver.Core" />

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 #if NET6_0_OR_GREATER
 using System.Buffers;
 #endif
@@ -12,23 +13,24 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal class MethodScopeMembers
 {
-    private int _index;
+    private List<ScopeMember> _growingScopeMembers;
 
     internal MethodScopeMembers(int numberOfLocals, int numberOfArguments)
     {
-        // 2 for 'return' and 'exception'
-#if NET6_0_OR_GREATER
-        Members = ArrayPool<ScopeMember>.Shared.Rent(numberOfLocals + numberOfArguments + 2);
-#else
-        Members = new ScopeMember[numberOfLocals + numberOfArguments + 2];
-#endif
+        _growingScopeMembers = new List<ScopeMember>();
         Exception = null;
         Return = default;
         InvocationTarget = default;
     }
 
     // ReSharper disable once AutoPropertyCanBeMadeGetOnly.Local
-    internal ScopeMember[] Members { get; private set; }
+    internal ScopeMember[] Members
+    {
+        get
+        {
+            return _growingScopeMembers.ToArray();
+        }
+    }
 
     internal Exception Exception { get; set; }
 
@@ -42,17 +44,11 @@ internal class MethodScopeMembers
 
     internal void AddMember(ScopeMember member)
     {
-        Members[_index] = member;
-        _index++;
+        _growingScopeMembers.Add(member);
     }
 
     internal void Dispose()
     {
-#if NET6_0_OR_GREATER
-        ArrayPool<ScopeMember>.Shared.Return(Members);
-
-#else
-        Members = null;
-#endif
+        _growingScopeMembers = null;
     }
 }

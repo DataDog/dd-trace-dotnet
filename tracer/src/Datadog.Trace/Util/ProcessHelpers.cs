@@ -7,6 +7,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 
@@ -50,6 +51,50 @@ namespace Datadog.Trace.Util
             processName = CurrentProcess.ProcessName;
             machineName = CurrentProcess.MachineName;
             processId = CurrentProcess.Pid;
+        }
+
+        /// <summary>
+        /// Run a command and get the standard output content as a string
+        /// </summary>
+        /// <param name="command">Command to run</param>
+        /// <param name="input">Standard input content</param>
+        /// <returns>The output of the command</returns>
+        public static CommandOutput? RunCommand(Command command, string? input = null)
+        {
+            Log.Debug("Running command: {Command} {Args}", command.Cmd, command.Arguments);
+            var processStartInfo = GetProcessStartInfo(command);
+            if (input is not null)
+            {
+                processStartInfo.RedirectStandardInput = true;
+            }
+
+            using var processInfo = Process.Start(processStartInfo);
+            if (processInfo is null)
+            {
+                return null;
+            }
+
+            if (input is not null)
+            {
+                processInfo.StandardInput.Write(input);
+                processInfo.StandardInput.Flush();
+                processInfo.StandardInput.Close();
+            }
+
+            var outputStringBuilder = new StringBuilder();
+            var errorStringBuilder = new StringBuilder();
+            while (!processInfo.HasExited)
+            {
+                outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
+                errorStringBuilder.Append(processInfo.StandardError.ReadToEnd());
+                Thread.Sleep(15);
+            }
+
+            outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
+            errorStringBuilder.Append(processInfo.StandardError.ReadToEnd());
+
+            Log.Debug<int>("Process finished with exit code: {Value}.", processInfo.ExitCode);
+            return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode);
         }
 
         /// <summary>

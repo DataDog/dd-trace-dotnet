@@ -89,6 +89,11 @@ namespace Datadog.Trace.IntegrationTests
                 allExpected.Add("Datadog-Container-ID", containerId);
             }
 
+            if (ContainerMetadata.GetEntityId() is { } entityId)
+            {
+                allExpected.Add("Datadog-Entity-ID", entityId);
+            }
+
             if (agentless)
             {
                 allExpected.Add(TelemetryConstants.ApiKeyHeader, apiKey);

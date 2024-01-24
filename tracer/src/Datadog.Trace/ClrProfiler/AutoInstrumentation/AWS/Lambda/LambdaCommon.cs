@@ -95,6 +95,11 @@ internal abstract class LambdaCommon
 
         try
         {
+            if (exception != null && scope is { Span: var span })
+            {
+                span.SetException(exception);
+            }
+
             SendEndInvocation(requestBuilder, scope, exception != null, returnValue);
         }
         catch (Exception ex)
