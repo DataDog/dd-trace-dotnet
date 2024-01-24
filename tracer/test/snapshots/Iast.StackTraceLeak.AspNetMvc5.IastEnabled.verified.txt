@@ -31,7 +31,7 @@ at Samples.Security.AspNetCore5.Controllers.IastController.StackTraceLeak(),
       "type": "STACKTRACE_LEAK",
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetMvc5.Controllers.IastController",
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "StackTraceLeak"
       },
       "evidence": {
