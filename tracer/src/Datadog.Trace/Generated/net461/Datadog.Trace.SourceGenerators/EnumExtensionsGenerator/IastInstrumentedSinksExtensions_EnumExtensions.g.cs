@@ -47,9 +47,8 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing => "vulnerability_type:xcontenttype_header_missing",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation => "vulnerability_type:trust_boundary_violation",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing => "vulnerability_type:hsts_header_missing",
-<<<<<<< HEAD
-<<<<<<< HEAD
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection => "vulnerability_type:header_injection",
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -70,6 +69,9 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection => "vulnerability_type:nosql_mongodb_injection",
 >>>>>>> cb21d5ac3 (Rename NoSqlInjection to NoSqlMongoDbInjection)
 >>>>>>> 6cfb3a6ae (Rename NoSqlInjection to NoSqlMongoDbInjection)
+=======
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection => "vulnerability_type:nosql_mongodb_injection",
+>>>>>>> f460758e6 (Fix rebase issues)
             _ => value.ToString(),
         };
 
@@ -100,9 +102,8 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing,
-<<<<<<< HEAD
-<<<<<<< HEAD
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -123,6 +124,9 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection,
 >>>>>>> cb21d5ac3 (Rename NoSqlInjection to NoSqlMongoDbInjection)
 >>>>>>> 6cfb3a6ae (Rename NoSqlInjection to NoSqlMongoDbInjection)
+=======
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection,
+>>>>>>> f460758e6 (Fix rebase issues)
         };
 
     /// <summary>
@@ -153,9 +157,8 @@ internal static partial class IastInstrumentedSinksExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing),
-<<<<<<< HEAD
-<<<<<<< HEAD
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection),
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -176,6 +179,9 @@ internal static partial class IastInstrumentedSinksExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection),
 >>>>>>> cb21d5ac3 (Rename NoSqlInjection to NoSqlMongoDbInjection)
 >>>>>>> 6cfb3a6ae (Rename NoSqlInjection to NoSqlMongoDbInjection)
+=======
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection),
+>>>>>>> f460758e6 (Fix rebase issues)
         };
 
     /// <summary>
@@ -206,9 +212,8 @@ internal static partial class IastInstrumentedSinksExtensions
             "vulnerability_type:xcontenttype_header_missing",
             "vulnerability_type:trust_boundary_violation",
             "vulnerability_type:hsts_header_missing",
-<<<<<<< HEAD
-<<<<<<< HEAD
             "vulnerability_type:header_injection",
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
             "vulnerability_type:stacktrace_leak",
@@ -225,5 +230,8 @@ internal static partial class IastInstrumentedSinksExtensions
             "vulnerability_type:nosql_mongodb_injection",
 >>>>>>> cb21d5ac3 (Rename NoSqlInjection to NoSqlMongoDbInjection)
 >>>>>>> 6cfb3a6ae (Rename NoSqlInjection to NoSqlMongoDbInjection)
+=======
+            "vulnerability_type:nosql_mongodb_injection",
+>>>>>>> f460758e6 (Fix rebase issues)
         };
 }

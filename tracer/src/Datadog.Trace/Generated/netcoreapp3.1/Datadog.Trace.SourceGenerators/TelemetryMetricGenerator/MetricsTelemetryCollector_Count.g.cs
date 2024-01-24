@@ -388,9 +388,8 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "vulnerability_type:xcontenttype_header_missing" }),
             new(new[] { "vulnerability_type:trust_boundary_violation" }),
             new(new[] { "vulnerability_type:hsts_header_missing" }),
-<<<<<<< HEAD
-<<<<<<< HEAD
             new(new[] { "vulnerability_type:header_injection" }),
+<<<<<<< HEAD
 <<<<<<< HEAD
             new(new[] { "vulnerability_type:stacktrace_leak" }),
             // request.tainted, index = 334
@@ -408,6 +407,10 @@ internal partial class MetricsTelemetryCollector
             // request.tainted, index = 329
 >>>>>>> 3ea161b11 (Update vulnerability NoSql position)
 >>>>>>> 4fdd33d46 (Update vulnerability NoSql position)
+=======
+            new(new[] { "vulnerability_type:nosql_mongodb_injection" }),
+            // request.tainted, index = 332
+>>>>>>> f460758e6 (Fix rebase issues)
             new(null),
         };
 
