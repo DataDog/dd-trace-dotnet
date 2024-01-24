@@ -4,8 +4,7 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using System.Collections.Generic;
 
 #if NETCOREAPP3_1_OR_GREATER
 using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
@@ -19,8 +18,6 @@ namespace Datadog.Trace.Sampling;
 
 internal static class RegexBuilder
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RegexBuilder));
-
     public static Regex? Build(string? pattern, string format)
     {
         if (pattern is null)
@@ -54,6 +51,28 @@ internal static class RegexBuilder
             default:
                 return null; // should be unreachable because we validate the format earlier
         }
+    }
+
+    public static List<KeyValuePair<string, Regex?>> Build(ICollection<KeyValuePair<string, string?>> patterns, string format)
+    {
+        if (patterns is { Count: > 0 })
+        {
+            var regexList = new List<KeyValuePair<string, Regex?>>(patterns.Count);
+
+            foreach (var pattern in patterns)
+            {
+                var regex = Build(pattern.Value, format);
+
+                if (regex != null)
+                {
+                    regexList.Add(new KeyValuePair<string, Regex?>(pattern.Key, regex));
+                }
+            }
+
+            return regexList;
+        }
+
+        return [];
     }
 
     private static string WrapWithLineCharacters(string regex)

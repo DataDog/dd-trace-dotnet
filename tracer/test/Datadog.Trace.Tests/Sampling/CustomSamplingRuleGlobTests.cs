@@ -51,6 +51,42 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         [Fact]
+        public void Constructs_With_ResourceName()
+        {
+            const string config = """[{ "sample_rate":0.3, resource: "/api/v1/*" }]""";
+            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob).Single();
+
+            var matchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v1/user/123" };
+            var nonMatchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v2/user/123" };
+
+            VerifyRate(rule, 0.3f);
+            VerifySingleRule(rule, matchingSpan, isMatch: true);
+            VerifySingleRule(rule, nonMatchingSpan, isMatch: false);
+        }
+
+        [Fact]
+        public void Constructs_With_Tags()
+        {
+            const string config = """[{ "sample_rate":0.3, tags: { "http.method": "GE?", "http.status_code": "200" } }]""";
+            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob).Single();
+
+            var matchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now);
+            matchingSpan.SetTag("http.method", "GET");
+            matchingSpan.SetMetric("http.status_code", 200);
+
+            var nonMatchingSpan1 = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now);
+            nonMatchingSpan1.SetTag("http.method", "GET");
+
+            var nonMatchingSpan2 = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now);
+            nonMatchingSpan2.SetTag("http.method", "POST");
+
+            VerifyRate(rule, 0.3f);
+            VerifySingleRule(rule, matchingSpan, isMatch: true);
+            VerifySingleRule(rule, nonMatchingSpan1, isMatch: false);
+            VerifySingleRule(rule, nonMatchingSpan2, isMatch: false);
+        }
+
+        [Fact]
         public void Constructs_All_Expected_From_Config_String()
         {
             const string config = """
@@ -124,6 +160,11 @@ namespace Datadog.Trace.Tests.Sampling
         private static void VerifyRate(string config, float expectedRate)
         {
             var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob).Single();
+            VerifyRate(rule, expectedRate);
+        }
+
+        private static void VerifyRate(ISamplingRule rule, float expectedRate)
+        {
             rule.GetSamplingRate(TestSpans.CartCheckoutSpan).Should().Be(expectedRate);
         }
 

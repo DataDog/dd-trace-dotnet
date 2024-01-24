@@ -19,6 +19,7 @@ namespace Datadog.Trace.Tests.Sampling
         private const string ServiceName = "my-service-name";
         private const string Env = "my-test-env";
         private const string OperationName = "test";
+        private const string ResourceName = "test-resource-name";
 
         private static readonly Dictionary<string, float> MockAgentRates = new() { { $"service:{ServiceName},env:{Env}", FallbackRate } };
 
@@ -45,7 +46,9 @@ namespace Datadog.Trace.Tests.Sampling
                     ruleName: "Allow_all",
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
-                    operationNamePattern: ".*"));
+                    operationNamePattern: ".*",
+                    resourceNamePattern: ".*",
+                    tagPatterns: null));
 
             RunSamplerTest(
                 sampler,
@@ -66,7 +69,9 @@ namespace Datadog.Trace.Tests.Sampling
                     ruleName: "Allow_all",
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
-                    operationNamePattern: ".*"));
+                    operationNamePattern: ".*",
+                    resourceNamePattern: ".*",
+                    tagPatterns: null));
 
             RunSamplerTest(
                 sampler,
@@ -87,7 +92,9 @@ namespace Datadog.Trace.Tests.Sampling
                     ruleName: "Allow_nothing",
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
-                    operationNamePattern: ".*"));
+                    operationNamePattern: ".*",
+                    resourceNamePattern: ".*",
+                    tagPatterns: null));
 
             RunSamplerTest(
                 sampler,
@@ -108,7 +115,9 @@ namespace Datadog.Trace.Tests.Sampling
                     ruleName: "Allow_half",
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
-                    operationNamePattern: ".*"));
+                    operationNamePattern: ".*",
+                    resourceNamePattern: ".*",
+                    tagPatterns: null));
 
             RunSamplerTest(
                 sampler,
@@ -174,6 +183,7 @@ namespace Datadog.Trace.Tests.Sampling
             {
                 using var scope = (Scope)tracer.StartActive(OperationName);
                 scope.Span.Context.TraceContext.Environment = Env;
+                scope.Span.ResourceName = ResourceName;
 
                 var decision = sampler.MakeSamplingDecision(scope.Span);
 
