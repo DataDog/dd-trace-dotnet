@@ -3150,11 +3150,7 @@ stages:
     isAppSecChanged: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'] ]
   condition: and(
     succeeded(), 
-    eq(variables.isMainRepository, true), 
-    or(
-        eq(variables.isAppSecChanged, 'True'), 
-        eq(variables.force_appsec_benchmarks_run, 'true')
-      )
+    eq(variables.isMainRepository, true)
     )
   dependsOn: [build_windows_tracer, build_windows_profiler, generate_variables, merge_commit_id]
   jobs:
@@ -3165,6 +3161,10 @@ stages:
     #### Windows
 
     - job: Windows
+      condition: or(
+        eq(variables.isAppSecChanged, 'True'),
+        eq(variables.force_appsec_benchmarks_run, 'true')
+        )
       strategy:
         matrix:
           BenchmarkAgent7:
