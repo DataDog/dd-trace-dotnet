@@ -21,6 +21,10 @@ internal class JsonTokenizer : ITokenizer
     {
         var redactedRanges = new List<Range>();
 
+        // Remove new lines from the value by space
+        // to get the correct position of the token with the .LinePosition property
+        value = value.Replace("\n", " ");
+
         using var sr = new StringReader(value);
         using var reader = new JsonTextReader(sr);
 
@@ -36,7 +40,7 @@ internal class JsonTokenizer : ITokenizer
                     break;
 
                 case JsonToken.PropertyName:
-                    RedactKey(reader, redactedRanges);
+                    RedactKey(value, reader, redactedRanges);
                     break;
             }
         }
@@ -48,11 +52,11 @@ internal class JsonTokenizer : ITokenizer
     {
         var length = reader.Value!.ToString()!.Length;
         var stringOffset = reader.TokenType == JsonToken.String ? 1 : 0; // offset to account for the closing quote
-        var start = reader.CharPos - length - stringOffset;
+        var start = reader.LinePosition - length - stringOffset;
         ranges.Add(new Range(start, length));
     }
 
-    private static void RedactKey(JsonTextReader reader, List<Range> ranges)
+    private static void RedactKey(string value, JsonTextReader reader, List<Range> ranges)
     {
         var propertyName = reader.Value!.ToString()!;
         if (!SourceValueRegex.IsMatch(propertyName))
@@ -62,13 +66,13 @@ internal class JsonTokenizer : ITokenizer
 
         // The current position is at the end of the property name, on the ':' character
         // We need to go back to the end of the property name, on the last double quote
-        var end = reader.CharPos - 1;
-        while (reader.CharBuffer?[end] != '"')
+        var end = reader.LinePosition - 1;
+        while (value[end] != '"')
         {
             end--;
         }
 
-        if (reader.CharBuffer[end] != '"')
+        if (value[end] != '"')
         {
             // We didn't find the end of the property name, so we can't redact it
             return;

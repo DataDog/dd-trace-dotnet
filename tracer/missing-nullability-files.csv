@@ -169,23 +169,9 @@ src/Datadog.Trace/HttpOverStreams/HttpMessage.cs
 src/Datadog.Trace/HttpOverStreams/HttpRequest.cs
 src/Datadog.Trace/HttpOverStreams/HttpResponse.cs
 src/Datadog.Trace/HttpOverStreams/IHttpContent.cs
-<<<<<<< HEAD
-<<<<<<< HEAD
 src/Datadog.Trace/Iast/Iast.cs
 src/Datadog.Trace/Iast/ITaintedMap.cs
 src/Datadog.Trace/Iast/SourceType.cs
-=======
-src/Datadog.Trace/IAST/Iast.cs
-src/Datadog.Trace/IAST/ITaintedMap.cs
-src/Datadog.Trace/IAST/SourceType.cs
-=======
-src/Datadog.Trace/Iast/Iast.cs
-src/Datadog.Trace/Iast/ITaintedMap.cs
-src/Datadog.Trace/Iast/SourceType.cs
->>>>>>> 080fb664a (Revert "update nullability due to rebase")
-src/Datadog.Trace/PDBs/DatadogPdbReader.cs
-src/Datadog.Trace/PDBs/SymbolMethodExtensions.cs
->>>>>>> ddfc710be (update nullability due to rebase)
 src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs
 src/Datadog.Trace/PlatformHelpers/AzureContext.cs
 src/Datadog.Trace/PlatformHelpers/ContainerMetadata.cs
