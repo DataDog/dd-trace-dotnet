@@ -1050,20 +1050,21 @@ namespace Datadog.Trace.Configuration
                     continue;
                 }
 
-                // The user has not provided a tag name. The normalization will happen later, when adding the prefix.
                 if (string.IsNullOrEmpty(providedTagName))
                 {
+                    // The user has not provided a tag name. The normalization will happen later, when adding the prefix.
                     headerTags.Add(headerName.Trim(), string.Empty);
                 }
-                else if (headerTagsNormalizationFixEnabled && providedTagName.TryConvertToNormalizedTagName(normalizeSpaces: false, out var normalizedTagName))
+                else
                 {
-                    // If the user has provided a tag name, then we don't normalize periods or spaces in the provided tag name
-                    headerTags.Add(headerName.Trim(), normalizedTagName);
-                }
-                else if (!headerTagsNormalizationFixEnabled && providedTagName.TryConvertToNormalizedTagName(normalizeSpaces: true, out var normalizedTagNameNoPeriods))
-                {
-                    // Back to the previous behaviour if the flag is set
-                    headerTags.Add(headerName.Trim(), normalizedTagNameNoPeriods);
+                    var normalizeSpaces = !headerTagsNormalizationFixEnabled;
+
+                    if (providedTagName.TryConvertToNormalizedTagName(normalizeSpaces, out var normalizedTagName))
+                    {
+                        // If the user has provided a tag name, then we don't normalize spaces in the provided tag name
+                        // (unless the fix is disabled by the user via feature flag "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED")
+                        headerTags.Add(headerName.Trim(), normalizedTagName);
+                    }
                 }
             }
 
