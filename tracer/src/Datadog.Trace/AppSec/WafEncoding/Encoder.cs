@@ -15,6 +15,7 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.WafEncoding
@@ -146,8 +147,8 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         for (var i = 0; i < maxChildrenCount; i++)
                         {
                             var originalKeyValue = dic.ElementAt(i);
-                            var keyValue = UnsafeHelper.As<KeyValuePair<TKeySource, TValueSource>, KeyValuePair<TKey, TValue>>(originalKeyValue);
-                            var key = getKey(keyValue!);
+                            var keyValue = VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<KeyValuePair<TKeySource, TValueSource>, KeyValuePair<TKey, TValue>>(ref originalKeyValue);
+                            var key = getKey(keyValue);
                             if (string.IsNullOrEmpty(key))
                             {
                                 childrenCount--;
