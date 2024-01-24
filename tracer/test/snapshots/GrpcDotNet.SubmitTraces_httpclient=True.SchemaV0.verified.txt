@@ -8,7 +8,9 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -42,7 +44,9 @@
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -94,7 +98,9 @@
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -139,7 +145,9 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -173,7 +181,9 @@
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -225,7 +235,9 @@
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -270,7 +282,9 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -306,7 +320,9 @@
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -358,7 +374,9 @@
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -405,7 +423,9 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -441,7 +461,9 @@
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -493,7 +515,9 @@
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -540,7 +564,9 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -576,7 +602,9 @@
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -628,7 +656,9 @@
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -675,7 +705,9 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -711,7 +743,9 @@
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -763,7 +797,9 @@
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -814,7 +850,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -850,7 +888,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -902,7 +942,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -949,7 +991,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -985,7 +1029,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1037,7 +1083,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1084,7 +1132,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1120,7 +1170,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1172,7 +1224,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1219,7 +1273,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1255,7 +1311,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1307,7 +1365,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1358,7 +1418,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1392,7 +1454,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1444,7 +1508,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1489,7 +1555,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1523,7 +1591,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1575,7 +1645,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1620,7 +1692,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1654,7 +1728,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1706,7 +1782,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1751,7 +1829,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1785,7 +1865,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1837,7 +1919,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1884,7 +1968,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -1918,7 +2004,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1970,7 +2058,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.useragent: grpc-dotnet/123,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: http://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,

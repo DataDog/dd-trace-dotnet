@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -8,7 +8,9 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -27,7 +29,9 @@
     ParentId: Id_2,
     Tags: {
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -87,7 +91,9 @@
       env: updated-env,
       language: dotnet,
       runtime-id: Guid_1,
-      Updated-key: Updated Value
+      Updated-key: Updated Value,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -107,7 +113,9 @@
     Tags: {
       env: updated-env,
       language: dotnet,
-      Updated-key: Updated Value
+      Updated-key: Updated Value,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -168,7 +176,9 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -223,7 +233,9 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -242,7 +254,9 @@
     ParentId: Id_19,
     Tags: {
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -329,7 +343,9 @@
       usr.name: Bits,
       usr.role: Mascot,
       usr.scope: test-scope,
-      usr.session_id: abc123
+      usr.session_id: abc123,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -355,7 +371,9 @@
 CustomException: Exception of type 'CustomException' was thrown.
 ,
       error.type: CustomException,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       Some-Number: 123.0
@@ -370,7 +388,9 @@ CustomException: Exception of type 'CustomException' was thrown.
     ParentId: Id_28,
     Tags: {
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -413,7 +433,9 @@ CustomException: Exception of type 'CustomException' was thrown.
       language: dotnet,
       runtime-id: Guid_1,
       _dd.appsec.events.custom-event-meta.sdk: true,
-      _dd.appsec.events.custom-event.sdk: true
+      _dd.appsec.events.custom-event.sdk: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -432,7 +454,9 @@ CustomException: Exception of type 'CustomException' was thrown.
     ParentId: Id_32,
     Tags: {
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -444,7 +468,9 @@ CustomException: Exception of type 'CustomException' was thrown.
     ParentId: Id_33,
     Tags: {
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -508,7 +534,9 @@ CustomException: Exception of type 'CustomException' was thrown.
       language: dotnet,
       runtime-id: Guid_1,
       usr.id: my-id,
-      _dd.appsec.events.users.login.success.sdk: true
+      _dd.appsec.events.users.login.success.sdk: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -527,7 +555,9 @@ CustomException: Exception of type 'CustomException' was thrown.
     ParentId: Id_39,
     Tags: {
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -539,7 +569,9 @@ CustomException: Exception of type 'CustomException' was thrown.
     ParentId: Id_40,
     Tags: {
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -604,7 +636,9 @@ CustomException: Exception of type 'CustomException' was thrown.
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.appsec.events.users.login.failure.sdk: true
+      _dd.appsec.events.users.login.failure.sdk: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -623,7 +657,9 @@ CustomException: Exception of type 'CustomException' was thrown.
     ParentId: Id_46,
     Tags: {
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -635,7 +671,9 @@ CustomException: Exception of type 'CustomException' was thrown.
     ParentId: Id_47,
     Tags: {
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {

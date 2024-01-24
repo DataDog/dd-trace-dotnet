@@ -30,7 +30,9 @@ System.Exception: Exception of type 'System.Exception' was thrown.
     Tags: {
       env: integration_tests,
       language: dotnet,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -57,7 +59,9 @@ System.Exception: Exception of type 'System.Exception' was thrown.
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,

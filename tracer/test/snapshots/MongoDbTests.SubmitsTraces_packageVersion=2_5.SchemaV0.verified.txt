@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -14,7 +14,9 @@
       otel.trace_id: Guid_1,
       runtime-id: Guid_2,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -39,7 +41,9 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -57,7 +61,9 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -75,7 +81,9 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -95,7 +103,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -116,7 +126,9 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -134,7 +146,9 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -154,7 +168,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -177,7 +193,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -200,7 +218,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -223,7 +243,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -243,7 +265,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -266,7 +290,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -289,7 +315,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -312,7 +340,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -335,7 +365,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -358,7 +390,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -381,7 +415,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -404,7 +440,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -427,7 +465,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -447,7 +487,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -467,7 +509,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -487,7 +531,9 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0

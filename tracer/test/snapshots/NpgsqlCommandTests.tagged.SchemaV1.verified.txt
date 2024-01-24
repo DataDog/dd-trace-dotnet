@@ -17,6 +17,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -38,6 +40,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -59,6 +63,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -80,6 +86,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -101,6 +109,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -122,6 +132,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -143,6 +155,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -164,6 +178,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -185,6 +201,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -206,6 +224,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -227,6 +247,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -248,6 +270,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -269,6 +293,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -290,6 +316,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -311,6 +339,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -332,6 +362,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -353,6 +385,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -374,6 +408,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -395,6 +431,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -416,6 +454,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -437,6 +477,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -481,6 +523,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -502,6 +546,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -523,6 +569,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -544,6 +592,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -565,6 +615,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -586,6 +638,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -607,6 +661,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -628,6 +684,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -649,6 +707,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -670,6 +730,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -691,6 +753,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -712,6 +776,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -756,6 +822,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -777,6 +845,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -798,6 +868,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -819,6 +891,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -840,6 +914,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -861,6 +937,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -882,6 +960,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -903,6 +983,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -924,6 +1006,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -945,6 +1029,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -966,6 +1052,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -987,6 +1075,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1008,6 +1098,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1029,6 +1121,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1050,6 +1144,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1071,6 +1167,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1092,6 +1190,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1113,6 +1213,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1134,6 +1236,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1155,6 +1259,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1176,6 +1282,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1197,6 +1305,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1218,6 +1328,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1239,6 +1351,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1260,6 +1374,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1281,6 +1397,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1302,6 +1420,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1323,6 +1443,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1344,6 +1466,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1365,6 +1489,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1386,6 +1512,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1407,6 +1535,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1428,6 +1558,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1449,6 +1581,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1470,6 +1604,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1491,6 +1627,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1512,6 +1650,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1533,6 +1673,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1554,6 +1696,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1575,6 +1719,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1596,6 +1742,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1617,6 +1765,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1638,6 +1788,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1659,6 +1811,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1680,6 +1834,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1701,6 +1857,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1722,6 +1880,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1743,6 +1903,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1764,6 +1926,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1785,6 +1949,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1806,6 +1972,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1827,6 +1995,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1848,6 +2018,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1869,6 +2041,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1890,6 +2064,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1911,6 +2087,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1932,6 +2110,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1953,6 +2133,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1974,6 +2156,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -1995,6 +2179,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2016,6 +2202,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2037,6 +2225,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2058,6 +2248,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2079,6 +2271,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2100,6 +2294,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2121,6 +2317,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2142,6 +2340,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2163,6 +2363,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2184,6 +2386,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2205,6 +2409,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2226,6 +2432,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2247,6 +2455,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2268,6 +2478,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2289,6 +2501,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2310,6 +2524,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2331,6 +2547,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2352,6 +2570,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2373,6 +2593,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2394,6 +2616,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2415,6 +2639,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2436,6 +2662,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2457,6 +2685,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2478,6 +2708,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2499,6 +2731,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2520,6 +2754,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2541,6 +2777,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2562,6 +2800,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2583,6 +2823,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2604,6 +2846,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2625,6 +2869,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2646,6 +2892,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2667,6 +2915,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2688,6 +2938,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2709,6 +2961,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2730,6 +2984,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2751,6 +3007,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2772,6 +3030,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2793,6 +3053,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2814,6 +3076,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2835,6 +3099,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2856,6 +3122,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2877,6 +3145,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2898,6 +3168,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2919,6 +3191,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2940,6 +3214,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2961,6 +3237,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -2982,6 +3260,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -3003,6 +3283,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -3024,6 +3306,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -3045,6 +3329,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -3066,6 +3352,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -3087,6 +3375,8 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   }

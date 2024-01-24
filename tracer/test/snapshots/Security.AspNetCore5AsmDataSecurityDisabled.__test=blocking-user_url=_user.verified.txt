@@ -20,7 +20,9 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      usr.id: user3
+      usr.id: user3,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -51,7 +53,9 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      usr.id: user3
+      usr.id: user3,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,

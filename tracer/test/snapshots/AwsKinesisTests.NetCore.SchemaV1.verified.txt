@@ -8,7 +8,9 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -63,6 +65,8 @@
       peer.service: MyStreamName,
       span.kind: producer,
       streamname: MyStreamName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: streamname
     }
   },
@@ -88,6 +92,8 @@
       peer.service: MyStreamName,
       span.kind: producer,
       streamname: MyStreamName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: streamname
     }
   },
@@ -109,6 +115,8 @@
       out.host: aws_kinesis,
       peer.service: aws_kinesis,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   }

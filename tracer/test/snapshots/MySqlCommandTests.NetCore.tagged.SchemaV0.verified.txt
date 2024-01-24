@@ -16,7 +16,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -39,7 +41,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -62,7 +66,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -85,7 +91,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -108,7 +116,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -131,7 +141,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -154,7 +166,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -177,7 +191,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -200,7 +216,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -223,7 +241,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -246,7 +266,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -269,7 +291,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -292,7 +316,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -315,7 +341,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -338,7 +366,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -361,7 +391,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -384,7 +416,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -407,7 +441,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -430,7 +466,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -453,7 +491,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -476,7 +516,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -499,7 +541,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -522,7 +566,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -545,7 +591,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -568,7 +616,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -591,7 +641,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -614,7 +666,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -637,7 +691,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -660,7 +716,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -683,7 +741,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -706,7 +766,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -729,7 +791,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -752,7 +816,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -775,7 +841,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -823,7 +891,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -846,7 +916,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -869,7 +941,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -892,7 +966,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -915,7 +991,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -938,7 +1016,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -961,7 +1041,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -984,7 +1066,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1007,7 +1091,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1030,7 +1116,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1053,7 +1141,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1076,7 +1166,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1099,7 +1191,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1122,7 +1216,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1145,7 +1241,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1168,7 +1266,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1191,7 +1291,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1214,7 +1316,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1237,7 +1341,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1260,7 +1366,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1283,7 +1391,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1306,7 +1416,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1329,7 +1441,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1352,7 +1466,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1375,7 +1491,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1398,7 +1516,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1421,7 +1541,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1444,7 +1566,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1467,7 +1591,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1490,7 +1616,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1513,7 +1641,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1536,7 +1666,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1559,7 +1691,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1582,7 +1716,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1605,7 +1741,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1628,7 +1766,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1651,7 +1791,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1674,7 +1816,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1697,7 +1841,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1720,7 +1866,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1743,7 +1891,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1766,7 +1916,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1789,7 +1941,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1812,7 +1966,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1835,7 +1991,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1858,7 +2016,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1881,7 +2041,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1904,7 +2066,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1927,7 +2091,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1950,7 +2116,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1973,7 +2141,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1996,7 +2166,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2019,7 +2191,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2042,7 +2216,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2065,7 +2241,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2088,7 +2266,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2111,7 +2291,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2134,7 +2316,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2157,7 +2341,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2180,7 +2366,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2203,7 +2391,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2226,7 +2416,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2249,7 +2441,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2272,7 +2466,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2295,7 +2491,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2318,7 +2516,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2341,7 +2541,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2364,7 +2566,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2387,7 +2591,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2410,7 +2616,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2433,7 +2641,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2456,7 +2666,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2479,7 +2691,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2502,7 +2716,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2525,7 +2741,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2548,7 +2766,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2571,7 +2791,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2594,7 +2816,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2617,7 +2841,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2640,7 +2866,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2663,7 +2891,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2686,7 +2916,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2709,7 +2941,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2732,7 +2966,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2755,7 +2991,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2778,7 +3016,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2801,7 +3041,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2824,7 +3066,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2847,7 +3091,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2870,7 +3116,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2893,7 +3141,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2916,7 +3166,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2939,7 +3191,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2962,7 +3216,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2985,7 +3241,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3008,7 +3266,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3031,7 +3291,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3054,7 +3316,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3077,7 +3341,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3100,7 +3366,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3123,7 +3391,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3146,7 +3416,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3169,7 +3441,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3192,7 +3466,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3215,7 +3491,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3238,7 +3516,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3261,7 +3541,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3284,7 +3566,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3307,7 +3591,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3330,7 +3616,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3353,7 +3641,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3376,7 +3666,9 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0

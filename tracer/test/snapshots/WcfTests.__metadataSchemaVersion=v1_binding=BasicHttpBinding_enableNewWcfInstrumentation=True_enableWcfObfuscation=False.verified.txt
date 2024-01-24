@@ -390,7 +390,9 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
       otel.trace_id: Guid_2,
       runtime-id: Guid_1,
       span.kind: internal,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
