@@ -72,5 +72,6 @@ namespace Datadog.Trace.Configuration
         TrustBoundaryViolation,
         UnvalidatedRedirect,
         TestPlatformAssemblyResolver,
+        StackTraceLeak
     }
 }

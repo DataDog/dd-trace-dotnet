@@ -55,8 +55,7 @@ namespace Datadog.Trace
                 var pathwayContext = TryGetPathwayContext(base64PathwayContext);
 
                 var edgeTags = edgeTagString.Split(',');
-                spanContext.MergePathwayContext(pathwayContext);
-                spanContext.SetCheckpoint(dsm, CheckpointKind.Consume, edgeTags, 0, 0);
+                spanContext.SetCheckpoint(dsm, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0, pathwayContext);
             }
 
             return spanContext;

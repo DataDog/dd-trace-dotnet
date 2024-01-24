@@ -88,6 +88,7 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
     public AspNetCore2IastTestsFullSamplingEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore2IastTestsEnabled", isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 200)
     {
+        SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
     }
 
     [SkippableTheory]
@@ -151,6 +152,25 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing(scrubHash: false);
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Fact]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestStackTraceLeak()
+    {
+        var filename = "Iast.StackTraceLeak.AspNetCore2";
+        var url = "/Iast/StackTraceLeak";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();

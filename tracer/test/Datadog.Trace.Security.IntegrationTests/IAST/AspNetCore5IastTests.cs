@@ -103,6 +103,25 @@ public class AspNetCore5IastTestsSpanTelemetryIastEnabled : AspNetCore5IastTests
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
+
+    [Fact]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestStackTraceLeak()
+    {
+        var filename = "Iast.StackTraceLeak.AspNetCore5.NotVulnerable";
+        var url = "/Iast/StackTraceLeak";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 public class AspNetCore5IastTestsOneVulnerabilityPerRequestIastEnabled : AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled
@@ -159,6 +178,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     public AspNetCore5IastTestsFullSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsEnabled")
     {
+        SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
     }
 
     // When the request is finished without this X-Content-Type-Options: nosniff header and the content-type of the request looks
@@ -229,6 +249,25 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing(scrubHash: false);
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Fact]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestStackTraceLeak()
+    {
+        var filename = "Iast.StackTraceLeak.AspNetCore5";
+        var url = "/Iast/StackTraceLeak";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();

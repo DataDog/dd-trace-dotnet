@@ -24,6 +24,7 @@ namespace Datadog.Trace.Iast;
 internal static class IastModule
 {
     public const string HeaderInjectionEvidenceSeparator = ": ";
+    private const string OperationNameStackTraceLeak = "stacktrace_leak";
     private const string OperationNameWeakHash = "weak_hashing";
     private const string OperationNameWeakCipher = "weak_cipher";
     private const string OperationNameSqlInjection = "sql_injection";
@@ -288,6 +289,15 @@ internal static class IastModule
         return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakCipher, OperationNameWeakCipher);
     }
 
+    public static IastModuleResponse OnStackTraceLeak(Exception ex, IntegrationId integrationId)
+    {
+        OnExecutedSinkTelemetry(IastInstrumentedSinks.StackTraceLeak);
+        var evidence = $"{ex.Source},{ex.GetType().Name}";
+        // We report the stack of the exception instead of the current stack
+        var stack = new StackTrace(ex, true);
+        return GetScope(evidence, integrationId, VulnerabilityTypeName.StackTraceLeak, OperationNameStackTraceLeak, externalStack: stack);
+    }
+
     public static IastModuleResponse OnHashingAlgorithm(string? algorithm, IntegrationId integrationId)
     {
         OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakHash);
@@ -384,7 +394,7 @@ internal static class IastModule
         return isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() == true;
     }
 
-    private static IastModuleResponse GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Func<TaintedObject, bool>? taintValidator = null, bool addLocation = true, int? hash = null)
+    private static IastModuleResponse GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Func<TaintedObject, bool>? taintValidator = null, bool addLocation = true, int? hash = null, StackTrace? externalStack = null)
     {
         var tracer = Tracer.Instance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
@@ -425,7 +435,7 @@ internal static class IastModule
 
         if (addLocation)
         {
-            var frameInfo = StackWalker.GetFrame();
+            var frameInfo = StackWalker.GetFrame(externalStack);
 
             if (!frameInfo.IsValid)
             {

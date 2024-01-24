@@ -146,13 +146,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
                 var edgeTags = new[] { "direction:in", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" };
                 var pathwayContext = dataStreamsManager.ExtractPathwayContext(headersAdapter);
-                span.Context.MergePathwayContext(pathwayContext);
                 span.SetDataStreamsCheckpoint(
                     dataStreamsManager,
                     CheckpointKind.Consume,
                     edgeTags,
                     GetHeadersSize(headers) + messageSize,
-                    messageTimestamp);
+                    messageTimestamp,
+                    pathwayContext);
             }
             catch (Exception ex)
             {

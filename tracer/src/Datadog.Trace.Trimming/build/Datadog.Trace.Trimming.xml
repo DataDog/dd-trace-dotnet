@@ -20,6 +20,7 @@
    <assembly fullname="HotChocolate.Execution" />
    <assembly fullname="log4net" />
    <assembly fullname="Microsoft.AspNetCore.Authentication.Abstractions" />
+   <assembly fullname="Microsoft.AspNetCore.Diagnostics" />
    <assembly fullname="Microsoft.AspNetCore.Http" />
    <assembly fullname="Microsoft.AspNetCore.Http.Abstractions">
       <type fullname="Microsoft.AspNetCore.Http.ConnectionInfo" />
@@ -962,7 +963,6 @@
       <type fullname="System.Text.RegularExpressions.Match" />
       <type fullname="System.Text.RegularExpressions.MatchCollection" />
       <type fullname="System.Text.RegularExpressions.Regex" />
-      <type fullname="System.Text.RegularExpressions.RegexMatchTimeoutException" />
       <type fullname="System.Text.RegularExpressions.RegexOptions" />
    </assembly>
    <assembly fullname="System.Threading">

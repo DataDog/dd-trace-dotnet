@@ -15,6 +15,81 @@
 
 
 
+
+## [Release 2.46.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.46.0)
+
+## Summary
+
+* [Tracing] Add support for matching sampling rules by resource name and span tags, and for using glob patterns
+* [Tracing] Add support for tracer flare for faster support resolution
+* [CI Visibility] Reduce overhead of intelligent test runner, payload upload, and git unshallow
+* [IAST] Add support for header injection vulnerability
+* [IAST] Fix false-positive related to small-integer string cache
+* [Serverless] Report exception details to Lambda extension
+
+## Changes
+
+### Tracer
+* Add `DD_TRACE_SAMPLING_RULES_FORMAT` setting (#4984)
+* [tracer] Match sampling rules by resource name and span tags (#5013)
+* [Tracer] Update signature parsing in the tracer's native library to account for `ELEMENT_TYPE_PTR` byte (#5042)
+* [Tracer] Send the Datadog-Entity-ID header, containing either the container-id or the cgroup inode if available (AIT-9281) (#5058)
+* `NullConfigurationSource` should implement `ITelemetredConfigurationSource` (#5033)
+
+### CI Visibility
+* [CI Visibility] - Update Code Coverage percentage reporting (#5032)
+* [CI Visibility] - Improve git upload logic (#5039)
+* [CI Visibility] - Intelligent Test Runner: reduce overhead of the default branch (#5041)
+* [CI Visibility] - Enable AutomaticDecompression on CI Visibility http clients (#5043)
+* [CI Visibility] - Add support for GZip compression in Multipart payloads (#5060)
+* [CI Visibility] - Fix exception when the CodeCoverage environment variable value is null (#5063)
+* [CI Visibility] - TestPlatform AssemblyResolver .ctor integration (#5088)
+* Ignore TestPlatform SDK assembly resolve error from CI CheckBuildLogs (#5084)
+
+### ASM
+* [ASM] IAST Header injection vulnerability detection. (#4981)
+* [ASM] Dont catch CallTargetBubbleUpException native side, like on managed side (#5034)
+* [IAST] SourceType refactor (#5037)
+* [ASM] Add max concurrent request setting for api sec (#5048)
+* [IAST] Dani/asm/small string cache bugfix (#5064)
+
+### Dynamic Instrumentation
+* [Dynamic Instrumentation] Upload symbols to SymDB (with System.Reflection.Metadata) (#4782)
+* [Dynamic Instrumentation] Made the captured members size flexible due to `IndexOutOfRangeException` (#5099)
+
+### Serverless
+* Fix AWS Lambda tests (#5050)
+* [SLES-1357] set exception on the aws.lambda span (#5054)
+
+### Build / Test
+* [Build] adds a notification on build end (#5008)
+* Add an API to create a suspended process (#5015)
+* Convert integration tests to async (#5018)
+* bump default kafka lib version in sample app to solve a bug with mac (#5028)
+* AutoGenerator bug fixes (#5029)
+* [IAST] Folder casing fix (#5035)
+* Use native debugging for procdump (#5046)
+* [IAST] Removed Activator calls in SourceGenerator for performance reasons (#5052)
+* Minor CI fixes (#5056)
+* Fix BenchmarkTests civisibility reporting (#5069)
+* Fix failing GraphQL tests on .NET Core 2.1 on alpine (#5075)
+* Dani/asm/source generator refactor (#5078)
+* Shorting the symbol extractor tests approval names (#5079)
+* Fix trimming file (#5080)
+* Disable code coverage unless forced (#5090)
+* Suppress build warnings we don't care about (#5096)
+* Skip debugger `SymbolExtractorTest` tests (#5095)
+
+### Miscellaneous
+* Reenable tracer flare and handle debug request (#5040)
+* Fix - Change DelegateInstrumentation set continuations behaviour to copy Calltarget (#5049)
+* Disable remote configuration in Serverless and CI scenarios (#5053)
+* Always log rejit errors (#5061)
+* Include telemetry data in tracer flare (#5062)
+* Update some Github docs (#5077)
+
+[Changes since 2.45.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.45.0...v2.46.0)
+
 ## [Release 2.45.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.45.0)
 
 ## Summary
