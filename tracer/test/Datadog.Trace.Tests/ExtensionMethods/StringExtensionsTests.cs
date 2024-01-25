@@ -27,11 +27,11 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         }
 
         [Theory]
-        [InlineData("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_:/-.", true, "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789_:/-.")]
+        [InlineData("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_:/-.", true, "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789_:/-_")]
         [InlineData("Content-Type", true, "content-type")]
         [InlineData(" Content-Type ", true, "content-type")]
         [InlineData("C!!!ont_____ent----tYp!/!e", true, "c___ont_____ent----typ_/_e")]
-        [InlineData("Some.Header", true, "some.header")]
+        [InlineData("Some.Header", true, "some_header")]
         [InlineData("9invalidtagname", false, null)]
         [InlineData("invalid_length_201_______________________________________________________________________________________________________________________________________________________________________________________", false, null)]
         [InlineData("valid_length_200________________________________________________________________________________________________________________________________________________________________________________________", true, "valid_length_200________________________________________________________________________________________________________________________________________________________________________________________")]
@@ -48,10 +48,10 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         }
 
         [Theory]
-        [InlineData("Some.Header", true, "some_header")]
-        [InlineData("Some Header", true, "some_header")]
-        [InlineData("Some.Header", false, "some.header")]
-        [InlineData("Some Header", false, "some header")]
+        [InlineData("Some.Header", true, "some_header")]    // always replace periods
+        [InlineData("Some Header", true, "some_header")]    // optionally replace spaces
+        [InlineData("Some.Header", false, "some_header")]   // always replace periods
+        [InlineData("Some Header", false, "some header")]   // optionally replace spaces
         [InlineData(" Some Header ", true, "some_header")]  // always trim whitespace
         [InlineData(" Some Header ", false, "some header")] // always trim whitespace
         public void TryConvertToNormalizedTagName_NormalizePeriodsAndSpaces(string input, bool normalizeSpaces, string expectedTagName)
