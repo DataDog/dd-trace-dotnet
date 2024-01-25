@@ -78,20 +78,12 @@ namespace Datadog.Trace.Ci
             var eventPlatformProxyEnabled = false;
             if (!settings.Agentless)
             {
-                if (!settings.ForceAgentsEvpProxy)
-                {
-                    discoveryService = DiscoveryService.Create(
-                        new ImmutableExporterSettings(settings.TracerSettings.ExporterInternal, true),
-                        tcpTimeout: TimeSpan.FromSeconds(5),
-                        initialRetryDelayMs: 10,
-                        maxRetryDelayMs: 1000,
-                        recheckIntervalMs: int.MaxValue);
-                }
-                else
-                {
-                    Log.Information("Using the Event platform proxy through the agent.");
-                }
-
+                discoveryService = DiscoveryService.Create(
+                    new ImmutableExporterSettings(settings.TracerSettings.ExporterInternal, true),
+                    tcpTimeout: TimeSpan.FromSeconds(5),
+                    initialRetryDelayMs: 10,
+                    maxRetryDelayMs: 1000,
+                    recheckIntervalMs: int.MaxValue);
                 EventPlatformProxySupport = IsEventPlatformProxySupportedByAgent(discoveryService);
                 eventPlatformProxyEnabled = settings.ForceAgentsEvpProxy || EventPlatformProxySupport != EventPlatformProxySupport.None;
             }
@@ -161,6 +153,7 @@ namespace Datadog.Trace.Ci
 
             Log.Information("Initializing CI Visibility from dd-trace / runner");
             Settings = settings;
+            EventPlatformProxySupport = IsEventPlatformProxySupportedByAgent(discoveryService);
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             var tracerSettings = settings.TracerSettings;
@@ -655,8 +648,8 @@ namespace Datadog.Trace.Ci
 
         private static EventPlatformProxySupport IsEventPlatformProxySupportedByAgent(IDiscoveryService discoveryService)
         {
+            var manualResetEventSlim = new ManualResetEventSlim();
             AgentConfiguration? agentConfiguration = null;
-            ManualResetEventSlim manualResetEventSlim = new(false);
             LifetimeManager.Instance.AddShutdownTask(() => manualResetEventSlim.Set());
 
             Log.Debug("Waiting for agent configuration...");
@@ -669,22 +662,29 @@ namespace Datadog.Trace.Ci
                 Log.Debug("Agent configuration received.");
             }
 
-            // We wait up to 5 seconds for the configuration to be retrieved.
             manualResetEventSlim.Wait(5_000);
-            var eventPlatformProxyEndpoint = Volatile.Read(ref agentConfiguration)?.EventPlatformProxyEndpoint;
+            if (agentConfiguration is null)
+            {
+                Log.Warning("Discovery service could not retrieve the agent configuration after 5 seconds.");
+                return EventPlatformProxySupport.None;
+            }
+
+            var eventPlatformProxyEndpoint = agentConfiguration.EventPlatformProxyEndpoint;
             if (!string.IsNullOrEmpty(eventPlatformProxyEndpoint))
             {
-                if (eventPlatformProxyEndpoint?.Contains("v2/") == true)
+                if (eventPlatformProxyEndpoint?.Contains("/v2") == true)
                 {
                     Log.Information("Event platform proxy V2 supported by agent.");
                     return EventPlatformProxySupport.V2;
                 }
 
-                if (eventPlatformProxyEndpoint?.Contains("v4/") == true)
+                if (eventPlatformProxyEndpoint?.Contains("/v4") == true)
                 {
                     Log.Information("Event platform proxy V4 supported by agent.");
                     return EventPlatformProxySupport.V4;
                 }
+
+                Log.Information("EventPlatformProxyEndpoint: '{EVPEndpoint}' not supported.", eventPlatformProxyEndpoint);
             }
             else
             {
