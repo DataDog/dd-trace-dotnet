@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,7 +17,14 @@ namespace Datadog.Trace.Iast.SensitiveData;
 
 internal class JsonTokenizer : ITokenizer
 {
-    private static readonly Regex SourceValueRegex = new(@"(?i)bearer\s+[a-z0-9\._\-]+|token:[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=-]+\.ey[I-L][\w=-]+(\.[\w.+\/=-]+)?|[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY|ssh-rsa\s*[a-z0-9\/\.+]{100,}", RegexOptions.Compiled);
+    private const string SourceValueRegexString = @"(?i)bearer\s+[a-z0-9\._\-]+|token:[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=-]+\.ey[I-L][\w=-]+(\.[\w.+\/=-]+)?|[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY|ssh-rsa\s*[a-z0-9\/\.+]{100,}";
+
+    private Regex _sourceValueRegex;
+
+    public JsonTokenizer(TimeSpan timeout)
+    {
+        _sourceValueRegex = new Regex(SourceValueRegexString, RegexOptions.Compiled | RegexOptions.IgnoreCase, timeout);
+    }
 
     public List<Range> GetTokens(string value, IntegrationId? integrationId = null)
     {
@@ -63,10 +71,10 @@ internal class JsonTokenizer : ITokenizer
         ranges.Add(new Range(start, length));
     }
 
-    private static void RedactKey(string value, JsonTextReader reader, List<Range> ranges)
+    private void RedactKey(string value, JsonTextReader reader, List<Range> ranges)
     {
         var readerValue = reader.Value?.ToString();
-        if (readerValue is null || !SourceValueRegex.IsMatch(readerValue))
+        if (readerValue is null || !_sourceValueRegex.IsMatch(readerValue))
         {
             return;
         }
@@ -74,7 +82,7 @@ internal class JsonTokenizer : ITokenizer
         // Guards to not iterate over the previous ranges in case of a malformed JSON
         var length = readerValue.Length;
         Range? lastRange = ranges.LastOrDefault();
-        var maxLastPosition = lastRange?.Start + lastRange?.Length ?? 0;
+        var maxLastPosition = lastRange?.Start + lastRange?.Length;
 
         // The current position is at the end of the property name, on the ':' character
         // We need to go back to the end of the property name, on the last double quote
