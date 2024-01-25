@@ -88,19 +88,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
                     agent.EventPlatformProxyPayloadReceived += (sender, e) =>
                     {
-                        if (e.Value.PathAndQuery == "/evp_proxy/v2/api/v2/libraries/tests/services/setting")
+                        if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
                         {
                             e.Value.Response = new MockTracerResponse("{\"data\":{\"id\":\"b5a855bffe6c0b2ae5d150fb6ad674363464c816\",\"type\":\"ci_app_tracers_test_service_settings\",\"attributes\":{\"code_coverage\":false,\"efd_enabled\":false,\"flaky_test_retries_enabled\":false,\"itr_enabled\":true,\"require_git\":false,\"tests_skipping\":true}}} ", 200);
                             return;
                         }
 
-                        if (e.Value.PathAndQuery == "/evp_proxy/v2/api/v2/ci/tests/skippable")
+                        if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable"))
                         {
                             e.Value.Response = new MockTracerResponse($"{{\"data\":[],\"meta\":{{\"correlation_id\":\"{correlationId}\"}}}}", 200);
                             return;
                         }
 
-                        if (e.Value.PathAndQuery == "/evp_proxy/v2/api/v2/citestcycle")
+                        if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
                         {
                             var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
                             if (payload.Events?.Length > 0)

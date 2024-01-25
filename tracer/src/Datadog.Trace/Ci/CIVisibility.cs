@@ -78,14 +78,23 @@ namespace Datadog.Trace.Ci
             var eventPlatformProxyEnabled = false;
             if (!settings.Agentless)
             {
-                discoveryService = DiscoveryService.Create(
-                    new ImmutableExporterSettings(settings.TracerSettings.ExporterInternal, true),
-                    tcpTimeout: TimeSpan.FromSeconds(5),
-                    initialRetryDelayMs: 10,
-                    maxRetryDelayMs: 1000,
-                    recheckIntervalMs: int.MaxValue);
-                EventPlatformProxySupport = IsEventPlatformProxySupportedByAgent(discoveryService);
-                eventPlatformProxyEnabled = settings.ForceAgentsEvpProxy || EventPlatformProxySupport != EventPlatformProxySupport.None;
+                if (settings.ForceAgentsEvpProxy)
+                {
+                    // if we force the evp proxy (internal switch)
+                    EventPlatformProxySupport = EventPlatformProxySupport.V2;
+                }
+                else
+                {
+                    discoveryService = DiscoveryService.Create(
+                        new ImmutableExporterSettings(settings.TracerSettings.ExporterInternal, true),
+                        tcpTimeout: TimeSpan.FromSeconds(5),
+                        initialRetryDelayMs: 10,
+                        maxRetryDelayMs: 1000,
+                        recheckIntervalMs: int.MaxValue);
+                    EventPlatformProxySupport = IsEventPlatformProxySupportedByAgent(discoveryService);
+                }
+
+                eventPlatformProxyEnabled = EventPlatformProxySupport != EventPlatformProxySupport.None;
             }
 
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
@@ -153,7 +162,7 @@ namespace Datadog.Trace.Ci
 
             Log.Information("Initializing CI Visibility from dd-trace / runner");
             Settings = settings;
-            EventPlatformProxySupport = IsEventPlatformProxySupportedByAgent(discoveryService);
+            EventPlatformProxySupport = settings.ForceAgentsEvpProxy ? EventPlatformProxySupport.V2 : IsEventPlatformProxySupportedByAgent(discoveryService);
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             var tracerSettings = settings.TracerSettings;
