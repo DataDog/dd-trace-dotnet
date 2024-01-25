@@ -24,7 +24,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private const string SupportedConfigurationEndpoint = "v0.7/config";
         private const string SupportedStatsEndpoint = "v0.6/stats";
         private const string SupportedDataStreamsEndpoint = "v0.1/pipeline_stats";
-        private const string SupportedEventPlatformProxyEndpoint = "evp_proxy/v2";
+        private const string SupportedEventPlatformProxyEndpointV2 = "evp_proxy/v2";
+        private const string SupportedEventPlatformProxyEndpointV4 = "evp_proxy/v4";
         private const string SupportedTelemetryProxyEndpoint = "telemetry/proxy";
         private const string SupportedTracerFlareEndpoint = "tracer_flare/v1";
 
@@ -68,7 +69,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 SupportedConfigurationEndpoint,
                 SupportedStatsEndpoint,
                 SupportedDataStreamsEndpoint,
-                SupportedEventPlatformProxyEndpoint,
+                SupportedEventPlatformProxyEndpointV2,
+                SupportedEventPlatformProxyEndpointV4,
                 SupportedTelemetryProxyEndpoint,
                 SupportedTracerFlareEndpoint,
             };
@@ -255,7 +257,11 @@ namespace Datadog.Trace.Agent.DiscoveryService
                     {
                         dataStreamsMonitoringEndpoint = endpoint;
                     }
-                    else if (endpoint.Equals(SupportedEventPlatformProxyEndpoint, StringComparison.OrdinalIgnoreCase))
+                    else if (eventPlatformProxyEndpoint is null && endpoint.Equals(SupportedEventPlatformProxyEndpointV2, StringComparison.OrdinalIgnoreCase))
+                    {
+                        eventPlatformProxyEndpoint = endpoint;
+                    }
+                    else if (endpoint.Equals(SupportedEventPlatformProxyEndpointV4, StringComparison.OrdinalIgnoreCase))
                     {
                         eventPlatformProxyEndpoint = endpoint;
                     }

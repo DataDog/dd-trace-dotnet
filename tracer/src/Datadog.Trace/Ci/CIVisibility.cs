@@ -44,6 +44,8 @@ namespace Datadog.Trace.Ci
             private set => _settings = value;
         }
 
+        public static EventPlatformProxySupport EventPlatformProxySupport { get; private set; } = EventPlatformProxySupport.None;
+
         public static CITracerManager? Manager
         {
             get
@@ -90,7 +92,8 @@ namespace Datadog.Trace.Ci
                     Log.Information("Using the Event platform proxy through the agent.");
                 }
 
-                eventPlatformProxyEnabled = settings.ForceAgentsEvpProxy || IsEventPlatformProxySupportedByAgent(discoveryService);
+                EventPlatformProxySupport = IsEventPlatformProxySupportedByAgent(discoveryService);
+                eventPlatformProxyEnabled = settings.ForceAgentsEvpProxy || EventPlatformProxySupport != EventPlatformProxySupport.None;
             }
 
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
@@ -650,9 +653,8 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        private static bool IsEventPlatformProxySupportedByAgent(IDiscoveryService discoveryService)
+        private static EventPlatformProxySupport IsEventPlatformProxySupportedByAgent(IDiscoveryService discoveryService)
         {
-            var eventPlatformProxyEnabled = false;
             AgentConfiguration? agentConfiguration = null;
             ManualResetEventSlim manualResetEventSlim = new(false);
             LifetimeManager.Instance.AddShutdownTask(() => manualResetEventSlim.Set());
@@ -669,17 +671,27 @@ namespace Datadog.Trace.Ci
 
             // We wait up to 5 seconds for the configuration to be retrieved.
             manualResetEventSlim.Wait(5_000);
-            if (!string.IsNullOrEmpty(Volatile.Read(ref agentConfiguration)?.EventPlatformProxyEndpoint))
+            var eventPlatformProxyEndpoint = Volatile.Read(ref agentConfiguration)?.EventPlatformProxyEndpoint;
+            if (!string.IsNullOrEmpty(eventPlatformProxyEndpoint))
             {
-                Log.Information("Event platform proxy supported by agent.");
-                eventPlatformProxyEnabled = true;
+                if (eventPlatformProxyEndpoint?.Contains("v2/") == true)
+                {
+                    Log.Information("Event platform proxy V2 supported by agent.");
+                    return EventPlatformProxySupport.V2;
+                }
+
+                if (eventPlatformProxyEndpoint?.Contains("v4/") == true)
+                {
+                    Log.Information("Event platform proxy V4 supported by agent.");
+                    return EventPlatformProxySupport.V4;
+                }
             }
             else
             {
                 Log.Information("Event platform proxy is not supported by the agent. Falling back to the APM protocol.");
             }
 
-            return eventPlatformProxyEnabled;
+            return EventPlatformProxySupport.None;
         }
     }
 }
