@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
@@ -126,9 +127,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             public byte[] TryGetLastBytes(string name)
             {
-                if (_messageAttributes != null && _messageAttributes.TryGetValue(SqsKey, out string json))
+                // IDictionary returns null if the key is not present
+                var json = _messageAttributes?[SqsKey]?.DuckCast<IMessageAttributeValue>();
+                if (json != null)
                 {
-                    var ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+                    var ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.StringValue);
                     if (ddAttributes.TryGetValue(name, out var b64))
                     {
                         return Convert.FromBase64String(b64);

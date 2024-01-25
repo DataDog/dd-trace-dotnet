@@ -45,14 +45,17 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
         /*
          * runs a scenario where we test:
          *   in the same thread:
-         *    - 2 async send
-         *    - 2 async receive
-         *    - 2 async batch send of 3 messages each
-         *    - 2 async receive of 3 messages
+         *    - 1 async send / receive + same with a batch of 3 messages
+         *    - 1 async send / receive + same with a batch of 3 messages where headers are full (so we cannot inject an datadog info)
          *   then in 3 different threads:
          *    - 2 async send and 2 async batch send of 3 messages
          *    - 2 async receive of the non batch messages
          *    - 2 async receive of 3 messages of the batch messages
+         *   batch messages and single messages are sent to 2 different queues.
+         *
+         * For DSM, this results in:
+         *  - 2 produce pathway points (one for each queue)
+         *  - 4 consume pathway points (one with a parent for the "normal" case, and one without for when headers are full, times 2 queues)
          */
         using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
@@ -62,7 +65,7 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
             var expectedCount = 0;
             var frameworkName = "NetFramework";
 #else
-            var expectedCount = 28;
+            var expectedCount = 34;
             var frameworkName = "NetCore";
 #endif
             var spans = agent.WaitForSpans(expectedCount);
@@ -74,7 +77,7 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
             var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
             taggedSpans.Should().HaveCount(expected: 16);
 
-            var dsPoints = agent.WaitForDataStreamsPoints(statsCount: 16);
+            var dsPoints = agent.WaitForDataStreamsPoints(statsCount: 12);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseParameters(packageVersion);
