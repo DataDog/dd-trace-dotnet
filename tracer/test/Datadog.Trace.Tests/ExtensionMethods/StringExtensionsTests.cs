@@ -54,9 +54,9 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData("Some Header", false, "some header")]
         [InlineData(" Some Header ", true, "some_header")]  // always trim whitespace
         [InlineData(" Some Header ", false, "some header")] // always trim whitespace
-        public void TryConvertToNormalizedTagName_NormalizePeriodsAndSpaces(string input, bool normalizePeriodsAndSpaces, string expectedTagName)
+        public void TryConvertToNormalizedTagName_NormalizePeriodsAndSpaces(string input, bool normalizeSpaces, string expectedTagName)
         {
-            input.TryConvertToNormalizedTagName(normalizeSpaces: normalizePeriodsAndSpaces, out var actualTagName).Should().BeTrue();
+            input.TryConvertToNormalizedTagName(normalizeSpaces, out var actualTagName).Should().BeTrue();
             actualTagName.Should().Be(expectedTagName);
         }
 
