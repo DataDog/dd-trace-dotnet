@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Helpers;
 
@@ -27,6 +28,6 @@ public class BsonAspect
     [AspectMethodInsertBefore("MongoDB.Bson.IO.JsonReader::.ctor(System.String)")]
     public static object AnalyzeJsonString(string json)
     {
-        return MongoDbHelper.DetectVulnerability(json);
+        return MongoDbHelper.DetectVulnerability(json, IntegrationId.MongoDb);
     }
 }
