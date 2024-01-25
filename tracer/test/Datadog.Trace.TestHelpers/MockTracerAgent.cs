@@ -303,7 +303,7 @@ namespace Datadog.Trace.TestHelpers
                 timeoutInMilliseconds,
                 (stats) =>
                 {
-                    return stats.Sum(s => s.Stats.Sum(bucket => bucket.Stats.Length)) == statsCount;
+                    return stats.Sum(s => s.Stats.Sum(bucket => bucket.Stats.Length)) >= statsCount;
                 });
         }
 
