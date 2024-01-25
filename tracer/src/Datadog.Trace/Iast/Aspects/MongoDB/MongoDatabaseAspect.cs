@@ -53,7 +53,7 @@ public class MongoDatabaseAspect
         }
         catch (Exception ex)
         {
-            Log.Debug(ex, "Failed to analyze the command");
+            Log.Warning(ex, "Failed to analyze the command");
         }
 
         return command;
