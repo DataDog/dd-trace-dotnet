@@ -86,7 +86,6 @@ internal static class IbmMqHelper
             }
 
             SpanContext? propagatedContext = null;
-            PathwayContext? pathwayContext = null;
 
             var adapter = new IbmMqHeadersAdapter(message);
             try
@@ -96,19 +95,6 @@ internal static class IbmMqHelper
             catch (Exception ex)
             {
                 Log.Error(ex, "Error extracting propagated headers from IbmMq message");
-            }
-
-            var dataStreams = tracer.TracerManager.DataStreamsManager;
-            if (dataStreams.IsEnabled)
-            {
-                try
-                {
-                    pathwayContext = dataStreams.ExtractPathwayContextAsBase64String(adapter);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting PathwayContext from IbmMq message");
-                }
             }
 
             var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
@@ -128,11 +114,6 @@ internal static class IbmMqHelper
             span.Type = SpanTypes.Queue;
             span.ResourceName = resourceName;
             span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
-
-            if (dataStreams.IsEnabled)
-            {
-                span.Context.MergePathwayContext(pathwayContext);
-            }
         }
         catch (Exception ex)
         {

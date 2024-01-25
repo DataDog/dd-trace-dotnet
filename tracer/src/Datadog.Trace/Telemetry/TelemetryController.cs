@@ -6,6 +6,8 @@
 #nullable enable
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,7 +17,9 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Telemetry;
 
@@ -136,6 +140,52 @@ internal class TelemetryController : ITelemetryController
     public void SetFlushInterval(TimeSpan flushInterval)
     {
         _queue.Enqueue(new WorkItem(WorkItem.ItemType.SetFlushInterval, flushInterval));
+    }
+
+    public async Task DumpTelemetry(string filePath)
+    {
+        if (!_isStarted)
+        {
+            // we haven't performed all startup initialization yet, so we can't dump anything
+            Log.Information("Unable to dump telemetry as controller not yet initialized");
+            return;
+        }
+
+        try
+        {
+            var application = _application.GetApplicationData();
+            var host = _application.GetHostData();
+            if (application is null || host is null)
+            {
+                Log.Debug("Telemetry not initialized, skipping");
+                return;
+            }
+
+            // fetch the "complete" values, and make sure to not impact real telemetry push
+            var input = new TelemetryInput(
+                configuration: null, // we don't store this indefinitely, so no way of dumping full config
+                _dependencies.GetFullData(),
+                _integrations.GetFullData(),
+                metrics: null,
+                _products.GetFullData(),
+                sendAppStarted: false);
+
+            // This will increment the data sequence, but shouldn't be an issue
+            var data = _dataBuilder.BuildTelemetryData(application, host, in input, _namingVersion, sendAppClosing: false);
+            Log.Debug("Dumping telemetry to file {Filename}", filePath);
+
+            // serialize JSON directly to a file
+            var serializer = JsonSerializer.Create(JsonTelemetryTransport.SerializerSettings);
+            using var file = File.Open(filePath, FileMode.Create, FileAccess.Write);
+            using var writer = new StreamWriter(file);
+            serializer.Serialize(writer, data);
+            await writer.FlushAsync().ConfigureAwait(false);
+            Log.Debug("Telemetry dump complete");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error dumping telemetry to file {Filename}", filePath);
+        }
     }
 
     private void TerminateLoop()

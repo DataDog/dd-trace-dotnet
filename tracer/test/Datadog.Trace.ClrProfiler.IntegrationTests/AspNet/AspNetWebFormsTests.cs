@@ -17,7 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
-    public class AspNetWebFormsTests : TracingIntegrationTest, IClassFixture<IisFixture>
+    public class AspNetWebFormsTests : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
 
@@ -30,7 +30,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/account/login?shutdown=1";
-            _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
@@ -102,6 +101,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Equal("elasticsearch", span.Type);
             }
         }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 }
 

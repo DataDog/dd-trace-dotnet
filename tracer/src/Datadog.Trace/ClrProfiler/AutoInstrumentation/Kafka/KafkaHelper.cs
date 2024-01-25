@@ -259,8 +259,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     }
                     else
                     {
-                        span.Context.MergePathwayContext(pathwayContext);
-
                         // TODO: we could pool these arrays to reduce allocations
                         // NOTE: the tags must be sorted in alphabetical order
                         var edgeTags = string.IsNullOrEmpty(topic)
@@ -272,7 +270,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                             CheckpointKind.Consume,
                             edgeTags,
                             message is null ? 0 : GetMessageSize(message),
-                            tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs);
+                            tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs,
+                            pathwayContext);
                     }
                 }
             }

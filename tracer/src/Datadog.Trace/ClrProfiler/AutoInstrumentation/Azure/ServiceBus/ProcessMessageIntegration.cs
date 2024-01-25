@@ -73,8 +73,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                     }
                 }
 
-                span.Context.MergePathwayContext(pathwayContext);
-
                 var consumeTime = span.StartTime.UtcDateTime;
                 var produceTime = message.EnqueuedTime.UtcDateTime;
                 var messageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
@@ -93,7 +91,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                     CheckpointKind.Consume,
                     edgeTags,
                     AzureServiceBusCommon.GetMessageSize(message),
-                    (long)messageQueueTimeMs);
+                    (long)messageQueueTimeMs,
+                    pathwayContext);
             }
 
             return CallTargetState.GetDefault();

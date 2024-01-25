@@ -1,8 +1,9 @@
-﻿// <copyright file="CallTargetBubbleUpException.cs" company="Datadog">
+// <copyright file="CallTargetBubbleUpException.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget;
@@ -49,5 +50,25 @@ public class CallTargetBubbleUpException : Exception
     public CallTargetBubbleUpException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
         : base(info, context)
     {
+    }
+
+    /// <summary>
+    /// To know if any inner exception is of type CallTargetBubbleUpException
+    /// </summary>
+    /// <param name="exception">exception</param>
+    /// <returns>whether any child  is of type</returns>
+    public static bool IsCallTargetBubbleUpException(Exception? exception)
+    {
+        while (exception is not null)
+        {
+            if (exception is CallTargetBubbleUpException)
+            {
+                return true;
+            }
+
+            exception = exception.InnerException;
+        }
+
+        return false;
     }
 }

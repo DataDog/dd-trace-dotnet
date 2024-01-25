@@ -50,6 +50,7 @@
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.iast.telemetry.executed.propagation: 1.0,
+      _dd.iast.telemetry.executed.sink.header_injection: 1.0,
       _dd.iast.telemetry.executed.sink.hsts_header_missing: 1.0,
       _dd.iast.telemetry.executed.sink.path_traversal: 1.0,
       _dd.iast.telemetry.executed.sink.unvalidated_redirect: 1.0,

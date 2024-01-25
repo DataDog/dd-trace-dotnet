@@ -44,7 +44,7 @@ public class DataStreamsMonitoringAzureServiceBusTests : TestHelper
 
         using var assertionScope = new AssertionScope();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+        using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
             agent.SpanFilters.Add(s => s.Tags.TryGetValue("messaging.system", out var value) && value == "servicebus"); // Exclude the Admin requests
             var spans = agent.WaitForSpans(23);
@@ -62,7 +62,7 @@ public class DataStreamsMonitoringAzureServiceBusTests : TestHelper
     [SkippableTheory(Skip = "This has only been tested on a live Azure Service Bus namespace using a connection string. Unskip this if you'd like to run locally or if you've correctly configured piotr-rojek/devopsifyme-sbemulator in CI")]
     [MemberData(nameof(GetPackageVersions))]
     [Trait("Category", "EndToEnd")]
-    public void ValidateSpanTags(string packageVersion)
+    public async Task ValidateSpanTags(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
@@ -72,7 +72,7 @@ public class DataStreamsMonitoringAzureServiceBusTests : TestHelper
 
         using var assertionScope = new AssertionScope();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+        using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
             agent.SpanFilters.Add(s => s.Tags.TryGetValue("messaging.system", out var value) && value == "servicebus"); // Exclude the Admin requests
             var spans = agent.WaitForSpans(23);

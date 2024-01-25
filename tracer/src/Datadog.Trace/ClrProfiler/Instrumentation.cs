@@ -7,13 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Helpers;
@@ -21,7 +19,6 @@ using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -371,7 +368,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 try
                 {
-                    InitRemoteConfigurationManagement(tracer);
+                    InitLiveDebugger(tracer);
                 }
                 catch (Exception e)
                 {
@@ -446,10 +443,25 @@ namespace Datadog.Trace.ClrProfiler
         }
 #endif
 
-        private static void InitRemoteConfigurationManagement(Tracer tracer)
+        private static void InitLiveDebugger(Tracer tracer)
         {
+            var settings = tracer.Settings;
+            var debuggerSettings = DebuggerSettings.FromDefaultSource();
+
+            if (!settings.IsRemoteConfigurationAvailable)
+            {
+                // live debugger requires RCM, so there's no point trying to initialize it if RCM is not available
+                if (debuggerSettings.Enabled)
+                {
+                    Log.Warning("Live Debugger is enabled but remote configuration is not available in this environment, so live debugger cannot be enabled.");
+                }
+
+                tracer.TracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
+                return;
+            }
+
             // Service Name must be lowercase, otherwise the agent will not be able to find the service
-            var serviceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceNameInternal ?? tracer.DefaultServiceName);
+            var serviceName = TraceUtil.NormalizeTag(settings.ServiceNameInternal ?? tracer.DefaultServiceName);
             var discoveryService = tracer.TracerManager.DiscoveryService;
 
             Task.Run(
@@ -464,7 +476,7 @@ namespace Datadog.Trace.ClrProfiler
 
                     if (isDiscoverySuccessful)
                     {
-                        var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, tracer.Settings, serviceName, tracer.TracerManager.Telemetry);
+                        var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings);
 
                         Log.Debug("Initializing live debugger.");
 

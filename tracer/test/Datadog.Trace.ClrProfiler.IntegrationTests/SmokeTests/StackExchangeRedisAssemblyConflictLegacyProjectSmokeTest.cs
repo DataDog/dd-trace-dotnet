@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
 using Xunit;
 using Xunit.Abstractions;
@@ -20,9 +21,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         [Fact(Skip = ".NET Framework test, but cannot run on Windows because it requires Redis")]
         [Trait("Category", "Smoke")]
-        public void NoExceptions()
+        public async Task NoExceptions()
         {
-            CheckForSmoke(shouldDeserializeTraces: false);
+            await CheckForSmoke(shouldDeserializeTraces: false);
         }
     }
 }

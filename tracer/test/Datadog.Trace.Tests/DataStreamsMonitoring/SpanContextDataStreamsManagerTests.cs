@@ -22,68 +22,50 @@ public class SpanContextDataStreamsManagerTests
         var spanContext = new SpanContext(traceId: 123, spanId: 1234);
         spanContext.PathwayContext.Should().BeNull();
 
-        spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" }, 100, 0);
+        spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" }, payloadSizeBytes: 100, timeInQueueMs: 0, parent: null);
 
         spanContext.PathwayContext.Should().NotBeNull();
     }
 
     [Fact]
-    public void MergePathwayContext_WhenNull_UsesOtherContext()
+    public void SetCheckpoint_BatchProduceDoesNotCreateChain()
     {
-        var ctx = new PathwayContext();
-
+        var dsm = GetEnabledDataStreamManager();
         var spanContext = new SpanContext(traceId: 123, spanId: 1234);
         spanContext.PathwayContext.Should().BeNull();
 
-        spanContext.MergePathwayContext(ctx);
-        spanContext.PathwayContext.Value.Should().Be(ctx);
-    }
+        spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" }, payloadSizeBytes: 100, timeInQueueMs: 0, parent: null);
 
-    [Fact]
-    public void MergePathwayContext_WhenOtherContextIsNull_KeepsContext()
-    {
-        var dsm = GetEnabledDataStreamManager();
-        var spanContext = new SpanContext(traceId: 123, spanId: 1234);
-        spanContext.SetCheckpoint(dsm,  CheckpointKind.Produce, new[] { "some-edge" }, 100, 0);
         spanContext.PathwayContext.Should().NotBeNull();
-        var previous = spanContext.PathwayContext;
+        var firstPathwayHash = spanContext.PathwayContext.Value.Hash;
 
-        spanContext.MergePathwayContext(null);
-        spanContext.PathwayContext.Should().Be(previous);
+        spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" }, payloadSizeBytes: 100, timeInQueueMs: 0, parent: null);
+
+        spanContext.PathwayContext.Should().NotBeNull();
+        // we used the same parameters, so we should have the same hash
+        // this would be false if the first pathway was considered as the parent of the second one.
+        spanContext.PathwayContext.Value.Hash.Should().BeEquivalentTo(firstPathwayHash);
     }
 
     [Fact]
-    public void MergePathwayContext_WhenOtherContextIsNotNull_KeepsEach50Percent()
+    public void SetCheckpoint_BatchConsumeDoesNotCreateChain()
     {
-        int iterations = 1000_000;
-        // When we have a context and there's a new context we pick one randomly
         var dsm = GetEnabledDataStreamManager();
         var spanContext = new SpanContext(traceId: 123, spanId: 1234);
-        spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" }, 100, 0);
+        spanContext.PathwayContext.Should().BeNull();
+        var parentCtx = new PathwayContext(new PathwayHash(value: 12), pathwayStartNs: 5, edgeStartNs: 8);
 
-        // Make sure we have a different hash for comparison purposes
-        while (spanContext.PathwayContext.Value.Hash.Value < (ulong)iterations)
-        {
-            spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" }, 100, 0);
-        }
+        spanContext.SetCheckpoint(dsm, CheckpointKind.Consume, new[] { "some-edge" }, payloadSizeBytes: 100, timeInQueueMs: 0, parentCtx);
 
-        var sameCount = 0;
-        var otherCount = 0;
-        for (int i = 0; i < iterations; i++)
-        {
-            var other = new PathwayContext(new PathwayHash((ulong)i), 1234, 5678);
-            spanContext.MergePathwayContext(other);
-            if (spanContext.PathwayContext.Value.Hash.Value == (ulong)i)
-            {
-                otherCount++;
-            }
-            else
-            {
-                sameCount++;
-            }
-        }
+        spanContext.PathwayContext.Should().NotBeNull();
+        var firstPathwayHash = spanContext.PathwayContext.Value.Hash;
 
-        sameCount.Should().BeCloseTo(otherCount, (uint)(iterations / 100)); // roughly 1%
+        spanContext.SetCheckpoint(dsm, CheckpointKind.Consume, new[] { "some-edge" }, payloadSizeBytes: 100, timeInQueueMs: 0, parentCtx);
+
+        spanContext.PathwayContext.Should().NotBeNull();
+        // we used the same parameters and the same parent hash, so we should have the same hash
+        // this would be false if the first pathway was considered as the parent of the second one.
+        spanContext.PathwayContext.Value.Hash.Should().BeEquivalentTo(firstPathwayHash);
     }
 
     private static DataStreamsManager GetEnabledDataStreamManager()

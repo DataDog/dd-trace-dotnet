@@ -44,6 +44,14 @@ namespace Datadog.Trace
         public const string ContainerId = "Datadog-Container-ID";
 
         /// <summary>
+        /// The unique identifier of the container where the traced application is running, either as the container id
+        /// or the cgroup node controller's inode.
+        /// This differs from <see cref="ContainerId"/> which is always the container id, which may not always be
+        /// accessible due to new Pod Security Standards starting in Kubernetes 1.25.
+        /// </summary>
+        public const string EntityId = "Datadog-Entity-ID";
+
+        /// <summary>
         /// Tells the agent whether top-level spans are computed by the tracer
         /// </summary>
         public const string ComputedTopLevelSpan = "Datadog-Client-Computed-Top-Level";

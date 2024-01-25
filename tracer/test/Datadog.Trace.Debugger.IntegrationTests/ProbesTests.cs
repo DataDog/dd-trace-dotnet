@@ -186,7 +186,7 @@ public class ProbesTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         SetDebuggerEnvironment(agent);
         using var logEntryWatcher = CreateLogEntryWatcher();
-        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
             SetProbeConfiguration(agent, probes.Select(p => p.Probe).ToArray());
@@ -228,7 +228,7 @@ public class ProbesTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         SetDebuggerEnvironment(agent);
         using var logEntryWatcher = CreateLogEntryWatcher();
-        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
             await RunSingle(phaseNumber: 1, captureSnapshot: false);
@@ -284,7 +284,7 @@ public class ProbesTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         SetDebuggerEnvironment(agent);
         using var logEntryWatcher = CreateLogEntryWatcher();
-        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
             SetProbeConfiguration(agent, probes);
@@ -334,7 +334,7 @@ public class ProbesTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         SetDebuggerEnvironment(agent);
         using var logEntryWatcher = CreateLogEntryWatcher();
-        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
             await sample.RunCodeSample();
@@ -436,7 +436,7 @@ public class ProbesTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent(useStatsD: useStatsD);
         SetDebuggerEnvironment(agent);
         using var logEntryWatcher = CreateLogEntryWatcher();
-        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
             var isSinglePhase = probes.Select(p => p.ProbeTestData.Phase).Distinct().Count() == 1;
@@ -703,7 +703,12 @@ public class ProbesTests : TestHelper
 
         if (testDescription.TestType == typeof(AsyncInstanceMethod) && !EnvironmentTools.IsWindows())
         {
-            throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+            throw new SkipException("Should run only on Windows. Different approvals between Windows/Linux.");
+        }
+
+        if (testDescription.TestType == typeof(AsyncVoid) && !EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("Should run only on Windows. Different approvals between Windows/Linux.");
         }
 
         if (!testDescription.IsOptimized && _unoptimizedNotSupportedTypes.Contains(testDescription.TestType))
@@ -719,7 +724,7 @@ public class ProbesTests : TestHelper
         SetDebuggerEnvironment(agent);
 
         using var logEntryWatcher = CreateLogEntryWatcher();
-        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
             SetProbeConfiguration(agent, probes);

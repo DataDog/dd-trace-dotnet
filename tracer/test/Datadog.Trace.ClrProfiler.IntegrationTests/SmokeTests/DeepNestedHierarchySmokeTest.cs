@@ -1,8 +1,9 @@
-﻿// <copyright file="DeepNestedHierarchySmokeTest.cs" company="Datadog">
+// <copyright file="DeepNestedHierarchySmokeTest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,8 +18,8 @@ public class DeepNestedHierarchySmokeTest : SmokeTestBase
 
     [SkippableFact]
     [Trait("Category", "Smoke")]
-    public void NoExceptions()
+    public async Task NoExceptions()
     {
-        CheckForSmoke(shouldDeserializeTraces: false);
+        await CheckForSmoke(shouldDeserializeTraces: false);
     }
 }

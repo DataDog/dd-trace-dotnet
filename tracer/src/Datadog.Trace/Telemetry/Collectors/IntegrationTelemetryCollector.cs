@@ -117,6 +117,7 @@ namespace Datadog.Trace.Telemetry
             // Must only include integrations that have changed since last time.
             // If this is the first time we're sending data, we know we're sending all of them
             List<IntegrationTelemetryData> changed;
+
             if (!_hasSentFirstValues)
             {
                 _hasSentFirstValues = true;
@@ -127,6 +128,14 @@ namespace Datadog.Trace.Telemetry
                 changed = new();
             }
 
+            return BuildTelemetryData(changed, includeAllValues: false);
+        }
+
+        public List<IntegrationTelemetryData> GetFullData()
+            => BuildTelemetryData(new(IntegrationRegistry.Names.Length), includeAllValues: true);
+
+        private List<IntegrationTelemetryData> BuildTelemetryData(List<IntegrationTelemetryData> integrations, bool includeAllValues)
+        {
             for (var i = 0; i < _integrationsById.Length; i++)
             {
                 var integration = _integrationsById[i];
@@ -136,14 +145,19 @@ namespace Datadog.Trace.Telemetry
                     autoEnabled: integration.WasExecuted > 0,
                     error: integration.Error);
 
-                if (!data.Equals(_previousValues[i]))
+                if (includeAllValues)
+                {
+                    // don't update previous if we're dumping all values
+                    integrations.Add(data);
+                }
+                else if (!data.Equals(_previousValues[i]))
                 {
                     _previousValues[i] = data;
-                    changed.Add(data);
+                    integrations.Add(data);
                 }
             }
 
-            return changed;
+            return integrations;
         }
 
         private void SetHasChanges()

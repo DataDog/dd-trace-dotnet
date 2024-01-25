@@ -55,6 +55,7 @@ namespace Honeypot
             NugetPackages.Add("Confluent.Kafka", new [] { "Confluent.Kafka" });
             NugetPackages.Add("MongoDB.Driver.Core", new [] { "MongoDB.Driver.Core", "MongoDB.Driver" });
             NugetPackages.Add("Microsoft.VisualStudio.TestPlatform.TestFramework", new [] { "Microsoft.VisualStudio.TestPlatform" });
+            NugetPackages.Add("Microsoft.VisualStudio.TestPlatform.Common", new [] { "Microsoft.VisualStudio.TestPlatform" });
             NugetPackages.Add("Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", new [] { "MSTest.TestAdapter" });
             NugetPackages.Add("MySqlConnector", new [] { "MySqlConnector" });
             NugetPackages.Add("MySql.Data", new [] { "MySql.Data" });
@@ -94,6 +95,7 @@ namespace Honeypot
             NugetPackages.Add("OpenTelemetry", new [] { "OpenTelemetry" });
             NugetPackages.Add("Microsoft.AspNetCore.Server.IIS", new[] { "Microsoft.AspNetCore.Server.IIS" });
             NugetPackages.Add("Microsoft.AspNetCore.Server.Kestrel.Core", new string[] { "Microsoft.AspNetCore.Server.Kestrel.Core" });
+            NugetPackages.Add("Microsoft.AspNetCore.Diagnostics", new[] { "Microsoft.AspNetCore.Diagnostics" });
             NugetPackages.Add("Azure.Messaging.ServiceBus", new string[] { "Azure.Messaging.ServiceBus" });
             NugetPackages.Add("amqmdnetstd", new [] { "IBMMQDotnetClient" });
             NugetPackages.Add("Yarp.ReverseProxy", new [] { "Yarp.ReverseProxy" });

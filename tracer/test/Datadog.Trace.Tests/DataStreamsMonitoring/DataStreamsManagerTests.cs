@@ -210,6 +210,33 @@ public class DataStreamsManagerTests
     }
 
     [Fact]
+    public async Task WhenEnabled_OneConsumeTwoProduceUsesTwiceConsumePathway()
+    {
+        var dsm = GetDataStreamManager(enabled: true, out var writer);
+
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "in" }, payloadSizeBytes: 100, timeInQueueMs: 100);
+
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Produce, new[] { "out" }, payloadSizeBytes: 100, timeInQueueMs: 100);
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Produce, new[] { "out" }, payloadSizeBytes: 100, timeInQueueMs: 100);
+
+        await dsm.DisposeAsync();
+
+        writer.Points.Should().HaveCount(expected: 3);
+        var points = writer.Points.ToArray();
+        // checking that points are in the expected order
+        points[0].EdgeTags.Should().Contain("in");
+        points[1].EdgeTags.Should().Contain("out");
+        points[2].EdgeTags.Should().Contain("out");
+        // both produces should be considered as children of the consume
+        points[1].ParentHash.Should().BeEquivalentTo(points[0].Hash);
+        points[2].ParentHash.Should().BeEquivalentTo(points[0].Hash);
+        // as a result, they should have the same hash (because their tags are the same too)
+        points[1].Hash.Should().BeEquivalentTo(points[2].Hash);
+        // just checking that the produce had a different hash
+        points[0].Hash.Should().NotBeSameAs(points[1].Hash);
+    }
+
+    [Fact]
     public async Task DisposeAsync_DisablesDsm()
     {
         var dsm = GetDataStreamManager(true, out _);

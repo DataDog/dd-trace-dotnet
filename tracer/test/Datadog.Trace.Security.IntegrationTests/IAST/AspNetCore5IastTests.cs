@@ -11,9 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
@@ -105,6 +103,25 @@ public class AspNetCore5IastTestsSpanTelemetryIastEnabled : AspNetCore5IastTests
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
+
+    [Fact]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestStackTraceLeak()
+    {
+        var filename = "Iast.StackTraceLeak.AspNetCore5.NotVulnerable";
+        var url = "/Iast/StackTraceLeak";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 public class AspNetCore5IastTestsOneVulnerabilityPerRequestIastEnabled : AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled
@@ -161,6 +178,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     public AspNetCore5IastTestsFullSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsEnabled")
     {
+        SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
     }
 
     // When the request is finished without this X-Content-Type-Options: nosniff header and the content-type of the request looks
@@ -231,6 +249,25 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing(scrubHash: false);
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Fact]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestStackTraceLeak()
+    {
+        var filename = "Iast.StackTraceLeak.AspNetCore5";
+        var url = "/Iast/StackTraceLeak";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
@@ -579,6 +616,77 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 4, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    // In header injections, we should exclude some headers to prevent false positives:
+    // location: it is already reported in UNVALIDATED_REDIRECT vulnerability detection.
+    // Sec-WebSocket-Location, Sec-WebSocket-Accept, Upgrade, Connection: Usually the framework gets info from request
+    // access-control-allow-*: when the source of the tainted range is the request header origin or access-control-request-headers
+    // set-cookie: We should ignore set-cookie header if the source of all the tainted ranges are cookies
+    // We should exclude the injection when the tainted string only has one range which comes from a request header with the same name that the header that we are checking in the response.
+    // Headers could store sensitive information, we should redact whole <header_value> if:
+    // <header_name> matches with a RegExp
+    // <header_value> matches with  a RegExp
+    // We should redact the sensitive information from the evidence when:
+    // Tainted range is considered sensitive value
+
+    [Trait("Category", "EndToEnd")]
+    [SkippableTheory]
+    [Trait("RunOnWindows", "True")]
+    [InlineData("Vuln.SensitiveName", new string[] { "name", "private_token" }, new string[] { "value", "ShouldBeRedacted" })]
+    [InlineData("Vuln.SensitiveValue", new string[] { "name", "myName", "value", ":bearer secret" }, null)]
+    [InlineData("Vuln.SensitiveValueComplex", new string[] { "name", "myName", "value", ":bear" }, new string[] { "value", "er%20secret" })]
+    [InlineData("NotVulnerable", new string[] { "propagation", "noVulnValue" }, null)]
+    [InlineData("Vuln.NoSensitive", new string[] { "name", "Name", "value", "value" }, new string[] { "value", "moreText" })]
+    [InlineData("NotVulnerable", new string[] { "name", "Sec-WebSocket-Accept" }, new string[] { "value", "moreText" })]
+    [InlineData("Vuln.Origin", new string[] { "name", "access-control-allow-origin", "value", "https://example.com" }, null)]
+    [InlineData("NotVulnerable", new string[] { "name", "access-control-allow-origin", "origin", "NotVulnerable" }, null, true)] // Not vulnerable
+    [InlineData("NotVulnerable", new string[] { "name", "Access-Control-Allow-Headers", "Access-Control-Request-Headers", "NotVulnerable" }, null, true)] // Not vulnerable
+    [InlineData("Vuln.Cookie.SensitiveValue", new string[] { "name", "set-cookie", "value", "token=glpat-eFynewhuKJFGdfGDFGdw;max-age=31536000;Secure;HttpOnly;SameSite=Strict" }, null)]
+    [InlineData("NotVulnerable", null, new string[] { "name", "set-cookie", "value", "NotVulnerable%3D22%3Bmax-age%3D31536000%3BSecure%3BHttpOnly%3BSameSite%3DStrict" })]
+    [InlineData("Vuln.MultipleHeaderValues", new string[] { "name", "extraName", "value", "value2" }, null)]
+    public async Task TestIastHeaderInjectionRequest(string testCase, string[] headers, string[] cookies, bool useValueFromOriginHeader = false)
+    {
+        var notVulnerable = testCase.StartsWith("notvulnerable", StringComparison.OrdinalIgnoreCase) || !IastEnabled;
+        var filename = "Iast.HeaderInjection.AspNetCore5." + (notVulnerable ? "NotVuln" : testCase) +
+            (useValueFromOriginHeader ? ".origin" : string.Empty);
+        if (!notVulnerable && RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        if (!IastEnabled) { filename += ".IastDisabled"; }
+        var url = $"/Iast/HeaderInjection?useValueFromOriginHeader={useValueFromOriginHeader}";
+        IncludeAllHttpSpans = true;
+
+        Dictionary<string, string> headersDic = new();
+        Dictionary<string, string> cookiesDic = new();
+
+        if (headers != null)
+        {
+            for (int i = 0; i < headers.Length; i = i + 2)
+            {
+                headersDic.Add(headers[i], headers[i + 1]);
+            }
+        }
+
+        if (cookies != null)
+        {
+            for (int i = 0; i < cookies.Length; i = i + 2)
+            {
+                cookiesDic.Add(cookies[i], cookies[i + 1]);
+            }
+        }
+
+        AddCookies(cookiesDic);
+        AddHeaders(headersDic);
+
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, 1, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();

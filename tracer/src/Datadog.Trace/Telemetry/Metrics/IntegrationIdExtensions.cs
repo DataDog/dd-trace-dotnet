@@ -72,6 +72,8 @@ internal static class IntegrationIdExtensions
             IntegrationId.Remoting => MetricTags.IntegrationName.Remoting,
             IntegrationId.TrustBoundaryViolation => MetricTags.IntegrationName.TrustBoundaryViolation,
             IntegrationId.UnvalidatedRedirect => MetricTags.IntegrationName.UnvalidatedRedirect,
+            IntegrationId.TestPlatformAssemblyResolver => MetricTags.IntegrationName.TestPlatformAssemblyResolver,
+            IntegrationId.StackTraceLeak => MetricTags.IntegrationName.StackTraceLeak,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }

@@ -25,31 +25,6 @@ internal abstract class AspectAttribute : Attribute
     private static Regex nameSplitter = new Regex(@"(?:([^|]+)\|)?(([^:]+)(?:::[^()]+\(.*\))?)", RegexOptions.Compiled); // 1->Assembly 2->Function 3->Type
     private readonly List<object> parameters = new List<object>();
 
-    public AspectAttribute(string targetMethod, AspectType aspectType = AspectType.Default, params VulnerabilityType[] vulnerabilityTypes)
-        : this(targetMethod, string.Empty, 0, false, aspectType, vulnerabilityTypes)
-    {
-    }
-
-    public AspectAttribute(string targetMethod, params AspectFilter[] filters)
-        : this(targetMethod, string.Empty, 0, false, filters)
-    {
-    }
-
-    public AspectAttribute(string targetMethod, string targetType, params AspectFilter[] filters)
-        : this(targetMethod, targetType, 0, false, filters)
-    {
-    }
-
-    public AspectAttribute(string targetMethod, string targetType, int paramShift, bool boxParam, AspectType aspectType = AspectType.Propagation, params VulnerabilityType[] vulnerabilityTypes)
-        : this(targetMethod, targetType, new int[] { paramShift }, new bool[] { boxParam }, new AspectFilter[] { }, aspectType, vulnerabilityTypes)
-    {
-    }
-
-    public AspectAttribute(string targetMethod, string targetType, int paramShift, bool boxParam, AspectFilter[] filters, AspectType aspectType = AspectType.Propagation, params VulnerabilityType[] vulnerabilityTypes)
-        : this(targetMethod, targetType, new int[] { paramShift }, new bool[] { boxParam }, filters, aspectType, vulnerabilityTypes)
-    {
-    }
-
     public AspectAttribute(string targetMethod, string targetType, int[] paramShift, bool[] boxParam, AspectFilter[] filters, AspectType aspectType = AspectType.Propagation, params VulnerabilityType[] vulnerabilityTypes)
     {
         if (paramShift == null || paramShift.Length == 0) { paramShift = new int[] { 0 }; }
@@ -63,8 +38,8 @@ internal abstract class AspectAttribute : Attribute
 
         Debug.Assert(paramShift.Length == boxParam.Length, "paramShift and boxParam must be same len");
 
-        parameters.Add(targetMethod.Quote());
-        parameters.Add(targetType.Quote());
+        parameters.Add(targetMethod);
+        parameters.Add(targetType);
         parameters.Add(paramShift);
         parameters.Add(boxParam);
         parameters.Add(filters);
@@ -118,11 +93,6 @@ internal abstract class AspectAttribute : Attribute
 
     public VulnerabilityType[] VulnerabilityTypes { get; private set; }
 
-    public override string ToString()
-    {
-        return string.Format("[{0}({1})]", GetType().Name.Replace("Attribute", string.Empty), string.Join(",", parameters.Select(i => ConvertToString(i)).ToArray()));
-    }
-
     internal static List<string> GetAssemblyList(string expression)
     {
         if (string.IsNullOrEmpty(expression))
@@ -131,26 +101,5 @@ internal abstract class AspectAttribute : Attribute
         }
 
         return expression.Split(',').Select(e => e.Trim()).Where(e => !string.IsNullOrEmpty(e)).ToList<string>();
-    }
-
-    internal static string ConvertToString(object? obj)
-    {
-        if (obj == null) { return "null"; }
-        if (obj is Array arr)
-        {
-            var res = new StringBuilder("[");
-            bool first = true;
-            foreach (var e in arr)
-            {
-                if (!first) { res.Append(","); }
-                else { first = false; }
-                res.Append(ConvertToString(e));
-            }
-
-            res.Append("]");
-            return res.ToString();
-        }
-
-        return Convert.ToString(obj);
     }
 }

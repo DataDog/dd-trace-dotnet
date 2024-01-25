@@ -5,11 +5,14 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration;
 
-internal class NullConfigurationSource : IConfigurationSource
+internal class NullConfigurationSource : IConfigurationSource, ITelemeteredConfigurationSource
 {
     public static readonly NullConfigurationSource Instance = new();
 
@@ -24,4 +27,25 @@ internal class NullConfigurationSource : IConfigurationSource
     public IDictionary<string, string>? GetDictionary(string key) => null;
 
     public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings) => null;
+
+    public ConfigurationResult<string>? GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+        => null;
+
+    public ConfigurationResult<int>? GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+        => null;
+
+    public ConfigurationResult<double>? GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+        => null;
+
+    public ConfigurationResult<bool>? GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+        => null;
+
+    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+        => null;
+
+    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
+        => null;
+
+    public ConfigurationResult<T>? GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+        => null;
 }

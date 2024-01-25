@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -450,6 +451,62 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.CustomSamplingRules.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("glob", SamplingRulesFormat.Glob)]     // exact match
+        [InlineData("Glob", SamplingRulesFormat.Glob)]     // case-insensitive
+        [InlineData(" glob ", SamplingRulesFormat.Glob)]   // trim whitespace
+        [InlineData("regex", SamplingRulesFormat.Regex)]   // exact match
+        [InlineData("RegEx", SamplingRulesFormat.Regex)]   // case-insensitive
+        [InlineData(" regex ", SamplingRulesFormat.Regex)] // trim whitespace
+        [InlineData("none", SamplingRulesFormat.Unknown)]  // invalid
+        [InlineData("1", SamplingRulesFormat.Unknown)]     // invalid
+        [InlineData("", SamplingRulesFormat.Unknown)]      // empty is invalid
+        [InlineData("  ", SamplingRulesFormat.Unknown)]    // whitespace is invalid
+        [InlineData(null, SamplingRulesFormat.Regex)]      // null defaults to regex
+        public void CustomSamplingRulesFormat(string value, string expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.CustomSamplingRulesFormat, value));
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry);
+
+            // verify setting
+            settings.CustomSamplingRulesFormat.Should().Be(expected);
+
+            // verify telemetry
+            var entries = telemetry.GetQueueForTesting()
+                                   .Where(e => e is { Key: ConfigurationKeys.CustomSamplingRulesFormat })
+                                   .OrderByDescending(e => e.SeqId)
+                                   .ToList();
+
+            // verify that we have 2 entries for this setting, one from code/default
+            // and one calculated (the actual value we're using)
+            entries.Should().HaveCount(2);
+
+            // verify that the entry with the highest SeqId has the actual value we're using
+            entries[0].StringValue.Should().Be(expected);
+
+            foreach (var entry in entries)
+            {
+                switch (entry.Origin)
+                {
+                    case ConfigurationOrigins.Default:
+                        // setting not specified, so the default value is used
+                        entry.StringValue.Should().Be(SamplingRulesFormat.Regex);
+                        break;
+                    case ConfigurationOrigins.Code:
+                        // original setting
+                        entry.StringValue.Should().Be(value);
+                        break;
+                    case ConfigurationOrigins.Calculated:
+                        // the actual setting used after normalization
+                        entry.StringValue.Should().Be(expected);
+                        break;
+                    default:
+                        throw new Exception($"Unexpected origin: {entry.Origin}");
+                }
+            }
         }
 
         [Theory]
