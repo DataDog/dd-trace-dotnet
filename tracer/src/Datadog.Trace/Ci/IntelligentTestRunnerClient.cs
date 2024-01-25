@@ -388,7 +388,7 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    public async Task<SkippableTest[]> GetSkippableTestsAsync()
+    public async Task<SkippableTestsResponse> GetSkippableTestsAsync()
     {
         Log.Debug("ITR: Getting skippable tests...");
         var framework = FrameworkDescription.Instance;
@@ -397,7 +397,7 @@ internal class IntelligentTestRunnerClient
         if (currentShaCommand is null)
         {
             Log.Warning("ITR: 'git rev-parse HEAD' command is null");
-            return Array.Empty<SkippableTest>();
+            return new SkippableTestsResponse();
         }
 
         var currentSha = currentShaCommand.Output.Replace("\n", string.Empty);
@@ -426,7 +426,7 @@ internal class IntelligentTestRunnerClient
 
         return await WithRetries(InternalGetSkippableTestsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
 
-        async Task<SkippableTest[]> InternalGetSkippableTestsAsync(byte[] state, bool finalTry)
+        async Task<SkippableTestsResponse> InternalGetSkippableTestsAsync(byte[] state, bool finalTry)
         {
             var sw = Stopwatch.StartNew();
             try
@@ -462,13 +462,13 @@ internal class IntelligentTestRunnerClient
                 Log.Debug("ITR: JSON RS = {Json}", responseContent);
                 if (string.IsNullOrEmpty(responseContent))
                 {
-                    return Array.Empty<SkippableTest>();
+                    return new SkippableTestsResponse();
                 }
 
                 var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(responseContent!);
                 if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
                 {
-                    return Array.Empty<SkippableTest>();
+                    return new SkippableTestsResponse(deserializedResult.Meta?.CorrelationId, Array.Empty<SkippableTest>());
                 }
 
                 var testAttributes = new List<SkippableTest>(deserializedResult.Data.Length);
@@ -508,7 +508,7 @@ internal class IntelligentTestRunnerClient
 
                 var totalSkippableTests = testAttributes.ToArray();
                 TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsResponseTests(totalSkippableTests.Length);
-                return totalSkippableTests;
+                return new SkippableTestsResponse(deserializedResult.Meta?.CorrelationId, totalSkippableTests);
             }
             finally
             {
@@ -1022,9 +1022,19 @@ internal class IntelligentTestRunnerClient
         [JsonProperty("repository_url")]
         public readonly string RepositoryUrl;
 
+        [JsonProperty("correlation_id")]
+        public readonly string? CorrelationId;
+
         public Metadata(string repositoryUrl)
         {
             RepositoryUrl = repositoryUrl;
+            CorrelationId = null;
+        }
+
+        public Metadata(string repositoryUrl, string? correlationId)
+        {
+            RepositoryUrl = repositoryUrl;
+            CorrelationId = correlationId;
         }
     }
 
@@ -1071,6 +1081,24 @@ internal class IntelligentTestRunnerClient
             RepositoryUrl = repositoryUrl;
             Sha = sha;
             Configurations = configurations;
+        }
+    }
+
+    public readonly struct SkippableTestsResponse
+    {
+        public readonly string? CorrelationId;
+        public readonly SkippableTest[] Tests;
+
+        public SkippableTestsResponse()
+        {
+            CorrelationId = null;
+            Tests = Array.Empty<SkippableTest>();
+        }
+
+        public SkippableTestsResponse(string? correlationId, SkippableTest[] tests)
+        {
+            CorrelationId = correlationId;
+            Tests = tests;
         }
     }
 

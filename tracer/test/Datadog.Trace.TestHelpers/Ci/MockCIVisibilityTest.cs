@@ -43,6 +43,9 @@ namespace Datadog.Trace.TestHelpers.Ci
         [JsonProperty("test_session_id")]
         public ulong TestSessionId { get; set; }
 
+        [JsonProperty("itr_correlation_id")]
+        public string CorrelationId { get; set; }
+
         [JsonProperty("error")]
         public int Error { get; set; }
 
