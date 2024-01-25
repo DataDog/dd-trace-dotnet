@@ -19,9 +19,7 @@
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
@@ -54,8 +52,6 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -94,8 +90,6 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"blk-001-001","name":"Block IP Addresses","tags":{"category":"security_response","type":"block_ip"}},"rule_matches":[{"operator":"ip_match","operator_value":"","parameters":[{"address":"http.client_ip","highlight":["86.242.244.246"],"key_path":[],"value":"86.242.244.246"}]}]}]},
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -130,9 +124,7 @@
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
@@ -169,8 +161,6 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"blk-001-001","name":"Block IP Addresses","tags":{"category":"security_response","type":"block_ip"}},"rule_matches":[{"operator":"ip_match","operator_value":"","parameters":[{"address":"http.client_ip","highlight":["86.242.244.246"],"key_path":[],"value":"86.242.244.246"}]}]}]},
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
