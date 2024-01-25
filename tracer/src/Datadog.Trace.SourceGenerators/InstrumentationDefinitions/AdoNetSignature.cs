@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.SourceGenerators.Helpers;
+
 namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions;
 
 internal record AdoNetSignature
@@ -11,7 +13,7 @@ internal record AdoNetSignature
     {
         TargetMethodName = targetMethodName;
         TargetReturnType = targetReturnType;
-        TargetParameterTypes = targetParameterTypes;
+        TargetParameterTypes = new(targetParameterTypes);
         InstrumentationTypeName = instrumentationTypeName;
         CallTargetIntegrationKind = callTargetIntegrationKind;
         ReturnType = returnType;
@@ -21,7 +23,7 @@ internal record AdoNetSignature
 
     public string? TargetReturnType { get; }
 
-    public string[] TargetParameterTypes { get; }
+    public EquatableArray<string> TargetParameterTypes { get; }
 
     public string InstrumentationTypeName { get; }
 
