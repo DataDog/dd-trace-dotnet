@@ -116,7 +116,8 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
         List<CallTargetDefinitionSource>? results = null;
 
         // Process InstrumentMethodAttribute first
-        foreach (AttributeData attributeData in classSymbol!.GetAttributes())
+        // Iterate over the GeneratorAttributeSyntaxContext.Attributes property which is pre-populated with the targeted attributes
+        foreach (AttributeData attributeData in ctx.Attributes)
         {
             if ((attributeData.AttributeClass?.Name == "InstrumentMethodAttribute" ||
                  attributeData.AttributeClass?.Name == "InstrumentMethod")
@@ -346,15 +347,9 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
         List<(string ClassName, AdoNetSignature Signature)>? results = null;
 
         // Process AdoNetSignatureAttribute next
-        foreach (AttributeData attributeData in classSymbol!.GetAttributes())
+        // Iterate over the GeneratorAttributeSyntaxContext.Attributes property which is pre-populated with the targeted attributes
+        foreach (AttributeData attributeData in ctx.Attributes)
         {
-            if ((attributeData.AttributeClass?.Name != "AdoNetTargetSignatureAttribute" &&
-                 attributeData.AttributeClass?.Name != "AdoNetTargetSignature")
-             || attributeData.AttributeClass.ToDisplayString() != AdoNetTargetSignatureAttribute)
-            {
-                continue;
-            }
-
             var hasMisconfiguredInput = false;
 
             string? methodName = null;
@@ -467,24 +462,16 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
     private static Result<EquatableArray<AssemblyCallTargetDefinitionSource>> GetAssemblyCallTargetDefinitionSources(
         GeneratorAttributeSyntaxContext ctx, CancellationToken ct)
     {
-        var assemblyAttributes = ctx.TargetSymbol.GetAttributes();
-
         ct.ThrowIfCancellationRequested();
 
         List<DiagnosticInfo>? diagnostics = null;
         List<AssemblyCallTargetDefinitionSource>? results = null;
 
         // Now build the adonet references
-        foreach (AttributeData attributeData in assemblyAttributes)
+        // Iterate over the GeneratorAttributeSyntaxContext.Attributes property which is pre-populated with the targeted attributes
+        foreach (AttributeData attributeData in ctx.Attributes)
         {
             var hasMisconfiguredInput = false;
-
-            if ((attributeData.AttributeClass?.Name != "AdoNetClientInstrumentMethodsAttribute" &&
-                 attributeData.AttributeClass?.Name != "AdoNetClientInstrumentMethods")
-             || attributeData.AttributeClass.ToDisplayString() != AdoNetInstrumentAttribute)
-            {
-                continue;
-            }
 
             string? assemblyName = null;
             string? integrationName = null;
