@@ -23,8 +23,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData("", "", "")]
         public void TrimEnd(string original, string suffix, string expected)
         {
-            string actual = original.TrimEnd(suffix, StringComparison.Ordinal);
-            Assert.Equal(expected, actual);
+            original.TrimEnd(suffix, StringComparison.Ordinal).Should().Be(expected);
         }
 
         [Theory]
@@ -39,12 +38,12 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData(" original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________", true, "original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________")]
         public void TryConvertToNormalizedTagName(string input, bool expectedConversionSuccess, string expectedTagName)
         {
-            bool actualConversionSuccess = input.TryConvertToNormalizedTagName(normalizeSpaces: false, out string actualTagName);
-            Assert.Equal(expectedConversionSuccess, actualConversionSuccess);
+            var actualConversionSuccess = input.TryConvertToNormalizedTagName(normalizeSpaces: false, out var actualTagName);
+            actualConversionSuccess.Should().Be(expectedConversionSuccess);
 
             if (actualConversionSuccess)
             {
-                Assert.Equal(expectedTagName, actualTagName);
+                actualTagName.Should().Be(expectedTagName);
             }
         }
 
@@ -58,8 +57,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         public void TryConvertToNormalizedTagName_NormalizePeriodsAndSpaces(string input, bool normalizePeriodsAndSpaces, string expectedTagName)
         {
             input.TryConvertToNormalizedTagName(normalizeSpaces: normalizePeriodsAndSpaces, out var actualTagName).Should().BeTrue();
-
-            Assert.Equal(expectedTagName, actualTagName);
+            actualTagName.Should().Be(expectedTagName);
         }
 
         [Theory]
@@ -74,12 +72,12 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData(" original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________", true, "original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________")]
         public void TryConvertToNormalizedHeaderTagName(string input, bool expectedConversionSuccess, string expectedTagName)
         {
-            bool actualConversionSuccess = input.TryConvertToNormalizedTagName(normalizeSpaces: true, out string actualTagName);
-            Assert.Equal(expectedConversionSuccess, actualConversionSuccess);
+            var actualConversionSuccess = input.TryConvertToNormalizedTagName(normalizeSpaces: true, out var actualTagName);
+            actualConversionSuccess.Should().Be(expectedConversionSuccess);
 
             if (actualConversionSuccess)
             {
-                Assert.Equal(expectedTagName, actualTagName);
+                actualTagName.Should().Be(expectedTagName);
             }
         }
     }
