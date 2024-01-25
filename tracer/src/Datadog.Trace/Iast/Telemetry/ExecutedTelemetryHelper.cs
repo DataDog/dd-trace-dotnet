@@ -147,6 +147,7 @@ internal class ExecutedTelemetryHelper
             IastInstrumentedSinks.HeaderInjection => BasicExecutedTag + SinkExecutedTag + "header_injection",
             IastInstrumentedSinks.StackTraceLeak => BasicExecutedTag + SinkExecutedTag + "stacktrace_leak",
             IastInstrumentedSinks.NoSqlMongoDbInjection => BasicExecutedTag + SinkExecutedTag + "nosql_mongodb_injection",
+            IastInstrumentedSinks.XPathInjection => BasicExecutedTag + SinkExecutedTag + "xpath_injection",
             IastInstrumentedSinks.None => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
             _ => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
         };

@@ -8,14 +8,14 @@ using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
 
-/// <summary> Xpath inection class aspect </summary>
-[AspectClass("System.Xml,System.Xml.ReaderWriter,System.Xml.XPath.XDocument", AspectType.Sink, VulnerabilityType.XpathInjection)]
+/// <summary> Xpath injection class aspect </summary>
+[AspectClass("System.Xml,System.Xml.ReaderWriter,System.Xml.XPath.XDocument", AspectType.Sink, VulnerabilityType.XPathInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class SystemXmlAspect
 {
     /// <summary>
-    /// Launches a spath injection vulnerability if the input is tainted
+    /// Launches a xpath injection vulnerability if the input is tainted
     /// </summary>
     /// <param name="xpath">the path in the xml</param>
     /// <returns>the path parameter</returns>

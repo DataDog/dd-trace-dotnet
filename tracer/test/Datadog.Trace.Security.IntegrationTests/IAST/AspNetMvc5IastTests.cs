@@ -221,7 +221,6 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         EnableEvidenceRedaction(false);
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
         DisableObfuscationQueryString();
