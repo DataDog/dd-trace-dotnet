@@ -745,9 +745,9 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("XpathInjection")]
         [Route("XpathInjection")]
-        public ActionResult XpathInjection(string user, string password)
+        public ActionResult XpathInjection(string user, string value)
         {
-            var findUserXPath = "/data/user[name/text()='" + user + "' and password/text()='" + password + "}']";
+            var findUserXPath = "/data/user[name/text()='" + user + "' and password/text()='" + value + "}']";
             var doc = new XmlDocument();
             doc.LoadXml(xmlContent);
             var result = doc.SelectSingleNode(findUserXPath);

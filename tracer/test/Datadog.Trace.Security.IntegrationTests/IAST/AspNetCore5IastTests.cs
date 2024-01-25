@@ -278,7 +278,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     public async Task TestIastXpathInjectionRequest()
     {
         var filename = "Iast.XpathInjection.AspNetCore5.IastEnabled";
-        var url = "/Iast/XpathInjection?user=klaus&password=secret";
+        var url = "/Iast/XpathInjection?user=klaus&value=pass";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;

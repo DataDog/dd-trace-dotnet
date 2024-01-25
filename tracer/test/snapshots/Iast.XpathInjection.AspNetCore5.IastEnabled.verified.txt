@@ -15,7 +15,7 @@
       http.request.headers.host: localhost:00000,
       http.route: iast/xpathinjection,
       http.status_code: 200,
-      http.url: http://localhost:00000/Iast/XpathInjection?user=klaus&password=secret,
+      http.url: http://localhost:00000/Iast/XpathInjection?user=klaus&value=pass,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
@@ -41,7 +41,7 @@
             "value": "' and password/text()='"
           },
           {
-            "value": "secret",
+            "value": "pass",
             "source": 1
           },
           {
@@ -59,8 +59,8 @@
     },
     {
       "origin": "http.request.parameter",
-      "name": "password",
-      "value": "secret"
+      "name": "value",
+      "value": "pass"
     }
   ]
 }
