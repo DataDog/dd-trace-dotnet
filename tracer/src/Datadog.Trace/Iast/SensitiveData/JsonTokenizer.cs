@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -50,7 +51,13 @@ internal class JsonTokenizer : ITokenizer
 
     private static void RedactValue(JsonTextReader reader, List<Range> ranges)
     {
-        var length = reader.Value!.ToString()!.Length;
+        var readerValue = reader.Value?.ToString();
+        if (readerValue is null)
+        {
+            return;
+        }
+
+        var length = readerValue.Length;
         var stringOffset = reader.TokenType == JsonToken.String ? 1 : 0; // offset to account for the closing quote
         var start = reader.LinePosition - length - stringOffset;
         ranges.Add(new Range(start, length));
@@ -58,27 +65,31 @@ internal class JsonTokenizer : ITokenizer
 
     private static void RedactKey(string value, JsonTextReader reader, List<Range> ranges)
     {
-        var propertyName = reader.Value!.ToString()!;
-        if (!SourceValueRegex.IsMatch(propertyName))
+        var readerValue = reader.Value?.ToString();
+        if (readerValue is null || !SourceValueRegex.IsMatch(readerValue))
         {
             return;
         }
 
+        // Guards to not iterate over the previous ranges in case of a malformed JSON
+        var length = readerValue.Length;
+        Range? lastRange = ranges.LastOrDefault();
+        var maxLastPosition = lastRange?.Start + lastRange?.Length ?? 0;
+
         // The current position is at the end of the property name, on the ':' character
         // We need to go back to the end of the property name, on the last double quote
         var end = reader.LinePosition - 1;
-        while (value[end] != '"')
+        while (end > maxLastPosition && value[end] != '"')
         {
             end--;
         }
 
-        if (value[end] != '"')
+        if (end <= maxLastPosition || value[end] != '"')
         {
             // We didn't find the end of the property name, so we can't redact it
             return;
         }
 
-        var length = propertyName.Length;
         var start = end - length;
         ranges.Add(new Range(start, length));
     }
