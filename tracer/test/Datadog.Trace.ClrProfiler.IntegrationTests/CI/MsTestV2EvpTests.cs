@@ -34,11 +34,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             SetServiceVersion("1.0.0");
         }
 
+        public static IEnumerable<object[]> GetData()
+        {
+            foreach (var version in PackageVersions.MSTest)
+            {
+                yield return version.Concat("evp_proxy/v2", true);
+                yield return version.Concat("evp_proxy/v4", false);
+            }
+        }
+
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.MSTest), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetData))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
-        public async Task SubmitTraces(string packageVersion)
+        public async Task SubmitTraces(string packageVersion, string evpVersionToRemove, bool expectedGzip)
         {
             var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
             var tests = new List<MockCIVisibilityTest>();
@@ -57,10 +66,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             try
             {
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
-                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, "1");
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 {
+                    agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
+
                     const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
                     agent.EventPlatformProxyPayloadReceived += (sender, e) =>
                     {
@@ -78,6 +88,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
                         {
+                            e.Value.Headers["Content-Encoding"].Should().Be(expectedGzip ? "gzip" : null);
+
                             var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
                             if (payload.Events?.Length > 0)
                             {
