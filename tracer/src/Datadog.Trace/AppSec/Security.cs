@@ -211,7 +211,7 @@ namespace Datadog.Trace.AppSec
 
                 if (Enabled && _configurationStatus.IncomingUpdateState.WafKeysToApply.Any())
                 {
-                    updateResult = _waf?.UpdateWafFromConfigurationStatus(_configurationStatus, _settings.UseUnsafeEncoder);
+                    updateResult = _waf?.UpdateWafFromConfigurationStatus(_configurationStatus);
                     if (updateResult?.Success ?? false)
                     {
                         if (!string.IsNullOrEmpty(updateResult.RuleFileVersion))

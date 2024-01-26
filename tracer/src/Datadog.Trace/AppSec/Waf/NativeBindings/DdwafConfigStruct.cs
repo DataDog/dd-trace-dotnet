@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.AppSec.WafEncoding;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {

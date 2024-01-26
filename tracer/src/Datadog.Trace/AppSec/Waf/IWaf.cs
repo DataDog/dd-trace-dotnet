@@ -21,6 +21,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         internal WafReturnCode Run(IntPtr contextHandle, IntPtr rawPersistentData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
 
-        UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus, bool settingsUseUnsafeEncoder = false);
+        UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus);
     }
 }

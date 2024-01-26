@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Xunit;
 using Encoder = Datadog.Trace.AppSec.WafEncoding.Encoder;
@@ -15,11 +16,16 @@ namespace Datadog.Trace.Security.Unit.Tests;
 
 public class EncoderUnitTests : WafLibraryRequiredTest
 {
-    private readonly Encoder _encoder;
+    private readonly IEncoder _encoder;
 
     public EncoderUnitTests()
     {
         _encoder = new Encoder();
+    }
+
+    internal EncoderUnitTests(IEncoder encoder)
+    {
+        _encoder = encoder;
     }
 
     [SkippableTheory]

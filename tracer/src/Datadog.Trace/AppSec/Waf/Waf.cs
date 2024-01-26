@@ -121,7 +121,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
-        private UpdateResult UpdateWafAndDisposeItems(IEncodeResult updateData)
+        private UpdateResult UpdateWafAndDispose(IEncodeResult updateData)
         {
             UpdateResult? res = null;
             DdwafObjectStruct? diagnostics = null;
@@ -164,10 +164,10 @@ namespace Datadog.Trace.AppSec.Waf
             return res;
         }
 
-        public UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus, bool useUnsafeEncoder = false)
+        public UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus)
         {
             var dic = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate();
-            return Update(dic, useUnsafeEncoder);
+            return Update(dic);
         }
 
         /// <summary>
@@ -204,21 +204,13 @@ namespace Datadog.Trace.AppSec.Waf
             return Context.GetContext(contextHandle, this, _wafLibraryInvoker, _encoder);
         }
 
-        private unsafe UpdateResult Update(IDictionary<string, object> arguments, bool useUnsafeEncoder = false)
+        private UpdateResult Update(IDictionary<string, object> arguments)
         {
             UpdateResult updated;
             try
             {
-                if (useUnsafeEncoder)
-                {
-                    using var encodedArgs = _encoder.Encode(arguments, applySafetyLimits: false);
-                    updated = UpdateWafAndDisposeItems(encodedArgs);
-                }
-                else
-                {
-                    var obj = _encoder.Encode(arguments, applySafetyLimits: false);
-                    updated = UpdateWafAndDisposeItems(obj);
-                }
+                var encodedArgs = _encoder.Encode(arguments, applySafetyLimits: false);
+                updated = UpdateWafAndDispose(encodedArgs);
 
                 // only if rules are provided will the waf give metrics
                 if (arguments.ContainsKey("rules"))
