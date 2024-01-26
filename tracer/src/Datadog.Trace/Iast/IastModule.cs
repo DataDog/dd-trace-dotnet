@@ -206,7 +206,7 @@ internal static class IastModule
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error while checking for NoSql injection.");
+            Log.Error(ex, "Error while checking for MongoDb NoSql injection.");
             return IastModuleResponse.Empty;
         }
     }
