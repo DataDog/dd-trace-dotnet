@@ -13,9 +13,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -39,9 +37,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -65,9 +61,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -91,9 +85,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -113,9 +105,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -135,9 +125,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -157,9 +145,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -179,9 +165,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -206,9 +190,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -229,9 +211,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -252,9 +232,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -275,9 +253,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -300,9 +276,7 @@
       message.size: 62,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -325,9 +299,7 @@
       message.size: 62,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -350,9 +322,7 @@
       message.size: 62,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -375,9 +345,7 @@
       message.size: 62,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -398,9 +366,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -421,9 +387,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -444,9 +408,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -467,9 +429,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -492,9 +452,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -517,9 +475,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -542,9 +498,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -567,9 +521,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -590,9 +542,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -613,9 +563,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -636,9 +584,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -659,9 +605,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -683,9 +627,7 @@
       language: dotnet,
       message.size: 62,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -710,9 +652,7 @@
       language: dotnet,
       message.size: 62,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -737,9 +677,7 @@
       language: dotnet,
       message.size: 62,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -764,9 +702,7 @@
       language: dotnet,
       message.size: 62,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -785,9 +721,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -807,9 +741,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -829,9 +761,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -851,9 +781,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -878,9 +806,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -901,9 +827,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -924,9 +848,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -947,9 +869,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -972,9 +892,7 @@
       message.size: 61,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -997,9 +915,7 @@
       message.size: 61,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1022,9 +938,7 @@
       message.size: 61,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1047,9 +961,7 @@
       message.size: 61,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1070,9 +982,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1093,9 +1003,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1116,9 +1024,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1139,9 +1045,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1163,9 +1067,7 @@
       language: dotnet,
       message.size: 61,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -1190,9 +1092,7 @@
       language: dotnet,
       message.size: 61,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -1217,9 +1117,7 @@
       language: dotnet,
       message.size: 61,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -1244,9 +1142,7 @@
       language: dotnet,
       message.size: 61,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -1265,9 +1161,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1287,9 +1181,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1309,9 +1201,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1331,9 +1221,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1353,9 +1241,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1375,9 +1261,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1397,9 +1281,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1419,9 +1301,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1441,9 +1321,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1463,9 +1341,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1485,9 +1361,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1507,9 +1381,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1536,9 +1408,7 @@
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1561,9 +1431,7 @@
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1586,9 +1454,7 @@
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1611,9 +1477,7 @@
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1636,9 +1500,7 @@
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1661,9 +1523,7 @@
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1686,9 +1546,7 @@
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1711,9 +1569,7 @@
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1736,9 +1592,7 @@
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1761,9 +1615,7 @@
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1786,9 +1638,7 @@
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1811,9 +1661,7 @@
       message.size: 17,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: producer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: producer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1837,9 +1685,7 @@
       language: dotnet,
       message.size: 17,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -1866,9 +1712,7 @@
       language: dotnet,
       message.size: 17,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -1895,9 +1739,7 @@
       language: dotnet,
       message.size: 17,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -1924,9 +1766,7 @@
       language: dotnet,
       message.size: 17,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -1953,9 +1793,7 @@
       language: dotnet,
       message.size: 17,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -1982,9 +1820,7 @@
       language: dotnet,
       message.size: 17,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2011,9 +1847,7 @@
       language: dotnet,
       message.size: 17,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2040,9 +1874,7 @@
       language: dotnet,
       message.size: 17,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2069,9 +1901,7 @@
       language: dotnet,
       message.size: 17,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2098,9 +1928,7 @@
       language: dotnet,
       message.size: 17,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2127,9 +1955,7 @@
       language: dotnet,
       message.size: 17,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2156,9 +1982,7 @@
       language: dotnet,
       message.size: 17,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2178,9 +2002,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -2200,9 +2022,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -2222,9 +2042,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -2244,9 +2062,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -2266,9 +2082,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -2288,9 +2102,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -2310,9 +2122,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -2332,9 +2142,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -2354,9 +2162,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -2376,9 +2182,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -2398,9 +2202,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -2420,9 +2222,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -2445,9 +2245,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -2471,9 +2269,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -2497,9 +2293,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -2523,9 +2317,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -2549,9 +2341,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -2575,9 +2365,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -2601,9 +2389,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -2627,9 +2413,7 @@
       env: integration_tests,
       out.host: rabbitmq,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
