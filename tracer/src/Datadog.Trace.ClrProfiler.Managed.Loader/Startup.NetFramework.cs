@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 return null;
             }
 
-            var appDomainFriendlyName = AppDomain.CurrentDomain.FriendlyName;
+            var appDomainFriendlyName = $"{AppDomain.CurrentDomain.Id} - {AppDomain.CurrentDomain.FriendlyName}";
 
             // WARNING: Logs must not be added _before_ we check for the above bail-out conditions
             StartupLogger.Debug("[AppDomain={0}] Assembly Resolve event received for: {1}", appDomainFriendlyName, name);
