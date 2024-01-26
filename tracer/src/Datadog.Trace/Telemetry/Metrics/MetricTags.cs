@@ -219,6 +219,7 @@ internal static class MetricTags
         [Description("integration_name:unvalidatedredirect")] UnvalidatedRedirect,
         [Description("integration_name:testplatformassemblyresolver")] TestPlatformAssemblyResolver,
         [Description("integration_name:stacktraceleak")] StackTraceLeak,
+        [Description("integration_name:xpathinjection")] XpathInjection,
     }
 
     public enum InstrumentationError
