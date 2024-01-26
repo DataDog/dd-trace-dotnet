@@ -60,6 +60,34 @@ public class XMLNodeAspectTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    [Fact]
+    public void GivenXmlDocument_WhenSelectNodeNotTainted_NotVulnerable()
+    {
+        var doc = new XmlDocument();
+        doc.LoadXml(xmlContent);
+        var result = doc.SelectNodes("NotTainted");
+        result.Should().NotBeNull();
+        result.Count.Should().Be(0);
+        AssertNotVulnerable();
+    }
+
+    [Fact]
+    public void GivenXmlDocument_WhenSelectNodeNull_NotVulnerable()
+    {
+        var doc = new XmlDocument();
+        doc.LoadXml(xmlContent);
+        try
+        {
+            doc.SelectNodes(null);
+            Assert.True(false, "XPathException should be thrown");
+        }
+        catch (XPathException)
+        {
+        }
+
+        AssertNotVulnerable();
+    }
+
     //[AspectMethodInsertBefore("System.Xml.XmlNode::SelectNodes(System.String,System.Xml.XmlNamespaceManager)", 1)]
 
     [Fact]
@@ -329,6 +357,36 @@ public class XMLNodeAspectTests : InstrumentationTestsBase
         result.Should().NotBeNull();
         result.Count().Should().BeGreaterThan(1);
         AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAXElement_WhenXPathSelectElementsNotTainted_NotVulnerable()
+    {
+        var doc = new XmlDocument();
+        doc.LoadXml(xmlContent);
+        XElement root = XElement.Load(new XmlNodeReader(doc));
+        var result = root.XPathSelectElements("notTainted");
+        result.Should().NotBeNull();
+        result.Count().Should().Be(0);
+        AssertNotVulnerable();
+    }
+
+    [Fact]
+    public void GivenAXElement_WhenXPathSelectElementsNull_NotVulnerable()
+    {
+        var doc = new XmlDocument();
+        doc.LoadXml(xmlContent);
+        XElement root = XElement.Load(new XmlNodeReader(doc));
+        try
+        {
+            root.XPathSelectElements(null);
+            Assert.True(false, "XPathException should be thrown");
+        }
+        catch (XPathException)
+        {
+        }
+
+        AssertNotVulnerable();
     }
 
     //[AspectMethodInsertBefore("System.Xml.XPath.Extensions::XPathSelectElements(System.Xml.Linq.XNode,System.String,System.Xml.IXmlNamespaceResolver)", 1)]

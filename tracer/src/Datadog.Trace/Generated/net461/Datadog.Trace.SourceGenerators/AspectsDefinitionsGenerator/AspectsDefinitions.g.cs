@@ -253,7 +253,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodInsertBefore(\"System.Xml.XPath.XPathNavigator::SelectSingleNode(System.String,System.Xml.IXmlNamespaceResolver)\",\"\",[1],[False],[None],Default,[])] ReviewPath(System.String)",
 "  [AspectMethodInsertBefore(\"System.Xml.XPath.XPathNavigator::Select(System.String)\",\"\",[0],[False],[None],Default,[])] ReviewPath(System.String)",
 "  [AspectMethodInsertBefore(\"System.Xml.XPath.XPathNavigator::Select(System.String,System.Xml.IXmlNamespaceResolver)\",\"\",[1],[False],[None],Default,[])] ReviewPath(System.String)",
-"[AspectClass(\"System.Xml.XPath.XDocument\",[None],Sink,[XPathInjection])] Datadog.Trace.Iast.Aspects.XPathExtensionAspect",
+"[AspectClass(\"System.Xml.XPath.XDocument,System.Xml.Linq\",[None],Sink,[XPathInjection])] Datadog.Trace.Iast.Aspects.XPathExtensionAspect",
 "  [AspectMethodInsertBefore(\"System.Xml.XPath.Extensions::XPathEvaluate(System.Xml.Linq.XNode,System.String)\",\"\",[0],[False],[None],Default,[])] ReviewPath(System.String)",
 "  [AspectMethodInsertBefore(\"System.Xml.XPath.Extensions::XPathEvaluate(System.Xml.Linq.XNode,System.String,System.Xml.IXmlNamespaceResolver)\",\"\",[1],[False],[None],Default,[])] ReviewPath(System.String)",
 "  [AspectMethodInsertBefore(\"System.Xml.XPath.Extensions::XPathSelectElement(System.Xml.Linq.XNode,System.String)\",\"\",[0],[False],[None],Default,[])] ReviewPath(System.String)",
