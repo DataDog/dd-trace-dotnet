@@ -61,7 +61,7 @@ internal class IntelligentTestRunnerClient
     private readonly Uri _searchCommitsUrl;
     private readonly Uri _packFileUrl;
     private readonly Uri _skippableTestsUrl;
-    private readonly bool _useEvpProxy;
+    private readonly EventPlatformProxySupport _eventPlatformProxySupport;
     private readonly Task<string> _getRepositoryUrlTask;
     private readonly Task<string> _getBranchNameTask;
     private readonly Task<ProcessHelpers.CommandOutput?> _getShaTask;
@@ -91,7 +91,7 @@ internal class IntelligentTestRunnerClient
 
         if (_settings.Agentless)
         {
-            _useEvpProxy = false;
+            _eventPlatformProxySupport = EventPlatformProxySupport.None;
             var agentlessUrl = _settings.AgentlessUrl;
             if (!string.IsNullOrWhiteSpace(agentlessUrl))
             {
@@ -130,12 +130,25 @@ internal class IntelligentTestRunnerClient
         else
         {
             // Use Agent EVP Proxy
-            _useEvpProxy = true;
             var agentUrl = _settings.TracerSettings.ExporterInternal.AgentUriInternal;
-            _settingsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{settingsUrlPath}");
-            _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{searchCommitsUrlPath}");
-            _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{packFileUrlPath}");
-            _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{skippableTestsUrlPath}");
+            _eventPlatformProxySupport = CIVisibility.EventPlatformProxySupport;
+            switch (_eventPlatformProxySupport)
+            {
+                case EventPlatformProxySupport.V2:
+                    _settingsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{settingsUrlPath}");
+                    _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{searchCommitsUrlPath}");
+                    _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{packFileUrlPath}");
+                    _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{skippableTestsUrlPath}");
+                    break;
+                case EventPlatformProxySupport.V4:
+                    _settingsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{settingsUrlPath}");
+                    _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{searchCommitsUrlPath}");
+                    _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{packFileUrlPath}");
+                    _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{skippableTestsUrlPath}");
+                    break;
+                default:
+                    throw new NotSupportedException("Event platform proxy not supported by the agent.");
+            }
         }
     }
 
@@ -811,7 +824,7 @@ internal class IntelligentTestRunnerClient
     {
         request.AddHeader(HttpHeaderNames.TraceId, _id);
         request.AddHeader(HttpHeaderNames.ParentId, _id);
-        if (_useEvpProxy)
+        if (_eventPlatformProxySupport is EventPlatformProxySupport.V2 or EventPlatformProxySupport.V4)
         {
             request.AddHeader(EvpSubdomainHeader, "api");
         }

@@ -159,7 +159,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         {
             var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
             // We remove the evp_proxy endpoint to force the APM protocol compatibility
-            agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2")).ToArray();
+            agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2") && !e.Contains("evp_proxy/v4")).ToArray();
             return agent;
         }
     }
