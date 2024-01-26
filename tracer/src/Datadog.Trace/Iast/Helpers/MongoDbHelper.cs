@@ -23,18 +23,12 @@ internal static class MongoDbHelper
             return;
         }
 
-        DetectVulnerability(jsonString, IntegrationId.MongoDb);
+        IastModule.OnNoSqlMongoDbQuery(jsonString, IntegrationId.MongoDb);
     }
 
     internal static void AnalyzeJsonCommand(object command)
     {
         var jsonCommand = command.DuckCast<JsonCommandStruct>();
-        DetectVulnerability(jsonCommand.Json, IntegrationId.MongoDb);
-    }
-
-    internal static string DetectVulnerability(string json, IntegrationId integrationId)
-    {
-        IastModule.OnNoSqlMongoDbQuery(json, integrationId);
-        return json;
+        IastModule.OnNoSqlMongoDbQuery(jsonCommand.Json, IntegrationId.MongoDb);
     }
 }

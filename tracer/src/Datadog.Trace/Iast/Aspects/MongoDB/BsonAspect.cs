@@ -28,6 +28,7 @@ public class BsonAspect
     [AspectMethodInsertBefore("MongoDB.Bson.IO.JsonReader::.ctor(System.String)")]
     public static object AnalyzeJsonString(string json)
     {
-        return MongoDbHelper.DetectVulnerability(json, IntegrationId.MongoDb);
+        IastModule.OnNoSqlMongoDbQuery(json, IntegrationId.MongoDb);
+        return json;
     }
 }
