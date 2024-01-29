@@ -961,6 +961,28 @@ namespace Datadog.Trace.Tests.Configuration
             value.Value.Should().Be(expected);
         }
 
+        [Theory]
+        // null, empty, whitespace
+        [InlineData(null, true, "")]
+        [InlineData("", true, "")]
+        [InlineData("  ", true, "")]
+        // no normalization
+        [InlineData("my-tag", true, "my-tag")]
+        [InlineData("my.tag", true, "my.tag")]
+        [InlineData("my tag", true, "my tag")]
+        [InlineData("my/!*&tag", true, "my/!*&tag")]
+        // opt-in to previous behavior: normalize, but keep spaces
+        [InlineData("my-tag", false, "my-tag")]
+        [InlineData("my.tag", false, "my_tag")]
+        [InlineData("my tag", false, "my tag")]
+        [InlineData("my:/!*&tag", false, "my:/___tag")]
+        public void InitializeHeaderTag(string tagName, bool headerTagsNormalizationFixEnabled, string expected)
+        {
+            TracerSettings.InitializeHeaderTag(tagName, headerTagsNormalizationFixEnabled)
+                          .Should()
+                          .Be(expected);
+        }
+
         private void SetAndValidateStatusCodes(Action<TracerSettings, IEnumerable<int>> setStatusCodes, Func<TracerSettings, bool[]> getStatusCodes)
         {
             var settings = new TracerSettings();
