@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -111,80 +112,40 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return root;
         }
 
-        internal InitResult ConfigureAndDispose(Obj? rulesObj, string? rulesFile, List<Obj> argsToDispose, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal InitResult Configure(IntPtr rulesObj, IEncoder encoder, DdwafConfigStruct configStruct, ref DdwafObjectStruct diagnostics, string? rulesFile)
         {
-            if (rulesObj == null)
+            var wafHandle = _wafLibraryInvoker.Init(rulesObj, ref configStruct, ref diagnostics);
+            if (wafHandle == IntPtr.Zero)
             {
-                Log.Error("Waf couldn't initialize properly because of an unusable rule file. If you set the environment variable {AppsecruleEnv}, check the path and content of the file are correct.", ConfigurationKeys.AppSec.Rules);
-                return InitResult.FromUnusableRuleFile();
+                Log.Warning("DDAS-0005-00: WAF initialization failed.");
             }
 
-            Obj? diagnostics = null;
-            var keyRegex = IntPtr.Zero;
-            var valueRegex = IntPtr.Zero;
-
-            try
+            var initResult = InitResult.From(diagnostics, wafHandle, _wafLibraryInvoker, encoder);
+            if (initResult.HasErrors)
             {
-                DdwafConfigStruct args = default;
-                keyRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterKeyRegex);
-                valueRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterValueRegex);
-                args.KeyRegex = keyRegex;
-                args.ValueRegex = valueRegex;
-                args.FreeWafFunction = _wafLibraryInvoker.ObjectFreeFuncPtr;
-
-                diagnostics = new Obj(_wafLibraryInvoker.ObjectMap());
-                var wafHandle = _wafLibraryInvoker.Init(rulesObj.RawPtr, ref args, diagnostics.RawPtr);
-                if (wafHandle == IntPtr.Zero)
+                var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                foreach (var item in initResult.Errors)
                 {
-                    Log.Warning("DDAS-0005-00: WAF initialization failed.");
+                    sb.Append($"{item.Key}: [{string.Join(", ", item.Value)}] ");
                 }
 
-                var initResult = InitResult.From(diagnostics, wafHandle, _wafLibraryInvoker);
-                if (initResult.HasErrors)
+                var errorMess = StringBuilderCache.GetStringAndRelease(sb);
+                Log.Warning("WAF initialization failed. Some rules are invalid in rule file {RulesFile}: {ErroringRules}", rulesFile, errorMess);
+            }
+            else
+            {
+                // sometimes loaded rules will be 0 if other errors happen above, that's why it should be the fallback log
+                if (initResult.LoadedRules == 0)
                 {
-                    var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-                    foreach (var item in initResult.Errors)
-                    {
-                        sb.Append($"{item.Key}: [{string.Join(", ", item.Value)}] ");
-                    }
-
-                    var errorMess = StringBuilderCache.GetStringAndRelease(sb);
-                    Log.Warning("WAF initialization failed. Some rules are invalid in rule file {RulesFile}: {ErroringRules}", rulesFile, errorMess);
+                    Log.Error("DDAS-0003-03: AppSec could not read the rule file {RulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
                 }
                 else
                 {
-                    // sometimes loaded rules will be 0 if other errors happen above, that's why it should be the fallback log
-                    if (initResult.LoadedRules == 0)
-                    {
-                        Log.Error("DDAS-0003-03: AppSec could not read the rule file {RulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
-                    }
-                    else
-                    {
-                        Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", initResult.LoadedRules, rulesFile);
-                    }
-                }
-
-                return initResult;
-            }
-            finally
-            {
-                if (keyRegex != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(keyRegex);
-                }
-
-                if (valueRegex != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(valueRegex);
-                }
-
-                diagnostics?.Dispose(_wafLibraryInvoker);
-                rulesObj.Dispose(_wafLibraryInvoker);
-                foreach (var arg in argsToDispose)
-                {
-                    arg.Dispose();
+                    Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", initResult.LoadedRules, rulesFile);
                 }
             }
+
+            return initResult;
         }
     }
 }

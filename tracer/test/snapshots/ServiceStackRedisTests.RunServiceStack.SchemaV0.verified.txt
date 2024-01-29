@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -19,9 +19,7 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.port: 6379,
       redis.raw_command: DDCUSTOM COMMAND,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -46,9 +44,7 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.port: 6379,
       redis.raw_command: ECHO Hello World,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -73,9 +69,7 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.port: 6379,
       redis.raw_command: INCR ServiceStack.Redis.INCR,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -100,9 +94,7 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.port: 6379,
       redis.raw_command: INCRBYFLOAT ServiceStack.Redis.INCR 1.25,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -127,9 +119,7 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.port: 6379,
       redis.raw_command: INFO,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       db.redis.database_index: 0.0,
@@ -154,9 +144,7 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.port: 6379,
       redis.raw_command: PING,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -181,9 +169,7 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.port: 6379,
       redis.raw_command: QUIT,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       db.redis.database_index: 0.0,
@@ -208,9 +194,7 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.port: 6379,
       redis.raw_command: ROLE,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       db.redis.database_index: 0.0,
@@ -235,9 +219,7 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.port: 6379,
       redis.raw_command: SELECT 0,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       db.redis.database_index: 0.0,
@@ -262,9 +244,7 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.port: 6379,
       redis.raw_command: SELECT 2,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -289,9 +269,7 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.port: 6379,
       redis.raw_command: SET ServiceStack.Redis.INCR 0,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -316,9 +294,7 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.port: 6379,
       redis.raw_command: SLOWLOG GET 5,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -343,9 +319,7 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.port: 6379,
       redis.raw_command: TIME,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       db.redis.database_index: 2.0,

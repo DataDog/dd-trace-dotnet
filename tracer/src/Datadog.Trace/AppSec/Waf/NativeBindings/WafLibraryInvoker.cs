@@ -85,9 +85,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate void FreeResultDelegate(ref DdwafResultStruct output);
 
-        private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config, IntPtr diagnostics);
+        private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafObjectStruct diagnostics);
 
-        private delegate IntPtr UpdateDelegate(IntPtr oldWafHandle, IntPtr wafRule, IntPtr diagnostics);
+        private delegate IntPtr UpdateDelegate(IntPtr oldWafHandle, IntPtr wafRule, ref DdwafObjectStruct diagnostics);
 
         private delegate IntPtr InitContextDelegate(IntPtr wafHandle);
 
@@ -245,7 +245,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return _version;
         }
 
-        internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config, IntPtr diagnostics) => _initField(wafRule, ref config, diagnostics);
+        internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafObjectStruct diagnostics) => _initField(wafRule, ref config, ref diagnostics);
 
         /// <summary>
         /// Only give a non null ruleSetInfo when updating rules. When updating rules overrides, rules datas, the ruleSetInfo will return no error and no diagnostics, even if there are, it's misleading, so give null in this case.
@@ -254,10 +254,19 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// <param name="wafData">a pointer to the new waf data (rules or overrides or other)</param>
         /// <param name="diagnostics">errors and diagnostics of the update, only for valid for new rules</param>
         /// <returns>the new waf handle, if error, will be a nullptr</returns>
-        internal IntPtr Update(IntPtr oldWafHandle, IntPtr wafData, IntPtr diagnostics) => _updateField(oldWafHandle, wafData, diagnostics);
+        internal IntPtr Update(IntPtr oldWafHandle, IntPtr wafData, ref DdwafObjectStruct diagnostics) => _updateField(oldWafHandle, wafData, ref diagnostics);
 
         internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
 
+        /// <summary>
+        /// WARNING: do not dispose newArgs until the Context is discarded as well
+        /// </summary>
+        /// <param name="context">waf context, can sustain multiple runs, args are cached</param>
+        /// <param name="rawPersistentData">these pointers SHOULD remain alive until the context is disposed</param>
+        /// <param name="rawEphemeralData">these pointers are not cached so can be disposed</param>
+        /// <param name="result">Result</param>
+        /// <param name="timeLeftInUs">timeout</param>
+        /// <returns>Return waf code</returns>
         internal WafReturnCode Run(IntPtr context, IntPtr rawPersistentData, IntPtr rawEphemeralData, ref DdwafResultStruct result, ulong timeLeftInUs)
             => _runField(context, rawPersistentData, rawEphemeralData, ref result, timeLeftInUs);
 

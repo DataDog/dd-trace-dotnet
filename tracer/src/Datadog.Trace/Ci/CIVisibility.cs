@@ -29,6 +29,7 @@ namespace Datadog.Trace.Ci
         private static CIVisibilitySettings? _settings;
         private static int _firstInitialization = 1;
         private static Task? _skippableTestsTask;
+        private static string? _skippableTestsCorrelationId;
         private static Dictionary<string, Dictionary<string, IList<SkippableTest>>>? _skippableTestsBySuiteAndName;
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
@@ -42,6 +43,8 @@ namespace Datadog.Trace.Ci
             get => LazyInitializer.EnsureInitialized(ref _settings, () => CIVisibilitySettings.FromDefaultSources())!;
             private set => _settings = value;
         }
+
+        public static EventPlatformProxySupport EventPlatformProxySupport { get; private set; } = EventPlatformProxySupport.None;
 
         public static CITracerManager? Manager
         {
@@ -75,7 +78,12 @@ namespace Datadog.Trace.Ci
             var eventPlatformProxyEnabled = false;
             if (!settings.Agentless)
             {
-                if (!settings.ForceAgentsEvpProxy)
+                if (settings.ForceAgentsEvpProxy)
+                {
+                    // if we force the evp proxy (internal switch)
+                    EventPlatformProxySupport = EventPlatformProxySupport.V2;
+                }
+                else
                 {
                     discoveryService = DiscoveryService.Create(
                         new ImmutableExporterSettings(settings.TracerSettings.ExporterInternal, true),
@@ -83,13 +91,10 @@ namespace Datadog.Trace.Ci
                         initialRetryDelayMs: 10,
                         maxRetryDelayMs: 1000,
                         recheckIntervalMs: int.MaxValue);
-                }
-                else
-                {
-                    Log.Information("Using the Event platform proxy through the agent.");
+                    EventPlatformProxySupport = IsEventPlatformProxySupportedByAgent(discoveryService);
                 }
 
-                eventPlatformProxyEnabled = settings.ForceAgentsEvpProxy || IsEventPlatformProxySupportedByAgent(discoveryService);
+                eventPlatformProxyEnabled = EventPlatformProxySupport != EventPlatformProxySupport.None;
             }
 
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
@@ -157,6 +162,7 @@ namespace Datadog.Trace.Ci
 
             Log.Information("Initializing CI Visibility from dd-trace / runner");
             Settings = settings;
+            EventPlatformProxySupport = settings.ForceAgentsEvpProxy ? EventPlatformProxySupport.V2 : IsEventPlatformProxySupportedByAgent(discoveryService);
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             var tracerSettings = settings.TracerSettings;
@@ -316,10 +322,9 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        internal static bool HasSkippableTests()
-        {
-            return _skippableTestsBySuiteAndName?.Count > 0;
-        }
+        internal static bool HasSkippableTests() => _skippableTestsBySuiteAndName?.Count > 0;
+
+        internal static string? GetSkippableTestsCorrelationId() => _skippableTestsCorrelationId;
 
         internal static string GetServiceNameFromRepository(string repository)
         {
@@ -615,10 +620,10 @@ namespace Datadog.Trace.Ci
                 if (settings.TestsSkippingEnabled == true)
                 {
                     var skippeableTests = await lazyItrClient.Value.GetSkippableTestsAsync().ConfigureAwait(false);
-                    Log.Information<int>("ITR: SkippableTests = {Length}.", skippeableTests.Length);
+                    Log.Information<string?, int>("ITR: CorrelationId = {CorrelationId}, SkippableTests = {Length}.", skippeableTests.CorrelationId, skippeableTests.Tests.Length);
 
                     var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippableTest>>>();
-                    foreach (var item in skippeableTests)
+                    foreach (var item in skippeableTests.Tests)
                     {
                         if (!skippableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
                         {
@@ -635,6 +640,7 @@ namespace Datadog.Trace.Ci
                         name.Add(item);
                     }
 
+                    _skippableTestsCorrelationId = skippeableTests.CorrelationId;
                     _skippableTestsBySuiteAndName = skippableTestsBySuiteAndName;
                     Log.Debug("ITR: SkippableTests dictionary has been built.");
                 }
@@ -649,11 +655,10 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        private static bool IsEventPlatformProxySupportedByAgent(IDiscoveryService discoveryService)
+        private static EventPlatformProxySupport IsEventPlatformProxySupportedByAgent(IDiscoveryService discoveryService)
         {
-            var eventPlatformProxyEnabled = false;
+            var manualResetEventSlim = new ManualResetEventSlim();
             AgentConfiguration? agentConfiguration = null;
-            ManualResetEventSlim manualResetEventSlim = new(false);
             LifetimeManager.Instance.AddShutdownTask(() => manualResetEventSlim.Set());
 
             Log.Debug("Waiting for agent configuration...");
@@ -666,19 +671,36 @@ namespace Datadog.Trace.Ci
                 Log.Debug("Agent configuration received.");
             }
 
-            // We wait up to 5 seconds for the configuration to be retrieved.
             manualResetEventSlim.Wait(5_000);
-            if (!string.IsNullOrEmpty(Volatile.Read(ref agentConfiguration)?.EventPlatformProxyEndpoint))
+            if (agentConfiguration is null)
             {
-                Log.Information("Event platform proxy supported by agent.");
-                eventPlatformProxyEnabled = true;
+                Log.Warning("Discovery service could not retrieve the agent configuration after 5 seconds.");
+                return EventPlatformProxySupport.None;
+            }
+
+            var eventPlatformProxyEndpoint = agentConfiguration.EventPlatformProxyEndpoint;
+            if (!string.IsNullOrEmpty(eventPlatformProxyEndpoint))
+            {
+                if (eventPlatformProxyEndpoint?.Contains("/v2") == true)
+                {
+                    Log.Information("Event platform proxy V2 supported by agent.");
+                    return EventPlatformProxySupport.V2;
+                }
+
+                if (eventPlatformProxyEndpoint?.Contains("/v4") == true)
+                {
+                    Log.Information("Event platform proxy V4 supported by agent.");
+                    return EventPlatformProxySupport.V4;
+                }
+
+                Log.Information("EventPlatformProxyEndpoint: '{EVPEndpoint}' not supported.", eventPlatformProxyEndpoint);
             }
             else
             {
                 Log.Information("Event platform proxy is not supported by the agent. Falling back to the APM protocol.");
             }
 
-            return eventPlatformProxyEnabled;
+            return EventPlatformProxySupport.None;
         }
     }
 }

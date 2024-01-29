@@ -1,25 +1,33 @@
-// <copyright file="Encoder.cs" company="Datadog">
+// <copyright file="EncoderLegacy.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.AppSec.Waf
+namespace Datadog.Trace.AppSec.WafEncoding
 {
-    internal static class Encoder
+    internal class EncoderLegacy : IEncoder
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EncoderLegacy));
         private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
+        private readonly WafLibraryInvoker _wafLibraryInvoker;
+
+        public EncoderLegacy(WafLibraryInvoker wafLibraryInvoker)
+        {
+            _wafLibraryInvoker = wafLibraryInvoker;
+        }
 
         public static ObjType DecodeArgsType(DDWAF_OBJ_TYPE t)
         {
@@ -40,7 +48,12 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static string TruncateLongString(string s) => s.Length > WafConstants.MaxStringLength ? s.Substring(0, WafConstants.MaxStringLength) : s;
 
-        public static Obj Encode(object o, WafLibraryInvoker wafLibraryInvoker, List<Obj>? argCache = null, bool applySafetyLimits = true) => EncodeInternal(o, argCache, WafConstants.MaxContainerDepth, applySafetyLimits, wafLibraryInvoker);
+        public IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
+        {
+            var argCache = new List<Obj>();
+            var result = EncodeInternal(o, argCache, remainingDepth, applySafetyLimits, _wafLibraryInvoker);
+            return new EncodeResult(result, argCache);
+        }
 
         private static Obj EncodeUnknownType(object o, WafLibraryInvoker wafLibraryInvoker)
         {
@@ -53,8 +66,23 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static Obj EncodeInternal<T>(T o, List<Obj>? argCache, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
         {
+            object args = o!;
+            if (o is ArrayList arrayList)
+            {
+                var list = new List<object>();
+                foreach (var item in arrayList)
+                {
+                    if (item is not null)
+                    {
+                        list.Add(item);
+                    }
+                }
+
+                args = list;
+            }
+
             var value =
-                o switch
+                args switch
                 {
                     null => CreateNativeNull(wafLibraryInvoker),
                     string s => CreateNativeString(s, applyLimits, wafLibraryInvoker),
@@ -91,7 +119,7 @@ namespace Datadog.Trace.AppSec.Waf
                     IList<ulong> objs => EncodeList(objs, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
                     IList<double> objs => EncodeList(objs, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
                     IList<decimal> objs => EncodeList(objs, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
-                    _ => EncodeUnknownType(o, wafLibraryInvoker),
+                    _ => EncodeUnknownType(args, wafLibraryInvoker),
                 };
 
             argCache?.Add(value);
@@ -276,6 +304,31 @@ namespace Datadog.Trace.AppSec.Waf
 
             sb.Append(" ]");
             return sb;
+        }
+
+        public class EncodeResult : IEncodeResult
+        {
+            private readonly Obj _obj;
+            private readonly IList<Obj> _argCache;
+
+            internal EncodeResult(Obj obj, IList<Obj> argCache)
+            {
+                _obj = obj;
+                _argCache = argCache;
+                Result = _obj.RawPtr;
+            }
+
+            public IntPtr Result { get; }
+
+            public DdwafObjectStruct ResultDdwafObject => _obj.InnerStruct;
+
+            public void Dispose()
+            {
+                foreach (var arg in _argCache)
+                {
+                    arg.Dispose();
+                }
+            }
         }
     }
 }

@@ -89,6 +89,8 @@ namespace Datadog.Trace.AppSec
 
             ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled)
                                        .AsBool(false);
+            UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
+                                     .AsBool(false);
         }
 
         public double ApiSecuritySampling { get; }
@@ -96,6 +98,8 @@ namespace Datadog.Trace.AppSec
         public int ApiSecurityMaxConcurrentRequests { get; }
 
         public bool Enabled { get; }
+
+        public bool UseUnsafeEncoder { get; }
 
         public bool CanBeToggled { get; }
 

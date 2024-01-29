@@ -507,9 +507,13 @@ namespace Datadog.Trace.TestHelpers
                 HandlePotentialDataStreams(request);
                 responseType = MockTracerResponseType.DataStreams;
             }
-            else if (request.PathAndQuery.StartsWith("/evp_proxy/v2/"))
+            else if (request.PathAndQuery.StartsWith("/evp_proxy/v2/") || request.PathAndQuery.StartsWith("/evp_proxy/v4/"))
             {
-                HandleEvpProxyPayload(request);
+                if (HandleEvpProxyPayload(request) is { } customResponse)
+                {
+                    return customResponse;
+                }
+
                 responseType = MockTracerResponseType.EvpProxy;
             }
             else if (request.PathAndQuery.StartsWith("/tracer_flare/v1"))
@@ -744,7 +748,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandleEvpProxyPayload(MockHttpParser.MockHttpRequest request)
+        private MockTracerResponse HandleEvpProxyPayload(MockHttpParser.MockHttpRequest request)
         {
             if (ShouldDeserializeTraces && request.ContentLength >= 1)
             {
@@ -757,6 +761,18 @@ namespace Datadog.Trace.TestHelpers
                         headerCollection.Add(header.Name, header.Value);
                     }
 
+                    if (headerCollection["Content-Encoding"] == "gzip")
+                    {
+                        var bodyMs = new MemoryStream(body);
+                        var uncompressedStream = new MemoryStream();
+                        using (var gzipStream = new GZipStream(bodyMs, CompressionMode.Decompress))
+                        {
+                            gzipStream.CopyTo(uncompressedStream);
+                        }
+
+                        body = uncompressedStream.ToArray();
+                    }
+
                     var bodyAsJson = headerCollection["Content-Type"] switch
                     {
                         "application/msgpack" => MessagePackSerializer.ToJson(body),
@@ -764,7 +780,9 @@ namespace Datadog.Trace.TestHelpers
                         _ => Encoding.UTF8.GetString(body), // e.g. multipart form data, currently we don't do anything with this so meh
                     };
 
-                    EventPlatformProxyPayloadReceived?.Invoke(this, new EventArgs<EvpProxyPayload>(new EvpProxyPayload(request.PathAndQuery, headerCollection, bodyAsJson)));
+                    var evpProxyPayload = new EvpProxyPayload(request.PathAndQuery, headerCollection, bodyAsJson);
+                    EventPlatformProxyPayloadReceived?.Invoke(this, new EventArgs<EvpProxyPayload>(evpProxyPayload));
+                    return evpProxyPayload.Response;
                 }
                 catch (Exception ex)
                 {
@@ -774,12 +792,14 @@ namespace Datadog.Trace.TestHelpers
                     {
                         // Accept call is likely interrupted by a dispose
                         // Swallow the exception and let the test finish
-                        return;
+                        return null;
                     }
 
                     throw;
                 }
             }
+
+            return null;
         }
 
         private void HandleTracerFlarePayload(MockHttpParser.MockHttpRequest request)
@@ -960,18 +980,23 @@ namespace Datadog.Trace.TestHelpers
             Snapshots = Snapshots.AddRange(snapshots);
         }
 
-        public readonly struct EvpProxyPayload
+        public class EvpProxyPayload
         {
-            public readonly string PathAndQuery;
-            public readonly NameValueCollection Headers;
-            public readonly string BodyInJson;
-
             public EvpProxyPayload(string pathAndQuery, NameValueCollection headers, string bodyInJson)
             {
                 PathAndQuery = pathAndQuery;
                 Headers = headers;
                 BodyInJson = bodyInJson;
+                Response = null;
             }
+
+            public string PathAndQuery { get; }
+
+            public NameValueCollection Headers { get; }
+
+            public string BodyInJson { get; }
+
+            public MockTracerResponse Response { get; set; }
         }
 
         public class AgentConfiguration

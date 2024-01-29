@@ -47,6 +47,7 @@ public class DiscoveryServiceTests
         AgentConfiguration config = null;
         var clientDropP0s = true;
         var version = "1.26.3";
+        var evpProxyEndpoint = "evp_proxy/v4";
         var mutex = new ManualResetEventSlim();
         var factory = new TestRequestFactory(
             x => new TestApiRequest(x, responseContent: GetConfig(clientDropP0s, version)));
@@ -68,6 +69,7 @@ public class DiscoveryServiceTests
         config.ClientDropP0s.Should().Be(clientDropP0s);
         config.StatsEndpoint.Should().NotBeNullOrEmpty();
         config.DataStreamsMonitoringEndpoint.Should().NotBeNullOrEmpty();
+        config.EventPlatformProxyEndpoint.Should().Be(evpProxyEndpoint);
         await ds.DisposeAsync();
     }
 

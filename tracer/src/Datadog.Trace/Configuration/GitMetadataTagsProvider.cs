@@ -59,24 +59,50 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
                 return true;
             }
 
+            string? gitCommitSha = null;
+            string? gitRespositoryUrl = null;
+
             // Get the tag from configuration. These may originate from the DD_GIT_REPOSITORY_URL and DD_GIT_COMMIT_SHA environment variables,
             // but if those were not available, they may have been extracted from the DD_TAGS environment variable.
-            if (!string.IsNullOrWhiteSpace(_immutableTracerSettings.GitCommitSha) &&
-                !string.IsNullOrWhiteSpace(_immutableTracerSettings.GitRepositoryUrl))
+            if (!string.IsNullOrWhiteSpace(_immutableTracerSettings.GitCommitSha))
             {
-                gitMetadata = _cachedGitTags = new GitMetadata(_immutableTracerSettings.GitCommitSha!, _immutableTracerSettings.GitRepositoryUrl!);
+                gitCommitSha = _immutableTracerSettings.GitCommitSha!;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_immutableTracerSettings.GitRepositoryUrl))
+            {
+                gitRespositoryUrl = _immutableTracerSettings.GitRepositoryUrl!;
+            }
+
+            if (gitCommitSha is not null && gitRespositoryUrl is not null)
+            {
+                // we have everything
+                gitMetadata = _cachedGitTags = new GitMetadata(gitCommitSha, gitRespositoryUrl);
                 // For now, we do not need to call the profiler here. The profiler is able to get those information from the environment.
                 return true;
             }
 
             if (TryGetGitTagsFromSourceLink(out gitMetadata))
             {
+                if (gitMetadata.IsEmpty)
+                {
+                    // If data extracted was empty, we try to keep with partial data from DD_TAGS
+                    gitMetadata = new GitMetadata(gitCommitSha ?? string.Empty, gitRespositoryUrl ?? string.Empty);
+                }
+
                 _cachedGitTags = gitMetadata;
                 // These tags could be GitMetadata.Empty but record it anyway, as it gives us an indication
                 // that we failed to extract the information
                 _telemetry.Record(ConfigurationKeys.GitRepositoryUrl, gitMetadata.RepositoryUrl, recordValue: true, ConfigurationOrigins.Calculated);
                 _telemetry.Record(ConfigurationKeys.GitCommitSha, gitMetadata.CommitSha, recordValue: true, ConfigurationOrigins.Calculated);
                 PropagateGitMetadataToTheProfiler(gitMetadata);
+                return true;
+            }
+
+            if (gitCommitSha is not null || gitRespositoryUrl is not null)
+            {
+                // if we have partial data we go with that
+                gitMetadata = _cachedGitTags = new GitMetadata(gitCommitSha ?? string.Empty, gitRespositoryUrl ?? string.Empty);
                 return true;
             }
 
