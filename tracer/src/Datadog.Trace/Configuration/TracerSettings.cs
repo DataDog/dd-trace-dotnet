@@ -1039,31 +1039,39 @@ namespace Datadog.Trace.Configuration
                 return null;
             }
 
-            var headerTags = new Dictionary<string, string>();
+            var headerTags = new Dictionary<string, string>(configurationDictionary.Count);
 
             foreach (var kvp in configurationDictionary)
             {
-                var headerName = kvp.Key;
-                var providedTagName = kvp.Value;
-                if (string.IsNullOrWhiteSpace(headerName))
+                var headerName = kvp.Key?.Trim();
+                var providedTagName = kvp.Value?.Trim();
+
+                if (string.IsNullOrEmpty(headerName))
                 {
                     continue;
                 }
 
+                // TODO: add tests for these "if" blocks
                 if (string.IsNullOrEmpty(providedTagName))
                 {
-                    // The user has not provided a tag name. The normalization will happen later, when adding the prefix.
-                    headerTags.Add(headerName.Trim(), string.Empty);
+                    // The user did not provide a tag name. Normalization will happen later, when adding the prefix.
+                    headerTags.Add(headerName, string.Empty);
                 }
                 else
                 {
-                    var normalizeSpaces = !headerTagsNormalizationFixEnabled;
-
-                    if (providedTagName.TryConvertToNormalizedTagName(normalizeSpaces, out var normalizedTagName))
+                    if (headerTagsNormalizationFixEnabled)
                     {
-                        // If the user has provided a tag name, then we don't normalize spaces in the provided tag name
-                        // (unless the fix is disabled by the user via feature flag "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED")
-                        headerTags.Add(headerName.Trim(), normalizedTagName);
+                        // If the user provided a tag name, we don't try to normalize it.
+                        headerTags.Add(headerName, providedTagName);
+                    }
+                    else
+                    {
+                        // user opted into the previous behavior, where all tag names were normalized
+                        // (including periods, but not spaces)
+                        if (providedTagName.TryConvertToNormalizedTagName(normalizeSpaces: false, out var normalizedTagName))
+                        {
+                            headerTags.Add(headerName, normalizedTagName);
+                        }
                     }
                 }
             }
