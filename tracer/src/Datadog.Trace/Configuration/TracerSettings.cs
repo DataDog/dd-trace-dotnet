@@ -1043,40 +1043,46 @@ namespace Datadog.Trace.Configuration
 
             foreach (var kvp in configurationDictionary)
             {
-                var headerName = kvp.Key?.Trim();
-                var providedTagName = kvp.Value?.Trim();
+                var headerName = kvp.Key.Trim();
+                var tagName = kvp.Value?.Trim();
 
                 if (string.IsNullOrEmpty(headerName))
                 {
-                    continue;
+                    return null;
                 }
 
-                // TODO: add tests for these "if" blocks
-                if (string.IsNullOrEmpty(providedTagName))
+                var finalTagName = InitializeHeaderTag(tagName, headerTagsNormalizationFixEnabled);
+
+                if (finalTagName is not null)
                 {
-                    // The user did not provide a tag name. Normalization will happen later, when adding the prefix.
-                    headerTags.Add(headerName, string.Empty);
-                }
-                else
-                {
-                    if (headerTagsNormalizationFixEnabled)
-                    {
-                        // If the user provided a tag name, we don't try to normalize it.
-                        headerTags.Add(headerName, providedTagName);
-                    }
-                    else
-                    {
-                        // user opted into the previous behavior, where all tag names were normalized
-                        // (including periods, but not spaces)
-                        if (providedTagName.TryConvertToNormalizedTagName(normalizeSpaces: false, out var normalizedTagName))
-                        {
-                            headerTags.Add(headerName, normalizedTagName);
-                        }
-                    }
+                    headerTags.Add(headerName, finalTagName);
                 }
             }
 
             return headerTags;
+        }
+
+        internal static string? InitializeHeaderTag(string? tagName, bool headerTagsNormalizationFixEnabled)
+        {
+            tagName = tagName?.Trim();
+
+            if (string.IsNullOrEmpty(tagName))
+            {
+                // The user did not provide a tag name. Normalization will happen later, when adding the prefix.
+                return string.Empty;
+            }
+
+            if (headerTagsNormalizationFixEnabled)
+            {
+                // If the user provided a tag name, we don't try to normalize it.
+                return tagName;
+            }
+
+            // user opted into the previous behavior, where all tag names were normalized
+            // (including periods, but _not_ spaces)
+            return tagName.TryConvertToNormalizedTagName(normalizeSpaces: false, out var normalizedTagName) ?
+                       normalizedTagName :
+                       null;
         }
 
         internal static string[] TrimSplitString(string? textValues, char[] separators)
