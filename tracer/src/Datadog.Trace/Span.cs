@@ -397,6 +397,7 @@ namespace Datadog.Trace
         {
             Error = true;
             SetExceptionTags(exception);
+            Debugger.ExceptionAutoInstrumentation.ExceptionDebugging.Report(this, exception);
         }
 
         /// <summary>

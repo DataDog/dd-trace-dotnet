@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Iast.Dataflow;
@@ -388,6 +389,22 @@ namespace Datadog.Trace.ClrProfiler
                 catch (Exception e)
                 {
                     Log.Error(e, "Failed to initialize Remote Configuration Management.");
+                }
+
+                try
+                {
+                    if (ExceptionDebugging.Settings.Enabled)
+                    {
+                        ExceptionDebugging.Initialize();
+                    }
+                    else
+                    {
+                        Log.Debug("Exception Debugging is not enabled.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error initializing Exception Debugging");
                 }
 
                 // RCM isn't _actually_ initialized at this point, as we do it in the background, so we record that separately

@@ -1,0 +1,66 @@
+// <copyright file="ParticipatingFrame.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+using System.Diagnostics;
+using System.Reflection;
+
+namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+{
+    internal enum ParticipatingFrameState
+    {
+        Default,
+        Blacklist
+    }
+
+    internal readonly struct ParticipatingFrame
+    {
+        private const int UndefinedIlOffset = -1;
+
+        private ParticipatingFrame(MethodBase method, ParticipatingFrameState state, int ilOffset = UndefinedIlOffset, bool isInBlackList = false)
+        {
+            Method = method;
+            MethodIdentifier = new MethodUniqueIdentifier(method.Module.ModuleVersionId, method.MetadataToken, method);
+            IsInBlackList = isInBlackList;
+            ILOffset = ilOffset;
+            State = state;
+        }
+
+        public ParticipatingFrame(StackFrame stackFrame, ParticipatingFrameState state, bool isInBlackList = false)
+            : this(stackFrame?.GetMethod(), state, stackFrame?.GetILOffset() ?? UndefinedIlOffset, isInBlackList)
+        {
+        }
+
+        public ParticipatingFrameState State { get; }
+
+        public MethodBase Method { get; }
+
+        public MethodUniqueIdentifier MethodIdentifier { get; }
+
+        public bool IsInBlackList { get; }
+
+        public int ILOffset { get; }
+
+        public override int GetHashCode()
+        {
+            return MethodIdentifier.GetHashCode();
+        }
+
+        public bool Equals(ParticipatingFrame other)
+        {
+            return MethodIdentifier.Equals(other.MethodIdentifier);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+
+            return Equals((ParticipatingFrame)obj);
+        }
+    }
+}

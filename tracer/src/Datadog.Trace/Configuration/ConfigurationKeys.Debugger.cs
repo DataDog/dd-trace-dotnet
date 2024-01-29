@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 
 namespace Datadog.Trace.Configuration
 {
@@ -90,6 +91,26 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DebuggerSettings.RedactedTypes"/>
             public const string RedactedTypes = "DD_DYNAMIC_INSTRUMENTATION_REDACTED_TYPES";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Exception Debugging.
+            /// Default value is false (disabled).
+            /// </summary>
+            /// <seealso cref="ExceptionDebuggingSettings.Enabled"/>
+            public const string ExceptionDebuggingEnabled = "DD_EXCEPTION_DEBUGGING_ENABLED";
+
+            /// <summary>
+            /// Configuration key for the amount of frames in a call stack we would like to capture values for.
+            /// </summary>
+            /// <seealso cref="ExceptionDebuggingSettings.MaximumFramesToCapture"/>
+            public const string ExceptionDebuggingMaxFramesToCapture = "DD_EXCEPTION_DEBUGGING_MAX_FRAMES_TO_CAPTURE";
+
+            /// <summary>
+            /// Configuration key for capturing the variables of all the frames in exception call stack.
+            /// Default value is false.
+            /// </summary>
+            /// <seealso cref="ExceptionDebuggingSettings.CaptureFullCallStack"/>
+            public const string ExceptionDebuggingCaptureFullCallStack = "DD_EXCEPTION_DEBUGGING_CAPTURE_FULL_CALLSTACK";
         }
     }
 }

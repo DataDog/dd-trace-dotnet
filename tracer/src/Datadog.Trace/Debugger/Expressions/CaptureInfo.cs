@@ -12,6 +12,7 @@ namespace Datadog.Trace.Debugger.Expressions;
 internal readonly ref struct CaptureInfo<TCapture>
 {
     internal CaptureInfo(
+        int methodMetadataIndex,
         MethodState methodState,
         TCapture value = default,
         MethodBase method = null,
@@ -25,6 +26,7 @@ internal readonly ref struct CaptureInfo<TCapture>
         LineCaptureInfo lineCaptureInfo = default,
         AsyncCaptureInfo asyncCaptureInfo = default)
     {
+        MethodMetadataIndex = methodMetadataIndex;
         Value = value;
         MemberKind = memberKind;
         Type = type ?? value?.GetType() ?? typeof(TCapture);
@@ -38,6 +40,8 @@ internal readonly ref struct CaptureInfo<TCapture>
         LocalsCount = localsCount;
         ArgumentsCount = argumentsCount;
     }
+
+    internal int MethodMetadataIndex { get; }
 
     internal TCapture Value { get; }
 
