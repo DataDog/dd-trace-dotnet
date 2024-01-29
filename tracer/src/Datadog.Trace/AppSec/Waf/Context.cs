@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -20,30 +21,32 @@ namespace Datadog.Trace.AppSec.Waf
 
         // the context handle should be locked, it is not safe for concurrent access and two
         // waf events may be processed at the same time due to code being run asynchronously
-        private readonly object _sync = new object();
         private readonly IntPtr _contextHandle;
 
         private readonly Waf _waf;
 
-        private readonly List<Obj> _argCache = new();
+        private readonly List<IEncodeResult> _argCache;
         private readonly Stopwatch _stopwatch;
         private readonly WafLibraryInvoker _wafLibraryInvoker;
+        private readonly IEncoder _encoder;
 
         private bool _disposed;
         private ulong _totalRuntimeOverRuns;
 
         // Beware this class is created on a thread but can be disposed on another so don't trust the lock is not going to be held
-        private Context(IntPtr contextHandle, Waf waf, WafLibraryInvoker wafLibraryInvoker)
+        private Context(IntPtr contextHandle, Waf waf, WafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
         {
             _contextHandle = contextHandle;
             _waf = waf;
             _wafLibraryInvoker = wafLibraryInvoker;
+            _encoder = encoder;
             _stopwatch = new Stopwatch();
+            _argCache = new(64);
         }
 
         ~Context() => Dispose(false);
 
-        public static IContext? GetContext(IntPtr contextHandle, Waf waf, WafLibraryInvoker wafLibraryInvoker)
+        public static IContext? GetContext(IntPtr contextHandle, Waf waf, WafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
         {
             // in high concurrency, the waf passed as argument here could have been disposed just above in between creation / waf update so last test here
             if (waf.Disposed)
@@ -52,10 +55,10 @@ namespace Datadog.Trace.AppSec.Waf
                 return null;
             }
 
-            return new Context(contextHandle, waf, wafLibraryInvoker);
+            return new Context(contextHandle, waf, wafLibraryInvoker, encoder);
         }
 
-        public IResult? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
+        public unsafe IResult? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
         {
             if (_disposed)
             {
@@ -78,13 +81,15 @@ namespace Datadog.Trace.AppSec.Waf
 
             // not restart cause it's the total runtime over runs, and we run several * during request
             _stopwatch.Start();
-            using var pwArgs = Encoder.Encode(addresses, _wafLibraryInvoker, _argCache, applySafetyLimits: true);
-            var rawArgs = pwArgs.RawPtr;
-
             WafReturnCode code;
-            lock (_sync)
+            lock (_stopwatch)
             {
-                code = _waf.Run(_contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+                var args = _encoder.Encode(addresses, applySafetyLimits: true);
+                var pwArgs = args.Result;
+                _argCache.Add(args);
+
+                // WARNING: DO NOT DISPOSE pwArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
+                code = _waf.Run(_contextHandle, pwArgs, ref retNative, timeoutMicroSeconds);
             }
 
             _stopwatch.Stop();
@@ -112,12 +117,13 @@ namespace Datadog.Trace.AppSec.Waf
 
             _disposed = true;
 
+            // WARNING do not move this above, this should only be disposed in the end of the context's life
             foreach (var arg in _argCache)
             {
                 arg.Dispose();
             }
 
-            lock (_sync)
+            lock (_stopwatch)
             {
                 _wafLibraryInvoker.ContextDestroy(_contextHandle);
             }

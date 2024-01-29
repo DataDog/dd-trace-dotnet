@@ -11,6 +11,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -124,6 +125,12 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         private void Execute(string address, object value, string flow = null, string rule = null, string schemaExtraction = null)
+        {
+            ExecuteInternal(address, value, flow, rule, schemaExtraction, true);
+            ExecuteInternal(address, value, flow, rule, schemaExtraction, false);
+        }
+
+        private void ExecuteInternal(string address, object value, string flow, string rule, string schemaExtraction, bool oldEncoder)
         {
             var args = new Dictionary<string, object> { { address, value } };
             var extractSchema = schemaExtraction is not null;
