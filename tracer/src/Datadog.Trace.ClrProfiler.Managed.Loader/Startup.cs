@@ -117,16 +117,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
             catch (FileNotFoundException ex)
             {
-                var appDomainFriendlyName = $"{AppDomain.CurrentDomain.Id} - {AppDomain.CurrentDomain.FriendlyName}";
-
                 // In some IIS scenarios the `AssemblyResolve` event doesn't get triggered and we received this exception.
                 // We will try to resolve it manually as a last chance.
-                StartupLogger.Log(ex, "[AppDomain={0}] Error on assembly load: {1}, Trying to solve it manually...", appDomainFriendlyName, assemblyString);
+                StartupLogger.Log(ex, "Error on assembly load: {0}, Trying to solve it manually...", assemblyString);
 
                 var assembly = ResolveAssembly(assemblyString);
                 if (assembly is not null)
                 {
-                    StartupLogger.Log("[AppDomain={0}] Assembly resolved manually.", appDomainFriendlyName);
+                    StartupLogger.Log("Assembly resolved manually.");
                 }
 
                 return assembly;

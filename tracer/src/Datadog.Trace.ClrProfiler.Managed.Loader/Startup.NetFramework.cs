@@ -6,6 +6,7 @@
 #if NETFRAMEWORK
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 
@@ -16,6 +17,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
+        private static readonly Dictionary<string, Assembly> AssemblyCache = new();
+
         private static string ResolveManagedProfilerDirectory()
         {
             var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
@@ -31,44 +34,64 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
-            return ResolveAssembly(args.Name);
+            try
+            {
+                return ResolveAssembly(args.Name);
+            }
+            catch (Exception ex)
+            {
+                StartupLogger.Log(ex, "Error resolving assembly: {0}", args.Name);
+            }
+
+            return null;
         }
 
         private static Assembly ResolveAssembly(string name)
         {
-            var assemblyName = new AssemblyName(name);
-
-            // On .NET Framework, having a non-US locale can cause mscorlib
-            // to enter the AssemblyResolve event when searching for resources
-            // in its satellite assemblies. Exit early so we don't cause
-            // infinite recursion.
-            if (string.Equals(assemblyName.Name, "mscorlib.resources", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(assemblyName.Name, "System.Net.Http", StringComparison.OrdinalIgnoreCase))
+            lock (AssemblyCache)
             {
-                return null;
-            }
-
-            var appDomainFriendlyName = $"{AppDomain.CurrentDomain.Id} - {AppDomain.CurrentDomain.FriendlyName}";
-
-            // WARNING: Logs must not be added _before_ we check for the above bail-out conditions
-            StartupLogger.Debug("[AppDomain={0}] Assembly Resolve event received for: {1}", appDomainFriendlyName, name);
-            var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
-            StartupLogger.Debug("[AppDomain={0}] Looking for: {1}", appDomainFriendlyName, path);
-
-            if (File.Exists(path))
-            {
-                if (name.StartsWith("Datadog.Trace, Version=") && name != AssemblyName)
+                if (AssemblyCache.TryGetValue(name, out var assembly))
                 {
-                    StartupLogger.Debug("[AppDomain={0}] Trying to load {1} which does not match the expected version ({2}). [Path={3}]", appDomainFriendlyName, name, AssemblyName, path);
+                    return assembly;
+                }
+
+                AssemblyCache[name] = null;
+                var assemblyName = new AssemblyName(name);
+
+                // On .NET Framework, having a non-US locale can cause mscorlib
+                // to enter the AssemblyResolve event when searching for resources
+                // in its satellite assemblies. Exit early so we don't cause
+                // infinite recursion.
+                if (string.Equals(assemblyName.Name, "mscorlib.resources", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(assemblyName.Name, "System.Net.Http", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(assemblyName.Name, "vstest.console.resources", StringComparison.OrdinalIgnoreCase))
+                {
                     return null;
                 }
 
-                StartupLogger.Debug("[AppDomain={0}] Resolving {1}, loading {2}", appDomainFriendlyName, name, path);
-                return Assembly.LoadFrom(path);
-            }
+                // WARNING: Logs must not be added _before_ we check for the above bail-out conditions
+                StartupLogger.Debug("Assembly Resolve event received for: '{0}'", name);
+                var path = string.IsNullOrEmpty(ManagedProfilerDirectory) ? $"{assemblyName.Name}.dll" : Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
+                StartupLogger.Debug(" Looking for: '{0}'", path);
 
-            StartupLogger.Debug("[AppDomain={0}] Assembly not found in path: {1}", appDomainFriendlyName, path);
-            return null;
+                if (File.Exists(path))
+                {
+                    if (name.StartsWith("Datadog.Trace, Version=") && name != AssemblyName)
+                    {
+                        StartupLogger.Debug(" Trying to load '{0}' which does not match the expected version ('{1}'). [Path={2}]", name, AssemblyName, path);
+                        return null;
+                    }
+
+                    StartupLogger.Debug(" Resolving '{0}', loading '{1}'", name, path);
+                    assembly = Assembly.LoadFrom(path);
+                    StartupLogger.Debug("Assembly '{0}' loaded.", assembly?.FullName ?? "(null)");
+                    AssemblyCache[name] = assembly;
+                    return assembly;
+                }
+
+                StartupLogger.Debug("Assembly not found in path: '{0}'", path);
+                return null;
+            }
         }
     }
 }
