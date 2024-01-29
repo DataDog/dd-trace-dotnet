@@ -21,12 +21,20 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST.Tainted;
 
 internal static class Utils
 {
-    public static EvidenceRedactor GetDefaultRedactor()
+    public static EvidenceRedactor GetDefaultRedactor(double? timeoutMs = null)
     {
-        var settings = new CustomSettingsForTests(new Dictionary<string, object>()
+        var settingsDictionary = new Dictionary<string, object>()
         {
             { ConfigurationKeys.Iast.RedactionEnabled, true }
-        });
+        };
+
+        if (timeoutMs is not null)
+        {
+            settingsDictionary[ConfigurationKeys.Iast.RegexTimeout] = timeoutMs;
+        }
+
+        var settings = new CustomSettingsForTests(settingsDictionary);
+
         var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
 
         var evidenceRedactor = IastModule.CreateRedactor(iastSettings);
@@ -34,9 +42,9 @@ internal static class Utils
         return evidenceRedactor;
     }
 
-    public static VulnerabilityBatch GetRedactedBatch()
+    public static VulnerabilityBatch GetRedactedBatch(double? timeoutMs = null)
     {
-        return new VulnerabilityBatch(GetDefaultRedactor());
+        return new VulnerabilityBatch(GetDefaultRedactor(timeoutMs));
     }
 
     public static System.Func<string, string, bool> GetRegexScrubber(params string[] rules)

@@ -5,7 +5,11 @@
 
 using System;
 using System.Collections.Generic;
+#if !NETCOREAPP3_1_OR_GREATER
 using System.Text.RegularExpressions;
+#else
+using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
+#endif
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Settings;
 
