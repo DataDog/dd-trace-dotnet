@@ -441,7 +441,10 @@ namespace Datadog.Trace
         /// <param name="parent">TODO</param>
         internal void SetCheckpoint(DataStreamsManager manager, CheckpointKind checkpointKind, string[] edgeTags, long payloadSizeBytes, long timeInQueueMs, PathwayContext? parent)
         {
-            PathwayContext = manager.SetCheckpoint(parent, checkpointKind, edgeTags, payloadSizeBytes, timeInQueueMs);
+            if (manager != null)
+            {
+                PathwayContext = manager.SetCheckpoint(parent, checkpointKind, edgeTags, payloadSizeBytes, timeInQueueMs);
+            }
         }
 
         internal static class Keys
