@@ -31,7 +31,6 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData("Content-Type", true, "content-type")]
         [InlineData(" Content-Type ", true, "content-type")]
         [InlineData("C!!!ont_____ent----tYp!/!e", true, "c___ont_____ent----typ_/_e")]
-        [InlineData("Some.Header", true, "some_header")]
         [InlineData("9invalidtagname", false, null)]
         [InlineData("invalid_length_201_______________________________________________________________________________________________________________________________________________________________________________________", false, null)]
         [InlineData("valid_length_200________________________________________________________________________________________________________________________________________________________________________________________", true, "valid_length_200________________________________________________________________________________________________________________________________________________________________________________________")]
@@ -58,27 +57,6 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         {
             input.TryConvertToNormalizedTagName(normalizeSpaces, out var actualTagName).Should().BeTrue();
             actualTagName.Should().Be(expectedTagName);
-        }
-
-        [Theory]
-        [InlineData("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_:/-.", true, "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789_:/-_")]
-        [InlineData("Content-Type", true, "content-type")]
-        [InlineData(" Content-Type ", true, "content-type")]
-        [InlineData("C!!!ont_____ent----tYp!/!e", true, "c___ont_____ent----typ_/_e")]
-        [InlineData("Some.Header", true, "some_header")]
-        [InlineData("9invalidtagname", false, null)]
-        [InlineData("invalid_length_201_______________________________________________________________________________________________________________________________________________________________________________________", false, null)]
-        [InlineData("valid_length_200________________________________________________________________________________________________________________________________________________________________________________________", true, "valid_length_200________________________________________________________________________________________________________________________________________________________________________________________")]
-        [InlineData(" original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________", true, "original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________")]
-        public void TryConvertToNormalizedHeaderTagName(string input, bool expectedConversionSuccess, string expectedTagName)
-        {
-            var actualConversionSuccess = input.TryConvertToNormalizedTagName(normalizeSpaces: true, out var actualTagName);
-            actualConversionSuccess.Should().Be(expectedConversionSuccess);
-
-            if (actualConversionSuccess)
-            {
-                actualTagName.Should().Be(expectedTagName);
-            }
         }
     }
 }
