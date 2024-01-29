@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Runtime.CompilerServices;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ExtensionMethods
