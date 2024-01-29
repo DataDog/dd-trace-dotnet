@@ -926,14 +926,14 @@
     "integrationName": "Serilog",
     "assemblyName": "Serilog",
     "minAssemblyVersionInclusive": "1.0.0",
-    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
     "packages": [
       {
         "name": "Serilog",
         "minVersionAvailableInclusive": "0.1.6",
         "minVersionSupportedInclusive": "1.0.1",
         "minVersionTestedInclusive": "1.4.214",
-        "maxVersionSupportedInclusive": "2.12.0",
+        "maxVersionSupportedInclusive": "3.1.1",
         "maxVersionAvailableInclusive": "3.1.1",
         "maxVersionTestedInclusive": "3.1.1"
       }

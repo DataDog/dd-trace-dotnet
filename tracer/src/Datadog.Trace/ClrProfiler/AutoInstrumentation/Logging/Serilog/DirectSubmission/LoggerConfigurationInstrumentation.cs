@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
         MethodName = "CreateLogger",
         ReturnTypeName = "Serilog.Core.Logger",
         MinimumVersion = "1.0.0",
-        MaximumVersion = "2.*.*",
+        MaximumVersion = "3.*.*",
         IntegrationName = nameof(IntegrationId.Serilog))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
