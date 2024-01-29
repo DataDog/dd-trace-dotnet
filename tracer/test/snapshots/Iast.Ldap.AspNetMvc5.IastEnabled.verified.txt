@@ -23,6 +23,11 @@
   "vulnerabilities": [
     {
       "type": "LDAP_INJECTION",
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "Ldap"
+      },
       "evidence": {
         "valueParts": [
           {
@@ -34,6 +39,11 @@
     },
     {
       "type": "LDAP_INJECTION",
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "Ldap"
+      },
       "evidence": {
         "valueParts": [
           {

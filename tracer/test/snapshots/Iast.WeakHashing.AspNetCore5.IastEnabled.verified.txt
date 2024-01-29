@@ -26,12 +26,22 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "WeakHashing"
+      },
       "evidence": {
         "value": "MD5"
       }
     },
     {
       "type": "WEAK_HASH",
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "WeakHashing"
+      },
       "evidence": {
         "value": "SHA1"
       }
