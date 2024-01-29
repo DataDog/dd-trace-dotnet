@@ -49,8 +49,8 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 
         [Theory]
         [InlineData("Some.Header", true, "some_header")]    // always replace periods
-        [InlineData("Some Header", true, "some_header")]    // optionally replace spaces
         [InlineData("Some.Header", false, "some_header")]   // always replace periods
+        [InlineData("Some Header", true, "some_header")]    // optionally replace spaces
         [InlineData("Some Header", false, "some header")]   // optionally replace spaces
         [InlineData(" Some Header ", true, "some_header")]  // always trim whitespace
         [InlineData(" Some Header ", false, "some header")] // always trim whitespace
