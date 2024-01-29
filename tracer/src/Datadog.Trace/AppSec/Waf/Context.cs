@@ -64,7 +64,7 @@ namespace Datadog.Trace.AppSec.Waf
         public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds)
             => RunInternal(null, ephemeralAddressData, timeoutMicroSeconds);
 
-        private unsafe IResult? RunInternal(IDictionary<string, object>? persistantAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds)
+        private unsafe IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds)
         {
             if (_disposed)
             {
@@ -81,11 +81,11 @@ namespace Datadog.Trace.AppSec.Waf
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                var persistantParameters = persistantAddressData == null ? string.Empty : Encoder.FormatArgs(persistantAddressData);
+                var persistentParameters = persistentAddressData == null ? string.Empty : Encoder.FormatArgs(persistentAddressData);
                 var ephemeralParameters = ephemeralAddressData == null ? string.Empty : Encoder.FormatArgs(ephemeralAddressData);
                 Log.Debug(
-                    "DDAS-0010-00: Executing AppSec In-App WAF with persistant parameters: {PersistantParameters}, ephemeral parameters: {EphemeralParameters}",
-                    persistantParameters,
+                    "DDAS-0010-00: Executing AppSec In-App WAF with persistent parameters: {PersistentParameters}, ephemeral parameters: {EphemeralParameters}",
+                    persistentParameters,
                     ephemeralParameters);
             }
 
@@ -94,30 +94,35 @@ namespace Datadog.Trace.AppSec.Waf
             WafReturnCode code;
             lock (_stopwatch)
             {
-                var args = _encoder.Encode(addresses, applySafetyLimits: true);
-                var pwArgs = args.Result;
-                _argCache.Add(args);
-
-                if (pwPersistantArgs == IntPtr.Zero && pwEphemeralArgs == IntPtr.Zero)
+                IEncodeResult? persistentArgs = null;
+                IntPtr pwPersistentArgs = IntPtr.Zero;
+                if (persistentAddressData != null)
                 {
-                    Log.Error("Both pwPersistantArgs and pwEphemeralArgs are null");
+                    persistentArgs = _encoder.Encode(persistentAddressData, applySafetyLimits: true);
+                    pwPersistentArgs = persistentArgs.Result;
+                    _argCache.Add(persistentArgs);
                 }
 
-                // WARNING: DO NOT DISPOSE pwPersistantArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
-                code = _waf.Run(_contextHandle, pwPersistantArgs, pwEphemeralArgs,  ref retNative, timeoutMicroSeconds);
+                IEncodeResult? ephemeralArgs = null;
+                IntPtr pwEphemeralArgs = IntPtr.Zero;
+                if (ephemeralAddressData is { Count: > 0 })
+                {
+                    ephemeralArgs = _encoder.Encode(ephemeralAddressData, applySafetyLimits: true);
+                    pwEphemeralArgs = ephemeralArgs.Result;
+                }
+
+                if (pwPersistentArgs == IntPtr.Zero && pwEphemeralArgs == IntPtr.Zero)
+                {
+                    Log.Error("Both pwPersistentArgs and pwEphemeralArgs are null");
+                }
+
+                // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
+                code = _waf.Run(_contextHandle, pwPersistentArgs, pwEphemeralArgs,  ref retNative, timeoutMicroSeconds);
 
                 // pwEphemeralArgs follow a different lifecycle and should be disposed immediately
-                if (ephemeralArgCache != null)
+                if (ephemeralArgs != null)
                 {
-                    Encoder.Pool.Return(ephemeralArgCache);
-                }
-
-                if (ephemeralArgCacheLegacy != null)
-                {
-                    foreach (var obj in ephemeralArgCacheLegacy)
-                    {
-                        obj.Dispose();
-                    }
+                    ephemeralArgs.Dispose();
                 }
             }
 
