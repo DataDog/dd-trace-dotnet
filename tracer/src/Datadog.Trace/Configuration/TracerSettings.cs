@@ -611,6 +611,7 @@ namespace Datadog.Trace.Configuration
         internal IDictionary<string, string> HeaderTagsInternal { get; set; }
 #pragma warning restore SA1624
 
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled"/>
         internal bool HeaderTagsNormalizationFixEnabled { get; }
 
         /// <summary>
@@ -1068,18 +1069,18 @@ namespace Datadog.Trace.Configuration
 
             if (string.IsNullOrEmpty(tagName))
             {
-                // The user did not provide a tag name. Normalization will happen later, when adding the prefix.
+                // The user did not provide a tag name. Normalization will happen later, when adding the tag prefix.
                 return string.Empty;
             }
 
             if (headerTagsNormalizationFixEnabled)
             {
-                // If the user provided a tag name, we don't try to normalize it.
+                // If the user provided a tag name, don't try to normalize it.
                 return tagName;
             }
 
-            // user opted into the previous behavior, where all tag names were normalized
-            // (including periods, but _not_ spaces)
+            // user opted into the previous behavior, where tag names were normalized even when specified
+            // (but _not_ spaces, due to a bug in the normalization code)
             return tagName.TryConvertToNormalizedTagName(normalizeSpaces: false, out var normalizedTagName) ?
                        normalizedTagName :
                        null;
