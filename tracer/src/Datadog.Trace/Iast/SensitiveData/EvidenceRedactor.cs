@@ -31,10 +31,6 @@ internal class EvidenceRedactor
 
         var options = RegexOptions.IgnoreCase | RegexOptions.Compiled;
 
-#if NETCOREAPP3_1_OR_GREATER
-        options |= RegexOptions.NonBacktracking;
-#endif
-
         _keysRegex = new(keysPattern, options, _timeout);
         _valuesRegex = new(valuesPattern, options, _timeout);
 
