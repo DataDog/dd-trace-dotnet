@@ -162,12 +162,12 @@ namespace Datadog.Trace.Configuration
                       // default value (empty)
                       ?? (IDictionary<string, string>)new ConcurrentDictionary<string, string>();
 
-            HeaderTagsNormalizationFixEnabled = config
+            var headerTagsNormalizationFixEnabled = config
                                                .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
                                                .AsBool(defaultValue: true);
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
-            HeaderTagsInternal = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, HeaderTagsNormalizationFixEnabled)
+            HeaderTagsInternal = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled)
                 ?? new Dictionary<string, string>();
 
             PeerServiceTagsEnabled = config
@@ -610,9 +610,6 @@ namespace Datadog.Trace.Configuration
         [ConfigKey(ConfigurationKeys.HeaderTags)]
         internal IDictionary<string, string> HeaderTagsInternal { get; set; }
 #pragma warning restore SA1624
-
-        /// <seealso cref="ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled"/>
-        internal bool HeaderTagsNormalizationFixEnabled { get; }
 
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
