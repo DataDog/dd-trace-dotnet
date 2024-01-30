@@ -5,13 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-#if !NETCOREAPP3_1_OR_GREATER
 using System.Text.RegularExpressions;
-#endif
 using Datadog.Trace.Logging;
-#if NETCOREAPP3_1_OR_GREATER
-using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
-#endif
 
 #nullable enable
 
