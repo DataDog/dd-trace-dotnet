@@ -97,6 +97,10 @@ namespace Datadog.Trace.Configuration
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
             }
 
+            ProfilingEnabledInternal = config
+                .WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)
+                .AsBool(defaultValue: false);
+
             EnvironmentInternal = config
                          .WithKeys(ConfigurationKeys.Environment)
                          .AsString();
@@ -479,6 +483,14 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_TraceEnabled_Set)]
         [ConfigKey(ConfigurationKeys.TraceEnabled)]
         internal bool TraceEnabledInternal { get; private set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether profiling is enabled.
+        /// Default is <c>true</c>.
+        /// </summary>
+        /// <seealso cref="ContinuousProfiler.ConfigurationKeys.ProfilingEnabled"/>
+        [ConfigKey(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)]
+        internal bool ProfilingEnabledInternal { get; private set; }
 
         /// <summary>
         /// Gets or sets the names of disabled integrations.
