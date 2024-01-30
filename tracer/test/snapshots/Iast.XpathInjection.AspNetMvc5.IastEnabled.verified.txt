@@ -23,6 +23,11 @@
   "vulnerabilities": [
     {
       "type": "XPATH_INJECTION",
+      "location": {
+        "spanId": XXX,
+        "path": "IastController.cs",
+        "line": XXX
+      },
       "evidence": {
         "valueParts": [
           {
