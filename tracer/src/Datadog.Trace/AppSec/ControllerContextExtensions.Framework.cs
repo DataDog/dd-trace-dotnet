@@ -11,6 +11,7 @@ using System.Linq;
 using System.Web;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
+using Datadog.Trace.Iast;
 
 namespace Datadog.Trace.AppSec
 {
@@ -36,8 +37,14 @@ namespace Datadog.Trace.AppSec
             }
 
             var security = Security.Instance;
-            var iastRequestContext = scope.Span?.Context?.TraceContext?.IastRequestContext;
-            var runIast = Iast.Iast.Instance.Settings.Enabled && iastRequestContext is not null;
+            var runIast = Iast.Iast.Instance.Settings.Enabled;
+            IastRequestContext? iastRequestContext = null;
+            if (runIast)
+            {
+                iastRequestContext = scope.Span?.Context?.TraceContext?.IastRequestContext;
+                runIast = iastRequestContext is not null;
+            }
+
             // if neither iast or security is enabled leave
             if (!security.Enabled && !runIast)
             {
