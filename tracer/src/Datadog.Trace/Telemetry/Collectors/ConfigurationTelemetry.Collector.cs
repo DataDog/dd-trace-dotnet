@@ -8,6 +8,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
@@ -108,12 +109,21 @@ namespace Datadog.Trace.Configuration.Telemetry
             };
         }
 
+        private static string? GetValueAsString(ConfigurationTelemetryEntry entry)
+        {
+            return entry.Type switch
+            {
+                ConfigurationTelemetry.ConfigurationTelemetryEntryType.Bool => entry.BoolValue?.ToString()?.ToLowerInvariant(),
+                ConfigurationTelemetry.ConfigurationTelemetryEntryType.Double => entry.DoubleValue?.ToString(CultureInfo.InvariantCulture),
+                ConfigurationTelemetry.ConfigurationTelemetryEntryType.Int => entry.IntValue?.ToString(CultureInfo.InvariantCulture),
+                ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted => "<redacted>",
+                _ => entry.StringValue
+            };
+        }
+
         private static ConfigurationKeyValue MapConfigKeyValueAsString(ConfigurationTelemetryEntry entry, string newKey)
         {
-            var value = GetValue(entry);
-
-            var newEntry = ConfigurationTelemetryEntry.String(newKey, value?.ToString(), entry.Origin, entry.Error);
-
+            var newEntry = ConfigurationTelemetryEntry.String(newKey, GetValueAsString(entry), entry.Origin, entry.Error);
             return GetConfigKeyValue(newEntry);
         }
 
