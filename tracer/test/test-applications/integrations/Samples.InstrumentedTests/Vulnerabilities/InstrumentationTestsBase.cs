@@ -358,14 +358,14 @@ public class InstrumentationTestsBase : IDisposable
         }
     }
 
-    public static bool IsLinux()
+    public static bool IsWindows()
     {
-        return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux);
+        return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
     }
 
     public static object TestRealDDBBLocalCall(Func<object> expression)
     {
-        if (IsLinux())
+        if (!IsWindows())
         {
             try
             {

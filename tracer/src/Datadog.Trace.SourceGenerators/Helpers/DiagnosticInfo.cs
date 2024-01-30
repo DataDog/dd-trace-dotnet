@@ -10,6 +10,11 @@ namespace Datadog.Trace.SourceGenerators.Helpers;
 internal sealed record DiagnosticInfo
 {
     public DiagnosticInfo(DiagnosticDescriptor descriptor, Location? location)
+        : this(descriptor, location is not null ? LocationInfo.CreateFrom(location) : null)
+    {
+    }
+
+    public DiagnosticInfo(DiagnosticDescriptor descriptor, LocationInfo? location)
     {
         Descriptor = descriptor;
         Location = location;
@@ -17,5 +22,5 @@ internal sealed record DiagnosticInfo
 
     public DiagnosticDescriptor Descriptor { get; }
 
-    public Location? Location { get; }
+    public LocationInfo? Location { get; }
 }

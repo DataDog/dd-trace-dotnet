@@ -91,6 +91,11 @@ namespace Datadog.Trace.Configuration
             /// Unless set to true or 1, tracers don’t collect schemas. After the experiment, the environment variable will be removed and schema collection will be enabled only when ASM is enabled
             /// </summary>
             internal const string ApiExperimentalSecurityEnabled = "DD_EXPERIMENTAL_API_SECURITY_ENABLED";
+
+            /// <summary>
+            /// Use legacy encoder for the waf
+            /// </summary>
+            internal const string UseUnsafeEncoder = "DD_EXPERIMENTAL_APPSEC_USE_UNSAFE_ENCODER";
         }
     }
 }

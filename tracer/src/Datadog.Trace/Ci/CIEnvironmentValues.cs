@@ -193,6 +193,33 @@ namespace Datadog.Trace.Ci
             return true;
         }
 
+        public static string RemoveSensitiveInformationFromUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+            {
+                return url;
+            }
+
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                if (!string.IsNullOrEmpty(uri.UserInfo))
+                {
+                    return uri.GetComponents(UriComponents.Fragment | UriComponents.Query | UriComponents.Path | UriComponents.Port | UriComponents.Host | UriComponents.Scheme, UriFormat.SafeUnescaped);
+                }
+            }
+            else
+            {
+                var urlPattern = new Regex("^(ssh://)(.*@)(.*)");
+                var urlMatch = urlPattern.Match(url);
+                if (urlMatch.Success)
+                {
+                    url = urlMatch.Result("$1$3");
+                }
+            }
+
+            return url;
+        }
+
         public void DecorateSpan(Span span)
         {
             if (span == null)
@@ -459,13 +486,7 @@ namespace Datadog.Trace.Ci
             // **********
             // Remove sensitive info from repository url
             // **********
-            if (Uri.TryCreate(Repository, UriKind.Absolute, out Uri repository))
-            {
-                if (!string.IsNullOrEmpty(repository.UserInfo))
-                {
-                    Repository = repository.GetComponents(UriComponents.Fragment | UriComponents.Query | UriComponents.Path | UriComponents.Port | UriComponents.Host | UriComponents.Scheme, UriFormat.SafeUnescaped);
-                }
-            }
+            Repository = RemoveSensitiveInformationFromUrl(Repository);
 
             // **********
             // Expand ~ in Paths

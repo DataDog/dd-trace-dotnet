@@ -507,7 +507,7 @@ namespace Datadog.Trace.TestHelpers
                 HandlePotentialDataStreams(request);
                 responseType = MockTracerResponseType.DataStreams;
             }
-            else if (request.PathAndQuery.StartsWith("/evp_proxy/v2/"))
+            else if (request.PathAndQuery.StartsWith("/evp_proxy/v2/") || request.PathAndQuery.StartsWith("/evp_proxy/v4/"))
             {
                 if (HandleEvpProxyPayload(request) is { } customResponse)
                 {
@@ -759,6 +759,18 @@ namespace Datadog.Trace.TestHelpers
                     foreach (var header in request.Headers)
                     {
                         headerCollection.Add(header.Name, header.Value);
+                    }
+
+                    if (headerCollection["Content-Encoding"] == "gzip")
+                    {
+                        var bodyMs = new MemoryStream(body);
+                        var uncompressedStream = new MemoryStream();
+                        using (var gzipStream = new GZipStream(bodyMs, CompressionMode.Decompress))
+                        {
+                            gzipStream.CopyTo(uncompressedStream);
+                        }
+
+                        body = uncompressedStream.ToArray();
                     }
 
                     var bodyAsJson = headerCollection["Content-Type"] switch

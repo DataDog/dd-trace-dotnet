@@ -3534,7 +3534,7 @@ stages:
     - job: upload
       timeoutInMinutes: 60 #default value
       pool:
-        vmImage: ubuntu-20.04
+        vmImage: ubuntu-latest
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -3759,7 +3759,7 @@ stages:
     - job: upload
       timeoutInMinutes: 60 #default value
       pool:
-        vmImage: ubuntu-20.04
+        vmImage: ubuntu-latest
       steps:
       - checkout: none
       - bash: |
@@ -4498,7 +4498,7 @@ stages:
   - job: test
     timeoutInMinutes: 60
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
 
     strategy:
       matrix:
@@ -4611,7 +4611,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
 
     steps:
     - template: steps/clone-repo.yml
@@ -4695,7 +4695,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        vmImage: ubuntu-20.04
+        vmImage: ubuntu-latest
       
       steps:
         - template: steps/clone-repo.yml
@@ -4774,7 +4774,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
 
     steps:
     - template: steps/clone-repo.yml
@@ -4864,7 +4864,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
 
     steps:
     - template: steps/clone-repo.yml
@@ -4928,7 +4928,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
 
     steps:
     - template: steps/clone-repo.yml
@@ -5000,7 +5000,7 @@ stages:
       installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb"
       linuxArtifacts: "linux-packages-linux-x64"
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
 
     steps:
     - template: steps/clone-repo.yml
@@ -5750,7 +5750,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        vmImage: ubuntu-20.04
+        vmImage: ubuntu-latest
       
       steps:
         - template: steps/clone-repo.yml
@@ -5953,7 +5953,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
 
     services:
       dd_agent: dd_agent
@@ -5981,7 +5981,7 @@ stages:
   - job: notify
     timeoutInMinutes: 10
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
 
     steps:
     - checkout: none
