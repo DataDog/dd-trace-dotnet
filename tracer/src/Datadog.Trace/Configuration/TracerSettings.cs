@@ -1049,7 +1049,7 @@ namespace Datadog.Trace.Configuration
 
                 if (string.IsNullOrEmpty(headerName))
                 {
-                    return null;
+                    continue;
                 }
 
                 var finalTagName = InitializeHeaderTag(tagName, headerTagsNormalizationFixEnabled);
