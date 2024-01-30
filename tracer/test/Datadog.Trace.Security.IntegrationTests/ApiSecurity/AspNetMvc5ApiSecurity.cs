@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -22,8 +23,8 @@ namespace Datadog.Trace.Security.IntegrationTests.ApiSecurity;
 [Collection("IisTests")]
 public class AspNetMvc5ApiSecurityEnabled : AspNetMvc5ApiSecurity
 {
-    public AspNetMvc5ApiSecurityEnabled(IisFixture iisFixture, ITestOutputHelper output)
-        : base(iisFixture, output, enableApiSecurity: true)
+    public AspNetMvc5ApiSecurityEnabled(IisFixture iisIisFixture, ITestOutputHelper output)
+        : base(iisIisFixture, output, enableApiSecurity: true)
     {
     }
 }
@@ -31,21 +32,22 @@ public class AspNetMvc5ApiSecurityEnabled : AspNetMvc5ApiSecurity
 [Collection("IisTests")]
 public class AspNetMvc5ApiSecurityDisabled : AspNetMvc5ApiSecurity
 {
-    public AspNetMvc5ApiSecurityDisabled(IisFixture iisFixture, ITestOutputHelper output)
-        : base(iisFixture, output, enableApiSecurity: false)
+    public AspNetMvc5ApiSecurityDisabled(IisFixture iisIisFixture, ITestOutputHelper output)
+        : base(iisIisFixture, output, enableApiSecurity: false)
     {
     }
 }
 
-public abstract class AspNetMvc5ApiSecurity : AspNetBase, IClassFixture<IisFixture>
+public abstract class AspNetMvc5ApiSecurity : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
-    private readonly IisFixture _fixture;
+    private readonly IisFixture _iisFixture;
     private readonly string _testName;
 
-    internal AspNetMvc5ApiSecurity(IisFixture iisFixture, ITestOutputHelper output, bool enableApiSecurity)
+    internal AspNetMvc5ApiSecurity(IisFixture iisIisFixture, ITestOutputHelper output, bool enableApiSecurity)
         : base("AspNetMvc5", output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
         SetSecurity(true);
+        EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.Rules, "ApiSecurity\\ruleset-with-block.json");
         if (enableApiSecurity)
         {
             EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled, "true");
@@ -53,33 +55,36 @@ public abstract class AspNetMvc5ApiSecurity : AspNetBase, IClassFixture<IisFixtu
         }
 
         AddCookies(new Dictionary<string, string> { { "cookie-key", "cookie-value" } });
-        _fixture = iisFixture;
-        _fixture.TryStartIis(this, IisAppType.AspNetIntegrated);
+        _iisFixture = iisIisFixture;
         _testName = "Security." + nameof(AspNetMvc5ApiSecurity)
                                 + ".enableApiSecurity=" + enableApiSecurity;
-        SetHttpPort(iisFixture.HttpPort);
     }
 
     [SkippableTheory]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]
     [Trait("LoadFromGAC", "True")]
-    [InlineData("/home/apisecurity/12", """{"Dog1":"23", "Dog2":"test", "Dog3": 2.5, "Dog4": 1.6}""", HttpStatusCode.OK, false)]
-    [InlineData("/home/apisecurity/12", """{"Dog1":"23", "Dog2":"dev/zero", "Dog3": 2.5, "Dog4": 1.6}""", HttpStatusCode.Forbidden, true)]
-    [InlineData("/home/emptymodel", """{"Dog1":"23", "Dog2":"test", "Dog3": 2.5, "Dog4": 1.6}""", HttpStatusCode.OK, false)]
-
-    public async Task TestApiSecurityScan(string url, string body, HttpStatusCode expectedStatusCode, bool containsAttack)
+    [InlineData("scan-without-attack", "/home/apisecurity/12", """{"Dog":"23", "Dog2":"test", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
+    [InlineData("scan-with-attack", "/home/apisecurity/12", """{"Dog":"23", "Dog2":"dev/zero", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
+    [InlineData("scan-empty-model", "/home/emptymodel", """{"Dog":"23", "Dog2":"test", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
+    public async Task TestApiSecurityScan(string scenario, string url, string body)
     {
-        var agent = _fixture.Agent;
+        var agent = _iisFixture.Agent;
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl, body.Substring(0, 10), expectedStatusCode, containsAttack);
-        var fileId = nameof(AspNetMvc5ApiSecurity) + Guid.NewGuid();
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = [new RuleOverride { Id = "crs-932-160", Enabled = true, OnMatch = ["block"] }] }, "ASM", fileId) });
+        var settings = VerifyHelper.GetSpanVerifierSettings(scenario, sanitisedUrl, string.Empty);
         var dateTime = DateTime.UtcNow;
         var result = await SubmitRequest(url, body, "application/json");
         var spans = agent.WaitForSpans(2, minDateTime: dateTime);
         await VerifySpans(spans, settings);
     }
+
+    public async Task InitializeAsync()
+    {
+        await _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
+        SetHttpPort(_iisFixture.HttpPort);
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     protected override string GetTestName() => _testName;
 }
