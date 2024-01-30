@@ -26,16 +26,19 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             try
             {
-                using var fileSink = new FileSink(StartupLogFilePath);
-                if (DebugEnabled)
+                lock (NixDefaultDirectory)
                 {
-                    var currentDomain = AppDomain.CurrentDomain;
-                    var isDefaultAppDomain = currentDomain.IsDefaultAppDomain();
-                    fileSink.Info($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff zzz}|{currentDomain.Id}|{currentDomain.FriendlyName}|{isDefaultAppDomain}] {message}{Environment.NewLine}", args);
-                }
-                else
-                {
-                    fileSink.Info($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {message}{Environment.NewLine}", args);
+                    using var fileSink = new FileSink(StartupLogFilePath);
+                    if (DebugEnabled)
+                    {
+                        var currentDomain = AppDomain.CurrentDomain;
+                        var isDefaultAppDomain = currentDomain.IsDefaultAppDomain();
+                        fileSink.Info($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff zzz}|{currentDomain.Id}|{currentDomain.FriendlyName}|{isDefaultAppDomain}] {message}{Environment.NewLine}", args);
+                    }
+                    else
+                    {
+                        fileSink.Info($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {message}{Environment.NewLine}", args);
+                    }
                 }
             }
             catch

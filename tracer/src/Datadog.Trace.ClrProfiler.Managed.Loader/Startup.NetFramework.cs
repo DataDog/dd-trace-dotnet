@@ -36,6 +36,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             try
             {
+                StartupLogger.Debug("Assembly Resolve event received for: '{0}'", args.Name);
                 return ResolveAssembly(args.Name);
             }
             catch (Exception ex)
@@ -52,6 +53,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             {
                 if (AssemblyCache.TryGetValue(name, out var assembly))
                 {
+                    if (assembly is not null)
+                    {
+                        StartupLogger.Debug("Assembly '{0}' loaded from cache.", assembly?.FullName ?? "(null)");
+                    }
+                    else
+                    {
+                        StartupLogger.Debug("Assembly '{0}' not found.", name);
+                    }
+
                     return assembly;
                 }
 
@@ -66,23 +76,23 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     string.Equals(assemblyName.Name, "System.Net.Http", StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(assemblyName.Name, "vstest.console.resources", StringComparison.OrdinalIgnoreCase))
                 {
+                    StartupLogger.Debug("Assembly '{0} ignored.", name);
                     return null;
                 }
 
                 // WARNING: Logs must not be added _before_ we check for the above bail-out conditions
-                StartupLogger.Debug("Assembly Resolve event received for: '{0}'", name);
                 var path = string.IsNullOrEmpty(ManagedProfilerDirectory) ? $"{assemblyName.Name}.dll" : Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
-                StartupLogger.Debug(" Looking for: '{0}'", path);
+                StartupLogger.Debug("  Looking for: '{0}'", path);
 
                 if (File.Exists(path))
                 {
                     if (name.StartsWith("Datadog.Trace, Version=") && name != AssemblyName)
                     {
-                        StartupLogger.Debug(" Trying to load '{0}' which does not match the expected version ('{1}'). [Path={2}]", name, AssemblyName, path);
+                        StartupLogger.Debug("  Trying to load '{0}' which does not match the expected version ('{1}'). [Path={2}]", name, AssemblyName, path);
                         return null;
                     }
 
-                    StartupLogger.Debug(" Resolving '{0}', loading '{1}'", name, path);
+                    StartupLogger.Debug("  Resolving '{0}', loading '{1}'", name, path);
                     assembly = Assembly.LoadFrom(path);
                     StartupLogger.Debug("Assembly '{0}' loaded.", assembly?.FullName ?? "(null)");
                     AssemblyCache[name] = assembly;
