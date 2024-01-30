@@ -11,6 +11,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.RazorPages" Version="2.1.1" />
     <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="7.0.5" />
+    <PackageReference Include="MongoDB.Driver" Version="2.8.0" />
+    <PackageReference Include="Moq" Version="4.16.0" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.5" />
     <PackageReference Include="SQLitePCLRaw.core" Version="2.1.5" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.117" />

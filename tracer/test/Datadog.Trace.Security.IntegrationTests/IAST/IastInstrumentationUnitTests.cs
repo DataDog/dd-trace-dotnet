@@ -252,7 +252,7 @@ public class IastInstrumentationUnitTests : TestHelper
 #if NET462
             arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
 #else
-            if (EnvironmentTools.IsLinux())
+            if (!EnvironmentTools.IsWindows())
             {
                 if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
                 {
