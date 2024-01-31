@@ -114,7 +114,7 @@ namespace Datadog.Trace.Configuration.Telemetry
             return entry.Type switch
             {
                 ConfigurationTelemetry.ConfigurationTelemetryEntryType.Bool => entry.BoolValue?.ToString()?.ToLowerInvariant(),
-                ConfigurationTelemetry.ConfigurationTelemetryEntryType.Double => entry.DoubleValue?.ToString(CultureInfo.InvariantCulture),
+                ConfigurationTelemetry.ConfigurationTelemetryEntryType.Double => entry.DoubleValue?.ToString("0.0###", CultureInfo.InvariantCulture),
                 ConfigurationTelemetry.ConfigurationTelemetryEntryType.Int => entry.IntValue?.ToString(CultureInfo.InvariantCulture),
                 ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted => "<redacted>",
                 _ => entry.StringValue
