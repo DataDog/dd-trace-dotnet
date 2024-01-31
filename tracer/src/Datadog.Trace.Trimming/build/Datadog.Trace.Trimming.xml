@@ -188,17 +188,8 @@
       <type fullname="System.Data.CommandType" />
       <type fullname="System.Data.Common.DbCommand" />
       <type fullname="System.Data.Common.DbConnectionStringBuilder" />
-      <type fullname="System.Data.DataColumn" />
-      <type fullname="System.Data.DataColumnCollection" />
-      <type fullname="System.Data.DataRow" />
-      <type fullname="System.Data.DataRowCollection" />
-      <type fullname="System.Data.DataSet" />
-      <type fullname="System.Data.DataTable" />
-      <type fullname="System.Data.DataTableCollection" />
       <type fullname="System.Data.IDbCommand" />
       <type fullname="System.Data.IDbConnection" />
-      <type fullname="System.Data.InternalDataCollectionBase" />
-      <type fullname="System.Data.SqlTypes.SqlBinary" />
    </assembly>
    <assembly fullname="System.Data.SqlClient" />
    <assembly fullname="System.Data.SQLite" />
@@ -522,7 +513,6 @@
       <type fullname="System.DateTimeKind" />
       <type fullname="System.DateTimeOffset" />
       <type fullname="System.DayOfWeek" />
-      <type fullname="System.DBNull" />
       <type fullname="System.Decimal" />
       <type fullname="System.Delegate" />
       <type fullname="System.Diagnostics.CodeAnalysis.AllowNullAttribute" />
