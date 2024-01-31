@@ -14,12 +14,12 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -1042,14 +1042,13 @@ namespace Datadog.Trace.Configuration
             foreach (var kvp in configurationDictionary)
             {
                 var headerName = kvp.Key.Trim();
-                var tagName = kvp.Value?.Trim();
 
                 if (string.IsNullOrEmpty(headerName))
                 {
                     continue;
                 }
 
-                var finalTagName = InitializeHeaderTag(tagName, headerTagsNormalizationFixEnabled);
+                var finalTagName = InitializeHeaderTag(tagName: kvp.Value, headerTagsNormalizationFixEnabled);
 
                 if (finalTagName is not null)
                 {
@@ -1078,7 +1077,7 @@ namespace Datadog.Trace.Configuration
 
             // user opted into the previous behavior, where tag names were normalized even when specified
             // (but _not_ spaces, due to a bug in the normalization code)
-            return tagName.TryConvertToNormalizedTagName(normalizeSpaces: false, out var normalizedTagName) ?
+            return SpanTagHelper.TryNormalizeTagName(tagName, normalizeSpaces: false, out var normalizedTagName) ?
                        normalizedTagName :
                        null;
         }

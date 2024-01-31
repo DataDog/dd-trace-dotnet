@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
 
@@ -37,7 +38,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData(" original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________", true, "original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________")]
         public void TryConvertToNormalizedTagName(string input, bool expectedConversionSuccess, string expectedTagName)
         {
-            var actualConversionSuccess = input.TryConvertToNormalizedTagName(normalizeSpaces: false, out var actualTagName);
+            var actualConversionSuccess = SpanTagHelper.TryNormalizeTagName(input, normalizeSpaces: false, out var actualTagName);
             actualConversionSuccess.Should().Be(expectedConversionSuccess);
 
             if (actualConversionSuccess)
@@ -55,7 +56,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData(" Some Header ", false, "some header")] // always trim whitespace
         public void TryConvertToNormalizedTagName_NormalizePeriodsAndSpaces(string input, bool normalizeSpaces, string expectedTagName)
         {
-            input.TryConvertToNormalizedTagName(normalizeSpaces, out var actualTagName).Should().BeTrue();
+            SpanTagHelper.TryNormalizeTagName(input, normalizeSpaces, out var actualTagName).Should().BeTrue();
             actualTagName.Should().Be(expectedTagName);
         }
     }
