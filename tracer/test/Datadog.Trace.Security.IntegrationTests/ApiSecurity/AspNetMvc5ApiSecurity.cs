@@ -70,8 +70,8 @@ public abstract class AspNetMvc5ApiSecurity : AspNetBase, IClassFixture<IisFixtu
     public async Task TestApiSecurityScan(string scenario, string url, string body)
     {
         var agent = _iisFixture.Agent;
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(scenario, sanitisedUrl, string.Empty);
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.UseTextForParameters($"scenario={scenario}");
         var dateTime = DateTime.UtcNow;
         var result = await SubmitRequest(url, body, "application/json");
         var spans = agent.WaitForSpans(2, minDateTime: dateTime);
