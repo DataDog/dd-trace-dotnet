@@ -173,8 +173,8 @@ namespace Datadog.Trace.Tests.Configuration
                 IConfigurationSource source = new NameValueConfigurationSource(collection);
                 var settings = new TracerSettings(source);
                 object actualValue = settingGetter(settings);
-                Assert.Equal(expectedValue, actualValue);
-                // actualValue.Should().BeEquivalentTo(expectedValue);
+                // Assert.Equal(expectedValue, actualValue);
+                actualValue.Should().BeEquivalentTo(expectedValue);
             }
         }
 

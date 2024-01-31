@@ -963,24 +963,28 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         // null, empty, whitespace
-        [InlineData(null, true, "")]
-        [InlineData("", true, "")]
-        [InlineData("  ", true, "")]
+        [InlineData(null, true, true, "")]
+        [InlineData("", true, true, "")]
+        [InlineData("  ", true, true, "")]
         // no normalization
-        [InlineData("my-tag", true, "my-tag")]
-        [InlineData("my.tag", true, "my.tag")]
-        [InlineData("my tag", true, "my tag")]
-        [InlineData("my/!*&tag", true, "my/!*&tag")]
+        [InlineData("my-tag", true, true, "my-tag")]
+        [InlineData("my.tag", true, true, "my.tag")]
+        [InlineData("my tag", true, true, "my tag")]
+        [InlineData("my/!*&tag", true, true, "my/!*&tag")]
+        [InlineData("1my-tag", true, false, null)]
         // opt-in to previous behavior: normalize, but keep spaces
-        [InlineData("my-tag", false, "my-tag")]
-        [InlineData("my.tag", false, "my_tag")]
-        [InlineData("my tag", false, "my tag")]
-        [InlineData("my:/!*&tag", false, "my:/___tag")]
-        public void InitializeHeaderTag(string tagName, bool headerTagsNormalizationFixEnabled, string expected)
+        [InlineData("my-tag", false, true, "my-tag")]
+        [InlineData("my.tag", false, true, "my_tag")]
+        [InlineData("my tag", false, true, "my tag")]
+        [InlineData("my:/!*&tag", false, true, "my:/___tag")]
+        [InlineData("1my-tag", false, false, null)]
+        public void InitializeHeaderTag(string tagName, bool headerTagsNormalizationFixEnabled, bool expectedValid, string expectedTagName)
         {
-            TracerSettings.InitializeHeaderTag(tagName, headerTagsNormalizationFixEnabled)
+            TracerSettings.InitializeHeaderTag(tagName, headerTagsNormalizationFixEnabled, out var finalTagName)
                           .Should()
-                          .Be(expected);
+                          .Be(expectedValid);
+
+            finalTagName.Should().Be(expectedTagName);
         }
 
         private void SetAndValidateStatusCodes(Action<TracerSettings, IEnumerable<int>> setStatusCodes, Func<TracerSettings, bool[]> getStatusCodes)

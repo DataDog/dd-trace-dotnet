@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.ClrProfiler;
@@ -1048,9 +1049,7 @@ namespace Datadog.Trace.Configuration
                     continue;
                 }
 
-                var finalTagName = InitializeHeaderTag(tagName: kvp.Value, headerTagsNormalizationFixEnabled);
-
-                if (finalTagName is not null)
+                if (InitializeHeaderTag(tagName: kvp.Value, headerTagsNormalizationFixEnabled, out var finalTagName))
                 {
                     headerTags.Add(headerName, finalTagName);
                 }
@@ -1059,27 +1058,37 @@ namespace Datadog.Trace.Configuration
             return headerTags;
         }
 
-        internal static string? InitializeHeaderTag(string? tagName, bool headerTagsNormalizationFixEnabled)
+        internal static bool InitializeHeaderTag(
+            string? tagName,
+            bool headerTagsNormalizationFixEnabled,
+            [NotNullWhen(true)] out string? finalTagName)
         {
             tagName = tagName?.Trim();
 
             if (string.IsNullOrEmpty(tagName))
             {
                 // The user did not provide a tag name. Normalization will happen later, when adding the tag prefix.
-                return string.Empty;
+                finalTagName = string.Empty;
+                return true;
+            }
+
+            if (!SpanTagHelper.IsValidTagName(tagName, out tagName))
+            {
+                // invalid tag name
+                finalTagName = null;
+                return false;
             }
 
             if (headerTagsNormalizationFixEnabled)
             {
                 // If the user provided a tag name, don't try to normalize it.
-                return tagName;
+                finalTagName = tagName;
+                return true;
             }
 
             // user opted into the previous behavior, where tag names were normalized even when specified
             // (but _not_ spaces, due to a bug in the normalization code)
-            return SpanTagHelper.TryNormalizeTagName(tagName, normalizeSpaces: false, out var normalizedTagName) ?
-                       normalizedTagName :
-                       null;
+            return SpanTagHelper.TryNormalizeTagName(tagName, normalizeSpaces: false, out finalTagName);
         }
 
         internal static string[] TrimSplitString(string? textValues, char[] separators)

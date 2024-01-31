@@ -13,19 +13,13 @@ internal static class SpanTagHelper
     {
         trimmedValue = value?.Trim();
 
-        if (string.IsNullOrEmpty(trimmedValue))
+        if (!string.IsNullOrEmpty(trimmedValue) && char.IsLetter(trimmedValue[0]) && trimmedValue.Length <= 200)
         {
-            trimmedValue = null;
-            return false;
+            return true;
         }
 
-        if (!char.IsLetter(trimmedValue[0]) || trimmedValue.Length > 200)
-        {
-            trimmedValue = null;
-            return false;
-        }
-
-        return true;
+        trimmedValue = null;
+        return false;
     }
 
     /// <summary>
@@ -53,13 +47,13 @@ internal static class SpanTagHelper
     {
         normalizedTagName = null;
 
-        if (!IsValidTagName(value, out var trimmedValue))
+        if (!IsValidTagName(value, out value))
         {
             return false;
         }
 
-        var sb = StringBuilderCache.Acquire(trimmedValue.Length);
-        sb.Append(trimmedValue.ToLowerInvariant());
+        var sb = StringBuilderCache.Acquire(value.Length);
+        sb.Append(value.ToLowerInvariant());
 
         for (var x = 0; x < sb.Length; x++)
         {
