@@ -14,6 +14,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -451,12 +452,17 @@ namespace Datadog.Trace.Tools.Runner
             string tracerProfiler64 = string.Empty;
             string tracerProfilerArm64 = null;
             string ldPreload = string.Empty;
+            string devPath = string.Empty;
 
             if (platform == Platform.Windows)
             {
                 tracerProfiler32 = FileExists(Path.Combine(tracerHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
                 tracerProfiler64 = FileExists(Path.Combine(tracerHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
                 tracerProfilerArm64 = FileExistsOrNull(Path.Combine(tracerHome, "win-ARM64EC", "Datadog.Trace.ClrProfiler.Native.dll"));
+                if (!EnsureDatadogTraceIsInTheGac(tracerHome) && EnsureNETFrameworkVSTestConsoleDevPathSupport())
+                {
+                    devPath = Path.Combine(tracerHome, "net461");
+                }
             }
             else if (platform == Platform.Linux)
             {
@@ -509,7 +515,149 @@ namespace Datadog.Trace.Tools.Runner
                 envVars["COR_PROFILER_PATH_ARM64"] = tracerProfilerArm64;
             }
 
+            if (!string.IsNullOrEmpty(devPath))
+            {
+                envVars["DEVPATH"] = devPath;
+            }
+
             return envVars;
+        }
+
+        private static bool EnsureDatadogTraceIsInTheGac(string tracerHome)
+        {
+            // We try to ensure Datadog.Trace.dll is installed in the gac for compatibility with .NET Framework fusion class loader
+            // Let's find gacutil, because CI Visibility runs with the SDK / CI environments it's probable that's available.
+            RunCiCommand.Log.Debug("EnsureDatadogTraceIsInTheGac: Looking for gacutil");
+            var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("where", "gacutil"));
+            if (cmdResponse?.ExitCode == 0 &&
+                cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
+                outputLines[0] is { Length: > 0 } gacPath)
+            {
+                RunCiCommand.Log.Debug("EnsureDatadogTraceIsInTheGac: gacutil was found.");
+                var cmdGacListResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command(gacPath, "/l"));
+                if (cmdGacListResponse?.ExitCode == 0)
+                {
+                    if (cmdGacListResponse.Output?.Contains(typeof(TracerConstants).Assembly.FullName!, StringComparison.OrdinalIgnoreCase) != true)
+                    {
+                        // Datadog.Trace is not in the GAC, let's try to install it.
+                        RunCiCommand.Log.Warning("EnsureDatadogTraceIsInTheGac: Datadog.Trace is not in the GAC, let's try to install it.");
+                        if (FileExistsOrNull(Path.Combine(tracerHome, "net461", "Datadog.Trace.dll")) is { } datadogTraceDllPath &&
+                            ProcessHelpers.RunCommand(new ProcessHelpers.Command(gacPath, $"/i {datadogTraceDllPath}")) is { } cmdGacInstallResponse)
+                        {
+                            if (cmdGacInstallResponse.ExitCode == 0)
+                            {
+                                // gacutil install was successful.
+                                RunCiCommand.Log.Information("EnsureDatadogTraceIsInTheGac: Datadog.Trace was installed in the gac.");
+                                return true;
+                            }
+
+                            RunCiCommand.Log.Warning("EnsureDatadogTraceIsInTheGac: gacutil returned an error, Datadog.Trace was not installed in the gac.");
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        // Datadog.Trace is in the GAC, do nothing
+                        RunCiCommand.Log.Information("EnsureDatadogTraceIsInTheGac: Datadog.Trace is already installed in the gac.");
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool EnsureNETFrameworkVSTestConsoleDevPathSupport()
+        {
+            // As a final workaround for .NET Framework compatibility we can use the DevPath approach.
+            // https://learn.microsoft.com/en-us/dotnet/framework/configure-apps/how-to-locate-assemblies-by-using-devpath
+            // .NET Framework tests runs using `vstest.console.exe` console app. So we need to locate this file and modify
+            // the configuration `vstest.console.exe.config` file to add:
+            /*
+                <configuration>
+                  <runtime>
+                    <developmentMode developerInstallation="true"/>
+                  </runtime>
+                </configuration>
+             */
+
+            RunCiCommand.Log.Debug("EnsureNETFrameworkVSTestConsoleDevPathSupport: Looking for vstest.console");
+            var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("where", "vstest.console"));
+            if (cmdResponse?.ExitCode == 0 &&
+                cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
+                outputLines[0] is { Length: > 0 } vstestConsolePath)
+            {
+                RunCiCommand.Log.Debug("EnsureNETFrameworkVSTestConsoleDevPathSupport: vstest.console was found.");
+                var configPath = $"{vstestConsolePath.Trim()}.config";
+                if (File.Exists(configPath))
+                {
+                    try
+                    {
+                        RunCiCommand.Log.Debug("EnsureNETFrameworkVSTestConsoleDevPathSupport: vstest.console configuration file was found.");
+                        var configContent = File.ReadAllText(configPath);
+                        var xmlDocument = new XmlDocument();
+                        xmlDocument.LoadXml(configContent);
+                        var xmlDoc = xmlDocument.DocumentElement!;
+                        var isDirty = false;
+                        var runtimeNode = xmlDoc["runtime"];
+                        if (runtimeNode is null)
+                        {
+                            runtimeNode = (XmlElement)xmlDoc.AppendChild(xmlDocument.CreateElement("runtime"))!;
+                            isDirty = true;
+                        }
+
+                        var developmentModeNode = runtimeNode["developmentMode"];
+                        if (developmentModeNode is null)
+                        {
+                            developmentModeNode = (XmlElement)runtimeNode.AppendChild(xmlDocument.CreateElement("developmentMode"))!;
+                            isDirty = true;
+                        }
+
+                        var developerInstallationAttribute = developmentModeNode.Attributes["developerInstallation"];
+                        if (developerInstallationAttribute is null)
+                        {
+                            developmentModeNode.SetAttribute("developerInstallation", "true");
+                            isDirty = true;
+                        }
+                        else if (developerInstallationAttribute.Value != "true")
+                        {
+                            developerInstallationAttribute.Value = "true";
+                            isDirty = true;
+                        }
+
+                        if (isDirty)
+                        {
+                            try
+                            {
+                                var outerXml = xmlDocument.OuterXml;
+                                RunCiCommand.Log.Debug("EnsureNETFrameworkVSTestConsoleDevPathSupport: vstest.console configuration file content: {Content}", outerXml);
+                                File.WriteAllText(configPath, outerXml);
+                                RunCiCommand.Log.Information("EnsureNETFrameworkVSTestConsoleDevPathSupport: vstest.console configuration file has been configured as developer mode.");
+                            }
+                            catch (Exception ex)
+                            {
+                                RunCiCommand.Log.Error(ex, "EnsureNETFrameworkVSTestConsoleDevPathSupport: Error writing the vstest.console configuration file.");
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            RunCiCommand.Log.Information("EnsureNETFrameworkVSTestConsoleDevPathSupport: vstest.console configuration file was already configured as developer mode.");
+                        }
+
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        RunCiCommand.Log.Error(ex, "EnsureNETFrameworkVSTestConsoleDevPathSupport: Error writing the vstest.console configuration file.");
+                        return false;
+                    }
+                }
+
+                RunCiCommand.Log.Warning("EnsureNETFrameworkVSTestConsoleDevPathSupport: vstest.console configuration file was not found.");
+            }
+
+            return false;
         }
 
         /// <summary>

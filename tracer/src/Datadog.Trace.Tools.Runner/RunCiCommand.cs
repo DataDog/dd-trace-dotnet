@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tools.Runner
 {
     internal class RunCiCommand : CommandWithExamples
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RunCiCommand));
+        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RunCiCommand));
 
         private readonly ApplicationContext _applicationContext;
         private readonly RunSettings _runSettings;
