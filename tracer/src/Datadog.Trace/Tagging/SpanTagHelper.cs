@@ -15,10 +15,17 @@ internal static class SpanTagHelper
 
         if (string.IsNullOrEmpty(trimmedValue))
         {
+            trimmedValue = null;
             return false;
         }
 
-        return char.IsLetter(trimmedValue[0]) && trimmedValue.Length <= 200;
+        if (!char.IsLetter(trimmedValue[0]) || trimmedValue.Length > 200)
+        {
+            trimmedValue = null;
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
