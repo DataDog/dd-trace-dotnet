@@ -18,8 +18,8 @@
     {
       "type": "WEAK_HASH",
       "location": {
-        "path": "Samples.Deduplication.Program",
-        "method": "ComputeHashNTimes"
+        "path": "Program.cs",
+        "line": XXX
       },
       "evidence": {
         "value": "MD5"
@@ -55,8 +55,8 @@
     {
       "type": "WEAK_HASH",
       "location": {
-        "path": "Samples.Deduplication.Program",
-        "method": "ComputeHashNTimes"
+        "path": "Program.cs",
+        "line": XXX
       },
       "evidence": {
         "value": "MD5"
@@ -92,8 +92,8 @@
     {
       "type": "WEAK_HASH",
       "location": {
-        "path": "Samples.Deduplication.Program",
-        "method": "ComputeHashNTimes"
+        "path": "Program.cs",
+        "line": XXX
       },
       "evidence": {
         "value": "MD5"
@@ -129,8 +129,8 @@
     {
       "type": "WEAK_HASH",
       "location": {
-        "path": "Samples.Deduplication.Program",
-        "method": "ComputeHashNTimes"
+        "path": "Program.cs",
+        "line": XXX
       },
       "evidence": {
         "value": "MD5"
@@ -166,8 +166,8 @@
     {
       "type": "WEAK_HASH",
       "location": {
-        "path": "Samples.Deduplication.Program",
-        "method": "ComputeHashNTimes"
+        "path": "Program.cs",
+        "line": XXX
       },
       "evidence": {
         "value": "MD5"
