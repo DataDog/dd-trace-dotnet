@@ -76,7 +76,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     string.Equals(assemblyName.Name, "System.Net.Http", StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(assemblyName.Name, "vstest.console.resources", StringComparison.OrdinalIgnoreCase))
                 {
-                    StartupLogger.Debug("Assembly '{0} ignored.", name);
                     return null;
                 }
 
