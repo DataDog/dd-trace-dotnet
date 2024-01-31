@@ -5,13 +5,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.Tests.PlatformHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -27,6 +27,21 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
         private const string Service = "TestService";
         private const string Env = "integrationTests";
         private const string Version = "1.0.0";
+
+        private static readonly NameValueCollection Defaults = new()
+        {
+            { ConfigurationKeys.ApiKey, "some_value" },
+            { ConfigurationKeys.DirectLogSubmission.Host, Host },
+            { ConfigurationKeys.DirectLogSubmission.Source, Source },
+            { ConfigurationKeys.DirectLogSubmission.Url, "http://localhost" },
+            { ConfigurationKeys.DirectLogSubmission.MinimumLevel, "debug" },
+            { ConfigurationKeys.DirectLogSubmission.GlobalTags, "Key1:Value1,Key2:Value2" },
+            { ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, nameof(IntegrationId.ILogger) },
+            { ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, "100" },
+            { ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, "2" },
+            { ConfigurationKeys.DirectLogSubmission.QueueSizeLimit, "1000" }
+        };
+
         private readonly JsonTextWriter _writer;
         private readonly StringBuilder _sb;
         private readonly ImmutableTracerSettings _tracerSettings;
@@ -34,16 +49,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
 
         public LogFormatterTests()
         {
-            _tracerSettings = new ImmutableTracerSettings(new TracerSettings());
-            _directLogSettings = ImmutableDirectLogSubmissionSettings.Create(
-                host: Host,
-                source: Source,
-                intakeUrl: "http://localhost",
-                apiKey: "some_value",
-                minimumLevel: DirectSubmissionLogLevel.Debug,
-                globalTags: new Dictionary<string, string> { { "Key1", "Value1" }, { "Key2", "Value2" } },
-                enabledLogShippingIntegrations: new List<string> { nameof(IntegrationId.ILogger) },
-                batchingOptions: new BatchingSinkOptions(batchSizeLimit: 100, queueLimit: 1000, TimeSpan.FromSeconds(2)));
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(Defaults));
+            _tracerSettings = new ImmutableTracerSettings(tracerSettings);
+            _directLogSettings = ImmutableDirectLogSubmissionSettings.Create(tracerSettings);
             _directLogSettings.IsEnabled.Should().BeTrue();
 
             _sb = new StringBuilder();

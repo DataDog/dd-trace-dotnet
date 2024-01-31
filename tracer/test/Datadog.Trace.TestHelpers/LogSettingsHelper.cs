@@ -3,18 +3,28 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 
 namespace Datadog.Trace.TestHelpers
 {
     internal class LogSettingsHelper
     {
+        private static readonly NameValueCollection ValidDefaults = new()
+        {
+            { ConfigurationKeys.ApiKey, "abcdef" },
+            { ConfigurationKeys.DirectLogSubmission.Host, "some_host" },
+            { ConfigurationKeys.DirectLogSubmission.Source, "csharp" },
+            { ConfigurationKeys.DirectLogSubmission.Url, "https://localhost:1234" },
+            { ConfigurationKeys.DirectLogSubmission.MinimumLevel, "debug" },
+            { ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, string.Join(";", ImmutableDirectLogSubmissionSettings.SupportedIntegrations) },
+            { ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, "1000" },
+            { ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, "2" },
+            { ConfigurationKeys.DirectLogSubmission.QueueSizeLimit, "100000" }
+        };
+
         public static LogFormatter GetFormatter() => new(
             new ImmutableTracerSettings(new TracerSettings(null, Configuration.Telemetry.NullConfigurationTelemetry.Instance)),
             GetValidSettings(),
@@ -26,15 +36,8 @@ namespace Datadog.Trace.TestHelpers
 
         public static ImmutableDirectLogSubmissionSettings GetValidSettings()
         {
-            return ImmutableDirectLogSubmissionSettings.Create(
-                host: "some_host",
-                source: "csharp",
-                intakeUrl: "https://localhost:1234",
-                apiKey: "abcdef",
-                minimumLevel: DirectSubmissionLogLevel.Debug,
-                globalTags: new Dictionary<string, string>(),
-                enabledLogShippingIntegrations: ImmutableDirectLogSubmissionSettings.SupportedIntegrations.Select(x => x.ToString()).ToList(),
-                batchingOptions: new BatchingSinkOptions(1000, 100_000, TimeSpan.FromSeconds(2)));
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(ValidDefaults));
+            return ImmutableDirectLogSubmissionSettings.Create(tracerSettings);
         }
     }
 }
