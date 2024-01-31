@@ -308,6 +308,7 @@ namespace Datadog.Trace.Configuration
 
             if (value is null)
             {
+                telemetry.Record(key, value, recordValue: true, ConfigurationOrigins.Default);
                 return null;
             }
 
