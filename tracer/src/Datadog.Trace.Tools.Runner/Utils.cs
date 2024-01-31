@@ -459,6 +459,9 @@ namespace Datadog.Trace.Tools.Runner
                 tracerProfiler32 = FileExists(Path.Combine(tracerHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
                 tracerProfiler64 = FileExists(Path.Combine(tracerHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
                 tracerProfilerArm64 = FileExistsOrNull(Path.Combine(tracerHome, "win-ARM64EC", "Datadog.Trace.ClrProfiler.Native.dll"));
+
+                // For full compatibility with .NET Framework we need to either install Datadog.Trace.dll to the GAC or enable Development mode for vstest.console
+                // This is a best effort approach
                 if (!EnsureDatadogTraceIsInTheGac(tracerHome) && EnsureNETFrameworkVSTestConsoleDevPathSupport())
                 {
                     devPath = Path.Combine(tracerHome, "net461");
