@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
 
 #nullable enable
 
