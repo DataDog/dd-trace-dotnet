@@ -64,7 +64,7 @@ namespace Datadog.Trace.AppSec.Waf
         public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds)
             => RunInternal(null, ephemeralAddressData, timeoutMicroSeconds);
 
-        private unsafe IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds)
+        private IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds)
         {
             if (_disposed)
             {
@@ -118,6 +118,7 @@ namespace Datadog.Trace.AppSec.Waf
                 if (pwPersistentArgs == IntPtr.Zero && pwEphemeralArgs == IntPtr.Zero)
                 {
                     Log.Error("Both pwPersistentArgs and pwEphemeralArgs are null");
+                    return null;
                 }
 
                 // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
