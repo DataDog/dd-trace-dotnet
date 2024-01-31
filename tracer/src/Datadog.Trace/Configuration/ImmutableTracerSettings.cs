@@ -35,7 +35,7 @@ namespace Datadog.Trace.Configuration
         private readonly IReadOnlyDictionary<string, string> _serviceNameMappings;
         private readonly IReadOnlyDictionary<string, string> _peerServiceNameMappings;
         private readonly IReadOnlyDictionary<string, string> _globalTags;
-        private readonly double? _globalSamplingRate;
+        private readonly double _globalSamplingRate;
         private readonly bool _runtimeMetricsEnabled;
         private readonly string? _spanSamplingRules;
 
@@ -316,7 +316,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalSamplingRate"/>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_GlobalSamplingRate_Get)]
-        internal double? GlobalSamplingRateInternal => DynamicSettings.GlobalSamplingRate ?? _globalSamplingRate;
+        internal double GlobalSamplingRateInternal => DynamicSettings.GlobalSamplingRate ?? _globalSamplingRate;
 
         /// <summary>
         /// Gets a collection of <see cref="IntegrationsInternal"/> keyed by integration name.

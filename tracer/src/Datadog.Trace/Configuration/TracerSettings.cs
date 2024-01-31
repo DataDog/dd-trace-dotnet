@@ -236,7 +236,7 @@ namespace Datadog.Trace.Configuration
 
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
-            GlobalSamplingRateInternal = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble();
+            GlobalSamplingRateInternal = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble(defaultValue: 1.0);
 
             StartupDiagnosticLogEnabledInternal = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
 
@@ -595,7 +595,7 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_GlobalSamplingRate_Get,
             PublicApiUsage.TracerSettings_GlobalSamplingRate_Set)]
         [ConfigKey(ConfigurationKeys.GlobalSamplingRate)]
-        internal double? GlobalSamplingRateInternal { get; set; }
+        internal double GlobalSamplingRateInternal { get; set; }
 
         /// <summary>
         /// Gets a collection of <see cref="IntegrationSettings"/> keyed by integration name.

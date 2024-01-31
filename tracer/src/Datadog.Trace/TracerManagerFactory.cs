@@ -264,7 +264,8 @@ namespace Datadog.Trace
                 }
             }
 
-            if (settings.GlobalSamplingRateInternal != null)
+            // ReSharper disable once CompareOfFloatsByEqualityOperator -- We only check if the value was set to its default
+            if (settings.GlobalSamplingRateInternal != 1.0)
             {
                 var globalRate = (float)settings.GlobalSamplingRateInternal;
 
