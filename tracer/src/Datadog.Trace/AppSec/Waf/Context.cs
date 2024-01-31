@@ -94,22 +94,26 @@ namespace Datadog.Trace.AppSec.Waf
             WafReturnCode code;
             lock (_stopwatch)
             {
-                IEncodeResult? persistentArgs = null;
-                IntPtr pwPersistentArgs = IntPtr.Zero;
+                // NOTE: the WAF must be called with either pwPersistentArgs or pwEphemeralArgs (or both) pointing to
+                // a valid structure. Failure to do so, results in a WAF error. It doesn't makes sense to propagate this
+                // error.
+                // Calling _encoder.Encode(null) results in a null object that will cause the WAF to error
+                // The WAF can be called with an empty dictionary (though we should avoid doing this).
+
+                var pwPersistentArgs = IntPtr.Zero;
                 if (persistentAddressData != null)
                 {
-                    persistentArgs = _encoder.Encode(persistentAddressData, applySafetyLimits: true);
+                    var persistentArgs = _encoder.Encode(persistentAddressData, applySafetyLimits: true);
                     pwPersistentArgs = persistentArgs.Result;
                     _argCache.Add(persistentArgs);
                 }
 
-                IEncodeResult? ephemeralArgs = null;
-                IntPtr pwEphemeralArgs = IntPtr.Zero;
-                if (ephemeralAddressData is { Count: > 0 })
-                {
-                    ephemeralArgs = _encoder.Encode(ephemeralAddressData, applySafetyLimits: true);
-                    pwEphemeralArgs = ephemeralArgs.Result;
-                }
+                // pwEphemeralArgs follow a different lifecycle and should be disposed immediately
+                using var ephemeralArgs =
+                    ephemeralAddressData is { Count: > 0 }
+                    ? _encoder.Encode(ephemeralAddressData, applySafetyLimits: true)
+                    : null;
+                var pwEphemeralArgs = ephemeralArgs?.Result ?? IntPtr.Zero;
 
                 if (pwPersistentArgs == IntPtr.Zero && pwEphemeralArgs == IntPtr.Zero)
                 {
@@ -118,12 +122,6 @@ namespace Datadog.Trace.AppSec.Waf
 
                 // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
                 code = _waf.Run(_contextHandle, pwPersistentArgs, pwEphemeralArgs,  ref retNative, timeoutMicroSeconds);
-
-                // pwEphemeralArgs follow a different lifecycle and should be disposed immediately
-                if (ephemeralArgs != null)
-                {
-                    ephemeralArgs.Dispose();
-                }
             }
 
             _stopwatch.Stop();
