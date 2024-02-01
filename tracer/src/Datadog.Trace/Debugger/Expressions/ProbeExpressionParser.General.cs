@@ -82,6 +82,11 @@ internal partial class ProbeExpressionParser<T>
         return Expression.TypeEqual(value, ProbeExpressionParserHelper.UndefinedValueType);
     }
 
+    private Expression IsDefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    {
+        return Expression.Not(IsUndefined(reader, parameters, itParameter));
+    }
+
     private Expression GetMember(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var referralMember = ParseTree(reader, parameters, itParameter);

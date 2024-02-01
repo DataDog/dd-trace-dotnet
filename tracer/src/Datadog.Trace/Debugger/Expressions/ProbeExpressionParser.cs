@@ -256,7 +256,7 @@ internal partial class ProbeExpressionParser<T>
                                         return GetItemAtIndex(reader, parameters, itParameter);
                                     }
 
-                                // generic operations
+                                // general operations
                                 case "getmember":
                                     {
                                         return GetMember(reader, parameters, itParameter);
@@ -270,6 +270,11 @@ internal partial class ProbeExpressionParser<T>
                                 case "isUndefined":
                                     {
                                         return IsUndefined(reader, parameters, itParameter);
+                                    }
+
+                                case "isDefined":
+                                    {
+                                        return IsDefined(reader, parameters, itParameter);
                                     }
 
                                 case "Ignore":
