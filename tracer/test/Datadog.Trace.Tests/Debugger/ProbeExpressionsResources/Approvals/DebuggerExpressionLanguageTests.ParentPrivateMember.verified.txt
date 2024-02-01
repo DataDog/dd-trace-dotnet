@@ -1,23 +1,28 @@
-Condition:
-Json:
+﻿Template:
+Segments: 
+
 {
-  "gt": [
-    [
-      {
-        "ref": "UndefinedField"
-      }
-    ],
-    2
+  "eq": [
+    {
+      "getmember": [
+        {
+          "ref": "ChildNested"
+        },
+        "_parentPrivateMember"
+      ]
+    },
+    "Hello from parent private member"
   ]
 }
-Expression: (
+Expressions: 
+(
     scopeMember,
     scopeMember,
     scopeMember,
     exception,
     scopeMemberArray) =>
 {
-    bool $dd_el_result;
+    string $dd_el_result;
     var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
     var @return = (string)scopeMember.Value;
     var @duration = (TimeSpan)scopeMember.Value;
@@ -35,8 +40,8 @@ Expression: (
     var CollectionArg = (List<string>)scopeMemberArray[10].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[11].Value;
 
-    return true;
+    return "UndefinedValue";
 }
-Result: True
+Result: The result of the expression is: UndefinedValue
 Errors:
-EvaluationError { Expression = this.UndefinedField, Message = The property or field does not exist in Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+TestStruct }
+EvaluationError { Expression = this.ChildNested._parentPrivateMember, Message = The property or field does not exist in Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+TestStruct+ChildNestedObject }
