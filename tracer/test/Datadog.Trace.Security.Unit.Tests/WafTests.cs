@@ -157,7 +157,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             if (flow is not null)
             {
                 result.ReturnCode.Should().Be(WafReturnCode.Match);
-                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
+                var jsonString = JsonConvert.SerializeObject(result.Data);
+                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
                 resultData.Rule.Tags.Type.Should().Be(flow);
                 resultData.Rule.Id.Should().Be(rule);
                 resultData.RuleMatches[0].Parameters[0].Address.Should().Be(address);

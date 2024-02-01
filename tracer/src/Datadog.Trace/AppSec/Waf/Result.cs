@@ -20,12 +20,9 @@ namespace Datadog.Trace.AppSec.Waf
             ShouldReportSecurityResult = returnCode >= WafReturnCode.Match;
             Derivatives = returnStruct.Derivatives.DecodeMap();
             ShouldReportSchema = Derivatives is { Count: > 0 };
-            var events = returnStruct.Events.DecodeObjectArray();
-            if (events.Count == 0 || !ShouldReportSecurityResult) { Data = string.Empty; }
-            else
+            if (ShouldReportSecurityResult)
             {
-                // Serialize all the events
-                Data = JsonConvert.SerializeObject(events);
+                Data = returnStruct.Events.DecodeObjectArray();
             }
 
             ShouldBlock = Actions.Contains("block");
@@ -38,7 +35,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public bool ShouldReportSchema { get; }
 
-        public string Data { get; }
+        public IReadOnlyCollection<object>? Data { get; }
 
         public List<string> Actions { get; }
 
