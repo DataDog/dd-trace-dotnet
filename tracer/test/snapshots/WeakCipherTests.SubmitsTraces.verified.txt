@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -18,8 +18,8 @@
     {
       "type": "WEAK_CIPHER",
       "location": {
-        "path": "Program.cs",
-        "line": XXX
+        "path": "Samples.WeakCipher.Program",
+        "method": "VulnerableSection"
       },
       "evidence": {
         "value": "DES"
@@ -55,8 +55,8 @@
     {
       "type": "WEAK_CIPHER",
       "location": {
-        "path": "Program.cs",
-        "line": XXX
+        "path": "Samples.WeakCipher.Program",
+        "method": "VulnerableSection"
       },
       "evidence": {
         "value": "DES"
@@ -92,8 +92,8 @@
     {
       "type": "WEAK_CIPHER",
       "location": {
-        "path": "Program.cs",
-        "line": XXX
+        "path": "Samples.WeakCipher.Program",
+        "method": "VulnerableSection"
       },
       "evidence": {
         "value": "RC2"
@@ -129,8 +129,8 @@
     {
       "type": "WEAK_CIPHER",
       "location": {
-        "path": "Program.cs",
-        "line": XXX
+        "path": "Samples.WeakCipher.Program",
+        "method": "VulnerableSection"
       },
       "evidence": {
         "value": "RC2"
@@ -166,8 +166,8 @@
     {
       "type": "WEAK_CIPHER",
       "location": {
-        "path": "Program.cs",
-        "line": XXX
+        "path": "Samples.WeakCipher.Program",
+        "method": "VulnerableSection"
       },
       "evidence": {
         "value": "TripleDES"
@@ -203,8 +203,8 @@
     {
       "type": "WEAK_CIPHER",
       "location": {
-        "path": "Program.cs",
-        "line": XXX
+        "path": "Samples.WeakCipher.Program",
+        "method": "VulnerableSection"
       },
       "evidence": {
         "value": "TripleDES"
