@@ -791,10 +791,6 @@ stages:
         displayName: Publish tracer-home.zip
         artifact: windows-tracer-home.zip
 
-      - publish: $(artifacts)/x86/en-us
-        displayName: Publish Windows x86 MSI
-        artifact: windows-msi-x86
-
       - publish: $(artifacts)/x64/en-us
         displayName: Publish Windows x64 MSI
         artifact: windows-msi-x64
@@ -3772,12 +3768,6 @@ stages:
             artifact: windows-msi-x64
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download x86 MSI
-          inputs:
-            artifact: windows-msi-x86
-            path: $(Build.ArtifactStagingDirectory)
-
         - bash: |
             az storage blob upload-batch \
               --destination "$(AZURE_STORAGE_CONTAINER_NAME)" \
@@ -5633,11 +5623,8 @@ stages:
         - task: DownloadPipelineArtifact@2
           displayName: Download MSI to temp directory
           inputs:
-#            artifact: windows-msi-$(targetPlatform)
-#            patterns: '**/*-$(targetPlatform).msi'
-            # I give up, I can't get x86 to work in the docker file
-            artifact: windows-msi-x64
-            patterns: '**/*-x64.msi'
+            artifact: windows-msi-$(targetPlatform)
+            patterns: '**/*-$(targetPlatform).msi'
             path: $(Agent.TempDirectory)
 
         - powershell: |
