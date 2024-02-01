@@ -845,8 +845,6 @@ partial class Build
         .Requires(() => Version)
         .Executes(() =>
         {
-            var fpm = Fpm.Value;
-            var gzip = GZip.Value;
             var chmod = Chmod.Value;
 
             // For legacy back-compat reasons, we _must_ add certain files to their expected locations
@@ -927,6 +925,11 @@ partial class Build
                     $"--chdir {assetsDirectory}",
                     $"--after-install {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}",
                     $"--after-remove {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}",
+                    "--license \"Apache License 2.0\"",
+                    "--description \"Datadog APM client library for .NET\"",
+                    "--url \"https://github.com/DataDog/dd-trace-dotnet\"",
+                    "--vendor \"Datadog <package@datadoghq.com>\"",
+                    "--maintainer \"Datadog Packages <package@datadoghq.com>\"",
                     "createLogPath.sh",
                     "dd-dotnet.sh",
                     "netstandard2.0/",
