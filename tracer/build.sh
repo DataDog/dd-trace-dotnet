@@ -28,4 +28,8 @@ export NUKE_TELEMETRY_OPTOUT=1
 echo "Microsoft (R) .NET Core SDK version $("$DOTNET_EXE" --version)"
 
 "$DOTNET_EXE" build "$BUILD_PROJECT_FILE" /nodeReuse:false /p:UseSharedCompilation=false -nologo -clp:NoSummary --verbosity quiet
-"$DOTNET_EXE" run --project "$BUILD_PROJECT_FILE" --no-build -- "$@"
+
+echo "dotnet build exited with code $?"
+ls -l "$SCRIPT_DIR/build/_build/bin/Debug/_build"
+
+"$SCRIPT_DIR/build/_build/bin/Debug/_build" "$@"

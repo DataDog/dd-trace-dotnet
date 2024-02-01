@@ -5,13 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-#if !NETCOREAPP3_1_OR_GREATER
 using System.Text.RegularExpressions;
-#endif
 using Datadog.Trace.Logging;
-#if NETCOREAPP3_1_OR_GREATER
-using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
-#endif
 
 #nullable enable
 
@@ -35,10 +30,6 @@ internal class EvidenceRedactor
         _logger = logger;
 
         var options = RegexOptions.IgnoreCase | RegexOptions.Compiled;
-
-#if NETCOREAPP3_1_OR_GREATER
-        options |= RegexOptions.NonBacktracking;
-#endif
 
         _keysRegex = new(keysPattern, options, _timeout);
         _valuesRegex = new(valuesPattern, options, _timeout);
