@@ -1,0 +1,14 @@
+{
+  "dsl": "getmember(ref ChildNested, ParentProtectedStaticMember) == Hello from parent protected static member",
+  "eq": [
+    {
+      "getmember": [
+        {
+          "ref": "ChildNested"
+        },
+        "ParentProtectedStaticMember"
+      ]
+    },
+    "Hello from parent protected static member"
+  ]
+}
