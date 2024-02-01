@@ -137,8 +137,7 @@ namespace Datadog.Trace.Configuration
             IsRareSamplerEnabled = settings.IsRareSamplerEnabled;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
-            // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
-            _logsInjectionEnabled = settings.LogSubmissionSettings.LogsInjectionEnabled ?? LogSubmissionSettings.IsEnabled;
+            _logsInjectionEnabled = settings.LogSubmissionSettings.LogsInjectionEnabled;
 
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)
@@ -316,7 +315,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalSamplingRate"/>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_GlobalSamplingRate_Get)]
-        internal double GlobalSamplingRateInternal => DynamicSettings.GlobalSamplingRate ?? _globalSamplingRate;
+        internal double? GlobalSamplingRateInternal => DynamicSettings.GlobalSamplingRate ?? _globalSamplingRate;
 
         /// <summary>
         /// Gets a collection of <see cref="IntegrationsInternal"/> keyed by integration name.

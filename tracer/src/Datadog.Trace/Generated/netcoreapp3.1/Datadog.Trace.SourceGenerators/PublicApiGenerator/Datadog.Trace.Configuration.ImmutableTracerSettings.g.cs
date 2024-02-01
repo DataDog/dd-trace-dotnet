@@ -159,7 +159,7 @@ partial record ImmutableTracerSettings
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalSamplingRate"/>
     [Datadog.Trace.SourceGenerators.PublicApi]
-    public double GlobalSamplingRate
+    public double? GlobalSamplingRate
     {
         get
         {

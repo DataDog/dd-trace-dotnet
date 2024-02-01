@@ -130,6 +130,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             ValidationErrors = validationErrors;
             IsEnabled = isEnabled;
+
+            // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
             LogsInjectionEnabled = config.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(defaultValue: isEnabled);
         }
 
@@ -204,8 +206,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
         internal string? ApiKey { get; }
 
         /// <summary>
-        /// Gets or sets whether logs injection has been explicitly enabled or disabled
+        /// Gets or sets a value indicating whether logs injection has been explicitly enabled or disabled
         /// </summary>
-        internal bool? LogsInjectionEnabled { get; set; }
+        internal bool LogsInjectionEnabled { get; set; }
     }
 }

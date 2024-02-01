@@ -540,7 +540,7 @@ namespace Datadog.Trace.Configuration
             get
             {
                 TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_LogsInjectionEnabled_Get);
-                return LogSubmissionSettings.LogsInjectionEnabled ?? false;
+                return LogSubmissionSettings.LogsInjectionEnabled;
             }
 
             set
