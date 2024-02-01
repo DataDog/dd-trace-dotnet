@@ -10,14 +10,15 @@ namespace Datadog.Trace.Tools.Runner
 {
     internal static class RunHelper
     {
-        public static bool TryGetEnvironmentVariables(ApplicationContext applicationContext, InvocationContext invocationContext, RunSettings settings, out Dictionary<string, string> profilerEnvironmentVariables)
+        public static bool TryGetEnvironmentVariables(ApplicationContext applicationContext, InvocationContext invocationContext, RunSettings settings, bool enableGacInstallation, out Dictionary<string, string> profilerEnvironmentVariables)
         {
             profilerEnvironmentVariables = Utils.GetProfilerEnvironmentVariables(
                 invocationContext,
                 applicationContext.RunnerFolder,
                 applicationContext.Platform,
                 settings,
-                reducePathLength: false);
+                reducePathLength: false,
+                enableGacInstallation: enableGacInstallation);
 
             if (profilerEnvironmentVariables is null)
             {

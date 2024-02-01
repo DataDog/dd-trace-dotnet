@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using Datadog.Trace.Ci;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner
@@ -62,7 +63,8 @@ namespace Datadog.Trace.Tools.Runner
                 _applicationContext.RunnerFolder,
                 _applicationContext.Platform,
                 _tracerSettings,
-                reducePathLength: true);
+                reducePathLength: true,
+                enableGacInstallation: CIVisibility.Settings.InstallDatadogTraceInGac);
 
             if (profilerEnvironmentVariables == null)
             {

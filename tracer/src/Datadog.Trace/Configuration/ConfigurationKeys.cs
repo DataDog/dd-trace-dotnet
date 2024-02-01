@@ -517,6 +517,11 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for setting the external code coverage file path
             /// </summary>
             public const string ExternalCodeCoveragePath = "DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Datadog.Trace GAC installation
+            /// </summary>
+            public const string InstallDatadogTraceInGac = "DD_CIVISIBILITY_GAC_INSTALL_ENABLED";
         }
 
         /// <summary>

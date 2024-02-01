@@ -41,7 +41,8 @@ namespace Datadog.Trace.Tools.Runner
                 ApplicationContext.RunnerFolder,
                 ApplicationContext.Platform,
                 _legacySettings,
-                reducePathLength: false);
+                reducePathLength: false,
+                enableGacInstallation: false);
 
             if (profilerEnvironmentVariables is null)
             {

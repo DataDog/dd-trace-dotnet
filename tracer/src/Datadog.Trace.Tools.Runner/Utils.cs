@@ -42,11 +42,11 @@ namespace Datadog.Trace.Tools.Runner
             return DirectoryExists("Home", Path.Combine(runnerFolder, "..", "..", "..", "home"), Path.Combine(runnerFolder, "home"));
         }
 
-        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, CommonTracerSettings options, bool reducePathLength)
+        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, CommonTracerSettings options, bool reducePathLength, bool enableGacInstallation)
         {
             var tracerHomeFolder = options.TracerHome.GetValue(context);
 
-            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, tracerHomeFolder, reducePathLength);
+            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, tracerHomeFolder, reducePathLength, enableGacInstallation);
 
             var environment = options.Environment.GetValue(context);
 
@@ -79,9 +79,9 @@ namespace Datadog.Trace.Tools.Runner
             return envVars;
         }
 
-        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, LegacySettings options, bool reducePathLength)
+        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, LegacySettings options, bool reducePathLength, bool enableGacInstallation)
         {
-            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, options.TracerHomeFolderOption.GetValue(context), reducePathLength);
+            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, options.TracerHomeFolderOption.GetValue(context), reducePathLength, enableGacInstallation);
 
             var environment = options.EnvironmentOption.GetValue(context);
 
@@ -411,7 +411,7 @@ namespace Datadog.Trace.Tools.Runner
             return false;
         }
 
-        private static Dictionary<string, string> GetBaseProfilerEnvironmentVariables(string runnerFolder, Platform platform, string tracerHomeFolder, bool reducePathLength)
+        private static Dictionary<string, string> GetBaseProfilerEnvironmentVariables(string runnerFolder, Platform platform, string tracerHomeFolder, bool reducePathLength, bool enableGacInstallation)
         {
             string tracerHome = null;
             if (!string.IsNullOrEmpty(tracerHomeFolder))
@@ -468,9 +468,19 @@ namespace Datadog.Trace.Tools.Runner
                 //   1. Check if `Datadog.Trace` is installed in the gac using `gacutil`, if not, we try to install it.
                 //   2. If that doesn't work we try to locate `vstest.console.exe.config` to enable debug mode on this
                 //      command so we can inject the DevPath environment variable
-                if (!EnsureDatadogTraceIsInTheGac(tracerHome) && EnsureNETFrameworkVSTestConsoleDevPathSupport())
+                if (enableGacInstallation)
                 {
-                    devPath = Path.Combine(tracerHome, "net461");
+                    if (!EnsureDatadogTraceIsInTheGac(tracerHome) && EnsureNETFrameworkVSTestConsoleDevPathSupport())
+                    {
+                        devPath = Path.Combine(tracerHome, "net461");
+                    }
+                }
+                else
+                {
+                    if (EnsureNETFrameworkVSTestConsoleDevPathSupport())
+                    {
+                        devPath = Path.Combine(tracerHome, "net461");
+                    }
                 }
             }
             else if (platform == Platform.Linux)
