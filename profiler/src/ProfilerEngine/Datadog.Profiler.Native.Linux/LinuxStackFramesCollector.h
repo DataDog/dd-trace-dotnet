@@ -21,11 +21,13 @@ class IManagedThreadList;
 class ProfilerSignalManager;
 class ProfilerSignalManager;
 class IConfiguration;
+class IUnwinder;
 
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* configuration);
+    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager, std::unique_ptr<IUnwinder> unwinder,
+                                       IConfiguration const* configuration);
     ~LinuxStackFramesCollector() override;
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;
@@ -42,24 +44,8 @@ protected:
                                                                 bool selfCollect) override;
 
 private:
-    class ErrorStatistics
-    {
-    public:
-        void Add(std::int32_t errorCode);
-        void Log();
-
-    private:
-        //                 v- error code v- # of errors
-        std::unordered_map<std::int32_t, std::int32_t> _stats;
-    };
-
-private:
     void NotifyStackWalkCompleted(std::int32_t resultErrorCode);
-    void UpdateErrorStats(std::int32_t errorCode);
-    static bool ShouldLogStats();
     bool CanCollect(int32_t threadId, pid_t processId) const;
-    std::int32_t CollectStackManually(void* ctx);
-    std::int32_t CollectStackWithBacktrace2(void* ctx);
     void MarkAsInterrupted();
 
     std::int32_t _lastStackWalkErrorCode;
@@ -71,18 +57,14 @@ private:
     std::atomic<bool> _stackWalkFinished;
     pid_t _processId;
     ProfilerSignalManager* _signalManager;
-
+    std::unique_ptr<IUnwinder> _unwinder;
 
 private:
     static bool CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);
 
-    static char const* ErrorCodeToString(int32_t errorCode);
     static std::mutex s_stackWalkInProgressMutex;
 
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
 
     std::int32_t CollectCallStackCurrentThread(void* ucontext);
-
-    ErrorStatistics _errorStatistics;
-    bool _useBacktrace2;
 };

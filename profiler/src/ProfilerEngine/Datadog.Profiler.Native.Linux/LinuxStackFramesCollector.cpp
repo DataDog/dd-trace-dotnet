@@ -9,10 +9,12 @@
 #include <iomanip>
 #include <libunwind.h>
 #include <mutex>
+#include <span>
 #include <ucontext.h>
 #include <unordered_map>
 
 #include "IConfiguration.h"
+#include "IUnwinder.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
@@ -25,57 +27,19 @@ using namespace std::chrono_literals;
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
-LinuxStackFramesCollector::LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* const configuration) :
+LinuxStackFramesCollector::LinuxStackFramesCollector(ProfilerSignalManager* signalManager, std::unique_ptr<IUnwinder> unwinder,
+    IConfiguration const* const configuration) :
     StackFramesCollectorBase(configuration),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
-    _errorStatistics{},
     _processId{OpSysTools::GetProcId()},
     _signalManager{signalManager},
-    _useBacktrace2{configuration->UseBacktrace2()}
+    _unwinder{std::move(unwinder)}
 {
     _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
 }
 
-LinuxStackFramesCollector::~LinuxStackFramesCollector()
-{
-    _errorStatistics.Log();
-}
-
-bool LinuxStackFramesCollector::ShouldLogStats()
-{
-    static std::time_t PreviousPrintTimestamp = 0;
-    static const std::int64_t TimeIntervalInSeconds = 600; // print stats every 10min
-
-    time_t currentTime;
-    time(&currentTime);
-
-    if (currentTime == static_cast<time_t>(-1))
-    {
-        return false;
-    }
-
-    if (currentTime - PreviousPrintTimestamp < TimeIntervalInSeconds)
-    {
-        return false;
-    }
-
-    PreviousPrintTimestamp = currentTime;
-
-    return true;
-}
-
-void LinuxStackFramesCollector::UpdateErrorStats(std::int32_t errorCode)
-{
-    if (Log::IsDebugEnabled())
-    {
-        _errorStatistics.Add(errorCode);
-        if (ShouldLogStats())
-        {
-            _errorStatistics.Log();
-        }
-    }
-}
+LinuxStackFramesCollector::~LinuxStackFramesCollector() = default;
 
 StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
                                                                                        uint32_t* pHR,
@@ -125,7 +89,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
             if (status == std::cv_status::timeout)
             {
                 _lastStackWalkErrorCode = E_ABORT;
-                ;
+
                 if (!_signalManager->CheckSignalHandler())
                 {
                     _lastStackWalkErrorCode = E_FAIL;
@@ -137,15 +101,6 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
             errorCode = _lastStackWalkErrorCode;
         }
-    }
-
-    // errorCode domain values
-    // * < 0 : libunwind error codes
-    // * > 0 : other errors (ex: failed to create frame while walking the stack)
-    // * == 0 : success
-    if (errorCode < 0)
-    {
-        UpdateErrorStats(errorCode);
     }
 
     *pHR = (errorCode == 0) ? S_OK : E_FAIL;
@@ -176,7 +131,11 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
         // Collect data for TraceContext tracking:
         bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
-        return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
+        auto [data, size] = Data();
+        auto nbFrames = _unwinder->Unwind(ctx, std::span(data, size));
+        SetFrameCount(nbFrames);
+
+        return nbFrames == 0 ? E_FAIL : S_OK;
     }
     catch (...)
     {
@@ -184,81 +143,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
     }
 }
 
-std::int32_t LinuxStackFramesCollector::CollectStackManually(void* ctx)
-{
-    std::int32_t resultErrorCode;
 
-    // if we are in the signal handler, ctx won't be null, so we will use the context
-    // This will allow us to skip the syscall frame and start from the frame before the syscall.
-    auto flag = UNW_INIT_SIGNAL_FRAME;
-    unw_context_t context;
-    if (ctx != nullptr)
-    {
-        context = *reinterpret_cast<unw_context_t*>(ctx);
-    }
-    else
-    {
-        // not in signal handler. Get the context and initialize the cursor form here
-        resultErrorCode = unw_getcontext(&context);
-        if (resultErrorCode != 0)
-        {
-            return E_ABORT; // unw_getcontext does not return a specific error code. Only -1
-        }
-
-        flag = static_cast<unw_init_local2_flags_t>(0);
-    }
-
-    unw_cursor_t cursor;
-    resultErrorCode = unw_init_local2(&cursor, &context, flag);
-
-    if (resultErrorCode < 0)
-    {
-        return resultErrorCode;
-    }
-
-    do
-    {
-        // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
-        if (IsCurrentCollectionAbortRequested())
-        {
-            AddFakeFrame();
-            return E_ABORT;
-        }
-
-        unw_word_t ip;
-        resultErrorCode = unw_get_reg(&cursor, UNW_REG_IP, &ip);
-        if (resultErrorCode != 0)
-        {
-            return resultErrorCode;
-        }
-
-        if (!AddFrame(ip))
-        {
-            return S_FALSE;
-        }
-
-        resultErrorCode = unw_step(&cursor);
-    } while (resultErrorCode > 0);
-
-    return resultErrorCode;
-}
-
-std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
-{
-    auto* context = reinterpret_cast<unw_context_t*>(ctx);
-
-    // Now walk the stack:
-    auto [data, size] = Data();
-    auto count = unw_backtrace2((void**)data, size, context);
-
-    if (count == 0)
-    {
-        return E_FAIL;
-    }
-
-    SetFrameCount(count);
-    return S_OK;
-}
 
 bool LinuxStackFramesCollector::CanCollect(int32_t threadId, pid_t processId) const
 {
@@ -334,29 +219,4 @@ bool LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, sigi
 
     errno = oldErrno;
     return success;
-}
-
-void LinuxStackFramesCollector::ErrorStatistics::Add(std::int32_t errorCode)
-{
-    auto& value = _stats[errorCode];
-    value++;
-}
-
-void LinuxStackFramesCollector::ErrorStatistics::Log()
-{
-    if (!_stats.empty())
-    {
-        std::stringstream ss;
-        ss << std::setfill(' ') << std::setw(13) << "# occurrences"
-           << " | "
-           << "Error message\n";
-        for (auto& errorCodeAndStats : _stats)
-        {
-            ss << std::setfill(' ') << std::setw(10) << errorCodeAndStats.second << "  |  " << unw_strerror(errorCodeAndStats.first) << " (" << errorCodeAndStats.first << ")\n";
-        }
-
-        Log::Info("LinuxStackFramesCollector::CollectStackSampleImplementation: The sampler thread encoutered errors in the interval\n",
-                  ss.str());
-        _stats.clear();
-    }
 }
