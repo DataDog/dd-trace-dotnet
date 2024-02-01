@@ -33,7 +33,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             if (Interlocked.Exchange(ref _startupCtorInitialized, 1) != 0)
             {
-                // Startup() was already called before
+                // Startup() was already called before in the same AppDomain, this can happen because the profiler rewrites
+                // methods before the jitting to inject the loader. This is done until the profiler detects that the loader
+                // has been initialized.
+                // The piece of code injected already includes an Interlocked condition but, because the static variable is emitted
+                // in a custom type inside the running assembly, others assemblies will also have a different type with a different static
+                // variable, so, we still can hit an scenario where multiple loaders initialize.
+                // With this we prevent this scenario.
                 return;
             }
 
