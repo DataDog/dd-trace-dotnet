@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.AppSec;
@@ -26,15 +29,23 @@ namespace Datadog.Trace
 
         private readonly TraceClock _clock;
 
-        private IastRequestContext _iastRequestContext;
-        private bool _isApiSecurity;
+        private IastRequestContext? _iastRequestContext;
+        private AppSecRequestContext? _appSecRequestContext;
 
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
         private int? _samplingPriority;
-        private Span _rootSpan;
+        // _rootSpan was chosen at some point to be used as the key for a lock that protects
+        // * _spans
+        // * _openSpans
+        // although it's a nullable field, the _rootSpan must always be set before operations on
+        // _spans & _samplingPriority take place, so it's okay to use it as a lock key
+        // even though we need to override the nullable warnings in some places.
+        // The reason _rootSpan was chosen is unknown, we're assuming it's to avoid
+        // allocation a separate field for the lock
+        private Span? _rootSpan;
 
-        public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
+        public TraceContext(IDatadogTracer tracer, TraceTagCollection? tags = null)
         {
             CurrentTraceSettings = tracer.PerTraceSettings;
 
@@ -55,7 +66,7 @@ namespace Datadog.Trace
             _clock = TraceClock.Instance;
         }
 
-        public Span RootSpan
+        public Span? RootSpan
         {
             get => _rootSpan;
             private set => _rootSpan = value;
@@ -81,23 +92,33 @@ namespace Datadog.Trace
             get => _samplingPriority;
         }
 
-        public string Environment { get; set; }
+        public string? Environment { get; set; }
 
-        public string ServiceVersion { get; set; }
+        public string? ServiceVersion { get; set; }
 
-        public string Origin { get; set; }
+        public string? Origin { get; set; }
 
         /// <summary>
         /// Gets or sets additional key/value pairs from upstream "tracestate" header that we will propagate downstream.
         /// This value will _not_ include the "dd" key, which is parsed out into other individual values
         /// (e.g. sampling priority, origin, propagates tags, etc).
         /// </summary>
-        internal string AdditionalW3CTraceState { get; set; }
+        internal string? AdditionalW3CTraceState { get; set; }
 
         /// <summary>
         /// Gets the IAST context.
         /// </summary>
-        internal IastRequestContext IastRequestContext => _iastRequestContext;
+        internal IastRequestContext? IastRequestContext => _iastRequestContext;
+
+        internal void AddWafSecurityEvents(IReadOnlyCollection<object> events)
+        {
+            if (Volatile.Read(ref _appSecRequestContext) is null)
+            {
+                Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
+            }
+
+            _appSecRequestContext!.AddWafSecurityEvents(events);
+        }
 
         internal void EnableIastInRequest()
         {
@@ -150,9 +171,9 @@ namespace Datadog.Trace
                     }
                 }
 
-                if (_isApiSecurity)
+                if (_appSecRequestContext != null)
                 {
-                    Security.Instance.ApiSecurity.ReleaseRequest();
+                    _appSecRequestContext.CloseWebSpan(Tags);
                 }
             }
 
@@ -161,7 +182,7 @@ namespace Datadog.Trace
                 ExtraServicesProvider.Instance.AddService(span.ServiceName);
             }
 
-            lock (_rootSpan)
+            lock (_rootSpan!)
             {
                 _spans.Add(span);
                 _openSpans--;
@@ -202,7 +223,7 @@ namespace Datadog.Trace
         {
             ArraySegment<Span> spansToWrite;
 
-            lock (_rootSpan)
+            lock (_rootSpan!)
             {
                 spansToWrite = _spans.GetArray();
                 _spans = default;
@@ -265,7 +286,12 @@ namespace Datadog.Trace
 
         public void MarkApiSecurity()
         {
-            _isApiSecurity = true;
+            if (Volatile.Read(ref _appSecRequestContext) is null)
+            {
+                Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
+            }
+
+            _appSecRequestContext!.MarkApiSecurity();
         }
     }
 }
