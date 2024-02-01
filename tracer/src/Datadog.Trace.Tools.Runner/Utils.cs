@@ -562,7 +562,7 @@ namespace Datadog.Trace.Tools.Runner
                         // We run the gacutil /i command using runas verb to elevate privileges
                         Log.Warning("EnsureDatadogTraceIsInTheGac: Datadog.Trace is not in the GAC, let's try to install it.");
                         if (FileExistsOrNull(Path.Combine(tracerHome, "net461", "Datadog.Trace.dll")) is { } datadogTraceDllPath &&
-                            ProcessHelpers.RunCommand(new ProcessHelpers.Command(gacPath, $"/i {datadogTraceDllPath}", verb: "runas")) is { } cmdGacInstallResponse)
+                            ProcessHelpers.RunCommand(new ProcessHelpers.Command(gacPath, $"/if {datadogTraceDllPath}", verb: "runas")) is { } cmdGacInstallResponse)
                         {
                             if (cmdGacInstallResponse.ExitCode == 0)
                             {
