@@ -461,7 +461,10 @@ namespace Datadog.Trace.Tools.Runner
                 tracerProfilerArm64 = FileExistsOrNull(Path.Combine(tracerHome, "win-ARM64EC", "Datadog.Trace.ClrProfiler.Native.dll"));
 
                 // For full compatibility with .NET Framework we need to either install Datadog.Trace.dll to the GAC or enable Development mode for vstest.console
-                // This is a best effort approach
+                // This is a best effort approach by:
+                //   1. Check if `Datadog.Trace` is installed in the gac using `gacutil`, if not, we try to install it.
+                //   2. If that doesn't work we try to locate `vstest.console.exe.config` to enable debug mode on this
+                //      command so we can inject the DevPath environment variable
                 if (!EnsureDatadogTraceIsInTheGac(tracerHome) && EnsureNETFrameworkVSTestConsoleDevPathSupport())
                 {
                     devPath = Path.Combine(tracerHome, "net461");
@@ -543,9 +546,10 @@ namespace Datadog.Trace.Tools.Runner
                     if (cmdGacListResponse.Output?.Contains(typeof(TracerConstants).Assembly.FullName!, StringComparison.OrdinalIgnoreCase) != true)
                     {
                         // Datadog.Trace is not in the GAC, let's try to install it.
+                        // We run the gacutil /i command using runas verb to elevate privileges
                         RunCiCommand.Log.Warning("EnsureDatadogTraceIsInTheGac: Datadog.Trace is not in the GAC, let's try to install it.");
                         if (FileExistsOrNull(Path.Combine(tracerHome, "net461", "Datadog.Trace.dll")) is { } datadogTraceDllPath &&
-                            ProcessHelpers.RunCommand(new ProcessHelpers.Command(gacPath, $"/i {datadogTraceDllPath}")) is { } cmdGacInstallResponse)
+                            ProcessHelpers.RunCommand(new ProcessHelpers.Command(gacPath, $"/i {datadogTraceDllPath}", verb: "runas")) is { } cmdGacInstallResponse)
                         {
                             if (cmdGacInstallResponse.ExitCode == 0)
                             {
