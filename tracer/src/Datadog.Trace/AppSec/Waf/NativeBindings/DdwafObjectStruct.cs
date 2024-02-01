@@ -53,7 +53,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         [FieldOffset(32)]
         public DDWAF_OBJ_TYPE Type;
 
-        public bool BoolValue => ByteValue == 1;
+        public bool BoolValue => Type == DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL && ByteValue == 1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal object? Decode()

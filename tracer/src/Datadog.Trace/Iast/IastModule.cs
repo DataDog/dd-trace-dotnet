@@ -28,6 +28,7 @@ internal static class IastModule
     private const string OperationNameWeakHash = "weak_hashing";
     private const string OperationNameWeakCipher = "weak_cipher";
     private const string OperationNameSqlInjection = "sql_injection";
+    private const string OperationNameNoSqlMongoDbInjection = "nosql_mongodb_injection";
     private const string OperationNameCommandInjection = "command_injection";
     private const string OperationNamePathTraversal = "path_traversal";
     private const string OperationNameLdapInjection = "ldap_injection";
@@ -192,6 +193,20 @@ internal static class IastModule
         catch (Exception ex)
         {
             Log.Error(ex, "Error while checking for Sql injection.");
+            return IastModuleResponse.Empty;
+        }
+    }
+
+    public static IastModuleResponse OnNoSqlMongoDbQuery(string query, IntegrationId integrationId)
+    {
+        try
+        {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.NoSqlMongoDbInjection);
+            return GetScope(query, integrationId, VulnerabilityTypeName.NoSqlMongoDbInjection, OperationNameNoSqlMongoDbInjection, Always);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for MongoDb NoSql injection.");
             return IastModuleResponse.Empty;
         }
     }

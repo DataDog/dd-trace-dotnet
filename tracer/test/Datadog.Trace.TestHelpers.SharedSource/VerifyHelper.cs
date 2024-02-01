@@ -161,6 +161,9 @@ namespace Datadog.Trace.TestHelpers
                   // remove propagated tags because their positions in the snapshots are not stable
                   // with our span ordering. correct position (first span in every trace chunk) is covered by other tests.
                   .Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
+                  // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
+                  // no matter what. That means we have unstable snapshot results.
+                  .Where(kvp => kvp.Key != Tags.GitRepositoryUrl && kvp.Key != Tags.GitCommitSha)
                   .Select(
                        kvp => kvp.Key switch
                        {
