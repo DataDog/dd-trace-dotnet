@@ -18,7 +18,6 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
 namespace Datadog.Trace.Debugger.Snapshots
@@ -575,7 +574,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         break;
                     case MethodState.ExitEndAsync:
                         CaptureExitMethodStartMarker(ref captureInfo);
-                        CaptureScopeMembers(MethodScopeMembers.Members.Where(member => member.ElementType == ScopeMemberKind.Local).ToArray());
+                        CaptureScopeMembers(MethodScopeMembers.Members, ScopeMemberKind.Local);
                         return true;
                     case MethodState.EndLine:
                     case MethodState.EndLineAsync:
@@ -592,7 +591,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return false;
         }
 
-        internal void CaptureScopeMembers(ScopeMember[] members)
+        internal void CaptureScopeMembers(ScopeMember[] members, ScopeMemberKind? kind = null)
         {
             foreach (var member in members)
             {
@@ -600,6 +599,11 @@ namespace Datadog.Trace.Debugger.Snapshots
                 {
                     // ArrayPool can allocate more items than we need, if "Type == null", this mean we can exit the loop because Type should never be null
                     break;
+                }
+
+                if (kind != null && kind.Value != member.ElementType)
+                {
+                    continue;
                 }
 
                 switch (member.ElementType)
