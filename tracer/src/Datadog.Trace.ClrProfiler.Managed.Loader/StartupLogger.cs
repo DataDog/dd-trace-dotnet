@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private static readonly bool DebugEnabled = IsDebugEnabled();
         private static readonly string LogDirectory = GetLogDirectory();
         private static readonly string StartupLogFilePath = SetStartupLogFilePath();
+        private static readonly object PadLock = new();
 
         public static void Log(string message, params object[] args)
         {
@@ -26,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             try
             {
-                lock (NixDefaultDirectory)
+                lock (PadLock)
                 {
                     using var fileSink = new FileSink(StartupLogFilePath);
                     if (DebugEnabled)

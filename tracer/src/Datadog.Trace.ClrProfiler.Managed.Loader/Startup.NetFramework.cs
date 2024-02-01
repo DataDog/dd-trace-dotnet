@@ -6,7 +6,6 @@
 #if NETFRAMEWORK
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 
@@ -17,8 +16,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private static readonly Dictionary<string, Assembly> AssemblyCache = new();
-
         private static string ResolveManagedProfilerDirectory()
         {
             var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
@@ -49,58 +46,39 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static Assembly ResolveAssembly(string name)
         {
-            lock (AssemblyCache)
+            var assemblyName = new AssemblyName(name);
+
+            // On .NET Framework, having a non-US locale can cause mscorlib
+            // to enter the AssemblyResolve event when searching for resources
+            // in its satellite assemblies. Exit early so we don't cause
+            // infinite recursion.
+            if (string.Equals(assemblyName.Name, "mscorlib.resources", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(assemblyName.Name, "System.Net.Http", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(assemblyName.Name, "vstest.console.resources", StringComparison.OrdinalIgnoreCase))
             {
-                if (AssemblyCache.TryGetValue(name, out var assembly))
+                return null;
+            }
+
+            // WARNING: Logs must not be added _before_ we check for the above bail-out conditions
+            var path = string.IsNullOrEmpty(ManagedProfilerDirectory) ? $"{assemblyName.Name}.dll" : Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
+            StartupLogger.Debug("  Looking for: '{0}'", path);
+
+            if (File.Exists(path))
+            {
+                if (name.StartsWith("Datadog.Trace, Version=") && name != AssemblyName)
                 {
-                    if (assembly is not null)
-                    {
-                        StartupLogger.Debug("Assembly '{0}' loaded from cache.", assembly?.FullName ?? "(null)");
-                    }
-                    else
-                    {
-                        StartupLogger.Debug("Assembly '{0}' not found.", name);
-                    }
-
-                    return assembly;
-                }
-
-                AssemblyCache[name] = null;
-                var assemblyName = new AssemblyName(name);
-
-                // On .NET Framework, having a non-US locale can cause mscorlib
-                // to enter the AssemblyResolve event when searching for resources
-                // in its satellite assemblies. Exit early so we don't cause
-                // infinite recursion.
-                if (string.Equals(assemblyName.Name, "mscorlib.resources", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(assemblyName.Name, "System.Net.Http", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(assemblyName.Name, "vstest.console.resources", StringComparison.OrdinalIgnoreCase))
-                {
+                    StartupLogger.Debug("  Trying to load '{0}' which does not match the expected version ('{1}'). [Path={2}]", name, AssemblyName, path);
                     return null;
                 }
 
-                // WARNING: Logs must not be added _before_ we check for the above bail-out conditions
-                var path = string.IsNullOrEmpty(ManagedProfilerDirectory) ? $"{assemblyName.Name}.dll" : Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
-                StartupLogger.Debug("  Looking for: '{0}'", path);
-
-                if (File.Exists(path))
-                {
-                    if (name.StartsWith("Datadog.Trace, Version=") && name != AssemblyName)
-                    {
-                        StartupLogger.Debug("  Trying to load '{0}' which does not match the expected version ('{1}'). [Path={2}]", name, AssemblyName, path);
-                        return null;
-                    }
-
-                    StartupLogger.Debug("  Resolving '{0}', loading '{1}'", name, path);
-                    assembly = Assembly.LoadFrom(path);
-                    StartupLogger.Debug("Assembly '{0}' loaded.", assembly?.FullName ?? "(null)");
-                    AssemblyCache[name] = assembly;
-                    return assembly;
-                }
-
-                StartupLogger.Debug("Assembly not found in path: '{0}'", path);
-                return null;
+                StartupLogger.Debug("  Resolving '{0}', loading '{1}'", name, path);
+                var assembly = Assembly.LoadFrom(path);
+                StartupLogger.Debug("Assembly '{0}' loaded.", assembly?.FullName ?? "(null)");
+                return assembly;
             }
+
+            StartupLogger.Debug("Assembly not found in path: '{0}'", path);
+            return null;
         }
     }
 }

@@ -75,7 +75,13 @@ public class AssemblyResolverCtorIntegration
     {
         lock (LstTasks)
         {
-            return Task.WhenAll(LstTasks);
+            var lstTasks = LstTasks;
+            return lstTasks.Count switch
+            {
+                0 => Task.CompletedTask,
+                1 => lstTasks[0],
+                _ => Task.WhenAll(LstTasks)
+            };
         }
     }
 }

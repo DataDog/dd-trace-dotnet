@@ -212,6 +212,7 @@
       <type fullname="System.Diagnostics.Process" />
       <type fullname="System.Diagnostics.ProcessStartInfo" />
       <type fullname="System.Diagnostics.ProcessThreadCollection" />
+      <type fullname="System.Diagnostics.ProcessWindowStyle" />
    </assembly>
    <assembly fullname="System.Diagnostics.StackTrace">
       <type fullname="System.Diagnostics.StackFrame" />
