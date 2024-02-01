@@ -35,42 +35,44 @@ public class TagListGenerator : IIncrementalGenerator
                         TagAttributeFullName,
                         static (node, _) => node is PropertyDeclarationSyntax,
                         static (context, ct) => GetPropertyTagForTags(context, ct))
-                   .Where(static m => m is not null)!;
+                   .Where(static m => m is not null)!
+                   .WithTrackingName(TrackingNames.TagResults);
 
         var metricProperties =
             context.SyntaxProvider.ForAttributeWithMetadataName(
                         MetricAttributeFullName,
                         static (node, _) => node is PropertyDeclarationSyntax,
                         static (context, ct) => GetPropertyTagForMetrics(context, ct))
-                   .Where(static m => m is not null)!;
-
-        IncrementalValuesProvider<ClassDeclarationSyntax> metricClassDeclarations =
-            context.SyntaxProvider.ForAttributeWithMetadataName(
-                        MetricAttributeFullName,
-                        static (node, _) => node is PropertyDeclarationSyntax,
-                        static (context, _) => context.TargetNode.Parent as ClassDeclarationSyntax)
-                   .Where(static m => m is not null)!;
+                   .Where(static m => m is not null)!
+                   .WithTrackingName(TrackingNames.MetricResults);
 
         context.ReportDiagnostics(
             tagProperties
                .Where(static m => m.Errors.Count > 0)
-               .SelectMany(static (x, _) => x.Errors));
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.TagDiagnostics));
 
         context.ReportDiagnostics(
             metricProperties
                .Where(static m => m.Errors.Count > 0)
-               .SelectMany(static (x, _) => x.Errors));
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.MetricDiagnostics));
 
         var allTags = tagProperties
                      .Where(static m => m.Value.IsValid)
                      .Select(static (x, _) => x.Value.PropertyTag)
-                     .Collect();
+                     .Collect()
+                     .WithTrackingName(TrackingNames.AllTags);
+
         var allMetrics = metricProperties
                         .Where(static m => m.Value.IsValid)
                         .Select(static (x, _) => x.Value.PropertyTag)
-                        .Collect();
+                        .Collect()
+                        .WithTrackingName(TrackingNames.AllMetrics);
 
-        var allProperties = allTags.Combine(allMetrics);
+        var allProperties = allTags
+                           .Combine(allMetrics)
+                           .WithTrackingName(TrackingNames.AllProperties);
 
         context.RegisterSourceOutput(
             allProperties,
