@@ -9,7 +9,6 @@
 #include <iomanip>
 #include <libunwind.h>
 #include <mutex>
-#include <span>
 #include <ucontext.h>
 #include <unordered_map>
 
@@ -132,7 +131,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
         bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
         auto [data, size] = Data();
-        auto nbFrames = _unwinder->Unwind(ctx, std::span(data, size));
+        auto nbFrames = _unwinder->Unwind(ctx, shared::span(data, size));
         SetFrameCount(nbFrames);
 
         return nbFrames == 0 ? E_FAIL : S_OK;

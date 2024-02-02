@@ -3,15 +3,18 @@
 
 #pragma once
 
-#include <cstdint>
+#if __cpp_lib_span
 
-#include "shared/src/native-src/span.hpp"
+#include <span>
 
-class IUnwinder
+namespace shared
 {
-public:
-    IUnwinder() = default;
-    virtual ~IUnwinder() = default;
+using std::span;
+}
 
-    virtual std::size_t Unwind(void* ctx, shared::span<std::uintptr_t> frames) = 0;
-};
+#else
+
+#define TCB_SPAN_NAMESPACE_NAME shared
+#include "tcb-span.hpp"
+
+#endif

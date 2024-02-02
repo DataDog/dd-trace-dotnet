@@ -18,7 +18,7 @@ std::unique_ptr<IUnwinder> LibunwindUnwinders::Create(IConfiguration const* cons
     return std::make_unique<LibunwindUnwinders::ManualUnwinder>();
 }
 
-std::size_t LibunwindUnwinders::ManualUnwinder::Unwind(void* ctx, std::span<std::uintptr_t> frames)
+std::size_t LibunwindUnwinders::ManualUnwinder::Unwind(void* ctx, shared::span<std::uintptr_t> frames)
 {
     // if we are in the signal handler, ctx won't be null, so we will use the context
     // This will allow us to skip the syscall frame and start from the frame before the syscall.
@@ -70,7 +70,7 @@ std::size_t LibunwindUnwinders::ManualUnwinder::Unwind(void* ctx, std::span<std:
     return nbFrames;
 }
 
-std::size_t LibunwindUnwinders::UwnBacktrace2::Unwind(void* ctx, std::span<std::uintptr_t> frames)
+std::size_t LibunwindUnwinders::UwnBacktrace2::Unwind(void* ctx, shared::span<std::uintptr_t> frames)
 {
     auto* context = reinterpret_cast<unw_context_t*>(ctx);
 
