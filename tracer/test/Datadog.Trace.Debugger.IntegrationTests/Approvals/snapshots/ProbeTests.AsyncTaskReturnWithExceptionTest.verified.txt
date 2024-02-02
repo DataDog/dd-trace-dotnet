@@ -59,6 +59,36 @@
               }
             },
             "locals": {
+              "@exception": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233079"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "Sequence contains no matching element"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "System.Linq"
+                  },
+                  "StackTrace": {
+                    "type": "String",
+                    "value": "   at System.Linq.ThrowHelper.ThrowNoMatchException()\r\n   at System.Linq.Enumerable.First[TSource](IEnumerable`1 source, Func`2 predicate)\r\n   at Samples.Probes.TestRuns.SmokeTests.AsyncTaskReturnWithExceptionTest.GetRoomById(String id) in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\SmokeTests\\AsyncTaskReturnWithExceptionTest.cs:line 28\r\n   at Samples.Probes.TestRuns.SmokeTests.AsyncTaskReturnWithExceptionTest.Method(String caller) in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\SmokeTests\\AsyncTaskReturnWithExceptionTest.cs:line 24"
+                  }
+                },
+                "type": "InvalidOperationException",
+                "value": "InvalidOperationException"
+              },
               "room": {
                 "isNull": "true",
                 "type": "Room"
