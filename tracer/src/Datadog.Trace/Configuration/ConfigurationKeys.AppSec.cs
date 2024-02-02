@@ -51,6 +51,26 @@ namespace Datadog.Trace.Configuration
             internal const string WafTimeout = "DD_APPSEC_WAF_TIMEOUT";
 
             /// <summary>
+            /// default value to true. Set to false to disable exploit prevention.
+            /// </summary>
+            internal const string RaspEnabled = "DD_APPSEC_RASP_ENABLED";
+
+            /// <summary>
+            /// with a default value of true, it allows a customer to disable the generation of stack traces, for any ASM-specific purpose such as RASP.
+            /// </summary>
+            internal const string StackTraceEnabled = "DD_APPSEC_STACK_TRACE_ENABLED";
+
+            /// <summary>
+            /// with a default value of 2, defines the maximum number of stack traces to be reported due to RASP events. 0 for unlimited.
+            /// </summary>
+            internal const string MaxStackTraces = "DD_APPSEC_MAX_STACK_TRACES";
+
+            /// <summary>
+            /// with a default value of 32, defines the maximum depth of a stack trace to be reported due to RASP events. O for unlimited.
+            /// </summary>
+            internal const string MaxStackTraceDepth = "DD_APPSEC_MAX_STACK_TRACE_DEPTH";
+
+            /// <summary>
             /// The regex that will be used to obfuscate possible sensitive data in keys that are highlighted WAF as potentially malicious
             /// </summary>
             internal const string ObfuscationParameterKeyRegex = "DD_APPSEC_OBFUSCATION_PARAMETER_KEY_REGEXP";

@@ -161,5 +161,50 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             settings.ObfuscationParameterValueRegex.Should().Be(expected);
         }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), true)]
+        public void RaspEnabledAsmEnabled(string raspEnabledValue, bool expected)
+        {
+            var source = CreateConfigurationSource([(ConfigurationKeys.AppSec.Enabled, "true"), (ConfigurationKeys.AppSec.RaspEnabled, raspEnabledValue)]);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
+
+            settings.RaspEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("true", false)]
+        [InlineData("false", false)]
+        public void RaspEnabledAsmDisabled(string raspEnabledValue, bool expected)
+        {
+            var source = CreateConfigurationSource([(ConfigurationKeys.AppSec.Enabled, "false"), (ConfigurationKeys.AppSec.RaspEnabled, raspEnabledValue)]);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
+
+            settings.RaspEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), true)]
+        public void StackTraceEnabled(string stackTraceEnabledValue, bool expected)
+        {
+            var source = CreateConfigurationSource([(ConfigurationKeys.AppSec.StackTraceEnabled, stackTraceEnabledValue)]);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
+
+            settings.StackTraceEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("1", 1)]
+        [InlineData("0", 0)]
+        [InlineData("100", 100)]
+        [InlineData("-1", 32)]
+        [InlineData("AAA", 32)]
+        public void MaxStackTraceDepth(string maxStackTraceDepthValue, int expected)
+        {
+            var source = CreateConfigurationSource([(ConfigurationKeys.AppSec.MaxStackTraceDepth, maxStackTraceDepthValue)]);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
+
+            settings.MaxStackTraceDepth.Should().Be(expected);
+        }
     }
 }

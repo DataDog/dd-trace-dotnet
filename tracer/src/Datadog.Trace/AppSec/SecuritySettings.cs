@@ -91,6 +91,22 @@ namespace Datadog.Trace.AppSec
                                        .AsBool(false);
             UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
                                      .AsBool(false);
+
+            RaspEnabled = config.WithKeys(ConfigurationKeys.AppSec.RaspEnabled)
+                                     .AsBool(true) && Enabled;
+
+            StackTraceEnabled = config.WithKeys(ConfigurationKeys.AppSec.StackTraceEnabled)
+                         .AsBool(true);
+
+            MaxStackTraces = config
+                                  .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)
+                                  .AsInt32(val => val >= 0)
+                                  .GetValueOrDefault(2);
+
+            MaxStackTraceDepth = config
+                                  .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
+                                  .AsInt32(val => val >= 0)
+                                  .GetValueOrDefault(32);
         }
 
         public double ApiSecuritySampling { get; }
@@ -104,6 +120,16 @@ namespace Datadog.Trace.AppSec
         public bool CanBeToggled { get; }
 
         public string? CustomIpHeader { get; }
+
+        // RASP related variables
+
+        public bool RaspEnabled { get; }
+
+        public bool StackTraceEnabled { get; }
+
+        public int MaxStackTraces { get; }
+
+        public int MaxStackTraceDepth { get; }
 
         /// <summary>
         /// Gets keys indicating the optional custom appsec headers the user wants to send.
