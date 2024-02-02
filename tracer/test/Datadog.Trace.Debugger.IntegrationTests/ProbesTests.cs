@@ -687,6 +687,7 @@ public class ProbesTests : TestHelper
 
                 Assert.NotNull(req);
                 req.Should().Contain($"service:{normalizedServiceName}");
+                req.Should().Contain($"probe-id:{probeAttributeBase.ProbeId}");
             }
         }
     }
