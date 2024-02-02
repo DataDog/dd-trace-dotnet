@@ -39,4 +39,4 @@ Expression: (
 }
 Result: True
 Errors:
-EvaluationError { Expression = this.UndefinedField, Message = The property or field does not exist. }
+EvaluationError { Expression = this.UndefinedField, Message = The property or field does not exist in Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+TestStruct }

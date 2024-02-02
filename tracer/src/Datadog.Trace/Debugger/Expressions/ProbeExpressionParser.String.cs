@@ -53,18 +53,6 @@ internal partial class ProbeExpressionParser<T>
         return Expression.Call(source, substringMethod, startIndex, lengthExpr);
     }
 
-    private Expression Length(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
-    {
-        var lengthMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(string), "get_Length", Type.EmptyTypes);
-        var source = ParseTree(reader, parameters, itParameter);
-        if (source.Type == ProbeExpressionParserHelper.UndefinedValueType)
-        {
-            return source;
-        }
-
-        return Expression.Call(source, lengthMethod);
-    }
-
     private Expression IsEmpty(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var source = ParseTree(reader, parameters, itParameter);
@@ -80,7 +68,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         // not sure about that, it seems from the RFC that isEmpty should support also collections
-        var collectionCount = CollectionCountExpression(source);
+        var collectionCount = CollectionAndStringLengthExpression(source);
         return Expression.Equal(collectionCount, Expression.Constant(0));
     }
 

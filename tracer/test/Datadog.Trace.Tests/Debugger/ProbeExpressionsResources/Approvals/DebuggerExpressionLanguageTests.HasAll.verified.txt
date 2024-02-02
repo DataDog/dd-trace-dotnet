@@ -1,7 +1,7 @@
 ﻿Condition:
 Json:
 {
-  "hasAll": [
+  "all": [
     {
       "ref": "CollectionLocal"
     },
