@@ -449,6 +449,7 @@ partial class Build
                 "tracer/src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
                 "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                 "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
+                "tracer/src/Datadog.Trace.Manual/Datadog.Trace.Manual.csproj",
                 "tracer/src/Datadog.Tracer.Native/CMakeLists.txt",
                 "tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h",
                 "tracer/src/Datadog.Tracer.Native/Resource.rc",
