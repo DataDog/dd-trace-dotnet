@@ -116,7 +116,8 @@ namespace Datadog.Trace.Security.Unit.Tests
                 if (matches[i])
                 {
                     result.ReturnCode.Should().Be(WafReturnCode.Match);
-                    var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
+                    var jsonString = JsonConvert.SerializeObject(result.Data);
+                    var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
                     if (flow != null)
                     {
                         resultData.Rule.Tags.Type.Should().Be(flow);

@@ -1,22 +1,22 @@
 ﻿Condition:
 Json:
 {
-    "eq": [
+  "eq": [
+    {
+      "getmember": [
         {
-            "getmember": [
-                {
-                    "getmember": [
-                        {
-                            "ref": "Nested"
-                        },
-                        "Nested"
-                    ]
-                },
-                "NestedString"
-            ]
+          "getmember": [
+            {
+              "ref": "Nested"
+            },
+            "Nested"
+          ]
         },
-        "Hello from another nested object"
-    ]
+        "NestedString"
+      ]
+    },
+    "Hello from another nested object"
+  ]
 }
 Expression: (
     scopeMember,

@@ -44,7 +44,9 @@ namespace Datadog.Trace.Tests.Debugger
                 DoubleNumber = 3.14159,
                 String = "Hello world!",
                 Null = null,
-                Nested = new TestStruct.NestedObject { NestedString = "Hello from nested object", Nested = new TestStruct.NestedObject { NestedString = "Hello from another nested object" } }
+                Nested = new TestStruct.NestedObject { NestedString = "Hello from nested object", Nested = new TestStruct.NestedObject { NestedString = "Hello from another nested object" } },
+                ChildNested = new TestStruct.ChildNestedObject(),
+                ParentAsChildNested = new TestStruct.ChildNestedObject()
             };
 
             TestObject.Nested.CreateCircleRef();
@@ -326,10 +328,25 @@ namespace Datadog.Trace.Tests.Debugger
 
             public NestedObject Nested;
 
+            public ChildNestedObject ChildNested;
+
+            public NestedObject ParentAsChildNested;
+
             public NestedObject Null;
 
             internal class NestedObject
             {
+#pragma warning disable SA1401
+#pragma warning disable SA1306
+                // ReSharper disable once UnusedMember.Global
+                protected static string ParentProtectedStaticMember = "Hello from parent protected static member";
+#pragma warning restore SA1401 // Field is assigned but its value is never used
+#pragma warning restore SA1306
+
+#pragma warning disable CS0414 // Field is assigned but its value is never used
+                private string _parentPrivateMember = "Hello from parent private member";
+#pragma warning restore CS0414 // Field is assigned but its value is never used
+
                 private NestedObject _circleRef;
 
                 private TimeSpan _timeSpan = new TimeSpan();
@@ -388,6 +405,18 @@ namespace Datadog.Trace.Tests.Debugger
                 {
                     return _string + _timeSpan.ToString() + _dictionary.ToString() + _ienumerable.ToString() + _listOfLists.ToString() + _readonlyList.ToString();
                 }
+            }
+
+            internal class ChildNestedObject : NestedObject
+            {
+#pragma warning disable SA1401
+                // ReSharper disable once UnusedMember.Global
+                public static string ChildPublicStaticMember = "Hello from child public static static member";
+#pragma warning restore SA1401
+
+#pragma warning disable CS0414 // Field is assigned but its value is never used
+                private string _childPrivateMember = "Hello from child private member";
+#pragma warning restore CS0414 // Field is assigned but its value is never used
             }
         }
     }

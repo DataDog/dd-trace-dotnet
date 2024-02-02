@@ -34,23 +34,32 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
         // RegisterSource(context, "AspectMethodInsertBeforeAttribute");
         // RegisterSource(context, "AspectMethodReplaceAttribute");
 
-        IncrementalValuesProvider<Result<(ClassAspects Aspects, bool IsValid)>> aspectsClassesToGenerate = context.SyntaxProvider
-                                     .ForAttributeWithMetadataName(
-                                          "Datadog.Trace.Iast.Dataflow.AspectClassAttribute",
-                                          predicate: (node, _) => node is ClassDeclarationSyntax,
-                                          transform: GetAspectsToGenerate)
-                                     .Where(static m => m is not null);
+        IncrementalValuesProvider<Result<(ClassAspects Aspects, bool IsValid)>> aspectsClassesToGenerate =
+            context.SyntaxProvider
+                   .ForAttributeWithMetadataName(
+                        "Datadog.Trace.Iast.Dataflow.AspectClassAttribute",
+                        predicate: (node, _) => node is ClassDeclarationSyntax,
+                        transform: GetAspectsToGenerate)
+                   .WithTrackingName(TrackingNames.PostTransform)
+
+                   .Where(static m => m is not null);
 
         context.ReportDiagnostics(
             aspectsClassesToGenerate
                .Where(static m => m.Errors.Count > 0)
-               .SelectMany(static (x, _) => x.Errors));
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.Diagnostics));
 
-        IncrementalValuesProvider<ClassAspects> validClassesToGenerate = aspectsClassesToGenerate
-                                  .Where(static m => m.Value.IsValid)
-                                  .Select(static (x, _) => x.Value.Aspects);
+        IncrementalValuesProvider<ClassAspects> validClassesToGenerate =
+            aspectsClassesToGenerate
+               .Where(static m => m.Value.IsValid)
+               .Select(static (x, _) => x.Value.Aspects)
+               .WithTrackingName(TrackingNames.ValidValues);
 
-        IncrementalValueProvider<ImmutableArray<ClassAspects>> allClassesToGenerate = validClassesToGenerate.Collect();
+        IncrementalValueProvider<ImmutableArray<ClassAspects>> allClassesToGenerate =
+            validClassesToGenerate
+               .Collect()
+               .WithTrackingName(TrackingNames.Collected);
 
         context.RegisterSourceOutput(
             allClassesToGenerate,
