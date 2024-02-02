@@ -1,0 +1,14 @@
+{
+  "dsl": "{instanceof(this.String, System.String)}",
+  "instanceof": [
+    {
+      "getmember": [
+        {
+          "ref": "this"
+        },
+        "String"
+      ]
+    },
+    "System.String"
+  ]
+}

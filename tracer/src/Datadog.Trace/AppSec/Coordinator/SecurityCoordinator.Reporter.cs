@@ -106,14 +106,19 @@ internal readonly partial struct SecurityCoordinator
 
             LogMatchesIfDebugEnabled(result.Data, blocked);
 
-            _localRootSpan.SetTag(Tags.AppSecJson, "{\"triggers\":" + result.Data + "}");
+            var traceContext = _localRootSpan.Context.TraceContext;
+            if (result.Data != null)
+            {
+                traceContext.AddWafSecurityEvents(result.Data);
+            }
+
             var clientIp = _localRootSpan.GetTag(Tags.HttpClientIp);
             if (!string.IsNullOrEmpty(clientIp))
             {
                 _localRootSpan.SetTag(Tags.ActorIp, clientIp);
             }
 
-            if (_localRootSpan.Context.TraceContext is { Origin: null } traceContext)
+            if (traceContext is { Origin: null })
             {
                 _localRootSpan.SetTag(Tags.Origin, "appsec");
                 traceContext.Origin = "appsec";

@@ -130,7 +130,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             ExecuteInternal(address, value, flow, rule, schemaExtraction, false);
         }
 
-        private void ExecuteInternal(string address, object value, string flow, string rule, string schemaExtraction, bool oldEncoder)
+        private void ExecuteInternal(string address, object value, string flow, string rule, string schemaExtraction, bool newEncoder)
         {
             var args = new Dictionary<string, object> { { address, value } };
             var extractSchema = schemaExtraction is not null;
@@ -149,7 +149,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, setupWafSchemaExtraction: extractSchema);
+            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, setupWafSchemaExtraction: extractSchema, useUnsafeEncoder: newEncoder);
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
@@ -157,7 +157,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             if (flow is not null)
             {
                 result.ReturnCode.Should().Be(WafReturnCode.Match);
-                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
+                var jsonString = JsonConvert.SerializeObject(result.Data);
+                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
                 resultData.Rule.Tags.Type.Should().Be(flow);
                 resultData.Rule.Id.Should().Be(rule);
                 resultData.RuleMatches[0].Parameters[0].Address.Should().Be(address);
