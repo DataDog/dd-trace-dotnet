@@ -18,7 +18,7 @@ namespace Datadog.Trace.Ci
 {
     internal sealed class CIEnvironmentValues
     {
-        internal const string RepositoryUrlPattern = @"((http|git|ssh|http(s)|file|\/?)|(git@[\w\.\-]+))(:(\/\/)?)([\w\.@\:/\-~]+)(\.git)(\/)?";
+        internal const string RepositoryUrlPattern = @"((http|git|ssh|http(s)|file|\/?)|(git@[\w\.\-]+))(:(\/\/)?)([\w\.@\:/\-~]+)(\.git)?(\/)?";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
         private static readonly Lazy<CIEnvironmentValues> _instance = new(() => new CIEnvironmentValues());
 
@@ -155,6 +155,9 @@ namespace Datadog.Trace.Ci
         }
 
         private static void SetEnvironmentVariablesIfNotEmpty(Dictionary<string, string> dictionary, params string[] keys)
+            => SetEnvironmentVariablesIfNotEmpty(dictionary, keys, null);
+
+        private static void SetEnvironmentVariablesIfNotEmpty(Dictionary<string, string> dictionary, string[] keys, Func<KeyValuePair<string, string>, string> filter)
         {
             if (dictionary is null || keys is null)
             {
@@ -171,6 +174,11 @@ namespace Datadog.Trace.Ci
                 var value = EnvironmentHelpers.GetEnvironmentVariable(key);
                 if (!string.IsNullOrEmpty(value))
                 {
+                    if (filter is not null)
+                    {
+                        value = filter(new KeyValuePair<string, string>(key, value));
+                    }
+
                     dictionary[key] = value;
                 }
             }
@@ -204,7 +212,14 @@ namespace Datadog.Trace.Ci
             {
                 if (!string.IsNullOrEmpty(uri.UserInfo))
                 {
-                    return uri.GetComponents(UriComponents.Fragment | UriComponents.Query | UriComponents.Path | UriComponents.Port | UriComponents.Host | UriComponents.Scheme, UriFormat.SafeUnescaped);
+                    var value = uri.GetComponents(UriComponents.Fragment | UriComponents.Query | UriComponents.Path | UriComponents.Port | UriComponents.Host | UriComponents.Scheme, UriFormat.SafeUnescaped);
+                    // In some cases `GetComponents` introduces a slash at the end of the url
+                    if (!url.EndsWith("/") && value.EndsWith("/"))
+                    {
+                        value = value.Substring(0, value.Length - 1);
+                    }
+
+                    return value;
                 }
             }
             else
@@ -376,10 +391,19 @@ namespace Datadog.Trace.Ci
                 VariablesToBypass = new Dictionary<string, string>();
                 SetEnvironmentVariablesIfNotEmpty(
                     VariablesToBypass,
-                    Constants.GitHubServerUrl,
+                    [Constants.GitHubServerUrl,
                     Constants.GitHubRepository,
                     Constants.GitHubRunId,
-                    Constants.GitHubRunAttempt);
+                    Constants.GitHubRunAttempt],
+                    kvp =>
+                    {
+                        if (kvp.Key == Constants.GitHubServerUrl)
+                        {
+                            return RemoveSensitiveInformationFromUrl(kvp.Value);
+                        }
+
+                        return kvp.Value;
+                    });
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.TeamCityVersion) != null)
             {
@@ -484,11 +508,6 @@ namespace Datadog.Trace.Ci
             }
 
             // **********
-            // Remove sensitive info from repository url
-            // **********
-            Repository = RemoveSensitiveInformationFromUrl(Repository);
-
-            // **********
             // Expand ~ in Paths
             // **********
 
@@ -589,6 +608,11 @@ namespace Datadog.Trace.Ci
             CommitterName = GetEnvironmentVariableIfIsNotEmpty(Constants.DDGitCommitCommiterName, CommitterName);
             CommitterEmail = GetEnvironmentVariableIfIsNotEmpty(Constants.DDGitCommitCommiterEmail, CommitterEmail);
             CommitterDate = GetDateTimeOffsetEnvironmentVariableIfIsNotEmpty(Constants.DDGitCommitCommiterDate, CommitterDate);
+
+            // **********
+            // Remove sensitive info from repository url
+            // **********
+            Repository = RemoveSensitiveInformationFromUrl(Repository);
 
             // **********
             // Clean Refs
@@ -930,6 +954,8 @@ namespace Datadog.Trace.Ci
             {
                 serverUrl = "https://github.com";
             }
+
+            serverUrl = RemoveSensitiveInformationFromUrl(serverUrl);
 
             var rawRepository = $"{serverUrl}/{EnvironmentHelpers.GetEnvironmentVariable(Constants.GitHubRepository)}";
             Repository = $"{rawRepository}.git";

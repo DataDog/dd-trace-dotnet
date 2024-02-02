@@ -31,6 +31,36 @@
               }
             },
             "locals": {
+              "@exception": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233088"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "Same length."
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": {
+                    "type": "String",
+                    "value": "   at Samples.Probes.TestRuns.SmokeTests.SimpleNestedTypeNameTest.NestedType.MethodToInstrument(String callerName) in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\SmokeTests\\SimpleNestedTypeNameTest.cs:line 24\r\n   at Samples.Probes.TestRuns.SmokeTests.SimpleNestedTypeNameTest.Run() in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\SmokeTests\\SimpleNestedTypeNameTest.cs:line 10\r\n   at Program.RunTest(Object instance, String testClassName) in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\Samples.Probes\\Program.cs:line 61"
+                  }
+                },
+                "type": "IntentionalDebuggerException",
+                "value": "IntentionalDebuggerException"
+              },
               "arr": {
                 "elements": [
                   {

@@ -415,6 +415,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     if (info.MemberKind == ScopeMemberKind.Exception && info.Value != null)
                     {
                         CaptureException(info.Value as Exception);
+                        CaptureLocal(info.Value, "@exception", info.Type);
                     }
                     else if (info.MemberKind == ScopeMemberKind.Return)
                     {
@@ -427,6 +428,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     if (MethodScopeMembers.Exception != null)
                     {
                         CaptureException(MethodScopeMembers.Exception);
+                        CaptureLocal(MethodScopeMembers.Exception, "@exception", MethodScopeMembers.Exception.GetType());
                     }
                     else if (MethodScopeMembers.Return.Type != null)
                     {
@@ -606,6 +608,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     case ScopeMemberKind.Exception:
                         {
                             CaptureException((Exception)member.Value);
+                            CaptureLocal((Exception)member.Value, member.Name, member.Type);
                             break;
                         }
                 }
