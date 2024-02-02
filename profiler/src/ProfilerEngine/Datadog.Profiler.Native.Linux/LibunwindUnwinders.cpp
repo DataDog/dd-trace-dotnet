@@ -62,7 +62,7 @@ std::size_t LibunwindUnwinders::ManualUnwinder::Unwind(void* ctx, shared::span<s
             return nbFrames;
         }
 
-        frames[nbFrames] = ip;
+        frames[nbFrames++] = ip;
 
         resultErrorCode = unw_step(&cursor);
     } while (resultErrorCode > 0 && nbFrames < frames.size());

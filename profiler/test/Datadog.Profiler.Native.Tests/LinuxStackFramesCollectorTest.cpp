@@ -338,7 +338,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWith
     StackSnapshotResultBuffer* buffer;
 
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
-    EXPECT_EQ(hr, S_OK);
+    ASSERT_EQ(hr, S_OK);
 
     std::vector<uintptr_t> ips;
     buffer->CopyInstructionPointers(ips);
