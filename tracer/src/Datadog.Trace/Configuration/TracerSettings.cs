@@ -159,7 +159,7 @@ namespace Datadog.Trace.Configuration
             GlobalTagsInternal = config
                         // backwards compatibility for names used in the past
                         .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
-                        .AsDictionary()
+                        .AsDictionary(() => new Dictionary<string, string>())
                        // Filter out tags with empty keys or empty values, and trim whitespace
                        ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                         .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())
@@ -1043,7 +1043,7 @@ namespace Datadog.Trace.Configuration
         {
             var configurationDictionary = config
                    .WithKeys(key)
-                   .AsDictionary(allowOptionalMappings: true);
+                   .AsDictionary(allowOptionalMappings: true, () => new Dictionary<string, string>());
 
             if (configurationDictionary == null)
             {
