@@ -58,7 +58,7 @@ namespace Datadog.Trace.Configuration
             _origin = origin;
         }
 
-        internal bool TreatNullDictionaryAsEmpty { get; set; } = false;
+        internal bool TreatNullDictionaryAsEmpty { get; set; } = true;
 
         /// <summary>
         /// Creates a new <see cref="JsonConfigurationSource"/> instance
