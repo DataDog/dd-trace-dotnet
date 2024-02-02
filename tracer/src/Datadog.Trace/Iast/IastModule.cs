@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Aspects.System;
 using Datadog.Trace.Iast.Propagation;
@@ -228,7 +229,14 @@ internal static class IastModule
 
     internal static EvidenceRedactor? CreateRedactor(IastSettings settings)
     {
-        return settings.RedactionEnabled ? new EvidenceRedactor(settings.RedactionKeysRegex, settings.RedactionValuesRegex, TimeSpan.FromMilliseconds(settings.RegexTimeout)) : null;
+        var timeout = TimeSpan.FromMilliseconds(settings.RegexTimeout);
+
+        if (timeout.TotalMilliseconds == 0)
+        {
+            timeout = Regex.InfiniteMatchTimeout;
+        }
+
+        return settings.RedactionEnabled ? new EvidenceRedactor(settings.RedactionKeysRegex, settings.RedactionValuesRegex, timeout) : null;
     }
 
     private static string BuildCommandInjectionEvidence(string file, string argumentLine, Collection<string>? argumentList)
