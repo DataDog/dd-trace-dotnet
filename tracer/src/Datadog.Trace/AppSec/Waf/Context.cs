@@ -84,7 +84,7 @@ namespace Datadog.Trace.AppSec.Waf
                 var persistentParameters = persistentAddressData == null ? string.Empty : Encoder.FormatArgs(persistentAddressData);
                 var ephemeralParameters = ephemeralAddressData == null ? string.Empty : Encoder.FormatArgs(ephemeralAddressData);
                 Log.Debug(
-                    "DDAS-0010-00: Executing AppSec In-App WAF with persistent parameters: {PersistentParameters}, ephemeral parameters: {EphemeralParameters}",
+                    "DDAS-0010-00: Executing AppSec In-App WAF with parameters: persistent: {PersistentParameters}, ephemeral: {EphemeralParameters}",
                     persistentParameters,
                     ephemeralParameters);
             }
