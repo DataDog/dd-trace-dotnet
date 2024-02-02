@@ -206,5 +206,19 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             settings.MaxStackTraceDepth.Should().Be(expected);
         }
+
+        [Theory]
+        [InlineData("1", 1)]
+        [InlineData("0", 0)]
+        [InlineData("100", 100)]
+        [InlineData("-1", 2)]
+        [InlineData("AAA", 2)]
+        public void MaxStackTraces(string maxStackTracesValue, int expected)
+        {
+            var source = CreateConfigurationSource([(ConfigurationKeys.AppSec.MaxStackTraces, maxStackTracesValue)]);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
+
+            settings.MaxStackTraceDepth.Should().Be(expected);
+        }
     }
 }
