@@ -588,6 +588,11 @@ namespace Datadog.Trace.Tools.Runner
                     Log.Warning("EnsureDatadogTraceIsInTheGac: Call to `gacutil /l` failed.");
                 }
             }
+            else
+            {
+                // `gacutil` cannot be found
+                Log.Warning("EnsureDatadogTraceIsInTheGac: gacutil cannot be found.");
+            }
 
             return false;
         }
