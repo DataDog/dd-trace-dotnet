@@ -1,7 +1,7 @@
 {
-    "dsl": "count(SomeCollection)",
-    "count": [
-        "# SomeCollection should have a 'ref' prefix",
-        "SomeCollection"
-    ]
+  "dsl": "len(Nested)",
+  "len": [
+    "# Nested is not a collection neither a string",
+    { "ref": "Nested" }
+  ]
 }

@@ -2,10 +2,10 @@
 Segments: 
 
 {
-    "count": [
-        "# SomeCollection should have a 'ref' prefix",
-        "SomeCollection"
-    ]
+  "len": [
+    "# Nested is not a collection neither a string",
+    { "ref": "Nested" }
+  ]
 }
 Expressions: 
 (
@@ -37,4 +37,4 @@ Expressions:
 }
 Result: The result of the expression is: UndefinedValue
 Errors:
-EvaluationError { Expression = "SomeCollection".Count, Message = Source must be an array or implement ICollection or IReadOnlyCollection }
+EvaluationError { Expression = this.Nested.Count, Message = Source must be an array or implement ICollection or IReadOnlyCollection }

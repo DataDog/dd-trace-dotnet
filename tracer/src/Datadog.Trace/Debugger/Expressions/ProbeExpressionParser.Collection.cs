@@ -149,7 +149,7 @@ internal partial class ProbeExpressionParser<T>
         return Expression.Convert(getItemCall, convertToType);
     }
 
-    private Expression Count(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    private Expression Length(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         Expression source = null;
         try
@@ -160,7 +160,7 @@ internal partial class ProbeExpressionParser<T>
                 return ReturnDefaultValueExpression();
             }
 
-            return CollectionCountExpression(source);
+            return CollectionAndStringLengthExpression(source);
         }
         catch (Exception e)
         {
@@ -169,8 +169,14 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    private MethodCallExpression CollectionCountExpression(Expression source)
+    private MethodCallExpression CollectionAndStringLengthExpression(Expression source)
     {
+        if (source?.Type == typeof(string))
+        {
+            var lengthMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(string), "get_Length", Type.EmptyTypes);
+            return Expression.Call(source, lengthMethod);
+        }
+
         if (!IsTypeSupportCount(source))
         {
             throw new InvalidOperationException("Source must be an array or implement ICollection or IReadOnlyCollection");

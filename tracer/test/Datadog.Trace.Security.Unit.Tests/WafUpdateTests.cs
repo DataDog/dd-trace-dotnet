@@ -155,7 +155,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             if (spectedResult == WafReturnCode.Match)
             {
                 var rule = attackParts[2];
-                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
+                var jsonString = JsonConvert.SerializeObject(result.Data);
+                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
                 resultData.Rule.Id.Should().Be(rule);
                 resultData.RuleMatches[0].Parameters[0].Address.Should().Be(address);
             }

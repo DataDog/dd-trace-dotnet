@@ -2,7 +2,7 @@
   "dsl": "filter(ref CollectionLocal, { len(@it) > 4 })",
   "gt": [
     {
-      "count": {
+      "len": {
         "filter": [
           {
             "ref": "CollectionLocal"

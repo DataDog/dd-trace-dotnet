@@ -41,23 +41,26 @@ public class TelemetryMetricGenerator : IIncrementalGenerator
                         TelemetryMetricTypeAttributeFullName,
                         static (node, _) => node is EnumDeclarationSyntax,
                         static (context, ct) => GetTypeToGenerate(context, ct))
+                   .WithTrackingName(TrackingNames.PostTransform)
                    .Where(static m => m is not null)!;
 
         context.ReportDiagnostics(
             enums
                .Where(static m => m.Errors.Count > 0)
-               .SelectMany(static (x, _) => x.Errors));
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.Diagnostics));
 
         var validEnums = enums
                         .Where(static m => m.Value.IsValid)
-                        .Select(static (x, _) => x.Value.EnumDetails);
+                        .Select(static (x, _) => x.Value.EnumDetails)
+                        .WithTrackingName(TrackingNames.ValidValues);
 
         context.RegisterSourceOutput(
             validEnums,
             static (spc, source) => GenerateEnumSpecificCollectors(in source, spc));
 
         context.RegisterSourceOutput(
-            validEnums.Collect(),
+            validEnums.Collect().WithTrackingName(TrackingNames.Collected),
             static (spc, source) => GenerateAggregateCollectors(in source, spc));
     }
 

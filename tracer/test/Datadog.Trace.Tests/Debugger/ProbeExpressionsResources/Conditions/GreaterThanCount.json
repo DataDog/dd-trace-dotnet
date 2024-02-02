@@ -1,8 +1,8 @@
 {
-  "dsl": "count(ref CollectionLocal) > 2",
+  "dsl": "len(ref CollectionLocal) > 2",
   "gt": [
     {
-      "count": [
+      "len": [
         {
           "ref": "CollectionLocal"
         }
