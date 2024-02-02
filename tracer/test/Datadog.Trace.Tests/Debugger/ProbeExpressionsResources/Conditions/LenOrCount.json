@@ -1,5 +1,5 @@
 {
-  "dsl": "len(ref String) > 2 || count(ref CollectionLocal) > 2",
+  "dsl": "len(ref String) > 2 || len(ref CollectionLocal) > 2",
   "or": [
     {
       "gt": [
@@ -16,7 +16,7 @@
     {
       "gt": [
         {
-          "count": [
+          "len": [
             {
               "ref": "CollectionLocal"
             }
