@@ -343,12 +343,17 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("key1:value1,key2:value2", true, new[] { "key1:value1", "key2:value2" })]
-        [InlineData("key1 :value1,empty,key2: value2", true, new[] { "key1:value1", "empty:", "key2:value2" })]
+        // null, empty, whitespace
         [InlineData(null, true, new string[0])]
         [InlineData("", true, new string[0])]
-        [InlineData("key1 :val.ue1?", false, new[] { "key1:val_ue1_" })]
-        [InlineData("key1 :val.ue1?", true, new[] { "key1:val.ue1_" })]
+        [InlineData("   ", true, new string[0])]
+        // nominal
+        [InlineData("key1:value1,key2:value2,key3", true, new[] { "key1:value1", "key2:value2", "key3:" })]
+        // trim whitespace
+        [InlineData(" key1 : value1 ", true, new[] { "key1:value1" })]
+        // other normalization
+        [InlineData("key1:val.u e1?!", true, new[] { "key1:val.u e1?!" })]
+        [InlineData("k.e y?!1", false, new[] { "k.e y?!1:" })]
         public void HeaderTags(string value, bool normalizationFixEnabled, string[] expected)
         {
             var source = CreateConfigurationSource(
@@ -357,6 +362,28 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.HeaderTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
+        }
+
+        [Theory]
+        // null, empty, whitespace
+        [InlineData(null, true, new string[0])]
+        [InlineData("", true, new string[0])]
+        [InlineData("   ", true, new string[0])]
+        // nominal
+        [InlineData("key1:value1,key2:value2,key3", true, new[] { "key1:value1", "key2:value2", "key3:" })]
+        // trim whitespace
+        [InlineData(" key1 : value1 ", true, new[] { "key1:value1" })]
+        // other normalization
+        [InlineData("key1:val.u e1?!", true, new[] { "key1:val.u e1?!" })]
+        [InlineData("k.e y?!1", false, new[] { "k.e y?!1:" })]
+        public void GrpcTags(string value, bool normalizationFixEnabled, string[] expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.GrpcTags, value),
+                (ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled, normalizationFixEnabled ? "1" : "0"));
+            var settings = new TracerSettings(source);
+
+            settings.GrpcTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
         }
 
         [Theory]
@@ -748,20 +775,6 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.TraceMethods.Should().Be(expected);
-        }
-
-        [Theory]
-        [InlineData("key1:value1,key2:value2", new[] { "key1:value1", "key2:value2" })]
-        [InlineData("key1 :value1,empty,key2: value2", new[] { "key1:value1", "empty:", "key2:value2" })]
-        [InlineData(null, new string[0])]
-        [InlineData("", new string[0])]
-        [InlineData("key1 :val.ue1?", new[] { "key1:val.ue1_" })]
-        public void GrpcTags(string value, string[] expected)
-        {
-            var source = CreateConfigurationSource((ConfigurationKeys.GrpcTags, value));
-            var settings = new TracerSettings(source);
-
-            settings.GrpcTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
         }
 
         [Theory]
