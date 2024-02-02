@@ -218,7 +218,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var source = CreateConfigurationSource([(ConfigurationKeys.AppSec.MaxStackTraces, maxStackTracesValue)]);
             var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.MaxStackTraceDepth.Should().Be(expected);
+            settings.MaxStackTraces.Should().Be(expected);
         }
     }
 }
