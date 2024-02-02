@@ -15,7 +15,6 @@ internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
         ServiceNameInternal = settings.ServiceNameInternal;
         ServiceVersionInternal = settings.ServiceVersionInternal;
         TraceEnabledInternal = settings.TraceEnabledInternal;
-        ProfilingEnabledInternal = settings.ProfilingEnabledInternal;
         DisabledIntegrationNamesInternal = GetHashSet(settings.DisabledIntegrationNamesInternal);
         AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
         MaxTracesSubmittedPerSecondInternal = settings.MaxTracesSubmittedPerSecondInternal;
@@ -35,7 +34,6 @@ internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
     private string? ServiceNameInternal { get; }
     private string? ServiceVersionInternal { get; }
     private bool TraceEnabledInternal { get; }
-    private bool ProfilingEnabledInternal { get; }
     private System.Collections.Generic.HashSet<string>? DisabledIntegrationNamesInternal { get; }
     private bool AnalyticsEnabledInternal { get; }
     private int MaxTracesSubmittedPerSecondInternal { get; }
@@ -55,7 +53,6 @@ internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
         RecordIfChanged(telemetry, "DD_SERVICE", ServiceNameInternal, settings.ServiceNameInternal);
         RecordIfChanged(telemetry, "DD_VERSION", ServiceVersionInternal, settings.ServiceVersionInternal);
         RecordIfChanged(telemetry, "DD_TRACE_ENABLED", TraceEnabledInternal, settings.TraceEnabledInternal);
-        RecordIfChanged(telemetry, "DD_PROFILING_ENABLED", ProfilingEnabledInternal, settings.ProfilingEnabledInternal);
         RecordIfChanged(telemetry, "DD_DISABLED_INTEGRATIONS", DisabledIntegrationNamesInternal, GetHashSet(settings.DisabledIntegrationNamesInternal));
         RecordIfChanged(telemetry, "DD_TRACE_ANALYTICS_ENABLED", AnalyticsEnabledInternal, settings.AnalyticsEnabledInternal);
         RecordIfChanged(telemetry, "DD_TRACE_RATE_LIMIT", MaxTracesSubmittedPerSecondInternal, settings.MaxTracesSubmittedPerSecondInternal);

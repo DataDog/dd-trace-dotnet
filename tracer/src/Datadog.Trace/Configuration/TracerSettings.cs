@@ -485,12 +485,11 @@ namespace Datadog.Trace.Configuration
         internal bool TraceEnabledInternal { get; private set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether profiling is enabled.
-        /// Default is <c>true</c>.
+        /// Gets a value indicating whether profiling is enabled.
+        /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ContinuousProfiler.ConfigurationKeys.ProfilingEnabled"/>
-        [ConfigKey(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)]
-        internal bool ProfilingEnabledInternal { get; private set; }
+        internal bool ProfilingEnabledInternal { get; }
 
         /// <summary>
         /// Gets or sets the names of disabled integrations.

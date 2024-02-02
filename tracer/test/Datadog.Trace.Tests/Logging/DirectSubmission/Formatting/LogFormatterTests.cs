@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -177,14 +178,15 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
             HasExpectedValue(log, !hasRenderedSource, $"\"ddsource\":\"{Source}\"");
             HasExpectedValue(log, !hasRenderedService, $"\"service\":\"{Service}\"");
             HasExpectedValue(log, !hasRenderedHost, $"\"host\":\"{Host}\"");
-            var (shouldContainLogs, expectedLogValue) = (isInAas, hasRenderedTags) switch
+
+            (string Key, string Value)[] expectedTags = (isInAas, hasRenderedTags) switch
             {
-                (_, true) => (false, "\"ddtags\""), // if the log itself adds this, we don't add the global tags currently
-                (true, false) => (true, $"\"ddtags\":\"aas.resource.id:{aasSettings!.ResourceId},Key1:Value1,Key2:Value2\""),
-                (false, false) => (true, $"\"ddtags\":\"Key1:Value1,Key2:Value2\""),
+                (_, true) => null, // if the log itself adds this, we don't add the global tags currently
+                (true, false) => [("aas.resource.id", aasSettings!.ResourceId), ("Key1", "Value1"), ("Key2", "Value2")],
+                (false, false) => [("Key1", "Value1"), ("Key2", "Value2")],
             };
 
-            HasExpectedValue(log, shouldContainLogs, expectedLogValue);
+            HasExpectedTags(log, expectedTags);
             HasExpectedValue(log, !hasRenderedEnv, $"\"dd_env\":\"{Env}\"");
             HasExpectedValue(log, !hasRenderedVersion, $"\"dd_version\":\"{Version}\"");
 
@@ -197,6 +199,42 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
                     hasRenderedEnv: hasRenderedEnv,
                     hasRenderedVersion: hasRenderedVersion,
                     messageTemplate: null);
+
+            static List<(string Key, string Value)> ExtractTags(string log)
+            {
+                var match = Regex.Match(log, "\"ddtags\":\"(.*)\"");
+
+                if (!match.Success)
+                {
+                    return null;
+                }
+
+                var tags = match.Groups[1].Value;
+
+                var result = new List<(string Key, string Value)>();
+
+                foreach (var item in tags.Split(','))
+                {
+                    var values = item.Split(':');
+                    result.Add((values[0], values[1]));
+                }
+
+                return result;
+            }
+
+            static void HasExpectedTags(string log, (string Key, string Value)[] expectedTags)
+            {
+                var actualTags = ExtractTags(log);
+
+                if (expectedTags == null)
+                {
+                    actualTags.Should().BeNull();
+                }
+                else
+                {
+                    actualTags.Should().BeEquivalentTo(expectedTags);
+                }
+            }
 
             static void HasExpectedValue(string log, bool shouldContain, string value)
             {
