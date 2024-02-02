@@ -246,18 +246,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // (ConfigurationKeys.CustomSamplingRules, config.CustomSamplingRules),
                 // (ConfigurationKeys.SpanSamplingRules, config.SpanSamplingRules),
                 // (ConfigurationKeys.DataStreamsMonitoring.Enabled, config.DataStreamsEnabled),
-                (ConfigurationKeys.HeaderTags, config.TraceHeaderTags == null ? string.Empty : JToken.Parse(config.TraceHeaderTags).ToString()),
+                (ConfigurationKeys.HeaderTags, config.TraceHeaderTags == null ? null : JToken.Parse(config.TraceHeaderTags).ToString()),
                 // (ConfigurationKeys.ServiceNameMappings, config.ServiceNameMapping == null ? string.Empty : JToken.Parse(config.ServiceNameMapping).ToString())
-                (ConfigurationKeys.GlobalTags, config.GlobalTags == null ? string.Empty : JToken.Parse(config.GlobalTags).ToString()),
+                (ConfigurationKeys.GlobalTags, config.GlobalTags == null ? null : JToken.Parse(config.GlobalTags).ToString()),
                 ("logs_injection_enabled", config.LogInjectionEnabled.ToString().ToLowerInvariant()),
-                ("trace_header_tags", config.TraceHeaderTags == null ? string.Empty : JToken.Parse(config.TraceHeaderTags).ToString()),
-                ("trace_tags", config.GlobalTags == null ? string.Empty : JToken.Parse(config.GlobalTags).ToString())
+                ("trace_sample_rate", config.TraceSampleRate?.ToString("0.0###", CultureInfo.InvariantCulture)),
+                ("trace_header_tags", config.TraceHeaderTags == null ? null : JToken.Parse(config.TraceHeaderTags).ToString()),
+                ("trace_tags", config.GlobalTags == null ? null : JToken.Parse(config.GlobalTags).ToString())
             };
-
-            if (config.TraceSampleRate != null)
-            {
-                expectedKeys.Add(("trace_sample_rate", config.TraceSampleRate.Value.ToString("0.0###", CultureInfo.InvariantCulture)));
-            }
 
             var expectedCount = expectedKeys.Count(k => k.Value is not null);
 
