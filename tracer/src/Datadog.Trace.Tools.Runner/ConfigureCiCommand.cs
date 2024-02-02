@@ -64,7 +64,7 @@ namespace Datadog.Trace.Tools.Runner
                 _applicationContext.Platform,
                 _tracerSettings,
                 reducePathLength: true,
-                enableGacInstallation: CIVisibility.Settings.InstallDatadogTraceInGac);
+                ciVisibilityOptions: new(CIVisibility.Settings.InstallDatadogTraceInGac, true));
 
             if (profilerEnvironmentVariables == null)
             {

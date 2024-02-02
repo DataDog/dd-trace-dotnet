@@ -33,7 +33,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             try
             {
-                StartupLogger.Debug("Assembly Resolve event received for: '{0}'", args.Name);
                 return ResolveAssembly(args.Name);
             }
             catch (Exception ex)

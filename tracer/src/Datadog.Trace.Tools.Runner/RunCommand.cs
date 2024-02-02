@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tools.Runner
             var arguments = args.Length > 1 ? Utils.GetArgumentsAsString(args.Skip(1)) : string.Empty;
 
             // Get profiler environment variables
-            if (!RunHelper.TryGetEnvironmentVariables(_applicationContext, context, _runSettings, false, out var profilerEnvironmentVariables))
+            if (!RunHelper.TryGetEnvironmentVariables(_applicationContext, context, _runSettings, out var profilerEnvironmentVariables))
             {
                 context.ExitCode = 1;
                 return;
