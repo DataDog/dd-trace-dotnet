@@ -358,6 +358,7 @@
   "DD_CIVISIBILITY_ITR_ENABLED": "ci_visibility_intelligent_test_runner_enabled",
   "DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY": "ci_visibility_force_agent_evp_proxy_enabled",
   "DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH": "ci_visibility_code_coverage_external_path",
+  "DD_CIVISIBILITY_GAC_INSTALL_ENABLED": "ci_visibility_gac_install_enabled",
   "DD_PROXY_HTTPS": "proxy_https",
   "DD_PROXY_NO_PROXY": "proxy_no_proxy",
   "DD_TRACE_DEBUG_LOOKUP_MDTOKEN": "trace_lookup_mdtoken_enabled",

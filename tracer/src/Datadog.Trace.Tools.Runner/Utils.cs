@@ -14,9 +14,11 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Spectre.Console;
 
@@ -25,6 +27,8 @@ namespace Datadog.Trace.Tools.Runner
     internal class Utils
     {
         public const string Profilerid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Utils));
 
         public static string GetHomePath(string runnerFolder)
         {
@@ -38,11 +42,11 @@ namespace Datadog.Trace.Tools.Runner
             return DirectoryExists("Home", Path.Combine(runnerFolder, "..", "..", "..", "home"), Path.Combine(runnerFolder, "home"));
         }
 
-        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, CommonTracerSettings options, bool reducePathLength)
+        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, CommonTracerSettings options, bool reducePathLength, CIVisibilityOptions ciVisibilityOptions)
         {
             var tracerHomeFolder = options.TracerHome.GetValue(context);
 
-            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, tracerHomeFolder, reducePathLength);
+            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, tracerHomeFolder, reducePathLength, ciVisibilityOptions);
 
             var environment = options.Environment.GetValue(context);
 
@@ -75,9 +79,9 @@ namespace Datadog.Trace.Tools.Runner
             return envVars;
         }
 
-        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, LegacySettings options, bool reducePathLength)
+        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, LegacySettings options, bool reducePathLength, CIVisibilityOptions ciVisibilityOptions)
         {
-            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, options.TracerHomeFolderOption.GetValue(context), reducePathLength);
+            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, options.TracerHomeFolderOption.GetValue(context), reducePathLength, ciVisibilityOptions);
 
             var environment = options.EnvironmentOption.GetValue(context);
 
@@ -407,7 +411,7 @@ namespace Datadog.Trace.Tools.Runner
             return false;
         }
 
-        private static Dictionary<string, string> GetBaseProfilerEnvironmentVariables(string runnerFolder, Platform platform, string tracerHomeFolder, bool reducePathLength)
+        private static Dictionary<string, string> GetBaseProfilerEnvironmentVariables(string runnerFolder, Platform platform, string tracerHomeFolder, bool reducePathLength, CIVisibilityOptions ciVisibilityOptions = null)
         {
             string tracerHome = null;
             if (!string.IsNullOrEmpty(tracerHomeFolder))
@@ -451,12 +455,35 @@ namespace Datadog.Trace.Tools.Runner
             string tracerProfiler64 = string.Empty;
             string tracerProfilerArm64 = null;
             string ldPreload = string.Empty;
+            string devPath = string.Empty;
 
             if (platform == Platform.Windows)
             {
                 tracerProfiler32 = FileExists(Path.Combine(tracerHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
                 tracerProfiler64 = FileExists(Path.Combine(tracerHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
                 tracerProfilerArm64 = FileExistsOrNull(Path.Combine(tracerHome, "win-ARM64EC", "Datadog.Trace.ClrProfiler.Native.dll"));
+
+                if (ciVisibilityOptions is not null)
+                {
+                    // For full compatibility with .NET Framework we need to either install Datadog.Trace.dll to the GAC or enable Development mode for vstest.console
+                    // This is a best effort approach by:
+                    //   1. Check if `Datadog.Trace` is installed in the gac using `gacutil`, if not, we try to install it.
+                    //   2. If that doesn't work we try to locate `vstest.console.exe.config` to enable debug mode on this
+                    //      command so we can inject the DevPath environment variable
+                    var installedInGac = false;
+                    if (ciVisibilityOptions.EnableGacInstallation)
+                    {
+                        installedInGac = EnsureDatadogTraceIsInTheGac(tracerHome);
+                    }
+
+                    if (!installedInGac && ciVisibilityOptions.EnableVsTestConsoleConfigModification)
+                    {
+                        if (EnsureNETFrameworkVSTestConsoleDevPathSupport())
+                        {
+                            devPath = Path.Combine(tracerHome, "net461");
+                        }
+                    }
+                }
             }
             else if (platform == Platform.Linux)
             {
@@ -509,7 +536,162 @@ namespace Datadog.Trace.Tools.Runner
                 envVars["COR_PROFILER_PATH_ARM64"] = tracerProfilerArm64;
             }
 
+            if (!string.IsNullOrEmpty(devPath))
+            {
+                envVars["DEVPATH"] = devPath;
+            }
+
             return envVars;
+        }
+
+        private static bool EnsureDatadogTraceIsInTheGac(string tracerHome)
+        {
+            // We try to ensure Datadog.Trace.dll is installed in the gac for compatibility with .NET Framework fusion class loader
+            // Let's find gacutil, because CI Visibility runs with the SDK / CI environments it's probable that's available.
+            var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("where", "gacutil"));
+            if (cmdResponse?.ExitCode == 0 &&
+                cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
+                outputLines[0] is { Length: > 0 } gacPath)
+            {
+                Log.Debug("EnsureDatadogTraceIsInTheGac: gacutil was found.");
+                var cmdGacListResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command(gacPath, "/l"));
+                if (cmdGacListResponse?.ExitCode == 0)
+                {
+                    if (cmdGacListResponse.Output?.Contains(typeof(TracerConstants).Assembly.FullName!, StringComparison.OrdinalIgnoreCase) != true)
+                    {
+                        // Datadog.Trace is not in the GAC, let's try to install it.
+                        // We run the gacutil /i command using runas verb to elevate privileges
+                        Log.Warning("EnsureDatadogTraceIsInTheGac: Datadog.Trace is not in the GAC, let's try to install it.");
+                        WriteInfo("Datadog.Trace is not installed in the GAC, the installation will require Administrator permissions. Installing...");
+                        if (FileExistsOrNull(Path.Combine(tracerHome, "net461", "Datadog.Trace.dll")) is { } datadogTraceDllPath &&
+                            ProcessHelpers.RunCommand(new ProcessHelpers.Command(gacPath, $"/if {datadogTraceDllPath}", verb: "runas")) is { } cmdGacInstallResponse)
+                        {
+                            if (cmdGacInstallResponse.ExitCode == 0)
+                            {
+                                // gacutil install was successful.
+                                Log.Information("EnsureDatadogTraceIsInTheGac: Datadog.Trace was installed in the gac.");
+                                WriteInfo("Datadog.Trace was installed in the GAC.");
+                                return true;
+                            }
+
+                            Log.Warning("EnsureDatadogTraceIsInTheGac: gacutil returned an error, Datadog.Trace was not installed in the gac.");
+                            WriteInfo("Datadog.Trace was not installed in the GAC.");
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        // Datadog.Trace is in the GAC, do nothing
+                        Log.Information("EnsureDatadogTraceIsInTheGac: Datadog.Trace is already installed in the gac.");
+                        return true;
+                    }
+                }
+                else
+                {
+                    // `gacutil /l` failed
+                    Log.Warning("EnsureDatadogTraceIsInTheGac: Call to `gacutil /l` failed.");
+                }
+            }
+            else
+            {
+                // `gacutil` cannot be found
+                Log.Warning("EnsureDatadogTraceIsInTheGac: gacutil cannot be found.");
+            }
+
+            return false;
+        }
+
+        private static bool EnsureNETFrameworkVSTestConsoleDevPathSupport()
+        {
+            // As a final workaround for .NET Framework compatibility we can use the DevPath approach.
+            // https://learn.microsoft.com/en-us/dotnet/framework/configure-apps/how-to-locate-assemblies-by-using-devpath
+            // .NET Framework tests runs using `vstest.console.exe` console app. So we need to locate this file and modify
+            // the configuration `vstest.console.exe.config` file to add:
+            /*
+                <configuration>
+                  <runtime>
+                    <developmentMode developerInstallation="true"/>
+                  </runtime>
+                </configuration>
+             */
+
+            Log.Debug("EnsureNETFrameworkVSTestConsoleDevPathSupport: Looking for vstest.console");
+            var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("where", "vstest.console"));
+            if (cmdResponse?.ExitCode == 0 &&
+                cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
+                outputLines[0] is { Length: > 0 } vstestConsolePath)
+            {
+                Log.Debug("EnsureNETFrameworkVSTestConsoleDevPathSupport: vstest.console was found.");
+                var configPath = $"{vstestConsolePath.Trim()}.config";
+                if (File.Exists(configPath))
+                {
+                    try
+                    {
+                        Log.Debug("EnsureNETFrameworkVSTestConsoleDevPathSupport: vstest.console configuration file was found.");
+                        var configContent = File.ReadAllText(configPath);
+                        var xmlDocument = new XmlDocument();
+                        xmlDocument.LoadXml(configContent);
+                        var xmlDoc = xmlDocument.DocumentElement!;
+                        var isDirty = false;
+                        var runtimeNode = xmlDoc["runtime"];
+                        if (runtimeNode is null)
+                        {
+                            runtimeNode = (XmlElement)xmlDoc.AppendChild(xmlDocument.CreateElement("runtime"))!;
+                            isDirty = true;
+                        }
+
+                        var developmentModeNode = runtimeNode["developmentMode"];
+                        if (developmentModeNode is null)
+                        {
+                            developmentModeNode = (XmlElement)runtimeNode.AppendChild(xmlDocument.CreateElement("developmentMode"))!;
+                            isDirty = true;
+                        }
+
+                        var developerInstallationAttribute = developmentModeNode.Attributes["developerInstallation"];
+                        if (developerInstallationAttribute is null)
+                        {
+                            developmentModeNode.SetAttribute("developerInstallation", "true");
+                            isDirty = true;
+                        }
+                        else if (developerInstallationAttribute.Value != "true")
+                        {
+                            developerInstallationAttribute.Value = "true";
+                            isDirty = true;
+                        }
+
+                        if (isDirty)
+                        {
+                            try
+                            {
+                                var outerXml = xmlDocument.OuterXml;
+                                Log.Debug("EnsureNETFrameworkVSTestConsoleDevPathSupport: vstest.console configuration file content: {Content}", outerXml);
+                                File.WriteAllText(configPath, outerXml);
+                                Log.Information("EnsureNETFrameworkVSTestConsoleDevPathSupport: vstest.console configuration file has been configured as developer mode.");
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error(ex, "EnsureNETFrameworkVSTestConsoleDevPathSupport: Error writing the vstest.console configuration file.");
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            Log.Information("EnsureNETFrameworkVSTestConsoleDevPathSupport: vstest.console configuration file was already configured as developer mode.");
+                        }
+
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "EnsureNETFrameworkVSTestConsoleDevPathSupport: Error writing the vstest.console configuration file.");
+                        return false;
+                    }
+                }
+
+                Log.Warning("EnsureNETFrameworkVSTestConsoleDevPathSupport: vstest.console configuration file was not found.");
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -627,6 +809,11 @@ namespace Datadog.Trace.Tools.Runner
             {
                 File.Copy(newPath, newPath.Replace(sourcePath, targetPath), true);
             }
+        }
+
+        public record CIVisibilityOptions(bool EnableGacInstallation, bool EnableVsTestConsoleConfigModification)
+        {
+            public static CIVisibilityOptions None { get; } = new(false, false);
         }
     }
 }
