@@ -18,6 +18,8 @@ public:
     virtual bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) = 0;
     virtual bool SetThreadName(ThreadID clrThreadId, const shared::WSTRING& threadName) = 0;
     virtual uint32_t Count() = 0;
+    virtual uint32_t GetHighCountAndReset() = 0;
+    virtual uint32_t GetLowCountAndReset() = 0;
     virtual uint32_t CreateIterator() = 0;
     virtual std::shared_ptr<ManagedThreadInfo> LoopNext(uint32_t iterator) = 0;
     virtual HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) = 0;

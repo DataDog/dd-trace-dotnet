@@ -37,7 +37,8 @@ namespace Samples.Computer01
         OpenLdapCrash,
         SocketTimeout,
         ForceSigSegvHandler,
-        Obfuscation
+        Obfuscation,
+        ThreadSpikes,
     }
 
     public class Program
@@ -72,6 +73,7 @@ namespace Samples.Computer01
             // 22: check socket timeout (linux)
             // 23: sigsegv handling validation
             // 24: use an obfuscated library
+            // 25: create thread spikes
             //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--service] [--iterations <number of iterations to execute>] " +
