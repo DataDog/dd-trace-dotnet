@@ -43,11 +43,11 @@ struct ThreadInfo
     uintptr_t ClassId = 0;
 
 public:
-    inline bool LastEventWasContentionStart()
+    const inline bool LastEventWasContentionStart()
     {
         return LastEventId == EventId::ContentionStart;
     }
-    inline bool LastEventWasAllocationTick()
+    const inline bool LastEventWasAllocationTick()
     {
         return LastEventId == EventId::AllocationTick;
     }
@@ -71,12 +71,12 @@ public:
         );
 
 // Inherited via IEtwEventsManager
-    virtual void Register(IGarbageCollectionsListener* pGarbageCollectionsListener) override;
-    virtual bool Start() override;
-    virtual void Stop() override;
+    void Register(IGarbageCollectionsListener* pGarbageCollectionsListener) override;
+    bool Start() override;
+    void Stop() override;
 
 // Inherited via IEtwEventsReceiver
-    virtual void OnEvent(
+    void OnEvent(
         uint64_t systemTimestamp,
         uint32_t tid,
         uint32_t version,
@@ -85,7 +85,7 @@ public:
         uint32_t id,
         uint32_t cbEventData,
         const uint8_t* pEventData) override;
-    virtual void OnStop() override;
+    void OnStop() override;
 
 private:
     ThreadInfo* GetOrCreate(uint32_t tid);

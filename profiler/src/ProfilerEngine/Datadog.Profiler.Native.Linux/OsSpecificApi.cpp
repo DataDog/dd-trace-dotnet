@@ -352,7 +352,8 @@ std::string GetProcessStartTime()
 std::unique_ptr<IEtwEventsManager> CreateEtwEventsManager(
     IAllocationsListener* pAllocationListener,
     IContentionListener* pContentionListener,
-    IGCSuspensionsListener* pGCSuspensionsListener)
+    IGCSuspensionsListener* pGCSuspensionsListener,
+    IConfiguration* pConfiguration)
 {
     // No ETW implementation on Linux
     return nullptr;

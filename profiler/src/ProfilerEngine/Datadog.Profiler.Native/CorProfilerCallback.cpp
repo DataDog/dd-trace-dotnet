@@ -289,7 +289,6 @@ bool CorProfilerCallback::InitializeServices()
         if (_pLiveObjectsProvider != nullptr)
         {
             _pEventPipeEventsManager->Register(_pLiveObjectsProvider);
-            // live heap is not supported by .NET Framework
         }
         // TODO: register any provider that needs to get notified when GCs start and end
     }
@@ -350,6 +349,8 @@ bool CorProfilerCallback::InitializeServices()
             _pStopTheWorldProvider = nullptr;
             _pGarbageCollectionProvider = nullptr;
         }
+
+        // live heap is not supported by .NET Framework
 
         _pEtwEventsManager = OsSpecificApi::CreateEtwEventsManager(
             _pAllocationsProvider,

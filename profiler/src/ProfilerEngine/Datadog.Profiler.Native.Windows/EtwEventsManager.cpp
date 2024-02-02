@@ -82,7 +82,7 @@ void EtwEventsManager::OnEvent(
     {
         if (_isDebugLogEnabled)
         {
-            //std::cout << "StackWalk" << std::endl;
+            std::cout << "StackWalk for thread #" << tid << std::endl;
         }
 
         auto pThreadInfo = GetOrCreate(tid);
@@ -108,7 +108,7 @@ void EtwEventsManager::OnEvent(
         {
             if (_isDebugLogEnabled)
             {
-                std::cout << "ContentionStart" << std::endl;
+                std::cout << "ContentionStart for thread #" << tid << std::endl;
             }
 
             auto pThreadInfo = GetOrCreate(tid);
@@ -119,7 +119,7 @@ void EtwEventsManager::OnEvent(
         {
             if (_isDebugLogEnabled)
             {
-                std::cout << "ContentionStop" << std::endl;
+                std::cout << "ContentionStop for thread #" << tid << std::endl;
             }
 
             auto pThreadInfo = Find(tid);
@@ -138,6 +138,8 @@ void EtwEventsManager::OnEvent(
             else
             {
                 // this should never happen
+                _logger->Error("Missing thread info...");
+
                 if (_isDebugLogEnabled)
                 {
                     std::cout << "Missing thread info..." << std::endl;
@@ -152,7 +154,7 @@ void EtwEventsManager::OnEvent(
         {
             if (_isDebugLogEnabled)
             {
-                //std::cout << "AllocationTick" << std::endl;
+                std::cout << "AllocationTick" << std::endl;
             }
 
             if (_pAllocationListener == nullptr)
@@ -171,7 +173,7 @@ void EtwEventsManager::OnEvent(
         {
             // reuse GC events parser
             auto timestamp = TimestampToEpochNS(systemTimestamp);
-            _parser.get()->ParseEvent(timestamp, version, keyword, id, cbEventData, pEventData);
+            _parser->ParseEvent(timestamp, version, keyword, id, cbEventData, pEventData);
         }
     }
 }
@@ -316,7 +318,7 @@ void EtwEventsManager::Stop()
     _IpcServer->Stop();
 }
 
-void LogLastError(const char* msg, DWORD error = ::GetLastError())
+static void LogLastError(const char* msg, DWORD error = ::GetLastError())
 {
     Log::Error(msg, " (", error, ")");
 }
