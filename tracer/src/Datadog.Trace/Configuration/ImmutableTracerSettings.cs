@@ -35,7 +35,7 @@ namespace Datadog.Trace.Configuration
         private readonly IReadOnlyDictionary<string, string> _serviceNameMappings;
         private readonly IReadOnlyDictionary<string, string> _peerServiceNameMappings;
         private readonly IReadOnlyDictionary<string, string> _globalTags;
-        private readonly double _globalSamplingRate;
+        private readonly double? _globalSamplingRate;
         private readonly bool _runtimeMetricsEnabled;
         private readonly string? _spanSamplingRules;
 

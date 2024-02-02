@@ -47,16 +47,16 @@ namespace Datadog.Trace.TestHelpers
                 { string.Empty, defaultValue }
             };
 
-        public static TheoryData<string, double?> DoubleTestCases()
+        public static TheoryData<string, double?> DoubleTestCases(double? defaultValue)
             => new TheoryData<string, double?>
             {
                 { "1.5", 1.5d },
                 { "1", 1.0d },
                 { "0", 0.0d },
                 { "-1", -1.0d },
-                { "A", null },
-                { null, null },
-                { string.Empty, null }
+                { "A", defaultValue },
+                { null, defaultValue },
+                { string.Empty, defaultValue }
             };
 
         public static TheoryData<string, string> StringTestCases()

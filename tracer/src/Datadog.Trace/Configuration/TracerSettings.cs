@@ -595,7 +595,7 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_GlobalSamplingRate_Get,
             PublicApiUsage.TracerSettings_GlobalSamplingRate_Set)]
         [ConfigKey(ConfigurationKeys.GlobalSamplingRate)]
-        internal double GlobalSamplingRateInternal { get; set; }
+        internal double? GlobalSamplingRateInternal { get; set; }
 
         /// <summary>
         /// Gets a collection of <see cref="IntegrationSettings"/> keyed by integration name.

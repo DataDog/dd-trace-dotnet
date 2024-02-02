@@ -40,7 +40,7 @@ internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
     private bool AnalyticsEnabledInternal { get; }
     private int MaxTracesSubmittedPerSecondInternal { get; }
     private string? CustomSamplingRulesInternal { get; }
-    private double GlobalSamplingRateInternal { get; }
+    private double? GlobalSamplingRateInternal { get; }
     private System.Collections.Generic.IDictionary<string, string>? GlobalTagsInternal { get; }
     private System.Collections.Generic.IDictionary<string, string>? HeaderTagsInternal { get; }
     private System.Collections.Generic.IDictionary<string, string>? GrpcTagsInternal { get; }
