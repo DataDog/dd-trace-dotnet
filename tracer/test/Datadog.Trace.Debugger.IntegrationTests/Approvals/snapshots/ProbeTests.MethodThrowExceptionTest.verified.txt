@@ -43,6 +43,36 @@
               }
             },
             "locals": {
+              "@exception": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233079"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "Number 2147483647is above snapshot value 7"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": {
+                    "type": "String",
+                    "value": "   at Samples.Probes.TestRuns.SmokeTests.MethodThrowExceptionTest.Method(Int32 toSet) in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\SmokeTests\\MethodThrowExceptionTest.cs:line 29\r\n   at Samples.Probes.TestRuns.SmokeTests.MethodThrowExceptionTest.Run() in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\SmokeTests\\MethodThrowExceptionTest.cs:line 14\r\n   at Program.RunTest(Object instance, String testClassName) in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\Samples.Probes\\Program.cs:line 61"
+                  }
+                },
+                "type": "InvalidOperationException",
+                "value": "InvalidOperationException"
+              },
               "numberSnapshot": {
                 "type": "Int32",
                 "value": "7"
