@@ -19,7 +19,7 @@ Json:
         {
           "gt": [
             {
-              "count": [
+              "len": [
                 {
                   "ref": "CollectionLocal"
                 }
@@ -29,7 +29,7 @@ Json:
           ]
         },
         {
-          "hasAny": [
+          "any": [
             {
               "filter": [
                 {
