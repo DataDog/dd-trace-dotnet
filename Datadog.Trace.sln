@@ -568,6 +568,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MSTestTests2", "tra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Selenium", "tracer\test\test-applications\integrations\Samples.Selenium\Samples.Selenium.csproj", "{32193A01-04DD-463B-A84A-9A93167958A4}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Manual", "tracer\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj", "{D18A4340-268E-4EAA-8603-38EA998EBDF2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1360,6 +1362,10 @@ Global
 		{32193A01-04DD-463B-A84A-9A93167958A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32193A01-04DD-463B-A84A-9A93167958A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32193A01-04DD-463B-A84A-9A93167958A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D18A4340-268E-4EAA-8603-38EA998EBDF2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D18A4340-268E-4EAA-8603-38EA998EBDF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D18A4340-268E-4EAA-8603-38EA998EBDF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D18A4340-268E-4EAA-8603-38EA998EBDF2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1581,6 +1587,7 @@ Global
 		{E10243AE-34FC-47B5-B898-B5203C36920C} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{0F1D9FB5-4415-40F1-B7B0-6DD5A3BAB0C4} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{32193A01-04DD-463B-A84A-9A93167958A4} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{D18A4340-268E-4EAA-8603-38EA998EBDF2} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
