@@ -157,7 +157,7 @@ partial class Build
 
     IEnumerable<Project> ProjectsToPack => new[]
     {
-        Solution.GetProject(Projects.DatadogTrace),
+        Solution.GetProject(Projects.DatadogTraceManual),
         Solution.GetProject(Projects.DatadogTraceOpenTracing),
         Solution.GetProject(Projects.DatadogTraceAnnotations),
         Solution.GetProject(Projects.DatadogTraceTrimming),
