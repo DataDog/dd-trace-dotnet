@@ -50,6 +50,7 @@ namespace Samples.Computer01
         private SocketTimeout _socketTest;
 #endif
         private Obfuscation _obfuscation;
+        private ThreadSpikes _threadSpikes;
 
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
@@ -169,6 +170,10 @@ namespace Samples.Computer01
 
                 case Scenario.ForceSigSegvHandler:
                     StartForceSigSegvHandler();
+                    break;
+
+                case Scenario.ThreadSpikes:
+                    StartThreadSpikes(nbThreads, parameter);
                     break;
 
                 default:
@@ -292,6 +297,10 @@ namespace Samples.Computer01
 
                 case Scenario.ForceSigSegvHandler:
                     StopForceSigSegvHandler();
+                    break;
+
+                case Scenario.ThreadSpikes:
+                    StopThreadSpikes();
                     break;
             }
         }
@@ -420,6 +429,10 @@ namespace Samples.Computer01
                         RunObfuscation();
                         break;
 
+                    case Scenario.ThreadSpikes:
+                        RunThreadSpikes(nbThreads, parameter);
+                        break;
+
                     default:
                         throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
                 }
@@ -434,18 +447,6 @@ namespace Samples.Computer01
         {
             var windowsService = new WindowsService(this, timeout, scenario, parameter);
             ServiceBase.Run(windowsService);
-        }
-
-        private void RunForceSigSegvHandler()
-        {
-            var test = new SigSegvHandlerExecution();
-            test.Run();
-        }
-
-        private void RunObfuscation()
-        {
-            var test = new Obfuscation();
-            test.Run();
         }
 
         private void StartComputer()
@@ -622,6 +623,12 @@ namespace Samples.Computer01
             _sigsegvHandler.Start();
         }
 
+        private void StartThreadSpikes(int threadCount, int duration)
+        {
+            _threadSpikes = new ThreadSpikes(threadCount, duration);
+            _threadSpikes.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -754,6 +761,11 @@ namespace Samples.Computer01
             _openldapCrash.Stop();
         }
 #endif
+
+        private void StopThreadSpikes()
+        {
+            _threadSpikes.Stop();
+        }
 
         private void RunComputer()
         {
@@ -910,6 +922,24 @@ namespace Samples.Computer01
             socketTest.Run();
         }
 #endif
+
+        private void RunForceSigSegvHandler()
+        {
+            var test = new SigSegvHandlerExecution();
+            test.Run();
+        }
+
+        private void RunObfuscation()
+        {
+            var test = new Obfuscation();
+            test.Run();
+        }
+
+        private void RunThreadSpikes(int threadCount, int duration)
+        {
+            var test = new ThreadSpikes(threadCount, duration);
+            test.Run();
+        }
 
         public class MySpecialClassA
         {
