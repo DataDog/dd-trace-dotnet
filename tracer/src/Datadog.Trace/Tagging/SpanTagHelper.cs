@@ -3,23 +3,35 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Tagging;
 
 internal static class SpanTagHelper
 {
-    internal static bool IsValidTagName(string value, out string trimmedValue)
+    internal static bool IsValidTagName(
+        string value,
+        [NotNullWhen(returnValue: true)] out string? trimmedValue)
     {
-        trimmedValue = value?.Trim();
+        trimmedValue = null;
 
-        if (!string.IsNullOrEmpty(trimmedValue) && char.IsLetter(trimmedValue[0]) && trimmedValue.Length <= 200)
+        if (string.IsNullOrWhiteSpace(value))
         {
-            return true;
+            return false;
         }
 
-        trimmedValue = null;
-        return false;
+        var trimmedTemp = value.Trim();
+
+        if (!char.IsLetter(trimmedTemp[0]) || trimmedTemp.Length > 200)
+        {
+            return false;
+        }
+
+        trimmedValue = trimmedTemp;
+        return true;
     }
 
     /// <summary>
@@ -43,17 +55,20 @@ internal static class SpanTagHelper
     /// </param>
     /// <param name="normalizedTagName">If the method returns <c>true</c>, the normalized tag name. Otherwise, <c>null</c>.</param>
     /// <returns>Returns a value indicating whether the conversion was successful.</returns>
-    internal static bool TryNormalizeTagName(string value, bool normalizeSpaces, out string normalizedTagName)
+    internal static bool TryNormalizeTagName(
+        string value,
+        bool normalizeSpaces,
+        [NotNullWhen(returnValue: true)] out string? normalizedTagName)
     {
         normalizedTagName = null;
 
-        if (!IsValidTagName(value, out value))
+        if (!IsValidTagName(value, out var trimmedValue))
         {
             return false;
         }
 
-        var sb = StringBuilderCache.Acquire(value.Length);
-        sb.Append(value.ToLowerInvariant());
+        var sb = StringBuilderCache.Acquire(trimmedValue.Length);
+        sb.Append(trimmedValue.ToLowerInvariant());
 
         for (var x = 0; x < sb.Length; x++)
         {
