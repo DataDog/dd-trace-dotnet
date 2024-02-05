@@ -75,7 +75,14 @@ namespace iast
         }
         if ((int)parts.size() > ++part && parts[part] != WStr("DEFAULT")) // Aspect Type
         {
-            _aspectType = ParseAspectType(shared::ToString(parts[part]));
+            try
+            {
+                _aspectType = (AspectType) std::stoi(parts[part]);
+            }
+            catch (std::exception err)
+            {
+                trace::Logger::Error("ERROR reading AspectType: ", err.what());
+            }
         }
         if ((int)parts.size() > ++part && parts[part] != WStr("DEFAULT")) //VulnerabilityTypes
         {

@@ -11,7 +11,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects.AspNetCore.Mvc;
 
 /// <summary> ControllerBaseAspect class aspect </summary>
-[AspectClass("Microsoft.AspNetCore.Mvc", AspectType.Sink, VulnerabilityType.UnvalidatedRedirect)]
+[AspectClass("Microsoft.AspNetCore.Mvc", AspectType.IastSink, VulnerabilityType.UnvalidatedRedirect)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class ControllerBaseAspect

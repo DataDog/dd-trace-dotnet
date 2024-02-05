@@ -10,10 +10,11 @@ namespace iast
 
     enum class AspectType
     {
-        None,
-        Source,
-        Sink,
-        Propagation
+        None = 0,
+        Propagation = 1,
+        IastSink = 2,
+        Source = 4,
+        RaspSink = 8
     };
     enum class VulnerabilityType
     {

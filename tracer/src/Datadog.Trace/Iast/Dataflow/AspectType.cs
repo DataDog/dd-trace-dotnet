@@ -11,14 +11,17 @@ namespace Datadog.Trace.Iast.Dataflow;
 internal enum AspectType
 {
     /// <summary> Default / undefined </summary>
-    Default,
+    Default = 0,
 
     /// <summary> Propagation aspect </summary>
-    Propagation,
+    Propagation = 1,
 
-    /// <summary> Sink aspect </summary>
-    Sink,
+    /// <summary> Iast sink aspect </summary>
+    IastSink = 2,
 
     /// <summary> Source aspect </summary>
-    Source,
+    Source = 4,
+
+    /// <summary> RASP sink aspect </summary>
+    RaspSink = 8,
 }

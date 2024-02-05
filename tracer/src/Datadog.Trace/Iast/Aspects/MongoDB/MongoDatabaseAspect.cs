@@ -13,7 +13,7 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.Iast.Aspects.MongoDB;
 
 /// <summary> MongoDB Driver class aspect </summary>
-[AspectClass("MongoDB.Driver", AspectType.Sink, VulnerabilityType.NoSqlMongoDbInjection)]
+[AspectClass("MongoDB.Driver", AspectType.IastSink, VulnerabilityType.NoSqlMongoDbInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class MongoDatabaseAspect

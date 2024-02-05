@@ -13,7 +13,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects.System.Web.SessionState;
 
 /// <summary> HttpSessionStateAspect class aspects </summary>
-[AspectClass("System.Web", AspectType.Sink, VulnerabilityType.TrustBoundaryViolation)]
+[AspectClass("System.Web", AspectType.IastSink, VulnerabilityType.TrustBoundaryViolation)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class HttpSessionStateBaseAspect

@@ -338,13 +338,22 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // iast stuff
-    if (IsIastEnabled())
+    
+    bool isRaspEnabled = IsRaspEnabled();
+    bool isIastEnabled = IsIastEnabled();
+
+    Logger::Info(isIastEnabled ? "IAST Callsite instrumentation is enabled."
+                               : "IAST Callsite instrumentation is disabled.");
+
+    Logger::Info(isRaspEnabled ? "RASP Callsite instrumentation is enabled."
+                               : "RASP Callsite instrumentation is disabled.");
+
+    if (isIastEnabled || isRaspEnabled)
     {
-        Logger::Info("IAST Callsite instrumentation is enabled.");
         _dataflow = new iast::Dataflow(info_);
         if (FAILED(_dataflow->Init()))
         {
-            Logger::Error("IAST Dataflow failed to initialize");
+            Logger::Error("IAST/RASP Dataflow failed to initialize");
             DEL(_dataflow);
         }
     }
@@ -352,7 +361,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     {
         Logger::Info("IAST Callsite instrumentation is disabled.");
     }
-
 
     // we're in!
     Logger::Info("Profiler filepath: ", currentModuleFileName);
@@ -2017,13 +2025,13 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
 
     if (_dataflow != nullptr)
     {
-        Logger::Info("Registerubg IAST Aspects.");
+        Logger::Info("Registering IAST/RASP Aspects.");
         _dataflow->LoadAspects(aspects, aspectsLength);
         return aspectsLength;
     }
     else
     {
-        Logger::Info("IAST is disabled.");
+        Logger::Info("IAST/RASP are disabled.");
     }
     return 0;
 }

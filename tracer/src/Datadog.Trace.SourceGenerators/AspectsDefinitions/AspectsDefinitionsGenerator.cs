@@ -170,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler
             "AspectClassAttribute" => arguments.Length switch
             {
                 // AspectClassAttribute(string defaultAssembly)
-                1 => $"[AspectClass({arguments[0]},[None],Propagation,[])]",
+                1 => $"[AspectClass({arguments[0]},[None],{((int)AspectType.Propagation).ToString()},[])]",
                 // AspectClassAttribute(string defaultAssembly, AspectType defaultAspectType, params VulnerabilityType[] defaultVulnerabilityTypes)
                 3 => $"[AspectClass({arguments[0]},[None],{arguments[1]},{Check(arguments[2])})]",
                 // AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, AspectType defaultAspectType = AspectType.Propagation, params VulnerabilityType[] defaultVulnerabilityTypes)
@@ -294,7 +294,7 @@ namespace Datadog.Trace.ClrProfiler
         else if (customAttributeArgument.Kind == TypedConstantKind.Enum)
         {
             if (customAttributeArgument.Type!.Name == "AspectFilter") { return ((AspectFilter)customAttributeArgument.Value!).ToString(); }
-            else if (customAttributeArgument.Type!.Name == "AspectType") { return ((AspectType)customAttributeArgument.Value!).ToString(); }
+            else if (customAttributeArgument.Type!.Name == "AspectType") { return ((int)customAttributeArgument.Value!).ToString(); }
             else if (customAttributeArgument.Type!.Name == "VulnerabilityType") { return ((VulnerabilityType)customAttributeArgument.Value!).ToString(); }
             var type = Resolve(customAttributeArgument);
             return Enum.ToObject(type, customAttributeArgument.Value).ToString();
