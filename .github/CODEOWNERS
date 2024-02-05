@@ -6,6 +6,11 @@
 # Tracer
 /tracer/                                  @DataDog/tracing-dotnet
 
+# Common Files
+Datadog.Trace.Trimming.xml                @DataDog/apm-dotnet
+missing-nullability-files.csv             @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace/Datadog.Trace.csproj  @DataDog/apm-dotnet
+
 # CI
 /tracer/src/Datadog.Trace/Ci/             @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/CI/   @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
