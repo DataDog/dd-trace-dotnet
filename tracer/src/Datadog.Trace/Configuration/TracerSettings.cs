@@ -1072,7 +1072,7 @@ namespace Datadog.Trace.Configuration
                 return true;
             }
 
-            if (!SpanTagHelper.IsValidTagName(tagName, out tagName))
+            if (!SpanTagHelper.IsValidTagName(tagName!, out tagName))
             {
                 // invalid tag name
                 finalTagName = null;
@@ -1081,12 +1081,13 @@ namespace Datadog.Trace.Configuration
 
             if (headerTagsNormalizationFixEnabled)
             {
-                // If the user provided a tag name, don't try to normalize it.
+                // Default code path: if the user provided a tag name, don't try to normalize it.
                 finalTagName = tagName;
                 return true;
             }
 
-            // user opted into the previous behavior, where tag names were normalized even when specified
+            // user opted via feature flag into the previous behavior,
+            // where tag names were normalized even when specified
             // (but _not_ spaces, due to a bug in the normalization code)
             return SpanTagHelper.TryNormalizeTagName(tagName, normalizeSpaces: false, out finalTagName);
         }
