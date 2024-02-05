@@ -7,7 +7,6 @@
 using System;
 using System.IO;
 using System.Reflection;
-using System.Threading;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
 {
@@ -23,26 +22,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private const string TraceEnabledKey = "DD_TRACE_ENABLED";
         private const string ProfilingEnabledKey = "DD_PROFILING_ENABLED";
 
-        private static int _startupCtorInitialized;
-
         /// <summary>
         /// Initializes static members of the <see cref="Startup"/> class.
         /// This method also attempts to load the Datadog.Trace .NET assembly.
         /// </summary>
         static Startup()
         {
-            if (Interlocked.Exchange(ref _startupCtorInitialized, 1) != 0)
-            {
-                // Startup() was already called before in the same AppDomain, this can happen because the profiler rewrites
-                // methods before the jitting to inject the loader. This is done until the profiler detects that the loader
-                // has been initialized.
-                // The piece of code injected already includes an Interlocked condition but, because the static variable is emitted
-                // in a custom type inside the running assembly, others assemblies will also have a different type with a different static
-                // variable, so, we still can hit an scenario where multiple loaders initialize.
-                // With this we prevent this scenario.
-                return;
-            }
-
             ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
             if (ManagedProfilerDirectory is null)
             {
@@ -94,7 +79,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             try
             {
-                StartupLogger.Debug("Invoking: '{0}.{1}', {2}", typeName, methodName, loaderHelperTypeName);
                 var assembly = LoadAssembly(AssemblyName);
                 if (assembly == null)
                 {
@@ -108,7 +92,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     // this way we avoid the reflection invoke call.
                     if (assembly.GetType(loaderHelperTypeName, throwOnError: false) is { } loaderHelperType)
                     {
-                        StartupLogger.Debug("Creating '{0}' instance.", loaderHelperTypeName);
                         Activator.CreateInstance(loaderHelperType);
                         return;
                     }
@@ -118,7 +101,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 var type = assembly.GetType(typeName, throwOnError: false);
                 var method = type?.GetRuntimeMethod(methodName, parameters: Type.EmptyTypes);
-                StartupLogger.Debug("Calling method '{0}.{1}'.", typeName, methodName);
                 method?.Invoke(obj: null, parameters: null);
             }
             catch (Exception ex)
@@ -142,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 var assembly = ResolveAssembly(assemblyString);
                 if (assembly is not null)
                 {
-                    StartupLogger.Log("Assembly '{0}' was resolved manually.", assemblyString);
+                    StartupLogger.Log("Assembly resolved manually.");
                 }
 
                 return assembly;

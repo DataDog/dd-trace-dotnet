@@ -5,7 +5,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -30,7 +29,7 @@ public class AssemblyResolverCtorIntegration
 {
     private const string IntegrationName = "TestPlatformAssemblyResolver";
 
-    private static readonly List<Task> LstTasks = new();
+    private static TaskCompletionSource<bool>? _callHasBeenCompletedTaskCompletionSource;
 
     /// <summary>
     /// OnMethodBegin callback
@@ -43,13 +42,8 @@ public class AssemblyResolverCtorIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TArg1>(TTarget instance, ref TArg1 directories)
     {
         Common.Log.Debug("Microsoft.VisualStudio.TestPlatform.Common.Utilities.AssemblyResolver.ctor started.");
-        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        lock (LstTasks)
-        {
-            LstTasks.Add(tcs.Task);
-        }
-
-        return new CallTargetState(null, tcs);
+        _callHasBeenCompletedTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        return CallTargetState.GetDefault();
     }
 
     /// <summary>
@@ -62,26 +56,30 @@ public class AssemblyResolverCtorIntegration
     /// <returns>A return value, in an async scenario will be T of Task of T</returns>
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
     {
-        if (state.State is TaskCompletionSource<bool> tcs)
-        {
-            tcs.TrySetResult(exception is null);
-            Common.Log.Debug("Microsoft.VisualStudio.TestPlatform.Common.Utilities.AssemblyResolver.ctor finished.");
-        }
-
+        _callHasBeenCompletedTaskCompletionSource?.TrySetResult(exception is null);
+        Common.Log.Debug("Microsoft.VisualStudio.TestPlatform.Common.Utilities.AssemblyResolver.ctor finished.");
         return CallTargetReturn.GetDefault();
     }
 
     internal static Task WaitForCallToBeCompletedAsync()
     {
-        lock (LstTasks)
+        if (_callHasBeenCompletedTaskCompletionSource?.Task is { } callTask)
         {
-            var lstTasks = LstTasks;
-            return lstTasks.Count switch
+            if (!callTask.IsCompleted)
             {
-                0 => Task.CompletedTask,
-                1 => lstTasks[0],
-                _ => Task.WhenAll(LstTasks)
-            };
+                return InternalWaitForCallToBeCompletedAsync(callTask);
+            }
+
+            Common.Log.Debug("Microsoft.VisualStudio.TestPlatform.Common.Utilities.AssemblyResolver.ctor already ran.");
+        }
+
+        return Task.CompletedTask;
+
+        static async Task InternalWaitForCallToBeCompletedAsync(Task<bool> callTask)
+        {
+            Common.Log.Debug("Waiting for Microsoft.VisualStudio.TestPlatform.Common.Utilities.AssemblyResolver.ctor to be completed...");
+            await callTask.ConfigureAwait(false);
+            Common.Log.Debug("Call to Microsoft.VisualStudio.TestPlatform.Common.Utilities.AssemblyResolver.ctor is completed.");
         }
     }
 }

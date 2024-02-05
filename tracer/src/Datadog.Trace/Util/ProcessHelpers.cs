@@ -85,20 +85,13 @@ namespace Datadog.Trace.Util
             var errorStringBuilder = new StringBuilder();
             while (!processInfo.HasExited)
             {
-                if (!processStartInfo.UseShellExecute)
-                {
-                    outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
-                    errorStringBuilder.Append(processInfo.StandardError.ReadToEnd());
-                }
-
+                outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
+                errorStringBuilder.Append(processInfo.StandardError.ReadToEnd());
                 Thread.Sleep(15);
             }
 
-            if (!processStartInfo.UseShellExecute)
-            {
-                outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
-                errorStringBuilder.Append(processInfo.StandardError.ReadToEnd());
-            }
+            outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
+            errorStringBuilder.Append(processInfo.StandardError.ReadToEnd());
 
             Log.Debug<int>("Process finished with exit code: {Value}.", processInfo.ExitCode);
             return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode);
@@ -136,20 +129,13 @@ namespace Datadog.Trace.Util
             var errorStringBuilder = new StringBuilder();
             while (!processInfo.HasExited)
             {
-                if (!processStartInfo.UseShellExecute)
-                {
-                    outputStringBuilder.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
-                    errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
-                }
-
+                outputStringBuilder.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
+                errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
                 await Task.Delay(15).ConfigureAwait(false);
             }
 
-            if (!processStartInfo.UseShellExecute)
-            {
-                outputStringBuilder.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
-                errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
-            }
+            outputStringBuilder.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
+            errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
 
             Log.Debug<int>("Process finished with exit code: {Value}.", processInfo.ExitCode);
             return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode);
@@ -161,18 +147,9 @@ namespace Datadog.Trace.Util
                                        new ProcessStartInfo(command.Cmd) :
                                        new ProcessStartInfo(command.Cmd, command.Arguments);
             processStartInfo.CreateNoWindow = true;
-            processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            processStartInfo.Verb = command.Verb;
-            if (command.Verb is null)
-            {
-                processStartInfo.UseShellExecute = false;
-                processStartInfo.RedirectStandardOutput = true;
-                processStartInfo.RedirectStandardError = true;
-            }
-            else
-            {
-                processStartInfo.UseShellExecute = true;
-            }
+            processStartInfo.UseShellExecute = false;
+            processStartInfo.RedirectStandardOutput = true;
+            processStartInfo.RedirectStandardError = true;
 
             if (command.WorkingDirectory is not null)
             {
@@ -187,14 +164,12 @@ namespace Datadog.Trace.Util
             public readonly string Cmd;
             public readonly string? Arguments;
             public readonly string? WorkingDirectory;
-            public readonly string? Verb;
 
-            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null)
+            public Command(string cmd, string? arguments = null, string? workingDirectory = null)
             {
                 Cmd = cmd;
                 Arguments = arguments;
                 WorkingDirectory = workingDirectory;
-                Verb = verb;
             }
         }
 

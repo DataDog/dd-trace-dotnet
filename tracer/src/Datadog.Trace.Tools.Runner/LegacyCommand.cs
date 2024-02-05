@@ -41,8 +41,7 @@ namespace Datadog.Trace.Tools.Runner
                 ApplicationContext.RunnerFolder,
                 ApplicationContext.Platform,
                 _legacySettings,
-                reducePathLength: false,
-                ciVisibilityOptions: Utils.CIVisibilityOptions.None);
+                reducePathLength: false);
 
             if (profilerEnvironmentVariables is null)
             {

@@ -46,14 +46,12 @@ namespace Datadog.Trace.Tools.Runner
         private async Task ExecuteAsync(InvocationContext context)
         {
             // CI Visibility mode is enabled.
-            var ciVisibilitySettings = CIVisibility.Settings;
-
             var args = _runSettings.Command.GetValue(context);
             var program = args[0];
             var arguments = args.Length > 1 ? Utils.GetArgumentsAsString(args.Skip(1)) : string.Empty;
 
             // Get profiler environment variables
-            if (!RunHelper.TryGetEnvironmentVariables(_applicationContext, context, _runSettings, new Utils.CIVisibilityOptions(ciVisibilitySettings.InstallDatadogTraceInGac, true), out var profilerEnvironmentVariables))
+            if (!RunHelper.TryGetEnvironmentVariables(_applicationContext, context, _runSettings, out var profilerEnvironmentVariables))
             {
                 context.ExitCode = 1;
                 return;
@@ -63,6 +61,7 @@ namespace Datadog.Trace.Tools.Runner
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
 
             // We check the settings and merge with the command settings options
+            var ciVisibilitySettings = CIVisibility.Settings;
             var agentless = ciVisibilitySettings.Agentless;
             var apiKey = ciVisibilitySettings.ApiKey;
 

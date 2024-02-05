@@ -50,9 +50,6 @@ namespace Datadog.Trace.Ci.Configuration
 
             // Force evp proxy
             ForceAgentsEvpProxy = config.WithKeys(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy).AsBool(false);
-
-            // Check if Datadog.Trace should be installed in the GAC
-            InstallDatadogTraceInGac = config.WithKeys(ConfigurationKeys.CIVisibility.InstallDatadogTraceInGac).AsBool(true);
         }
 
         /// <summary>
@@ -139,11 +136,6 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets a value indicating whether EVP Proxy must be used.
         /// </summary>
         public bool ForceAgentsEvpProxy { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether we ensure Datadog.Trace GAC installation.
-        /// </summary>
-        public bool InstallDatadogTraceInGac { get; }
 
         /// <summary>
         /// Gets the tracer settings

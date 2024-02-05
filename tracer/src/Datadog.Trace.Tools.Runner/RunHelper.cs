@@ -12,18 +12,12 @@ namespace Datadog.Trace.Tools.Runner
     {
         public static bool TryGetEnvironmentVariables(ApplicationContext applicationContext, InvocationContext invocationContext, RunSettings settings, out Dictionary<string, string> profilerEnvironmentVariables)
         {
-            return TryGetEnvironmentVariables(applicationContext, invocationContext, settings, Utils.CIVisibilityOptions.None, out profilerEnvironmentVariables);
-        }
-
-        public static bool TryGetEnvironmentVariables(ApplicationContext applicationContext, InvocationContext invocationContext, RunSettings settings, Utils.CIVisibilityOptions ciVisibilityOptions, out Dictionary<string, string> profilerEnvironmentVariables)
-        {
             profilerEnvironmentVariables = Utils.GetProfilerEnvironmentVariables(
                 invocationContext,
                 applicationContext.RunnerFolder,
                 applicationContext.Platform,
                 settings,
-                reducePathLength: false,
-                ciVisibilityOptions: ciVisibilityOptions);
+                reducePathLength: false);
 
             if (profilerEnvironmentVariables is null)
             {
