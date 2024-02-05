@@ -32,4 +32,6 @@ echo "Microsoft (R) .NET Core SDK version $("$DOTNET_EXE" --version)"
 echo "dotnet build exited with code $?"
 ls -l "$SCRIPT_DIR/build/_build/bin/Debug/_build"
 
+# This shouldn't be needed, but the build randomly fails on OSX because the file doesn't have execute permissions
+chmod +x "$SCRIPT_DIR/build/_build/bin/Debug/_build"
 "$SCRIPT_DIR/build/_build/bin/Debug/_build" "$@"
