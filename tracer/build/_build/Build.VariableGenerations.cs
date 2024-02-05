@@ -1251,29 +1251,8 @@ partial class Build : NukeBuild
         {
             branch = Environment.GetEnvironmentVariable(AzureBuildSourceBranchName);
         }
-
-        try
-        {
-            // Clean branch name
-            var regex = new Regex(@"^refs\/heads\/tags\/(.*)|refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)|origin\/tags\/(.*)|origin\/(.*)$");
-            if (!string.IsNullOrEmpty(branch))
-            {
-                var match = regex.Match(branch);
-                if (match.Success && match.Groups.Count == 7)
-                {
-                    branch =
-                        !string.IsNullOrWhiteSpace(match.Groups[2].Value) ? match.Groups[2].Value :
-                        !string.IsNullOrWhiteSpace(match.Groups[4].Value) ? match.Groups[4].Value :
-                                                                            match.Groups[6].Value;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            // .
-        }
         
-        if (string.Equals(branch, baseBranch, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(CleanBranchName(branch), CleanBranchName(baseBranch), StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
@@ -1285,6 +1264,32 @@ partial class Build : NukeBuild
             GitTasks.Git("rev-parse --abbrev-ref HEAD").First().Text,
             baseBranch,
             StringComparison.OrdinalIgnoreCase);
+
+        static string CleanBranchName(string branchName)
+        {
+            try
+            {
+                // Clean branch name
+                var regex = new Regex(@"^refs\/heads\/tags\/(.*)|refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)|origin\/tags\/(.*)|origin\/(.*)$");
+                if (!string.IsNullOrEmpty(branchName))
+                {
+                    var match = regex.Match(branchName);
+                    if (match.Success && match.Groups.Count == 7)
+                    {
+                        branchName =
+                            !string.IsNullOrWhiteSpace(match.Groups[2].Value) ? match.Groups[2].Value :
+                            !string.IsNullOrWhiteSpace(match.Groups[4].Value) ? match.Groups[4].Value :
+                                                                                match.Groups[6].Value;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // .
+            }
+
+            return branchName;
+        }
     }
 
     static string[] GetGitChangedFiles(string baseBranch)
