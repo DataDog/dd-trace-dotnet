@@ -63,7 +63,7 @@ internal class IastSettings
                                .AsString(DefaultRedactionValuesRegex);
         RegexTimeout = config
                                 .WithKeys(ConfigurationKeys.Iast.RegexTimeout)
-                                .AsDouble(200, val1 => val1 is > 0).Value;
+                                .AsDouble(200, val1 => val1 is >= 0).Value;
 
         IastTelemetryVerbosity = config
             .WithKeys(ConfigurationKeys.Iast.IastTelemetryVerbosity)
