@@ -3,8 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text.Json;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -20,7 +24,7 @@ namespace Datadog.Profiler.IntegrationTests
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0" })]
         public void CheckMetrics(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 10 --threads 20");
@@ -42,6 +46,58 @@ namespace Datadog.Profiler.IntegrationTests
             // Thread.Sleep(10000000);
 
             Assert.True(hasMetrics);
+            ValidateMetrics(runner.Environment.PprofDir);
+        }
+
+        private void ValidateMetrics(string directory)
+        {
+            var metricsFiles = Directory.GetFiles(directory, "metrics_*.json");
+            Assert.True(metricsFiles.Length > 0);
+            foreach (var metricsFile in metricsFiles)
+            {
+                // get the metrics from the local json file
+                var metrics = GetMetrics(metricsFile);
+                double threadCount = -1;
+                double threadCountLow = -1;
+                double threadCountHigh = -1;
+
+                foreach (var metric in metrics)
+                {
+                    if (metric.Item1 == "dotnet_managed_threads")
+                    {
+                        threadCount = metric.Item2;
+                    }
+                    else if (metric.Item1 == "dotnet_managed_threads_low")
+                    {
+                        threadCountLow = metric.Item2;
+                    }
+                    else if (metric.Item1 == "dotnet_managed_threads_high")
+                    {
+                        threadCountHigh = metric.Item2;
+                    }
+                }
+
+                Assert.True(threadCount > 0);
+                Assert.True(threadCountLow > 0);
+                Assert.True(threadCountHigh > 0);
+
+                Assert.True(threadCountLow <= threadCount);
+                Assert.True(threadCount <= threadCountHigh);
+            }
+        }
+
+        private static List<Tuple<string, double>> GetMetrics(string metricsFile)
+        {
+            List<Tuple<string, double>> metrics = new List<Tuple<string, double>>();
+            var jsonContent = System.IO.File.ReadAllText(metricsFile);
+
+            JsonDocument doc = JsonDocument.Parse(jsonContent);
+            doc.RootElement.EnumerateArray().All(element => {
+                var kvp = element.EnumerateArray().ToArray();
+                metrics.Add(new Tuple<string, double>(kvp[0].ToString(), kvp[1].GetDouble()));
+                return true;
+            });
+            return metrics;
         }
 
         private bool GetMetrics(HttpListenerRequest request)

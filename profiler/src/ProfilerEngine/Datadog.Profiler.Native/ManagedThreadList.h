@@ -35,6 +35,8 @@ public:
     bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) override;
     bool SetThreadName(ThreadID clrThreadId, const shared::WSTRING& threadName) override;
     uint32_t Count() override;
+    uint32_t GetHighCountAndReset() override;
+    uint32_t GetLowCountAndReset() override;
     uint32_t CreateIterator() override;
     std::shared_ptr<ManagedThreadInfo> LoopNext(uint32_t iterator) override;
     HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
@@ -63,6 +65,11 @@ private:
     std::vector<uint32_t> _iterators;
 
     ICorProfilerInfo4* _pCorProfilerInfo;
+
+    // Keep track of the highest/lowest number of threads
+    // Will be reset each time the value is read
+    uint32_t _highCount;
+    uint32_t _lowCount;
 
 private:
     void UpdateIterators(uint32_t pos);

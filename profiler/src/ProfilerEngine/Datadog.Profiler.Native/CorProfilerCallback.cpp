@@ -130,6 +130,14 @@ bool CorProfilerCallback::InitializeServices()
         return _pManagedThreadList->Count();
     });
 
+    _managedThreadsMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_managed_threads_high", [this]() {
+        return _pManagedThreadList->GetHighCountAndReset();
+    });
+
+    _managedThreadsMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_managed_threads_low", [this]() {
+        return _pManagedThreadList->GetLowCountAndReset();
+    });
+
     _pCodeHotspotsThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
     _managedThreadsWithContextMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_managed_threads_with_context", [this]() {
         return _pCodeHotspotsThreadList->Count();
