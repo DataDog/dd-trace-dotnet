@@ -8,6 +8,7 @@ namespace Datadog.Trace.Iast.Dataflow;
 /// <summary>
 /// Type of an aspect function
 /// </summary>
+[System.Flags]
 internal enum AspectType
 {
     /// <summary> Default / undefined </summary>
