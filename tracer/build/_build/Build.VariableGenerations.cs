@@ -1252,10 +1252,20 @@ partial class Build : NukeBuild
             branch = Environment.GetEnvironmentVariable(AzureBuildSourceBranchName);
         }
         
-        if (string.Equals(CleanBranchName(branch), CleanBranchName(baseBranch), StringComparison.OrdinalIgnoreCase))
+        Console.WriteLine("Base Branch: {0}", baseBranch);
+        Console.WriteLine("Current Branch: {0}", branch);
+
+        var cleanBranch = CleanBranchName(branch);
+        var cleanBaseBranch = CleanBranchName(baseBranch);
+        Console.Write("  {0} == {1}? ", cleanBranch, cleanBaseBranch);
+        
+        if (string.Equals(cleanBranch, cleanBaseBranch, StringComparison.OrdinalIgnoreCase))
         {
+            Console.WriteLine("true");
             return true;
         }
+
+        Console.WriteLine("false");
 
         // *****
         // In case we cannot find the baseBranch we fallback to the git command
