@@ -297,6 +297,7 @@ namespace Datadog.Trace.AspNet
                                 }
                             }
 
+                            InsecureAuthAnalyzer.AnalyzeInsecureAuth(app.Context.Request.Headers, IntegrationId, app.Context.Response.StatusCode);
                             CookieAnalyzer.AnalyzeCookies(app.Context.Response.Cookies, IntegrationId);
                         }
 

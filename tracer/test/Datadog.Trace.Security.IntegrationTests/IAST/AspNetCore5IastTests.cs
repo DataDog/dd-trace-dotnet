@@ -587,6 +587,29 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
                           .DisableRequireUniquePrefix();
     }
 
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [SkippableTheory]
+    [InlineData("Authorization", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
+    public async Task TestIastInsecureAuthProtocolRequest(string header, string data)
+    {
+        var filename = IastEnabled ? "Iast.InsecureAuthProtocol.AspNetCore5.IastEnabled" : "Iast.InsecureAuthProtocol.AspNetCore5.IastDisabled";
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/Iast/InsecureAuthProtocol";
+        IncludeAllHttpSpans = true;
+        AddHeaders(new Dictionary<string, string> { { header, data } });
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
     public async Task TestIastPathTraversalRequest()

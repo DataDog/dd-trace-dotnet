@@ -292,6 +292,7 @@ internal static class MetricTags
         [Description("vulnerability_type:nosql_mongodb_injection")] NoSqlMongoDbInjection = 19,
         [Description("vulnerability_type:xpath_injection")] XPathInjection = 20,
         [Description("vulnerability_type:reflection_injection")] ReflectionInjection = 21,
+        [Description("vulnerability_type:insecure_auth_protocol")] InsecureAuthProtocol = 22,
     }
 
     public enum CIVisibilityTestFramework

@@ -463,6 +463,18 @@ namespace Samples.Security.AspNetCore5.Controllers
             Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
             return Content("Sending AllVulnerabilitiesCookie");
         }
+        
+        [HttpGet("InsecureAuthProtocol")]
+        [Route("InsecureAuthProtocol")]
+        public IActionResult InsecureAuthProtocol(bool forbidden = false)
+        {
+            if (forbidden)
+            {
+                return StatusCode(403);
+            }
+            
+            return Content("InsecureAuthProtocol page");
+        }
 
         [HttpGet("SSRF")]
         [Route("SSRF")]
