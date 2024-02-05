@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             if (tags is not null && requestProxy.QueueUrl is not null)
             {
                 tags.QueueUrl = requestProxy.QueueUrl;
-                tags.QueueName = AwsSqsCommon.GetQueueName(requestProxy.QueueUrl);
+                tags.QueueName = queueName;
             }
 
             if (scope?.Span.Context != null && !string.IsNullOrEmpty(queueName))
