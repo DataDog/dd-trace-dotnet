@@ -53,8 +53,7 @@ internal static class RegexBuilder
             case SamplingRulesFormat.Glob:
                 // the "any" pattern matches any value regardless of type (e.g. string, int, floating point, etc).
                 // for tags, it means the tag must exist, but its value can be anything.
-                if (pattern.Equals("*", StringComparison.Ordinal) ||
-                    pattern.All(c => c == '*'))
+                if (pattern.Length > 0 && pattern.All(c => c == '*'))
                 {
                     return null; // match all without using a regex
                 }
