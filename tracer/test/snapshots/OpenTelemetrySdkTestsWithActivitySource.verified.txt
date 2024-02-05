@@ -693,10 +693,10 @@
       otel.trace_id: Guid_4,
       runtime-id: Guid_2,
       span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      version: 1.0.x
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
