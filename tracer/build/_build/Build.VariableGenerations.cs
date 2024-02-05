@@ -1283,7 +1283,7 @@ partial class Build : NukeBuild
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
                 // .
             }
