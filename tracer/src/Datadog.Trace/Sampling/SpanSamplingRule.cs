@@ -129,6 +129,11 @@ namespace Datadog.Trace.Sampling
         /// <inheritdoc/>
         public bool IsMatch(Span span)
         {
+            if (span == null!)
+            {
+                return false;
+            }
+
             if (_alwaysMatch)
             {
                 // the rule is a catch-all
