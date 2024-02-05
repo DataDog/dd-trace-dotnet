@@ -272,6 +272,25 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastXpathInjectionRequest()
+    {
+        var filename = "Iast.XpathInjection.AspNetCore5.IastEnabled";
+        var url = "/Iast/XpathInjection?user=klaus&value=pass";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 public class AspNetCore5IastTestsFullSamplingIastDisabled : AspNetCore5IastTestsFullSampling

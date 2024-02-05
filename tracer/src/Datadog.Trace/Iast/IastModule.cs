@@ -39,6 +39,7 @@ internal static class IastModule
     private const string OperationNameTrustBoundaryViolation = "trust_boundary_violation";
     private const string OperationNameUnvalidatedRedirect = "unvalidated_redirect";
     private const string OperationNameHeaderInjection = "header_injection";
+    private const string OperationNameXPathInjection = "xpath_injection";
     private const string ReferrerHeaderName = "Referrer";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
@@ -596,5 +597,19 @@ internal static class IastModule
         var evidence = StringAspects.Concat(headerName, HeaderInjectionEvidenceSeparator, headerValue);
         var hash = ("HEADER_INJECTION:" + headerName).GetStaticHashCode();
         GetScope(evidence, integrationId, VulnerabilityTypeName.HeaderInjection, OperationNameHeaderInjection, Always, false, hash);
+    }
+
+    internal static IastModuleResponse OnXpathInjection(string xpath)
+    {
+        try
+        {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.XPathInjection);
+            return GetScope(xpath, IntegrationId.XpathInjection, VulnerabilityTypeName.XPathInjection, OperationNameXPathInjection, Always);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for xpath injection.");
+            return IastModuleResponse.Empty;
+        }
     }
 }
