@@ -17,7 +17,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 61;
+    public const int Length = 62;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.
@@ -91,6 +91,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.UnvalidatedRedirect => nameof(Datadog.Trace.Configuration.IntegrationId.UnvalidatedRedirect),
             Datadog.Trace.Configuration.IntegrationId.TestPlatformAssemblyResolver => nameof(Datadog.Trace.Configuration.IntegrationId.TestPlatformAssemblyResolver),
             Datadog.Trace.Configuration.IntegrationId.StackTraceLeak => nameof(Datadog.Trace.Configuration.IntegrationId.StackTraceLeak),
+            Datadog.Trace.Configuration.IntegrationId.XpathInjection => nameof(Datadog.Trace.Configuration.IntegrationId.XpathInjection),
             _ => value.ToString(),
         };
 
@@ -165,6 +166,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.UnvalidatedRedirect,
             Datadog.Trace.Configuration.IntegrationId.TestPlatformAssemblyResolver,
             Datadog.Trace.Configuration.IntegrationId.StackTraceLeak,
+            Datadog.Trace.Configuration.IntegrationId.XpathInjection,
         };
 
     /// <summary>
@@ -239,5 +241,6 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.UnvalidatedRedirect),
             nameof(Datadog.Trace.Configuration.IntegrationId.TestPlatformAssemblyResolver),
             nameof(Datadog.Trace.Configuration.IntegrationId.StackTraceLeak),
+            nameof(Datadog.Trace.Configuration.IntegrationId.XpathInjection),
         };
 }
