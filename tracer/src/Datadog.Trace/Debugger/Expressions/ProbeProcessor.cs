@@ -285,11 +285,6 @@ namespace Datadog.Trace.Debugger.Expressions
 
             CheckSpanDecoration(snapshotCreator, ref shouldStopCapture, evaluationResult);
 
-            if (evaluationResult.HasError)
-            {
-                return evaluationResult;
-            }
-
             if (evaluationResult.Metric.HasValue)
             {
                 LiveDebugger.Instance.SendMetrics(ProbeInfo.MetricKind.Value, ProbeInfo.MetricName, evaluationResult.Metric.Value, ProbeInfo.ProbeId);
@@ -297,6 +292,11 @@ namespace Datadog.Trace.Debugger.Expressions
                 // if it is a metric probe, once we sent the value, we can stop the invokers and dispose the snapshot creator
                 snapshotCreator.Dispose();
                 shouldStopCapture = true;
+            }
+
+            if (evaluationResult.HasError)
+            {
+                return evaluationResult;
             }
 
             if (evaluationResult.Condition != null && // meaning not metric, span probe or span decoration
