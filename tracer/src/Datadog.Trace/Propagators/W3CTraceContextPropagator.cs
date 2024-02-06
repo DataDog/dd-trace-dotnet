@@ -37,15 +37,20 @@ namespace Datadog.Trace.Propagators
         //                  ^   ^
         private const char TraceStateDatadogKeyValueSeparator = ':';
 
-        // they key used for the sampling priority in the key/value pairs embedded inside the "dd" value
+        // the key used for the sampling priority in the key/value pairs embedded inside the "dd" value
         // "key1=value1,dd=s:1;o:rum,key2=value2"
         //                 ^
         private const string TraceStateSamplingPriorityKey = "s";
 
-        // they key used for the origin in the key/value pairs embedded inside the "dd" value
+        // the key used for the origin in the key/value pairs embedded inside the "dd" value
         // "key1=value1,dd=s:1;o:rum,key2=value2"
         //                     ^
         private const string TraceStateOriginKey = "o";
+
+        // the key used for the last seen parent Datadog span ID in the key/value pairs embedded inside the "dd" value
+        // "key1=value1,dd=s:1;o:rum;lp.id:0123456789abcdef,key2=value2"
+        //                           ^^^^^
+        private const string TraceStateLastParentKey = "lp:id";
 
         // character bounds validation
         private const char LowerBound = '\u0020'; // decimal: 32, ' ' (space)
@@ -329,11 +334,13 @@ namespace Datadog.Trace.Propagators
             {
                 // "dd" section not found or it is too short
                 // shortest valid length is 6 as in "dd=a:b"
-                return new W3CTraceState(null, null, null, additionalValues);
+                // note for this case the lp.id will be viewed as 0 if added as a span tag
+                return new W3CTraceState(null, null, null, null, additionalValues);
             }
 
             int? samplingPriority = null;
             string? origin = null;
+            string? lastParent = null;
             var propagatedTagsBuilder = StringBuilderCache.Acquire(50);
 
             try
@@ -389,6 +396,10 @@ namespace Datadog.Trace.Propagators
                     {
                         origin = value.ToString();
                     }
+                    else if (name.Equals(TraceStateLastParentKey, StringComparison.Ordinal))
+                    {
+                        lastParent = value.ToString();
+                    }
                     else if (name.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
                     {
                         value = ReplaceCharacters(value, LowerBound, UpperBound, OutOfBoundsReplacement, ExtractPropagatedTagValueReplacements);
@@ -411,6 +422,10 @@ namespace Datadog.Trace.Propagators
                     else if (name == TraceStateOriginKey)
                     {
                         origin = value;
+                    }
+                    else if (name == TraceStateLastParentKey)
+                    {
+                        lastParent = value;
                     }
                     else if (name.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
                     {
@@ -446,7 +461,7 @@ namespace Datadog.Trace.Propagators
                     propagatedTags = null;
                 }
 
-                return new W3CTraceState(samplingPriority, origin, propagatedTags, additionalValues);
+                return new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues);
             }
             finally
             {
