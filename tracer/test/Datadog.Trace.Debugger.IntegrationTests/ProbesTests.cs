@@ -892,6 +892,14 @@ public class ProbesTests : TestHelper
                                 }
 
                                 break;
+
+                            case "StackTrace":
+                                if (IsParentName(item, parentName: ".@exception.fields"))
+                                {
+                                    item.Value.Replace("ScrubbedValue");
+                                }
+
+                                break;
                         }
                     }
                     catch (Exception)

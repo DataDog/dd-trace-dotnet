@@ -20,6 +20,9 @@ ManagedThreadList::ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo) :
     {
         _pCorProfilerInfo->AddRef();
     }
+
+    _highCount = 0;
+    _lowCount = 0;
 }
 
 ManagedThreadList::~ManagedThreadList()
@@ -65,6 +68,12 @@ std::shared_ptr<ManagedThreadInfo> ManagedThreadList::GetOrCreate(ThreadID clrTh
         _threads.push_back(pInfo);
 
         _lookupByClrThreadId[clrThreadId] = pInfo;
+
+        auto currentCount = _threads.size();
+        if (_highCount <= currentCount)
+        {
+            _highCount = static_cast<uint32_t>(currentCount);
+        }
     }
 
     return pInfo;
@@ -126,7 +135,6 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, std::shared_ptr<M
         std::shared_ptr<ManagedThreadInfo> pInfo = *i; // make a copy so it can be moved later
         if (pInfo->GetClrThreadId() == clrThreadId)
         {
-
             // remove it from the storage and index
             _threads.erase(i);
             _lookupByClrThreadId.erase(pInfo->GetClrThreadId());
@@ -136,6 +144,16 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, std::shared_ptr<M
 
             // NOTE: move the instance so the caller can do additional operation before releasing
             pThreadInfo = std::move(pInfo);
+
+            // wait for the first threads to be created to get the low count
+            if (_lowCount == 0)
+            {
+                _lowCount = static_cast<uint32_t>(_threads.size());
+            }
+            else
+            {
+                _lowCount--;
+            }
 
             return true;
         }
@@ -191,6 +209,22 @@ uint32_t ManagedThreadList::Count()
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
     return static_cast<uint32_t>(_threads.size());
+}
+
+uint32_t ManagedThreadList::GetHighCountAndReset()
+{
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
+    auto currentHigh = _highCount;
+    _highCount = static_cast<uint32_t>(_threads.size());
+    return currentHigh;
+}
+
+uint32_t ManagedThreadList::GetLowCountAndReset()
+{
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
+    auto currentLow = _lowCount;
+    _lowCount = static_cast<uint32_t>(_threads.size());
+    return (currentLow == 0) ? _lowCount : currentLow;
 }
 
 uint32_t ManagedThreadList::CreateIterator()

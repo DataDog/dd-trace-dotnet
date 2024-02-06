@@ -31,7 +31,43 @@
         "DD_INTERNAL_PROFILING_OUTPUT_DIR": "$(PROGRAMDATA)\\Datadog-APM\\Pprof-files\\DotNet",
 
         "DD_ENV": "apm-profiling-local",
-        "DD_SERVICE": "dd-dotnet-computer01",
+        "DD_SERVICE": "dd-dotnet-computer01-framework",
+
+        "DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION": "true"
+      },
+      "nativeDebugging": true
+    },
+    "Tracer+Profiler": {
+      "commandName": "Executable",
+      "executablePath": "$(BaseOutputPath)\\$(ConfigBasedRelativeOutputPath)\\profiler\\src\\Demos\\Samples.Computer01\\$(TargetFramework)\\Samples.Computer01.exe",
+      "commandLineArgs": "--scenario 9 --threads 4",
+      "environmentVariables": {
+        "COR_ENABLE_PROFILING": "1",
+        "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+
+        "CORECLR_ENABLE_PROFILING": "1",
+        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+
+        "COMPlus_EnableDiagnostics": "1",
+
+        "DOTNET_gcServer": "0",
+        "DOTNET_gcConcurrent": "1",
+
+        "DD_PROFILING_ENABLED": "1",
+        "DD_INTERNAL_PROFILING_ETW_ENABLED": "1",
+        "DD_PROFILING_CPU_ENABLED": "1",
+        "DD_PROFILING_WALLTIME_ENABLED": "0",
+        "DD_PROFILING_EXCEPTION_ENABLED": "0",
+        "DD_PROFILING_ALLOCATION_ENABLED": "0",
+        "DD_PROFILING_LOCK_ENABLED": "1`",
+        "DD_PROFILING_GC_ENABLED": "1",
+
+        "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED": "0",
+        "DD_TRACE_DEBUG": "1",
+        "DD_INTERNAL_PROFILING_OUTPUT_DIR": "$(PROGRAMDATA)\\Datadog-APM\\Pprof-files\\DotNet",
+
+        "DD_ENV": "apm-profiling-local",
+        "DD_SERVICE": "dd-dotnet-computer01-gc",
 
         "DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION": "true"
       },

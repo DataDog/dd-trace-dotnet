@@ -1,0 +1,98 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet.request,
+    Resource: GET /iast/xpathinjection,
+    Service: sample,
+    Type: web,
+    Tags: {
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
+      http.status_code: 200,
+      http.url: http://localhost:00000/Iast/XpathInjection?user=klaus&value=pass,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.iast.enabled: 1,
+      _dd.iast.json:
+{
+  "vulnerabilities": [
+    {
+      "type": "XPATH_INJECTION",
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "XpathInjection"
+      },
+      "evidence": {
+        "valueParts": [
+          {
+            "value": "/data/user[name/text()='"
+          },
+          {
+            "value": "klaus",
+            "source": 0
+          },
+          {
+            "value": "' and password/text()='"
+          },
+          {
+            "value": "pass",
+            "source": 1
+          },
+          {
+            "value": "}']"
+          }
+        ]
+      }
+    }
+  ],
+  "sources": [
+    {
+      "origin": "http.request.parameter",
+      "name": "user",
+      "value": "klaus"
+    },
+    {
+      "origin": "http.request.parameter",
+      "name": "value",
+      "value": "pass"
+    }
+  ]
+}
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet-mvc.request,
+    Resource: GET /iast/xpathinjection,
+    Service: sample,
+    Type: web,
+    ParentId: Id_2,
+    Tags: {
+      aspnet.action: xpathinjection,
+      aspnet.controller: iast,
+      aspnet.route: {controller}/{action}/{id},
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Iast/XpathInjection?user=klaus&value=pass,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      span.kind: server
+    }
+  }
+]

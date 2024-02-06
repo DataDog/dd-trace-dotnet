@@ -18,6 +18,8 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.XPath;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -85,6 +87,9 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(DirectorySearcher), null, new string[] { "Void set_AttributeScopeQuery(System.String)" }, true)]
     [InlineData(typeof(PrincipalContext), null, new string[] { "Void .ctor(System.DirectoryServices.AccountManagement.ContextType, System.String)", "Boolean ValidateCredentials(System.String, System.String, System.DirectoryServices.AccountManagement.ContextOptions)", "Boolean ValidateCredentials(System.String, System.String)" }, true)]
     [InlineData(typeof(SearchRequest), null, new string[] { "Void .ctor(System.String, System.Xml.XmlDocument, System.DirectoryServices.Protocols.SearchScope, System.String[])", "void set_RequestId(System.String)", "void set_DistinguishedName(System.String)" }, true)]
+    [InlineData(typeof(XmlNode), null, null, true)]
+    [InlineData(typeof(Extensions), null, null, true)]
+    [InlineData(typeof(XPathExpression), null, null, true)]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestMethodsAspectCover(Type typeToCheck, string methodToCheck, string[] overloadsToExclude = null, bool excludeParameterlessMethods = false)
@@ -204,6 +209,9 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(PrincipalContext))]
     [InlineData(typeof(SearchRequest))]
     [InlineData(typeof(Random))]
+    [InlineData(typeof(XmlNode))]
+    [InlineData(typeof(Extensions))]
+    [InlineData(typeof(XPathExpression))]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestAllAspectsHaveACorrespondingMethod(Type type, string[] aspectsToExclude = null)

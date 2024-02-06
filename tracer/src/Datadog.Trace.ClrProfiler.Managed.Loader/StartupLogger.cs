@@ -16,25 +16,29 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private static readonly bool DebugEnabled = IsDebugEnabled();
         private static readonly string LogDirectory = GetLogDirectory();
         private static readonly string StartupLogFilePath = SetStartupLogFilePath();
+        private static readonly object PadLock = new();
 
         public static void Log(string message, params object[] args)
         {
+            if (StartupLogFilePath == null)
+            {
+                return;
+            }
+
             try
             {
-                if (StartupLogFilePath != null)
+                lock (PadLock)
                 {
-                    try
+                    using var fileSink = new FileSink(StartupLogFilePath);
+                    if (DebugEnabled)
                     {
-                        using (var fileSink = new FileSink(StartupLogFilePath))
-                        {
-                            fileSink.Info($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {message}{Environment.NewLine}", args);
-                        }
-
-                        return;
+                        var currentDomain = AppDomain.CurrentDomain;
+                        var isDefaultAppDomain = currentDomain.IsDefaultAppDomain();
+                        fileSink.Info($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff zzz}|{currentDomain.Id}|{currentDomain.FriendlyName}|{isDefaultAppDomain}] {message}{Environment.NewLine}", args);
                     }
-                    catch
+                    else
                     {
-                        // ignore
+                        fileSink.Info($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {message}{Environment.NewLine}", args);
                     }
                 }
             }
