@@ -6,7 +6,6 @@
     Resource: GET /iast/insecureauthprotocol,
     Service: Samples.Security.AspNetCore5,
     Type: web,
-    ParentId: Id_3,
     Tags: {
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.IastController.InsecureAuthProtocol (Samples.Security.AspNetCore5),
       aspnet_core.route: iast/insecureauthprotocol,
@@ -24,6 +23,7 @@
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -31,7 +31,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_4,
+    SpanId: Id_3,
     Name: aspnet_core_mvc.request,
     Resource: GET /iast/insecureauthprotocol,
     Service: Samples.Security.AspNetCore5,
