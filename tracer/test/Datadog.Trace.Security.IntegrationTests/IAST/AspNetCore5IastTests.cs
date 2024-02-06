@@ -591,9 +591,20 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [Trait("RunOnWindows", "True")]
     [SkippableTheory]
     [InlineData("Authorization", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
+    [InlineData("Authorization", "basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
+    [InlineData("Authorization", "    bAsic    QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
+    [InlineData("Authorization", "digest QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
     public async Task TestIastInsecureAuthProtocolRequest(string header, string data)
     {
         var filename = IastEnabled ? "Iast.InsecureAuthProtocol.AspNetCore5.IastEnabled" : "Iast.InsecureAuthProtocol.AspNetCore5.IastDisabled";
+
+        // Test on basic or digest
+        if (IastEnabled)
+        {
+            var scheme = data.Trim(' ').Split(' ')[0];
+            filename += scheme.Equals("basic", StringComparison.OrdinalIgnoreCase) ? ".BasicAuth" : ".DigestAuth";
+        }
+
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = "/Iast/InsecureAuthProtocol";
         IncludeAllHttpSpans = true;

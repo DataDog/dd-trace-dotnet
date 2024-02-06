@@ -25,23 +25,25 @@ internal static class InsecureAuthAnalyzer
     {
         try
         {
+            // Check for Authorization header
+            const string headerName = HeaderNames.Authorization;
+            if (!headers.TryGetValue(headerName, out var authHeader))
+            {
+                return;
+            }
+
             if (IgnoredStatusCode(statusCode))
             {
                 return;
             }
 
-            // Check for Authorization header
-            if (!headers.TryGetValue(HeaderNames.Authorization, out var authHeader))
+            var detectedScheme = InsecureSchemeDetected(authHeader);
+            if (detectedScheme is null)
             {
                 return;
             }
 
-            if (!IsInsecureProtocol(authHeader))
-            {
-                return;
-            }
-
-            IastModule.OnInsecureAuthProtocol(authHeader, integrationId);
+            IastModule.OnInsecureAuthProtocol($"{headerName}: {detectedScheme}", integrationId);
         }
         catch (Exception error)
         {
@@ -55,24 +57,26 @@ internal static class InsecureAuthAnalyzer
     {
         try
         {
-            if (IgnoredStatusCode(statusCode))
-            {
-                return;
-            }
-
-            // Get Authorization header
-            var authHeader = headers["Authorization"];
+            // Check for Authorization header
+            const string headerName = "Authorization";
+            var authHeader = headers[headerName];
             if (string.IsNullOrEmpty(authHeader))
             {
                 return;
             }
 
-            if (!IsInsecureProtocol(authHeader))
+            if (IgnoredStatusCode(statusCode))
             {
                 return;
             }
 
-            IastModule.OnInsecureAuthProtocol(authHeader, integrationId);
+            var detectedScheme = InsecureSchemeDetected(authHeader);
+            if (detectedScheme is null)
+            {
+                return;
+            }
+
+            IastModule.OnInsecureAuthProtocol($"{headerName}: {detectedScheme}", integrationId);
         }
         catch (Exception error)
         {
@@ -89,11 +93,11 @@ internal static class InsecureAuthAnalyzer
         return statusCode >= 300;
     }
 
-    private static bool IsInsecureProtocol(string authHeader)
+    private static string? InsecureSchemeDetected(string authHeader)
     {
-        var insecureProtocols = new[] { "basic", "digest" };
+        var insecureSchemes = new[] { "Basic", "Digest" };
+        var scheme = authHeader.Trim(' ').Split(' ')[0];
 
-        // Case insensitive comparison
-        return insecureProtocols.Contains(authHeader.Split(' ')[0], StringComparer.OrdinalIgnoreCase);
+        return insecureSchemes.FirstOrDefault(s => s.Equals(scheme, StringComparison.OrdinalIgnoreCase));
     }
 }
