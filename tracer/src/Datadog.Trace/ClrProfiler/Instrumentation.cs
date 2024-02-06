@@ -565,7 +565,7 @@ namespace Datadog.Trace.ClrProfiler
                     {
                         if (isRasp)
                         {
-                            inputAspects = GetRaspAspects(AspectDefinitions.Aspects);
+                            inputAspects = GetRaspAspects(AspectDefinitions.Aspects, out var _);
                         }
                     }
 
@@ -587,36 +587,52 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        private static string[] GetRaspAspects(string[] aspects)
+        internal static string[] GetRaspAspects(string[] aspects, out bool error)
         {
-            var raspAspects = new List<string>();
-            int classAspectType = 0;
-            foreach (var aspect in aspects)
+            try
             {
-                var trimmed = aspect.Trim();
-                // AspectClass
-                if (trimmed.StartsWith("[AspectC"))
+                error = false;
+                var raspAspects = new List<string>();
+                int classAspectType = 0;
+                foreach (var aspect in aspects)
                 {
-                    var lastQuoteIndex = trimmed.LastIndexOf("\"");
-                    if (lastQuoteIndex != -1)
+                    var trimmed = aspect.Trim();
+                    // AspectClass
+                    if (trimmed.StartsWith("[AspectClass"))
                     {
-                        if (!int.TryParse(trimmed.Substring(lastQuoteIndex + 1).Split(',')[1], out classAspectType))
+                        var lastQuoteIndex = trimmed.LastIndexOf("\"");
+                        if (lastQuoteIndex != -1)
                         {
-                            classAspectType = 0;
-
+                            if (!int.TryParse(trimmed.Substring(lastQuoteIndex + 2).Split(',')[1], out classAspectType))
+                            {
+                                classAspectType = 0;
+                                error = true;
+                                // This should never happen
+                                Log.Error("Error reading aspectType from aspect {Aspect}", aspect);
+                            }
+                        }
+                        else
+                        {
+                            error = true;
                             // This should never happen
                             Log.Error("Error reading aspectType from aspect {Aspect}", aspect);
                         }
                     }
+
+                    if (((AspectType)classAspectType).HasFlag(AspectType.RaspSink))
+                    {
+                        raspAspects.Add(aspect);
+                    }
                 }
 
-                if (((AspectType)classAspectType).HasFlag(AspectType.RaspSink))
-                {
-                    raspAspects.Add(aspect);
-                }
+                return raspAspects.ToArray();
             }
-
-            return raspAspects.ToArray();
+            catch (Exception ex)
+            {
+                error = true;
+                Log.Error(ex, "Error getting RASP aspects");
+                return null;
+            }
         }
 
         internal static void DisableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
