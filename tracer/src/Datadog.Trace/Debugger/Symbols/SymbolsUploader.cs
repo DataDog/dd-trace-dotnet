@@ -136,9 +136,9 @@ namespace Datadog.Trace.Debugger.Symbols
             AppDomain.CurrentDomain.AssemblyLoad -= CurrentDomain_AssemblyLoad;
         }
 
-        private async void CurrentDomain_AssemblyLoad(object? sender, AssemblyLoadEventArgs args)
+        private void CurrentDomain_AssemblyLoad(object? sender, AssemblyLoadEventArgs args)
         {
-            await ProcessItemAsync(args.LoadedAssembly).ConfigureAwait(false);
+            _ = ProcessItemAsync(args.LoadedAssembly);
         }
 
         private async Task ProcessItemAsync(Assembly assembly)
