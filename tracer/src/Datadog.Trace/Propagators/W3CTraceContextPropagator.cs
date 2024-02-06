@@ -157,6 +157,10 @@ namespace Datadog.Trace.Propagators
                     sb.Append("o:").Append(replacedOrigin).Append(TraceStateDatadogPairsSeparator);
                 }
 
+                // last parent ("lp.id:<value>")
+                var lastParent = HexString.ToHexString(context.SpanId, lowerCase: true);
+                sb.Append("lp.id:").Append(lastParent).Append(TraceStateDatadogPairsSeparator);
+
                 // propagated tags ("t.<key>:<value>")
                 var propagatedTags = context.PrepareTagsForPropagation();
 
