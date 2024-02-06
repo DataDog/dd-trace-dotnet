@@ -11,6 +11,7 @@ Datadog.Trace.Trimming.xml                @DataDog/apm-dotnet
 missing-nullability-files.csv             @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Generated/      @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Configuration/IntegrationId.cs @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace/Telemetry/Metrics/MetricTags.cs @DataDog/apm-dotnet
 
 # CI
 /tracer/src/Datadog.Trace/Ci/             @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
