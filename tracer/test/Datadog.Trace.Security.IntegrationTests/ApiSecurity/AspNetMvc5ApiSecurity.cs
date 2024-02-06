@@ -56,8 +56,7 @@ public abstract class AspNetMvc5ApiSecurity : AspNetBase, IClassFixture<IisFixtu
 
         AddCookies(new Dictionary<string, string> { { "cookie-key", "cookie-value" } });
         _iisFixture = iisIisFixture;
-        _testName = "Security." + nameof(AspNetMvc5ApiSecurity)
-                                + ".enableApiSecurity=" + enableApiSecurity;
+        _testName = "Security." + nameof(AspNetMvc5ApiSecurity) + ".enableApiSecurity=" + enableApiSecurity;
     }
 
     [SkippableTheory]
@@ -82,6 +81,10 @@ public abstract class AspNetMvc5ApiSecurity : AspNetBase, IClassFixture<IisFixtu
     {
         await _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
         SetHttpPort(_iisFixture.HttpPort);
+        // we need to have a first request to the home page to avoid the initialization metrics of the waf and sampling priority set to 2.0 because of that
+        var answer = await SubmitRequest("/", null, string.Empty);
+        // because of this we need to add a filter
+        _iisFixture.Agent.SpanFilters.Add(s => !s.Resource.Contains("home/index"));
     }
 
     public Task DisposeAsync() => Task.CompletedTask;

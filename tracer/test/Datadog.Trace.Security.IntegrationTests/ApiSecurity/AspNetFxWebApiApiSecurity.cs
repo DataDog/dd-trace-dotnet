@@ -6,6 +6,7 @@
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -60,7 +61,7 @@ public abstract class AspNetFxWebApiApiSecurity : AspNetBase, IClassFixture<IisF
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.UseTextForParameters($"scenario={scenario}");
         var dateTime = DateTime.UtcNow;
-        await SubmitRequest(url, body, "application/json");
+        var res = await SubmitRequest(url, body, "application/json");
         var spans = agent.WaitForSpans(2, minDateTime: dateTime);
         await VerifySpans(spans, settings);
     }
@@ -69,6 +70,10 @@ public abstract class AspNetFxWebApiApiSecurity : AspNetBase, IClassFixture<IisF
     {
         await _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
         SetHttpPort(_iisFixture.HttpPort);
+        // we need to have a first request to the home page to avoid the initialization metrics of the waf and sampling priority set to 2.0 because of that
+        var answer = await SubmitRequest("/", null, string.Empty);
+        // because of this we need to add a filter
+        _iisFixture.Agent.SpanFilters.Add(s => !s.Resource.Contains("landing"));
     }
 
     public Task DisposeAsync() => Task.CompletedTask;

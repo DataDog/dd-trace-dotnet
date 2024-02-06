@@ -276,8 +276,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             {
                 var url = $"http://localhost:{_httpPort}{path}";
 
-                var response =
-                    body == null ? await _httpClient.GetAsync(url) : await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
+                var response = body == null ? await _httpClient.GetAsync(url) : await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
                 var responseText = await response.Content.ReadAsStringAsync();
                 return (response.StatusCode, responseText);
             }
