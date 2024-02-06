@@ -1079,7 +1079,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             // live heap profiling is not supported by .NET Framework (missing .NET 7 ICorProfilerInfo13 functions to create weak handles)
             if (_pConfiguration->IsHeapProfilingEnabled())
             {
-                Log::Warn("Live Heap profiling is not supported by .NET Framework (.NET 7+ is required)");
+                Log::Info("Live Heap profiling is not supported by .NET Framework (.NET 7+ is required)");
             }
         }
         else
@@ -1087,7 +1087,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         {
             if (AreEventBasedProfilersEnabled)
             {
-                Log::Warn("Event-based profilers (Allocation, LockContention, Live Heap and GC) are not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
+                Log::Info("Event-based profilers (Allocation, LockContention, Live Heap and GC) are not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
             }
         }
     }
