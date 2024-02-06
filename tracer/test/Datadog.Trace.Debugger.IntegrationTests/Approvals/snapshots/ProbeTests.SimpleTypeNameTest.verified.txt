@@ -53,10 +53,7 @@
                     "type": "String",
                     "value": "Samples.Probes.TestRuns"
                   },
-                  "StackTrace": {
-                    "type": "String",
-                    "value": "   at Samples.Probes.TestRuns.SmokeTests.SimpleTypeNameTest.MethodToInstrument(String callerName) in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\SmokeTests\\SimpleTypeNameTest.cs:line 22\r\n   at Samples.Probes.TestRuns.SmokeTests.SimpleTypeNameTest.Run() in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\SmokeTests\\SimpleTypeNameTest.cs:line 10\r\n   at Program.RunTest(Object instance, String testClassName) in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\Samples.Probes\\Program.cs:line 61"
-                  }
+                  "StackTrace": "ScrubbedValue"
                 },
                 "type": "IntentionalDebuggerException",
                 "value": "IntentionalDebuggerException"
