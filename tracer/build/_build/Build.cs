@@ -79,6 +79,9 @@ partial class Build : NukeBuild
     [Parameter("Enables code coverage")]
     readonly bool CodeCoverage;
 
+    [Parameter("Enable or Disable fast developer loop")]
+    readonly bool FastDevLoop;
+    
     [Parameter("The directory containing the tool .nupkg file")]
     readonly AbsolutePath ToolSource;
 

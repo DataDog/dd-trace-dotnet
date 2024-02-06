@@ -7,6 +7,12 @@
     "debugger": {
       "snapshot": {
         "duration": "ScrubbedValue",
+        "evaluationErrors": [
+          {
+            "expr": "this.@exceptions",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {

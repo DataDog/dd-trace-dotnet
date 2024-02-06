@@ -45,10 +45,7 @@
                     "type": "String",
                     "value": "Samples.Probes.TestRuns"
                   },
-                  "StackTrace": {
-                    "type": "String",
-                    "value": "   at Samples.Probes.TestRuns.SmokeTests.AsyncThrowException.Method(String caller) in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\SmokeTests\\AsyncThrowException.cs:line 19"
-                  }
+                  "StackTrace": "ScrubbedValue"
                 },
                 "type": "InvalidOperationException",
                 "value": "InvalidOperationException"
