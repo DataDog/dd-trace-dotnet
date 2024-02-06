@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.Rcm;
@@ -47,6 +48,8 @@ namespace Datadog.Trace.AppSec
         private WafLibraryInvoker? _wafLibraryInvoker;
         private AppSecRateLimiter? _rateLimiter;
         private InitResult? _wafInitResult;
+        private string? _blockedHtmlTemplateCache;
+        private string? _blockedJsonTemplateCache;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
@@ -292,13 +295,13 @@ namespace Datadog.Trace.AppSec
             void SetJsonResponseContent()
             {
                 blockingAction.ContentType = AspNet.MimeTypes.Json;
-                blockingAction.ResponseContent = _settings.BlockedJsonTemplate;
+                blockingAction.ResponseContent = GetJsonResponse();
             }
 
             void SetHtmlResponseContent()
             {
                 blockingAction.ContentType = AspNet.MimeTypes.TextHtml;
-                blockingAction.ResponseContent = _settings.BlockedHtmlTemplate;
+                blockingAction.ResponseContent = GetHtmlResponse();
             }
 
             if (action?.Parameters == null)
@@ -345,6 +348,60 @@ namespace Datadog.Trace.AppSec
             }
 
             return blockingAction;
+        }
+
+        private string GetJsonResponse()
+        {
+            if (_blockedJsonTemplateCache != null)
+            {
+                return _blockedJsonTemplateCache;
+            }
+
+            if (_settings.BlockedJsonTemplatePath != null && AppDomain.CurrentDomain.BaseDirectory != null)
+            {
+                var fullPath =
+                    Path.IsPathRooted(_settings.BlockedJsonTemplatePath)
+                        ? _settings.BlockedJsonTemplatePath
+                        : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _settings.BlockedJsonTemplatePath);
+                if (File.Exists(fullPath))
+                {
+                    _blockedJsonTemplateCache = File.ReadAllText(fullPath);
+                }
+            }
+
+            if (_blockedJsonTemplateCache == null)
+            {
+                _blockedJsonTemplateCache = SecurityConstants.BlockedJsonTemplate;
+            }
+
+            return _blockedJsonTemplateCache;
+        }
+
+        private string GetHtmlResponse()
+        {
+            if (_blockedHtmlTemplateCache != null)
+            {
+                return _blockedHtmlTemplateCache;
+            }
+
+            if (_settings.BlockedHtmlTemplatePath != null && AppDomain.CurrentDomain.BaseDirectory != null)
+            {
+                var fullPath =
+                    Path.IsPathRooted(_settings.BlockedJsonTemplatePath)
+                        ? _settings.BlockedJsonTemplatePath
+                        : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _settings.BlockedHtmlTemplatePath);
+                if (File.Exists(fullPath))
+                {
+                    _blockedHtmlTemplateCache = File.ReadAllText(fullPath);
+                }
+            }
+
+            if (_blockedHtmlTemplateCache == null)
+            {
+                _blockedHtmlTemplateCache = SecurityConstants.BlockedHtmlTemplate;
+            }
+
+            return _blockedHtmlTemplateCache;
         }
 
         /// <summary> Frees resources </summary>
