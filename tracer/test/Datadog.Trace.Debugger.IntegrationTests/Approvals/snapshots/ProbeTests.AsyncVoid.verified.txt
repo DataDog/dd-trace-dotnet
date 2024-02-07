@@ -23,8 +23,9 @@
             },
             "locals": {
               "e": {
-                "isNull": "true",
-                "type": "AccessViolationException"
+                "notCapturedReason": "valueIsUnreachable",
+                "type": "AccessViolationException",
+                "value": null
               }
             }
           }

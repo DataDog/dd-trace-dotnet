@@ -80,6 +80,19 @@ namespace Datadog.Trace.Debugger.Snapshots
                     return true;
                 }
 
+                if (source is UnreachableLocal unreachable)
+                {
+                    jsonWriter.WritePropertyName(variableName);
+                    jsonWriter.WriteStartObject();
+                    jsonWriter.WritePropertyName("type");
+                    jsonWriter.WriteValue(type.Name);
+                    jsonWriter.WritePropertyName("value");
+                    jsonWriter.WriteValue(unreachable.Value);
+                    WriteNotCapturedReason(jsonWriter, NotCapturedReason.valueIsUnreachable);
+                    jsonWriter.WriteEndObject();
+                    return true;
+                }
+
                 if (source is IEnumerable enumerable && (Redaction.IsSupportedCollection(source) ||
                                                          Redaction.IsSupportedDictionary(source)))
                 {
