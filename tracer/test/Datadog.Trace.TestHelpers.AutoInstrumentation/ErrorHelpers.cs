@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Tagging;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -108,7 +109,7 @@ public static class ErrorHelpers
 
     private static string SanitizeTagValue(string tag)
     {
-        tag.TryConvertToNormalizedTagName(true, out var normalizedTag);
+        SpanTagHelper.TryNormalizeTagName(tag, normalizeSpaces: true, out var normalizedTag);
         return normalizedTag;
     }
 }

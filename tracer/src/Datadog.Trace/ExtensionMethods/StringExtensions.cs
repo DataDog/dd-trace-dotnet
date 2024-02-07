@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Runtime.CompilerServices;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ExtensionMethods
@@ -75,60 +74,6 @@ namespace Datadog.Trace.ExtensionMethods
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Datadog tag requirements:
-        /// 1. Tag must start with a letter
-        /// 2. Tag cannot exceed 200 characters
-        /// 3. If the first two requirements are met, then valid characters will be retained while all other characters will be converted to underscores. Valid characters include:
-        ///    - Alphanumerics
-        ///    - Underscores
-        ///    - Minuses
-        ///    - Colons
-        ///    - Slashes
-        ///
-        /// 4. Optionally, periods can be replaced by underscores.
-        /// Note: This method will trim leading/trailing whitespace before checking the requirements.
-        /// </summary>
-        /// <param name="value">Input string to convert into tag name</param>
-        /// <param name="normalizePeriods">True if we replace dots by underscores</param>
-        /// <param name="normalizedTagName">If the method returns true, the normalized tag name</param>
-        /// <returns>Returns whether the conversion was successful</returns>
-        public static bool TryConvertToNormalizedTagName(this string value, bool normalizePeriods, out string normalizedTagName)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                normalizedTagName = null;
-                return false;
-            }
-
-            var trimmedValue = value.Trim();
-            if (!char.IsLetter(trimmedValue[0]) || trimmedValue.Length > 200)
-            {
-                normalizedTagName = null;
-                return false;
-            }
-
-            var sb = StringBuilderCache.Acquire(trimmedValue.Length);
-            sb.Append(trimmedValue.ToLowerInvariant());
-
-            for (var x = 0; x < sb.Length; x++)
-            {
-                switch (sb[x])
-                {
-                    case (>= 'a' and <= 'z') or (>= '0' and <= '9') or '_' or ':' or '/' or '-':
-                        continue;
-                    case '.' when !normalizePeriods:
-                        continue;
-                    default:
-                        sb[x] = '_';
-                        break;
-                }
-            }
-
-            normalizedTagName = StringBuilderCache.GetStringAndRelease(sb);
-            return true;
         }
 
         public static string SanitizeNulls(this string txt)
