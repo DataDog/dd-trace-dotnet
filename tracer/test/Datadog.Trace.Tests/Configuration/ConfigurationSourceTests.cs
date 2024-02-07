@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tests.Configuration
         private static readonly Dictionary<string, string> TagsK1V1K2V2 = new() { { "k1", "v1" }, { "k2", "v2" } };
         private static readonly Dictionary<string, string> TagsK2V2 = new() { { "k2", "v2" } };
         private static readonly Dictionary<string, string> TagsWithColonsInValue = new() { { "k1", "v1" }, { "k2", "v2:with:colons" }, { "trailing", "colon:good:" } };
-        private static readonly Dictionary<string, string> HeaderTagsWithOptionalMappings = new() { { "header1", "tag1" }, { "header2", "content-type" }, { "header3", "content-type" }, { "header4", "c___ont_____ent----typ_/_e" }, { "validheaderonly", string.Empty }, { "validheaderwithoutcolon", string.Empty } };
+        private static readonly Dictionary<string, string> HeaderTagsWithOptionalMappings = new() { { "header1", "tag1" }, { "header2", "Content-Type" }, { "header3", "Content-Type" }, { "header4", "C!!!ont_____ent----tYp!/!e" }, { "validheaderonly", string.Empty }, { "validheaderwithoutcolon", string.Empty } };
         private static readonly Dictionary<string, string> HeaderTagsWithDots = new() { { "header3", "my.header.with.dot" }, { "my.new.header.with.dot", string.Empty } };
         private static readonly Dictionary<string, string> HeaderTagsSameTag = new() { { "header1", "tag1" }, { "header2", "tag1" } };
 
@@ -39,95 +39,95 @@ namespace Datadog.Trace.Tests.Configuration
 
         public static IEnumerable<(Func<GlobalSettings, object> Getter, object Expected)> GetGlobalDefaultTestData()
         {
-            yield return (CreateGlobalFunc(s => s.DebugEnabled), false);
-            yield return (CreateGlobalFunc(s => s.DiagnosticSourceEnabled), true);
+            yield return (s => s.DebugEnabled, false);
+            yield return (s => s.DiagnosticSourceEnabled, true);
         }
 
         public static IEnumerable<(string Key, string Value, Func<GlobalSettings, object> Getter, object Expected)> GetGlobalTestData()
         {
-            yield return (ConfigurationKeys.DebugEnabled, "true", CreateGlobalFunc(s => s.DebugEnabled), true);
-            yield return (ConfigurationKeys.DebugEnabled, "false", CreateGlobalFunc(s => s.DebugEnabled), false);
-            yield return (ConfigurationKeys.DebugEnabled, "tRUe", CreateGlobalFunc(s => s.DebugEnabled), true);
-            yield return (ConfigurationKeys.DebugEnabled, "fALse", CreateGlobalFunc(s => s.DebugEnabled), false);
-            yield return (ConfigurationKeys.DebugEnabled, "1", CreateGlobalFunc(s => s.DebugEnabled), true);
-            yield return (ConfigurationKeys.DebugEnabled, "0", CreateGlobalFunc(s => s.DebugEnabled), false);
-            yield return (ConfigurationKeys.DebugEnabled, "yes", CreateGlobalFunc(s => s.DebugEnabled), true);
-            yield return (ConfigurationKeys.DebugEnabled, "no", CreateGlobalFunc(s => s.DebugEnabled), false);
-            yield return (ConfigurationKeys.DebugEnabled, "T", CreateGlobalFunc(s => s.DebugEnabled), true);
-            yield return (ConfigurationKeys.DebugEnabled, "F", CreateGlobalFunc(s => s.DebugEnabled), false);
-            yield return (ConfigurationKeys.DebugEnabled, "Y", CreateGlobalFunc(s => s.DebugEnabled), true);
-            yield return (ConfigurationKeys.DebugEnabled, "N", CreateGlobalFunc(s => s.DebugEnabled), false);
+            yield return (ConfigurationKeys.DebugEnabled, "true", s => s.DebugEnabled, true);
+            yield return (ConfigurationKeys.DebugEnabled, "false", s => s.DebugEnabled, false);
+            yield return (ConfigurationKeys.DebugEnabled, "tRUe", s => s.DebugEnabled, true);
+            yield return (ConfigurationKeys.DebugEnabled, "fALse", s => s.DebugEnabled, false);
+            yield return (ConfigurationKeys.DebugEnabled, "1", s => s.DebugEnabled, true);
+            yield return (ConfigurationKeys.DebugEnabled, "0", s => s.DebugEnabled, false);
+            yield return (ConfigurationKeys.DebugEnabled, "yes", s => s.DebugEnabled, true);
+            yield return (ConfigurationKeys.DebugEnabled, "no", s => s.DebugEnabled, false);
+            yield return (ConfigurationKeys.DebugEnabled, "T", s => s.DebugEnabled, true);
+            yield return (ConfigurationKeys.DebugEnabled, "F", s => s.DebugEnabled, false);
+            yield return (ConfigurationKeys.DebugEnabled, "Y", s => s.DebugEnabled, true);
+            yield return (ConfigurationKeys.DebugEnabled, "N", s => s.DebugEnabled, false);
 
             // garbage checks
-            yield return (ConfigurationKeys.DebugEnabled, "what_even_is_this", CreateGlobalFunc(s => s.DebugEnabled), false);
-            yield return (ConfigurationKeys.DebugEnabled, "42", CreateGlobalFunc(s => s.DebugEnabled), false);
-            yield return (ConfigurationKeys.DebugEnabled, string.Empty, CreateGlobalFunc(s => s.DebugEnabled), false);
+            yield return (ConfigurationKeys.DebugEnabled, "what_even_is_this", s => s.DebugEnabled, false);
+            yield return (ConfigurationKeys.DebugEnabled, "42", s => s.DebugEnabled, false);
+            yield return (ConfigurationKeys.DebugEnabled, string.Empty, s => s.DebugEnabled, false);
         }
 
         public static IEnumerable<(Func<TracerSettings, object> SettingGetter, object ExpectedValue)> GetDefaultTestData()
         {
-            yield return (CreateFunc(s => s.TraceEnabled), true);
-            yield return (CreateFunc(s => s.Exporter.AgentUri), new Uri("http://127.0.0.1:8126/"));
-            yield return (CreateFunc(s => s.Environment), null);
-            yield return (CreateFunc(s => s.ServiceName), null);
-            yield return (CreateFunc(s => s.DisabledIntegrationNames.Count), 1); // The OpenTelemetry integration is disabled by defa)t
-            yield return (CreateFunc(s => s.LogsInjectionEnabled), false);
-            yield return (CreateFunc(s => s.GlobalTags.Count), 0);
+            yield return (s => s.TraceEnabled, true);
+            yield return (s => s.Exporter.AgentUri, new Uri("http://127.0.0.1:8126/"));
+            yield return (s => s.Environment, null);
+            yield return (s => s.ServiceName, null);
+            yield return (s => s.DisabledIntegrationNames.Count, 1); // The OpenTelemetry integration is disabled by defa)t
+            yield return (s => s.LogsInjectionEnabled, false);
+            yield return (s => s.GlobalTags.Count, 0);
 #pragma warning disable 618 // App analytics is deprecated but supported
-            yield return (CreateFunc(s => s.AnalyticsEnabled), false);
+            yield return (s => s.AnalyticsEnabled, false);
 #pragma warning restore 618
-            yield return (CreateFunc(s => s.CustomSamplingRules), null);
-            yield return (CreateFunc(s => s.MaxTracesSubmittedPerSecond), 100);
-            yield return (CreateFunc(s => s.TracerMetricsEnabled), false);
-            yield return (CreateFunc(s => s.Exporter.DogStatsdPort), 8125);
-            yield return (CreateFunc(s => s.PropagationStyleInject), new[] { "Datadog", "tracecontext" });
-            yield return (CreateFunc(s => s.PropagationStyleExtract), new[] { "Datadog", "tracecontext" });
-            yield return (CreateFunc(s => s.ServiceNameMappings), null);
+            yield return (s => s.CustomSamplingRules, null);
+            yield return (s => s.MaxTracesSubmittedPerSecond, 100);
+            yield return (s => s.TracerMetricsEnabled, false);
+            yield return (s => s.Exporter.DogStatsdPort, 8125);
+            yield return (s => s.PropagationStyleInject, new[] { "Datadog", "tracecontext" });
+            yield return (s => s.PropagationStyleExtract, new[] { "Datadog", "tracecontext" });
+            yield return (s => s.ServiceNameMappings, null);
 
-            yield return (CreateFunc(s => s.TraceId128BitGenerationEnabled), true);
-            yield return (CreateFunc(s => s.TraceId128BitLoggingEnabled), false);
+            yield return (s => s.TraceId128BitGenerationEnabled, true);
+            yield return (s => s.TraceId128BitLoggingEnabled, false);
         }
 
         public static IEnumerable<(string Key, string Value, Func<TracerSettings, object> Getter, object Expected)> GetTestData()
         {
-            yield return (ConfigurationKeys.TraceEnabled, "true", CreateFunc(s => s.TraceEnabled), true);
-            yield return (ConfigurationKeys.TraceEnabled, "false", CreateFunc(s => s.TraceEnabled), false);
+            yield return (ConfigurationKeys.TraceEnabled, "true", s => s.TraceEnabled, true);
+            yield return (ConfigurationKeys.TraceEnabled, "false", s => s.TraceEnabled, false);
 
-            yield return (ConfigurationKeys.AgentHost, "test-host", CreateFunc(s => s.Exporter.AgentUri), new Uri("http://test-host:8126/"));
-            yield return (ConfigurationKeys.AgentPort, "9000", CreateFunc(s => s.Exporter.AgentUri), new Uri("http://127.0.0.1:9000/"));
+            yield return (ConfigurationKeys.AgentHost, "test-host", s => s.Exporter.AgentUri, new Uri("http://test-host:8126/"));
+            yield return (ConfigurationKeys.AgentPort, "9000", s => s.Exporter.AgentUri, new Uri("http://127.0.0.1:9000/"));
 
-            yield return (ConfigurationKeys.Environment, "staging", CreateFunc(s => s.Environment), "staging");
+            yield return (ConfigurationKeys.Environment, "staging", s => s.Environment, "staging");
 
-            yield return (ConfigurationKeys.ServiceVersion, "1.0.0", CreateFunc(s => s.ServiceVersion), "1.0.0");
+            yield return (ConfigurationKeys.ServiceVersion, "1.0.0", s => s.ServiceVersion, "1.0.0");
 
-            yield return (ConfigurationKeys.ServiceName, "web-service", CreateFunc(s => s.ServiceName), "web-service");
-            yield return ("DD_SERVICE_NAME", "web-service", CreateFunc(s => s.ServiceName), "web-service");
+            yield return (ConfigurationKeys.ServiceName, "web-service", s => s.ServiceName, "web-service");
+            yield return ("DD_SERVICE_NAME", "web-service", s => s.ServiceName, "web-service");
 
-            yield return (ConfigurationKeys.DisabledIntegrations, "integration1;integration2;;INTEGRATION2", CreateFunc(s => s.DisabledIntegrationNames.Count), 3); // The OpenTelemetry integration is disabled by defau)t
+            yield return (ConfigurationKeys.DisabledIntegrations, "integration1;integration2;;INTEGRATION2", s => s.DisabledIntegrationNames.Count, 3); // The OpenTelemetry integration is disabled by defau)t
 
-            yield return (ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2);
-            yield return (ConfigurationKeys.GlobalTags, "keyonly:,nocolon,:,:valueonly,k2:v2", CreateFunc(s => s.GlobalTags), TagsK2V2);
-            yield return ("DD_TRACE_GLOBAL_TAGS", "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2);
-            yield return (ConfigurationKeys.GlobalTags, "k1:v1,k1:v2", CreateFunc(s => s.GlobalTags.Count), 1);
-            yield return (ConfigurationKeys.GlobalTags, "k1:v1, k2:v2:with:colons, :leading:colon:bad, trailing:colon:good:", CreateFunc(s => s.GlobalTags), TagsWithColonsInValue);
+            yield return (ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", s => s.GlobalTags, TagsK1V1K2V2);
+            yield return (ConfigurationKeys.GlobalTags, "keyonly:,nocolon,:,:valueonly,k2:v2", s => s.GlobalTags, TagsK2V2);
+            yield return ("DD_TRACE_GLOBAL_TAGS", "k1:v1, k2:v2", s => s.GlobalTags, TagsK1V1K2V2);
+            yield return (ConfigurationKeys.GlobalTags, "k1:v1,k1:v2", s => s.GlobalTags.Count, 1);
+            yield return (ConfigurationKeys.GlobalTags, "k1:v1, k2:v2:with:colons, :leading:colon:bad, trailing:colon:good:", s => s.GlobalTags, TagsWithColonsInValue);
 
 #pragma warning disable 618 // App Analytics is deprecated but still supported
-            yield return (ConfigurationKeys.GlobalAnalyticsEnabled, "true", CreateFunc(s => s.AnalyticsEnabled), true);
-            yield return (ConfigurationKeys.GlobalAnalyticsEnabled, "false", CreateFunc(s => s.AnalyticsEnabled), false);
+            yield return (ConfigurationKeys.GlobalAnalyticsEnabled, "true", s => s.AnalyticsEnabled, true);
+            yield return (ConfigurationKeys.GlobalAnalyticsEnabled, "false", s => s.AnalyticsEnabled, false);
 #pragma warning restore 618
 
-            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header2:Content-Type,header3: Content-Type ,header4:C!!!ont_____ent----tYp!/!e,header6:9invalidtagname,:invalidtagonly,validheaderonly:,validheaderwithoutcolon,:", CreateFunc(s => s.HeaderTags), HeaderTagsWithOptionalMappings);
-            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header2:tag1", CreateFunc(s => s.HeaderTags), HeaderTagsSameTag);
-            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header1:tag2", CreateFunc(s => s.HeaderTags.Count), 1);
-            yield return (ConfigurationKeys.HeaderTags, "header3:my.header.with.dot,my.new.header.with.dot", CreateFunc(s => s.HeaderTags), HeaderTagsWithDots);
+            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header2:Content-Type,header3: Content-Type ,header4:C!!!ont_____ent----tYp!/!e,header6:9invalidtagname,:invalidtagonly,validheaderonly:,validheaderwithoutcolon,:", s => s.HeaderTags, HeaderTagsWithOptionalMappings);
+            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header2:tag1", s => s.HeaderTags, HeaderTagsSameTag);
+            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header1:tag2", s => s.HeaderTags.Count, 1);
+            yield return (ConfigurationKeys.HeaderTags, "header3:my.header.with.dot,my.new.header.with.dot", s => s.HeaderTags, HeaderTagsWithDots);
 
-            yield return (ConfigurationKeys.ServiceNameMappings, "elasticsearch:custom-name", CreateFunc(s => s.ServiceNameMappings["elasticsearch"]), "custom-name");
+            yield return (ConfigurationKeys.ServiceNameMappings, "elasticsearch:custom-name", s => s.ServiceNameMappings["elasticsearch"], "custom-name");
         }
 
         // JsonConfigurationSource needs to be tested with JSON data, which cannot be used with the other IConfigurationSource implementations.
         public static IEnumerable<(string Value, Func<TracerSettings, object> Getter, object Expected)> GetJsonTestData()
         {
-            yield return new(@"{ ""DD_TRACE_GLOBAL_TAGS"": { ""k1"":""v1"", ""k2"": ""v2""} }", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2);
+            yield return new(@"{ ""DD_TRACE_GLOBAL_TAGS"": { ""k1"":""v1"", ""k2"": ""v2""} }", s => s.GlobalTags, TagsK1V1K2V2);
         }
 
         public static IEnumerable<object[]> GetBadJsonTestData1()
@@ -145,17 +145,7 @@ namespace Datadog.Trace.Tests.Configuration
         public static IEnumerable<(string Value, Func<TracerSettings, object> Getter, object Expected)> GetBadJsonTestData3()
         {
             // Json doesn't represent dictionary of string to string
-            yield return (@"{ ""DD_TRACE_GLOBAL_TAGS"": { ""name1"": { ""name2"": [ ""vers"" ] } } }", CreateFunc(s => s.GlobalTags.Count), 0);
-        }
-
-        public static Func<TracerSettings, object> CreateFunc(Func<TracerSettings, object> settingGetter)
-        {
-            return settingGetter;
-        }
-
-        public static Func<GlobalSettings, object> CreateGlobalFunc(Func<GlobalSettings, object> settingGetter)
-        {
-            return settingGetter;
+            yield return (@"{ ""DD_TRACE_GLOBAL_TAGS"": { ""name1"": { ""name2"": [ ""vers"" ] } } }", s => s.GlobalTags.Count, 0);
         }
 
         public void Dispose()
@@ -183,7 +173,8 @@ namespace Datadog.Trace.Tests.Configuration
                 IConfigurationSource source = new NameValueConfigurationSource(collection);
                 var settings = new TracerSettings(source);
                 object actualValue = settingGetter(settings);
-                Assert.Equal(expectedValue, actualValue);
+                // Assert.Equal(expectedValue, actualValue);
+                actualValue.Should().BeEquivalentTo(expectedValue);
             }
         }
 
