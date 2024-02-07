@@ -529,7 +529,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("1", SamplingRulesFormat.Unknown)]     // invalid
         [InlineData("", SamplingRulesFormat.Unknown)]      // empty is invalid
         [InlineData("  ", SamplingRulesFormat.Unknown)]    // whitespace is invalid
-        [InlineData(null, SamplingRulesFormat.Regex)]      // null defaults to regex
+        [InlineData(null, SamplingRulesFormat.Glob)]       // null defaults to glob
         public void CustomSamplingRulesFormat(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CustomSamplingRulesFormat, value));
@@ -558,7 +558,7 @@ namespace Datadog.Trace.Tests.Configuration
                 {
                     case ConfigurationOrigins.Default:
                         // setting not specified, so the default value is used
-                        entry.StringValue.Should().Be(SamplingRulesFormat.Regex);
+                        entry.StringValue.Should().Be(SamplingRulesFormat.Glob);
                         break;
                     case ConfigurationOrigins.Code:
                         // original setting
