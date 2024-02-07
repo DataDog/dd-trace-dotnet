@@ -4,14 +4,12 @@
 // </copyright>
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -399,12 +397,17 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("key1:value1,key2:value2", true, new[] { "key1:value1", "key2:value2" })]
-        [InlineData("key1 :value1,empty,key2: value2", true, new[] { "key1:value1", "empty:", "key2:value2" })]
+        // null, empty, whitespace
         [InlineData(null, true, new string[0])]
         [InlineData("", true, new string[0])]
-        [InlineData("key1 :val.ue1?", false, new[] { "key1:val_ue1_" })]
-        [InlineData("key1 :val.ue1?", true, new[] { "key1:val.ue1_" })]
+        [InlineData("   ", true, new string[0])]
+        // nominal
+        [InlineData("key1:value1,key2:value2,key3", true, new[] { "key1:value1", "key2:value2", "key3:" })]
+        // trim whitespace
+        [InlineData(" key1 : value1 ", true, new[] { "key1:value1" })]
+        // other normalization
+        [InlineData("key1:val.u e1?!", true, new[] { "key1:val.u e1?!" })]
+        [InlineData("k.e y?!1", false, new[] { "k.e y?!1:" })]
         public void HeaderTags(string value, bool normalizationFixEnabled, string[] expected)
         {
             var source = CreateConfigurationSource(
@@ -413,6 +416,28 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.HeaderTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
+        }
+
+        [Theory]
+        // null, empty, whitespace
+        [InlineData(null, true, new string[0])]
+        [InlineData("", true, new string[0])]
+        [InlineData("   ", true, new string[0])]
+        // nominal
+        [InlineData("key1:value1,key2:value2,key3", true, new[] { "key1:value1", "key2:value2", "key3:" })]
+        // trim whitespace
+        [InlineData(" key1 : value1 ", true, new[] { "key1:value1" })]
+        // other normalization
+        [InlineData("key1:val.u e1?!", true, new[] { "key1:val.u e1?!" })]
+        [InlineData("k.e y?!1", false, new[] { "k.e y?!1:" })]
+        public void GrpcTags(string value, bool normalizationFixEnabled, string[] expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.GrpcTags, value),
+                (ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled, normalizationFixEnabled ? "1" : "0"));
+            var settings = new TracerSettings(source);
+
+            settings.GrpcTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
         }
 
         [Theory]
@@ -849,20 +874,6 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("key1:value1,key2:value2", new[] { "key1:value1", "key2:value2" })]
-        [InlineData("key1 :value1,empty,key2: value2", new[] { "key1:value1", "empty:", "key2:value2" })]
-        [InlineData(null, new string[0])]
-        [InlineData("", new string[0])]
-        [InlineData("key1 :val.ue1?", new[] { "key1:val.ue1_" })]
-        public void GrpcTags(string value, string[] expected)
-        {
-            var source = CreateConfigurationSource((ConfigurationKeys.GrpcTags, value));
-            var settings = new TracerSettings(source);
-
-            settings.GrpcTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
-        }
-
-        [Theory]
         [InlineData("", TagPropagation.OutgoingTagPropagationHeaderMaxLength)]
         [InlineData(null, TagPropagation.OutgoingTagPropagationHeaderMaxLength)]
         [InlineData("invalid", TagPropagation.OutgoingTagPropagationHeaderMaxLength)]
@@ -1055,6 +1066,32 @@ namespace Datadog.Trace.Tests.Configuration
             #error Unexpected TFM
 #endif
             value.Value.Should().Be(expected);
+        }
+
+        [Theory]
+        // null, empty, whitespace
+        [InlineData(null, true, true, "")]
+        [InlineData("", true, true, "")]
+        [InlineData("  ", true, true, "")]
+        // no normalization
+        [InlineData("my-tag", true, true, "my-tag")]
+        [InlineData("my.tag", true, true, "my.tag")]
+        [InlineData("my tag", true, true, "my tag")]
+        [InlineData("my/!*&tag", true, true, "my/!*&tag")]
+        [InlineData("1my-tag", true, false, null)]
+        // opt-in to previous behavior: normalize, but keep spaces
+        [InlineData("my-tag", false, true, "my-tag")]
+        [InlineData("my.tag", false, true, "my_tag")]
+        [InlineData("my tag", false, true, "my tag")]
+        [InlineData("my:/!*&tag", false, true, "my:/___tag")]
+        [InlineData("1my-tag", false, false, null)]
+        public void InitializeHeaderTag(string tagName, bool headerTagsNormalizationFixEnabled, bool expectedValid, string expectedTagName)
+        {
+            TracerSettings.InitializeHeaderTag(tagName, headerTagsNormalizationFixEnabled, out var finalTagName)
+                          .Should()
+                          .Be(expectedValid);
+
+            finalTagName.Should().Be(expectedTagName);
         }
 
         private void SetAndValidateStatusCodes(Action<TracerSettings, IEnumerable<int>> setStatusCodes, Func<TracerSettings, bool[]> getStatusCodes)

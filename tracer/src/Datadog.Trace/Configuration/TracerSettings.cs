@@ -8,18 +8,19 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -174,12 +175,12 @@ namespace Datadog.Trace.Configuration
                       // default value (empty)
                       ?? (IDictionary<string, string>)new ConcurrentDictionary<string, string>();
 
-            HeaderTagsNormalizationFixEnabled = config
+            var headerTagsNormalizationFixEnabled = config
                                                .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
                                                .AsBool(defaultValue: true);
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
-            HeaderTagsInternal = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, HeaderTagsNormalizationFixEnabled)
+            HeaderTagsInternal = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled)
                 ?? new Dictionary<string, string>();
 
             PeerServiceTagsEnabled = config
@@ -668,8 +669,6 @@ namespace Datadog.Trace.Configuration
         internal IDictionary<string, string> HeaderTagsInternal { get; set; }
 #pragma warning restore SA1624
 
-        internal bool HeaderTagsNormalizationFixEnabled { get; }
-
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
         /// </summary>
@@ -1096,35 +1095,58 @@ namespace Datadog.Trace.Configuration
                 return null;
             }
 
-            var headerTags = new Dictionary<string, string>();
+            var headerTags = new Dictionary<string, string>(configurationDictionary.Count);
 
             foreach (var kvp in configurationDictionary)
             {
-                var headerName = kvp.Key;
-                var providedTagName = kvp.Value;
-                if (string.IsNullOrWhiteSpace(headerName))
+                var headerName = kvp.Key.Trim();
+
+                if (string.IsNullOrEmpty(headerName))
                 {
                     continue;
                 }
 
-                // The user has not provided a tag name. The normalization will happen later, when adding the prefix.
-                if (string.IsNullOrEmpty(providedTagName))
+                if (InitializeHeaderTag(tagName: kvp.Value, headerTagsNormalizationFixEnabled, out var finalTagName))
                 {
-                    headerTags.Add(headerName.Trim(), string.Empty);
-                }
-                else if (headerTagsNormalizationFixEnabled && providedTagName.TryConvertToNormalizedTagName(normalizePeriods: false, out var normalizedTagName))
-                {
-                    // If the user has provided a tag name, then we don't normalize periods in the provided tag name
-                    headerTags.Add(headerName.Trim(), normalizedTagName);
-                }
-                else if (!headerTagsNormalizationFixEnabled && providedTagName.TryConvertToNormalizedTagName(normalizePeriods: true, out var normalizedTagNameNoPeriods))
-                {
-                    // Back to the previous behaviour if the flag is set
-                    headerTags.Add(headerName.Trim(), normalizedTagNameNoPeriods);
+                    headerTags.Add(headerName, finalTagName);
                 }
             }
 
             return headerTags;
+        }
+
+        internal static bool InitializeHeaderTag(
+            string? tagName,
+            bool headerTagsNormalizationFixEnabled,
+            [NotNullWhen(true)] out string? finalTagName)
+        {
+            tagName = tagName?.Trim();
+
+            if (string.IsNullOrEmpty(tagName))
+            {
+                // The user did not provide a tag name. Normalization will happen later, when adding the tag prefix.
+                finalTagName = string.Empty;
+                return true;
+            }
+
+            if (!SpanTagHelper.IsValidTagName(tagName!, out tagName))
+            {
+                // invalid tag name
+                finalTagName = null;
+                return false;
+            }
+
+            if (headerTagsNormalizationFixEnabled)
+            {
+                // Default code path: if the user provided a tag name, don't try to normalize it.
+                finalTagName = tagName;
+                return true;
+            }
+
+            // user opted via feature flag into the previous behavior,
+            // where tag names were normalized even when specified
+            // (but _not_ spaces, due to a bug in the normalization code)
+            return SpanTagHelper.TryNormalizeTagName(tagName, normalizeSpaces: false, out finalTagName);
         }
 
         internal static string[] TrimSplitString(string? textValues, char[] separators)
