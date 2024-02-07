@@ -53,6 +53,7 @@ namespace Datadog.Trace.Coverage.Collector
         private readonly ICollectorLogger _logger;
         private readonly string _assemblyFilePath;
         private readonly bool _enableJitOptimizations;
+        private readonly CoverageMode _coverageMode;
 
         private byte[]? _strongNameKeyBlob;
 
@@ -62,6 +63,14 @@ namespace Datadog.Trace.Coverage.Collector
             _logger = logger ?? new ConsoleCollectorLogger();
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
             _enableJitOptimizations = settings.CIVisibility.CodeCoverageEnableJitOptimizations;
+            _coverageMode = CoverageMode.LineExecution;
+            if (settings.CIVisibility.CodeCoverageMode is { Length: > 0 } strCodeCoverageMode)
+            {
+                if (Enum.TryParse<CoverageMode>(strCodeCoverageMode, ignoreCase: true, out var coverageMode))
+                {
+                    _coverageMode = coverageMode;
+                }
+            }
 
             if (!File.Exists(_assemblyFilePath))
             {
@@ -488,15 +497,27 @@ namespace Datadog.Trace.Coverage.Collector
                                     optIdx = 4;
                                 }
 
-                                // Increments items in the counters array (to have the number of times a line was executed)
-                                instructions.Insert(currentInstructionIndex + optIdx + 1, Instruction.Create(OpCodes.Ldc_I4, i));
-                                instructions.Insert(currentInstructionIndex + optIdx + 2, Instruction.Create(OpCodes.Ldelema, module.TypeSystem.Int32));
-                                instructions.Insert(currentInstructionIndex + optIdx + 3, Instruction.Create(OpCodes.Dup));
-                                instructions.Insert(currentInstructionIndex + optIdx + 4, Instruction.Create(OpCodes.Ldind_I4));
-                                instructions.Insert(currentInstructionIndex + optIdx + 5, Instruction.Create(OpCodes.Ldc_I4_1));
-                                instructions.Insert(currentInstructionIndex + optIdx + 6, Instruction.Create(OpCodes.Add));
-                                instructions.Insert(currentInstructionIndex + optIdx + 7, Instruction.Create(OpCodes.Stind_I4));
-                                instructions.Insert(currentInstructionIndex + optIdx + 8, currentInstructionClone);
+                                switch (_coverageMode)
+                                {
+                                    case CoverageMode.LineCallCount:
+                                        // Increments items in the counters array (to have the number of times a line was executed)
+                                        instructions.Insert(currentInstructionIndex + optIdx + 1, Instruction.Create(OpCodes.Ldc_I4, i));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 2, Instruction.Create(OpCodes.Ldelema, module.TypeSystem.Int32));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 3, Instruction.Create(OpCodes.Dup));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 4, Instruction.Create(OpCodes.Ldind_I4));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 5, Instruction.Create(OpCodes.Ldc_I4_1));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 6, Instruction.Create(OpCodes.Add));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 7, Instruction.Create(OpCodes.Stind_I4));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 8, currentInstructionClone);
+                                        break;
+                                    case CoverageMode.LineExecution:
+                                        // Set 1 to items in the counters array (to check if the line was executed or not)
+                                        instructions.Insert(currentInstructionIndex + optIdx + 1, Instruction.Create(OpCodes.Ldc_I4, i));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 2, Instruction.Create(OpCodes.Ldc_I4_1));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 3, Instruction.Create(OpCodes.Stelem_I4));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 4, currentInstructionClone);
+                                        break;
+                                }
                             }
 
                             isDirty = true;
