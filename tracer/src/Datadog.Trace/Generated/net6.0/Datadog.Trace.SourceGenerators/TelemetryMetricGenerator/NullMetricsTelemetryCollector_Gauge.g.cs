@@ -23,4 +23,16 @@ internal partial class NullMetricsTelemetryCollector
     public void RecordGaugeDirectLogQueue(int value)
     {
     }
+
+    public void RecordGaugePoolCount(int value)
+    {
+    }
+
+    public void RecordGaugePoolSlowCount(int value)
+    {
+    }
+
+    public void RecordGaugePoolMemory(int value)
+    {
+    }
 }

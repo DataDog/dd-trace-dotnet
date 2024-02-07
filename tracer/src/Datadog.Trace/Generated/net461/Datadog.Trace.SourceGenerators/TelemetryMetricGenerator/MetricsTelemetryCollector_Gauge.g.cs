@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
-    private const int GaugeLength = 8;
+    private const int GaugeLength = 11;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Gauge" /> values.
@@ -30,6 +30,12 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "component_name:iast_aspects" }),
             // direct_log_queue.length, index = 7
             new(null),
+            // waf.pool_count, index = 8
+            new(null),
+            // waf.pool_slow_count, index = 9
+            new(null),
+            // waf.pool_memory, index = 10
+            new(null),
         };
 
     /// <summary>
@@ -38,7 +44,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] GaugeEntryCounts { get; }
-        = new int[]{ 1, 6, 1, };
+        = new int[]{ 1, 6, 1, 1, 1, 1, };
 
     public void RecordGaugeStatsBuckets(int value)
     {
@@ -54,5 +60,20 @@ internal partial class MetricsTelemetryCollector
     public void RecordGaugeDirectLogQueue(int value)
     {
         Interlocked.Exchange(ref _buffer.Gauge[7], value);
+    }
+
+    public void RecordGaugePoolCount(int value)
+    {
+        Interlocked.Exchange(ref _buffer.Gauge[8], value);
+    }
+
+    public void RecordGaugePoolSlowCount(int value)
+    {
+        Interlocked.Exchange(ref _buffer.Gauge[9], value);
+    }
+
+    public void RecordGaugePoolMemory(int value)
+    {
+        Interlocked.Exchange(ref _buffer.Gauge[10], value);
     }
 }

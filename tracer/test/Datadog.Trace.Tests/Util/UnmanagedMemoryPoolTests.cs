@@ -94,14 +94,17 @@ public class UnmanagedMemoryPoolTests
 
         var pool = Encoder.Pool;
 
-        try
+        for (int x = 0; x < 10; x++)
         {
-            var pwArgs = _encoder.Encode(addresses, applySafetyLimits: true, argToFree: argCache, pool: pool);
-        }
-        finally
-        {
-            pool.Return(argCache);
-            argCache.Clear();
+            try
+            {
+                var pwArgs = _encoder.Encode(addresses, applySafetyLimits: true, argToFree: argCache, pool: pool);
+            }
+            finally
+            {
+                pool.Return(argCache);
+                argCache.Clear();
+            }
         }
 
         pool.Dispose();

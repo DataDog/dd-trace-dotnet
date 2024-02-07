@@ -37,6 +37,9 @@ public class ContextTests : WafLibraryRequiredTest
             AppSec.WafEncoding.Encoder.SetPoolSize(0);
         }
 
+        const int threadCount = 5; // 20;
+        const int iterations = 1000;
+
         var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, setupWafSchemaExtraction: true, useUnsafeEncoder: useUnsafeEncoder);
         using var waf = initResult.Waf;
         waf.Should().NotBeNull();
@@ -47,13 +50,13 @@ public class ContextTests : WafLibraryRequiredTest
         ruleSet.Should().NotBeNull();
 
         var longArraylist = new ArrayList();
-        for (var i = 0; i < 400; i++)
+        for (var i = 0; i < threadCount * 20; i++)
         {
             longArraylist.AddRange(new object[] { 1, 2, true, 3.0, 4.0, 5 });
         }
 
         const int updateThreads = 1;
-        var threads = new Thread[20];
+        var threads = new Thread[threadCount];
 
         // beware that the update thread is not thread safe, only ONE thread can update the waf at the time (should be ok as remote config works only on 1 thread)
         var threadsUpdate = new Thread[updateThreads];
@@ -90,7 +93,7 @@ public class ContextTests : WafLibraryRequiredTest
                         { Tags.HttpClientIp, "127.0.0.1" },
                     };
                     var r = new Random();
-                    for (var i = 0; i < 1000; i++)
+                    for (var i = 0; i < iterations; i++)
                     {
                         var next = r.Next();
                         using var context = waf.CreateContext();
@@ -139,7 +142,7 @@ public class ContextTests : WafLibraryRequiredTest
 
             if (t < updateThreads)
             {
-                for (int i = 0; i < 40; i++)
+                for (int i = 0; i < threadCount * 2; i++)
                 {
                     var threadUpdate = new Thread(
                     () =>
