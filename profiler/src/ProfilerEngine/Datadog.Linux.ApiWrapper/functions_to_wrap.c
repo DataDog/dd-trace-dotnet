@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdatomic.h>
 
 /* dl_iterate_phdr wrapper
 The .NET profiler on Linux uses a classic signal-based approach to collect thread callstack.
@@ -84,6 +85,14 @@ int dl_iterate_phdr(int (*callback)(struct dl_phdr_info* info, size_t size, void
 /* Function pointers to hold the value of the glibc functions */
 static void* (*__real_dlopen)(const char* file, int mode) = NULL;
 
+atomic_int nb_opened_libraries;
+
+// this function is called by the profiler
+unsigned int dd_get_nb_opened_libraries()
+{
+    return atomic_load(&nb_opened_libraries);
+}
+
 void* dlopen(const char* file, int mode)
 {
     if (__real_dlopen == NULL)
@@ -95,6 +104,8 @@ void* dlopen(const char* file, int mode)
 
     // call the real dlopen (libc/musl-libc)
     void* result = __real_dlopen(file, mode);
+
+    atomic_fetch_add(&nb_opened_libraries, 1);
 
     ((char*)&functions_entered_counter)[ENTERED_DL_OPEN]--;
 

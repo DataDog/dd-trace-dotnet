@@ -19,20 +19,22 @@
 #include "ProfilerSignalManager.h"
 #include "ScopeFinalizer.h"
 #include "StackSnapshotResultBuffer.h"
+#include "NativeLibraries.h"
 
 using namespace std::chrono_literals;
 
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
-LinuxStackFramesCollector::LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* const configuration) :
+LinuxStackFramesCollector::LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* const configuration, UnwindTablesStore* unwindTablesStore) :
     StackFramesCollectorBase(configuration),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
     _errorStatistics{},
     _processId{OpSysTools::GetProcId()},
     _signalManager{signalManager},
-    _useBacktrace2{configuration->UseBacktrace2()}
+    _useBacktrace2{configuration->UseBacktrace2()},
+    _unwindTablesStore{unwindTablesStore}
 {
     _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
 }
@@ -175,8 +177,8 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
     {
         // Collect data for TraceContext tracking:
         bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
-
-        return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
+        return CollectStackWithAsyncProfilerUnwinder(ctx);
+        //return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
     }
     catch (...)
     {
@@ -250,6 +252,195 @@ std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
     // Now walk the stack:
     auto [data, size] = Data();
     auto count = unw_backtrace2((void**)data, size, context);
+
+    if (count == 0)
+    {
+        return E_FAIL;
+    }
+
+    SetFrameCount(count);
+    return S_OK;
+}
+
+
+class SafeAccess
+{
+public:
+    NOINLINE __attribute__((aligned(16))) static void* load(void** ptr)
+    {
+        return *ptr;
+    }
+
+    static uintptr_t skipFaultInstruction(uintptr_t pc)
+    {
+        if ((pc - (uintptr_t)load) < 16)
+        {
+#if defined(__x86_64__)
+            return *(u16*)pc == 0x8b48 ? 3 : 0; // mov rax, [reg]
+#elif defined(__i386__)
+            return *(u8*)pc == 0x8b ? 2 : 0; // mov eax, [reg]
+#elif defined(__arm__) || defined(__thumb__)
+            return (*(instruction_t*)pc & 0x0e50f000) == 0x04100000 ? 4 : 0; // ldr r0, [reg]
+#elif defined(__aarch64__)
+            return (*(instruction_t*)pc & 0xffc0001f) == 0xf9400000 ? 4 : 0; // ldr x0, [reg]
+#else
+            return sizeof(instruction_t);
+#endif
+        }
+        return 0;
+    }
+};
+
+const intptr_t MIN_VALID_PC = 0x1000;
+const intptr_t MAX_WALK_SIZE = 0x100000;
+const intptr_t MAX_FRAME_SIZE = 0x40000;
+
+#define stripPointer(p) (p)
+
+__attribute__((visibility("hidden"))) bool dwarfUnwind(FrameDesc* f, const void*& pc, uintptr_t& fp, uintptr_t& sp, uintptr_t prev_sp, uintptr_t bottom)
+{
+    u8 cfa_reg = (u8)f->cfa;
+    int cfa_off = f->cfa >> 8;
+    if (cfa_reg == DW_REG_SP)
+    {
+        sp = sp + cfa_off;
+    }
+    else if (cfa_reg == DW_REG_FP)
+    {
+        sp = fp + cfa_off;
+    }
+    else if (cfa_reg == DW_REG_PLT)
+    {
+        sp += ((uintptr_t)pc & 15) >= 11 ? cfa_off * 2 : cfa_off;
+    }
+    else
+    {
+        return false;
+    }
+    // Check if the next frame is below on the current stack
+    if (sp < prev_sp || sp >= prev_sp + MAX_FRAME_SIZE || sp >= bottom)
+    {
+        return false;
+    }
+    // Stack pointer must be word aligned
+    if ((sp & (sizeof(uintptr_t) - 1)) != 0)
+    {
+        return false;
+    }
+    if (f->fp_off & DW_PC_OFFSET)
+    {
+        pc = (const char*)pc + (f->fp_off >> 1);
+    }
+    else
+    {
+        if (f->fp_off != DW_SAME_FP && f->fp_off < MAX_FRAME_SIZE && f->fp_off > -MAX_FRAME_SIZE)
+        {
+            fp = (uintptr_t)SafeAccess::load((void**)(sp + f->fp_off));
+        }
+        pc = stripPointer(SafeAccess::load((void**)sp - 1));
+    }
+    if (pc < (const void*)MIN_VALID_PC || pc > (const void*)-MIN_VALID_PC)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+inline std::tuple<const void*, uintptr_t, uintptr_t> ExtractExecutionInfos(void* ctx)
+{
+    if (ctx != nullptr)
+    {
+        StackFrame frame(ctx);
+        return {(const void*)frame.pc(), frame.fp(), frame.sp()};
+    }
+    
+    return {__builtin_return_address(0), (uintptr_t)__builtin_frame_address(1), (uintptr_t)__builtin_frame_address(0)};
+}
+
+std::uint16_t LinuxStackFramesCollector::stackWalkBro(ddprof::span<std::uintptr_t> callchain, void* ctx)
+{
+    auto [pc, fp, sp] = ExtractExecutionInfos(ctx);
+
+    uintptr_t bottom = _pCurrentCollectionThreadInfo->GetStackBasedAddress();
+    if (bottom == 0)
+    {
+        bottom = (uintptr_t)&sp + MAX_WALK_SIZE;
+    }
+
+    std::shared_ptr<UnwindTablesStore::UnwindTable> cc = nullptr;
+    uintptr_t prev_sp;
+    std::size_t depth = 0;
+
+    while (depth < callchain.size())
+    {
+        callchain[depth++] = (uintptr_t)pc;
+        prev_sp = sp;
+
+        FrameDesc* f;
+
+        if (cc != nullptr)
+        {
+            bool stopUnwinding = false;
+            while (cc->contains(pc) && (f = cc->findFrameDesc(pc)) != nullptr )
+            {
+                assert(f != nullptr);
+                if (!dwarfUnwind(f, pc, fp, sp, prev_sp, bottom))
+                {
+                    stopUnwinding = true;
+                    break; // we should get out of the outer loop
+                }
+                callchain[depth++] = (uintptr_t)pc;
+                prev_sp = sp;
+            }
+            if (stopUnwinding)
+            {
+                break;
+            }
+        }
+
+        cc = _unwindTablesStore->FindByAddress(pc);
+
+        if (cc == NULL || (f = cc->findFrameDesc(pc)) == nullptr)
+        {
+            //walkFp(pc, fp, sp); // how to break there is an issue
+            // Check if the next frame is below on the current stack
+            if (fp < sp || fp >= sp + MAX_FRAME_SIZE || fp >= bottom)
+            {
+                break;
+            }
+
+            // Frame pointer must be word aligned
+            if ((fp & (sizeof(uintptr_t) - 1)) != 0)
+            {
+                break;
+            }
+
+            pc = stripPointer(SafeAccess::load((void**)fp + FRAME_PC_SLOT));
+            if (pc < (const void*)MIN_VALID_PC || pc > (const void*)-MIN_VALID_PC)
+            {
+                break;
+            }
+
+            sp = fp + (FRAME_PC_SLOT + 1) * sizeof(void*);
+            fp = *(uintptr_t*)fp;
+            continue;
+        }
+
+        if (!dwarfUnwind(f, pc, fp, sp, prev_sp, bottom))
+        {
+            break;
+        }
+    }
+    return depth;
+}
+
+std::int32_t LinuxStackFramesCollector::CollectStackWithAsyncProfilerUnwinder(void* ctx)
+{
+    auto [data, max_depth] = Data();
+
+    auto callchain = ddprof::span<uintptr_t>(data, max_depth);
+    auto count = stackWalkBro(callchain, ctx);
 
     if (count == 0)
     {

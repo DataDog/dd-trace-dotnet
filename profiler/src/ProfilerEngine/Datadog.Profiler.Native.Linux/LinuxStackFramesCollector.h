@@ -17,15 +17,33 @@
 #include <signal.h>
 #include <unordered_map>
 
+#include "NativeLibraries.h"
+
+#include "../async-profiler/stackFrame.h"
+#include "../async-profiler/dwarf.h"
+#include "../async-profiler/stackWalker.h"
+#include "../async-profiler/stack_context.h"
+#include "../async-profiler/span.hpp"
+#include "../async-profiler/arch.h"
+
+#include <stdint.h>
+
+#ifdef __clang__
+#define NOINLINE __attribute__((noinline))
+#else
+#define NOINLINE __attribute__((noinline, noclone))
+#endif
+
 class IManagedThreadList;
 class ProfilerSignalManager;
 class ProfilerSignalManager;
 class IConfiguration;
+class UnwindTablesStore;
 
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* configuration);
+    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* configuration, UnwindTablesStore* unwindTablesStore);
     ~LinuxStackFramesCollector() override;
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;
@@ -60,6 +78,7 @@ private:
     bool CanCollect(int32_t threadId, pid_t processId) const;
     std::int32_t CollectStackManually(void* ctx);
     std::int32_t CollectStackWithBacktrace2(void* ctx);
+    std::int32_t CollectStackWithAsyncProfilerUnwinder(void* ctx);
     void MarkAsInterrupted();
 
     std::int32_t _lastStackWalkErrorCode;
@@ -82,7 +101,9 @@ private:
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
 
     std::int32_t CollectCallStackCurrentThread(void* ucontext);
+    std::uint16_t stackWalkBro(ddprof::span<std::uintptr_t> callchain, void* ctx);
 
     ErrorStatistics _errorStatistics;
     bool _useBacktrace2;
+    UnwindTablesStore* _unwindTablesStore;
 };

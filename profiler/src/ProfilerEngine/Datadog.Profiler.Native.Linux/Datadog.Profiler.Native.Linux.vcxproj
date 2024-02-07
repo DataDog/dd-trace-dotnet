@@ -115,6 +115,7 @@
     <ClCompile Include="LinuxStackFramesCollector.cpp" />
     <ClCompile Include="LinuxThreadInfo.cpp" />
     <ClCompile Include="LinuxThreadsCpuManager.cpp" />
+    <ClCompile Include="NativeLibraries.cpp" />
     <ClCompile Include="OsSpecificApi.cpp" />
     <ClCompile Include="ProfilerSignalManager.cpp" />
     <ClCompile Include="SystemCallsShield.cpp" />
@@ -125,6 +126,7 @@
   <ItemGroup>
     <ClInclude Include="LinuxStackFramesCollector.h" />
     <ClInclude Include="LinuxThreadInfo.h" />
+    <ClInclude Include="NativeLibraries.h" />
     <ClInclude Include="ProfilerSignalManager.h" />
     <ClInclude Include="SystemCallsShield.h" />
   </ItemGroup>

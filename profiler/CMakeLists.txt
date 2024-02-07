@@ -113,10 +113,11 @@ SET(OUTPUT_DEPS_DIR ${CMAKE_BINARY_DIR}/deps)
 FILE(MAKE_DIRECTORY ${OUTPUT_DEPS_DIR})
 FILE(MAKE_DIRECTORY ${OUTPUT_TMP_DIR})
 
+add_subdirectory(src/ProfilerEngine/async-profiler)
 add_subdirectory(src/ProfilerEngine/Datadog.Profiler.Native.Linux)
 add_subdirectory(src/ProfilerEngine/Datadog.Linux.ApiWrapper)
 enable_testing()
 add_subdirectory(test)
 
 add_custom_target(all-profiler)
-add_dependencies(all-profiler Datadog.Profiler.Native Datadog.Linux.ApiWrapper.x64 profiler-native-tests)
+add_dependencies(all-profiler Datadog.Profiler.Native Datadog.Linux.ApiWrapper.x64 profiler-native-tests async-profiler-lib.static)

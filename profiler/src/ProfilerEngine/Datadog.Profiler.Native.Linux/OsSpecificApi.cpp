@@ -24,6 +24,7 @@
 
 #include "OpSysTools.h"
 #include "ScopeFinalizer.h"
+#include "NativeLibraries.h"
 
 #include "IConfiguration.h"
 #include "IThreadInfo.h"
@@ -55,9 +56,14 @@ std::pair<DWORD, std::string> GetLastErrorMessage()
 }
 
 
+std::once_flag flag1;
+
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
 {
-    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration);
+    static UnwindTablesStore store;
+    std::call_once(flag1, [](UnwindTablesStore& store){ store.Start();}, store );
+
+    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration, &store);
 }
 
 // https://linux.die.net/man/5/proc
