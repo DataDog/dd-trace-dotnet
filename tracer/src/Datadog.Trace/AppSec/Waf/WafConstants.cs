@@ -10,5 +10,6 @@ namespace Datadog.Trace.AppSec.Waf
         internal const int MaxStringLength = 4096;
         internal const int MaxContainerDepth = 20;
         internal const int MaxContainerSize = 256;
+        internal const int MaxUnmanagedPools = 500;
     }
 }

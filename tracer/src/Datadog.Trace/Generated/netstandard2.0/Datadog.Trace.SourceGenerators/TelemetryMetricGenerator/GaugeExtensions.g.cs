@@ -12,7 +12,7 @@ internal static partial class GaugeExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Gauge" /> metric.
     /// </summary>
-    public const int Length = 3;
+    public const int Length = 6;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -25,6 +25,9 @@ internal static partial class GaugeExtensions
             Datadog.Trace.Telemetry.Metrics.Gauge.StatsBuckets => "stats_buckets",
             Datadog.Trace.Telemetry.Metrics.Gauge.Instrumentations => "instrumentations",
             Datadog.Trace.Telemetry.Metrics.Gauge.DirectLogQueue => "direct_log_queue.length",
+            Datadog.Trace.Telemetry.Metrics.Gauge.PoolCount => "waf.pool_count",
+            Datadog.Trace.Telemetry.Metrics.Gauge.PoolSlowCount => "waf.pool_slow_count",
+            Datadog.Trace.Telemetry.Metrics.Gauge.PoolMemory => "waf.pool_memory",
             _ => null!,
         };
 
@@ -38,6 +41,9 @@ internal static partial class GaugeExtensions
         {
             Datadog.Trace.Telemetry.Metrics.Gauge.Instrumentations => false,
             Datadog.Trace.Telemetry.Metrics.Gauge.DirectLogQueue => false,
+            Datadog.Trace.Telemetry.Metrics.Gauge.PoolCount => false,
+            Datadog.Trace.Telemetry.Metrics.Gauge.PoolSlowCount => false,
+            Datadog.Trace.Telemetry.Metrics.Gauge.PoolMemory => false,
             _ => true,
         };
 
