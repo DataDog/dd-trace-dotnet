@@ -634,9 +634,9 @@ namespace Datadog.Trace.Configuration
             public const string WcfObfuscationEnabled = "DD_TRACE_WCF_RESOURCE_OBFUSCATION_ENABLED";
 
             /// <summary>
-            /// Enables a fix around header tags normalization.
-            /// We used to normalize periods even if a tag was provided for a header, whereas we should not.
-            /// This flag defaults to true and is here only in case customers need backwards compatibility.
+            /// Enables a fix for header tags normalization.
+            /// We used to normalize tag names even if they were specified in user configuration, but we should not.
+            /// Default value is <c>true</c>.
             /// </summary>
             public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
 
