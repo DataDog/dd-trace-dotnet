@@ -105,7 +105,6 @@ namespace Datadog.Trace.Configuration
             _globalSamplingRate = settings.GlobalSamplingRateInternal;
             IntegrationsInternal = new ImmutableIntegrationSettingsCollection(settings.IntegrationsInternal, settings.DisabledIntegrationNamesInternal);
             _headerTags = new ReadOnlyDictionary<string, string>(settings.HeaderTagsInternal);
-            HeaderTagsNormalizationFixEnabled = settings.HeaderTagsNormalizationFixEnabled;
             GrpcTagsInternal = new ReadOnlyDictionary<string, string>(settings.GrpcTagsInternal);
             IpHeader = settings.IpHeader;
             IpHeaderEnabled = settings.IpHeaderEnabled;
@@ -347,8 +346,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_GrpcTags_Get)]
         internal IReadOnlyDictionary<string, string> GrpcTagsInternal { get; }
-
-        internal bool HeaderTagsNormalizationFixEnabled { get; }
 
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
