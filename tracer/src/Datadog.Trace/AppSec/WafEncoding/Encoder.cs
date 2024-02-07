@@ -28,9 +28,9 @@ namespace Datadog.Trace.AppSec.WafEncoding
         private static int _poolSize = 500;
 
         [ThreadStatic]
-        private static UnmanagedMemoryPool? _pool;
+        private static IUnmanagedMemoryPool? _pool;
 
-        internal static UnmanagedMemoryPool Pool
+        internal static IUnmanagedMemoryPool Pool
         {
             get
             {
@@ -39,7 +39,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     return _pool;
                 }
 
-                var instance = new UnmanagedMemoryPool(MaxBytesForMaxStringLength, _poolSize);
+                var instance = UnmanagedMemoryPoolFactory.GetPool(MaxBytesForMaxStringLength, _poolSize);
                 _pool = instance;
                 return instance;
             }
@@ -68,7 +68,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             return new EncodeResult(lstPointers, pool, Encode(o, lstPointers, remainingDepth, key, applySafetyLimits, pool: pool));
         }
 
-        public unsafe DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true, UnmanagedMemoryPool? pool = null)
+        public unsafe DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true, IUnmanagedMemoryPool? pool = null)
         {
             pool ??= Pool;
 
@@ -612,10 +612,10 @@ namespace Datadog.Trace.AppSec.WafEncoding
         public class EncodeResult : IEncodeResult
         {
             private readonly List<IntPtr> _pointers;
-            private readonly UnmanagedMemoryPool _innerPool;
+            private readonly IUnmanagedMemoryPool _innerPool;
             private readonly GCHandle _handle;
 
-            internal EncodeResult(List<IntPtr> pointers, UnmanagedMemoryPool pool, DdwafObjectStruct result)
+            internal EncodeResult(List<IntPtr> pointers, IUnmanagedMemoryPool pool, DdwafObjectStruct result)
             {
                 _pointers = pointers;
                 _innerPool = pool;

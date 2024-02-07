@@ -43,11 +43,6 @@ internal enum Gauge
     /// </summary>
     [TelemetryMetric("waf.pool_slow_count", isCommon: false)] PoolSlowCount,
 
-    /// <summary>
-    /// The max amount of memory allocated in all unmanaged pools
-    /// </summary>
-    [TelemetryMetric("waf.pool_memory", isCommon: false)] PoolMemory,
-
     #endregion
 
 }

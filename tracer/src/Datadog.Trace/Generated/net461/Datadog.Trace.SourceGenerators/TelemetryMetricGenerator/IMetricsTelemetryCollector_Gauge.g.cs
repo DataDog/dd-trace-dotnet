@@ -18,6 +18,4 @@ internal partial interface IMetricsTelemetryCollector
     public void RecordGaugePoolCount(int value);
 
     public void RecordGaugePoolSlowCount(int value);
-
-    public void RecordGaugePoolMemory(int value);
 }

@@ -31,8 +31,4 @@ internal partial class NullMetricsTelemetryCollector
     public void RecordGaugePoolSlowCount(int value)
     {
     }
-
-    public void RecordGaugePoolMemory(int value)
-    {
-    }
 }
