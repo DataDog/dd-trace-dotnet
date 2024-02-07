@@ -59,7 +59,7 @@ namespace Datadog.Trace.Ci.Agent
      */
     internal sealed class CIVisibilityProtocolWriter : IEventWriter
     {
-        private const int DefaultBatchInterval = 1000;
+        private const int DefaultBatchInterval = 2500;
         private const int DefaultMaxItemsInQueue = 25000;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIVisibilityProtocolWriter>();
