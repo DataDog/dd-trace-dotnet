@@ -593,6 +593,8 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [InlineData("BasicAuth", "Authorization", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
     [InlineData("BasicAuth", "Authorization", "basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
     [InlineData("BasicAuth", "Authorization", "    bAsic    QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
+    [InlineData("BasicAuth", "Authorization", "hello,    Basic    QWxhZGRpbjpvcGVuIHNlc2FtZQ==, world,1234567890")]
+    [InlineData("BasicAuth", "Authorization", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==, Digest value")]
     [InlineData("DigestAuth", "Authorization", "digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"")]
     public async Task TestIastInsecureAuthProtocolRequest(string name, string header, string data)
     {

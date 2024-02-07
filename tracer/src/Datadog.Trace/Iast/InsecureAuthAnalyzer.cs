@@ -96,8 +96,20 @@ internal static class InsecureAuthAnalyzer
     private static string? InsecureSchemeDetected(string authHeader)
     {
         var insecureSchemes = new[] { "Basic", "Digest" };
-        var scheme = authHeader.Trim(' ').Split(' ')[0];
 
-        return insecureSchemes.FirstOrDefault(s => s.Equals(scheme, StringComparison.OrdinalIgnoreCase));
+        // The auth header can be a concatenation of multiple Authorization headers (concatenated by a comma)
+        // This is not a standard practice for the Authorization header but can theoretically happen.
+        var elements = authHeader.Split(',');
+        foreach (var element in elements)
+        {
+            var scheme = element.Trim(' ').Split(' ')[0];
+            var detectedScheme = insecureSchemes.FirstOrDefault(s => s.Equals(scheme, StringComparison.OrdinalIgnoreCase));
+            if (detectedScheme is not null)
+            {
+                return detectedScheme;
+            }
+        }
+
+        return null;
     }
 }
