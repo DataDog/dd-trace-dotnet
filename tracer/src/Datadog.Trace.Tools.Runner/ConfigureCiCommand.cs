@@ -17,7 +17,8 @@ namespace Datadog.Trace.Tools.Runner
         private static readonly IReadOnlyDictionary<string, CIName> CiNamesMapping
             = new Dictionary<string, CIName>(StringComparer.OrdinalIgnoreCase)
             {
-                ["azp"] = CIName.AzurePipelines
+                ["azp"] = CIName.AzurePipelines,
+                ["jenkins"] = CIName.Jenkins
             };
 
         private readonly ApplicationContext _applicationContext;
@@ -33,6 +34,7 @@ namespace Datadog.Trace.Tools.Runner
             AddArgument(_nameArgument);
 
             AddExample("dd-trace ci configure azp");
+            AddExample("dd-trace ci configure jenkins");
 
             this.SetHandler(Execute);
         }
