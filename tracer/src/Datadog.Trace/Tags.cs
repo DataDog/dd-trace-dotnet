@@ -8,7 +8,7 @@ using System;
 namespace Datadog.Trace
 {
     /// <summary>
-    /// Standard span tags used by integrations.
+    /// Standard Datadog span tags.
     /// </summary>
     public static partial class Tags
     {
