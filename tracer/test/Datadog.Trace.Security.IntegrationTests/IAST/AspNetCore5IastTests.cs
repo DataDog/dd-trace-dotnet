@@ -590,22 +590,15 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [SkippableTheory]
-    [InlineData("Authorization", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
-    [InlineData("Authorization", "basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
-    [InlineData("Authorization", "    bAsic    QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
-    [InlineData("Authorization", "digest QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
-    public async Task TestIastInsecureAuthProtocolRequest(string header, string data)
+    [InlineData("BasicAuth", "Authorization", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
+    [InlineData("BasicAuth", "Authorization", "basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
+    [InlineData("BasicAuth", "Authorization", "    bAsic    QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
+    [InlineData("DigestAuth", "Authorization", "digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"")]
+    public async Task TestIastInsecureAuthProtocolRequest(string name, string header, string data)
     {
-        var filename = IastEnabled ? "Iast.InsecureAuthProtocol.AspNetCore5.IastEnabled" : "Iast.InsecureAuthProtocol.AspNetCore5.IastDisabled";
-
-        // Test on basic or digest
-        if (IastEnabled)
-        {
-            var scheme = data.Trim(' ').Split(' ')[0];
-            filename += scheme.Equals("basic", StringComparison.OrdinalIgnoreCase) ? ".BasicAuth" : ".DigestAuth";
-        }
-
+        var filename = IastEnabled ? "Iast.InsecureAuthProtocol.AspNetCore5.IastEnabled." + name : "Iast.InsecureAuthProtocol.AspNetCore5.IastDisabled";
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+
         var url = "/Iast/InsecureAuthProtocol";
         IncludeAllHttpSpans = true;
         AddHeaders(new Dictionary<string, string> { { header, data } });
