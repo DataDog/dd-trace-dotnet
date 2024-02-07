@@ -625,10 +625,20 @@ internal sealed class AspectMethodReplaceAttribute : AspectAttribute
 
 internal enum AspectType
 {
-    Default,
-    Propagation,
-    Sink,
-    Source,
+    /// <summary> Default / undefined </summary>
+    Default = 0,
+
+    /// <summary> Propagation aspect </summary>
+    Propagation = 1,
+
+    /// <summary> Iast sink aspect </summary>
+    IastSink = 2,
+
+    /// <summary> Source aspect </summary>
+    Source = 4,
+
+    /// <summary> RASP sink aspect </summary>
+    RaspSink = 8,
 }
 }
 
