@@ -77,7 +77,7 @@ namespace iast
         {
             try
             {
-                _aspectType = (AspectType) std::stoi(parts[part]);
+                _aspectType = (AspectType) ConvertToInt(parts[part]);
             }
             catch (std::exception err)
             {
