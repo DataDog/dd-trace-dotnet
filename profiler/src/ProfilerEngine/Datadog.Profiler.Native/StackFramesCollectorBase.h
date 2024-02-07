@@ -7,6 +7,7 @@
 #include <condition_variable>
 #include <memory>
 #include <mutex>
+#include <span>
 
 #include "ManagedThreadInfo.h"
 #include "StackSnapshotResultBuffer.h"
@@ -23,7 +24,7 @@ protected:
     void AddFakeFrame();
     void SetFrameCount(std::uint16_t count);
 
-    std::pair<uintptr_t*, std::uint16_t> Data();
+    std::span<uintptr_t> Data();
 
     StackSnapshotResultBuffer* GetStackSnapshotResult();
     bool IsCurrentCollectionAbortRequested();

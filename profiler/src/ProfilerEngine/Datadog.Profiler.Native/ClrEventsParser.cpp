@@ -75,18 +75,20 @@ void ClrEventsParser::ParseEvent(
     DWORD version;
     INT64 keywords; // used to filter out unneeded events.
     WCHAR* name;
-    if (!TryGetEventInfo(metadataBlob, cbMetadataBlob, name, id, keywords, version))
+    auto metadata = std::span(metadataBlob, cbMetadataBlob);
+    if (!TryGetEventInfo(metadata, name, id, keywords, version))
     {
         return;
     }
 
+    auto data = std::span(eventData, cbEventData);
     if (KEYWORD_GC == (keywords & KEYWORD_GC))
     {
-        ParseGcEvent(id, version, cbEventData, eventData);
+        ParseGcEvent(id, version, data);
     }
     else if (KEYWORD_CONTENTION == (keywords & KEYWORD_CONTENTION))
     {
-        ParseContentionEvent(id, version, cbEventData, eventData);
+        ParseContentionEvent(id, version, data);
     }
 }
 
@@ -111,7 +113,7 @@ uint64_t ClrEventsParser::GetCurrentTimestamp()
 #if defined(__clang__) || defined(DD_SANITIZERS)
 __attribute__((no_sanitize("alignment")))
 #endif
-void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
+void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, std::span<const BYTE> eventData)
 {
     // look for AllocationTick_V4
     if ((id == EVENT_ALLOCATION_TICK) && (version == 4))
@@ -134,41 +136,40 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
         //DumpBuffer(pEventData, cbEventData);
 
         AllocationTickV4Payload payload{0};
-        ULONG offset = 0;
-        if (!Read(payload.AllocationAmount, pEventData, cbEventData, offset))
+        if (!Read(payload.AllocationAmount, eventData))
         {
             return;
         }
-        if (!Read(payload.AllocationKind, pEventData, cbEventData, offset))
+        if (!Read(payload.AllocationKind, eventData))
         {
             return;
         }
-        if (!Read(payload.ClrInstanceId, pEventData, cbEventData, offset))
+        if (!Read(payload.ClrInstanceId, eventData))
         {
             return;
         }
-        if (!Read(payload.AllocationAmount64, pEventData, cbEventData, offset))
+        if (!Read(payload.AllocationAmount64, eventData))
         {
             return;
         }
-        if (!Read(payload.TypeId, pEventData, cbEventData, offset))
+        if (!Read(payload.TypeId, eventData))
         {
             return;
         }
-        payload.TypeName = ReadWideString(pEventData, cbEventData, &offset);
+        payload.TypeName = ReadWideString(eventData);
         if (payload.TypeName == nullptr)
         {
             return;
         }
-        if (!Read(payload.HeapIndex, pEventData, cbEventData, offset))
+        if (!Read(payload.HeapIndex, eventData))
         {
             return;
         }
-        if (!Read(payload.Address, pEventData, cbEventData, offset))
+        if (!Read(payload.Address, eventData))
         {
             return;
         }
-        if (!Read(payload.ObjectSize, pEventData, cbEventData, offset))
+        if (!Read(payload.ObjectSize, eventData))
         {
             return;
         }
@@ -193,8 +194,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
     else if (id == EVENT_GC_START)
     {
         GCStartPayload payload{0};
-        ULONG offset = 0;
-        if (!Read<GCStartPayload>(payload, pEventData, cbEventData, offset))
+        if (!Read<GCStartPayload>(payload, eventData))
         {
             return;
         }
@@ -205,8 +205,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
     else if (id == EVENT_GC_END)
     {
         GCEndPayload payload{0};
-        ULONG offset = 0;
-        if (!Read<GCEndPayload>(payload, pEventData, cbEventData, offset))
+        if (!Read<GCEndPayload>(payload, eventData))
         {
             return;
         }
@@ -231,8 +230,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
 
         // TODO: check for size and see if V2 with POH numbers could be read from payload
         GCHeapStatsV1Payload payload = {0};
-        ULONG offset = 0;
-        if (!Read<GCHeapStatsV1Payload>(payload, pEventData, cbEventData, offset))
+        if (!Read<GCHeapStatsV1Payload>(payload, eventData))
         {
             return;
         }
@@ -243,8 +241,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
     else if (id == EVENT_GC_GLOBAL_HEAP_HISTORY)
     {
         GCGlobalHeapPayload payload = {0};
-        ULONG offset = 0;
-        if (!Read<GCGlobalHeapPayload>(payload, pEventData, cbEventData, offset))
+        if (!Read<GCGlobalHeapPayload>(payload, eventData))
         {
             return;
         }
@@ -254,7 +251,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
     }
 }
 
-void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
+void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, std::span<const BYTE> eventData)
 {
     if (_pContentionListener == nullptr)
     {
@@ -271,8 +268,7 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
         //DumpBuffer(pEventData, cbEventData);
 
         ContentionStopV1Payload payload{0};
-        ULONG offset = 0;
-        if (!Read<ContentionStopV1Payload>(payload, pEventData, cbEventData, offset))
+        if (!Read<ContentionStopV1Payload>(payload, eventData))
         {
             return;
         }
@@ -281,28 +277,27 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
     }
 }
 
-bool ClrEventsParser::TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version)
+bool ClrEventsParser::TryGetEventInfo(std::span<const BYTE> metadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version)
 {
-    if (pMetadata == nullptr || cbMetadata == 0)
+    if (metadata.empty())
     {
         return false;
     }
 
-    ULONG offset = 0;
-    if (!Read(id, pMetadata, cbMetadata, offset))
+    if (!Read(id, metadata))
     {
         return false;
     }
 
     // skip the name to read keyword and version
-    name = ReadWideString(pMetadata, cbMetadata, &offset);
+    name = ReadWideString(metadata);
 
-    if (!Read(keywords, pMetadata, cbMetadata, offset))
+    if (!Read(keywords, metadata))
     {
         return false;
     }
 
-    if (!Read(version, pMetadata, cbMetadata, offset))
+    if (!Read(version, metadata))
     {
         return false;
     }

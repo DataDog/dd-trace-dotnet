@@ -58,12 +58,6 @@ class Loader;
 
 class CorProfilerCallback : public ICorProfilerCallback10
 {
-private:
-    static const std::vector<shared::WSTRING> ManagedAssembliesToLoad_AppDomainDefault_ProcNonIIS;
-    static const std::vector<shared::WSTRING> ManagedAssembliesToLoad_AppDomainNonDefault_ProcNonIIS;
-    static const std::vector<shared::WSTRING> ManagedAssembliesToLoad_AppDomainDefault_ProcIIS;
-    static const std::vector<shared::WSTRING> ManagedAssembliesToLoad_AppDomainNonDefault_ProcIIS;
-
 public:
     CorProfilerCallback();
     virtual ~CorProfilerCallback();
