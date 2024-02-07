@@ -12,6 +12,7 @@ using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
@@ -279,7 +280,7 @@ namespace Datadog.Trace.Propagators
                     var cacheKey = new Key(headerName, defaultTagPrefix);
                     var tagNameResult = _defaultTagMappingCache.GetOrAdd(cacheKey, key =>
                     {
-                        if (key.HeaderName.TryConvertToNormalizedTagName(normalizePeriods: true, out var normalizedHeaderTagName))
+                        if (SpanTagHelper.TryNormalizeTagName(key.HeaderName, normalizeSpaces: true, out var normalizedHeaderTagName))
                         {
                             return key.TagPrefix + "." + normalizedHeaderTagName;
                         }
