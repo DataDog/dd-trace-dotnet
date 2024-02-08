@@ -487,6 +487,11 @@ namespace Datadog.Trace.Configuration
             public const string CodeCoverageEnableJitOptimizations = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLE_JIT_OPTIMIZATIONS";
 
             /// <summary>
+            /// Configuration key for selecting the code coverage mode LineExecution or LineCallCount
+            /// </summary>
+            public const string CodeCoverageMode = "DD_CIVISIBILITY_CODE_COVERAGE_MODE";
+
+            /// <summary>
             /// Configuration key for setting the code coverage jsons destination path.
             /// </summary>
             public const string CodeCoveragePath = "DD_CIVISIBILITY_CODE_COVERAGE_PATH";
