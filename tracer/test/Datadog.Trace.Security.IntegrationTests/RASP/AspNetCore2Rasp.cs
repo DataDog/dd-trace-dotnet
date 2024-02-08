@@ -1,9 +1,9 @@
-// <copyright file="AspNetCore5Rasp.cs" company="Datadog">
+// <copyright file="AspNetCore2Rasp.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP2_1
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
@@ -19,9 +19,9 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Iast;
 
-public class AspNetCore5RaspEnabledIastEnabled : AspNetCore5Rasp
+public class AspNetCore2RaspEnabledIastEnabled : AspNetCore2Rasp
 {
-    public AspNetCore5RaspEnabledIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+    public AspNetCore2RaspEnabledIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
     : base(fixture, outputHelper, enableIast: true)
     {
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
@@ -33,19 +33,19 @@ public class AspNetCore5RaspEnabledIastEnabled : AspNetCore5Rasp
     }
 }
 
-public class AspNetCore5RaspEnabledIastDisabled : AspNetCore5Rasp
+public class AspNetCore2RaspEnabledIastDisabled : AspNetCore2Rasp
 {
-    public AspNetCore5RaspEnabledIastDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+    public AspNetCore2RaspEnabledIastDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
     : base(fixture, outputHelper, enableIast: false)
     {
     }
 }
 
-public abstract class AspNetCore5Rasp : AspNetCore5TestsSecurityEnabled
+public abstract class AspNetCore2Rasp : AspNetCore2TestsSecurityEnabled
 {
     // This class is used to test RASP features either with IAST enabled or disabled. Since they both use common instrumentation
     // points, we should test that IAST works normally with or without RASP enabled.
-    public AspNetCore5Rasp(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast)
+    public AspNetCore2Rasp(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast)
         : base(fixture, outputHelper)
     {
         EnableRasp();
@@ -60,7 +60,7 @@ public abstract class AspNetCore5Rasp : AspNetCore5TestsSecurityEnabled
     public async Task TestRaspIastPathTraversalRequest()
     {
         var filePath = "file.csv";
-        var filename = IastEnabled ? "Rasp.PathTraversal.AspNetCore5.IastEnabled" : "Rasp.PathTraversal.AspNetCore5.IastDisabled";
+        var filename = IastEnabled ? "Rasp.PathTraversal.AspNetCore2.IastEnabled" : "Rasp.PathTraversal.AspNetCore2.IastDisabled";
         var url = $"/Iast/GetFileContent?file={filePath}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
