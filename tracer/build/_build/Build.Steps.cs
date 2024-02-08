@@ -61,9 +61,9 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.15.1";
+    const string LibDdwafVersion = "1.16.0";
 
-    string[] OlderLibDdwafVersions = new[] { "1.3.0", "1.10.0", "1.14.0" };
+    string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0" };
 
     AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
