@@ -798,3 +798,30 @@ TEST(ConfigurationTest, CheckCIVisibilitySpanIdValueIfSetTo0)
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetCIVisibilitySpanId(), 0ull);
 }
+
+TEST(ConfigurationTest, CheckEtwIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsEtwEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckEtwIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::EtwEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    auto expectedValue =
+#ifdef LINUX
+        false;
+#else
+        true;
+#endif
+    ASSERT_THAT(configuration.IsEtwEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckEtwIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::EtwEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsEtwEnabled(), expectedValue);
+}

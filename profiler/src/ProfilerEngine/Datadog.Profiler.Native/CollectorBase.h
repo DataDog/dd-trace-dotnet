@@ -199,7 +199,7 @@ private:
                 return;
             }
 
-            sample->SetThreadId("<0> [# 0]");
+            sample->SetThreadId("<0> [#0]");
             sample->SetThreadName("Managed thread (name unknown) [#0]");
 
             return;

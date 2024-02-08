@@ -13,14 +13,16 @@
 #include "OpSysTools.h"
 
 
+// set to true for debugging purpose
 const bool LogGcEvents = false;
+
 #define LOG_GC_EVENT(x)                         \
 {                                               \
     if (LogGcEvents)                            \
     {                                           \
         std::stringstream builder;              \
         builder << OpSysTools::GetThreadId()    \
-        << " " << ((_gcInProgress.Number != -1) ? "F" : ((_currentBGC.Number != -1) ? "B" : " "))   \
+        << " " << ((_gcInProgress.Number != -1) ? "F" : ((_currentBGC.Number != -1) ? "B" : ""))   \
         << GetCurrentGC().Number                \
         << " | " << x << std::endl;             \
         std::cout << builder.str();             \
@@ -29,17 +31,16 @@ const bool LogGcEvents = false;
 
 
 ClrEventsParser::ClrEventsParser(
-    ICorProfilerInfo12* pCorProfilerInfo,
     IAllocationsListener* pAllocationListener,
     IContentionListener* pContentionListener,
     IGCSuspensionsListener* pGCSuspensionsListener)
     :
-    _pCorProfilerInfo{pCorProfilerInfo},
     _pAllocationListener{pAllocationListener},
     _pContentionListener{pContentionListener},
     _pGCSuspensionsListener{pGCSuspensionsListener}
 {
-    ClearCollections();
+    ResetGC(_gcInProgress);
+    ResetGC(_currentBGC);
 }
 
 void ClrEventsParser::Register(IGarbageCollectionsListener* pGarbageCollectionsListener)
@@ -52,37 +53,19 @@ void ClrEventsParser::Register(IGarbageCollectionsListener* pGarbageCollectionsL
     _pGarbageCollectionsListeners.push_back(pGarbageCollectionsListener);
 }
 
+
 void ClrEventsParser::ParseEvent(
-    EVENTPIPE_PROVIDER provider,
-    DWORD eventId,
-    DWORD eventVersion,
-    ULONG cbMetadataBlob,
-    LPCBYTE metadataBlob,
+    uint64_t timestamp,
+    DWORD version,
+    INT64 keywords,
+    DWORD id,
     ULONG cbEventData,
-    LPCBYTE eventData,
-    LPCGUID pActivityId,
-    LPCGUID pRelatedActivityId,
-    ThreadID eventThread,
-    ULONG numStackFrames,
-    UINT_PTR stackFrames[])
+    LPCBYTE eventData
+    )
 {
-    // Currently, only "Microsoft-Windows-DotNETRuntime" provider is used so no need to check.
-    // However, during the test, a last (keyword=0 id=1 V1) event is sent from "Microsoft-DotNETCore-EventPipe".
-
-    // These should be the same as eventId and eventVersion.
-    // However it was not the case for the last event received from "Microsoft-DotNETCore-EventPipe".
-    DWORD id;
-    DWORD version;
-    INT64 keywords; // used to filter out unneeded events.
-    WCHAR* name;
-    if (!TryGetEventInfo(metadataBlob, cbMetadataBlob, name, id, keywords, version))
-    {
-        return;
-    }
-
     if (KEYWORD_GC == (keywords & KEYWORD_GC))
     {
-        ParseGcEvent(id, version, cbEventData, eventData);
+        ParseGcEvent(timestamp, id, version, cbEventData, eventData);
     }
     else if (KEYWORD_CONTENTION == (keywords & KEYWORD_CONTENTION))
     {
@@ -111,7 +94,8 @@ uint64_t ClrEventsParser::GetCurrentTimestamp()
 #if defined(__clang__) || defined(DD_SANITIZERS)
 __attribute__((no_sanitize("alignment")))
 #endif
-void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
+void
+ClrEventsParser::ParseGcEvent(uint64_t timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
 {
     // look for AllocationTick_V4
     if ((id == EVENT_ALLOCATION_TICK) && (version == 4))
@@ -184,6 +168,8 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
     }
 
     // the rest of events are related to garbage collections lifetime
+    // read https://medium.com/criteo-engineering/spying-on-net-garbage-collector-with-net-core-eventpipes-9f2a986d5705?source=friends_link&sk=baf9a7766fb5c7899b781f016803597f
+    // for more details about the state machine
     //
     if (id == EVENT_GC_TRIGGERED)
     {
@@ -199,8 +185,10 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
             return;
         }
 
-        LOG_GC_EVENT("OnGCStart");
-        OnGCStart(payload);
+        std::stringstream buffer;
+        buffer << "OnGCStart: " << payload.Count << " " << payload.Depth << " " << payload.Reason << " " << payload.Type;
+        LOG_GC_EVENT(buffer.str());
+        OnGCStart(timestamp, payload);
     }
     else if (id == EVENT_GC_END)
     {
@@ -211,18 +199,20 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
             return;
         }
 
-        LOG_GC_EVENT("OnGCStop");
-        OnGCStop(payload);
+        std::stringstream buffer;
+        buffer << "OnGCEnd: " << payload.Count << " " << payload.Depth;
+        LOG_GC_EVENT(buffer.str());
+        OnGCEnd(payload);
     }
     else if (id == EVENT_GC_SUSPEND_EE_BEGIN)
     {
         LOG_GC_EVENT("OnGCSuspendEEBegin");
-        OnGCSuspendEEBegin();
+        OnGCSuspendEEBegin(timestamp);
     }
     else if (id == EVENT_GC_RESTART_EE_END)
     {
         LOG_GC_EVENT("OnGCRestartEEEnd");
-        OnGCRestartEEEnd();
+        OnGCRestartEEEnd(timestamp);
     }
     else if (id == EVENT_GC_HEAP_STAT)
     {
@@ -238,7 +228,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
         }
 
         LOG_GC_EVENT("OnGCHeapStats");
-        OnGCHeapStats();
+        OnGCHeapStats(timestamp);
     }
     else if (id == EVENT_GC_GLOBAL_HEAP_HISTORY)
     {
@@ -250,7 +240,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
         }
 
         LOG_GC_EVENT("OnGCGlobalHeapHistory");
-        OnGCGlobalHeapHistory(payload);
+        OnGCGlobalHeapHistory(timestamp, payload);
     }
 }
 
@@ -281,48 +271,19 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
     }
 }
 
-bool ClrEventsParser::TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version)
-{
-    if (pMetadata == nullptr || cbMetadata == 0)
-    {
-        return false;
-    }
-
-    ULONG offset = 0;
-    if (!Read(id, pMetadata, cbMetadata, offset))
-    {
-        return false;
-    }
-
-    // skip the name to read keyword and version
-    name = ReadWideString(pMetadata, cbMetadata, &offset);
-
-    if (!Read(keywords, pMetadata, cbMetadata, offset))
-    {
-        return false;
-    }
-
-    if (!Read(version, pMetadata, cbMetadata, offset))
-    {
-        return false;
-    }
-
-    return true;
-}
-
-void ClrEventsParser::NotifySuspension(uint32_t number, uint32_t generation, uint64_t duration, uint64_t timestamp)
+void ClrEventsParser::NotifySuspension(uint64_t timestamp, uint32_t number, uint32_t generation, uint64_t duration)
 {
     if (_pGCSuspensionsListener != nullptr)
     {
-        _pGCSuspensionsListener->OnSuspension(number, generation, duration, timestamp);
+        _pGCSuspensionsListener->OnSuspension(timestamp, number, generation, duration);
     }
 }
 
-void ClrEventsParser::NotifyGarbageCollectionStarted(int32_t number, uint32_t generation, GCReason reason, GCType type)
+void ClrEventsParser::NotifyGarbageCollectionStarted(uint64_t timestamp, int32_t number, uint32_t generation, GCReason reason, GCType type)
 {
     for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
-        pGarbageCollectionsListener->OnGarbageCollectionStart(number, generation, reason, type);
+        pGarbageCollectionsListener->OnGarbageCollectionStart(timestamp, number, generation, reason, type);
     }
 }
 
@@ -362,12 +323,6 @@ GCDetails& ClrEventsParser::GetCurrentGC()
     return _currentBGC;
 }
 
-void ClrEventsParser::ClearCollections()
-{
-    ResetGC(_currentBGC);
-    ResetGC(_gcInProgress);
-}
-
 void ClrEventsParser::ResetGC(GCDetails& gc)
 {
     gc.Number = -1;
@@ -377,9 +332,11 @@ void ClrEventsParser::ResetGC(GCDetails& gc)
     gc.IsCompacting = false;
     gc.PauseDuration = 0;
     gc.StartTimestamp = 0;
+    gc.HasGlobalHeapHistoryBeenReceived = false;
+    gc.HasHeapStatsBeenReceived = false;
 }
 
-void ClrEventsParser::InitializeGC(GCDetails& gc, GCStartPayload& payload)
+void ClrEventsParser::InitializeGC(uint64_t timestamp, GCDetails& gc, GCStartPayload& payload)
 {
     gc.Number = payload.Count;
     gc.Generation = payload.Depth;
@@ -387,48 +344,48 @@ void ClrEventsParser::InitializeGC(GCDetails& gc, GCStartPayload& payload)
     gc.Type = (GCType)payload.Type;
     gc.IsCompacting = false;
     gc.PauseDuration = 0;
-    gc.StartTimestamp = GetCurrentTimestamp();
+    gc.StartTimestamp = timestamp;
+    gc.HasGlobalHeapHistoryBeenReceived = false;
+    gc.HasHeapStatsBeenReceived = false;
 }
 
 void ClrEventsParser::OnGCTriggered()
 {
-    // all previous collections are finished
-    ClearCollections();
 }
 
-void ClrEventsParser::OnGCStart(GCStartPayload& payload)
+void ClrEventsParser::OnGCStart(uint64_t timestamp, GCStartPayload& payload)
 {
     NotifyGarbageCollectionStarted(
+        timestamp,
         payload.Count,
         payload.Depth,
         static_cast<GCReason>(payload.Reason),
         static_cast<GCType>(payload.Type)
         );
 
-    // If a BCG is already started, FGC (0/1) are possible and will finish before the BGC
-    //
     if ((payload.Depth == 2) && (payload.Type == GCType::BackgroundGC))
     {
-        InitializeGC(_currentBGC, payload);
+        InitializeGC(timestamp, _currentBGC, payload);
     }
     else
     {
-        InitializeGC(_gcInProgress, payload);
+        // If a BCG is already started, nonConcurrent and Foreground GCs (0/1) are possible and will finish before the BGC
+        InitializeGC(timestamp, _gcInProgress, payload);
     }
 }
 
-void ClrEventsParser::OnGCStop(GCEndPayload& payload)
+void ClrEventsParser::OnGCEnd(GCEndPayload& payload)
 {
 }
 
-void ClrEventsParser::OnGCSuspendEEBegin()
+void ClrEventsParser::OnGCSuspendEEBegin(uint64_t timestamp)
 {
     // we don't know yet what will be the next GC corresponding to this suspension
     // so it is kept until next GCStart
-    _suspensionStart = GetCurrentTimestamp();
+    _suspensionStart = timestamp;
 }
 
-void ClrEventsParser::OnGCRestartEEEnd()
+void ClrEventsParser::OnGCRestartEEEnd(uint64_t timestamp)
 {
     GCDetails& gc = GetCurrentGC();
     if (gc.Number == -1)
@@ -441,11 +398,10 @@ void ClrEventsParser::OnGCRestartEEEnd()
 
     // compute suspension time
     uint64_t suspensionDuration = 0;
-    uint64_t currentTimestamp = GetCurrentTimestamp();
     if (_suspensionStart != 0)
     {
-        suspensionDuration = currentTimestamp - _suspensionStart;
-        NotifySuspension(gc.Number, gc.Generation, suspensionDuration, currentTimestamp);
+        suspensionDuration = timestamp - _suspensionStart;
+        NotifySuspension(timestamp, gc.Number, gc.Generation, suspensionDuration);
 
         _suspensionStart = 0;
     }
@@ -459,7 +415,10 @@ void ClrEventsParser::OnGCRestartEEEnd()
     // could be the end of a gen0/gen1 or of a non concurrent gen2 GC
     if ((gc.Generation < 2) || (gc.Type == GCType::NonConcurrentGC))
     {
-        auto endTimestamp = GetCurrentTimestamp();
+        std::stringstream buffer;
+        buffer << "   end of GC #" << gc.Number << " - " << (timestamp - gc.StartTimestamp) / 1000000 << "ms";
+        LOG_GC_EVENT(buffer.str());
+
         NotifyGarbageCollectionEnd(
             gc.Number,
             gc.Generation,
@@ -467,42 +426,43 @@ void ClrEventsParser::OnGCRestartEEEnd()
             gc.Type,
             gc.IsCompacting,
             gc.PauseDuration,
-            endTimestamp - gc.StartTimestamp,
-            endTimestamp
-            );
-        _gcInProgress.Number = -1;
-        return;
+            timestamp - gc.StartTimestamp,
+            timestamp);
+        ResetGC(gc);
     }
 }
 
-void ClrEventsParser::OnGCHeapStats()
+void ClrEventsParser::OnGCHeapStats(uint64_t timestamp)
 {
     // Note: last event for non background GC (will be GcGlobalHeapHistory for background gen 2)
     GCDetails& gc = GetCurrentGC();
+    gc.HasHeapStatsBeenReceived = true;
     if (gc.Number == -1)
     {
         return;
     }
 
-    // this is the last event for a gen0/gen1 foreground collection during a background gen2 collections
-    if ((_currentBGC.Number != -1) && (gc.Generation < 2))
+    if (gc.HasGlobalHeapHistoryBeenReceived && (gc.Generation == 2) && (gc.Type == GCType::BackgroundGC))
     {
-        auto endTimestamp = GetCurrentTimestamp();
-        NotifyGarbageCollectionEnd(
-            gc.Number,
-            gc.Generation,
-            gc.Reason,
-            gc.Type,
-            gc.IsCompacting,
-            gc.PauseDuration,
-            endTimestamp - gc.StartTimestamp,
-            endTimestamp
-            );
-        ResetGC(_gcInProgress);
+            std::stringstream buffer;
+            buffer << "   end of GC #" << gc.Number << " - " << (timestamp - gc.StartTimestamp) / 1000000 << "ms";
+            LOG_GC_EVENT(buffer.str());
+
+            NotifyGarbageCollectionEnd(
+                gc.Number,
+                gc.Generation,
+                gc.Reason,
+                gc.Type,
+                gc.IsCompacting,
+                gc.PauseDuration,
+                timestamp - gc.StartTimestamp,
+                timestamp
+                );
+            ResetGC(gc);
     }
 }
 
-void ClrEventsParser::OnGCGlobalHeapHistory(GCGlobalHeapPayload& payload)
+void ClrEventsParser::OnGCGlobalHeapHistory(uint64_t timestamp, GCGlobalHeapPayload& payload)
 {
     GCDetails& gc = GetCurrentGC();
 
@@ -511,21 +471,18 @@ void ClrEventsParser::OnGCGlobalHeapHistory(GCGlobalHeapPayload& payload)
     {
         return;
     }
+    gc.HasGlobalHeapHistoryBeenReceived = true;
 
     // check if the collection was compacting
     gc.IsCompacting =
         (payload.GlobalMechanisms & GCGlobalMechanisms::Compaction) == GCGlobalMechanisms::Compaction;
 
-    // this is the last event for gen 2 background collections
-    if ((payload.CondemnedGeneration == 2) && (gc.Type == GCType::BackgroundGC))
+    if (gc.HasHeapStatsBeenReceived && (gc.Generation == 2) && (gc.Type == GCType::BackgroundGC))
     {
-        // check unexpected generation mismatch: should never occur
-        if (gc.Generation != payload.CondemnedGeneration)
-        {
-            return;
-        }
+        std::stringstream buffer;
+        buffer << "   end of GC #" << gc.Number << " - " << (timestamp - gc.StartTimestamp) / 1000000 << "ms";
+        LOG_GC_EVENT(buffer.str());
 
-        auto endTimestamp = GetCurrentTimestamp();
         NotifyGarbageCollectionEnd(
             gc.Number,
             gc.Generation,
@@ -533,10 +490,8 @@ void ClrEventsParser::OnGCGlobalHeapHistory(GCGlobalHeapPayload& payload)
             gc.Type,
             gc.IsCompacting,
             gc.PauseDuration,
-            endTimestamp - gc.StartTimestamp,
-            endTimestamp
-            );
-
-        ClearCollections();
+            timestamp - gc.StartTimestamp,
+            timestamp);
+        ResetGC(gc);
     }
 }

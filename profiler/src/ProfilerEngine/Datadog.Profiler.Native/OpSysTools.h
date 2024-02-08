@@ -109,6 +109,7 @@ public:
 
     static bool IsSafeToStartProfiler(double coresThreshold, double& cpuLimit);
     static std::int64_t GetHighPrecisionTimestamp();
+    static std::int64_t ConvertTicks(uint64_t ticks);
 
     static void Sleep(std::chrono::nanoseconds duration);
 
@@ -117,6 +118,7 @@ private:
 
     static std::int64_t s_nanosecondsPerHighPrecisionTimerTick;
     static std::int64_t s_highPrecisionTimerTicksPerNanosecond;
+    static uint64_t s_ticksPerSecond;
 
     static std::int64_t GetHighPrecisionNanosecondsFallback();
 
@@ -170,6 +172,23 @@ inline std::int64_t OpSysTools::GetHighPrecisionNanoseconds()
 #else
     // Need to implement this for Linux!
     return OpSysTools::GetHighPrecisionNanosecondsFallback();
+#endif
+}
+
+// TODO: remove if not needed
+inline std::int64_t OpSysTools::ConvertTicks(uint64_t ticks)
+{
+#ifdef _WINDOWS
+    if (s_ticksPerSecond != 0)
+    {
+        uint64_t microsecs = ticks * 1000000 / s_ticksPerSecond; // microseconds
+        return microsecs * 1000;                                 // nanoseconds
+    }
+
+    return 0;
+#else
+    // only used for ETW (Windows only)
+    return 0;
 #endif
 }
 

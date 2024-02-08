@@ -55,3 +55,8 @@ bool EnabledProfilers::IsEnabled(RuntimeProfiler profiler) const
 {
     return ((_enabledProfilers & profiler) == profiler);
 }
+
+void EnabledProfilers::Disable(RuntimeProfiler profiler)
+{
+    _enabledProfilers = _enabledProfilers & ~profiler;
+}

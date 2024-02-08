@@ -219,7 +219,16 @@
   <ItemGroup>
     <ClInclude Include="..\Datadog.Profiler.Native\DllMain.h" />
     <ClInclude Include="..\Datadog.Profiler.Native.Windows\resource.h" />
+    <ClInclude Include="EtwEventsManager.h" />
+    <ClInclude Include="ETW\EtwEventsHandler.h" />
+    <ClInclude Include="ETW\IIpcLogger.h" />
+    <ClInclude Include="ETW\INamedPipeHandler.h" />
+    <ClInclude Include="ETW\IpcClient.h" />
+    <ClInclude Include="ETW\IpcServer.h" />
+    <ClInclude Include="ETW\ProfilerLogger.h" />
+    <ClInclude Include="ETW\Protocol.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="SecurityDescriptorHelpers.h" />
     <ClInclude Include="SystemTime.h" />
     <ClInclude Include="Windows64BitStackFramesCollector.h" />
     <ClInclude Include="Windows32BitStackFramesCollector.h" />
@@ -227,6 +236,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Datadog.Profiler.Native\DllMain.cpp" />
+    <ClCompile Include="EtwEventsManager.cpp" />
+    <ClCompile Include="ETW\EtwEventsHandler.cpp" />
+    <ClCompile Include="ETW\IpcClient.cpp" />
+    <ClCompile Include="ETW\IpcServer.cpp" />
+    <ClCompile Include="ETW\ProfilerLogger.cpp" />
+    <ClCompile Include="SecurityDescriptorHelpers.cpp" />
     <ClCompile Include="SystemTime.cpp" />
     <ClCompile Include="WindowsThreadInfo.cpp" />
     <ClCompile Include="WindowsThreadsCpuManager.cpp" />

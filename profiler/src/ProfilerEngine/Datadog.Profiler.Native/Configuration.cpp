@@ -87,6 +87,8 @@ Configuration::Configuration()
         // If we detect CI Visibility we allow to reduce the minimum ms in sampling rate down to 1ms.
         _cpuWallTimeSamplingRate = ExtractCpuWallTimeSamplingRate(1);
     }
+
+    _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -524,6 +526,16 @@ bool Configuration::IsSystemCallsShieldEnabled() const
     return false;
 #endif
 }
+
+bool Configuration::IsEtwEnabled() const
+{
+#ifdef LINUX
+    return false;
+#else
+    return _isEtwEnabled;
+#endif
+}
+
 
 bool convert_to(shared::WSTRING const& s, bool& result)
 {

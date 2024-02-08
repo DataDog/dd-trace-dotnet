@@ -6,16 +6,20 @@
 #include <atomic>
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <vector>
 #include <windows.h>
 
+#include "Protocol.h"
 #include "INamedPipeHandler.h"
-
+#include "IEtwEventsReceiver.h"
+#include "IIpcLogger.h"
 
 class EtwEventsHandler : public INamedPipeHandler
 {
 public:
     EtwEventsHandler();
-    EtwEventsHandler(bool showMessages);
+    EtwEventsHandler(IIpcLogger* logger, IEtwEventsReceiver* pClrEventsReceiver);
     ~EtwEventsHandler();
     void Stop();
 
@@ -27,8 +31,11 @@ public:
 
 private:
     bool ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSize, DWORD& readSize);
+    void WriteSuccessResponse(HANDLE hPipe);
 
 private:
     std::atomic<bool> _stopRequested = false;
     bool _showMessages;
+    IEtwEventsReceiver* _pReceiver;
+    IIpcLogger* _logger;
 };

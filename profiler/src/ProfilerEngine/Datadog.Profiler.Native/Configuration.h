@@ -66,6 +66,8 @@ public:
     bool IsSystemCallsShieldEnabled() const override;
     bool IsCIVisibilityEnabled() const override;
     std::uint64_t GetCIVisibilitySpanId() const override;
+    bool IsEtwEnabled() const override;
+
 
 private:
     static tags ExtractUserTags();
@@ -148,4 +150,5 @@ private:
 
     bool _isCIVisibilityEnabled;
     std::uint64_t _internalCIVisibilitySpanId;
+    bool _isEtwEnabled;
 };

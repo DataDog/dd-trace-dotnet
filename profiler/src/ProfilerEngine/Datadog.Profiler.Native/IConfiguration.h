@@ -64,4 +64,5 @@ public:
     virtual bool IsSystemCallsShieldEnabled() const = 0;
     virtual bool IsCIVisibilityEnabled() const = 0;
     virtual std::uint64_t GetCIVisibilitySpanId() const = 0;
+    virtual bool IsEtwEnabled() const = 0;
 };

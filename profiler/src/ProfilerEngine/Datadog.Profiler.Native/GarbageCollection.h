@@ -25,9 +25,9 @@ enum GCReason
 
 enum GCType
 {
-    NonConcurrentGC,
-    BackgroundGC,
-    ForegroundGC
+    NonConcurrentGC = 0,
+    BackgroundGC = 1,
+    ForegroundGC = 2
 };
 
 enum GCGlobalMechanisms

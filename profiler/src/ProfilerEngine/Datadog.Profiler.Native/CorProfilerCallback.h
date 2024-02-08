@@ -10,7 +10,7 @@
 
 #include "AllocationsProvider.h"
 #include "ApplicationStore.h"
-#include "ClrEventsParser.h"
+#include "EventPipeEventsManager.h"
 #include "ExceptionsProvider.h"
 #include "IAppDomainStore.h"
 #include "IClrLifetime.h"
@@ -33,8 +33,8 @@
 #include "IAllocationsRecorder.h"
 #include "IMetadataProvider.h"
 #include "ThreadLifetimeProvider.h"
-
 #include "shared/src/native-src/string.h"
+#include "IEtwEventsManager.h"
 
 #include <atomic>
 #include <memory>
@@ -47,6 +47,8 @@ class IManagedThreadList;
 class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
+
+
 #ifdef LINUX
 class SystemCallsShield;
 #endif
@@ -215,7 +217,7 @@ private :
     ICorProfilerInfo12* _pCorProfilerInfoEvents = nullptr;
     ICorProfilerInfo13* _pCorProfilerInfoLiveHeap = nullptr;
 
-    std::unique_ptr<ClrEventsParser> _pClrEventsParser = nullptr;
+    std::unique_ptr<EventPipeEventsManager> _pEventPipeEventsManager = nullptr;
     EVENTPIPE_SESSION _session{0};
     inline static bool _isNet46OrGreater = false;
     std::shared_ptr<IMetricsSender> _metricsSender;
@@ -259,6 +261,8 @@ private :
 
     std::unique_ptr<ISamplesProvider> _gcThreadsCpuProvider;
     std::unique_ptr<IMetadataProvider> _pMetadataProvider;
+    std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
+    bool _isETWStarted = false;
 
 private:
     static void ConfigureDebugLog();
