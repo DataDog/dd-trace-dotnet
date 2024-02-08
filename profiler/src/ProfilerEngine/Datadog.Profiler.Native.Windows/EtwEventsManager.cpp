@@ -288,9 +288,7 @@ bool EtwEventsManager::Start()
     }
 
     // register our process ID to the Datadog Agent
-    SendRegistrationCommand(true);
-
-    return true;
+    return SendRegistrationCommand(true);
 }
 
 void EtwEventsManager::Stop()
