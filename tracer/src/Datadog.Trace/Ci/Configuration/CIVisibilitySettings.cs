@@ -44,6 +44,7 @@ namespace Datadog.Trace.Ci.Configuration
             CodeCoverageSnkFilePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile).AsString();
             CodeCoveragePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoveragePath).AsString();
             CodeCoverageEnableJitOptimizations = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations).AsBool(true);
+            CodeCoverageMode = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageMode).AsString();
 
             // Git upload
             GitUploadEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.GitUploadEnabled).AsBool();
@@ -121,6 +122,11 @@ namespace Datadog.Trace.Ci.Configuration
         public bool CodeCoverageEnableJitOptimizations { get; }
 
         /// <summary>
+        /// Gets the code coverage mode
+        /// </summary>
+        public string? CodeCoverageMode { get; private set; }
+
+        /// <summary>
         /// Gets a value indicating whether the Git Upload metadata is going to be used.
         /// </summary>
         public bool? GitUploadEnabled { get; private set; }
@@ -170,6 +176,11 @@ namespace Datadog.Trace.Ci.Configuration
             Agentless = enabled;
             ApiKey = apiKey;
             AgentlessUrl = agentlessUrl;
+        }
+
+        internal void SetCodeCoverageMode(string? coverageMode)
+        {
+            CodeCoverageMode = coverageMode;
         }
 
         internal void SetDefaultManualInstrumentationSettings()
