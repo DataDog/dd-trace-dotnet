@@ -14,15 +14,15 @@ namespace Datadog.Trace.Util;
 internal class AsyncManualResetEvent
 {
     private readonly object _mutex;
-    private TaskCompletionSource<object?> _tcs;
+    private TaskCompletionSource<bool> _tcs;
 
     public AsyncManualResetEvent(bool set)
     {
         _mutex = new object();
-        _tcs = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         if (set)
         {
-            _tcs.TrySetResult(null);
+            _tcs.TrySetResult(true);
         }
     }
 
@@ -42,7 +42,9 @@ internal class AsyncManualResetEvent
         }
     }
 
-    public Task WaitAsync()
+    public Task WaitAsync() => InternalWaitAsync();
+
+    private Task<bool> InternalWaitAsync()
     {
         lock (_mutex)
         {
@@ -52,11 +54,10 @@ internal class AsyncManualResetEvent
 
     public Task<bool> WaitAsync(int millisecondTimeout)
     {
-        var waitTask = WaitAsync();
+        var waitTask = InternalWaitAsync();
+        return waitTask.IsCompleted ? waitTask : InternalWaitWithTimeoutAsync(waitTask, millisecondTimeout);
 
-        return waitTask.IsCompleted ? Task.FromResult(true) : InternalWaitAsync(waitTask, millisecondTimeout);
-
-        static async Task<bool> InternalWaitAsync(Task task, int timeout)
+        static async Task<bool> InternalWaitWithTimeoutAsync(Task task, int timeout)
         {
             using var delayCancellation = new CancellationTokenSource();
             var completedTask = await Task.WhenAny(task, Task.Delay(timeout, delayCancellation.Token)).ConfigureAwait(false);
@@ -73,7 +74,7 @@ internal class AsyncManualResetEvent
 
     public Task WaitAsync(CancellationToken cancellationToken)
     {
-        var waitTask = WaitAsync();
+        var waitTask = InternalWaitAsync();
         if (waitTask.IsCompleted)
         {
             return waitTask;
@@ -118,7 +119,7 @@ internal class AsyncManualResetEvent
     {
         lock (_mutex)
         {
-            _tcs.TrySetResult(null);
+            _tcs.TrySetResult(true);
         }
     }
 
@@ -128,7 +129,7 @@ internal class AsyncManualResetEvent
         {
             if (_tcs.Task.IsCompleted)
             {
-                _tcs = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+                _tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             }
         }
     }
