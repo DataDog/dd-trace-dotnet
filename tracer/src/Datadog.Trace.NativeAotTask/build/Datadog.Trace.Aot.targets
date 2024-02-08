@@ -1,0 +1,8 @@
+﻿<Project>
+
+  <UsingTask TaskName="InjectDatadog" AssemblyFile="Datadog.Trace.NativeAotTask.dll" />
+
+  <Target Name="InjectDatadog" BeforeTargets="IlCompile" AfterTargets="WriteIlcRspFileForCompilation">
+    <InjectDatadog IlcRspFile="%(ManagedBinary.IlcRspFile)" IntermediateOutputPath="$(IntermediateOutputPath)" />
+  </Target>
+</Project>

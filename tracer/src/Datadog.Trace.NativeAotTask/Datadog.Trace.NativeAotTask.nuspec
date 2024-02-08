@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+
+  <metadata>
+    <id>Datadog.Trace.Aot</id>
+    <version>1.0.27</version>
+    <title>Datadog.Trace.Aot</title>
+    <authors>Datadog</authors>
+    <owners>Datadog</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>MSBuild task to inject Datadog AOT profiler into .NET assemblies</description>
+    <releaseNotes>Initial release</releaseNotes>
+
+    <dependencies>      
+      <group targetFramework="net6.0">
+        <dependency id="System.Diagnostics.DiagnosticSource" version="4.4.1" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System.Configuration" targetFramework=".NETFramework4.6.1" />
+      <frameworkAssembly assemblyName="System.IO.Compression" targetFramework=".NETFramework4.6.1" />
+      <frameworkAssembly assemblyName="System.Web" targetFramework=".NETFramework4.6.1" />
+    </frameworkAssemblies>
+  </metadata>
+  <files>
+    <file src="bin\Release\netstandard2.0\*.dll" target="build" />
+    <file src="build\Datadog.Trace.Aot.targets" target="build" />
+    <file src="..\Datadog.Trace\bin\Release\net6.0\Datadog.Trace.dll" target="lib/net6.0" />
+  </files>
+</package>
