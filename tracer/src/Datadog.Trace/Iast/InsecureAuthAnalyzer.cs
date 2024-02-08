@@ -90,7 +90,7 @@ internal static class InsecureAuthAnalyzer
         // To minimize false positives when we get auth credentials to a page that doesn't exist
         // (e.g. happens with vulnerability scanners), we'll just ignore this vulnerability when
         // there is no success response.
-        return statusCode >= 300;
+        return statusCode >= 400;
     }
 
     private static string? InsecureSchemeDetected(string authHeader)
