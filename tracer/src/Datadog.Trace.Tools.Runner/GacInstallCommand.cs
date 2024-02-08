@@ -33,6 +33,17 @@ internal class GacInstallCommand : CommandWithExamples
 
     private void Execute(InvocationContext context)
     {
+        /*
+        using (var cnt = NativeMethods.CreateAssemblyCache())
+        {
+            var asmInfo = new AssemblyInfo();
+            cnt.AssemblyCache.QueryAssemblyInfo(QueryAssemblyInfoFlag.QUERYASMINFO_FLAG_GETSIZE, "Datadog.Trace", ref asmInfo);
+            Console.WriteLine(asmInfo.AssemblyFlags);
+            Console.WriteLine(asmInfo.CurrentAssemblyPath);
+            Console.WriteLine(asmInfo.AssemblySizeInKb);
+        }
+        */
+
         var assemblyPath = _assemblyPathArgument.GetValue(context);
 
         if (!AdministratorHelper.IsElevated)
@@ -50,7 +61,7 @@ internal class GacInstallCommand : CommandWithExamples
         }
 
         using var container = NativeMethods.CreateAssemblyCache();
-        var hr = container.AssemblyCache.InstallAssembly(0, assemblyPath, IntPtr.Zero);
+        var hr = container.AssemblyCache.InstallAssembly(AssemblyCacheInstallFlags.None, assemblyPath, IntPtr.Zero);
         if (hr == 0)
         {
             Utils.WriteSuccess($"Assembly '{assemblyPath}' was installed in the GAC successfully.");

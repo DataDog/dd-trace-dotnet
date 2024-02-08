@@ -59,12 +59,22 @@ internal class GacUninstallCommand : CommandWithExamples
         }
 
         using var container = NativeMethods.CreateAssemblyCache();
-        var hr = container.AssemblyCache.UninstallAssembly(0, assemblyName!, IntPtr.Zero, out var position);
-        if (position == 3 /*IASSEMBLYCACHE_UNINSTALL_DISPOSITION_ALREADY_UNINSTALLED*/)
+        var hr = container.AssemblyCache.UninstallAssembly(UninstallAssemblyFlags.None, assemblyName!, IntPtr.Zero, out var position);
+
+        switch (position)
         {
-            Utils.WriteWarning($"Assembly '{assemblyName}' was already uninstalled from the GAC.");
-            context.ExitCode = hr;
-            return;
+            case UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_ALREADY_UNINSTALLED:
+                Utils.WriteWarning($"Assembly '{assemblyName}' was already uninstalled from the GAC.");
+                context.ExitCode = hr;
+                break;
+            case UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_REFERENCE_NOT_FOUND:
+                Utils.WriteWarning($"Assembly '{assemblyName}' not found in the GAC.");
+                context.ExitCode = hr;
+                break;
+            case UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_STILL_IN_USE:
+                Utils.WriteWarning($"Assembly '{assemblyName}' is still in use.");
+                context.ExitCode = hr;
+                break;
         }
 
         if (hr == 0)
