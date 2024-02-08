@@ -116,8 +116,8 @@ namespace Datadog.Trace.Tools.Runner
                 builder.Command.AddCommand(gacCommand);
 
 #pragma warning disable CA1416
-                gacCommand.AddCommand(new GacInstallCommand(applicationContext));
-                gacCommand.AddCommand(new GacUninstallCommand(applicationContext));
+                gacCommand.AddCommand(new GacInstallCommand());
+                gacCommand.AddCommand(new GacUninstallCommand());
 #pragma warning restore CA1416
             }
 #endif

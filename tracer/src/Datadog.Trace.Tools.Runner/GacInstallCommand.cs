@@ -3,39 +3,65 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.IO;
 using System.Runtime.Versioning;
 using Datadog.Trace.Tools.Runner.Gac;
 
 namespace Datadog.Trace.Tools.Runner;
+
+#if NETCOREAPP3_0_OR_GREATER
 
 #if NET5_0_OR_GREATER
 [SupportedOSPlatform("windows")]
 #endif
 internal class GacInstallCommand : CommandWithExamples
 {
-    private readonly ApplicationContext _applicationContext;
-    private readonly Argument<string> _nameArgument = new("assembly-path") { Arity = ArgumentArity.ZeroOrOne };
+    private readonly Argument<string> _assemblyPathArgument = new("assembly-path") { Arity = ArgumentArity.ExactlyOne };
 
-    public GacInstallCommand(ApplicationContext applicationContext)
+    public GacInstallCommand()
         : base("install", "Install a .NET Framework assembly to the GAC")
     {
-        _applicationContext = applicationContext;
-        AddArgument(_nameArgument);
+        AddArgument(_assemblyPathArgument);
 
-        AddExample("dd-trace gac install c:\assemblies\assemblyName.dll");
+        AddExample("dd-trace gac install c:\\assemblies\\assemblyName.dll");
 
         this.SetHandler(Execute);
     }
 
     private void Execute(InvocationContext context)
     {
+        var assemblyPath = _assemblyPathArgument.GetValue(context);
+
         if (!AdministratorHelper.IsElevated)
         {
             Utils.WriteError("This command requires Administrator permissions.");
             context.ExitCode = 1;
             return;
         }
+
+        if (!File.Exists(assemblyPath))
+        {
+            Utils.WriteError($"File '{assemblyPath}' does not exist.");
+            context.ExitCode = 1;
+            return;
+        }
+
+        using var container = NativeMethods.CreateAssemblyCache();
+        var hr = container.AssemblyCache.InstallAssembly(0, assemblyPath, IntPtr.Zero);
+        if (hr == 0)
+        {
+            Utils.WriteSuccess($"Assembly '{assemblyPath}' was installed in the GAC successfully.");
+        }
+        else
+        {
+            Utils.WriteError($"Error installing '{assemblyPath}' in the GAC. HRESULT={hr}");
+        }
+
+        context.ExitCode = hr;
     }
 }
+
+#endif
