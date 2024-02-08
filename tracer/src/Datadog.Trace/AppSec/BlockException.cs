@@ -12,6 +12,11 @@ namespace Datadog.Trace.AppSec
 {
     internal class BlockException : CallTargetBubbleUpException
     {
+        public BlockException(IResult result)
+            : this(result, false)
+        {
+        }
+
         public BlockException(IResult result, bool reported = false)
         {
             Result = result;

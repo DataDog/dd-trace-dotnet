@@ -24,10 +24,9 @@ namespace Datadog.Trace.AppSec.Coordinator;
 internal readonly partial struct SecurityCoordinator
 {
     private const string WebApiControllerHandlerTypeFullname = "System.Web.Http.WebHost.HttpControllerHandler";
-
+    private static readonly Lazy<Action<IResult, HttpStatusCode, string>?> _throwHttpResponseRedirectException = new(CreateThrowHttpResponseExceptionDynMethForRedirect);
+    private static readonly Lazy<Action<IResult, HttpStatusCode, string, string>?> _throwHttpResponseException = new(CreateThrowHttpResponseExceptionDynMeth);
     private static readonly bool? UsingIntegratedPipeline;
-    private static readonly Lazy<Action<HttpStatusCode, string, string>?> _throwHttpResponseException = new(CreateThrowHttpResponseExceptionDynMeth);
-    private static readonly Lazy<Action<HttpStatusCode, string>?> _throwHttpResponseRedirectException = new(CreateThrowHttpResponseExceptionDynMethForRedirect);
 
     private readonly HttpContext _context;
 
@@ -57,14 +56,14 @@ internal readonly partial struct SecurityCoordinator
 
     private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
 
-    private static Action<HttpStatusCode, string, string>? CreateThrowHttpResponseExceptionDynMeth()
+    private static Action<IResult, HttpStatusCode, string, string>? CreateThrowHttpResponseExceptionDynMeth()
     {
         try
         {
             var dynMethod = new DynamicMethod(
                 "ThrowHttpResponseExceptionDynMeth",
                 typeof(void),
-                new[] { typeof(HttpStatusCode), typeof(string), typeof(string) },
+                [typeof(IResult), typeof(HttpStatusCode), typeof(string), typeof(string)],
                 typeof(SecurityCoordinator).Module,
                 true);
             var il = GetBaseIlForThrowingHttpResponseException(dynMethod);
@@ -90,17 +89,17 @@ internal readonly partial struct SecurityCoordinator
             var contentCtor = contentType.GetConstructor(new[] { typeof(string), typeof(Encoding), typeof(string) });
 
             // body's content
-            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
             var encodingType = typeof(Encoding);
             var encodingUtf8Prop = encodingType.GetProperty("UTF8");
             il.EmitCall(OpCodes.Call, encodingUtf8Prop.GetMethod, null);
             // media type
-            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_3);
             il.Emit(OpCodes.Newobj, contentCtor);
             il.EmitCall(OpCodes.Callvirt, messageContentProperty.SetMethod, null);
             il.Emit(OpCodes.Ldloc_0);
             il.Emit(OpCodes.Throw);
-            return (Action<HttpStatusCode, string, string>)dynMethod.CreateDelegate(typeof(Action<HttpStatusCode, string, string>));
+            return (Action<IResult, HttpStatusCode, string, string>)dynMethod.CreateDelegate(typeof(Action<IResult, HttpStatusCode, string, string>));
         }
         catch (Exception e)
         {
@@ -109,14 +108,14 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    private static Action<HttpStatusCode, string>? CreateThrowHttpResponseExceptionDynMethForRedirect()
+    private static Action<IResult, HttpStatusCode, string>? CreateThrowHttpResponseExceptionDynMethForRedirect()
     {
         try
         {
             var dynMethod = new DynamicMethod(
                 "ThrowHttpResponseRedirectExceptionDynMeth",
                 typeof(void),
-                new[] { typeof(HttpStatusCode), typeof(string), typeof(string) },
+                [typeof(IResult), typeof(HttpStatusCode), typeof(string)],
                 typeof(SecurityCoordinator).Module,
                 true);
             var il = GetBaseIlForThrowingHttpResponseException(dynMethod);
@@ -152,14 +151,14 @@ internal readonly partial struct SecurityCoordinator
             il.EmitCall(OpCodes.Callvirt, headerProperty.GetMethod, null);
             // location
             il.Emit(OpCodes.Ldstr, "Location");
-            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
 
             il.EmitCall(OpCodes.Callvirt, tryAddWithoutValidationMethod, null);
 
             il.Emit(OpCodes.Ldloc_0);
             il.Emit(OpCodes.Throw);
 
-            return (Action<HttpStatusCode, string>)dynMethod.CreateDelegate(typeof(Action<HttpStatusCode, string>));
+            return (Action<IResult, HttpStatusCode, string>)dynMethod.CreateDelegate(typeof(Action<IResult, HttpStatusCode, string>));
         }
         catch (Exception e)
         {
@@ -187,18 +186,18 @@ internal readonly partial struct SecurityCoordinator
         }
 
         var blockException = typeof(BlockException);
-        var blockExceptionCtor = blockException.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, Array.Empty<Type>(), null);
-        var exceptionCtor = exceptionType.GetConstructor(new[] { typeof(HttpStatusCode) });
+        var blockExceptionCtor = blockException.GetConstructor(BindingFlags.Public | BindingFlags.Instance, null, [typeof(IResult)], null);
+        var exceptionCtor = exceptionType.GetConstructor([typeof(HttpStatusCode)]);
         var exceptionResponseProperty = exceptionType.GetProperty("Response");
-        var setValueMethod = typeof(FieldInfo).GetMethod("SetValue", new[] { typeof(object), typeof(object) });
+        var setValueMethod = typeof(FieldInfo).GetMethod("SetValue", [typeof(object), typeof(object)]);
         var getTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle");
-        var getFieldMethod = typeof(Type).GetMethod("GetField", new[] { typeof(string), typeof(BindingFlags) }, null);
+        var getFieldMethod = typeof(Type).GetMethod("GetField", [typeof(string), typeof(BindingFlags)], null);
         var getBaseType = typeof(Type).GetProperty("BaseType");
 
         var il = method.GetILGenerator();
         il.DeclareLocal(exceptionType);
         // status code loading
-        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Ldarg_1);
         // new HttpResponseException(statuscode)
         il.Emit(OpCodes.Newobj, exceptionCtor);
         il.Emit(OpCodes.Stloc_0);
@@ -213,8 +212,10 @@ internal readonly partial struct SecurityCoordinator
         il.Emit(OpCodes.Ldstr, "_innerException");
         il.Emit(OpCodes.Ldc_I4_S, (int)(BindingFlags.Instance | BindingFlags.NonPublic));
         il.EmitCall(OpCodes.Callvirt, getFieldMethod, null);
-
-        il.Emit(OpCodes.Ldloc_0); // loads httpexception
+        // loads httpexception
+        il.Emit(OpCodes.Ldloc_0);
+        // loads IResult
+        il.Emit(OpCodes.Ldarg_0);
         il.Emit(OpCodes.Newobj, blockExceptionCtor); // loads blockexception
         il.EmitCall(OpCodes.Callvirt, setValueMethod, null);
 
@@ -270,7 +271,7 @@ internal readonly partial struct SecurityCoordinator
 
             if (result.ShouldBlock)
             {
-                ChooseBlockingMethodAndBlock(result.Actions[0], reporting);
+                ChooseBlockingMethodAndBlock(result, reporting);
             }
 
             // here we assume if we haven't blocked we'll have collected the correct status elsewhere
@@ -292,9 +293,9 @@ internal readonly partial struct SecurityCoordinator
         };
     }
 
-    private void ChooseBlockingMethodAndBlock(string blockActionId, Action<int?, bool> reporting)
+    private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting)
     {
-        var blockingAction = _security.GetBlockingAction(blockActionId, new[] { _context.Request.Headers["Accept"] });
+        var blockingAction = _security.GetBlockingAction(result.Actions[0], [_context.Request.Headers["Accept"]]);
         var isWebApiRequest = _context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
         if (isWebApiRequest)
         {
@@ -303,14 +304,14 @@ internal readonly partial struct SecurityCoordinator
                 // in the normal case reporting will be by the caller function after we block
                 // in the webapi case we block with an exception, so can't report afterwards
                 reporting(blockingAction.StatusCode, true);
-                throwException((HttpStatusCode)blockingAction.StatusCode, blockingAction.ResponseContent, blockingAction.ContentType);
+                throwException(result, (HttpStatusCode)blockingAction.StatusCode, blockingAction.ResponseContent, blockingAction.ContentType);
             }
             else if (blockingAction.IsRedirect && _throwHttpResponseRedirectException.Value is { } throwRedirectException)
             {
                 // in the normal case reporting will be by the caller function after we block
                 // in the webapi case we block with an exception, so can't report afterwards
                 reporting(blockingAction.StatusCode, true);
-                throwRedirectException((HttpStatusCode)blockingAction.StatusCode, blockingAction.RedirectLocation);
+                throwRedirectException(result, (HttpStatusCode)blockingAction.StatusCode, blockingAction.RedirectLocation);
             }
         }
 
