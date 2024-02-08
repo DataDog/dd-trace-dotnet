@@ -687,6 +687,7 @@ public class ProbesTests : TestHelper
 
                 Assert.NotNull(req);
                 req.Should().Contain($"service:{normalizedServiceName}");
+                req.Should().Contain($"probe-id:{probeAttributeBase.ProbeId}");
             }
         }
     }
@@ -889,6 +890,14 @@ public class ProbesTests : TestHelper
                                     {
                                         item.Value.Replace(new JArray(firstChild));
                                     }
+                                }
+
+                                break;
+
+                            case "StackTrace":
+                                if (IsParentName(item, parentName: ".@exception.fields"))
+                                {
+                                    item.Value.Replace("ScrubbedValue");
                                 }
 
                                 break;

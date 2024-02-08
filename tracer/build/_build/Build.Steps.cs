@@ -212,6 +212,11 @@ partial class Build
         .Unlisted()
         .Executes(() =>
         {
+            if (FastDevLoop)
+            {
+                return;
+            }
+
             if (IsWin)
             {
                 NuGetTasks.NuGetRestore(s => s
@@ -278,8 +283,10 @@ partial class Build
         {
             DeleteDirectory(NativeTracerProject.Directory / "build");
 
+            var finalArchs = FastDevLoop ? new[]  { "arm64" } : OsxArchs;
+            
             var lstNativeBinaries = new List<string>();
-            foreach (var arch in OsxArchs)
+            foreach (var arch in finalArchs)
             {
                 var buildDirectory = NativeBuildDirectory + "_" + arch;
                 EnsureExistingDirectory(buildDirectory);

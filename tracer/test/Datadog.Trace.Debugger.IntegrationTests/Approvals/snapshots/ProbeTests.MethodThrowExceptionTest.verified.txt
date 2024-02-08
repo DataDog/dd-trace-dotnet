@@ -65,10 +65,7 @@
                     "type": "String",
                     "value": "Samples.Probes.TestRuns"
                   },
-                  "StackTrace": {
-                    "type": "String",
-                    "value": "   at Samples.Probes.TestRuns.SmokeTests.MethodThrowExceptionTest.Method(Int32 toSet) in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\SmokeTests\\MethodThrowExceptionTest.cs:line 29\r\n   at Samples.Probes.TestRuns.SmokeTests.MethodThrowExceptionTest.Run() in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\SmokeTests\\MethodThrowExceptionTest.cs:line 14\r\n   at Program.RunTest(Object instance, String testClassName) in C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\Samples.Probes\\Program.cs:line 61"
-                  }
+                  "StackTrace": "ScrubbedValue"
                 },
                 "type": "InvalidOperationException",
                 "value": "InvalidOperationException"
