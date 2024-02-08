@@ -12,32 +12,13 @@ namespace Datadog.Trace.AppSec
 {
     internal class BlockException : CallTargetBubbleUpException
     {
-        internal BlockException()
-        {
-        }
-
-        internal BlockException(string message)
-            : base(message)
-        {
-        }
-
-        internal BlockException(string message, Exception inner)
-            : base(message, inner)
-        {
-        }
-
-        internal BlockException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
-            : base(info, context)
-        {
-        }
-
         public BlockException(IResult result, bool reported = false)
         {
             Result = result;
             Reported = reported;
         }
 
-        public IResult? Result { get; }
+        public IResult Result { get; }
 
         public bool Reported { get; }
 
