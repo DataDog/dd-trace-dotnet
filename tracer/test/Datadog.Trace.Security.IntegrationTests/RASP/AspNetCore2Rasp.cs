@@ -12,12 +12,11 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
-using Datadog.Trace.Security.IntegrationTests.Rcm;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.Security.IntegrationTests.Iast;
+namespace Datadog.Trace.Security.IntegrationTests.Rasp;
 
 public class AspNetCore2RaspEnabledIastEnabled : AspNetCore2Rasp
 {
