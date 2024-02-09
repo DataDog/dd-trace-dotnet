@@ -166,15 +166,15 @@ EXTERN_C VOID STDAPICALLTYPE DisableTracerCLRProfiler()
     trace::profiler->DisableTracerCLRProfiler();
 }
 
-EXTERN_C VOID STDAPICALLTYPE RegisterIastAspects(WCHAR** aspects, int aspectsLength)
+EXTERN_C VOID STDAPICALLTYPE RegisterCallsiteAspects(WCHAR** aspects, int aspectsLength)
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in RegisterIastAspects call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in RegisterCallsiteAspects call. Tracer CLR Profiler was not initialized.");
         return;
     }
 
-    trace::profiler->RegisterIastAspects(aspects, aspectsLength);
+    trace::profiler->RegisterCallsiteAspects(aspects, aspectsLength);
 }
 
 

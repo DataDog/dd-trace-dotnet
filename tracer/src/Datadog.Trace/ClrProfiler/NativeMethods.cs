@@ -166,7 +166,7 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        public static int RegisterIastAspects(string[] aspects)
+        public static int RegisterCallsiteAspects(string[] aspects)
         {
             if (aspects == null || aspects.Length == 0)
             {
@@ -175,11 +175,11 @@ namespace Datadog.Trace.ClrProfiler
 
             if (IsWindows)
             {
-                return Windows.RegisterIastAspects(aspects, aspects.Length);
+                return Windows.RegisterCallsiteAspects(aspects, aspects.Length);
             }
             else
             {
-                return NonWindows.RegisterIastAspects(aspects, aspects.Length);
+                return NonWindows.RegisterCallsiteAspects(aspects, aspects.Length);
             }
         }
 
@@ -299,7 +299,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern void DisableTracerCLRProfiler();
 
             [DllImport("Datadog.Tracer.Native.dll")]
-            public static extern int RegisterIastAspects([In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] aspects, int aspectsLength);
+            public static extern int RegisterCallsiteAspects([In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] aspects, int aspectsLength);
 
             [DllImport("Datadog.Tracer.Native.dll")]
             public static extern int RegisterCallTargetDefinitions([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition2[] methodArrays, int size, uint enabledCategories);
@@ -355,7 +355,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern void DisableTracerCLRProfiler();
 
             [DllImport("Datadog.Tracer.Native")]
-            public static extern int RegisterIastAspects([In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] aspects, int aspectsLength);
+            public static extern int RegisterCallsiteAspects([In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] aspects, int aspectsLength);
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern int RegisterCallTargetDefinitions([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition2[] methodArrays, int size, uint enabledCategories);

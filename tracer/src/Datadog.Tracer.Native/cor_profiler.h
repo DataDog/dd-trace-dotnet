@@ -214,7 +214,7 @@ public:
     //
     // Register Aspects into Dataflow
     //
-    int RegisterIastAspects(WCHAR** aspects, int aspectsLength);
+    int RegisterCallsiteAspects(WCHAR** aspects, int aspectsLength);
 
 
     //
