@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP3_0_OR_GREATER
-
 using System;
 using System.IO;
 using System.Reflection;
@@ -54,5 +52,3 @@ internal sealed class NativeMethods
         return new AssemblyCacheContainer(libPointer, ppAsmCache);
     }
 }
-
-#endif

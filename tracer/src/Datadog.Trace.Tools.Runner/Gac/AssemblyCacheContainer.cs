@@ -8,8 +8,6 @@ using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.Tools.Runner.Gac;
 
-#if NETCOREAPP3_0_OR_GREATER
-
 internal sealed class AssemblyCacheContainer : IDisposable
 {
     private readonly IntPtr _libPointer;
@@ -30,5 +28,3 @@ internal sealed class AssemblyCacheContainer : IDisposable
         }
     }
 }
-
-#endif

@@ -10,8 +10,6 @@ using Xunit;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests;
 
-#if NETCOREAPP3_0_OR_GREATER
-
 #if NET5_0_OR_GREATER
 [SupportedOSPlatform("windows")]
 #endif
@@ -106,5 +104,3 @@ public class GacCommandTests
         }
     }
 }
-
-#endif

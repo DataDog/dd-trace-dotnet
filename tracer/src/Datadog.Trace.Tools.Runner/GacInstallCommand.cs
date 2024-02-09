@@ -12,8 +12,6 @@ using Datadog.Trace.Tools.Runner.Gac;
 
 namespace Datadog.Trace.Tools.Runner;
 
-#if NETCOREAPP3_0_OR_GREATER
-
 #if NET5_0_OR_GREATER
 [SupportedOSPlatform("windows")]
 #endif
@@ -62,5 +60,3 @@ internal class GacInstallCommand : CommandWithExamples
         context.ExitCode = hr;
     }
 }
-
-#endif
