@@ -352,21 +352,28 @@ namespace Datadog.Trace.AppSec
 
         private string GetJsonResponse()
         {
-            if (_blockedJsonTemplateCache != null)
+            try
             {
-                return _blockedJsonTemplateCache;
-            }
-
-            if (_settings.BlockedJsonTemplatePath != null && AppDomain.CurrentDomain.BaseDirectory != null)
-            {
-                var fullPath =
-                    Path.IsPathRooted(_settings.BlockedJsonTemplatePath)
-                        ? _settings.BlockedJsonTemplatePath
-                        : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _settings.BlockedJsonTemplatePath);
-                if (File.Exists(fullPath))
+                if (_blockedJsonTemplateCache != null)
                 {
-                    _blockedJsonTemplateCache = File.ReadAllText(fullPath);
+                    return _blockedJsonTemplateCache;
                 }
+
+                if (_settings.BlockedJsonTemplatePath != null && AppDomain.CurrentDomain.BaseDirectory != null)
+                {
+                    var fullPath =
+                        Path.IsPathRooted(_settings.BlockedJsonTemplatePath)
+                            ? _settings.BlockedJsonTemplatePath
+                            : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _settings.BlockedJsonTemplatePath);
+                    if (File.Exists(fullPath))
+                    {
+                        _blockedJsonTemplateCache = File.ReadAllText(fullPath);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error setting json blocking template, defaulting in built in template");
             }
 
             if (_blockedJsonTemplateCache == null)
@@ -379,21 +386,28 @@ namespace Datadog.Trace.AppSec
 
         private string GetHtmlResponse()
         {
-            if (_blockedHtmlTemplateCache != null)
+            try
             {
-                return _blockedHtmlTemplateCache;
-            }
-
-            if (_settings.BlockedHtmlTemplatePath != null && AppDomain.CurrentDomain.BaseDirectory != null)
-            {
-                var fullPath =
-                    Path.IsPathRooted(_settings.BlockedJsonTemplatePath)
-                        ? _settings.BlockedJsonTemplatePath
-                        : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _settings.BlockedHtmlTemplatePath);
-                if (File.Exists(fullPath))
+                if (_blockedHtmlTemplateCache != null)
                 {
-                    _blockedHtmlTemplateCache = File.ReadAllText(fullPath);
+                    return _blockedHtmlTemplateCache;
                 }
+
+                if (_settings.BlockedHtmlTemplatePath != null && AppDomain.CurrentDomain.BaseDirectory != null)
+                {
+                    var fullPath =
+                        Path.IsPathRooted(_settings.BlockedHtmlTemplatePath)
+                            ? _settings.BlockedHtmlTemplatePath
+                            : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _settings.BlockedHtmlTemplatePath);
+                    if (File.Exists(fullPath))
+                    {
+                        _blockedHtmlTemplateCache = File.ReadAllText(fullPath);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error setting html blocking template, defaulting in built in template");
             }
 
             if (_blockedHtmlTemplateCache == null)
