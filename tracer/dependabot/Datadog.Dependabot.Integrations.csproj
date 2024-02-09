@@ -178,13 +178,13 @@
 
     <!-- Integration: OpenTelemetry -->
     <!-- Assembly: OpenTelemetry -->
-    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry/1.6.0 -->
-    <PackageReference Include="OpenTelemetry" Version="1.6.0" />
+    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry/1.7.0 -->
+    <PackageReference Include="OpenTelemetry" Version="1.7.0" />
 
     <!-- Integration: OpenTelemetry.Api -->
     <!-- Assembly: OpenTelemetry.Api -->
-    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry.Api/1.6.0 -->
-    <PackageReference Include="OpenTelemetry.Api" Version="1.6.0" />
+    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry.Api/1.7.0 -->
+    <PackageReference Include="OpenTelemetry.Api" Version="1.7.0" />
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!-- Assembly: Oracle.ManagedDataAccess -->
