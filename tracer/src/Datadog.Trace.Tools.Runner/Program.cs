@@ -109,6 +109,20 @@ namespace Datadog.Trace.Tools.Runner
             builder.Command.AddCommand(new AnalyzeInstrumentationErrorsCommand { IsHidden = true });
             builder.Command.AddCommand(new CoverageMergerCommand { IsHidden = true });
 
+#if NETCOREAPP3_0_OR_GREATER
+            if (applicationContext.Platform == Platform.Windows)
+            {
+                var gacCommand = new Command("gac", "Install or Uninstall a .NET Framework assembly to the GAC");
+                builder.Command.AddCommand(gacCommand);
+
+#pragma warning disable CA1416
+                gacCommand.AddCommand(new GacGetCommand());
+                gacCommand.AddCommand(new GacInstallCommand());
+                gacCommand.AddCommand(new GacUninstallCommand());
+#pragma warning restore CA1416
+            }
+#endif
+
             var parser = builder.Build();
 
             var parseResult = parser.Parse(args);
