@@ -43,21 +43,6 @@ internal class GacUninstallCommand : CommandWithExamples
             return;
         }
 
-        if (File.Exists(assemblyName))
-        {
-            try
-            {
-                var asmPath = Path.IsPathRooted(assemblyName)
-                                  ? assemblyName
-                                  : Path.Combine(Environment.CurrentDirectory, assemblyName);
-                assemblyName = Assembly.LoadFile(asmPath).GetName().Name;
-            }
-            catch
-            {
-                // .
-            }
-        }
-
         using var container = NativeMethods.CreateAssemblyCache();
         var hr = container.AssemblyCache.UninstallAssembly(UninstallAssemblyFlags.None, assemblyName!, IntPtr.Zero, out var position);
 

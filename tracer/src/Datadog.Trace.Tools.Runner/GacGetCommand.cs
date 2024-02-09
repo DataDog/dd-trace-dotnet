@@ -36,22 +36,6 @@ internal class GacGetCommand : CommandWithExamples
     private void Execute(InvocationContext context)
     {
         var assemblyName = _assemblyNameArgument.GetValue(context);
-
-        if (File.Exists(assemblyName))
-        {
-            try
-            {
-                var asmPath = Path.IsPathRooted(assemblyName)
-                                  ? assemblyName
-                                  : Path.Combine(Environment.CurrentDirectory, assemblyName);
-                assemblyName = Assembly.LoadFile(asmPath).GetName().Name;
-            }
-            catch
-            {
-                // .
-            }
-        }
-
         using var container = NativeMethods.CreateAssemblyCache();
         var asmInfo = new AssemblyInfo();
         var hr = container.AssemblyCache.QueryAssemblyInfo(QueryAssemblyInfoFlag.QUERYASMINFO_FLAG_GETSIZE, assemblyName!, ref asmInfo);
