@@ -42,10 +42,19 @@ jobs:
         AzureDevopsBuildId: "${{ github.event.inputs.azdo_build_id }}"
 
     - uses: ./.github/actions/create-system-test-docker-base-images
-      name: 'Create system test docker images'
+      name: 'Create system test docker images x64'
       with:
         artifacts_path: "${{steps.assets.outputs.artifacts_path}}"
         package_version: "${{steps.versions.outputs.version}}"
+        lib_waf_version: "${{steps.versions.outputs.lib_waf_version}}"
+        waf_rules_version: "${{steps.versions.outputs.waf_rules_version}}"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: ./.github/actions/create-system-test-docker-base-images_arm64
+      name: 'Create system test docker images arm64'
+      with:
+        artifacts_path: "${{steps.assets.outputs.artifacts_path}}"
+        package_version: "${{steps.versions.outputs.version}}.arm64"
         lib_waf_version: "${{steps.versions.outputs.lib_waf_version}}"
         waf_rules_version: "${{steps.versions.outputs.waf_rules_version}}"
         github_token: ${{ secrets.GITHUB_TOKEN }}
