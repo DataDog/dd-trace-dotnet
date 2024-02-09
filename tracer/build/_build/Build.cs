@@ -532,6 +532,8 @@ partial class Build : NukeBuild
                     CopyDirectoryRecursively(resultsDirectory, BuildDataDirectory / "benchmarks",
                                              DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                 }
+
+                CopyDumpsToBuildData();
             }
         });
 
