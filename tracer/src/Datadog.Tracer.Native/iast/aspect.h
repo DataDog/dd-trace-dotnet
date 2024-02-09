@@ -31,8 +31,6 @@ namespace iast
         Tracked
     };
 
-    std::string ToString(AspectType type);
-    AspectType ParseAspectType(const std::string& txt);
     std::string ToString(VulnerabilityType type);
     VulnerabilityType ParseVulnerabilityType(const std::string& txt);
     std::string ToString(std::vector<VulnerabilityType> types);

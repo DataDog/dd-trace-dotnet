@@ -181,9 +181,9 @@ namespace Datadog.Trace.ClrProfiler
             "AspectCtorReplaceAttribute" => arguments.Length switch
             {
                 // AspectCtorReplaceAttribute(string targetMethod)
-                1 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[None],Default,[])]",
+                1 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[None],0,[])]",
                 // AspectCtorReplaceAttribute(string targetMethod, params AspectFilter[] filters)
-                2 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1])},Default,[])]",
+                2 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1])},0,[])]",
                 // AspectCtorReplaceAttribute(string targetMethod, AspectType aspectType = AspectType.Default, params VulnerabilityType[] vulnerabilityTypes)
                 3 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[None],{arguments[1]},{Check(arguments[2])})]",
                 // AspectCtorReplaceAttribute(string targetMethod, AspectFilter[] filters, AspectType aspectType = AspectType.Default, params VulnerabilityType[] vulnerabilityTypes)
@@ -193,11 +193,11 @@ namespace Datadog.Trace.ClrProfiler
             "AspectMethodReplaceAttribute" => arguments.Length switch
             {
                 // AspectMethodReplaceAttribute(string targetMethod)
-                1 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],[None],Default,[])]",
+                1 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],[None],0,[])]",
                 // AspectMethodReplaceAttribute(string targetMethod, params AspectFilter[] filters)
-                2 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1], "[None]")},Default,[])]",
+                2 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1], "[None]")},0,[])]",
                 // AspectMethodReplaceAttribute(string targetMethod, string targetType, params AspectFilter[] filters)
-                3 => $"[AspectMethodReplace({arguments[0]},{arguments[1]},[0],[False],{Check(arguments[2], "[None]")},Default,[])]",
+                3 => $"[AspectMethodReplace({arguments[0]},{arguments[1]},[0],[False],{Check(arguments[2], "[None]")},0,[])]",
                 // AspectMethodReplaceAttribute(string targetMethod, AspectFilter[] filters, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
                 4 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],[{Check(arguments[1], "[0]")}],arguments[2],{Check(arguments[2])})]",
                 _ => throw new ArgumentException($"Could not find AspectMethodReplaceAttribute overload with {arguments.Length} parameters")
@@ -205,15 +205,15 @@ namespace Datadog.Trace.ClrProfiler
             "AspectMethodInsertBeforeAttribute" => arguments.Length switch
             {
                 // AspectMethodInsertBeforeAttribute(string targetMethod, params int[] paramShift)
-                2 => $"[AspectMethodInsertBefore({arguments[0]},\"\",{MakeSameSize(Check(arguments[1]))},[None],Default,[])]",
+                2 => $"[AspectMethodInsertBefore({arguments[0]},\"\",{MakeSameSize(Check(arguments[1]))},[None],0,[])]",
                 // AspectMethodInsertBeforeAttribute(string targetMethod, int[] paramShift, bool[] boxParam)
-                3 => $"[AspectMethodInsertBefore({arguments[0]},\"\",[{arguments[1]}],[{arguments[2]}],[None],Default,[])]",
+                3 => $"[AspectMethodInsertBefore({arguments[0]},\"\",[{arguments[1]}],[{arguments[2]}],[None],0,[])]",
                 _ => throw new ArgumentException($"Could not find AspectMethodInsertBeforeAttribute overload with {arguments.Length} parameters")
             },
             "AspectMethodInsertAfterAttribute" => arguments.Length switch
             {
                 // AspectMethodInsertAfterAttribute(string targetMethod)
-                1 => $"[AspectMethodInsertAfter({arguments[0]},\"\",[0],[False],[None],Default,[])]",
+                1 => $"[AspectMethodInsertAfter({arguments[0]},\"\",[0],[False],[None],0,[])]",
                 // AspectMethodInsertAfterAttribute(string targetMethod, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
                 3 => $"[AspectMethodInsertAfter({arguments[0]},\"\",[0],[False],[None],{arguments[1]},{Check(arguments[2])})]",
                 _ => throw new ArgumentException($"Could not find AspectMethodInsertAfterAttribute overload with {arguments.Length} parameters")

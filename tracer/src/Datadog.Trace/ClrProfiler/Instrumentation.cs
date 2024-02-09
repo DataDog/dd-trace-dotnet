@@ -118,8 +118,6 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
                     TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
 
-                    // We call Iast and Rasp at the same time to send the callsite aspects only once
-
                     var raspEnabled = Security.Instance.Settings.RaspEnabled;
                     var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
 
@@ -555,16 +553,16 @@ namespace Datadog.Trace.ClrProfiler
             // Since we have no RASP especific instrumentations for now, we will only filter callsite aspects if RASP is
             // enabled and IAST is disabled. We don't expect RASP only instrumentation to be used in the near future.
 
-            bool isIast = categories.HasFlag(InstrumentationCategory.Iast);
-            bool isRasp = categories.HasFlag(InstrumentationCategory.Rasp);
+            var isIast = categories.HasFlag(InstrumentationCategory.Iast);
+            var isRasp = categories.HasFlag(InstrumentationCategory.Rasp);
 
             if (isIast || isRasp)
             {
-                string debugMsg = (isIast && isRasp) ? "IAST/RASP" : (isIast ? "IAST" : "RASP");
-                var inputAspects = isIast ? AspectDefinitions.Aspects : GetRaspAspects(AspectDefinitions.Aspects, out var _);
+                var inputAspects = isIast ? AspectDefinitions.Aspects : GetRaspAspects(AspectDefinitions.Aspects, out _);
 
                 if (inputAspects != null)
                 {
+                    var debugMsg = (isIast && isRasp) ? "IAST/RASP" : (isIast ? "IAST" : "RASP");
                     Log.Debug("Registering {DebugMsg} Callsite Dataflow Aspects into native library.", debugMsg);
 
                     var aspects = NativeMethods.RegisterIastAspects(inputAspects);

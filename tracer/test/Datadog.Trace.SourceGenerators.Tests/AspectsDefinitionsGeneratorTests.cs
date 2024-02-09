@@ -86,8 +86,8 @@ namespace Datadog.Trace.ClrProfiler
     {
         public static string[] Aspects = new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],1,[])] MyTests.TestAspectClass",
-"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
-"  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.Object,System.Object,System.Object)",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],0,[])] Concat(System.String,System.String)",
+"  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],0,[])] Concat(System.Object,System.Object,System.Object)",
         };
     }
 }
@@ -135,8 +135,8 @@ namespace Datadog.Trace.ClrProfiler
     {
         public static string[] Aspects = new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],1,[])] MyTests.TestAspectClass",
-"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
-"  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],0,[])] Concat(System.String,System.String)",
+"  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],0,[])] Concat(System.String,System.String)",
         };
     }
 }
@@ -203,11 +203,11 @@ namespace Datadog.Trace.ClrProfiler
     {
         public static string[] Aspects = new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],1,[])] MyTests.TestAspectClass1",
-"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
-"  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.Object,System.Object,System.Object)",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],0,[])] Concat(System.String,System.String)",
+"  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],0,[])] Concat(System.Object,System.Object,System.Object)",
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],10,[WeakCipher,WeakHash])] MyTests.TestAspectClass2",
-"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
-"  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.Object,System.Object,System.Object)",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],0,[])] Concat(System.String,System.String)",
+"  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],0,[])] Concat(System.Object,System.Object,System.Object)",
         };
     }
 }
@@ -263,9 +263,9 @@ namespace Datadog.Trace.ClrProfiler
     {
         public static string[] Aspects = new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringLiteral_0,StringLiteral_1],2,[WeakCipher])] MyTests.TestAspectClass2",
-"  [AspectMethodReplace(\"System.Text.StringBuilder::.ctor(System.String)\",\"System.Text.StringBuilder\",[0],[False],[StringLiterals_Any],Default,[])] Init(System.String)",
+"  [AspectMethodReplace(\"System.Text.StringBuilder::.ctor(System.String)\",\"System.Text.StringBuilder\",[0],[False],[StringLiterals_Any],0,[])] Init(System.String)",
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringLiterals_Any,StringLiterals],4,[WeakCipher,WeakHash])] MyTests.TestAspectClass1",
-"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],0,[])] Concat(System.String,System.String)",
         };
     }
 }
@@ -312,7 +312,7 @@ namespace Datadog.Trace.ClrProfiler
     {
         public static string[] Aspects = new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[None],1,[])] MyTests.TestAspectClass1",
-"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String[])\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String[])",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String[])\",\"\",[0],[False],[StringLiterals_Any],0,[])] Concat(System.String,System.String[])",
         };
     }
 }
