@@ -8,6 +8,8 @@ using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.Tools.Runner.Gac;
 
+// Code based on: https://github.com/dotnet/pinvoke/tree/main/src/Fusion
+
 [StructLayout(LayoutKind.Sequential)]
 internal struct AssemblyInfo
 {

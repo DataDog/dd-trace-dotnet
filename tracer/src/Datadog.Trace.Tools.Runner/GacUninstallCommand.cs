@@ -20,12 +20,12 @@ namespace Datadog.Trace.Tools.Runner;
 #endif
 internal class GacUninstallCommand : CommandWithExamples
 {
-    private readonly Argument<string> _assemlyNameArgument = new("assembly-name") { Arity = ArgumentArity.ExactlyOne };
+    private readonly Argument<string> _assemblyNameArgument = new("assembly-name") { Arity = ArgumentArity.ExactlyOne };
 
     public GacUninstallCommand()
         : base("uninstall", "Uninstall a .NET Framework assembly from the GAC")
     {
-        AddArgument(_assemlyNameArgument);
+        AddArgument(_assemblyNameArgument);
 
         AddExample("dd-trace gac uninstall assemblyName");
 
@@ -34,7 +34,7 @@ internal class GacUninstallCommand : CommandWithExamples
 
     private void Execute(InvocationContext context)
     {
-        var assemblyName = _assemlyNameArgument.GetValue(context);
+        var assemblyName = _assemblyNameArgument.GetValue(context);
 
         if (!AdministratorHelper.IsElevated)
         {

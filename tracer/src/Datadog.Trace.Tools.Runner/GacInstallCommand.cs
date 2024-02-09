@@ -33,19 +33,6 @@ internal class GacInstallCommand : CommandWithExamples
 
     private void Execute(InvocationContext context)
     {
-        /*
-        using (var cnt = NativeMethods.CreateAssemblyCache())
-        {
-            var asmInfo = new AssemblyInfo();
-            cnt.AssemblyCache.QueryAssemblyInfo(QueryAssemblyInfoFlag.QUERYASMINFO_FLAG_GETSIZE, "Datadog.Trace", ref asmInfo);
-            Console.WriteLine(asmInfo.AssemblyFlags);
-            Console.WriteLine(asmInfo.CurrentAssemblyPath);
-            Console.WriteLine(asmInfo.AssemblySizeInKb);
-        }
-        */
-
-        var assemblyPath = _assemblyPathArgument.GetValue(context);
-
         if (!AdministratorHelper.IsElevated)
         {
             Utils.WriteError("This command requires Administrator permissions.");
@@ -53,6 +40,7 @@ internal class GacInstallCommand : CommandWithExamples
             return;
         }
 
+        var assemblyPath = _assemblyPathArgument.GetValue(context);
         if (!File.Exists(assemblyPath))
         {
             Utils.WriteError($"File '{assemblyPath}' does not exist.");

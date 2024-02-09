@@ -5,9 +5,8 @@
 
 namespace Datadog.Trace.Tools.Runner.Gac;
 
-/// <summary>
-/// Enumerates values that may be returned by the <see cref="IAssemblyCache.UninstallAssembly"/> function.
-/// </summary>
+// Code based on: https://github.com/dotnet/pinvoke/tree/main/src/Fusion
+
 internal enum UninstallDisposition
 {
     IASSEMBLYCACHE_UNINSTALL_DISPOSITION_UNINSTALLED = 1,

@@ -7,6 +7,8 @@ using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.Tools.Runner.Gac;
 
+// Code based on: https://github.com/dotnet/pinvoke/tree/main/src/Fusion
+
 [ComImport]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 [Guid("7c23ff90-33af-11d3-95da-00a024a85b51")]

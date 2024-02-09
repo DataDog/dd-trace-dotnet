@@ -7,9 +7,8 @@ using System;
 
 namespace Datadog.Trace.Tools.Runner.Gac;
 
-/// <summary>
-/// Flags that can be specified in <see cref="ASSEMBLY_INFO.dwAssemblyFlags"/>.
-/// </summary>
+// Code based on: https://github.com/dotnet/pinvoke/tree/main/src/Fusion
+
 [Flags]
 internal enum AssemblyInfoFlags
 {

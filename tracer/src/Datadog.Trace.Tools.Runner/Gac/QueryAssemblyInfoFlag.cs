@@ -7,9 +7,8 @@ using System;
 
 namespace Datadog.Trace.Tools.Runner.Gac;
 
-/// <summary>
-/// The flags that may be passed to the <see cref="IAssemblyCache.QueryAssemblyInfo"/> method.
-/// </summary>
+// Code based on: https://github.com/dotnet/pinvoke/tree/main/src/Fusion
+
 [Flags]
 internal enum QueryAssemblyInfoFlag
 {

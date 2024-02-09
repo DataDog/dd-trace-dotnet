@@ -7,6 +7,8 @@ using System;
 
 namespace Datadog.Trace.Tools.Runner.Gac;
 
+// Code based on: https://github.com/dotnet/pinvoke/tree/main/src/Fusion
+
 [Flags]
 internal enum AssemblyCacheInstallFlags
 {
