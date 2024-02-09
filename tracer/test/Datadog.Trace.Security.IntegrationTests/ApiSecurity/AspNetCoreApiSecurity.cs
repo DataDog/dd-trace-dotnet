@@ -31,7 +31,7 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
         _fixture = fixture;
         _fixture.SetOutput(outputHelper);
         Directory.CreateDirectory(LogDirectory);
-        EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.Rules, "ApiSecurity\\ruleset-with-block.json");
+        EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.Rules, Path.Combine("ApiSecurity", "ruleset-with-block.json"));
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
         if (enableApiSecurity)
         {
