@@ -175,7 +175,7 @@ public class TestAspectClass1
     }
 }
 
-[AspectClass("mscorlib,netstandard,System.Private.CoreLib", new[] { AspectFilter.StringOptimization }, AspectType.IastSink, new[] { VulnerabilityType.WeakCipher, VulnerabilityType.WeakHash) }]
+[AspectClass("mscorlib,netstandard,System.Private.CoreLib", new[] { AspectFilter.StringOptimization }, AspectType.IastSink | AspectType.RaspSink, new[] { VulnerabilityType.WeakCipher, VulnerabilityType.WeakHash) }]
 public class TestAspectClass2
 { 
     [AspectMethodReplace("System.String::Concat(System.String,System.String)", AspectFilter.StringLiterals_Any)]
@@ -205,7 +205,7 @@ namespace Datadog.Trace.ClrProfiler
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],1,[])] MyTests.TestAspectClass1",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.Object,System.Object,System.Object)",
-"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],2,[WeakCipher,WeakHash])] MyTests.TestAspectClass2",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],10,[WeakCipher,WeakHash])] MyTests.TestAspectClass2",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.Object,System.Object,System.Object)",
         };
