@@ -548,6 +548,51 @@ namespace Datadog.Trace.Tools.Runner
         {
             var datadogTraceDllPath = FileExistsOrNull(Path.Combine(tracerHome, "net461", "Datadog.Trace.dll"));
 
+#if NETCOREAPP3_0_OR_GREATER
+            // Let's try to execute the built-in GAC installer to avoid the gacutil dependency
+            if (platform == Platform.Windows && datadogTraceDllPath is not null)
+            {
+#pragma warning disable CA1416
+                using var container = Gac.NativeMethods.CreateAssemblyCache();
+                var asmInfo = new Gac.AssemblyInfo();
+                var hr = container.AssemblyCache.QueryAssemblyInfo(Gac.QueryAssemblyInfoFlag.QUERYASMINFO_FLAG_GETSIZE, "Datadog.Trace", ref asmInfo);
+                if (hr == 0 && asmInfo.AssemblyFlags == Gac.AssemblyInfoFlags.ASSEMBLYINFO_FLAG_INSTALLED)
+                {
+                    // Datadog.Trace is in the GAC, do nothing
+                    Log.Information("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace is already installed in the gac.");
+                    return true;
+                }
+
+                if (Gac.AdministratorHelper.IsElevated)
+                {
+                    hr = container.AssemblyCache.InstallAssembly(0, datadogTraceDllPath, IntPtr.Zero);
+                    if (hr == 0)
+                    {
+                        Log.Information("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace was installed in the gac.");
+                        WriteSuccess($"Assembly '{datadogTraceDllPath}' was installed in the GAC successfully.");
+                        return true;
+                    }
+                }
+                else
+                {
+#if NET6_0_OR_GREATER
+                    var processPath = Environment.ProcessPath ?? Environment.GetCommandLineArgs()[0];
+#else
+                    var processPath = Environment.GetCommandLineArgs()[0];
+#endif
+                    if (ProcessHelpers.RunCommand(new ProcessHelpers.Command(processPath, $"gac install {datadogTraceDllPath}", verb: "runas")) is { } cmdGacInstallResponse &&
+                        cmdGacInstallResponse.ExitCode == 0)
+                    {
+                        // dd-trace gac install was successful.
+                        Log.Information("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace was installed in the gac.");
+                        WriteSuccess("Datadog.Trace was installed in the GAC.");
+                        return true;
+                    }
+                }
+#pragma warning restore CA1416
+            }
+#endif
+
             // We try to ensure Datadog.Trace.dll is installed in the gac for compatibility with .NET Framework fusion class loader
             // Let's find gacutil, because CI Visibility runs with the SDK / CI environments it's probable that's available.
             var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("where", "gacutil"));
@@ -598,43 +643,6 @@ namespace Datadog.Trace.Tools.Runner
             {
                 // `gacutil` cannot be found
                 Log.Warning("EnsureDatadogTraceIsInTheGac: gacutil cannot be found.");
-
-#if NETCOREAPP3_0_OR_GREATER
-                // Let's try to execute the built-in GAC installer
-                // We first try to use gacutil to avoid elevating permissions on every run and just as a final fallback
-                if (platform == Platform.Windows && datadogTraceDllPath is not null)
-                {
-#pragma warning disable CA1416
-                    if (Gac.AdministratorHelper.IsElevated)
-                    {
-                        using var container = Gac.NativeMethods.CreateAssemblyCache();
-                        var hr = container.AssemblyCache.InstallAssembly(0, datadogTraceDllPath, IntPtr.Zero);
-                        if (hr == 0)
-                        {
-                            Log.Information("EnsureDatadogTraceIsInTheGac: Datadog.Trace was installed in the gac using the built-in gac installer.");
-                            WriteSuccess($"Assembly '{datadogTraceDllPath}' was installed in the GAC successfully.");
-                            return true;
-                        }
-                    }
-                    else
-                    {
-#if NET6_0_OR_GREATER
-                        var processPath = Environment.ProcessPath ?? Environment.GetCommandLineArgs()[0];
-#else
-                        var processPath = Environment.GetCommandLineArgs()[0];
-#endif
-                        if (ProcessHelpers.RunCommand(new ProcessHelpers.Command(processPath, $"gac install {datadogTraceDllPath}", verb: "runas")) is { } cmdGacInstallResponse &&
-                            cmdGacInstallResponse.ExitCode == 0)
-                        {
-                            // dd-trace gac install was successful.
-                            Log.Information("EnsureDatadogTraceIsInTheGac: Datadog.Trace was installed in the gac using the built-in gac installer.");
-                            WriteSuccess("Datadog.Trace was installed in the GAC.");
-                            return true;
-                        }
-                    }
-#pragma warning restore CA1416
-                }
-#endif
             }
 
             return false;
