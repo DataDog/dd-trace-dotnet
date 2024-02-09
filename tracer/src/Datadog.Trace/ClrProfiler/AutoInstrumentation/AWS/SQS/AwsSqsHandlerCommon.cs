@@ -151,14 +151,14 @@ internal static class AwsSqsHandlerCommon
 
     public class SendType
     {
+        public static readonly SendType SingleMessage = new("SendMessage");
+
+        public static readonly SendType Batch = new("SendMessageBatch");
+
         private SendType(string value)
         {
             OperationName = value;
         }
-
-        public static SendType SingleMessage => new("SendMessage");
-
-        public static SendType Batch => new("SendMessageBatch");
 
         public string OperationName { get; }
 
