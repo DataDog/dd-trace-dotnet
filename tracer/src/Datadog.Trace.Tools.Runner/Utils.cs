@@ -548,7 +548,6 @@ namespace Datadog.Trace.Tools.Runner
         {
             var datadogTraceDllPath = FileExistsOrNull(Path.Combine(tracerHome, "net461", "Datadog.Trace.dll"));
 
-#if NETCOREAPP3_0_OR_GREATER
             try
             {
                 // Let's try to execute the built-in GAC installer to avoid the gacutil dependency
@@ -604,7 +603,6 @@ namespace Datadog.Trace.Tools.Runner
             {
                 Log.Error(ex, "Error using the built-in gac installer.");
             }
-#endif
 
             // We try to ensure Datadog.Trace.dll is installed in the gac for compatibility with .NET Framework fusion class loader
             // Let's find gacutil, because CI Visibility runs with the SDK / CI environments it's probable that's available.

@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP3_0_OR_GREATER
-
 using System;
 using System.IO;
 using System.Reflection;
@@ -22,7 +20,9 @@ internal sealed class NativeMethods
 {
     private const string NetFrameworkSubKey = @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\";
 
-    internal static unsafe AssemblyCacheContainer CreateAssemblyCache()
+    private delegate int CreateAssemblyCacheDelegate(out IAssemblyCache ppAsmCache, int reserved);
+
+    internal static AssemblyCacheContainer CreateAssemblyCache()
     {
         string fusionFullPath;
         using (var ndpKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, Environment.Is64BitProcess ? RegistryView.Registry64 : RegistryView.Registry32).OpenSubKey(NetFrameworkSubKey))
@@ -43,8 +43,8 @@ internal sealed class NativeMethods
 
         var libPointer = NativeLibrary.Load(fusionFullPath);
         var createAssemblyCachePointer = NativeLibrary.GetExport(libPointer, nameof(CreateAssemblyCache));
-        var functionPointer = (delegate* unmanaged[Stdcall]<out IAssemblyCache, uint, int>)createAssemblyCachePointer;
-        var hr = functionPointer(out var ppAsmCache, 0);
+        var createAssemblyCache = Marshal.GetDelegateForFunctionPointer<CreateAssemblyCacheDelegate>(createAssemblyCachePointer);
+        var hr = createAssemblyCache(out var ppAsmCache, 0);
         if (hr != 0)
         {
             NativeLibrary.Free(libPointer);
@@ -54,5 +54,3 @@ internal sealed class NativeMethods
         return new AssemblyCacheContainer(libPointer, ppAsmCache);
     }
 }
-
-#endif

@@ -51,9 +51,17 @@ internal static class AdministratorHelper
             }
 
             var process = Process.Start(processInfo);
-            process?.WaitForExit();
-            Console.WriteLine("Returned: {0}", process?.ExitCode);
-            Environment.Exit(process?.ExitCode ?? 0);
+            if (process is null)
+            {
+                Console.WriteLine("Process cannot be executed.");
+                Environment.Exit(1);
+            }
+            else
+            {
+                process.WaitForExit();
+                Console.WriteLine("Returned: {0}", process.ExitCode);
+                Environment.Exit(process.ExitCode);
+            }
         }
     }
 }

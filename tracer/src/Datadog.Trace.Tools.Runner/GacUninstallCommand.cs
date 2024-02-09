@@ -6,14 +6,10 @@
 using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.IO;
-using System.Reflection;
 using System.Runtime.Versioning;
 using Datadog.Trace.Tools.Runner.Gac;
 
 namespace Datadog.Trace.Tools.Runner;
-
-#if NETCOREAPP3_0_OR_GREATER
 
 #if NET5_0_OR_GREATER
 [SupportedOSPlatform("windows")]
@@ -74,5 +70,3 @@ internal class GacUninstallCommand : CommandWithExamples
         context.ExitCode = hr;
     }
 }
-
-#endif
