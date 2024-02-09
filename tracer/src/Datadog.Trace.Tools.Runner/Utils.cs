@@ -563,8 +563,12 @@ namespace Datadog.Trace.Tools.Runner
                     return true;
                 }
 
+                Log.Warning("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace is not in the GAC, let's try to install it.");
+
                 if (Gac.AdministratorHelper.IsElevated)
                 {
+                    WriteInfo("Datadog.Trace is not installed in the GAC, installing it...");
+
                     hr = container.AssemblyCache.InstallAssembly(0, datadogTraceDllPath, IntPtr.Zero);
                     if (hr == 0)
                     {
@@ -575,6 +579,8 @@ namespace Datadog.Trace.Tools.Runner
                 }
                 else
                 {
+                    WriteInfo("Datadog.Trace is not installed in the GAC, the installation will require Administrator permissions. Installing...");
+
 #if NET6_0_OR_GREATER
                     var processPath = Environment.ProcessPath ?? Environment.GetCommandLineArgs()[0];
 #else
