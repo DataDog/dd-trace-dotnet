@@ -47,6 +47,7 @@ internal sealed class NativeMethods
         var hr = functionPointer(out var ppAsmCache, 0);
         if (hr != 0)
         {
+            NativeLibrary.Free(libPointer);
             throw new TargetInvocationException($"Error creating AssemblyCache. HRESULT = {hr}", null);
         }
 
