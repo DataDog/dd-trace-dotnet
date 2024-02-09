@@ -21,7 +21,7 @@ internal sealed class NativeMethods
     private const string NetFrameworkSubKey = @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\";
 
     private delegate int CreateAssemblyCacheDelegate(out IAssemblyCache ppAsmCache, int reserved);
-    
+
     internal static AssemblyCacheContainer CreateAssemblyCache()
     {
         string fusionFullPath;
