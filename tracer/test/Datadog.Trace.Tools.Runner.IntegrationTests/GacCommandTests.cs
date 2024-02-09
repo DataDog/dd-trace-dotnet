@@ -24,6 +24,8 @@ public class GacCommandTests
     [InlineData("mscorlib", true)]
     public void GacGetTest(string assemblyName, bool expectedToBeFound)
     {
+        Skip.IfNot(FrameworkDescription.Instance.IsWindows());
+
         var commandLine = $"gac get {assemblyName}";
 
         using var console = ConsoleHelper.Redirect();
@@ -46,6 +48,8 @@ public class GacCommandTests
     [Trait("RunOnWindows", "True")]
     public void GacCompleteTest()
     {
+        Skip.IfNot(FrameworkDescription.Instance.IsWindows());
+
         // We skip the test if we don't have permissions
         Skip.IfNot(Gac.AdministratorHelper.IsElevated);
 
