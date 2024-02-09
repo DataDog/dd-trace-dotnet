@@ -50,15 +50,14 @@ public class AspMvc5RaspEnabledIastEnabledIntegrated : AspNetMvc5RaspTests
     }
 }
 
-public abstract class AspNetMvc5RaspTests : AspNetMvc5
+public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly string _testName;
     private readonly bool _enableIast;
     private readonly bool _classicMode;
 
     public AspNetMvc5RaspTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableIast)
-        : base(iisFixture, output, classicMode: classicMode, enableSecurity: true)
+        : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
         EnableRasp();
         EnableIast(enableIast);
@@ -74,9 +73,10 @@ public abstract class AspNetMvc5RaspTests : AspNetMvc5
         _iisFixture = iisFixture;
         _classicMode = classicMode;
         _enableIast = enableIast;
-        _testName = "Security." + nameof(AspNetMvc5)
-                 + (classicMode ? ".Classic" : ".Integrated")
-                 + ".enableIast=" + enableIast;
+
+        SetSecurity(true);
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
     }
 
     [Trait("Category", "EndToEnd")]
@@ -97,5 +97,13 @@ public abstract class AspNetMvc5RaspTests : AspNetMvc5
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
+
+    public async Task InitializeAsync()
+    {
+        await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        SetHttpPort(_iisFixture.HttpPort);
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
 }
 #endif
