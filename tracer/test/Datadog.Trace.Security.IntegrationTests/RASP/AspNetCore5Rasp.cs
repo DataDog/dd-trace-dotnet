@@ -23,12 +23,6 @@ public class AspNetCore5RaspEnabledIastEnabled : AspNetCore5Rasp
     public AspNetCore5RaspEnabledIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
     : base(fixture, outputHelper, enableIast: true)
     {
-        SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
-        SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
-        SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
-        SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "true");
-        EnableEvidenceRedaction(false);
-        EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
     }
 }
 
@@ -40,19 +34,41 @@ public class AspNetCore5RaspEnabledIastDisabled : AspNetCore5Rasp
     }
 }
 
-public abstract class AspNetCore5Rasp : AspNetCore5TestsSecurityEnabled
+public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
     // This class is used to test RASP features either with IAST enabled or disabled. Since they both use common instrumentation
     // points, we should test that IAST works normally with or without RASP enabled.
     public AspNetCore5Rasp(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast)
-        : base(fixture, outputHelper)
+        : base("AspNetCore5", outputHelper, "/shutdown", testName: "AspNetCore5.SecurityEnabled")
     {
         EnableRasp();
         EnableIast(enableIast);
+        SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
+        SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
+        SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
+        SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "true");
+        EnableEvidenceRedaction(false);
+        EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
         IastEnabled = enableIast;
+        Fixture = fixture;
+        Fixture.SetOutput(outputHelper);
     }
 
     protected bool IastEnabled { get; }
+
+    protected AspNetCoreTestFixture Fixture { get; }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        Fixture.SetOutput(null);
+    }
+
+    public async Task TryStartApp()
+    {
+        await Fixture.TryStartApp(this, true);
+        SetHttpPort(Fixture.HttpPort);
+    }
 
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
