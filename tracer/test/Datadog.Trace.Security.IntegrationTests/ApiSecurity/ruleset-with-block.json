@@ -39,8 +39,7 @@
               }
             ],
             "list": [
-              "dev/zero",
-              "bin/dev/zero"
+              "dev/zero"
             ]
           },
           "operator": "phrase_match"
