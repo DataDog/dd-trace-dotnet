@@ -46,6 +46,7 @@ public class SpanMessagePackFormatterTests
         spans[1].Tags.SetMetric("Metric1", 1.1);
         spans[1].Tags.SetMetric("Metric2", 2.1);
         spans[1].Tags.SetMetric("Metric3", 3.1);
+        spans[1].Context.LastParentId = "0123456789abcdef";
 
         spans[2].Error = true;
 
@@ -93,7 +94,7 @@ public class SpanMessagePackFormatterTests
             else
             {
                 tagsProcessor.Remaining.Should()
-                             .HaveCount(1).And.Contain(new KeyValuePair<string, string>("language", "dotnet"));
+                             .HaveCount(2).And.Contain(new KeyValuePair<string, string>("language", "dotnet"), new KeyValuePair<string, string>("_dd.lp.id", expected.SpanId.ToString("x16")));
             }
 
             var metricsProcessor = new TagsProcessor<double>(actual.Metrics);

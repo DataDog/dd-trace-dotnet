@@ -657,6 +657,7 @@ namespace Datadog.Trace.Propagators
 
             spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
+            spanContext.LastParentId = traceState.LastParent;
             return true;
         }
 
