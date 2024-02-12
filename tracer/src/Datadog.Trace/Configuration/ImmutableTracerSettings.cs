@@ -243,7 +243,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether we should tag every telemetry event with git metadata.
-        /// Defaul value is true (enabled).
+        /// Default value is true (enabled).
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GitMetadataEnabled"/>
         internal bool GitMetadataEnabled { get; }
