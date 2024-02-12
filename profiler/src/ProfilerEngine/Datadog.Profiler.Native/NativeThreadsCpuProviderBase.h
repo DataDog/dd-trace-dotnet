@@ -20,8 +20,8 @@ protected:
     virtual void OnCpuDuration(std::uint64_t cpuTime);
 
 private:
-    std::list<std::shared_ptr<Sample>> GetSamples() override;
 
+    std::unique_ptr<SampleEnumerator> GetSamples() override;
     virtual std::vector<FrameInfoView> GetFrames() = 0;
     virtual std::vector<std::shared_ptr<IThreadInfo>> const& GetThreads() = 0;
 
