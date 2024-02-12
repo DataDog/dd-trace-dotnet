@@ -37,7 +37,7 @@ public class FuzzEncoder : WafLibraryRequiredTest
     [Fact]
     public void LetsFuzz()
     {
-        // if we don't throw any exceptions and generate a valid object the the test is successful
+        // if we don't throw any exceptions and generate a valid object then the test is successful
 
         var jsonGenerator = new JsonGenerator();
 
