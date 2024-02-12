@@ -99,7 +99,7 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
-    
+
     public async Task InitializeAsync()
     {
         await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
