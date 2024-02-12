@@ -3753,7 +3753,7 @@ stages:
 
 # Only run these on merges to master etc
 - stage: upload_container_images
-  condition: and(succeeded(), eq(variables.isMainRepository, true))
+  condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'), eq(variables.isMainRepository, true), eq(variables.isMainOrReleaseBranch, true))
   dependsOn: [upload_to_azure]
   jobs:
     - job: upload

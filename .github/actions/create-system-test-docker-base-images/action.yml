@@ -47,7 +47,7 @@ runs:
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot_test
+        tags: ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot
         platforms: 'linux/amd64,linux/arm64'
         context: ${{inputs.artifacts_path}}
         file: ${{inputs.artifacts_path}}/system-tests.dockerfile
