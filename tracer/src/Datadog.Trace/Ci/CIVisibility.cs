@@ -678,16 +678,15 @@ namespace Datadog.Trace.Ci
                 return EventPlatformProxySupport.None;
             }
 
-            var eventPlatformProxyEndpoint = agentConfiguration.EventPlatformProxyEndpoint;
-            if (!string.IsNullOrEmpty(eventPlatformProxyEndpoint))
+            if (agentConfiguration.EventPlatformProxyEndpoint is { Length: > 0 } eventPlatformProxyEndpoint)
             {
-                if (eventPlatformProxyEndpoint?.Contains("/v2") == true)
+                if (eventPlatformProxyEndpoint.Contains("/v2"))
                 {
                     Log.Information("Event platform proxy V2 supported by agent.");
                     return EventPlatformProxySupport.V2;
                 }
 
-                if (eventPlatformProxyEndpoint?.Contains("/v4") == true)
+                if (eventPlatformProxyEndpoint.Contains("/v4"))
                 {
                     Log.Information("Event platform proxy V4 supported by agent.");
                     return EventPlatformProxySupport.V4;
