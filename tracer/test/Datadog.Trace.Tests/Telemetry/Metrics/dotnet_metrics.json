@@ -105,5 +105,21 @@
     "description": "Essentially all the stats values available from the native profiler. We may potentially want to include these in the 'common' init_time metric - I'm not sure?",
     "send_to_user": false,
     "user_tags":[]
+  },
+  "waf.pool_count": {
+    "tags": [ ],
+    "metric_type": "gauge",
+    "data_type": "instances",
+    "description": "The number of reusable unmanaged memory pools created)",
+    "send_to_user": false,
+    "user_tags":[]
+  },
+  "waf.pool_slow_count": {
+    "tags": [ ],
+    "metric_type": "gauge",
+    "data_type": "instances",
+    "description": "The number of non reusable (slow) unmanaged memory pools created)",
+    "send_to_user": false,
+    "user_tags":[]
   }
 }
