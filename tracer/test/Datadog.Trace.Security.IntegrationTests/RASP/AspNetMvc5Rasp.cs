@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-/*
-
 #if NETFRAMEWORK
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
@@ -20,6 +18,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rasp;
 
+[Collection("IisTests")]
 public class AspMvc5RaspEnabledIastDisabledClassic : AspNetMvc5RaspTests
 {
     public AspMvc5RaspEnabledIastDisabledClassic(IisFixture fixture, ITestOutputHelper outputHelper)
@@ -28,6 +27,7 @@ public class AspMvc5RaspEnabledIastDisabledClassic : AspNetMvc5RaspTests
     }
 }
 
+[Collection("IisTests")]
 public class AspMvc5RaspEnabledIastEnabledClassic : AspNetMvc5RaspTests
 {
     public AspMvc5RaspEnabledIastEnabledClassic(IisFixture fixture, ITestOutputHelper outputHelper)
@@ -36,6 +36,7 @@ public class AspMvc5RaspEnabledIastEnabledClassic : AspNetMvc5RaspTests
     }
 }
 
+[Collection("IisTests")]
 public class AspMvc5RaspEnabledIastDisabledIntegrated : AspNetMvc5RaspTests
 {
     public AspMvc5RaspEnabledIastDisabledIntegrated(IisFixture fixture, ITestOutputHelper outputHelper)
@@ -44,6 +45,7 @@ public class AspMvc5RaspEnabledIastDisabledIntegrated : AspNetMvc5RaspTests
     }
 }
 
+[Collection("IisTests")]
 public class AspMvc5RaspEnabledIastEnabledIntegrated : AspNetMvc5RaspTests
 {
     public AspMvc5RaspEnabledIastEnabledIntegrated(IisFixture fixture, ITestOutputHelper outputHelper)
@@ -109,5 +111,3 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
     public Task DisposeAsync() => Task.CompletedTask;
 }
 #endif
-
-*/
