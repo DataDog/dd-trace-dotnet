@@ -890,7 +890,7 @@ partial class Build
     Target ZipMonitoringHomeLinux => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
-        .DependsOn(PrepareMonitoringHomeLinux, BuildDdDotnet)
+        .DependsOn(PrepareMonitoringHomeLinux)
         .OnlyWhenStatic(() => IsLinux)
         .Requires(() => Version)
         .Executes(() =>
