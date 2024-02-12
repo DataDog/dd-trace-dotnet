@@ -213,59 +213,37 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 switch (listInstance)
                 {
                     case IList<bool> boolCollection:
-                        EnumerateAndEncode(ref context, remainingDepth, boolCollection);
+                        EnumerateAndEncode(ref context, remainingDepth, boolCollection, childrenData, childrenCount);
                         break;
                     case IList<decimal> intCollection:
-                        EnumerateAndEncode(ref context, remainingDepth, intCollection);
+                        EnumerateAndEncode(ref context, remainingDepth, intCollection, childrenData, childrenCount);
                         break;
                     case IList<double> intCollection:
-                        EnumerateAndEncode(ref context, remainingDepth, intCollection);
+                        EnumerateAndEncode(ref context, remainingDepth, intCollection, childrenData, childrenCount);
                         break;
                     case IList<float> intCollection:
-                        EnumerateAndEncode(ref context, remainingDepth, intCollection);
+                        EnumerateAndEncode(ref context, remainingDepth, intCollection, childrenData, childrenCount);
                         break;
                     case IList<int> intCollection:
-                        EnumerateAndEncode(ref context, remainingDepth, intCollection);
+                        EnumerateAndEncode(ref context, remainingDepth, intCollection, childrenData, childrenCount);
                         break;
                     case IList<uint> uintCollection:
-                        EnumerateAndEncode(ref context, remainingDepth, uintCollection);
+                        EnumerateAndEncode(ref context, remainingDepth, uintCollection, childrenData, childrenCount);
                         break;
                     case IList<long> longCollection:
-                        EnumerateAndEncode(ref context, remainingDepth, longCollection);
+                        EnumerateAndEncode(ref context, remainingDepth, longCollection, childrenData, childrenCount);
                         break;
                     case IList<ulong> ulongCollection:
-                        EnumerateAndEncode(ref context, remainingDepth, ulongCollection);
+                        EnumerateAndEncode(ref context, remainingDepth, ulongCollection, childrenData, childrenCount);
                         break;
                     default:
-                        EnumerateAndEncodeIList(ref context, remainingDepth, listInstance);
+                        EnumerateAndEncodeIList(ref context, remainingDepth, listInstance, childrenData, childrenCount);
                         break;
                 }
 
                 ddwafObjectStruct.Array = childrenData;
                 ddwafObjectStruct.NbEntries = (ulong)childrenCount;
                 context.Buffers.Add(childrenData);
-
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                void EnumerateAndEncode<T>(ref EncoderContext context, int remainingDepth, IList<T> lstInstance)
-                {
-                    var itemData = childrenData;
-                    for (var idx = 0; idx < childrenCount; idx++)
-                    {
-                        *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, null, lstInstance[idx]);
-                        itemData += ObjectStructSize;
-                    }
-                }
-
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                void EnumerateAndEncodeIList(ref EncoderContext context, int remainingDepth, IList lstInstance)
-                {
-                    var itemData = childrenData;
-                    for (var idx = 0; idx < childrenCount; idx++)
-                    {
-                        *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, null, lstInstance[idx]);
-                        itemData += ObjectStructSize;
-                    }
-                }
             }
             else
             {
@@ -306,6 +284,28 @@ namespace Datadog.Trace.AppSec.WafEncoding
             }
 
             return ddwafObjectStruct;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void EnumerateAndEncode<T>(ref EncoderContext context, int remainingDepth, IList<T> lstInstance, IntPtr childrenData, int childrenCount)
+        {
+            var itemData = childrenData;
+            for (var idx = 0; idx < childrenCount; idx++)
+            {
+                *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, null, lstInstance[idx]);
+                itemData += ObjectStructSize;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void EnumerateAndEncodeIList(ref EncoderContext context, int remainingDepth, IList lstInstance, IntPtr childrenData, int childrenCount)
+        {
+            var itemData = childrenData;
+            for (var idx = 0; idx < childrenCount; idx++)
+            {
+                *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, null, lstInstance[idx]);
+                itemData += ObjectStructSize;
+            }
         }
 
         private static unsafe DdwafObjectStruct ProcessKeyValuePairs<TKey, TValue>(ref EncoderContext context, int remainingDepth, string? key, IEnumerable<KeyValuePair<TKey, TValue>> enumerableDic, int count, delegate*<KeyValuePair<TKey, TValue>, string?> getKey, delegate*<KeyValuePair<TKey, TValue>, object?> getValue)
@@ -353,56 +353,74 @@ namespace Datadog.Trace.AppSec.WafEncoding
             var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
             var childrenData = childrenFromPool ? context.Pool.Rent() : Marshal.AllocCoTaskMem(ObjectStructSize * childrenCount);
 
-            if (enumerableDic is IDictionary)
+            if (enumerableDic is IDictionary iDic)
             {
                 var typeKVP = typeof(KeyValuePair<TKey, TValue>);
                 if (typeKVP == typeof(KeyValuePair<string, string>))
                 {
-                    EnumerateIDictionaryItems<string, string>(ref context, remainingDepth);
+                    EnumerateIDictionaryItems<string, string>(
+                        ref context,
+                        remainingDepth,
+                        iDic,
+                        (delegate*< KeyValuePair<string, string>, string?>)getKey,
+                        (delegate*<KeyValuePair<string, string>, object?>)getValue,
+                        childrenData,
+                        childrenCount);
                 }
                 else if (typeKVP == typeof(KeyValuePair<string, object>))
                 {
-                    EnumerateIDictionaryItems<string, object>(ref context, remainingDepth);
+                    EnumerateIDictionaryItems<string, object>(
+                        ref context,
+                        remainingDepth,
+                        iDic,
+                        (delegate*<KeyValuePair<string, object>, string?>)getKey,
+                        (delegate*<KeyValuePair<string, object>, object?>)getValue,
+                        childrenData,
+                        childrenCount);
                 }
                 else if (typeKVP == typeof(KeyValuePair<string, string[]>))
                 {
-                    EnumerateIDictionaryItems<string, string[]>(ref context, remainingDepth);
+                    EnumerateIDictionaryItems<string, string[]>(
+                        ref context,
+                        remainingDepth,
+                        iDic,
+                        (delegate*<KeyValuePair<string, string[]>, string?>)getKey,
+                        (delegate*<KeyValuePair<string, string[]>, object?>)getValue,
+                        childrenData,
+                        childrenCount);
                 }
                 else if (typeKVP == typeof(KeyValuePair<string, List<string>>))
                 {
-                    EnumerateIDictionaryItems<string, List<string>>(ref context, remainingDepth);
+                    EnumerateIDictionaryItems<string, List<string>>(
+                        ref context,
+                        remainingDepth,
+                        iDic,
+                        (delegate*<KeyValuePair<string, List<string>>, string?>)getKey,
+                        (delegate*<KeyValuePair<string, List<string>>, object?>)getValue,
+                        childrenData,
+                        childrenCount);
                 }
                 else if (typeKVP == typeof(KeyValuePair<string, JToken>))
                 {
-                    EnumerateIDictionaryItems<string, JToken>(ref context, remainingDepth);
+                    EnumerateIDictionaryItems<string, JToken>(
+                        ref context,
+                        remainingDepth,
+                        iDic,
+                        (delegate*<KeyValuePair<string, JToken>, string?>)getKey,
+                        (delegate*<KeyValuePair<string, JToken>, object?>)getValue,
+                        childrenData,
+                        childrenCount);
                 }
                 else
                 {
-                    EnumerateIDictionaryItems<TKey, TValue>(ref context, remainingDepth);
-                }
-
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                void EnumerateIDictionaryItems<TKeySource, TValueSource>(ref EncoderContext context, int remainingDepth)
-                    where TKeySource : notnull
-                {
-                    var itemData = childrenData;
-                    var dic = (Dictionary<TKeySource, TValueSource>)enumerableDic;
-                    var maxChildrenCount = childrenCount;
-                    for (var i = 0; i < maxChildrenCount; i++)
-                    {
-                        var originalKeyValue = dic.ElementAt(i);
-                        var keyValue = VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<KeyValuePair<TKeySource, TValueSource>, KeyValuePair<TKey, TValue>>(ref originalKeyValue);
-                        var key = getKey(keyValue);
-                        if (string.IsNullOrEmpty(key))
-                        {
-                            childrenCount--;
-                            Log.Warning("EncodeDictionary: ignoring dictionary member with null name");
-                            continue;
-                        }
-
-                        *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, key, getValue(keyValue!));
-                        itemData += ObjectStructSize;
-                    }
+                    EnumerateIDictionaryItems<string, TValue>(
+                        ref context,
+                        remainingDepth,
+                        iDic,
+                        (delegate*<KeyValuePair<string, TValue>, string?>)getKey,
+                        (delegate*<KeyValuePair<string, TValue>, object?>)getValue,
+                        childrenData,
+                        childrenCount);
                 }
             }
             else
@@ -430,6 +448,30 @@ namespace Datadog.Trace.AppSec.WafEncoding
             ddWafObjectMap.NbEntries = (ulong)childrenCount;
             context.Buffers.Add(childrenData);
             return ddWafObjectMap;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void EnumerateIDictionaryItems<TKey, TValue>(ref EncoderContext context, int remainingDepth, IDictionary enumerableDic, delegate*<KeyValuePair<TKey, TValue>, string?> getKey, delegate*<KeyValuePair<TKey, TValue>, object?> getValue, IntPtr childrenData, int childrenCount)
+            where TKey : notnull
+        {
+            var itemData = childrenData;
+            var dic = (Dictionary<TKey, TValue>)enumerableDic;
+            var maxChildrenCount = childrenCount;
+            for (var i = 0; i < maxChildrenCount; i++)
+            {
+                var originalKeyValue = dic.ElementAt(i);
+                var keyValue = VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<KeyValuePair<TKey, TValue>, KeyValuePair<TKey, TValue>>(ref originalKeyValue);
+                var key = getKey(keyValue);
+                if (string.IsNullOrEmpty(key))
+                {
+                    childrenCount--;
+                    Log.Warning("EncodeDictionary: ignoring dictionary member with null name");
+                    continue;
+                }
+
+                *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, key, getValue(keyValue!));
+                itemData += ObjectStructSize;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
