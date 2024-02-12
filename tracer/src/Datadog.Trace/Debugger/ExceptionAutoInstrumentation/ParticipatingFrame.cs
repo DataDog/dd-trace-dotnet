@@ -62,5 +62,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             return Equals((ParticipatingFrame)obj);
         }
+
+        public override string ToString()
+        {
+            var methodName = Method?.DeclaringType?.FullName + "." + Method?.Name ?? "Unknown Method";
+            var blacklistStatus = IsInBlackList ? "Blacklisted" : "Not Blacklisted";
+            var ilOffsetInfo = ILOffset != UndefinedIlOffset ? $"IL Offset: {ILOffset}" : "IL Offset: Undefined";
+            return $"ParticipatingFrame: Method={methodName}, State={State}, {ilOffsetInfo}, {blacklistStatus}";
+        }
     }
 }

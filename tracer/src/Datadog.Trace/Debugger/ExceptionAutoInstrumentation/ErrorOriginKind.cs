@@ -1,4 +1,4 @@
-// <copyright file="ErrorOriginType.cs" company="Datadog">
+// <copyright file="ErrorOriginKind.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal enum ErrorOriginType : byte
+    internal enum ErrorOriginKind : byte
     {
         /// <summary>
         /// A first-chance exception is any exception that is initially thrown.
@@ -36,8 +36,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         HttpRequestFailure,
 
         /// <summary>
-        /// The shadow stack knows when a catch statement ends. When it does, it calls an exception event.
-        /// For first-chance exception it means this instance will have the full StackTrace.
+        /// An exception that was caught by user code.
         /// </summary>
         ExceptionCaught
     }

@@ -5,7 +5,6 @@
 
 using System;
 using System.Threading;
-using Datadog.Trace.Debugger.RateLimiting;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
@@ -21,12 +20,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     {
         private volatile int _initializationOrTearDownInProgress;
 
-        public TrackedExceptionCase(ExceptionIdentifier exceptionId, TimeSpan windowDuration)
+        public TrackedExceptionCase(ExceptionIdentifier exceptionId, string exceptionToString)
         {
             ExceptionIdentifier = exceptionId;
             ErrorHash = MD5HashProvider.GetHash(exceptionId);
+            ExceptionToString = exceptionToString;
             StartCollectingTime = DateTime.MaxValue;
-            Sampler = new AdaptiveSampler(windowDuration, 1, 180, 16, null);
         }
 
         public bool IsCollecting => TrackingExceptionCollectionState == ExceptionCollectionState.Collecting;
@@ -35,15 +34,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public string ErrorHash { get; }
 
+        public string ExceptionToString { get; }
+
         public ExceptionCollectionState TrackingExceptionCollectionState { get; private set; } = ExceptionCollectionState.None;
 
         public bool IsDone => TrackingExceptionCollectionState == ExceptionCollectionState.Finalizing || TrackingExceptionCollectionState == ExceptionCollectionState.Done;
 
         public DateTime StartCollectingTime { get; private set; }
 
-        public ExceptionCase ExceptionCase { get; set; }
-
-        public AdaptiveSampler Sampler { get; }
+        public ExceptionCase ExceptionCase { get; private set; }
 
         private bool BeginInProgressState(ExceptionCollectionState exceptionCollectionState)
         {
@@ -62,25 +61,50 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _initializationOrTearDownInProgress = 0;
         }
 
-        public bool Initialized()
+        private bool Initialized()
         {
             return BeginInProgressState(ExceptionCollectionState.Initializing);
         }
 
-        public void BeginCollect()
+        public void Instrument()
         {
+            // else - If there is a concurrent initialization or tearing down, ignore this case
+            if (Initialized())
+            {
+                var @case = ExceptionCaseInstrumentationManager.Instrument(ExceptionIdentifier);
+                BeginCollect(@case);
+                CachedDoneExceptions.Remove(ExceptionToString);
+            }
+        }
+
+        private void BeginCollect(ExceptionCase @case)
+        {
+            ExceptionCase = @case;
             EndInProgressState(ExceptionCollectionState.Collecting);
             StartCollectingTime = DateTime.UtcNow;
         }
 
-        public bool BeginTeardown()
+        public bool Revert()
+        {
+            if (BeginTeardown())
+            {
+                ExceptionCaseInstrumentationManager.Revert(ExceptionCase);
+                EndTeardown();
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool BeginTeardown()
         {
             return BeginInProgressState(ExceptionCollectionState.Finalizing);
         }
 
-        public void EndTeardown()
+        private void EndTeardown()
         {
             EndInProgressState(ExceptionCollectionState.Done);
+            ExceptionCase = default;
         }
 
         public override int GetHashCode()

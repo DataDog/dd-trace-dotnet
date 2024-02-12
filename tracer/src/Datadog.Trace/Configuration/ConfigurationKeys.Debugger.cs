@@ -111,6 +111,13 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="ExceptionDebuggingSettings.CaptureFullCallStack"/>
             public const string ExceptionDebuggingCaptureFullCallStack = "DD_EXCEPTION_DEBUGGING_CAPTURE_FULL_CALLSTACK";
+
+            /// <summary>
+            /// Configuration key for the interval used to track exceptions
+            /// Default value is <c>1</c>h.
+            /// </summary>
+            /// <seealso cref="ExceptionDebuggingSettings.RateLimit"/>
+            public const string RateLimitSeconds = "DD_EXCEPTION_DEBUGGING_RATE_LIMIT_SECONDS";
         }
     }
 }

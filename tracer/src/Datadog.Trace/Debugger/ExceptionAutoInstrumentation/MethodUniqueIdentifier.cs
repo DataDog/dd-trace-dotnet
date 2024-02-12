@@ -76,13 +76,20 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             return _hashCode;
         }
+
+        public override string ToString()
+        {
+            var probesInfo = Probes == null ? "null" : $"{Probes.Length} probes";
+            var processorsCount = Processors?.Count ?? 0;
+            return $"ExceptionCase: ExceptionId={ExceptionId}, Probes=[{probesInfo}], Processors={processorsCount}";
+        }
     }
 
     internal readonly struct ExceptionIdentifier : IEquatable<ExceptionIdentifier>
     {
         private readonly int _hashCode;
 
-        public ExceptionIdentifier(HashSet<Type> exceptionTypes, ParticipatingFrame[] stackTrace, ErrorOriginType errorOrigin)
+        public ExceptionIdentifier(HashSet<Type> exceptionTypes, ParticipatingFrame[] stackTrace, ErrorOriginKind errorOrigin)
         {
             ExceptionTypes = exceptionTypes;
             StackTrace = stackTrace;
@@ -94,7 +101,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public ParticipatingFrame[] StackTrace { get; }
 
-        public ErrorOriginType ErrorOrigin { get; }
+        public ErrorOriginKind ErrorOrigin { get; }
 
         private int ComputeHashCode()
         {
@@ -134,6 +141,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public override int GetHashCode()
         {
             return _hashCode;
+        }
+
+        public override string ToString()
+        {
+            var exceptionTypes = string.Join(", ", ExceptionTypes.Select(t => t.FullName));
+            var stackTrace = string.Join("; ", StackTrace.Select(frame => frame.ToString()));
+            return $"ErrorOrigin: {ErrorOrigin}, ExceptionTypes: [{exceptionTypes}], StackTrace: [{stackTrace}]";
         }
     }
 

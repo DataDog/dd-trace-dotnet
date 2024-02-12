@@ -338,8 +338,11 @@ src/Datadog.Trace/DataStreamsMonitoring/Transport/DataStreamsTransportStrategy.c
 src/Datadog.Trace/DataStreamsMonitoring/Utils/BinaryPrimitivesHelper.cs
 src/Datadog.Trace/Debugger/Configurations/Trie.cs
 src/Datadog.Trace/Debugger/ExceptionAutoInstrumentation/AggregateExceptionRelatedFrames.cs
+src/Datadog.Trace/Debugger/ExceptionAutoInstrumentation/CachedDoneExceptions.cs
 src/Datadog.Trace/Debugger/ExceptionAutoInstrumentation/DebuggerSnapshot.cs
 src/Datadog.Trace/Debugger/ExceptionAutoInstrumentation/ErrorOriginType.cs
+src/Datadog.Trace/Debugger/ExceptionAutoInstrumentation/ExceptionCaseInstrumentationManager.cs
+src/Datadog.Trace/Debugger/ExceptionAutoInstrumentation/ExceptionCaseScheduler.cs
 src/Datadog.Trace/Debugger/ExceptionAutoInstrumentation/ExceptionCollectionState.cs
 src/Datadog.Trace/Debugger/ExceptionAutoInstrumentation/ExceptionDebuggingProcessor.cs
 src/Datadog.Trace/Debugger/ExceptionAutoInstrumentation/ExceptionProbe.cs
@@ -359,7 +362,6 @@ src/Datadog.Trace/Debugger/ExceptionAutoInstrumentation/ShadowStackTree.cs
 src/Datadog.Trace/Debugger/ExceptionAutoInstrumentation/SnapshotCapturingStrategy.cs
 src/Datadog.Trace/Debugger/ExceptionAutoInstrumentation/TrackedExceptionCase.cs
 src/Datadog.Trace/Debugger/ExceptionAutoInstrumentation/TrackedStackFrameNode.cs
-src/Datadog.Trace/Debugger/ExceptionAutoInstrumentation/TrackingFrameData.cs
 src/Datadog.Trace/Debugger/Expressions/CaptureInfo.cs
 src/Datadog.Trace/Debugger/Expressions/CompiledExpression.cs
 src/Datadog.Trace/Debugger/Expressions/Enums.cs
