@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -54,6 +55,20 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
 
         const string expectedOutput = NetCoreRuntime;
 
+        console.Output.Should().Contain(expectedOutput);
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public void NoRuntime()
+    {
+        using var console = ConsoleHelper.Redirect();
+
+        var processInfo = new ProcessInfo("target", 100, new Dictionary<string, string>(), "mainModule", []);
+
+        ProcessBasicCheck.Run(processInfo, MockRegistryService([], ProfilerPath));
+
+        var expectedOutput = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? RuntimeDetectionFailedWindows : RuntimeDetectionFailedLinux;
         console.Output.Should().Contain(expectedOutput);
     }
 

@@ -15,7 +15,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
     {
         public const string NetFrameworkRuntime = "Target process is running with .NET Framework";
         public const string NetCoreRuntime = "Target process is running with .NET Core";
-        public const string RuntimeDetectionFailed = "Failed to detect target process runtime, assuming .NET Framework";
+        public const string RuntimeDetectionFailedWindows = "Failed to detect target process runtime, assuming .NET Framework";
+        public const string RuntimeDetectionFailedLinux = "Failed to detect target process runtime, assuming .NET Core";
         public const string BothRuntimesDetected = "The target process is running .NET Framework and .NET Core simultaneously. Checks will be performed assuming a .NET Framework runtime.";
         public const string LoaderNotLoaded = "The native loader library is not loaded into the process";
         public const string NativeTracerNotLoaded = "The native tracer library is not loaded into the process";
