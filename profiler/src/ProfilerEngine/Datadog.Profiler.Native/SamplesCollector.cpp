@@ -5,7 +5,7 @@
 
 #include "Log.h"
 #include "OpSysTools.h"
-#include "SampleEnumerator.h"
+#include "SamplesEnumerator.h"
 
 SamplesCollector::SamplesCollector(
     IConfiguration* configuration,

@@ -21,7 +21,7 @@
 #include "OsSpecificApi.h"
 #include "Profile.h"
 #include "Sample.h"
-#include "SampleEnumerator.h"
+#include "SamplesEnumerator.h"
 #include "ScopeFinalizer.h"
 #include "dd_profiler_version.h"
 

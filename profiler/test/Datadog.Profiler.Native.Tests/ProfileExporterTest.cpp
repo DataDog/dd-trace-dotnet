@@ -13,7 +13,7 @@
 #include "MetricsRegistry.h"
 #include "ProfilerMockedInterface.h"
 #include "RuntimeInfoHelper.h"
-#include "SampleEnumerator.h"
+#include "SamplesEnumerator.h"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
 

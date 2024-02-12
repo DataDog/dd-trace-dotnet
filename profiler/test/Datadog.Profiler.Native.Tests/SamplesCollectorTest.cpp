@@ -12,7 +12,7 @@
 #include "ISamplesProvider.h"
 #include "ProfilerMockedInterface.h"
 #include "Sample.h"
-#include "SampleEnumerator.h"
+#include "SamplesEnumerator.h"
 #include "ThreadsCpuManagerHelper.h"
 
 #include <chrono>
@@ -58,7 +58,7 @@ public:
     {
     }
 
-    std::unique_ptr<SampleEnumerator> GetSamples() override
+    std::unique_ptr<SamplesEnumerator> GetSamples() override
     {
         _calls++;
 

@@ -9,7 +9,7 @@
 #include "LiveObjectsProvider.h"
 #include "OpSysTools.h"
 #include "Sample.h"
-#include "SampleEnumerator.h"
+#include "SamplesEnumerator.h"
 #include "SampleValueTypeProvider.h"
 
 std::vector<SampleValueType> LiveObjectsProvider::SampleTypeDefinitions(
@@ -99,7 +99,7 @@ void LiveObjectsProvider::OnGarbageCollectionEnd(
     });
 }
 
-class LiveObjectsEnumerator : public SampleEnumerator
+class LiveObjectsEnumerator : public SamplesEnumerator
 {
 public:
     LiveObjectsEnumerator(std::size_t size) :
@@ -113,7 +113,7 @@ public:
         _samples.push_back(std::move(sample));
     }
 
-    // Inherited via SampleEnumerator
+    // Inherited via SamplesEnumerator
     std::size_t size() const override
     {
         return _samples.size();
@@ -132,7 +132,7 @@ public:
     std::size_t _currentPos;
 };
 
-std::unique_ptr<SampleEnumerator> LiveObjectsProvider::GetSamples()
+std::unique_ptr<SamplesEnumerator> LiveObjectsProvider::GetSamples()
 {
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
 

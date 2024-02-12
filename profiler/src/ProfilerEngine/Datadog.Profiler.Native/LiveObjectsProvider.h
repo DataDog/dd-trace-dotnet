@@ -48,7 +48,7 @@ public:
     bool Stop() override;
 
     // Inherited via IBatchedSamplesProvider
-    std::unique_ptr<SampleEnumerator> GetSamples() override;
+    std::unique_ptr<SamplesEnumerator> GetSamples() override;
 
     const char* GetName() override;
 
