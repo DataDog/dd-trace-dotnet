@@ -56,6 +56,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
 
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
+        private readonly byte[] _lastParentIdBytes = StringEncoding.UTF8.GetBytes("_dd.lp.id");
 
         // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
@@ -269,6 +270,13 @@ namespace Datadog.Trace.Agent.MessagePack
                 bytes = traceTagWriter.Bytes;
                 offset = traceTagWriter.Offset;
                 count += traceTagWriter.Count;
+            }
+
+            if (!string.IsNullOrEmpty(span.Context.LastParentId))
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _lastParentIdBytes);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, span.Context.LastParentId);
             }
 
             // add "runtime-id" tag to service-entry (aka top-level) spans

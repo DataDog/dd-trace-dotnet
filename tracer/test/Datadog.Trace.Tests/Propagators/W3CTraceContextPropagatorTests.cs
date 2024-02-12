@@ -55,31 +55,31 @@ namespace Datadog.Trace.Tests.Propagators
 
         [Theory]
         // null/empty/whitespace
-        [InlineData(null, null, null, null, "")]
-        [InlineData(null, "", "", "", "")]
-        [InlineData(null, " ", " ", " ", "")]
+        [InlineData(null, null, null, null, "dd=lp.id:0000000000000002")]
+        [InlineData(null, "", "", "", "dd=lp.id:0000000000000002")]
+        [InlineData(null, " ", " ", " ", "dd=lp.id:0000000000000002")]
         // sampling priority only
-        [InlineData(SamplingPriorityValues.UserReject, null, null, null, "dd=s:-1")]
-        [InlineData(SamplingPriorityValues.AutoReject, null, null, null, "dd=s:0")]
-        [InlineData(SamplingPriorityValues.AutoKeep, null, null, null, "dd=s:1")]
-        [InlineData(SamplingPriorityValues.UserKeep, null, null, null, "dd=s:2")]
-        [InlineData(3, null, null, null, "dd=s:3")]
-        [InlineData(-5, null, null, null, "dd=s:-5")]
+        [InlineData(SamplingPriorityValues.UserReject, null, null, null, "dd=s:-1;lp.id:0000000000000002")]
+        [InlineData(SamplingPriorityValues.AutoReject, null, null, null, "dd=s:0;lp.id:0000000000000002")]
+        [InlineData(SamplingPriorityValues.AutoKeep, null, null, null, "dd=s:1;lp.id:0000000000000002")]
+        [InlineData(SamplingPriorityValues.UserKeep, null, null, null, "dd=s:2;lp.id:0000000000000002")]
+        [InlineData(3, null, null, null, "dd=s:3;lp.id:0000000000000002")]
+        [InlineData(-5, null, null, null, "dd=s:-5;lp.id:0000000000000002")]
         // origin only
-        [InlineData(null, "abc", null, null, "dd=o:abc")]
-        [InlineData(null, "synthetics~;,=web", null, null, "dd=o:synthetics___~web")]
+        [InlineData(null, "abc", null, null, "dd=o:abc;lp.id:0000000000000002")]
+        [InlineData(null, "synthetics~;,=web", null, null, "dd=o:synthetics___~web;lp.id:0000000000000002")]
         // propagated tags only
-        [InlineData(null, null, "_dd.p.a=1", null, "dd=t.a:1")]
-        [InlineData(null, null, "_dd.p.a=1,_dd.p.b=2", null, "dd=t.a:1;t.b:2")]
-        [InlineData(null, null, "_dd.p.a=1,b=2", null, "dd=t.a:1")]
-        [InlineData(null, null, "_dd.p.usr.id=MTIzNDU=", null, "dd=t.usr.id:MTIzNDU~")] // convert '=' to '~'
+        [InlineData(null, null, "_dd.p.a=1", null, "dd=lp.id:0000000000000002;t.a:1")]
+        [InlineData(null, null, "_dd.p.a=1,_dd.p.b=2", null, "dd=lp.id:0000000000000002;t.a:1;t.b:2")]
+        [InlineData(null, null, "_dd.p.a=1,b=2", null, "dd=lp.id:0000000000000002;t.a:1")]
+        [InlineData(null, null, "_dd.p.usr.id=MTIzNDU=", null, "dd=lp.id:0000000000000002;t.usr.id:MTIzNDU~")] // convert '=' to '~'
         // additional state only
-        [InlineData(null, null, null, "key1=value1,key2=value2", "key1=value1,key2=value2")]
+        [InlineData(null, null, null, "key1=value1,key2=value2", "dd=lp.id:0000000000000002,key1=value1,key2=value2")]
         // combined
-        [InlineData(SamplingPriorityValues.UserKeep, "rum", null, "key1=value1", "dd=s:2;o:rum,key1=value1")]
-        [InlineData(SamplingPriorityValues.AutoReject, null, "_dd.p.a=b", "key1=value1", "dd=s:0;t.a:b,key1=value1")]
-        [InlineData(null, "rum", "_dd.p.a=b", "key1=value1", "dd=o:rum;t.a:b,key1=value1")]
-        [InlineData(SamplingPriorityValues.AutoKeep, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1", "dd=s:1;o:rum;t.dm:-4;t.usr.id:12345,key1=value1")]
+        [InlineData(SamplingPriorityValues.UserKeep, "rum", null, "key1=value1", "dd=s:2;o:rum;lp.id:0000000000000002,key1=value1")]
+        [InlineData(SamplingPriorityValues.AutoReject, null, "_dd.p.a=b", "key1=value1", "dd=s:0;lp.id:0000000000000002;t.a:b,key1=value1")]
+        [InlineData(null, "rum", "_dd.p.a=b", "key1=value1", "dd=o:rum;lp.id:0000000000000002;t.a:b,key1=value1")]
+        [InlineData(SamplingPriorityValues.AutoKeep, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1", "dd=s:1;o:rum;lp.id:0000000000000002;t.dm:-4;t.usr.id:12345,key1=value1")]
         public void CreateTraceStateHeader(int? samplingPriority, string origin, string tags, string additionalState, string expected)
         {
             var propagatedTags = TagPropagation.ParseHeader(tags);
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Tests.Propagators
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
 
             // note that "t.usr.id:MTIzNDU=" is encoded as "t.usr.id:MTIzNDU~"
-            tracestate.Should().Be("dd=s:2;t.dm:-4;t.usr.id:MTIzNDU~");
+            tracestate.Should().Be("dd=s:2;lp.id:0000000000000002;t.dm:-4;t.usr.id:MTIzNDU~");
         }
 
         [Fact]
@@ -134,7 +134,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             // note that there is no "t.tid" propagated tag when using W3C headers
             // because the full 128-bit trace id fits in the "traceparent" header
-            tracestate.Should().Be("dd=s:2");
+            tracestate.Should().Be("dd=s:2;lp.id:0000000000000002");
         }
 
         [Fact]
@@ -153,7 +153,7 @@ namespace Datadog.Trace.Tests.Propagators
             W3CPropagator.Inject(spanContext, headers.Object);
 
             headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
-            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:origin,key1=value1"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:origin;lp.id:000000003ade68b1,key1=value1"), Times.Once());
             headers.VerifyNoOtherCalls();
         }
 
@@ -176,7 +176,7 @@ namespace Datadog.Trace.Tests.Propagators
             W3CPropagator.Inject(spanContext, headers.Object);
 
             headers.Verify(h => h.Set("traceparent", "00-1234567890abcdef1122334455667788-0000000000000001-01"), Times.Once());
-            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:origin,key1=value1"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:origin;lp.id:0000000000000001,key1=value1"), Times.Once());
             headers.VerifyNoOtherCalls();
         }
 
@@ -196,7 +196,7 @@ namespace Datadog.Trace.Tests.Propagators
             W3CPropagator.Inject(spanContext, headers.Object, (carrier, name, value) => carrier.Set(name, value));
 
             headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
-            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:origin,key1=value1"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:origin;lp.id:000000003ade68b1,key1=value1"), Times.Once());
             headers.VerifyNoOtherCalls();
         }
 
@@ -285,7 +285,7 @@ namespace Datadog.Trace.Tests.Propagators
         public void ParseTraceState(string header, int? samplingPriority, string origin, string propagatedTags, string additionalValues)
         {
             var traceState = W3CTraceContextPropagator.ParseTraceState(header);
-            var expected = new W3CTraceState(samplingPriority, origin, propagatedTags, additionalValues);
+            var expected = new W3CTraceState(samplingPriority, origin, null, propagatedTags, additionalValues);
             traceState.Should().BeEquivalentTo(expected);
         }
 

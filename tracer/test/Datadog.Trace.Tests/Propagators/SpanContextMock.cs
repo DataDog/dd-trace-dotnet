@@ -27,6 +27,8 @@ internal class SpanContextMock
 
     public string AdditionalW3CTraceState { get; set; }
 
+    public string LastParentId { get; set; }
+
     public ISpanContext Parent { get; set; }
 
     public ulong? ParentId { get; set; }
