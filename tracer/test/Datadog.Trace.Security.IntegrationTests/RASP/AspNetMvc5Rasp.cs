@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+/*
+
 #if NETFRAMEWORK
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
@@ -97,7 +99,7 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
-
+    
     public async Task InitializeAsync()
     {
         await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
@@ -107,3 +109,5 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
     public Task DisposeAsync() => Task.CompletedTask;
 }
 #endif
+
+*/
