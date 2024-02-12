@@ -17,7 +17,7 @@ partial class Program
                 @"  [AspectMethodInsertBefore(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertBefore_1(System.String,System.String)"","""",[1],[False],[None],Propagation,[])] AspectMethodInsertBefore_1(System.String)",
                 @"  [AspectMethodInsertAfter(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertAfter(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectMethodInsertAfter(System.String)",
         };
-        NativeMethods.RegisterIastAspects(aspects);
+        NativeMethods.RegisterCallsiteAspects(aspects);
     }
 
     private static void CallSite()
