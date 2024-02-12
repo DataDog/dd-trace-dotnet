@@ -57,7 +57,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// <param name="setupWafSchemaExtraction">should we read the config file for schema extraction</param>
         /// <param name="useUnsafeEncoder">use legacy encoder</param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static unsafe InitResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? embeddedRulesetPath = null, JToken? rulesFromRcm = null, bool setupWafSchemaExtraction = false, bool useUnsafeEncoder = false)
+        internal static InitResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? embeddedRulesetPath = null, JToken? rulesFromRcm = null, bool setupWafSchemaExtraction = false, bool useUnsafeEncoder = false)
         {
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
 
@@ -65,6 +65,10 @@ namespace Datadog.Trace.AppSec.Waf
             wafLibraryInvoker.SetupLogging(GlobalSettings.Instance.DebugEnabledInternal);
 
             var jtokenRoot = rulesFromRcm ?? WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath)!;
+            if (jtokenRoot is null)
+            {
+                return InitResult.FromUnusableRuleFile();
+            }
 
             IntPtr rulesObj;
             DdwafConfigStruct configWafStruct = default;
