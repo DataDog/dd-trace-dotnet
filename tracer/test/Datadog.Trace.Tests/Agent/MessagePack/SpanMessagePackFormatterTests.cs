@@ -93,8 +93,16 @@ public class SpanMessagePackFormatterTests
             }
             else
             {
-                tagsProcessor.Remaining.Should()
-                             .HaveCount(2).And.Contain(new KeyValuePair<string, string>("language", "dotnet"), new KeyValuePair<string, string>("_dd.lp.id", expected.SpanId.ToString("x16")));
+                if (!string.IsNullOrEmpty(expected.Context.LastParentId))
+                {
+                    tagsProcessor.Remaining.Should()
+                                 .HaveCount(2).And.Contain(new KeyValuePair<string, string>("language", "dotnet"), new KeyValuePair<string, string>("_dd.lp.id", "0123456789abcdef"));
+                }
+                else
+                {
+                    tagsProcessor.Remaining.Should()
+                                 .HaveCount(1).And.Contain(new KeyValuePair<string, string>("language", "dotnet"));
+                }
             }
 
             var metricsProcessor = new TagsProcessor<double>(actual.Metrics);

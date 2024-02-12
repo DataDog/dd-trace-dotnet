@@ -138,7 +138,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-1"), Times.Once());
 
             headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
-            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;t.key1:value1;t.key2:value2"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;lp.id:000000003ade68b1;t.key1:value1;t.key2:value2"), Times.Once());
 
             headers.VerifyNoOtherCalls();
         }
@@ -180,7 +180,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set("b3", "1234567890abcdef1122334455667788-0000000000000001-1"), Times.Once());
 
             headers.Verify(h => h.Set("traceparent", "00-1234567890abcdef1122334455667788-0000000000000001-01"), Times.Once());
-            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;t.key1:value1;t.key2:value2"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;lp.id:0000000000000001;t.key1:value1;t.key2:value2"), Times.Once());
 
             headers.VerifyNoOtherCalls();
         }
@@ -218,7 +218,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-1"), Times.Once());
 
             headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
-            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;t.key1:value1;t.key2:value2"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;lp.id:000000003ade68b1;t.key1:value1;t.key2:value2"), Times.Once());
 
             headers.VerifyNoOtherCalls();
         }
@@ -260,7 +260,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set("b3", "1234567890abcdef1122334455667788-0000000000000001-1"), Times.Once());
 
             headers.Verify(h => h.Set("traceparent", "00-1234567890abcdef1122334455667788-0000000000000001-01"), Times.Once());
-            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;t.key1:value1;t.key2:value2"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;lp.id:0000000000000001;t.key1:value1;t.key2:value2"), Times.Once());
 
             headers.VerifyNoOtherCalls();
         }
