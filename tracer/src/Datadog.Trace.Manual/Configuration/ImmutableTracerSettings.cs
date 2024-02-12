@@ -67,7 +67,7 @@ public sealed class ImmutableTracerSettings
     /// Gets the Uri where the Tracer can connect to the Agent.
     /// </summary>
     [Instrumented]
-    internal Uri AgentUri { get; }
+    public Uri AgentUri { get; }
 
     /// <summary>
     /// Gets the exporter settings that dictate how the tracer exports data.
