@@ -42,6 +42,8 @@ Sample::Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCoun
     _timestamp = timestamp;
     _runtimeId = runtimeId;
     _callstack.reserve(framesCount);
+    _labels.reserve(10);
+    _numericLabels.reserve(10);
 }
 
 Sample::Sample(std::string_view runtimeId) :

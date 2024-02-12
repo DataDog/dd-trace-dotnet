@@ -2,16 +2,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include <list>
+
+#include <cstddef>
 #include <memory>
 
-// forward declarations
-class SampleEnumerator;
+class Sample;
 
-class ISamplesProvider
+class SampleEnumerator
 {
 public:
-    virtual ~ISamplesProvider() = default;
-    virtual std::unique_ptr<SampleEnumerator> GetSamples() = 0;
-    virtual const char* GetName() = 0;
+    virtual ~SampleEnumerator() = default;
+
+    virtual std::size_t size() const = 0;
+    virtual bool MoveNext(std::shared_ptr<Sample>& sample) = 0;
 };
