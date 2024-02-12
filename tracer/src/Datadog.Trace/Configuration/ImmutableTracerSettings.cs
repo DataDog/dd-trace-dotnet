@@ -28,6 +28,7 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public partial record ImmutableTracerSettings
     {
+        private readonly bool _traceEnabled;
         private readonly DomainMetadata _domainMetadata;
         private readonly bool _isDataStreamsMonitoringEnabled;
         private readonly bool _logsInjectionEnabled;
@@ -90,7 +91,7 @@ namespace Datadog.Trace.Configuration
 
             GitMetadataEnabled = settings.GitMetadataEnabled;
             ServiceNameInternal = settings.ServiceNameInternal;
-            TraceEnabledInternal = settings.TraceEnabledInternal;
+            _traceEnabled = settings.TraceEnabledInternal;
             ExporterInternal = new ImmutableExporterSettings(settings.ExporterInternal, true);
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
@@ -253,7 +254,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TraceEnabled"/>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_TraceEnabled_Get)]
-        internal bool TraceEnabledInternal { get; }
+        internal bool TraceEnabledInternal => DynamicSettings.TraceEnabled ?? _traceEnabled;
 
         /// <summary>
         /// Gets the exporter settings that dictate how the tracer exports data.

@@ -72,6 +72,7 @@ namespace Datadog.Trace.Configuration
 
             var dynamicSettings = new ImmutableDynamicSettings
             {
+                TraceEnabled = settings.WithKeys(ConfigurationKeys.TraceEnabled).AsBool(),
                 // RuntimeMetricsEnabled = settings.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled).AsBool(),
                 // DataStreamsMonitoringEnabled = settings.WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled).AsBool(),
                 // CustomSamplingRules = settings.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString(),
