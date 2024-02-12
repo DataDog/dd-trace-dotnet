@@ -209,6 +209,7 @@ public class DistributedPropagatorTests
                        SamplingPriority = SamplingPriority,
                        PropagatedTags = PropagatedTagsCollection,
                        AdditionalW3CTraceState = AdditionalW3CTraceState,
+                       LastParentId = LastParentId
                    });
     }
 
@@ -247,6 +248,7 @@ public class DistributedPropagatorTests
                        SamplingPriority = expectedSamplingPriority,
                        PropagatedTags = PropagatedTagsCollection,
                        AdditionalW3CTraceState = AdditionalW3CTraceState,
+                       LastParentId = LastParentId,
                    });
     }
 
