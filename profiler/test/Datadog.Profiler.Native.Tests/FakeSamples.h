@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include "SampleEnumerator.h"
+#include "SamplesEnumerator.h"
 
 #include <list>
 #include <memory>
 
-class FakeSamples : public SampleEnumerator
+class FakeSamples : public SamplesEnumerator
 {
 public:
     FakeSamples();
@@ -16,7 +16,7 @@ public:
     FakeSamples(std::shared_ptr<Sample> sample);
     FakeSamples(std::list<std::shared_ptr<Sample>> samples);
 
-    // Inherited via SampleEnumerator
+    // Inherited via SamplesEnumerator
     std::size_t size() const override;
 
     bool MoveNext(std::shared_ptr<Sample>& sample) override;

@@ -8,10 +8,10 @@
 
 class Sample;
 
-class SampleEnumerator
+class SamplesEnumerator
 {
 public:
-    virtual ~SampleEnumerator() = default;
+    virtual ~SamplesEnumerator() = default;
 
     virtual std::size_t size() const = 0;
     virtual bool MoveNext(std::shared_ptr<Sample>& sample) = 0;

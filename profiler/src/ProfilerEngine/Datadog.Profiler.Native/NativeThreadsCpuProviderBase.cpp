@@ -7,7 +7,7 @@
 #include "Log.h"
 #include "OsSpecificApi.h"
 #include "RawCpuSample.h"
-#include "SampleEnumerator.h"
+#include "SamplesEnumerator.h"
 
 NativeThreadsCpuProviderBase::NativeThreadsCpuProviderBase(CpuTimeProvider* cpuTimeProvider) :
     _cpuTimeProvider{cpuTimeProvider},
@@ -15,7 +15,7 @@ NativeThreadsCpuProviderBase::NativeThreadsCpuProviderBase(CpuTimeProvider* cpuT
 {
 }
 
-class CpuSampleEnumerator : public SampleEnumerator
+class CpuSampleEnumerator : public SamplesEnumerator
 {
 public:
     CpuSampleEnumerator() :
@@ -28,7 +28,7 @@ public:
         _sample = sample;
     }
 
-    // Inherited via SampleEnumerator
+    // Inherited via SamplesEnumerator
     std::size_t size() const override
     {
         return _sample == nullptr ? 0 : 1;
@@ -50,7 +50,7 @@ public:
     bool _alreadyCalled;
 };
 
-std::unique_ptr<SampleEnumerator> NativeThreadsCpuProviderBase::GetSamples()
+std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()
 {
     std::uint64_t cpuTime = 0;
     for (auto const& thread : GetThreads())

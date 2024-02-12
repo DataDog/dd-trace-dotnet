@@ -20,7 +20,7 @@
 #include "IThreadsCpuManager.h"
 #include "ProviderBase.h"
 #include "RawSample.h"
-#include "SampleEnumerator.h"
+#include "SamplesEnumerator.h"
 #include "SampleValueTypeProvider.h"
 
 #include "shared/src/native-src/string.h"
@@ -128,9 +128,9 @@ public:
         return sample;
     }
 
-    std::unique_ptr<SampleEnumerator> GetSamples() override
+    std::unique_ptr<SamplesEnumerator> GetSamples() override
     {
-        return std::make_unique<SampleEnumeratorImpl>(FetchRawSamples(), this);
+        return std::make_unique<SamplesEnumeratorImpl>(FetchRawSamples(), this);
     }
 
 protected:
@@ -145,16 +145,16 @@ protected:
     }
 
 private:
-    class SampleEnumeratorImpl : public SampleEnumerator
+    class SamplesEnumeratorImpl : public SamplesEnumerator
     {
     public:
-        SampleEnumeratorImpl(std::list<TRawSample> rawSamples, CollectorBase<TRawSample>* collector) :
+        SamplesEnumeratorImpl(std::list<TRawSample> rawSamples, CollectorBase<TRawSample>* collector) :
             _rawSamples{std::move(rawSamples)}, _collector{collector}
         {
             _currentRawSample = _rawSamples.begin();
         }
 
-        // Inherited via SampleEnumerator
+        // Inherited via SamplesEnumerator
         std::size_t size() const override
         {
             return _rawSamples.size();

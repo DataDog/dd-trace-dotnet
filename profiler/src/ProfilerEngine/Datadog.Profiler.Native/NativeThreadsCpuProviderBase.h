@@ -21,7 +21,7 @@ protected:
 
 private:
 
-    std::unique_ptr<SampleEnumerator> GetSamples() override;
+    std::unique_ptr<SamplesEnumerator> GetSamples() override;
     virtual std::vector<FrameInfoView> GetFrames() = 0;
     virtual std::vector<std::shared_ptr<IThreadInfo>> const& GetThreads() = 0;
 
