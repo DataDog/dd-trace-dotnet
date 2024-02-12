@@ -8,6 +8,11 @@
     <!-- Code analysis -->
     <AnalysisLevel>latest</AnalysisLevel>
 
+    <!-- Suppress some of the analyzer warnings we don't care about -->
+    <!-- VSTHRD200: Use "Async" suffix in names of methods that return an awaitable type -->
+    <NoWarn>$(NoWarn);VSTHRD200</NoWarn>
+
+
     <!-- NuGet packages -->
     <IsPackable>true</IsPackable>
     <PackageIconUrl>https://github.com/DataDog/dd-trace-dotnet/raw/master/datadog-logo-64x64.png</PackageIconUrl>
@@ -39,6 +44,10 @@
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Analyzers\Datadog.Trace.Tools.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.9.28">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

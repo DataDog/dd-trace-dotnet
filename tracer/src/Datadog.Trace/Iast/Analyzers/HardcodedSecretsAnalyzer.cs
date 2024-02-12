@@ -34,7 +34,7 @@ internal class HardcodedSecretsAnalyzer : IDisposable
         Log.Debug("HardcodedSecretsAnalyzer -> Init");
         _regexTimeout = regexTimeout;
         _started = true;
-        Task.Run(() => PoolingThread())
+        _ = Task.Run(() => PoolingThread())
                     .ContinueWith(t => Log.Error(t.Exception, "Error in Hardcoded secret analyzer"), TaskContinuationOptions.OnlyOnFaulted);
     }
 

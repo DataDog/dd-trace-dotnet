@@ -86,7 +86,7 @@ namespace Datadog.Trace.Activity
                 // For this case we are going to do some retries with a back-off.
                 if (Interlocked.Decrement(ref _initializationRetries) > 0)
                 {
-                    Task.Delay(InitializationBackoffPerRetry, cancellationToken).ContinueWith(
+                    _ = Task.Delay(InitializationBackoffPerRetry, cancellationToken).ContinueWith(
                         _ =>
                     {
                         if (cancellationToken.IsCancellationRequested)
