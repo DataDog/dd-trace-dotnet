@@ -25,6 +25,7 @@ public class RegexBuilderTests
     [InlineData(null, "glob", null)]
     [InlineData("*", "glob", null)]
     [InlineData("**", "glob", null)]
+    [InlineData("*****", "glob", null)]
     [InlineData("", "glob", "^$")]
     [InlineData("test", "glob", "^test$")]
     [InlineData("te*st", "glob", "^te.*st$")]
