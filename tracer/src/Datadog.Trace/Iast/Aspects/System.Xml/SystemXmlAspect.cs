@@ -33,7 +33,11 @@ public class SystemXmlAspect
     [AspectMethodInsertBefore("System.Xml.XPath.XPathNavigator::Select(System.String,System.Xml.IXmlNamespaceResolver)", 1)]
     public static string ReviewPath(string xpath)
     {
-        IastModule.OnXpathInjection(xpath);
+        if (Iast.Instance.Settings.Enabled)
+        {
+            IastModule.OnXpathInjection(xpath);
+        }
+
         return xpath;
     }
 }

@@ -54,7 +54,11 @@ public class WebClientAspect
     [AspectMethodInsertBefore("System.Net.WebClient::set_BaseAddress(System.String)")]
     public static object Review(string parameter)
     {
-        IastModule.OnSSRF(parameter);
+        if (Iast.Instance.Settings.Enabled)
+        {
+            IastModule.OnSSRF(parameter);
+        }
+
         return parameter;
     }
 
@@ -116,7 +120,11 @@ public class WebClientAspect
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesTaskAsync(System.Uri,System.String,System.Collections.Specialized.NameValueCollection)", 2)]
     public static object ReviewUri(Uri parameter)
     {
-        IastModule.OnSSRF(parameter.OriginalString);
+        if (Iast.Instance.Settings.Enabled)
+        {
+            IastModule.OnSSRF(parameter.OriginalString);
+        }
+
         return parameter;
     }
 }

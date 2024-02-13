@@ -53,7 +53,11 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.String,System.Threading.CancellationToken)", 1)]
     public static string Review(string parameter)
     {
-        IastModule.OnSSRF(parameter);
+        if (Iast.Instance.Settings.Enabled)
+        {
+            IastModule.OnSSRF(parameter);
+        }
+
         return parameter;
     }
 
@@ -87,7 +91,11 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::set_BaseAddress(System.Uri)")]
     public static Uri ReviewUri(Uri parameter)
     {
-        IastModule.OnSSRF(parameter.OriginalString);
+        if (Iast.Instance.Settings.Enabled)
+        {
+            IastModule.OnSSRF(parameter.OriginalString);
+        }
+
         return parameter;
     }
 
@@ -112,7 +120,7 @@ public class HttpClientAspect
     {
         var uri = parameter.RequestUri;
 
-        if (uri is not null)
+        if (uri is not null && Iast.Instance.Settings.Enabled)
         {
             IastModule.OnSSRF(uri.OriginalString);
         }
@@ -124,7 +132,7 @@ public class HttpClientAspect
     {
         var uri = parameter.DuckCast<ClrProfiler.AutoInstrumentation.AspNet.IHttpRequestMessage>()?.RequestUri;
 
-        if (uri is not null)
+        if (uri is not null && Iast.Instance.Settings.Enabled)
         {
             IastModule.OnSSRF(uri.OriginalString);
         }

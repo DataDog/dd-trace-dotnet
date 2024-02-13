@@ -31,7 +31,11 @@ public class FileInfoAspect
     [AspectMethodInsertBefore("System.IO.FileInfo::Replace(System.String,System.String,System.Boolean)", new int[] { 1, 2 })]
     public static string ReviewPath(string path)
     {
-        IastModule.OnPathTraversal(path);
+        if (Iast.Instance.Settings.Enabled)
+        {
+            IastModule.OnPathTraversal(path);
+        }
+
         return path;
     }
 }

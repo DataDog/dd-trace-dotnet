@@ -58,7 +58,11 @@ public class DirectoryInfoAspect
 #endif
     public static string ReviewPath(string path)
     {
-        IastModule.OnPathTraversal(path);
+        if (Iast.Instance.Settings.Enabled)
+        {
+            IastModule.OnPathTraversal(path);
+        }
+
         return path;
     }
 }

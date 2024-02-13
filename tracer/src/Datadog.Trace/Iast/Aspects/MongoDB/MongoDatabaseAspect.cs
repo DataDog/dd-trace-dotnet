@@ -31,7 +31,7 @@ public class MongoDatabaseAspect
     [AspectMethodInsertBefore("MongoDB.Driver.IMongoCollectionExtensions::FindAsync(MongoDB.Driver.IMongoCollection`1<!!0>,MongoDB.Driver.FilterDefinition`1<!!0>,MongoDB.Driver.FindOptions`2<!!0,!!0>,System.Threading.CancellationToken)", 2)]
     public static object? AnalyzeCommand(object? command)
     {
-        if (command == null)
+        if (command == null || !Iast.Instance.Settings.Enabled)
         {
             return command;
         }

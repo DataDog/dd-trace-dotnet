@@ -29,7 +29,7 @@ public class HttpSessionStateBaseAspect
     [AspectMethodInsertBefore("System.Web.HttpSessionStateBase::Remove(System.String)", 0)]
     public static object Add(object value)
     {
-        if (value is string valueStr)
+        if (value is string valueStr && Iast.Instance.Settings.Enabled)
         {
             IastModule.OnTrustBoundaryViolation(valueStr);
         }

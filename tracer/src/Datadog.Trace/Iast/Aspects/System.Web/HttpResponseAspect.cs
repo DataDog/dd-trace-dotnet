@@ -26,6 +26,11 @@ public class HttpResponseAspect
     [AspectMethodInsertBefore("System.Web.HttpResponse::RedirectPermanent(System.String,System.Boolean)", 1)]
     public static string? Redirect(string? url)
     {
-        return IastModule.OnUnvalidatedRedirect(url);
+        if (Iast.Instance.Settings.Enabled)
+        {
+            return IastModule.OnUnvalidatedRedirect(url);
+        }
+
+        return url;
     }
 }
