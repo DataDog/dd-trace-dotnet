@@ -195,7 +195,6 @@
   <ItemGroup>
     <Content Include="Data\createdb.sql" />
     <Content Include="Data\database.sql" />
-    <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Web.config" />
     <Content Include="Views\Web.config" />
