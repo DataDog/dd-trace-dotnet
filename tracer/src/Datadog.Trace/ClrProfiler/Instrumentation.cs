@@ -543,7 +543,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 var defs = NativeMethods.EnableCallTargetDefinitions((uint)categories);
                 TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
-                EnableCallSiteInstrumentations(categories, sw);
+                EnableCallSiteInstrumentations(categories, sw, raspEnabled: raspEnabled);
             }
         }
 
