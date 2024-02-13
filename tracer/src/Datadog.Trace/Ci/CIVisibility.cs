@@ -657,7 +657,7 @@ namespace Datadog.Trace.Ci
 
         private static EventPlatformProxySupport IsEventPlatformProxySupportedByAgent(IDiscoveryService discoveryService)
         {
-            if (discoveryService == NullDiscoveryService.Instance)
+            if (discoveryService is NullDiscoveryService)
             {
                 return EventPlatformProxySupport.None;
             }
