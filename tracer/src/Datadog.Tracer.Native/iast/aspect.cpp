@@ -129,10 +129,10 @@ bool Aspect::IsEnabled()
     }
     for (auto type : GetVulnerabilityTypes())
     {
-        // TODO:  Check if any type is enabled in config
-        //   auto key = ToLower(ToString(type));
-        //   auto value = HdivConfig::Instance.GetEnabled(key + ".enabled", true) || HdivConfig::Instance.GetEnabled(key
-        //   + ".attackEnabled", true); if (value)
+        //TODO:  Check if any type is enabled in config
+        //  auto key = ToLower(ToString(type));
+        //  auto value = HdivConfig::Instance.GetEnabled(key + ".enabled", true) || HdivConfig::Instance.GetEnabled(key
+        //  + ".attackEnabled", true); if (value)
         {
             return true;
         }

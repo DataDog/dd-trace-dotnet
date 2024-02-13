@@ -2031,7 +2031,7 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
     }
     else
     {
-        Logger::Info("IAST/RASP are disabled.");
+        Logger::Info("Callsite instrumentation is disabled.");
     }
     return 0;
 }
