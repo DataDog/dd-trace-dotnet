@@ -38,10 +38,23 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             {
                 AnsiConsole.WriteLine(NetCoreRuntime);
             }
+            else if (runtime == ProcessInfo.Runtime.Mixed)
+            {
+                Utils.WriteWarning(BothRuntimesDetected);
+                runtime = ProcessInfo.Runtime.NetFx;
+            }
             else
             {
-                Utils.WriteWarning(runtime == ProcessInfo.Runtime.Mixed ? BothRuntimesDetected : RuntimeDetectionFailed);
-                runtime = ProcessInfo.Runtime.NetFx;
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Utils.WriteWarning(RuntimeDetectionFailedWindows);
+                    runtime = ProcessInfo.Runtime.NetFx;
+                }
+                else
+                {
+                    Utils.WriteWarning(RuntimeDetectionFailedLinux);
+                    runtime = ProcessInfo.Runtime.NetCore;
+                }
             }
 
             AnsiConsole.WriteLine(ModuleCheck());
@@ -179,7 +192,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey64, out var corProfilerPathValue64);
 
             string?[] valuesToCheck = { corProfilerPathValue, corProfilerPathValue32, corProfilerPathValue64 };
-            var isTracingUsingBundle = TracingWithBundle(valuesToCheck, process.Id);
+            var isTracingUsingBundle = TracingWithBundle(valuesToCheck, process);
 
             if (!ok && isTracingUsingBundle)
             {
@@ -544,12 +557,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 or "1";
         }
 
-        private static bool TracingWithBundle(string?[] profilerPathValues, int processId)
+        private static bool TracingWithBundle(string?[] profilerPathValues, ProcessInfo process)
         {
-            Process process = Process.GetProcessById(processId);
-
             // Get the file path of the main module (the .exe file)
-            string? filePath = process.MainModule?.FileName;
+            string? filePath = process.MainModule;
             string? directoryPath = Path.GetDirectoryName(filePath);
 
             string[] expectedEndingsForBundleSetup =
