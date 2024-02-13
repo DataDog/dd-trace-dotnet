@@ -22,14 +22,6 @@ inputs:
     description: 'Github token for pushing images to ghcr.io Docker repository'
     required: true
 
-  architecture:
-    description: 'The architecture of the image being built'
-    required: true
-
-  architecture_tag:
-    description: 'The tag for the architecture of the image being built'
-    required: true
-
 runs:
   using: "composite"
   steps:
@@ -51,16 +43,17 @@ runs:
       shell: bash
       run: docker login -u publisher -p ${{ inputs.github_token }} ghcr.io
 
-    - name: Docker Build linux-x64 image
+    - name: Docker Build linux-x64 and linux-arm64 images
       uses: docker/build-push-action@v3
       with:
         push: true
         tags: ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot
-        platforms: linux/${{inputs.architecture}}
+        platforms: 'linux/amd64,linux/arm64'
         context: ${{inputs.artifacts_path}}
         file: ${{inputs.artifacts_path}}/system-tests.dockerfile
         build-args: |
-          LINUX_PACKAGE=datadog-dotnet-apm-${{inputs.package_version}}${{inputs.architecture_tag}}.tar.gz
+          LINUX_AMD64_PACKAGE=datadog-dotnet-apm-${{inputs.package_version}}.tar.gz
+          LINUX_ARM64_PACKAGE=datadog-dotnet-apm-${{inputs.package_version}}.arm64.tar.gz
           LIBRARY_VERSION=${{inputs.package_version}}
           LIBDDWAF_VERSION=${{inputs.lib_waf_version}}
           APPSEC_EVENT_RULES_VERSION=${{inputs.waf_rules_version}}
