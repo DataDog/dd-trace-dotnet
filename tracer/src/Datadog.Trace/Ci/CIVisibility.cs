@@ -657,21 +657,13 @@ namespace Datadog.Trace.Ci
 
         private static EventPlatformProxySupport IsEventPlatformProxySupportedByAgent(IDiscoveryService discoveryService)
         {
-            var manualResetEventSlim = new ManualResetEventSlim();
-            AgentConfiguration? agentConfiguration = null;
-            LifetimeManager.Instance.AddShutdownTask(() => manualResetEventSlim.Set());
-
-            Log.Debug("Waiting for agent configuration...");
-            discoveryService.SubscribeToChanges(CallBack);
-            void CallBack(AgentConfiguration aConfiguration)
+            if (discoveryService is NullDiscoveryService)
             {
-                agentConfiguration = aConfiguration;
-                manualResetEventSlim.Set();
-                discoveryService.RemoveSubscription(CallBack);
-                Log.Debug("Agent configuration received.");
+                return EventPlatformProxySupport.None;
             }
 
-            manualResetEventSlim.Wait(5_000);
+            Log.Debug("Waiting for agent configuration...");
+            var agentConfiguration = new DiscoveryAgentConfigurationCallback(discoveryService).WaitAndGet(5_000);
             if (agentConfiguration is null)
             {
                 Log.Warning("Discovery service could not retrieve the agent configuration after 5 seconds.");
@@ -701,6 +693,38 @@ namespace Datadog.Trace.Ci
             }
 
             return EventPlatformProxySupport.None;
+        }
+
+        private class DiscoveryAgentConfigurationCallback
+        {
+            private readonly ManualResetEventSlim _manualResetEventSlim;
+            private readonly Action<AgentConfiguration> _callback;
+            private readonly IDiscoveryService _discoveryService;
+            private AgentConfiguration? _agentConfiguration;
+
+            public DiscoveryAgentConfigurationCallback(IDiscoveryService discoveryService)
+            {
+                _manualResetEventSlim = new ManualResetEventSlim();
+                LifetimeManager.Instance.AddShutdownTask(() => _manualResetEventSlim.Set());
+                _discoveryService = discoveryService;
+                _callback = CallBack;
+                _agentConfiguration = null;
+                _discoveryService.SubscribeToChanges(_callback);
+            }
+
+            public AgentConfiguration? WaitAndGet(int timeoutInMs = 5_000)
+            {
+                _manualResetEventSlim.Wait(timeoutInMs);
+                return _agentConfiguration;
+            }
+
+            private void CallBack(AgentConfiguration agentConfiguration)
+            {
+                _agentConfiguration = agentConfiguration;
+                _manualResetEventSlim.Set();
+                _discoveryService.RemoveSubscription(_callback);
+                Log.Debug("Agent configuration received.");
+            }
         }
     }
 }
