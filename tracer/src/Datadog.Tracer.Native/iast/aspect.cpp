@@ -9,8 +9,7 @@ namespace iast
 BEGIN_ENUM_PARSE(AspectType)
 ENUM_VALUE(AspectType, None)
 ENUM_VALUE(AspectType, Source)
-ENUM_VALUE(AspectType, IastSink)
-ENUM_VALUE(AspectType, RaspSink)
+ENUM_VALUE(AspectType, Sink)
 ENUM_VALUE(AspectType, Propagation)
 END_ENUM_PARSE(AspectType)
 
@@ -124,17 +123,16 @@ int Aspect::GetSpotInfoId(MethodInfo* method, int line, mdMemberRef* aspectMembe
 bool Aspect::IsEnabled()
 {
     auto aspectType = GetAspectType();
-    if ((((int) aspectType & (int)AspectType::IastSink) == 0) &&
-        (((int) aspectType & (int)AspectType::RaspSink) == 0))
+    if (aspectType != AspectType::Sink)
     {
         return true;
     }
     for (auto type : GetVulnerabilityTypes())
     {
-        //TODO:  Check if any type is enabled in config
-        //  auto key = ToLower(ToString(type));
-        //  auto value = HdivConfig::Instance.GetEnabled(key + ".enabled", true) || HdivConfig::Instance.GetEnabled(key
-        //  + ".attackEnabled", true); if (value)
+        // TODO:  Check if any type is enabled in config
+        //   auto key = ToLower(ToString(type));
+        //   auto value = HdivConfig::Instance.GetEnabled(key + ".enabled", true) || HdivConfig::Instance.GetEnabled(key
+        //   + ".attackEnabled", true); if (value)
         {
             return true;
         }

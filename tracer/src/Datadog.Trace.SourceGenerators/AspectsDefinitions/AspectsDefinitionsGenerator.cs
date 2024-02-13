@@ -170,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler
             "AspectClassAttribute" => arguments.Length switch
             {
                 // AspectClassAttribute(string defaultAssembly)
-                1 => $"[AspectClass({arguments[0]},[None],{((int)AspectType.Propagation).ToString()},[])]",
+                1 => $"[AspectClass({arguments[0]},[None],Propagation,[])]",
                 // AspectClassAttribute(string defaultAssembly, AspectType defaultAspectType, params VulnerabilityType[] defaultVulnerabilityTypes)
                 3 => $"[AspectClass({arguments[0]},[None],{arguments[1]},{Check(arguments[2])})]",
                 // AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, AspectType defaultAspectType = AspectType.Propagation, params VulnerabilityType[] defaultVulnerabilityTypes)
@@ -181,9 +181,9 @@ namespace Datadog.Trace.ClrProfiler
             "AspectCtorReplaceAttribute" => arguments.Length switch
             {
                 // AspectCtorReplaceAttribute(string targetMethod)
-                1 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[None],0,[])]",
+                1 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[None],Default,[])]",
                 // AspectCtorReplaceAttribute(string targetMethod, params AspectFilter[] filters)
-                2 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1])},0,[])]",
+                2 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1])},Default,[])]",
                 // AspectCtorReplaceAttribute(string targetMethod, AspectType aspectType = AspectType.Default, params VulnerabilityType[] vulnerabilityTypes)
                 3 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[None],{arguments[1]},{Check(arguments[2])})]",
                 // AspectCtorReplaceAttribute(string targetMethod, AspectFilter[] filters, AspectType aspectType = AspectType.Default, params VulnerabilityType[] vulnerabilityTypes)
@@ -193,11 +193,11 @@ namespace Datadog.Trace.ClrProfiler
             "AspectMethodReplaceAttribute" => arguments.Length switch
             {
                 // AspectMethodReplaceAttribute(string targetMethod)
-                1 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],[None],0,[])]",
+                1 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],[None],Default,[])]",
                 // AspectMethodReplaceAttribute(string targetMethod, params AspectFilter[] filters)
-                2 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1], "[None]")},0,[])]",
+                2 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1], "[None]")},Default,[])]",
                 // AspectMethodReplaceAttribute(string targetMethod, string targetType, params AspectFilter[] filters)
-                3 => $"[AspectMethodReplace({arguments[0]},{arguments[1]},[0],[False],{Check(arguments[2], "[None]")},0,[])]",
+                3 => $"[AspectMethodReplace({arguments[0]},{arguments[1]},[0],[False],{Check(arguments[2], "[None]")},Default,[])]",
                 // AspectMethodReplaceAttribute(string targetMethod, AspectFilter[] filters, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
                 4 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],[{Check(arguments[1], "[0]")}],arguments[2],{Check(arguments[2])})]",
                 _ => throw new ArgumentException($"Could not find AspectMethodReplaceAttribute overload with {arguments.Length} parameters")
@@ -205,15 +205,15 @@ namespace Datadog.Trace.ClrProfiler
             "AspectMethodInsertBeforeAttribute" => arguments.Length switch
             {
                 // AspectMethodInsertBeforeAttribute(string targetMethod, params int[] paramShift)
-                2 => $"[AspectMethodInsertBefore({arguments[0]},\"\",{MakeSameSize(Check(arguments[1]))},[None],0,[])]",
+                2 => $"[AspectMethodInsertBefore({arguments[0]},\"\",{MakeSameSize(Check(arguments[1]))},[None],Default,[])]",
                 // AspectMethodInsertBeforeAttribute(string targetMethod, int[] paramShift, bool[] boxParam)
-                3 => $"[AspectMethodInsertBefore({arguments[0]},\"\",[{arguments[1]}],[{arguments[2]}],[None],0,[])]",
+                3 => $"[AspectMethodInsertBefore({arguments[0]},\"\",[{arguments[1]}],[{arguments[2]}],[None],Default,[])]",
                 _ => throw new ArgumentException($"Could not find AspectMethodInsertBeforeAttribute overload with {arguments.Length} parameters")
             },
             "AspectMethodInsertAfterAttribute" => arguments.Length switch
             {
                 // AspectMethodInsertAfterAttribute(string targetMethod)
-                1 => $"[AspectMethodInsertAfter({arguments[0]},\"\",[0],[False],[None],0,[])]",
+                1 => $"[AspectMethodInsertAfter({arguments[0]},\"\",[0],[False],[None],Default,[])]",
                 // AspectMethodInsertAfterAttribute(string targetMethod, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
                 3 => $"[AspectMethodInsertAfter({arguments[0]},\"\",[0],[False],[None],{arguments[1]},{Check(arguments[2])})]",
                 _ => throw new ArgumentException($"Could not find AspectMethodInsertAfterAttribute overload with {arguments.Length} parameters")
@@ -294,7 +294,7 @@ namespace Datadog.Trace.ClrProfiler
         else if (customAttributeArgument.Kind == TypedConstantKind.Enum)
         {
             if (customAttributeArgument.Type!.Name == "AspectFilter") { return ((AspectFilter)customAttributeArgument.Value!).ToString(); }
-            else if (customAttributeArgument.Type!.Name == "AspectType") { return ((int)customAttributeArgument.Value!).ToString(); }
+            else if (customAttributeArgument.Type!.Name == "AspectType") { return ((AspectType)customAttributeArgument.Value!).ToString(); }
             else if (customAttributeArgument.Type!.Name == "VulnerabilityType") { return ((VulnerabilityType)customAttributeArgument.Value!).ToString(); }
             var type = Resolve(customAttributeArgument);
             return Enum.ToObject(type, customAttributeArgument.Value).ToString();

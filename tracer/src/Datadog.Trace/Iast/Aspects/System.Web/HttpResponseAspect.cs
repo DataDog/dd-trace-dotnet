@@ -10,7 +10,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects.System.Web;
 
 /// <summary> HttpResponseAspect class aspect </summary>
-[AspectClass("System.Web", AspectType.IastSink, VulnerabilityType.UnvalidatedRedirect)]
+[AspectClass("System.Web", AspectType.Sink, VulnerabilityType.UnvalidatedRedirect)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class HttpResponseAspect

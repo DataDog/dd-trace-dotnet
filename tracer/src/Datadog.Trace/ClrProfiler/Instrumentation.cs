@@ -133,7 +133,6 @@ namespace Datadog.Trace.ClrProfiler
                         if (raspEnabled)
                         {
                             Log.Debug("Enabling Rasp call target category");
-                            category |= InstrumentationCategory.Rasp;
                         }
 
                         EnableTracerInstrumentations(category);
@@ -554,7 +553,7 @@ namespace Datadog.Trace.ClrProfiler
             // enabled and IAST is disabled. We don't expect RASP only instrumentation to be used in the near future.
 
             var isIast = categories.HasFlag(InstrumentationCategory.Iast);
-            var isRasp = categories.HasFlag(InstrumentationCategory.Rasp);
+            var isRasp = Security.Instance.Settings.RaspEnabled;
 
             if (isIast || isRasp)
             {
@@ -586,13 +585,14 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        // We instrument only the sinks when RASP is enabled
         internal static string[] GetRaspAspects(string[] aspects, out bool error)
         {
             try
             {
                 error = false;
                 var raspAspects = new List<string>();
-                int classAspectType = 0;
+                var classAspectType = string.Empty;
                 foreach (var aspect in aspects)
                 {
                     var trimmed = aspect.Trim();
@@ -602,13 +602,7 @@ namespace Datadog.Trace.ClrProfiler
                         var lastQuoteIndex = trimmed.LastIndexOf("\"");
                         if (lastQuoteIndex != -1)
                         {
-                            if (!int.TryParse(trimmed.Substring(lastQuoteIndex + 2).Split(',')[1], out classAspectType))
-                            {
-                                classAspectType = 0;
-                                error = true;
-                                // This should never happen
-                                Log.Error("Error reading aspectType from aspect {Aspect}", aspect);
-                            }
+                            classAspectType = trimmed.Substring(lastQuoteIndex + 2).Split(',')[1];
                         }
                         else
                         {
@@ -618,7 +612,7 @@ namespace Datadog.Trace.ClrProfiler
                         }
                     }
 
-                    if (((AspectType)classAspectType).HasFlag(AspectType.RaspSink))
+                    if (classAspectType.Equals("Sink", StringComparison.OrdinalIgnoreCase))
                     {
                         raspAspects.Add(aspect);
                     }

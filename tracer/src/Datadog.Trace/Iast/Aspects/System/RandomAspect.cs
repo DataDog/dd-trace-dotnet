@@ -10,7 +10,7 @@ namespace Datadog.Trace.Iast.Aspects;
 #nullable enable
 
 /// <summary> Random class aspect </summary>
-[AspectClass("mscorlib,System.Runtime.Extensions,System.Runtime", AspectType.IastSink, VulnerabilityType.WeakRandomness)]
+[AspectClass("mscorlib,System.Runtime.Extensions,System.Runtime", AspectType.Sink, VulnerabilityType.WeakRandomness)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class RandomAspect

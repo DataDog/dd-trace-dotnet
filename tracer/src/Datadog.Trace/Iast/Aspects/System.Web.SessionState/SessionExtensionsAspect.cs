@@ -18,7 +18,7 @@ using Microsoft.AspNetCore.Http;
 namespace Datadog.Trace.Iast.Aspects.System.Web.SessionState;
 
 /// <summary> SessionExtensionsAspect class aspects </summary>
-[AspectClass("Microsoft.AspNetCore.Http.Extensions", AspectType.IastSink, VulnerabilityType.TrustBoundaryViolation)]
+[AspectClass("Microsoft.AspNetCore.Http.Extensions", AspectType.Sink, VulnerabilityType.TrustBoundaryViolation)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class SessionExtensionsAspect

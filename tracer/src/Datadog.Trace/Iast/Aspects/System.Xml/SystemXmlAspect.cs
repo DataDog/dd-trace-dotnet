@@ -9,7 +9,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects;
 
 /// <summary> Xpath injection class aspect </summary>
-[AspectClass("System.Xml,System.Xml.ReaderWriter,System.Xml.XPath.XDocument", AspectType.IastSink, VulnerabilityType.XPathInjection)]
+[AspectClass("System.Xml,System.Xml.ReaderWriter,System.Xml.XPath.XDocument", AspectType.Sink, VulnerabilityType.XPathInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class SystemXmlAspect

@@ -11,7 +11,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects.AspNetCore.Http;
 
 /// <summary> HttpResponseAspect class aspect </summary>
-[AspectClass("Microsoft.AspNetCore.Http", AspectType.IastSink, VulnerabilityType.UnvalidatedRedirect)]
+[AspectClass("Microsoft.AspNetCore.Http", AspectType.Sink, VulnerabilityType.UnvalidatedRedirect)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class HttpResponseAspect
