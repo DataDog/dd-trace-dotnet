@@ -632,13 +632,13 @@ void Configuration::ExtractSsiState(bool& ssiDeployed, bool& ssiEnabled)
 
     ssiDeployed = true;
 
-    auto r = shared::Trim(shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed));
+    auto r = shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed);
     if (r.empty())
     {
         ssiEnabled = false;
         return;
     }
 
-    auto pos = r.find(WStr("profiling"),0);
-    ssiEnabled = (pos != -1);
+    auto pos = r.find(WStr("profiling"));
+    ssiEnabled = (pos != shared::WSTRING::npos);
 }
