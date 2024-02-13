@@ -663,7 +663,7 @@ namespace Datadog.Trace.Ci
             }
 
             Log.Debug("Waiting for agent configuration...");
-            var agentConfiguration = new DiscoveryAgentConfigurationCallback(discoveryService).WaitAndGet();
+            var agentConfiguration = new DiscoveryAgentConfigurationCallback(discoveryService).WaitAndGet(5_000);
             if (agentConfiguration is null)
             {
                 Log.Warning("Discovery service could not retrieve the agent configuration after 5 seconds.");
