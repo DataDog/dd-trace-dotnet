@@ -89,6 +89,7 @@ Configuration::Configuration()
     }
 
     _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, false);
+     ExtractSsiState(_isSsiDeployed, _isSsiActivated);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -536,6 +537,16 @@ bool Configuration::IsEtwEnabled() const
 #endif
 }
 
+bool Configuration::IsSsiDeployed() const
+{
+    return _isSsiDeployed;
+}
+
+bool Configuration::IsSsiActivated() const
+{
+    return _isSsiActivated;
+}
+
 
 bool convert_to(shared::WSTRING const& s, bool& result)
 {
@@ -603,4 +614,31 @@ bool Configuration::IsEnvironmentValueSet(shared::WSTRING const& name, T& value)
 
     value = result;
     return true;
+}
+
+void Configuration::ExtractSsiState(bool& ssiDeployed, bool& ssiEnabled)
+{
+    // if the profiler has been deployed via Single Step Instrumentation,
+    // the DD_INJECTION_ENABLED env var exists.
+    // if the profiler has been activated via Single Step Instrumentation,
+    // the DD_INJECTION_ENABLED env var should contain "profiling" (it is a list of SSI installed products)
+    //
+    if (!shared::EnvironmentExist(EnvironmentVariables::SsiDeployed))
+    {
+        ssiDeployed = false;
+        ssiEnabled = false;
+        return;
+    }
+
+    ssiDeployed = true;
+
+    auto r = shared::Trim(shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed));
+    if (r.empty())
+    {
+        ssiEnabled = false;
+        return;
+    }
+
+    auto pos = r.find(WStr("profiling"),0);
+    ssiEnabled = (pos != -1);
 }

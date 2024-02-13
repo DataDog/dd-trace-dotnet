@@ -44,6 +44,9 @@ namespace shared
     // Trim removes space from the beginning and end of a string.
     std::string Trim(const std::string& str);
 
+    // Check that an environment variable exists
+    bool EnvironmentExist(const WSTRING& name);
+
     // GetEnvironmentValue returns the environment variable value for the given
     // name. Space is trimmed.
     WSTRING GetEnvironmentValue(const WSTRING& name);
