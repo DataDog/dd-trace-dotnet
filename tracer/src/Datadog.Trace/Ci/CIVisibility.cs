@@ -705,6 +705,7 @@ namespace Datadog.Trace.Ci
             public DiscoveryAgentConfigurationCallback(IDiscoveryService discoveryService)
             {
                 _manualResetEventSlim = new ManualResetEventSlim();
+                LifetimeManager.Instance.AddShutdownTask(() => _manualResetEventSlim.Set());
                 _discoveryService = discoveryService;
                 _callback = CallBack;
                 _agentConfiguration = null;
