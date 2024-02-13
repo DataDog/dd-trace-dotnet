@@ -45,6 +45,7 @@ namespace Datadog.Trace.Configuration
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, true);
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingLogsInjection, true);
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true);
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnabled, true);
             }
         }
 
