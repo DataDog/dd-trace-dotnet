@@ -70,6 +70,12 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
         // -----------------------------------
 
+        internal DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true, UnmanagedMemoryPool? pool = null)
+        {
+            var context = new EncoderContext { ApplySafetyLimits = applySafetyLimits, Buffers = new List<IntPtr>(), Pool = Pool };
+            return Encode(ref context, remainingDepth, key, o);
+        }
+
         private static unsafe DdwafObjectStruct Encode<TInstance>(ref EncoderContext context, int remainingDepth, string? key, TInstance? o)
         {
             DdwafObjectStruct ddwafObjectStruct;
