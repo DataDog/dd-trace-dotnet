@@ -132,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler
 
                         if (raspEnabled)
                         {
-                            Log.Debug("Enabling Rasp call target category");
+                            Log.Debug("Enabling Rasp.");
                         }
 
                         EnableTracerInstrumentations(category);
