@@ -2025,7 +2025,7 @@ int CorProfiler::RegisterCallsiteAspects(WCHAR** aspects, int aspectsLength)
 
     if (_dataflow != nullptr)
     {
-        Logger::Info("Registering IAST/RASP Aspects.");
+        Logger::Info("Registering Callsite Aspects.");
         _dataflow->LoadAspects(aspects, aspectsLength);
         return aspectsLength;
     }
