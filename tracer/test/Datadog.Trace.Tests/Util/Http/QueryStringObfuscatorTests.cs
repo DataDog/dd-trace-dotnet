@@ -32,6 +32,10 @@ public class QueryStringObfuscatorTests
             new(
                 "http://google.fr/waf?pass=03cb9f67-dbbc-4cb8-b966-329951e10934&key2=val2&key3=val3",
                 "http://google.fr/waf?<redacted>&key2=val2&key3=val3"),
+            // same as above, but with different case to test case-insensitivity
+            new(
+                "http://google.fr/waf?PASS=03cb9f67-dbbc-4cb8-b966-329951e10934&key2=val2&key3=val3",
+                "http://google.fr/waf?<redacted>&key2=val2&key3=val3"),
             new(
                 "http://google.fr/waf?key1=val1&public_key=MDNjYjlmNjctZGJiYy00Y2I4LWI5NjYtMzI5OTUxZTEwOTM0&key3=val3",
                 "http://google.fr/waf?key1=val1&<redacted>&key3=val3"),
@@ -46,6 +50,10 @@ public class QueryStringObfuscatorTests
                 "https://google.fr/waf?<redacted>&key1=val1&key2=val2&<redacted>&<redacted>&key3=val3&json=%7B%20<redacted>%7D"),
             new(
                 "http://google.fr/waf?password=12345&token=token:1234&bearer 1234&ecdsa-1-1 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa= test&old-pwd2=test&ssh-dss aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa= test&application_key=test&app-key=test2",
+                "http://google.fr/waf?<redacted>&<redacted>&<redacted>&<redacted>&<redacted>&<redacted>&<redacted>&<redacted>"),
+            // same as above, but with different case to test case-insensitivity
+            new(
+                "http://google.fr/waf?PassWord=12345&Token=token:1234&Bearer 1234&ecdsa-1-1 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa= test&old-pwd2=test&ssh-dss aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa= test&application_key=test&app-key=test2",
                 "http://google.fr/waf?<redacted>&<redacted>&<redacted>&<redacted>&<redacted>&<redacted>&<redacted>&<redacted>"),
         };
         return allData.Select(e => new[] { e.Data, e.Expected });
