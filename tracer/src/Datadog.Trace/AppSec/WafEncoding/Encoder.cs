@@ -525,6 +525,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     long i => sb.Append(i),
                     uint i => sb.Append(i),
                     ulong i => sb.Append(i),
+                    float i => sb.Append(i),
                     double i => sb.Append(i),
                     bool i => sb.Append(i),
                     IEnumerable<KeyValuePair<string, JToken>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),

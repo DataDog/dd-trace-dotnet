@@ -28,6 +28,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DD_APPSEC_ENABLED": "true",
         "DD_APPSEC_BLOCKING_ENABLED": "true",
+        "DD_APPSEC_RULES" : "C:\\Repositories\\dd-trace-dotnet2\\tracer\\test\\Datadog.Trace.Security.IntegrationTests\\ApiSecurity\\ruleset-with-block.json",
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)\\shared\\bin\\monitoring-home\\",
         "CORECLR_ENABLE_PROFILING": "1",
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
@@ -46,7 +47,8 @@
         "DD_IAST_MAX_CONCURRENT_REQUESTS": "1",
         "DD_WRITE_INSTRUMENTATION_TO_DISK": "false",
         "DD_EXPERIMENTAL_API_SECURITY_ENABLED": "true",
-        "DD_API_SECURITY_REQUEST_SAMPLE_RATE": "1"
+        "DD_API_SECURITY_REQUEST_SAMPLE_RATE": "1",
+        "DD_API_SECURITY_MAX_CONCURRENT_REQUESTS": "100"
       },
       "Logging": {
         "LogLevel": {
