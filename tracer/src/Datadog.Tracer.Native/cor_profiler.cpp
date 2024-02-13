@@ -353,7 +353,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         _dataflow = new iast::Dataflow(info_);
         if (FAILED(_dataflow->Init()))
         {
-            Logger::Error("IAST/RASP Dataflow failed to initialize");
+            Logger::Error("Callsite Dataflow failed to initialize");
             DEL(_dataflow);
         }
     }
