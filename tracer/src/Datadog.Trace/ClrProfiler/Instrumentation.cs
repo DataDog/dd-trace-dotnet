@@ -565,7 +565,7 @@ namespace Datadog.Trace.ClrProfiler
                     var debugMsg = (isIast && isRasp) ? "IAST/RASP" : (isIast ? "IAST" : "RASP");
                     Log.Debug("Registering {DebugMsg} Callsite Dataflow Aspects into native library.", debugMsg);
 
-                    var aspects = NativeMethods.RegisterCallsiteAspects(inputAspects);
+                    var aspects = NativeMethods.RegisterIastAspects(inputAspects);
                     Log.Information<int, string>("{Aspects} {DebugMsg} Callsite Dataflow Aspects added to the profiler.", aspects, debugMsg);
 
                     if (isIast)
@@ -758,7 +758,7 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Information<int, int>("{Defs} IAST definitions and {Derived} IAST derived definitions added to the profiler.", defs, derived);
 
                     Log.Debug("Registering IAST Callsite Dataflow Aspects into native library.");
-                    var aspects = NativeMethods.RegisterCallsiteAspects(AspectDefinitions.Aspects);
+                    var aspects = NativeMethods.RegisterIastAspects(AspectDefinitions.Aspects);
                     Log.Information<int>("{Aspects} IAST Callsite Dataflow Aspects added to the profiler.", aspects);
                     TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.IastAspects, aspects);
                 }

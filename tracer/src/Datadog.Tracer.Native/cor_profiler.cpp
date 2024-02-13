@@ -2019,7 +2019,7 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
     return numReverts;
 }
 
-int CorProfiler::RegisterCallsiteAspects(WCHAR** aspects, int aspectsLength)
+int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
 
