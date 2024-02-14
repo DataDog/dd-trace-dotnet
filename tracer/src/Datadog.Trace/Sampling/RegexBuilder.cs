@@ -22,7 +22,7 @@ internal static class RegexBuilder
         }
 
         const RegexOptions options = RegexOptions.Compiled | RegexOptions.IgnoreCase;
-        var timeout = TimeSpan.FromMilliseconds(500);
+        var timeout = TimeSpan.FromMilliseconds(200);
 
         switch (format)
         {
