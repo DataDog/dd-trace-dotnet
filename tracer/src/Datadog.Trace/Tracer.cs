@@ -407,7 +407,7 @@ namespace Datadog.Trace
         {
             // null parent means use the currently active span
             parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
-
+            string lastParentId = null;
             TraceContext traceContext;
 
             if (parent is SpanContext parentSpanContext)
@@ -428,6 +428,8 @@ namespace Datadog.Trace
                     traceContext.SetSamplingPriority(samplingPriority);
                     traceContext.Origin = parentSpanContext.Origin;
                     traceContext.AdditionalW3CTraceState = parentSpanContext.AdditionalW3CTraceState;
+                    lastParentId = parentSpanContext.LastParentId;
+                    parentSpanContext.LastParentId = null;
                 }
             }
             else
@@ -462,7 +464,9 @@ namespace Datadog.Trace
                 traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits);
             }
 
-            return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+            var context = new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+            context.LastParentId = lastParentId;
+            return context;
         }
 
         /// <remarks>
