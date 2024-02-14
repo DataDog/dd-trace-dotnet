@@ -50,7 +50,7 @@ namespace Datadog.Trace.Propagators
         // the key used for the last seen parent Datadog span ID in the key/value pairs embedded inside the "dd" value
         // "key1=value1,dd=s:1;o:rum;lp.id:0123456789abcdef,key2=value2"
         //                           ^^^^^
-        private const string TraceStateLastParentKey = "lp:id";
+        private const string TraceStateLastParentKey = "lp.id";
 
         // character bounds validation
         private const char LowerBound = '\u0020'; // decimal: 32, ' ' (space)
