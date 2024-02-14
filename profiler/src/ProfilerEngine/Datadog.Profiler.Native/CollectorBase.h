@@ -20,6 +20,7 @@
 #include "IThreadsCpuManager.h"
 #include "ProviderBase.h"
 #include "RawSample.h"
+#include "RawSamples.hpp"
 #include "SamplesEnumerator.h"
 #include "SampleValueTypeProvider.h"
 
@@ -62,7 +63,8 @@ public:
         _pFrameStore{pFrameStore},
         _pAppDomainStore{pAppDomainStore},
         _pRuntimeIdStore{pRuntimeIdStore},
-        _pThreadsCpuManager{pThreadsCpuManager}
+        _pThreadsCpuManager{pThreadsCpuManager},
+        _collectedSamples{}
     {
         _valueOffsets = std::move(valueOffsets);
     }
@@ -86,9 +88,7 @@ public:
 
     void Add(TRawSample&& sample) override
     {
-        std::lock_guard<std::mutex> lock(_rawSamplesLock);
-
-        _collectedSamples.push_back(std::forward<TRawSample>(sample));
+        _collectedSamples.Add(std::forward<TRawSample>(sample));
     }
 
     void TransformRawSample(const TRawSample& rawSample, std::shared_ptr<Sample>& sample)
@@ -130,7 +130,7 @@ public:
 
     std::unique_ptr<SamplesEnumerator> GetSamples() override
     {
-        return std::make_unique<SamplesEnumeratorImpl>(FetchRawSamples(), this);
+        return std::make_unique<SamplesEnumeratorImpl>(_collectedSamples.FetchRawSamples(), this);
     }
 
 protected:
@@ -145,13 +145,14 @@ protected:
     }
 
 private:
+
     class SamplesEnumeratorImpl : public SamplesEnumerator
     {
     public:
-        SamplesEnumeratorImpl(std::list<TRawSample> rawSamples, CollectorBase<TRawSample>* collector) :
+        SamplesEnumeratorImpl(RawSamples<TRawSample> rawSamples, CollectorBase<TRawSample>* collector) :
             _rawSamples{std::move(rawSamples)}, _collector{collector}
         {
-            _currentRawSample = _rawSamples.begin();
+            _currentRawSample = _rawSamples.cbegin();
         }
 
         // Inherited via SamplesEnumerator
@@ -162,7 +163,7 @@ private:
 
         bool MoveNext(std::shared_ptr<Sample>& sample) override
         {
-            if (_currentRawSample == _rawSamples.end())
+            if (_currentRawSample == _rawSamples.cend())
                 return false;
 
             _collector->TransformRawSample(*_currentRawSample, sample);
@@ -172,30 +173,10 @@ private:
         }
 
     private:
-        std::list<TRawSample> _rawSamples;
+        RawSamples<TRawSample> _rawSamples;
         CollectorBase<TRawSample>* _collector;
-        typename std::list<TRawSample>::iterator _currentRawSample;
+        typename RawSamples<TRawSample>::const_iterator _currentRawSample;
     };
-
-    std::list<TRawSample> FetchRawSamples()
-    {
-        std::lock_guard<std::mutex> lock(_rawSamplesLock);
-
-        std::list<TRawSample> input = std::move(_collectedSamples); // _collectedSamples is empty now
-        return input;
-    }
-
-    std::list<std::shared_ptr<Sample>> TransformRawSamples(std::list<TRawSample>&& input)
-    {
-        std::list<std::shared_ptr<Sample>> samples;
-
-        for (auto const& rawSample : input)
-        {
-            samples.push_back(TransformRawSample(rawSample));
-        }
-
-        return samples;
-    }
 
 private:
     void SetAppDomainDetails(const TRawSample& rawSample, std::shared_ptr<Sample>& sample)
@@ -274,7 +255,6 @@ private:
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
     bool _isNativeFramesEnabled = false;
 
-    std::mutex _rawSamplesLock;
-    std::list<TRawSample> _collectedSamples;
+    RawSamples<TRawSample> _collectedSamples;
     std::vector<SampleValueTypeProvider::Offset> _valueOffsets;
 };
