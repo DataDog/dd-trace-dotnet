@@ -206,7 +206,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
         internal string? ApiKey { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether logs injection has been explicitly enabled or disabled
+        /// Gets or sets a value indicating whether logs injection is enabled or disabled
         /// </summary>
         internal bool LogsInjectionEnabled { get; set; }
     }

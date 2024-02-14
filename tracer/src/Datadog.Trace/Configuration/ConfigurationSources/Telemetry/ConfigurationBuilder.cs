@@ -243,8 +243,10 @@ internal readonly struct ConfigurationBuilder
         // ****************
         // Dictionary accessors
         // ****************
+        [return: NotNullIfNotNull(nameof(getDefaultValue))]
         public IDictionary<string, string>? AsDictionary(Func<IDictionary<string, string>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
 
+        [return: NotNullIfNotNull(nameof(getDefaultValue))]
         public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, Func<IDictionary<string, string>>? getDefaultValue = null)
         {
             // TODO: Handle/allow default values + validation?
@@ -263,7 +265,9 @@ internal readonly struct ConfigurationBuilder
             {
                 // Horrible that we have to stringify the dictionary, but that's all that's available in the telemetry api
                 var defaultValue = getDefaultValue();
-                Telemetry.Record(Key, string.Join(", ", defaultValue.Select(kvp => $"{kvp.Key}:{kvp.Value}")), true, ConfigurationOrigins.Default);
+                var defaultValueAsString = defaultValue.Count == 0 ? string.Empty : string.Join(", ", defaultValue!.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
+
+                Telemetry.Record(Key, defaultValueAsString, true, ConfigurationOrigins.Default);
                 return defaultValue;
             }
 
