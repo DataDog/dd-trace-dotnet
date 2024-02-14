@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
-    <TargetFramework Condition="$(OS.StartsWith('Windows')) AND '$(NUKE_NOTIFY)' != ''">$(TargetFramework)-windows10.0.17763</TargetFramework>
+    <TargetFramework Condition="$(OS.StartsWith('Windows')) AND '$(NUKE_NOTIFY)' != ''">$(TargetFramework)-windows10.0.19041</TargetFramework>
     <DefineConstants Condition="$(OS.StartsWith('Windows')) AND '$(NUKE_NOTIFY)' != ''">$(DefineConstants);NUKE_NOTIFY</DefineConstants>
     <RollForward>LatestMajor</RollForward>
     <RootNamespace></RootNamespace>
