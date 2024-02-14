@@ -45,19 +45,35 @@ namespace Datadog.Trace
             return ExtractInternal(carrier, getter);
         }
 
-        internal static SpanContext? ExtractInternal<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
+        /// <inheritdoc />
+        [PublicApi]
+        public ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string messageType, string source)
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_ExtractIncludingDsm);
+            return ExtractInternal(carrier, getter, messageType, source);
+        }
+
+        internal static SpanContext? ExtractInternal<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string? messageType = null, string? source = null)
         {
             var spanContext = SpanContextPropagator.Instance.Extract(carrier, getter);
 
             if (spanContext is not null
-             && Tracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm
-             && getter(carrier, DataStreamsPropagationHeaders.TemporaryBase64PathwayContext).FirstOrDefault() is { Length: > 0 } base64PathwayContext)
+             && Tracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm)
             {
-                // Kafka special: check if there is a pathway context to recover from the message. If so, just set the pathway on the span context so that it'll be picked by child spans.
-                // This allows users who consume in batch to recover the correct pathway by calling this method before producing a new message downstream from this one.
-                // (otherwise, only the pathway of the last consumed message would be used)
-                var currentPathwayContext = TryGetPathwayContext(base64PathwayContext);
-                spanContext.ManuallySetPathwayContextToPairMessages(currentPathwayContext);
+                if (getter(carrier, DataStreamsPropagationHeaders.TemporaryBase64PathwayContext).FirstOrDefault() is { Length: > 0 } base64PathwayContext)
+                {
+                    // Kafka special: check if there is a pathway context to recover from the message. If so, just set the pathway on the span context so that it'll be picked by child spans.
+                    // This allows users who consume in batch to recover the correct pathway by calling this method before producing a new message downstream from this one.
+                    // (otherwise, only the pathway of the last consumed message would be used)
+                    var currentPathwayContext = TryGetPathwayContext(base64PathwayContext);
+                    spanContext.ManuallySetPathwayContextToPairMessages(currentPathwayContext);
+                } // otherwise, set a normal checkpoint if parameters are provided
+                else if (!string.IsNullOrEmpty(messageType) && !string.IsNullOrEmpty(source))
+                {
+                    var parentPathwayContext = dsm.ExtractPathwayContextAsBase64String(new CarrierWithDelegate<TCarrier>(carrier, getter));
+                    var edgeTags = new[] { "direction:in", $"topic:{source}", $"type:{messageType}" };
+                    spanContext.SetCheckpoint(dsm, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0, parentPathwayContext);
+                }
             }
 
             return spanContext;
