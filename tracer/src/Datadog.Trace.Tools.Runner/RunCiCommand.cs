@@ -126,9 +126,11 @@ namespace Datadog.Trace.Tools.Runner
             var hasEvpProxy = !string.IsNullOrEmpty(agentConfiguration?.EventPlatformProxyEndpoint);
             if (agentless || hasEvpProxy)
             {
+                Log.Information<long>("[{Elapsed}ms] Before Initialization.", sw.ElapsedMilliseconds);
                 // Initialize CI Visibility with the current settings
                 Log.Debug("RunCiCommand: Initialize CI Visibility for the runner.");
                 CIVisibility.InitializeFromRunner(ciVisibilitySettings, discoveryService, hasEvpProxy);
+                Log.Information<long>("[{Elapsed}ms] After Initialization.", sw.ElapsedMilliseconds);
 
                 // Upload git metadata by default (unless is disabled explicitly) or if ITR is enabled (required).
                 Log.Debug("RunCiCommand: Uploading repository changes.");
