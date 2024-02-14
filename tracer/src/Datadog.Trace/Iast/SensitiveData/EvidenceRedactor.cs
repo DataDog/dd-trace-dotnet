@@ -23,9 +23,6 @@ internal class EvidenceRedactor
 
     public EvidenceRedactor(string keysPattern, string valuesPattern, TimeSpan timeout, IDatadogLogger? logger = null)
     {
-#if NETCOREAPP3_1_OR_GREATER
-        AppDomain.CurrentDomain.SetData("REGEX_NONBACKTRACKING_MAX_AUTOMATA_SIZE", 2000);
-#endif
         _timeout = timeout;
         _logger = logger;
 

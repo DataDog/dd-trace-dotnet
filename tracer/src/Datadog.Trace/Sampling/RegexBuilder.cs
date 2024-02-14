@@ -5,13 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-
-#if NETCOREAPP3_1_OR_GREATER
-using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
-#else
 using System.Text.RegularExpressions;
-#endif
 
 #nullable enable
 
@@ -27,13 +21,8 @@ internal static class RegexBuilder
             return null;
         }
 
-#if NETCOREAPP3_1_OR_GREATER
-        const RegexOptions options = RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.NonBacktracking;
-#else
         const RegexOptions options = RegexOptions.Compiled | RegexOptions.IgnoreCase;
-#endif
-
-        var timeout = TimeSpan.FromSeconds(1);
+        var timeout = TimeSpan.FromMilliseconds(500);
 
         switch (format)
         {

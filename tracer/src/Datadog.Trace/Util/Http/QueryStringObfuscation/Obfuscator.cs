@@ -7,13 +7,8 @@
 #pragma warning disable SA1001, SA1116, SA1118
 
 using System;
-#if !NETCOREAPP3_1_OR_GREATER
 using System.Text.RegularExpressions;
-#endif
 using Datadog.Trace.Logging;
-#if NETCOREAPP3_1_OR_GREATER
-using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
-#endif
 
 namespace Datadog.Trace.Util.Http.QueryStringObfuscation
 {
@@ -26,19 +21,14 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
 
         internal Obfuscator(string pattern, TimeSpan timeout, IDatadogLogger logger)
         {
-#if NETCOREAPP3_1_OR_GREATER
-            AppDomain.CurrentDomain.SetData("REGEX_NONBACKTRACKING_MAX_AUTOMATA_SIZE", 2000);
-#endif
             _timeout = timeout;
             _logger = logger;
 
-            var options = RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace;
+            const RegexOptions options = RegexOptions.Compiled |
+                                         RegexOptions.IgnoreCase |
+                                         RegexOptions.IgnorePatternWhitespace;
 
-#if NETCOREAPP3_1_OR_GREATER
-            options |= RegexOptions.NonBacktracking;
-#endif
-
-            _regex = new(pattern, options, _timeout);
+            _regex = new Regex(pattern, options, _timeout);
         }
 
         /// <summary>
