@@ -117,22 +117,22 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     result->SetUnixTimeUtc(GetCurrentTimestamp());
     result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
 
-    RawAllocationSample rawSample;
-    rawSample.Timestamp = result->GetUnixTimeUtc();
-    rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
-    rawSample.SpanId = result->GetSpanId();
-    rawSample.AppDomainId = result->GetAppDomainId();
-    result->CopyInstructionPointers(rawSample.Stack);
-    rawSample.ThreadInfo = threadInfo;
-    rawSample.AllocationSize = objectSize;
-    rawSample.Address = address;
-    rawSample.MethodTable = classId;
+    auto rawSample = CreateRawSample();
+    rawSample->Timestamp = result->GetUnixTimeUtc();
+    rawSample->LocalRootSpanId = result->GetLocalRootSpanId();
+    rawSample->SpanId = result->GetSpanId();
+    rawSample->AppDomainId = result->GetAppDomainId();
+    result->CopyInstructionPointers(rawSample->Stack);
+    rawSample->ThreadInfo = threadInfo;
+    rawSample->AllocationSize = objectSize;
+    rawSample->Address = address;
+    rawSample->MethodTable = classId;
 
     // The provided type name contains the metadata-based `xx syntax for generics instead of <>
     // So rely on the frame store to get a C#-like representation like what is done for frames
-    if (!_pFrameStore->GetTypeName(classId, rawSample.AllocationClass))
+    if (!_pFrameStore->GetTypeName(classId, rawSample->AllocationClass))
     {
-        rawSample.AllocationClass = shared::ToString(shared::WSTRING(typeName));
+        rawSample->AllocationClass = shared::ToString(shared::WSTRING(typeName));
     }
 
     // the listener is the live objects profiler: could be null if disabled
@@ -141,7 +141,6 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
         _pListener->OnAllocation(rawSample);
     }
 
-    Add(std::move(rawSample));
     _sampledAllocationsCountMetric->Incr();
     _sampledAllocationsSizeMetric->Add((double_t)objectSize);
 }

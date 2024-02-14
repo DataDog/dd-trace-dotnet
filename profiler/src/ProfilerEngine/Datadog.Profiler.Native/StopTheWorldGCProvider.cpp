@@ -34,17 +34,15 @@ StopTheWorldGCProvider::StopTheWorldGCProvider(
 
 void StopTheWorldGCProvider::OnSuspension(uint64_t timestamp, int32_t number, uint32_t generation, uint64_t pauseDuration)
 {
-    RawStopTheWorldSample rawSample;
-    rawSample.Timestamp = timestamp;
-    rawSample.LocalRootSpanId = 0;
-    rawSample.SpanId = 0;
-    rawSample.AppDomainId = (AppDomainID)nullptr;
-    rawSample.ThreadInfo = nullptr;
-    rawSample.Stack.clear();
+    auto rawSample = CreateRawSample();
+    rawSample->Timestamp = timestamp;
+    rawSample->LocalRootSpanId = 0;
+    rawSample->SpanId = 0;
+    rawSample->AppDomainId = (AppDomainID)nullptr;
+    rawSample->ThreadInfo = nullptr;
+    rawSample->Stack.clear();
 
-    rawSample.Number = number;
-    rawSample.Generation = generation;
-    rawSample.Duration = pauseDuration;
-
-    Add(std::move(rawSample));
+    rawSample->Number = number;
+    rawSample->Generation = generation;
+    rawSample->Duration = pauseDuration;
 }

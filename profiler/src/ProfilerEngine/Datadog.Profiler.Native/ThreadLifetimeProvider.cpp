@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "ThreadLifetimeProvider.h"
+
 #include "SampleValueTypeProvider.h"
 #include "GarbageCollectionProvider.h"
 #include "OpSysTools.h"
@@ -24,26 +25,26 @@ ThreadLifetimeProvider::ThreadLifetimeProvider(
 
 void ThreadLifetimeProvider::OnThreadStart(std::shared_ptr<ManagedThreadInfo> pThreadInfo)
 {
-    Add(CreateSample(pThreadInfo, ThreadEventKind::Start));
+    CreateSample(pThreadInfo, ThreadEventKind::Start);
 }
 
 void ThreadLifetimeProvider::OnThreadStop(std::shared_ptr<ManagedThreadInfo> pThreadInfo)
 {
-    Add(CreateSample(pThreadInfo, ThreadEventKind::Stop));
+    CreateSample(pThreadInfo, ThreadEventKind::Stop);
 }
 
-RawThreadLifetimeSample ThreadLifetimeProvider::CreateSample(std::shared_ptr<ManagedThreadInfo> pThreadInfo, ThreadEventKind kind)
+void ThreadLifetimeProvider::CreateSample(std::shared_ptr<ManagedThreadInfo> pThreadInfo, ThreadEventKind kind)
 {
-    RawThreadLifetimeSample rawSample;
-    rawSample.Timestamp = GetCurrentTimestamp();
-    rawSample.LocalRootSpanId = 0;
-    rawSample.SpanId = 0;
-    rawSample.AppDomainId = (AppDomainID) nullptr;
-    rawSample.Stack.clear();
-    rawSample.ThreadInfo = std::move(pThreadInfo);
-    rawSample.Kind = kind;
+    auto rawSample = CreateRawSample();
+    rawSample->Timestamp = GetCurrentTimestamp();
+    rawSample->LocalRootSpanId = 0;
+    rawSample->SpanId = 0;
+    rawSample->AppDomainId = (AppDomainID) nullptr;
+    rawSample->Stack.clear();
+    rawSample->ThreadInfo = std::move(pThreadInfo);
+    rawSample->Kind = kind;
 
-    return rawSample;
+    //the destructor will add the raw sample in the underlying storage
 }
 
 uint64_t ThreadLifetimeProvider::GetCurrentTimestamp()

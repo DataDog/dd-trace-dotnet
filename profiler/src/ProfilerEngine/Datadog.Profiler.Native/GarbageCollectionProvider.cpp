@@ -76,23 +76,22 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
         _compactingGen2CountMetric->Incr();
     }
 
-    RawGarbageCollectionSample rawSample;
-    rawSample.Timestamp = endTimestamp;
-    rawSample.LocalRootSpanId = 0;
-    rawSample.SpanId = 0;
-    rawSample.AppDomainId = (AppDomainID) nullptr;
-    rawSample.ThreadInfo = nullptr;
-    rawSample.Stack.clear();
+    auto rawSample = CreateRawSample();
+    rawSample->Timestamp = endTimestamp;
+    rawSample->LocalRootSpanId = 0;
+    rawSample->SpanId = 0;
+    rawSample->AppDomainId = (AppDomainID) nullptr;
+    rawSample->ThreadInfo = nullptr;
+    rawSample->Stack.clear();
 
-    rawSample.Number = number;
-    rawSample.Generation = generation;
-    rawSample.Duration = pauseDuration;
-    rawSample.TotalDuration = totalDuration;
-    rawSample.PauseDuration = pauseDuration;
-    rawSample.Reason = reason;
-    rawSample.Type = type;
-    rawSample.IsCompacting = isCompacting;
-    Add(std::move(rawSample));
+    rawSample->Number = number;
+    rawSample->Generation = generation;
+    rawSample->Duration = pauseDuration;
+    rawSample->TotalDuration = totalDuration;
+    rawSample->PauseDuration = pauseDuration;
+    rawSample->Reason = reason;
+    rawSample->Type = type;
+    rawSample->IsCompacting = isCompacting;
 }
 
 void GarbageCollectionProvider::OnGarbageCollectionStart(

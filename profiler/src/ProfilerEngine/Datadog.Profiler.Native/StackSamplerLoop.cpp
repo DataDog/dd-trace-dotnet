@@ -591,6 +591,19 @@ int64_t StackSamplerLoop::ComputeWallTime(int64_t currentTimestampNs, int64_t pr
     }
 }
 
+template <class TRawSample>
+void PersistRawSample(RawSampleHolder<TRawSample> rawSample, StackSnapshotResultBuffer const* pSnapshotResult, std::shared_ptr<ManagedThreadInfo>& pThreadInfo)
+{
+    rawSample->Timestamp = pSnapshotResult->GetUnixTimeUtc();
+    rawSample->LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
+    rawSample->SpanId = pSnapshotResult->GetSpanId();
+    rawSample->AppDomainId = pSnapshotResult->GetAppDomainId();
+    pSnapshotResult->CopyInstructionPointers(rawSample->Stack);
+    rawSample->ThreadInfo = pThreadInfo;
+    rawSample->Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
+    // holder desctrutor will persist in the underlying storage
+}
+
 void StackSamplerLoop::PersistStackSnapshotResults(
     StackSnapshotResultBuffer const* pSnapshotResult,
     std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
@@ -604,28 +617,12 @@ void StackSamplerLoop::PersistStackSnapshotResults(
     if (profilingType == PROFILING_TYPE::WallTime)
     {
         // add the WallTime sample to the lipddprof pipeline
-        RawWallTimeSample rawSample;
-        rawSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
-        rawSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
-        rawSample.SpanId = pSnapshotResult->GetSpanId();
-        rawSample.AppDomainId = pSnapshotResult->GetAppDomainId();
-        pSnapshotResult->CopyInstructionPointers(rawSample.Stack);
-        rawSample.ThreadInfo = pThreadInfo;
-        rawSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
-        _pWallTimeCollector->Add(std::move(rawSample));
+        PersistRawSample(_pWallTimeCollector->CreateRawSample(), pSnapshotResult, pThreadInfo);
     }
     else
     if (profilingType == PROFILING_TYPE::CpuTime)
     {
         // add the CPU sample to the lipddprof pipeline if needed
-        RawCpuSample rawCpuSample;
-        rawCpuSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
-        rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
-        rawCpuSample.SpanId = pSnapshotResult->GetSpanId();
-        rawCpuSample.AppDomainId = pSnapshotResult->GetAppDomainId();
-        pSnapshotResult->CopyInstructionPointers(rawCpuSample.Stack);
-        rawCpuSample.ThreadInfo = pThreadInfo;
-        rawCpuSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
-        _pCpuTimeCollector->Add(std::move(rawCpuSample));
+        PersistRawSample(_pCpuTimeCollector->CreateRawSample(), pSnapshotResult, pThreadInfo);
     }
 }

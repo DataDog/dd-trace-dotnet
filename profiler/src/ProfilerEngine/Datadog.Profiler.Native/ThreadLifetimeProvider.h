@@ -35,6 +35,6 @@ public:
     void OnThreadStop(std::shared_ptr<ManagedThreadInfo> threadInfo) override;
 
 private:
-    RawThreadLifetimeSample CreateSample(std::shared_ptr<ManagedThreadInfo> pThreadInfo, ThreadEventKind kind);
+    void CreateSample(std::shared_ptr<ManagedThreadInfo> pThreadInfo, ThreadEventKind kind);
     uint64_t GetCurrentTimestamp();
 };

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "RawSamples.hpp"
 
 template <class TRawSample>
 class ICollector
@@ -11,5 +12,5 @@ public:
     virtual ~ICollector() = default;
 
 public:
-    virtual void Add(TRawSample&& rawSample) = 0;
+    virtual RawSampleHolder<TRawSample> CreateRawSample() = 0;
 };
