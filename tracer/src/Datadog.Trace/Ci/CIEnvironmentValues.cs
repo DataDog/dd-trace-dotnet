@@ -288,22 +288,31 @@ namespace Datadog.Trace.Ci
                 return pivotFolder;
             }
 
-            var folderSeparator = Path.DirectorySeparatorChar;
-            if (pivotFolder[pivotFolder.Length - 1] != folderSeparator)
+            try
             {
-                pivotFolder += folderSeparator;
+                var folderSeparator = Path.DirectorySeparatorChar;
+                if (pivotFolder[pivotFolder.Length - 1] != folderSeparator)
+                {
+                    pivotFolder += folderSeparator;
+                }
+
+                var pivotFolderUri = new Uri(pivotFolder);
+                var absolutePathUri = new Uri(absolutePath);
+                var relativeUri = pivotFolderUri.MakeRelativeUri(absolutePathUri);
+                if (useOSSeparator)
+                {
+                    return Uri.UnescapeDataString(
+                        relativeUri.ToString().Replace('/', folderSeparator));
+                }
+
+                return Uri.UnescapeDataString(relativeUri.ToString());
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error creating a relative path for '{AbsolutePath}' from '{BasePath}'", absolutePath, pivotFolder);
             }
 
-            var pivotFolderUri = new Uri(pivotFolder);
-            var absolutePathUri = new Uri(absolutePath);
-            var relativeUri = pivotFolderUri.MakeRelativeUri(absolutePathUri);
-            if (useOSSeparator)
-            {
-                return Uri.UnescapeDataString(
-                    relativeUri.ToString().Replace('/', folderSeparator));
-            }
-
-            return Uri.UnescapeDataString(relativeUri.ToString());
+            return absolutePath;
         }
 
         internal void ReloadEnvironmentData()
