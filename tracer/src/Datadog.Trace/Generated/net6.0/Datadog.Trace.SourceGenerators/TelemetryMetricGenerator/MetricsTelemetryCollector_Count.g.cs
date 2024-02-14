@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
-    private const int CountLength = 339;
+    private const int CountLength = 340;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> values.
@@ -366,9 +366,10 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "source_type:http.request.cookie.value" }),
             new(new[] { "source_type:http.request.matrix.parameter" }),
             new(new[] { "source_type:http.request.uri" }),
-            // executed.propagation, index = 316
+            new(new[] { "source_type:graphql.resolver.argument" }),
+            // executed.propagation, index = 317
             new(null),
-            // executed.sink, index = 317
+            // executed.sink, index = 318
             new(new[] { "vulnerability_type:none" }),
             new(new[] { "vulnerability_type:weak_cipher" }),
             new(new[] { "vulnerability_type:weak_hash" }),
@@ -390,7 +391,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "vulnerability_type:stacktrace_leak" }),
             new(new[] { "vulnerability_type:nosql_mongodb_injection" }),
             new(new[] { "vulnerability_type:xpath_injection" }),
-            // request.tainted, index = 338
+            // request.tainted, index = 339
             new(null),
         };
 
@@ -400,7 +401,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new int[]{ 4, 67, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 67, 1, 22, 3, 1, 1, 5, 12, 1, 21, 1, };
+        = new int[]{ 4, 67, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 67, 1, 22, 3, 1, 1, 5, 13, 1, 21, 1, };
 
     public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
     {
@@ -581,17 +582,17 @@ internal partial class MetricsTelemetryCollector
 
     public void RecordCountIastExecutedPropagations(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[316], increment);
+        Interlocked.Add(ref _buffer.Count[317], increment);
     }
 
     public void RecordCountIastExecutedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks tag, int increment = 1)
     {
-        var index = 317 + (int)tag;
+        var index = 318 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastRequestTainted(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[338], increment);
+        Interlocked.Add(ref _buffer.Count[339], increment);
     }
 }

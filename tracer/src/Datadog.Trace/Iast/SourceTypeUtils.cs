@@ -33,6 +33,7 @@ internal static class SourceTypeUtils
         SourceType.CookieName => "http_request_cookie_name",
         SourceType.CookieValue => "http_request_cookie_value",
         SourceType.RequestUri => "http_request_uri",
+        SourceType.GraphQlResolverArgument => "graphql_resolver_argument",
         _ => throw new Exception($"SourceTypeName TEXT for value {value} not defined in GetAsTag")
     };
 
@@ -51,6 +52,7 @@ internal static class SourceTypeUtils
             SourceType.CookieName => "http.request.cookie.name",
             SourceType.CookieValue => "http.request.cookie.value",
             SourceType.RequestUri => "http.request.uri",
+            SourceType.GraphQlResolverArgument => "graphql.resolver.argument",
             _ => throw new Exception($"SourceTypeName TEXT for value {value} not defined")
         };
 
@@ -69,6 +71,7 @@ internal static class SourceTypeUtils
             "http.request.cookie.name" => SourceType.CookieName,
             "http.request.cookie.value" => SourceType.CookieValue,
             "http.request.uri" => SourceType.RequestUri,
+            "graphql.resolver.argument" => SourceType.GraphQlResolverArgument,
             _ => throw new Exception($"SourceTypeName VALUE for text {value ?? "NULL"} not defined")
         };
 }

@@ -174,6 +174,11 @@ internal class IastRequestContext
         }
     }
 
+    internal void AddGraphQlResolverArgument(string name, string value)
+    {
+        _taintedObjects.TaintInputString(value, new Source(SourceType.GraphQlResolverArgument, name, value));
+    }
+
     internal TaintedObjects GetTaintedObjects()
     {
         return _taintedObjects;
@@ -276,6 +281,7 @@ internal class IastRequestContext
                 helper.AddExecutedSource(IastInstrumentedSources.CookieValue);
                 helper.AddExecutedSource(IastInstrumentedSources.RequestPath);
                 helper.AddExecutedSource(IastInstrumentedSources.RequestQuery);
+                helper.AddExecutedSource(IastInstrumentedSources.GraphQlResolverArgument);
             }
 
             if (request.Query != null)
