@@ -7,6 +7,7 @@ using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -46,6 +47,7 @@ namespace Datadog.Trace.Tools.Runner
         private async Task ExecuteAsync(InvocationContext context)
         {
             // CI Visibility mode is enabled.
+            var sw = Stopwatch.StartNew();
             var ciVisibilitySettings = CIVisibility.Settings;
 
             var args = _runSettings.Command.GetValue(context);
@@ -308,7 +310,7 @@ namespace Datadog.Trace.Tools.Runner
                     return;
                 }
 
-                Log.Debug("RunCiCommand: Launching: {Value}", command);
+                Log.Information<long, string>("RunCiCommand: [{Elapsed}ms] Launching: {Value}", sw.ElapsedMilliseconds, command);
                 var processInfo = Utils.GetProcessStartInfo(program, Environment.CurrentDirectory, profilerEnvironmentVariables);
                 if (!string.IsNullOrEmpty(arguments))
                 {
@@ -317,7 +319,7 @@ namespace Datadog.Trace.Tools.Runner
 
                 exitCode = Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
                 session?.SetTag(TestTags.CommandExitCode, exitCode);
-                Log.Debug<int>("RunCiCommand: Finished with exit code: {Value}", exitCode);
+                Log.Information<long, int>("RunCiCommand: [{Elapsed}ms] Finished with exit code: {Value}", sw.ElapsedMilliseconds, exitCode);
 
                 if (!testSkippingEnabled)
                 {
@@ -407,6 +409,8 @@ namespace Datadog.Trace.Tools.Runner
                     await session.CloseAsync(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail).ConfigureAwait(false);
                 }
             }
+
+            Log.Information<long>("RunCiCommand: [{Elapsed}ms] Finishing", sw.ElapsedMilliseconds);
         }
     }
 }
