@@ -73,16 +73,6 @@ namespace UpdateVendors
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Datadog.Sketches", AddNullableDirectiveTransform));
 
             Add(
-                libraryName: "IndieSystem.Text.RegularExpressions",
-                version: "0.6",
-                downloadUrl: "https://github.com/robertpi/IndieRegex/archive/refs/tags/v0.6.zip",
-                pathToSrc: new[] { "IndieRegex-0.6", "src" },
-                // Perform standard CS file transform with additional '#nullable enable' directive at the beginning of the files, since the vendored project was built with <Nullable>enable</Nullable>
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "IndieSystem.Text.RegularExpressions",
-                    AddIfNetcoreapp31OrGreater, AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma),
-                relativePathsToExclude: new[] { "additional/HashCode.cs", "SR.resx" });
-
-            Add(
                 libraryName: "System.Collections.Immutable",
                 version: "7.0.0",
                 downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
