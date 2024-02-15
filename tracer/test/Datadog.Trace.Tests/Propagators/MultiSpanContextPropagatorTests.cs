@@ -697,7 +697,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { "00-11111111111111110000000000000004-000000003ade68b1-01" });
             headers.Setup(h => h.GetValues("tracestate"))
-                   .Returns(new[] { "dd=s:2;t.tid:1111111111111111,foo=1" });
+                   .Returns(new[] { "dd=s:2;lp.id:0123456789abcdef;t.tid:1111111111111111,foo=1" });
             headers.Setup(h => h.GetValues("x-datadog-trace-id"))
                    .Returns(new[] { "4" });
             headers.Setup(h => h.GetValues("x-datadog-parent-id"))
@@ -733,6 +733,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
+                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use lp.id
                        });
         }
 

@@ -245,6 +245,28 @@ public class SpanMessagePackFormatterTests
         }
     }
 
+    [Fact]
+    public async Task LastParentId_Tag()
+    {
+        var mockApi = new MockApi();
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, false } });
+        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null);
+        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+
+        using (var scope = tracer.StartActiveInternal("root"))
+        {
+            scope.Span.Context.LastParentId = "0123456789abcdef";
+        }
+
+        await tracer.FlushAsync();
+        var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(1));
+
+        var span0 = traceChunks[0][0];
+        var tagValue0 = span0.GetTag("_dd.lp.id");
+
+        tagValue0.Should().Be("0123456789abcdef");
+    }
+
     private readonly struct TagsProcessor<T> : IItemProcessor<T>
     {
         private readonly Dictionary<string, T> _expectedTags;

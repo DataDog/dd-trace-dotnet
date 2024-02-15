@@ -285,7 +285,36 @@ namespace Datadog.Trace.Tests.Propagators
         public void ParseTraceState(string header, int? samplingPriority, string origin, string propagatedTags, string additionalValues)
         {
             var traceState = W3CTraceContextPropagator.ParseTraceState(header);
-            var expected = new W3CTraceState(samplingPriority, origin, null, propagatedTags, additionalValues);
+            var lastParent = string.IsNullOrEmpty(header) ? null : "0000000000000000";
+            var expected = new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues);
+            traceState.Should().BeEquivalentTo(expected);
+        }
+
+        [Fact]
+        public void ParseTraceStateWithLastParent()
+        {
+            var header = "dd=s:2;o:rum;lp.id:0123456789abcdef;t.dm:-4;t.usr.id:12345~,key1=value1";
+            var traceState = W3CTraceContextPropagator.ParseTraceState(header);
+            var samplingPriority = 2;
+            var origin = "rum";
+            var lastParent = "0123456789abcdef";
+            var propagatedTags = "_dd.p.dm=-4,_dd.p.usr.id=12345=";
+            var additionalValues = "key1=value1";
+            var expected = new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues);
+            traceState.Should().BeEquivalentTo(expected);
+        }
+
+        [Fact]
+        public void MissingLastParentId_ShouldBe_Zeroes()
+        {
+            var header = "dd=s:2;o:rum;t.dm:-4;t.usr.id:12345~,key1=value1";
+            var traceState = W3CTraceContextPropagator.ParseTraceState(header);
+            var samplingPriority = 2;
+            var origin = "rum";
+            var lastParent = "0000000000000000";
+            var propagatedTags = "_dd.p.dm=-4,_dd.p.usr.id=12345=";
+            var additionalValues = "key1=value1";
+            var expected = new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues);
             traceState.Should().BeEquivalentTo(expected);
         }
 
@@ -323,6 +352,7 @@ namespace Datadog.Trace.Tests.Propagators
                            IsRemote = true,
                            Parent = null,
                            ParentId = null,
+                           LastParentId = "0000000000000000",
                        });
         }
 
@@ -405,6 +435,7 @@ namespace Datadog.Trace.Tests.Propagators
                            IsRemote = true,
                            Parent = null,
                            ParentId = null,
+                           LastParentId = "0000000000000000"
                        });
         }
 
