@@ -129,6 +129,7 @@ add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib libunwind-lib corecl
 # ******************************************************
 # Define shared target
 # ******************************************************
+set(dd_profiling_linker_script "${CMAKE_SOURCE_DIR}/datadog_profiling.version")
 
 add_library(${PROFILER_SHARED_LIB_NAME} SHARED
     ../Datadog.Profiler.Native/DllMain.cpp
