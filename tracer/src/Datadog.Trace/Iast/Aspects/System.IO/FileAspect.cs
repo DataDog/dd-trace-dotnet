@@ -101,11 +101,7 @@ public class FileAspect
     [AspectMethodInsertBefore("System.IO.File::Replace(System.String,System.String,System.String,System.Boolean)", new int[] { 1, 2, 3 })]
     public static string ReviewPath(string path)
     {
-        if (Iast.Instance.Settings.Enabled)
-        {
-            IastModule.OnPathTraversal(path);
-        }
-
+        IastModule.OnPathTraversal(path);
         return path;
     }
 }

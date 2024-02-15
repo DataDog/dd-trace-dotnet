@@ -28,11 +28,7 @@ public class XPathExtensionAspect
     [AspectMethodInsertBefore("System.Xml.XPath.Extensions::XPathSelectElements(System.Xml.Linq.XNode,System.String,System.Xml.IXmlNamespaceResolver)", 1)]
     public static string ReviewPath(string xpath)
     {
-        if (Iast.Instance.Settings.Enabled)
-        {
-            IastModule.OnXpathInjection(xpath);
-        }
-
+        IastModule.OnXpathInjection(xpath);
         return xpath;
     }
 }

@@ -30,11 +30,7 @@ public class StreamWriterAspect
     [AspectMethodInsertBefore("System.IO.StreamWriter::.ctor(System.String,System.Boolean,System.Text.Encoding,System.Int32)", 3)]
     public static string ReviewPath(string path)
     {
-        if (Iast.Instance.Settings.Enabled)
-        {
-            IastModule.OnPathTraversal(path);
-        }
-
+        IastModule.OnPathTraversal(path);
         return path;
     }
 }
