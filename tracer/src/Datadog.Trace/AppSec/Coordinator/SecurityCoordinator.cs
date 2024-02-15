@@ -100,6 +100,10 @@ internal readonly partial struct SecurityCoordinator
                 }
 
                 RecordTelemetry(result);
+
+                // Show the deserilized string of additiveContext
+                var json = JsonConvert.SerializeObject(additiveContext);
+                Log.Debug("Additive context: {AdditiveContext}", json);
             }
         }
         catch (Exception ex) when (ex is not BlockException)

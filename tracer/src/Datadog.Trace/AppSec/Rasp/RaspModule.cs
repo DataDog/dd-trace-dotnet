@@ -5,7 +5,11 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+#if NETFRAMEWORK
+using System.Web;
+#endif
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
@@ -44,7 +48,7 @@ internal static class RaspModule
     }
 
     private static void RunWaf(Dictionary<string, object> arguments, Span rootSpan)
-    {
+        {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
         var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true);
 
