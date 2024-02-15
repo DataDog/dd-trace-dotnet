@@ -1,5 +1,5 @@
 imports:
-  - https://raw.githubusercontent.com/dotnet/crank/main/src/Microsoft.Crank.Jobs.Bombardier/bombardier.yml
+  - ./bombardier.yml
   - ./os.profiles.yml
 
 variables:

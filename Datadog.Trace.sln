@@ -291,6 +291,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "crank", "crank", "{E3FB283A
 		tracer\build\crank\run.sh = tracer\build\crank\run.sh
 		tracer\build\crank\Samples.AspNetCoreSimpleController.yml = tracer\build\crank\Samples.AspNetCoreSimpleController.yml
 		tracer\build\crank\Security.Samples.AspNetCoreSimpleController.yml = tracer\build\crank\Security.Samples.AspNetCoreSimpleController.yml
+		tracer\build\crank\bombardier.yml = tracer\build\crank\bombardier.yml
+		tracer\build\crank\loader.conf = tracer\build\crank\loader.conf
+		tracer\build\crank\README.md = tracer\build\crank\README.md
+		tracer\build\crank\run-adhoc.sh = tracer\build\crank\run-adhoc.sh
+		tracer\build\crank\run-appsec.sh = tracer\build\crank\run-appsec.sh
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DuplicateTypeProxy", "tracer\test\test-applications\regression\DuplicateTypeProxy\DuplicateTypeProxy.csproj", "{34B67004-7249-4EF1-8E12-6E6DA37EA6BE}"
