@@ -25,7 +25,8 @@ namespace Datadog.Trace.Security.Unit.Tests;
 
 public class ContextTests : WafLibraryRequiredTest
 {
-    public const int TimeoutMicroSeconds = 1_000_000;
+    // here we use just 1 sec instead of the 20sec common one as we dont really care about the result, just that it runs
+    public const int WafRunTimeoutMicroSeconds = 1_000_000;
 
     [Theory]
     [InlineData(true)]
@@ -100,12 +101,12 @@ public class ContextTests : WafLibraryRequiredTest
                             continue;
                         }
 
-                        var result = context.Run(args, TimeoutMicroSeconds);
+                        var result = context.Run(args, WafRunTimeoutMicroSeconds);
                         result.ReturnCode.Should().Be(WafReturnCode.Ok);
                         args.Clear();
 
                         args.Add(AddressesConstants.RequestBody, new List<string> { "dog1", "dog2", "dog3", "dog4" });
-                        result = context.Run(args, TimeoutMicroSeconds);
+                        result = context.Run(args, WafRunTimeoutMicroSeconds);
                         result.ReturnCode.Should().Be(WafReturnCode.Ok);
                         args.Clear();
 
@@ -116,7 +117,7 @@ public class ContextTests : WafLibraryRequiredTest
 #else
                         args.Add(AddressesConstants.RequestPathParams, new Dictionary<string, object> { { "controller", "Home" }, { "action", "Index" }, { "id", "appscan_fingerprint" } });
 #endif
-                        result = context.Run(args, TimeoutMicroSeconds);
+                        result = context.Run(args, WafRunTimeoutMicroSeconds);
                         args.Clear();
 
 #if NETFRAMEWORK
@@ -124,13 +125,13 @@ public class ContextTests : WafLibraryRequiredTest
 #else
                         args.Add(AddressesConstants.RequestPathParams, new Dictionary<string, object> { { "id", "appscan_fingerprint" } });
 #endif
-                        result = context.Run(args, TimeoutMicroSeconds);
+                        result = context.Run(args, WafRunTimeoutMicroSeconds);
                         args.Clear();
 
                         args.Add(AddressesConstants.ResponseBody, new List<object> { "dog1", true, 1.5, 1.40d, "dummy_rule", longArraylist, longArraylist });
                         args.Add(AddressesConstants.ResponseHeaderNoCookies, new Dictionary<string, ArrayList> { { "content-type", longArraylist } });
                         args.Add(AddressesConstants.ResponseStatus, "200");
-                        result = context.Run(args, TimeoutMicroSeconds);
+                        result = context.Run(args, WafRunTimeoutMicroSeconds);
                         result.ReturnCode.Should().Be(WafReturnCode.Ok);
                         args.Clear();
                     }
