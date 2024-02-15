@@ -1,5 +1,5 @@
 ﻿
-#if IS_WINDOWS
+#if NUKE_NOTIFY
 #nullable enable
 
 using System;
