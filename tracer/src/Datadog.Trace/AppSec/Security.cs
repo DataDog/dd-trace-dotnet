@@ -351,7 +351,7 @@ namespace Datadog.Trace.AppSec
         public void Dispose()
         {
             _waf?.Dispose();
-            Encoder.Pool.Dispose();
+            Encoder.Allocator.Dispose();
         }
 
         internal void SetDebugEnabled(bool enabled)

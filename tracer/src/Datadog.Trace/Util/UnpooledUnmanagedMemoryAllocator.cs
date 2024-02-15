@@ -1,4 +1,4 @@
-// <copyright file="UnmanagedMemoryPoolSlow.cs" company="Datadog">
+// <copyright file="UnpooledUnmanagedMemoryAllocator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,18 +20,18 @@ namespace Datadog.Trace.Util;
 /// <summary>
 /// Non pooled memory pool (what a paradox)
 /// </summary>
-internal unsafe class UnmanagedMemoryPoolSlow : IUnmanagedMemoryPool
+internal unsafe class UnpooledUnmanagedMemoryAllocator : IUnmanagedMemoryAllocator
 {
     private readonly int _blockSize;
 
     private bool _isDisposed;
 
-    public UnmanagedMemoryPoolSlow(int blockSize)
+    public UnpooledUnmanagedMemoryAllocator(int blockSize)
     {
         _blockSize = blockSize;
     }
 
-    ~UnmanagedMemoryPoolSlow()
+    ~UnpooledUnmanagedMemoryAllocator()
     {
         Dispose();
     }
@@ -91,7 +91,7 @@ internal unsafe class UnmanagedMemoryPoolSlow : IUnmanagedMemoryPool
 
         _isDisposed = true;
 
-        UnmanagedMemoryPoolFactory.OnPoolDestroyed(this);
+        UnmanagedMemoryAllocatorFactory.OnPoolDestroyed(this);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

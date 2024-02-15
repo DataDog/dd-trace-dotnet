@@ -1,4 +1,4 @@
-// <copyright file="UnmanagedMemoryPool.cs" company="Datadog">
+﻿// <copyright file="UnmanagedMemoryPool.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,7 +20,7 @@ namespace Datadog.Trace.Util;
 /// <summary>
 /// Beware that this type is not thread safe and should be used with [ThreadStatic]
 /// </summary>
-internal unsafe class UnmanagedMemoryPool : IUnmanagedMemoryPool
+internal unsafe class UnmanagedMemoryPool : IUnmanagedMemoryAllocator
 {
     private readonly IntPtr* _items;
     private readonly int _length;
@@ -146,7 +146,7 @@ internal unsafe class UnmanagedMemoryPool : IUnmanagedMemoryPool
         }
 
         _isDisposed = true;
-        UnmanagedMemoryPoolFactory.OnPoolDestroyed(this);
+        UnmanagedMemoryAllocatorFactory.OnPoolDestroyed(this);
 
         for (var i = 0; i < _length; i++)
         {

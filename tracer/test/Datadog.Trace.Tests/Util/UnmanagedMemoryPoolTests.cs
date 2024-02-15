@@ -92,7 +92,7 @@ public class UnmanagedMemoryPoolTests
             Encoder.SetPoolSize(poolSize.Value);
         }
 
-        var pool = Encoder.Pool;
+        var pool = Encoder.Allocator;
 
         for (int x = 0; x < 10; x++)
         {
@@ -158,7 +158,7 @@ public class UnmanagedMemoryPoolTests
                     }
 
                     var argCache = new List<IntPtr>();
-                    var pool = Encoder.Pool;
+                    var pool = Encoder.Allocator;
                     for (var i = 0; i < 100; i++)
                     {
                         try

@@ -110,7 +110,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 // > ((4096 * 4) + 1) * 1000
                 // > 16.385.000
                 // so give more margin for execution
-                Encoder.Pool.Dispose();
+                Encoder.Allocator.Dispose();
             }
 
             GC.Collect();

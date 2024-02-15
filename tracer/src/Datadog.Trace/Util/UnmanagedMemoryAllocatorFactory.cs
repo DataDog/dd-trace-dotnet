@@ -1,4 +1,4 @@
-// <copyright file="UnmanagedMemoryPoolFactory.cs" company="Datadog">
+// <copyright file="UnmanagedMemoryAllocatorFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,15 +20,15 @@ namespace Datadog.Trace.Util;
 /// <summary>
 /// Beware that this type is not thread safe and should be used with [ThreadStatic]
 /// </summary>
-internal class UnmanagedMemoryPoolFactory
+internal class UnmanagedMemoryAllocatorFactory
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(UnmanagedMemoryPoolFactory));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(UnmanagedMemoryAllocatorFactory));
 
     // Statistics
     private static int _fastPoolCount = 0;
     private static int _slowPoolCount = 0;
 
-    public static IUnmanagedMemoryPool GetPool(int blockSize, int poolSize)
+    public static IUnmanagedMemoryAllocator GetPool(int blockSize, int poolSize)
     {
         if (_fastPoolCount < WafConstants.MaxUnmanagedPools)
         {
@@ -44,13 +44,13 @@ internal class UnmanagedMemoryPoolFactory
             Log.Debug<int, int>("Created slow WAF unmanaged pool. Current pools -> Fast: {PoolCount}  Slow: {SlowPoolCount}", _fastPoolCount, _slowPoolCount);
             TelemetryFactory.Metrics.RecordGaugePoolSlowCount(_slowPoolCount);
 
-            return new UnmanagedMemoryPoolSlow(blockSize);
+            return new UnpooledUnmanagedMemoryAllocator(blockSize);
         }
     }
 
-    public static void OnPoolDestroyed(IUnmanagedMemoryPool pool)
+    public static void OnPoolDestroyed(IUnmanagedMemoryAllocator pool)
     {
-        if (pool is UnmanagedMemoryPoolSlow)
+        if (pool is UnpooledUnmanagedMemoryAllocator)
         {
             Interlocked.Decrement(ref _slowPoolCount);
             TelemetryFactory.Metrics.RecordGaugePoolSlowCount(_slowPoolCount);
