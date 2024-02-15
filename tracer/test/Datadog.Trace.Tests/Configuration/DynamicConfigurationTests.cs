@@ -93,11 +93,14 @@ namespace Datadog.Trace.Tests.Configuration
             var tracerSettings = new TracerSettings();
             TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
 
+            // tracing is enabled by default
             TracerManager.Instance.Settings.TraceEnabled.Should().BeTrue();
 
+            // disable "remotely"
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_enabled", "false")));
             TracerManager.Instance.Settings.TraceEnabled.Should().BeFalse();
 
+            // re-enable "remotely"
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_enabled", "true")));
             TracerManager.Instance.Settings.TraceEnabled.Should().BeTrue();
         }
