@@ -17,6 +17,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
     {
         private static readonly IReadOnlyDictionary<string, string> Mapping = new Dictionary<string, string>
         {
+            { ConfigurationKeys.TraceEnabled, "tracing_enabled" },
             // { ConfigurationKeys.DebugEnabled, "tracing_debug" },
             // { ConfigurationKeys.RuntimeMetricsEnabled, "runtime_metrics_enabled" },
             { ConfigurationKeys.HeaderTags, "tracing_header_tags" },
