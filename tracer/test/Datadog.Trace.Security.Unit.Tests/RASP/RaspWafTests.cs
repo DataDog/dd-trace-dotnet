@@ -55,7 +55,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         ExecuteRule(
             AddressesConstants.FileAccess,
             value,
-            paramValue,
+            vulnerabilityType,
             rule,
             ruleFile,
             action,
@@ -114,6 +114,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         result.Actions.ContainsKey(actionType).Should().BeTrue();
             var jsonString = JsonConvert.SerializeObject(result.Data);
             var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
+            resultData.Rule.Tags.Type.Should().Be(vulnerabilityType);
             resultData.Rule.Id.Should().Be(rule);
     }
 
