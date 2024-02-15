@@ -36,6 +36,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
         public static ConditionalWeakTable<object, Scope> Scopes { get; } = new();
 
+        public static Scope? GetActiveWcfScope(Tracer tracer)
+        {
+            if (tracer.InternalActiveScope is { Span: { Type: SpanTypes.Web } parent } scope && HasInstrumentationNameTag(parent))
+            {
+                return scope;
+            }
+
+            return null;
+
+            static bool HasInstrumentationNameTag(Span span)
+            {
+                if (span.Tags is WcfTags wcfTags)
+                {
+                    return wcfTags.InstrumentationName == nameof(IntegrationId.Wcf);
+                }
+
+                return span.GetTag(Tags.InstrumentationName) == nameof(IntegrationId.Wcf);
+            }
+        }
+
         internal static Scope? CreateScope<TRequestContext>(TRequestContext requestContext, bool useWebHttpResourceNames)
             where TRequestContext : IRequestContext
         {

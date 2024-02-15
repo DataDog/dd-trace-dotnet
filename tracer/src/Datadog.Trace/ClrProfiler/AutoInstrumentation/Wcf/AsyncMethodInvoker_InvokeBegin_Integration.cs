@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 var useWcfWebHttpResourceNames = Tracer.Instance.Settings.WcfWebHttpResourceNamesEnabled;
 
                 // Then, create the new scope
-                var scope = WcfCommon.CreateScope(requestContext, useWcfWebHttpResourceNames);
+                var scope = WcfCommon.GetActiveWcfScope(Tracer.Instance) ?? WcfCommon.CreateScope(requestContext, useWcfWebHttpResourceNames);
 
                 if (scope != null)
                 {
