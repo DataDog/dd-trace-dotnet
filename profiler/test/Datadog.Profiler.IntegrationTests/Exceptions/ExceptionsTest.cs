@@ -169,12 +169,12 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         }
 
         [TestAppFact("Samples.ExceptionGenerator")]
-        public void DisableExceptionProfiler(string appName, string framework, string appAssembly)
+        public void ExceptionProfilerIsEnabledByDefault(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
 
-            // Test that the exception profiler is disabled by default
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            // Test that the exception profiler is enabled by default
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
 
@@ -189,7 +189,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
             }
 
-            // only walltime profiler enabled so should see 1 value per sample
+            // only exception profiler enabled so should see 1 value per sample
             SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
         }
 
@@ -284,11 +284,18 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             // look for the following sections with type=count,size
             /*
                 Exceptions start
-                ArgumentException=3879
-                SystemException=4000
-                InvalidOperationException=4023
-                InvalidCastException=4053
-                TimeoutException=4045
+                ArgumentException=8345
+                SystemException=8383
+                InvalidOperationException=8276
+                InvalidCastException=8346
+                TimeoutException=8353
+                BadImageFormatException=8368
+                NotImplementedException=8270
+                ArithmeticException=8293
+                IndexOutOfRangeException=8349
+                NotSupportedException=8393
+                RankException=8357
+                UnauthorizedAccessException=8267
                 Exceptions end
             */
             int pos = 0;

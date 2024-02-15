@@ -26,6 +26,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             // disable default profilers except CPU
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -42,6 +43,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             // disable default profilers except wall time
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -59,6 +61,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -75,6 +78,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
 
@@ -93,6 +97,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
 
@@ -115,6 +120,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
 
@@ -137,6 +143,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
 
