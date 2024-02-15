@@ -16,15 +16,6 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-#if SYSTEM_PRIVATE_CORELIB
-using System.Buffers.Binary;
-using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.Arm;
-using System.Runtime.Intrinsics.X86;
-using System.Text.Unicode;
-#endif
-
 namespace Datadog.Trace.Util;
 
 internal static class HexConverter
@@ -124,89 +115,10 @@ internal static class HexConverter
         buffer[startingIndex] = (char)(packedResult >> 8);
     }
 
-#if SYSTEM_PRIVATE_CORELIB
-    // Converts Vector128<byte> into 2xVector128<byte> ASCII Hex representation
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [CompExactlyDependsOn(typeof(Ssse3))]
-    [CompExactlyDependsOn(typeof(AdvSimd.Arm64))]
-    internal static (Vector128<byte>, Vector128<byte>) AsciiToHexVector128(Vector128<byte> src, Vector128<byte> hexMap)
-    {
-        Debug.Assert(Ssse3.IsSupported || AdvSimd.Arm64.IsSupported);
-        // The algorithm is simple: a single srcVec (contains the whole 16b Guid) is converted
-        // into nibbles and then, via hexMap, converted into a HEX representation via
-        // Shuffle(nibbles, srcVec). ASCII is then expanded to UTF-16.
-        Vector128<byte> shiftedSrc = Vector128.ShiftRightLogical(src.AsUInt64(), 4).AsByte();
-        Vector128<byte> lowNibbles = Vector128.UnpackLow(shiftedSrc, src);
-        Vector128<byte> highNibbles = Vector128.UnpackHigh(shiftedSrc, src);
-
-        return (Vector128.ShuffleUnsafe(hexMap, lowNibbles & Vector128.Create((byte)0xF)),
-            Vector128.ShuffleUnsafe(hexMap, highNibbles & Vector128.Create((byte)0xF)));
-    }
-
-    [CompExactlyDependsOn(typeof(Ssse3))]
-    [CompExactlyDependsOn(typeof(AdvSimd.Arm64))]
-    private static void EncodeToUtf16_Vector128(ReadOnlySpan<byte> bytes, Span<char> chars, Casing casing)
-    {
-        Debug.Assert(bytes.Length >= Vector128<int>.Count);
-
-        ref byte srcRef = ref MemoryMarshal.GetReference(bytes);
-        ref ushort destRef = ref Unsafe.As<char, ushort>(ref MemoryMarshal.GetReference(chars));
-
-        Vector128<byte> hexMap = casing == Casing.Upper ?
-            Vector128.Create((byte)'0', (byte)'1', (byte)'2', (byte)'3',
-                             (byte)'4', (byte)'5', (byte)'6', (byte)'7',
-                             (byte)'8', (byte)'9', (byte)'A', (byte)'B',
-                             (byte)'C', (byte)'D', (byte)'E', (byte)'F') :
-            Vector128.Create((byte)'0', (byte)'1', (byte)'2', (byte)'3',
-                             (byte)'4', (byte)'5', (byte)'6', (byte)'7',
-                             (byte)'8', (byte)'9', (byte)'a', (byte)'b',
-                             (byte)'c', (byte)'d', (byte)'e', (byte)'f');
-
-        nuint pos = 0;
-        nuint lengthSubVector128 = (nuint)bytes.Length - (nuint)Vector128<int>.Count;
-        do
-        {
-            // This implementation processes 4 bytes of input at once, it can be easily modified
-            // to support 16 bytes at once, but that didn't demonstrate noticeable wins
-            // for Converter.ToHexString (around 8% faster for large inputs) so
-            // it focuses on small inputs instead.
-
-            uint i32 = Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref srcRef, pos));
-            Vector128<byte> vec = Vector128.CreateScalar(i32).AsByte();
-
-            // JIT is expected to eliminate all unused calculations
-            (Vector128<byte> hexLow, _) = AsciiToHexVector128(vec, hexMap);
-            (Vector128<ushort> v0, _) = Vector128.Widen(hexLow);
-
-            v0.StoreUnsafe(ref destRef, pos * 2);
-
-            pos += (nuint)Vector128<int>.Count;
-            if (pos == (nuint)bytes.Length)
-            {
-                return;
-            }
-
-            // Overlap with the current chunk for trailing elements
-            if (pos > lengthSubVector128)
-            {
-                pos = lengthSubVector128;
-            }
-
-        } while (true);
-    }
-#endif
-
     public static void EncodeToUtf16(ReadOnlySpan<byte> bytes, Span<char> chars, Casing casing = Casing.Upper)
     {
         Debug.Assert(chars.Length >= bytes.Length * 2, "chars.Length >= bytes.Length * 2");
 
-#if SYSTEM_PRIVATE_CORELIB
-        if ((AdvSimd.Arm64.IsSupported || Ssse3.IsSupported) && bytes.Length >= 4)
-        {
-            EncodeToUtf16_Vector128(bytes, chars, casing);
-            return;
-        }
-#endif
         for (int pos = 0; pos < bytes.Length; pos++)
         {
             ToCharsBuffer(bytes[pos], chars, pos * 2, casing);
@@ -265,103 +177,8 @@ internal static class HexConverter
 
     public static bool TryDecodeFromUtf16(ReadOnlySpan<char> chars, Span<byte> bytes, out int charsProcessed)
     {
-#if SYSTEM_PRIVATE_CORELIB
-        if (BitConverter.IsLittleEndian && (Ssse3.IsSupported || AdvSimd.Arm64.IsSupported) &&
-            chars.Length >= Vector128<ushort>.Count * 2)
-        {
-            return TryDecodeFromUtf16_Vector128(chars, bytes, out charsProcessed);
-        }
-#endif
         return TryDecodeFromUtf16_Scalar(chars, bytes, out charsProcessed);
     }
-
-#if SYSTEM_PRIVATE_CORELIB
-    [CompExactlyDependsOn(typeof(AdvSimd.Arm64))]
-    [CompExactlyDependsOn(typeof(Ssse3))]
-    public static bool TryDecodeFromUtf16_Vector128(ReadOnlySpan<char> chars, Span<byte> bytes, out int charsProcessed)
-    {
-        Debug.Assert(Ssse3.IsSupported || AdvSimd.Arm64.IsSupported);
-        Debug.Assert(chars.Length <= bytes.Length * 2);
-        Debug.Assert(chars.Length % 2 == 0);
-        Debug.Assert(chars.Length >= Vector128<ushort>.Count * 2);
-
-        nuint offset = 0;
-        nuint lengthSubTwoVector128 = (nuint)chars.Length - ((nuint)Vector128<ushort>.Count * 2);
-
-        ref ushort srcRef = ref Unsafe.As<char, ushort>(ref MemoryMarshal.GetReference(chars));
-        ref byte destRef = ref MemoryMarshal.GetReference(bytes);
-
-        do
-        {
-            // The algorithm is UTF8 so we'll be loading two UTF-16 vectors to narrow them into a
-            // single UTF8 ASCII vector - the implementation can be shared with UTF8 paths.
-            Vector128<ushort> vec1 = Vector128.LoadUnsafe(ref srcRef, offset);
-            Vector128<ushort> vec2 = Vector128.LoadUnsafe(ref srcRef, offset + (nuint)Vector128<ushort>.Count);
-            Vector128<byte> vec = Vector128.Narrow(vec1, vec2);
-
-            // Based on "Algorithm #3" https://github.com/WojciechMula/toys/blob/master/simd-parse-hex/geoff_algorithm.cpp
-            // by Geoff Langdale and Wojciech Mula
-            // Move digits '0'..'9' into range 0xf6..0xff.
-            Vector128<byte> t1 = vec + Vector128.Create((byte)(0xFF - '9'));
-            // And then correct the range to 0xf0..0xf9.
-            // All other bytes become less than 0xf0.
-            Vector128<byte> t2 = Vector128.SubtractSaturate(t1, Vector128.Create((byte)6));
-            // Convert into uppercase 'a'..'f' => 'A'..'F' and
-            // move hex letter 'A'..'F' into range 0..5.
-            Vector128<byte> t3 = (vec & Vector128.Create((byte)0xDF)) - Vector128.Create((byte)'A');
-            // And correct the range into 10..15.
-            // The non-hex letters bytes become greater than 0x0f.
-            Vector128<byte> t4 = Vector128.AddSaturate(t3, Vector128.Create((byte)10));
-            // Convert '0'..'9' into nibbles 0..9. Non-digit bytes become
-            // greater than 0x0f. Finally choose the result: either valid nibble (0..9/10..15)
-            // or some byte greater than 0x0f.
-            Vector128<byte> nibbles = Vector128.Min(t2 - Vector128.Create((byte)0xF0), t4);
-            // Any high bit is a sign that input is not a valid hex data
-            if (!Utf16Utility.AllCharsInVectorAreAscii(vec1 | vec2) ||
-                Vector128.AddSaturate(nibbles, Vector128.Create((byte)(127 - 15))).ExtractMostSignificantBits() != 0)
-            {
-                // Input is either non-ASCII or invalid hex data
-                break;
-            }
-            Vector128<byte> output;
-            if (Ssse3.IsSupported)
-            {
-                output = Ssse3.MultiplyAddAdjacent(nibbles,
-                    Vector128.Create((short)0x0110).AsSByte()).AsByte();
-            }
-            else
-            {
-                // Workaround for missing MultiplyAddAdjacent on ARM
-                Vector128<short> even = AdvSimd.Arm64.TransposeEven(nibbles, Vector128<byte>.Zero).AsInt16();
-                Vector128<short> odd = AdvSimd.Arm64.TransposeOdd(nibbles, Vector128<byte>.Zero).AsInt16();
-                even = AdvSimd.ShiftLeftLogical(even, 4).AsInt16();
-                output = AdvSimd.AddSaturate(even, odd).AsByte();
-            }
-            // Accumulate output in lower INT64 half and take care about endianness
-            output = Vector128.Shuffle(output, Vector128.Create((byte)0, 2, 4, 6, 8, 10, 12, 14, 0, 0, 0, 0, 0, 0, 0, 0));
-            // Store 8 bytes in dest by given offset
-            Unsafe.WriteUnaligned(ref Unsafe.Add(ref destRef, offset / 2), output.AsUInt64().ToScalar());
-
-            offset += (nuint)Vector128<ushort>.Count * 2;
-            if (offset == (nuint)chars.Length)
-            {
-                charsProcessed = chars.Length;
-                return true;
-            }
-            // Overlap with the current chunk for trailing elements
-            if (offset > lengthSubTwoVector128)
-            {
-                offset = lengthSubTwoVector128;
-            }
-        }
-        while (true);
-
-        // Fall back to the scalar routine in case of invalid input.
-        bool fallbackResult = TryDecodeFromUtf16_Scalar(chars.Slice((int)offset), bytes.Slice((int)(offset / 2)), out int fallbackProcessed);
-        charsProcessed = (int)offset + fallbackProcessed;
-        return fallbackResult;
-    }
-#endif
 
     private static bool TryDecodeFromUtf16_Scalar(ReadOnlySpan<char> chars, Span<byte> bytes, out int charsProcessed)
     {
