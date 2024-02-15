@@ -10,6 +10,8 @@
 
 #if !NETCOREAPP3_1_OR_GREATER
 
+#nullable enable
+
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;

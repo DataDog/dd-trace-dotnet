@@ -10,6 +10,8 @@
 
 #if NETCOREAPP3_1_OR_GREATER
 
+#nullable enable
+
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 #if SYSTEM_PRIVATE_CORELIB
