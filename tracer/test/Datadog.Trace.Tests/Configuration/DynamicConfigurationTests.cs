@@ -87,25 +87,38 @@ namespace Datadog.Trace.Tests.Configuration
             TracerManager.Instance.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
         }
 
+        [Fact]
+        public void EnableTracing()
+        {
+            var tracerSettings = new TracerSettings();
+            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
+
+            TracerManager.Instance.Settings.TraceEnabled.Should().BeTrue();
+
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_enabled", "false")));
+            TracerManager.Instance.Settings.TraceEnabled.Should().BeFalse();
+
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_enabled", "true")));
+            TracerManager.Instance.Settings.TraceEnabled.Should().BeTrue();
+        }
+
         private static ConfigurationBuilder CreateConfig(params (string Key, string Value)[] settings)
         {
             var jsonBuilder = new StringBuilder();
 
             jsonBuilder.AppendLine("{");
-
-            jsonBuilder.AppendLine("'lib_config':");
-
+            jsonBuilder.AppendLine("\"lib_config\":");
             jsonBuilder.AppendLine("{");
+
             foreach (var (key, value) in settings)
             {
-                jsonBuilder.AppendLine($"\"{key}\": {value},");
+                jsonBuilder.AppendLine($"\"{key}\": \"{value}\",");
             }
 
             jsonBuilder.AppendLine("}");
             jsonBuilder.AppendLine("}");
 
             var configurationSource = new DynamicConfigConfigurationSource(jsonBuilder.ToString(), ConfigurationOrigins.RemoteConfig);
-
             return new ConfigurationBuilder(configurationSource, Mock.Of<IConfigurationTelemetry>());
         }
     }
