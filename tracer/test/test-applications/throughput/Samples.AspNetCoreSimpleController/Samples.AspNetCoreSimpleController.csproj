@@ -4,7 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <Platforms>x64;x86;AnyCPU</Platforms>
     <DefineConstants Condition="'$(MANUAL_INSTRUMENTATION)' == 'true'">$(DefineConstants);MANUAL_INSTRUMENTATION</DefineConstants>
-    <DefineConstants Condition="'$(VERSION_MISMATCH)' == 'true'">$(DefineConstants);VERSION_MISMATCH</DefineConstants>
+    <DefineConstants Condition="'$(MANUAL_ONLY_INSTRUMENTATION)' == 'true'">$(DefineConstants);MANUAL_ONLY_INSTRUMENTATION</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(MANUAL_INSTRUMENTATION)' == 'true'">

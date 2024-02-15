@@ -107,6 +107,7 @@ public class CompareThroughput
     {
         CrankScenario.Baseline => "Baseline",
         CrankScenario.AutomaticInstrumentation => "Automatic",
+        CrankScenario.ManualInstrumentation => "Manual",
         CrankScenario.ManualAndAutomaticInstrumentation => "Manual + Automatic",
         CrankScenario.TraceStats => "Trace stats",
         CrankScenario.NoAttack => "No attack",
@@ -126,6 +127,7 @@ public class CompareThroughput
                 ("baseline_linux.json", CrankScenario.Baseline),
                 ("calltarget_ngen_linux.json", CrankScenario.AutomaticInstrumentation),
                 ("trace_stats_linux.json", CrankScenario.TraceStats),
+                ("manual_only_linux.json", CrankScenario.ManualInstrumentation),
                 ("manual_and_automatic_linux.json", CrankScenario.ManualAndAutomaticInstrumentation),
             }
         ),
@@ -134,6 +136,7 @@ public class CompareThroughput
                 ("baseline_linux_arm64.json", CrankScenario.Baseline),
                 ("calltarget_ngen_linux_arm64.json", CrankScenario.AutomaticInstrumentation),
                 ("trace_stats_linux_arm64.json", CrankScenario.TraceStats),
+                ("manual_only_linux_arm64.json", CrankScenario.ManualInstrumentation),
                 ("manual_and_automatic_linux_arm64.json", CrankScenario.ManualAndAutomaticInstrumentation),
             }
         ),
@@ -142,6 +145,7 @@ public class CompareThroughput
                 ("baseline_windows.json", CrankScenario.Baseline),
                 ("calltarget_ngen_windows.json", CrankScenario.AutomaticInstrumentation),
                 ("trace_stats_windows.json", CrankScenario.TraceStats),
+                ("manual_only_windows.json", CrankScenario.ManualInstrumentation),
                 ("manual_and_automatic_windows.json", CrankScenario.ManualAndAutomaticInstrumentation),
             }
         ),
@@ -197,6 +201,7 @@ public class CompareThroughput
         Baseline,
         AutomaticInstrumentation,
         TraceStats,
+        ManualInstrumentation,
         ManualAndAutomaticInstrumentation,
         NoAttack,
         AttackNoBlocking,

@@ -32,6 +32,7 @@ if [ "$1" = "windows" ]; then
     rm -f baseline_windows.json
     rm -f calltarget_ngen_windows.json
     rm -f trace_stats_windows.json
+    rm -f manual_only_windows.json
     rm -f manual_and_automatic_windows.json
     
     echo "Running windows throughput tests"
@@ -46,6 +47,11 @@ if [ "$1" = "windows" ]; then
       echo "Running throughput tests with stats enabled"
       crank --config Samples.AspNetCoreSimpleController.yml --scenario trace_stats --profile windows --json trace_stats_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=trace_stats --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
       dd-trace --crank-import="trace_stats_windows.json"
+      
+      echo "Running manual-only instrumentation throughput tests"
+      crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile windows --json manual_only_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha 
+      dd-trace --crank-import="manual_only_windows.json"
+
     fi
 
     echo "Running manual instrumentation throughput tests"
@@ -58,6 +64,7 @@ elif [ "$1" = "linux" ]; then
     rm -f baseline_linux.json
     rm -f calltarget_ngen_linux.json
     rm -f trace_stats_linux.json
+    rm -f manual_only_linux.json
     rm -f manual_and_automatic_linux.json
 
     echo "Running Linux x64 throughput tests"
@@ -72,6 +79,11 @@ elif [ "$1" = "linux" ]; then
       echo "Running throughput tests with stats enabled"
       crank --config Samples.AspNetCoreSimpleController.yml --scenario trace_stats --profile linux --json trace_stats_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=trace_stats --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
       dd-trace --crank-import="trace_stats_linux.json"
+      
+      echo "Running manual-only instrumentation throughput tests"
+      crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile linux --json manual_only_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+      dd-trace --crank-import="manual_only_linux.json"
+
     fi
 
     echo "Running manual instrumentation throughput tests"
@@ -84,6 +96,7 @@ elif [ "$1" = "linux_arm64" ]; then
     rm -f baseline_linux_arm64.json
     rm -f calltarget_ngen_linux_arm64.json
     rm -f trace_stats_linux_arm64.json
+    rm -f manual_only_linux_arm64.json
     rm -f manual_and_automatic_linux_arm64.json
 
     echo "Running Linux arm64 throughput tests"
@@ -98,6 +111,11 @@ elif [ "$1" = "linux_arm64" ]; then
       echo "Running throughput tests with stats enabled"
       crank --config Samples.AspNetCoreSimpleController.yml --scenario trace_stats --profile linux_arm64 --json trace_stats_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=trace_stats --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
       dd-trace --crank-import="trace_stats_linux_arm64.json"
+      
+      echo "Running manual-only instrumentation throughput tests"
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile linux_arm64 --json manual_only_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="manual_only_linux_arm64.json"
+
     fi
 
     echo "Running manual instrumentation throughput tests"
