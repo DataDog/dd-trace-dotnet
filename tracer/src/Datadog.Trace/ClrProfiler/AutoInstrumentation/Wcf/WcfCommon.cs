@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             }
         }
 
-        internal static Scope? CreateScope<TRequestContext>(TRequestContext requestContext, bool useWebHttpResourceNames)
+        internal static Scope? GetOrCreateScope<TRequestContext>(TRequestContext requestContext, bool useWebHttpResourceNames)
             where TRequestContext : IRequestContext
         {
             var requestMessage = requestContext.RequestMessage;
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 return null;
             }
 
-            Scope? scope = null;
+            var scope = GetActiveWcfScope(Tracer.Instance);
 
             try
             {
@@ -85,6 +85,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 WebHeadersCollection? headers = null;
 
                 IDictionary<string, object> requestProperties = requestMessage.Properties;
+
                 if (requestProperties.TryGetValue("httpRequest", out object httpRequestProperty) &&
                     httpRequestProperty.GetType().FullName.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
                 {
@@ -170,7 +171,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     }
                 }
 
-                scope = tracer.StartActiveInternal(operationName, propagatedContext, tags: tags);
+                scope = GetActiveWcfScope(tracer);
+
+                if (scope is null)
+                {
+                    scope = tracer.StartActiveInternal(operationName, propagatedContext, tags: tags);
+                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
+                    tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+                }
+
                 var span = scope.Span;
 
                 var requestHeaders = requestMessage.Headers;
@@ -190,9 +199,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     var headerTagsProcessor = new SpanContextPropagator.SpanTagHeaderTagProcessor(span);
                     SpanContextPropagator.Instance.ExtractHeaderTags(ref headerTagsProcessor, headers.Value, tracer.Settings.HeaderTagsInternal!, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
-
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
             {

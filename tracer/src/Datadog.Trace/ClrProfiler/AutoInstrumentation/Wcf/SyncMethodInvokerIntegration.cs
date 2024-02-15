@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
             {
                 var useWcfWebHttpResourceNames = Tracer.Instance.Settings.WcfWebHttpResourceNamesEnabled;
-                return new CallTargetState(WcfCommon.GetActiveWcfScope(Tracer.Instance) ?? WcfCommon.CreateScope(operationContextProxy.RequestContext, useWcfWebHttpResourceNames));
+                return new CallTargetState(WcfCommon.GetOrCreateScope(operationContextProxy.RequestContext, useWcfWebHttpResourceNames));
             }
             else
             {
