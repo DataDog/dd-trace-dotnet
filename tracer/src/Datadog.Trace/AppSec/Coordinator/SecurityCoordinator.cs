@@ -98,6 +98,10 @@ internal readonly partial struct SecurityCoordinator
                 // run the WAF and execute the results
                 result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
                 RecordTelemetry(result);
+
+                // Show the deserilized string of additiveContext
+                var json = JsonConvert.SerializeObject(additiveContext);
+                Log.Debug("Additive context: {AdditiveContext}", json);
             }
         }
         catch (Exception ex) when (ex is not BlockException)
