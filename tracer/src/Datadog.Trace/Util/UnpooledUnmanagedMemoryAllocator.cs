@@ -1,4 +1,4 @@
-// <copyright file="UnmanagedMemoryPoolSlow.cs" company="Datadog">
+// <copyright file="UnpooledUnmanagedMemoryAllocator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,31 +7,34 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Util;
 
 /// <summary>
 /// Non pooled memory pool (what a paradox)
 /// </summary>
-internal unsafe class UnmanagedMemoryPoolSlow : IUnmanagedMemoryPool
+internal class UnpooledUnmanagedMemoryAllocator : IUnmanagedMemoryAllocator
 {
+    private static int _instanceCount;
     private readonly int _blockSize;
+    private readonly MetricTags.UnmanagedMemoryPoolComponent _component;
 
     private bool _isDisposed;
 
-    public UnmanagedMemoryPoolSlow(int blockSize)
+    public UnpooledUnmanagedMemoryAllocator(int blockSize, MetricTags.UnmanagedMemoryPoolComponent component)
     {
         _blockSize = blockSize;
+        _component = component;
+        Interlocked.Increment(ref _instanceCount);
+        TelemetryFactory.Metrics.RecordGaugeUnmanagedMemoryPool(MetricTags.UnmanagedMemoryPoolType.Unpooled, _component, _instanceCount);
     }
 
-    ~UnmanagedMemoryPoolSlow()
+    ~UnpooledUnmanagedMemoryAllocator()
     {
         Dispose();
     }
@@ -91,12 +94,13 @@ internal unsafe class UnmanagedMemoryPoolSlow : IUnmanagedMemoryPool
 
         _isDisposed = true;
 
-        UnmanagedMemoryPoolFactory.OnPoolDestroyed(this);
+        Interlocked.Decrement(ref _instanceCount);
+        TelemetryFactory.Metrics.RecordGaugeUnmanagedMemoryPool(MetricTags.UnmanagedMemoryPoolType.Unpooled, _component, _instanceCount);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ThrowObjectDisposedException()
     {
-        throw new ObjectDisposedException("UnmanagedMemoryPool");
+        throw new ObjectDisposedException(nameof(UnpooledUnmanagedMemoryAllocator));
     }
 }

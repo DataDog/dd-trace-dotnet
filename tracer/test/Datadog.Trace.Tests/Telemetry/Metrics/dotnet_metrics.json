@@ -106,19 +106,14 @@
     "send_to_user": false,
     "user_tags":[]
   },
-  "waf.pool_count": {
-    "tags": [ ],
+  "unmanaged_memory_pools": {
+    "tags": [ 
+      "pool_type",
+      "component" 
+    ],
     "metric_type": "gauge",
     "data_type": "instances",
-    "description": "The number of reusable unmanaged memory pools created)",
-    "send_to_user": false,
-    "user_tags":[]
-  },
-  "waf.pool_slow_count": {
-    "tags": [ ],
-    "metric_type": "gauge",
-    "data_type": "instances",
-    "description": "The number of non reusable (slow) unmanaged memory pools created)",
+    "description": "The number of unmanaged memory pools created",
     "send_to_user": false,
     "user_tags":[]
   }

@@ -24,11 +24,7 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordGaugePoolCount(int value)
-    {
-    }
-
-    public void RecordGaugePoolSlowCount(int value)
+    public void RecordGaugeUnmanagedMemoryPool(Datadog.Trace.Telemetry.Metrics.MetricTags.UnmanagedMemoryPoolType tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.UnmanagedMemoryPoolComponent tag2, int value)
     {
     }
 }

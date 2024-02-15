@@ -379,4 +379,15 @@ internal static class MetricTags
         [Description("itrskip_enabled")] CoverageDisabled_ItrSkipEnabled,
         [Description("coverage_enabled;itrskip_enabled")] CoverageEnabled_ItrSkipEnabled,
     }
+
+    public enum UnmanagedMemoryPoolType
+    {
+        [Description("pool_type:pooled")] Pooled,
+        [Description("pool_type:unpooled")] Unpooled,
+    }
+
+    public enum UnmanagedMemoryPoolComponent
+    {
+        [Description("component:asm_encoder")] AsmEncoder,
+    }
 }
