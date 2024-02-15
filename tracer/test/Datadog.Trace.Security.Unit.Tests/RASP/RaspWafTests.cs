@@ -81,7 +81,7 @@ public class RaspWafTests : WafLibraryRequiredTest
             var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds);
             CheckResult(rule, expectedAction, resultEph, actionType);
         }
-    }
+        }
 
     private IContext InitWaf(bool newEncoder, string ruleFile, Dictionary<string, object> args, out Waf waf)
     {
@@ -106,15 +106,16 @@ public class RaspWafTests : WafLibraryRequiredTest
             { AddressesConstants.RequestBody, new[] { "param", requestParam } },
             { AddressesConstants.RequestMethod, "GET" }
         };
-    }
+        }
 
     private void CheckResult(string rule, string expectedAction, IResult result, string actionType)
-    {
-        result.ReturnCode.Should().Be(WafReturnCode.Match);
+        {
+            result.ReturnCode.Should().Be(WafReturnCode.Match);
         result.Actions.ContainsKey(actionType).Should().BeTrue();
-        var jsonString = JsonConvert.SerializeObject(result.Data);
-        var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
-        resultData.Rule.Id.Should().Be(rule);
+            var jsonString = JsonConvert.SerializeObject(result.Data);
+            var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
+            resultData.Rule.Tags.Type.Should().Be(vulnerabilityType);
+            resultData.Rule.Id.Should().Be(rule);
     }
 
     private Action CreateNewStatusAction(string action, string actionType, int newStatus)
