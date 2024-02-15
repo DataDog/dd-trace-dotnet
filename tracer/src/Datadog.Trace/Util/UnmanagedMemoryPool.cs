@@ -7,13 +7,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Util;
 
@@ -22,30 +20,39 @@ namespace Datadog.Trace.Util;
 /// </summary>
 internal unsafe class UnmanagedMemoryPool : IUnmanagedMemoryAllocator
 {
+    private static int _instanceCount;
+
     private readonly IntPtr* _items;
     private readonly int _length;
     private readonly int _blockSize;
+    private readonly MetricTags.UnmanagedMemoryPoolComponent _component;
     private int _initialSearchIndex;
 
     private bool _isDisposed;
 
-    public UnmanagedMemoryPool(int blockSize, int poolSize)
+    public UnmanagedMemoryPool(int blockSize, int poolSize, MetricTags.UnmanagedMemoryPoolComponent component)
     {
         _blockSize = blockSize;
         _items = (IntPtr*)Marshal.AllocCoTaskMem(poolSize * sizeof(IntPtr));
         _length = poolSize;
         _initialSearchIndex = 0;
+        _component = component;
 
         for (var i = 0; i < _length; i++)
         {
             _items[i] = IntPtr.Zero;
         }
+
+        Interlocked.Increment(ref _instanceCount);
+        TelemetryFactory.Metrics.RecordGaugeUnmanagedMemoryPool(MetricTags.UnmanagedMemoryPoolType.Pooled, _component, _instanceCount);
     }
 
     ~UnmanagedMemoryPool()
     {
         Dispose();
     }
+
+    public static int InstanceCount => _instanceCount;
 
     public bool IsDisposed => _isDisposed;
 
@@ -146,7 +153,8 @@ internal unsafe class UnmanagedMemoryPool : IUnmanagedMemoryAllocator
         }
 
         _isDisposed = true;
-        UnmanagedMemoryAllocatorFactory.OnPoolDestroyed(this);
+        Interlocked.Decrement(ref _instanceCount);
+        TelemetryFactory.Metrics.RecordGaugeUnmanagedMemoryPool(MetricTags.UnmanagedMemoryPoolType.Pooled, _component, _instanceCount);
 
         for (var i = 0; i < _length; i++)
         {
@@ -163,6 +171,6 @@ internal unsafe class UnmanagedMemoryPool : IUnmanagedMemoryAllocator
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ThrowObjectDisposedException()
     {
-        throw new ObjectDisposedException("UnmanagedMemoryPool");
+        throw new ObjectDisposedException(nameof(UnmanagedMemoryPool));
     }
 }

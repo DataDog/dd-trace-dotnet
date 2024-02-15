@@ -14,8 +14,8 @@ using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.WafEncoding
@@ -39,9 +39,23 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     return _pool;
                 }
 
-                var instance = UnmanagedMemoryAllocatorFactory.GetPool(MaxBytesForMaxStringLength, _poolSize);
+                var instance = GetPool();
+
                 _pool = instance;
                 return instance;
+
+                static IUnmanagedMemoryAllocator GetPool()
+                {
+                    var instanceCount = UnmanagedMemoryPool.InstanceCount;
+                    if (instanceCount < WafConstants.MaxUnmanagedPools)
+                    {
+                        Log.Debug<int>("Created fast WAF unmanaged pool. Current pools -> Fast: {PoolCount}", instanceCount);
+                        return new UnmanagedMemoryPool(MaxBytesForMaxStringLength, _poolSize, MetricTags.UnmanagedMemoryPoolComponent.AsmEncoder);
+                    }
+
+                    Log.Debug<int>("Created slow WAF unmanaged allocator. Current pools -> Fast: {PoolCount} ", instanceCount);
+                    return new UnpooledUnmanagedMemoryAllocator(MaxBytesForMaxStringLength, MetricTags.UnmanagedMemoryPoolComponent.AsmEncoder);
+                }
             }
         }
 

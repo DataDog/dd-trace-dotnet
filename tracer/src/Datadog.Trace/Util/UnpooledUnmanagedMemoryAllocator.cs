@@ -7,28 +7,31 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Util;
 
 /// <summary>
 /// Non pooled memory pool (what a paradox)
 /// </summary>
-internal unsafe class UnpooledUnmanagedMemoryAllocator : IUnmanagedMemoryAllocator
+internal class UnpooledUnmanagedMemoryAllocator : IUnmanagedMemoryAllocator
 {
+    private static int _instanceCount;
     private readonly int _blockSize;
+    private readonly MetricTags.UnmanagedMemoryPoolComponent _component;
 
     private bool _isDisposed;
 
-    public UnpooledUnmanagedMemoryAllocator(int blockSize)
+    public UnpooledUnmanagedMemoryAllocator(int blockSize, MetricTags.UnmanagedMemoryPoolComponent component)
     {
         _blockSize = blockSize;
+        _component = component;
+        Interlocked.Increment(ref _instanceCount);
+        TelemetryFactory.Metrics.RecordGaugeUnmanagedMemoryPool(MetricTags.UnmanagedMemoryPoolType.Unpooled, _component, _instanceCount);
     }
 
     ~UnpooledUnmanagedMemoryAllocator()
@@ -91,12 +94,13 @@ internal unsafe class UnpooledUnmanagedMemoryAllocator : IUnmanagedMemoryAllocat
 
         _isDisposed = true;
 
-        UnmanagedMemoryAllocatorFactory.OnPoolDestroyed(this);
+        Interlocked.Decrement(ref _instanceCount);
+        TelemetryFactory.Metrics.RecordGaugeUnmanagedMemoryPool(MetricTags.UnmanagedMemoryPoolType.Unpooled, _component, _instanceCount);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ThrowObjectDisposedException()
     {
-        throw new ObjectDisposedException("UnmanagedMemoryPool");
+        throw new ObjectDisposedException(nameof(UnpooledUnmanagedMemoryAllocator));
     }
 }
