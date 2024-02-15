@@ -28,7 +28,6 @@ private:
     std::shared_ptr<Sample> _sample;
     uintptr_t _address;
     ObjectHandleID _weakHandle;
-    int64_t _timestamp;
     uint64_t _gcCount;
 
     static std::atomic<uint64_t> s_nextObjectId;

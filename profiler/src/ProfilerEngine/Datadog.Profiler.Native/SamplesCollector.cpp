@@ -102,17 +102,17 @@ void SamplesCollector::Export()
         // batched samples are collected once just before export
         CollectSamples(_batchedSamplesProviders);
 
-        Log::Debug("Collected samples per provider:");
+        Log::Info("Collected samples per provider:");
         for (auto& samplesProvider : _samplesProviders)
         {
             auto name = samplesProvider.first->GetName();
-            Log::Debug(name, " : ", samplesProvider.second);
+            Log::Info(name, " : ", samplesProvider.second);
             samplesProvider.second = 0;
         }
         for (auto& batchedSamplesProvider : _batchedSamplesProviders)
         {
             auto name = batchedSamplesProvider.first->GetName();
-            Log::Debug(name, " : ", batchedSamplesProvider.second);
+            Log::Info(name, " : ", batchedSamplesProvider.second);
             batchedSamplesProvider.second = 0;
         }
 

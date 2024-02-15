@@ -10,7 +10,6 @@ LiveObjectInfo::LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address
     :
     _address(address),
     _weakHandle(nullptr),
-    _timestamp(timestamp),
     _gcCount(0)
 {
     auto id = s_nextObjectId++;
