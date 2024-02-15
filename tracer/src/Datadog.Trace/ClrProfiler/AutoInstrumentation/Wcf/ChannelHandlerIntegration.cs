@@ -63,7 +63,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            state.Scope.DisposeWithException(exception);
+            if (!Tracer.Instance.Settings.DelayWcfInstrumentationEnabled)
+            {
+                // The span will be closed by the delayed instrumentation
+                state.Scope.DisposeWithException(exception);
+            }
+
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }
