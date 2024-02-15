@@ -12,8 +12,10 @@
 
 #nullable enable
 
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+
 #if SYSTEM_PRIVATE_CORELIB
 using System.Buffers.Binary;
 using System.Runtime.InteropServices;
@@ -23,8 +25,7 @@ using System.Runtime.Intrinsics.X86;
 using System.Text.Unicode;
 #endif
 
-// ReSharper disable once CheckNamespace
-namespace System;
+namespace Datadog.Trace.Util;
 
 internal static class HexConverter
 {

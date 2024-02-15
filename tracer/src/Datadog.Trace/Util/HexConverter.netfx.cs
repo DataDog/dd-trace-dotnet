@@ -12,12 +12,12 @@
 
 #nullable enable
 
+using System;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
-// ReSharper disable once CheckNamespace
-namespace System;
+namespace Datadog.Trace.Util;
 
 /// <summary>
 /// This class is a .NET Framework version of .NET Core's internal HexConverter. It provides lower-level API
