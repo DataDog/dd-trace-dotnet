@@ -30,18 +30,11 @@ internal enum Gauge
     /// The number of logs currently enqueued to the direct log submission sink
     /// </summary>
     [TelemetryMetric("direct_log_queue.length", isCommon: false)] DirectLogQueue,
-    #endregion
-    #region Asm
 
     /// <summary>
-    /// The number of unmanaged pool instances currently active (fast)
+    /// The number of unmanaged memory pool instances currently active
     /// </summary>
-    [TelemetryMetric("waf.pool_count", isCommon: false)] PoolCount,
-
-    /// <summary>
-    /// The number of unmanaged pool instances currently disabled (slow)
-    /// </summary>
-    [TelemetryMetric("waf.pool_slow_count", isCommon: false)] PoolSlowCount,
+    [TelemetryMetric<MetricTags.UnmanagedMemoryPoolType, MetricTags.UnmanagedMemoryPoolComponent>("unmanaged_memory_pools", isCommon: false)] UnmanagedMemoryPool,
 
     #endregion
 
