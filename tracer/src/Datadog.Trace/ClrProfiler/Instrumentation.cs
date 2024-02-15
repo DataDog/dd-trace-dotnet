@@ -135,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler
                             Log.Debug("Enabling Rasp.");
                         }
 
-                        EnableTracerInstrumentations(category);
+                        EnableTracerInstrumentations(category, raspEnabled: raspEnabled);
                     }
                 }
                 catch (Exception ex)
@@ -533,7 +533,7 @@ namespace Datadog.Trace.ClrProfiler
             TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
         }
 
-        internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
+        internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null, bool raspEnabled = false)
         {
             if (legacyMode)
             {
@@ -543,25 +543,24 @@ namespace Datadog.Trace.ClrProfiler
             {
                 var defs = NativeMethods.EnableCallTargetDefinitions((uint)categories);
                 TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
-                EnableCallSiteInstrumentations(categories, sw);
+                EnableCallSiteInstrumentations(categories, sw, raspEnabled: raspEnabled);
             }
         }
 
-        private static void EnableCallSiteInstrumentations(InstrumentationCategory categories, Stopwatch sw)
+        private static void EnableCallSiteInstrumentations(InstrumentationCategory categories, Stopwatch sw, bool raspEnabled = false)
         {
             // Since we have no RASP especific instrumentations for now, we will only filter callsite aspects if RASP is
             // enabled and IAST is disabled. We don't expect RASP only instrumentation to be used in the near future.
 
             var isIast = categories.HasFlag(InstrumentationCategory.Iast);
-            var isRasp = Security.Instance.Settings.RaspEnabled;
 
-            if (isIast || isRasp)
+            if (isIast || raspEnabled)
             {
                 var inputAspects = isIast ? AspectDefinitions.Aspects : GetRaspAspects(AspectDefinitions.Aspects, out _);
 
                 if (inputAspects != null)
                 {
-                    var debugMsg = (isIast && isRasp) ? "IAST/RASP" : (isIast ? "IAST" : "RASP");
+                    var debugMsg = (isIast && raspEnabled) ? "IAST/RASP" : (isIast ? "IAST" : "RASP");
                     Log.Debug("Registering {DebugMsg} Callsite Dataflow Aspects into native library.", debugMsg);
 
                     var aspects = NativeMethods.RegisterIastAspects(inputAspects);

@@ -359,7 +359,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
     else
     {
-        Logger::Info("IAST Callsite instrumentation is disabled.");
+        Logger::Info("Callsite instrumentation is disabled.");
     }
 
     // we're in!
