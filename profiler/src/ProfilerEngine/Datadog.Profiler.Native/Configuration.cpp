@@ -487,8 +487,8 @@ int32_t Configuration::ExtractCpuThreadsThreshold()
 
 bool Configuration::GetContention()
 {
-    // disabled by default
-    bool lockContentionEnabled = false;
+    // enabled by default
+    bool lockContentionEnabled = true;
 
     // first look at the supported env var
     if (IsEnvironmentValueSet(EnvironmentVariables::LockContentionProfilingEnabled, lockContentionEnabled))
@@ -497,7 +497,7 @@ bool Configuration::GetContention()
     }
 
     // if not there, look at the deprecated one
-    return GetEnvironmentValue(EnvironmentVariables::DeprecatedContentionProfilingEnabled, false);
+    return GetEnvironmentValue(EnvironmentVariables::DeprecatedContentionProfilingEnabled, lockContentionEnabled);
 }
 
 bool Configuration::GetDefaultDebugLogEnabled()
