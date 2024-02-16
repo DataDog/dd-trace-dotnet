@@ -31,5 +31,7 @@ services:
       DD_AGENT_HOST: "datadog-agent"
       DD_ENV: "apm-docker-samples"
       ASPNETCORE_ENVIRONMENT: Production
-      # If the OTLP Exporter is enabled in the .NET application, use the GRPC endpoint
+      # If the OTLP Exporter is enabled in the .NET application, use the GRPC endpoint.
+      # This is only required if you're using OpenTelemetry ONLY (no Datadog autoinstrumentation)
+      # It is not required for this sample
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://datadog-agent:4317"
