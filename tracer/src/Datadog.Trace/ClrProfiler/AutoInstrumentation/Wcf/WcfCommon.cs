@@ -36,11 +36,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
         public static ConditionalWeakTable<object, Scope> Scopes { get; } = new();
 
-        internal static Scope? CreateScope<TRequestContext>(TRequestContext requestContext, bool useWebHttpResourceNames)
-            where TRequestContext : IRequestContext
+        internal static Scope? CreateScope<TRequestMessage>(TRequestMessage requestMessage, bool useWebHttpResourceNames)
+            where TRequestMessage : IMessage
         {
-            var requestMessage = requestContext.RequestMessage;
-
             if (requestMessage == null)
             {
                 return null;
