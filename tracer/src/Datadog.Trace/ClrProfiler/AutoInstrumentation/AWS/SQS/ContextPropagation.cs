@@ -109,7 +109,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             public void Add(string key, byte[] value)
             {
-                _carrier.AppendFormat("\"{0}\":\"{1}\",", key, Convert.ToBase64String(value));
+                _carrier
+                    .Append('"')
+                    .Append(key)
+                    .Append("\":\"")
+                    .Append(Convert.ToBase64String(value))
+                    .Append("\",");
             }
         }
 
