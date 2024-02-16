@@ -26,11 +26,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
         public void ShouldGetGarbageCollectionSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
-
-            // disable default profilers
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
+            EnvironmentHelper.DisableDefaultProfilers(runner);
 
             // enable GC profiler
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "1");

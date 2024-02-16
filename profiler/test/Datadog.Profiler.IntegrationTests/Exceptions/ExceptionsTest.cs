@@ -59,11 +59,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             }
 
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);
-            // disable default profilers
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
-
+            EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "10000");
 
@@ -109,11 +105,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         public void Sampling(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario3);
-            // disable default profilers
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
-
+            EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "100");
 
@@ -142,12 +134,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         public void GetExceptionSamplesWithTimestamp(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
-            // disable default profilers
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            EnvironmentHelper.DisableDefaultProfilers(runner);
             // timestamps are enabled by default
-
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
             CheckExceptionProfiles(runner, true);
@@ -157,12 +145,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         public void GetExceptionSamplesWithoutTimestamp(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
-            // disable default profilers
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "0");
-
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
             CheckExceptionProfiles(runner, false);
@@ -223,11 +207,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioMeasureException);
 
-            // disable default profilers
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
-
+            EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);

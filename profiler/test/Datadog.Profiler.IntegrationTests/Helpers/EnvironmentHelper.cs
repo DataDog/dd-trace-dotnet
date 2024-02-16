@@ -87,6 +87,15 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 #endif
         }
 
+        internal static void DisableDefaultProfilers(TestApplicationRunner runner)
+        {
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
+            // TODO: runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
+        }
+
         internal void EnableTracer()
         {
             AddTracerEnvironmentVariables();

@@ -3,11 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -32,10 +28,7 @@ namespace Datadog.Profiler.IntegrationTests.Threads
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
 
-            // disable default profilers
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            EnvironmentHelper.DisableDefaultProfilers(runner);
 
             // enable thread lifetime provider
             runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "1");
