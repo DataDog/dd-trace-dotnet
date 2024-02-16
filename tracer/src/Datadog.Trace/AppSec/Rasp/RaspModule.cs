@@ -30,6 +30,7 @@ internal static class RaspModule
     private static void CheckVulnerability(string address, string valueToCheck)
     {
         var security = Security.Instance;
+        Log.Information("ENTER FILEEEEE");
 
         if (!security.RaspEnabled)
         {
