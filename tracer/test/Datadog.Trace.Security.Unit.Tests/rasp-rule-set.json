@@ -1,7 +1,7 @@
 {
   "version": "2.2",
   "metadata": {
-    "rules_version": "1.10.0"
+    "rules_version": "1.3.0"
   },
   "rules": [
     {
@@ -14,33 +14,18 @@
       },
       "conditions": [
         {
-          "operator": "lfi_detector",
+          "operator": "match_regex",
           "parameters": {
-            "resource": [
+            "inputs": [
               {
                 "address": "server.io.fs.file"
               }
             ],
-            "params": [
-              {
-                "address": "server.request.query"
-              },
-              {
-                "address": "server.request.body"
-              },
-              {
-                "address": "server.request.path_params"
-              },
-              {
-                "address": "grpc.server.request.message"
-              },
-              {
-                "address": "graphql.server.all_resolvers"
-              },
-              {
-                "address": "graphql.server.resolver"
-              }
-            ]
+            "regex": ".*",
+            "options": {
+              "case_sensitive": false,
+              "min_length": 2
+            }
           }
         }
       ],

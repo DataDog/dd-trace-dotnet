@@ -31,6 +31,7 @@ internal static class RaspModule
     private static void RunWaf(Dictionary<string, object> arguments)
     {
         var security = Security.Instance;
+        Log.Information("ENTER FILEEEEE");
 
         if (!security.RaspEnabled)
         {
