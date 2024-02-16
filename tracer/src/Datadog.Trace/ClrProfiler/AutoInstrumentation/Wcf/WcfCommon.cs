@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         public static ConditionalWeakTable<object, Scope> Scopes { get; } = new();
 
         internal static Scope? CreateScope<TRequestMessage>(TRequestMessage requestMessage, bool useWebHttpResourceNames)
-            where TRequestMessage : IMessage
+            where TRequestMessage : IMessage?
         {
             if (requestMessage == null)
             {
@@ -62,9 +62,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 string? httpMethod = null;
                 WebHeadersCollection? headers = null;
 
-                IDictionary<string, object> requestProperties = requestMessage.Properties;
-                if (requestProperties.TryGetValue("httpRequest", out object httpRequestProperty) &&
-                    httpRequestProperty.GetType().FullName.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
+                IDictionary<string, object?>? requestProperties = requestMessage.Properties;
+                if (requestProperties?.TryGetValue("httpRequest", out var httpRequestProperty) ?? false
+                    && httpRequestProperty.GetType().FullName.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
                 {
                     var httpRequestPropertyProxy = httpRequestProperty.DuckCast<HttpRequestMessagePropertyStruct>();
                     var webHeaderCollection = httpRequestPropertyProxy.Headers;
@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     {
                         propagatedContext = SpanContextPropagator.Instance.Extract(requestMessage.Headers, GetHeaderValues);
 
-                        static IEnumerable<string> GetHeaderValues(IMessageHeaders headers, string name)
+                        static IEnumerable<string?> GetHeaderValues(IMessageHeaders headers, string name)
                         {
                             try
                             {
@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
                 string? resourceName = null;
                 if (useWebHttpResourceNames
-                 && requestProperties.TryGetValue("UriMatched", out object uriMatched)
+                 && requestProperties?.TryGetValue("UriMatched", out var uriMatched) is true
                  && uriMatched is true
                  && requestProperties.TryGetValue("UriTemplateMatchResults", out var matchResults)
                  && matchResults is not null

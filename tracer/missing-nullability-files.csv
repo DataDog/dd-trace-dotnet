@@ -614,13 +614,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartIntegratio
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartTags.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RabbitMQ/RabbitMQConstants.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/Common.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/ChannelHandlerIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/HttpRequestMessagePropertyStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/IMessage.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/IMessageHeaders.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/ImmutableDispatchRuntimeIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/IOperationContextStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/IRequestContext.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/BeginMethodHandler.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/BeginMethodHandler`1.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/BeginMethodHandler`2.cs
