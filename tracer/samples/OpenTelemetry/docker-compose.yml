@@ -13,9 +13,6 @@ services:
       DD_API_KEY: "${DD_API_KEY:?Set DD_API_KEY in your shell to send traces to Datadog}"
       DD_APM_ENABLED: "true"
       DD_APM_NON_LOCAL_TRAFFIC: "true"
-      # Configure the Datadog agent for OTLP Ingest
-      DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT: "0.0.0.0:4317"
-      DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT: "0.0.0.0:4318"
 
   #
   # Application containers
@@ -31,7 +28,3 @@ services:
       DD_AGENT_HOST: "datadog-agent"
       DD_ENV: "apm-docker-samples"
       ASPNETCORE_ENVIRONMENT: Production
-      # If the OTLP Exporter is enabled in the .NET application, use the GRPC endpoint.
-      # This is only required if you're using OpenTelemetry ONLY (no Datadog autoinstrumentation)
-      # It is not required for this sample
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://datadog-agent:4317"
