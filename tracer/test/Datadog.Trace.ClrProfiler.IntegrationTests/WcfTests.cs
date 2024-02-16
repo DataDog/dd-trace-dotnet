@@ -22,6 +22,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private const string ServiceVersion = "1.0.0";
 
+        private static readonly HashSet<string> ExcludeTags = new HashSet<string>
+        {
+            "custom-tag",
+        };
+
         public WcfTests(ITestOutputHelper output)
             : base("Wcf", output)
         {
@@ -75,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "v1", false, false },
         };
 
-        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsWcf(metadataSchemaVersion);
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsWcf(metadataSchemaVersion, ExcludeTags);
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
