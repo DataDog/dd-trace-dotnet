@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.CI.AzurePipelines;
@@ -1234,10 +1235,72 @@ partial class Build : NukeBuild
        });
 
     static bool IsGitBaseBranch(string baseBranch)
-        => string.Equals(
+    {
+        // *****
+        // First we try to find the base branch in the Azure Pipelines environment variables.
+        // This code is a simplified version of Datadog.Trace/CI/CIEnvironmentValues.cs file
+        // to only extract the branch name from Azure Pipelines
+        // *****
+        const string AzureSystemPullRequestSourceBranch = "SYSTEM_PULLREQUEST_SOURCEBRANCH";
+        const string AzureBuildSourceBranch = "BUILD_SOURCEBRANCH";
+        const string AzureBuildSourceBranchName = "BUILD_SOURCEBRANCHNAME";
+
+        var prBranch = Environment.GetEnvironmentVariable(AzureSystemPullRequestSourceBranch);
+        var branch = !string.IsNullOrWhiteSpace(prBranch) ? prBranch : Environment.GetEnvironmentVariable(AzureBuildSourceBranch);
+        if (string.IsNullOrWhiteSpace(branch))
+        {
+            branch = Environment.GetEnvironmentVariable(AzureBuildSourceBranchName);
+        }
+        
+        Console.WriteLine("Base Branch: {0}", baseBranch);
+        Console.WriteLine("Current Branch: {0}", branch);
+
+        var cleanBranch = CleanBranchName(branch);
+        var cleanBaseBranch = CleanBranchName(baseBranch);
+        Console.Write("  {0} == {1}? ", cleanBranch, cleanBaseBranch);
+        
+        if (string.Equals(cleanBranch, cleanBaseBranch, StringComparison.OrdinalIgnoreCase))
+        {
+            Console.WriteLine("true");
+            return true;
+        }
+
+        Console.WriteLine("false");
+
+        // *****
+        // In case we cannot find the baseBranch we fallback to the git command
+        // *****
+        return string.Equals(
             GitTasks.Git("rev-parse --abbrev-ref HEAD").First().Text,
             baseBranch,
             StringComparison.OrdinalIgnoreCase);
+
+        static string CleanBranchName(string branchName)
+        {
+            try
+            {
+                // Clean branch name
+                var regex = new Regex(@"^refs\/heads\/tags\/(.*)|refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)|origin\/tags\/(.*)|origin\/(.*)$");
+                if (!string.IsNullOrEmpty(branchName))
+                {
+                    var match = regex.Match(branchName);
+                    if (match.Success && match.Groups.Count == 7)
+                    {
+                        branchName =
+                            !string.IsNullOrWhiteSpace(match.Groups[2].Value) ? match.Groups[2].Value :
+                            !string.IsNullOrWhiteSpace(match.Groups[4].Value) ? match.Groups[4].Value :
+                                                                                match.Groups[6].Value;
+                    }
+                }
+            }
+            catch
+            {
+                // .
+            }
+
+            return branchName;
+        }
+    }
 
     static string[] GetGitChangedFiles(string baseBranch)
     {

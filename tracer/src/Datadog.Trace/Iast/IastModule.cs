@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Aspects.System;
 using Datadog.Trace.Iast.Propagation;
@@ -28,6 +29,7 @@ internal static class IastModule
     private const string OperationNameWeakHash = "weak_hashing";
     private const string OperationNameWeakCipher = "weak_cipher";
     private const string OperationNameSqlInjection = "sql_injection";
+    private const string OperationNameNoSqlMongoDbInjection = "nosql_mongodb_injection";
     private const string OperationNameCommandInjection = "command_injection";
     private const string OperationNamePathTraversal = "path_traversal";
     private const string OperationNameLdapInjection = "ldap_injection";
@@ -37,6 +39,7 @@ internal static class IastModule
     private const string OperationNameTrustBoundaryViolation = "trust_boundary_violation";
     private const string OperationNameUnvalidatedRedirect = "unvalidated_redirect";
     private const string OperationNameHeaderInjection = "header_injection";
+    private const string OperationNameXPathInjection = "xpath_injection";
     private const string ReferrerHeaderName = "Referrer";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
@@ -196,6 +199,20 @@ internal static class IastModule
         }
     }
 
+    public static IastModuleResponse OnNoSqlMongoDbQuery(string query, IntegrationId integrationId)
+    {
+        try
+        {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.NoSqlMongoDbInjection);
+            return GetScope(query, integrationId, VulnerabilityTypeName.NoSqlMongoDbInjection, OperationNameNoSqlMongoDbInjection, Always);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for MongoDb NoSql injection.");
+            return IastModuleResponse.Empty;
+        }
+    }
+
     public static IastModuleResponse OnCommandInjection(string file, string argumentLine, Collection<string> argumentList, IntegrationId integrationId)
     {
         try
@@ -213,7 +230,14 @@ internal static class IastModule
 
     internal static EvidenceRedactor? CreateRedactor(IastSettings settings)
     {
-        return settings.RedactionEnabled ? new EvidenceRedactor(settings.RedactionKeysRegex, settings.RedactionValuesRegex, TimeSpan.FromMilliseconds(settings.RegexTimeout)) : null;
+        var timeout = TimeSpan.FromMilliseconds(settings.RegexTimeout);
+
+        if (timeout.TotalMilliseconds == 0)
+        {
+            timeout = Regex.InfiniteMatchTimeout;
+        }
+
+        return settings.RedactionEnabled ? new EvidenceRedactor(settings.RedactionKeysRegex, settings.RedactionValuesRegex, timeout) : null;
     }
 
     private static string BuildCommandInjectionEvidence(string file, string argumentLine, Collection<string>? argumentList)
@@ -552,7 +576,7 @@ internal static class IastModule
             // TripleDESCryptoServiceProvider is a SymetricAlgorithm that internally creates a TripleDES instance, which is also a weak SymmetricAlgorithm. In order to avoid launching two spans for a single vulnerability,
             // we skip the one that would be launched when instantiating the TripleDESCryptoServiceProvider class.
             "TripleDESCryptoServiceProvider" => true,
-            _ => string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.Linux, StringComparison.Ordinal) && name.EndsWith("provider", StringComparison.OrdinalIgnoreCase)
+            _ => (string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.Linux, StringComparison.Ordinal) || string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.MacOS, StringComparison.Ordinal)) && name.EndsWith("provider", StringComparison.OrdinalIgnoreCase)
         };
 
     // Evidence: If the customer application is setting the header with an invalid value, the evidence value should be the value that is set. If the header is missing, the evidence should not be sent.
@@ -573,5 +597,19 @@ internal static class IastModule
         var evidence = StringAspects.Concat(headerName, HeaderInjectionEvidenceSeparator, headerValue);
         var hash = ("HEADER_INJECTION:" + headerName).GetStaticHashCode();
         GetScope(evidence, integrationId, VulnerabilityTypeName.HeaderInjection, OperationNameHeaderInjection, Always, false, hash);
+    }
+
+    internal static IastModuleResponse OnXpathInjection(string xpath)
+    {
+        try
+        {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.XPathInjection);
+            return GetScope(xpath, IntegrationId.XpathInjection, VulnerabilityTypeName.XPathInjection, OperationNameXPathInjection, Always);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for xpath injection.");
+            return IastModuleResponse.Empty;
+        }
     }
 }

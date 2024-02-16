@@ -17,7 +17,7 @@ Json:
     {
       "gt": [
         {
-          "count": [
+          "len": [
             {
               "ref": "CollectionLocal"
             }

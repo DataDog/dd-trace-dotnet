@@ -523,29 +523,8 @@ void StackSamplerLoop::CollectOneThreadStackSample(
 
     } // SemaphoreScope guardedLock(pThreadInfo->GetStackWalkLock())
 
-    UpdateStatistics(hrCollectStack, countCollectedStackFrames);
-
     // Store stack-walk results into the results buffer:
     PersistStackSnapshotResults(pStackSnapshotResult, pThreadInfo, profilingType);
-}
-
-void StackSamplerLoop::UpdateStatistics(HRESULT hrCollectStack, std::size_t countCollectedStackFrames)
-{
-    // Counts stats on how often we encounter certain results.
-    // For now we only print it to the debug log.
-    // However, summary statistics of this are a good candidate for global telemetry in the future.
-
-    // All of these counters will cycle over time, especially _totalStacksCollected.
-    // For current Debug Log purposes this does not matter.
-    // For future global telemetry we may need to find some way to put it in the context of overall runtime
-    // to interpret correctly.
-    uint64_t& encounteredStackSnapshotHrCount = _encounteredStackSnapshotHRs[hrCollectStack];
-    ++encounteredStackSnapshotHrCount;
-
-    uint64_t& encounteredStackSnapshotDepthCount = _encounteredStackSnapshotDepths[countCollectedStackFrames];
-    ++encounteredStackSnapshotDepthCount;
-
-    ++_totalStacksCollectedCount;
 }
 
 void StackSamplerLoop::UpdateSnapshotInfos(StackSnapshotResultBuffer* const pStackSnapshotResult, int64_t representedDurationNanosecs, time_t currentUnixTimestamp)

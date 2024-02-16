@@ -57,7 +57,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// <param name="setupWafSchemaExtraction">should we read the config file for schema extraction</param>
         /// <param name="useUnsafeEncoder">use legacy encoder</param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static unsafe InitResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? embeddedRulesetPath = null, JToken? rulesFromRcm = null, bool setupWafSchemaExtraction = false, bool useUnsafeEncoder = false)
+        internal static InitResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? embeddedRulesetPath = null, JToken? rulesFromRcm = null, bool setupWafSchemaExtraction = false, bool useUnsafeEncoder = false)
         {
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
 
@@ -65,6 +65,10 @@ namespace Datadog.Trace.AppSec.Waf
             wafLibraryInvoker.SetupLogging(GlobalSettings.Instance.DebugEnabledInternal);
 
             var jtokenRoot = rulesFromRcm ?? WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath)!;
+            if (jtokenRoot is null)
+            {
+                return InitResult.FromUnusableRuleFile();
+            }
 
             IntPtr rulesObj;
             DdwafConfigStruct configWafStruct = default;
@@ -227,8 +231,8 @@ namespace Datadog.Trace.AppSec.Waf
         }
 
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)
-        public WafReturnCode Run(IntPtr contextHandle, IntPtr rawPersistentData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds)
-            => _wafLibraryInvoker.Run(contextHandle, rawPersistentData, IntPtr.Zero, ref retNative, timeoutMicroSeconds);
+        public WafReturnCode Run(IntPtr contextHandle, IntPtr rawPersistentData, IntPtr rawEphemeralData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds)
+            => _wafLibraryInvoker.Run(contextHandle, rawPersistentData, rawEphemeralData, ref retNative, timeoutMicroSeconds);
 
         internal static List<RuleData> MergeRuleData(IEnumerable<RuleData> res)
         {

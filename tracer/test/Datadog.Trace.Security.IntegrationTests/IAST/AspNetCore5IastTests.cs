@@ -272,6 +272,25 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastXpathInjectionRequest()
+    {
+        var filename = "Iast.XpathInjection.AspNetCore5.IastEnabled";
+        var url = "/Iast/XpathInjection?user=klaus&value=pass";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 public class AspNetCore5IastTestsFullSamplingIastDisabled : AspNetCore5IastTestsFullSampling
@@ -389,6 +408,27 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var filename = IastEnabled ? "Iast.SqlInjection.AspNetCore5.IastEnabled" : "Iast.SqlInjection.AspNetCore5.IastDisabled";
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = "/Iast/SqlQuery?username=Vicent";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastNoSqlMongoDbInjectionRequest()
+    {
+        var filename = IastEnabled ? "Iast.NoSqlMongoDbInjection.AspNetCore5.IastEnabled" : "Iast.NoSqlMongoDbInjection.AspNetCore5.IastDisabled";
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        const string value = "1\", \"$or\": [{\"Price\": {\"$gt\": 1000}}], \"other\": \"1";
+        var url = $"/Iast/NoSqlQueryMongoDb?price={value}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;

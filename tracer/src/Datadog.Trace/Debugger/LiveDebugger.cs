@@ -460,7 +460,7 @@ namespace Datadog.Trace.Debugger
             _debuggerSink.AddErrorProbeStatus(probeId, probeVersion, exception, errorMessage);
         }
 
-        internal void SendMetrics(MetricKind metricKind, string metricName, double value)
+        internal void SendMetrics(MetricKind metricKind, string metricName, double value, string probeId)
         {
             if (_dogStats is NoOpStatsd)
             {
@@ -470,13 +470,13 @@ namespace Datadog.Trace.Debugger
             switch (metricKind)
             {
                 case MetricKind.COUNT:
-                    _dogStats.Counter(statName: metricName, value: value);
+                    _dogStats.Counter(statName: metricName, value: value, tags: new[] { $"probe-id:{probeId}" });
                     break;
                 case MetricKind.GAUGE:
-                    _dogStats.Gauge(statName: metricName, value: value);
+                    _dogStats.Gauge(statName: metricName, value: value, tags: new[] { $"probe-id:{probeId}" });
                     break;
                 case MetricKind.HISTOGRAM:
-                    _dogStats.Histogram(statName: metricName, value: value);
+                    _dogStats.Histogram(statName: metricName, value: value, tags: new[] { $"probe-id:{probeId}" });
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(

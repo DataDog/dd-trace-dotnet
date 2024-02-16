@@ -112,8 +112,12 @@
 
     <div><a href="/Iast/StackTraceLeak">GET /Iast/StackTraceLeak</a></div>
 
+    <div><a href="/Iast/XpathInjection?user=James&password=Smith">GET /Iast/XpathInjection</a></div>
+
     <div><a href="javascript:GetCookieHeaderData('file=value1', 'name', 'myName', 'value', 'myValue', '/Iast/HeaderInjection')">GET /HeaderInjection</a></div>
 
+    <div><a href="/Iast/NoSqlQueryMongoDb?price=42">GET /Iast/NoSqlQueryMongoDb</a></div>
+    
     <div>
         @Html.Raw(Context.Request.Query["q"])
     </div>

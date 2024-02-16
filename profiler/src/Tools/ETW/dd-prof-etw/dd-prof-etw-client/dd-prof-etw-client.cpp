@@ -10,23 +10,24 @@
 #include <sstream>
 #include <string>
 
-#include "..\shared\Protocol.h"
-#include "..\shared\IpcClient.h"
-#include "..\shared\IpcServer.h"
-#include "..\shared\EtwEventsHandler.h"
-
+#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\Protocol.h"
+#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.h"
+#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.h"
+#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\EtwEventsHandler.h"
+#include "EtwEventDumper.h"
+#include "..\ConsoleLogger.h"
 
 void ShowHelp()
 {
-    printf("\nDatadog CLR Events Client v1.0\n");
+    printf("\nDatadog CLR Events Client v1.1\n");
     printf("Simulate a .NET profiled application asking for ETW CLR events via named pipes.\n");
     printf("\n");
-    printf("Usage: -pid <pid of a .NET process emitting events> -pipe <server named pipe endpoint>\n");
-    printf("   Ex: -pid 1234 -pipe DD_ETW_DISPATCHER\n");
+    printf("Usage: -pid <pid of a .NET process emitting events>\n");
+    printf("   Ex: -pid 1234\n");
     printf("\n");
 }
 
-bool ParseCommandLine(int argc, char* argv[], int& pid, char*& pipe, bool& needHelp)
+bool ParseCommandLine(int argc, char* argv[], int& pid, bool& needHelp)
 {
     bool success = false;
 
@@ -51,17 +52,6 @@ bool ParseCommandLine(int argc, char* argv[], int& pid, char*& pipe, bool& needH
             success = (pid != 0);
         }
         else
-        if (strcmp(argv[i], "-pipe") == 0)
-        {
-            if (i == argc - 1)
-            {
-                return false;
-            }
-
-            pipe = argv[i + 1];
-            success = true;
-        }
-        else
         if (strcmp(argv[i], "-help") == 0)
         {
             needHelp = true;
@@ -77,7 +67,7 @@ void ShowLastError(const char* msg, DWORD error = ::GetLastError())
     printf("%s (%u)\n", msg, error);
 }
 
-void SendRegistrationCommand(IpcClient* pClient, int pid, bool add)
+bool SendRegistrationCommand(IpcClient* pClient, int pid, bool add)
 {
     RegistrationProcessMessage message;
     if (add)
@@ -93,20 +83,37 @@ void SendRegistrationCommand(IpcClient* pClient, int pid, bool add)
     if (code != NamedPipesCode::Success)
     {
         ShowLastError("Failed to write to pipe", code);
-        return;
+        return false;
     }
 
     IpcHeader response;
     code = pClient->Read(&response, sizeof(response));
     if (code == NamedPipesCode::Success)
     {
+        bool success = (response.ResponseCode == (uint8_t)ResponseId::OK);
         if (add)
         {
-            std::cout << "Registered!\n";
+            if (success)
+            {
+                std::cout << "Registered!\n";
+            }
+            else
+            {
+                std::cout << "Registration failed...\n";
+                return false;
+            }
         }
         else
         {
-            std::cout << "Unregistered!\n";
+            if (success)
+            {
+                std::cout << "Unregistered!\n";
+            }
+            else
+            {
+                std::cout << "Unregistration failed...\n";
+                return false;
+            }
         }
     }
     else
@@ -114,42 +121,44 @@ void SendRegistrationCommand(IpcClient* pClient, int pid, bool add)
         if (code == NamedPipesCode::NotConnected)
         {
             // expected after unregistration (i.e. !add) because the pipe will be closed by the Agent
-            if (add)
-            {
-                std::cout << "Pipe no more connected: registration failed...\n";
-            }
+            std::cout << "Pipe is no more connected\n";
+        }
+        else
+        if (code == NamedPipesCode::Broken)
+        {
+            // expected when the Agent crashes
+            std::cout << "Pipe is broken\n";
         }
         else
         {
             ShowLastError("Failed to read result", code);
-
-            if (add)
-            {
-                std::cout << "Registration failed...\n";
-            }
-            else
-            {
-                std::cout << "Unregistration failed...\n";
-            }
         }
+
+        if (add)
+        {
+            std::cout << "Registration failed...\n";
+        }
+        else
+        {
+            std::cout << "Unregistration failed...\n";
+        }
+        return false;
     }
+
+    return true;
 }
 
 
 int main(int argc, char* argv[])
 {
     int pid = -1;
-    char* pipe = nullptr;
+    const char* pipe = "DD_ETW_DISPATCHER";
     bool needHelp = false;
-    if (!ParseCommandLine(argc, argv, pid, pipe, needHelp))
+    if (!ParseCommandLine(argc, argv, pid, needHelp))
     {
         if (pid == -1)
         {
             std::cout << "Missing -p <pid>...\n";
-        }
-        if (pipe == nullptr)
-        {
-            std::cout << "Missing -pipe <server name>...\n";
         }
 
         return -1;
@@ -170,15 +179,16 @@ int main(int argc, char* argv[])
     std::string pipeName = buffer.str();
     std::cout << "Exposing " << pipeName << "\n";
 
-    bool showMessages = true;
-    auto handler = std::make_unique<EtwEventsHandler>(showMessages);
+    EtwEventDumper eventDumper;
+    std::unique_ptr<ConsoleLogger> logger = std::make_unique<ConsoleLogger>();
+    auto handler = std::make_unique<EtwEventsHandler>(logger.get(), &eventDumper);
     auto server = IpcServer::StartAsync(
-        showMessages,
+        logger.get(),
         pipeName,
         handler.get(),
         (1 << 16) + sizeof(IpcHeader),
         sizeof(SuccessResponse),
-        16,
+        2,
         500
         );
     if (server == nullptr)
@@ -192,7 +202,7 @@ int main(int argc, char* argv[])
     pipeName += pipe;
     std::cout << "Contacting " << pipeName << "...\n";
 
-    auto client = IpcClient::Connect(showMessages, pipeName, 500);
+    auto client = IpcClient::Connect(logger.get(), pipeName, 500);
     if (client == nullptr)
     {
         std::cout << "Impossible to connect to the ETW server...\n";

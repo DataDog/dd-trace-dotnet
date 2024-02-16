@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "ManagedThreadInfo.h"
+
 class IThreadLifetimeListener
 {
 public:

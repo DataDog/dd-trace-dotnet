@@ -34,16 +34,19 @@ public class TracerSettingsSnapshotGenerator : IIncrementalGenerator
                         GenerateSnapshotFullName,
                         static (node, _) => node is ClassDeclarationSyntax,
                         static (context, ct) => GetSettableProperties(context, ct))
+                   .WithTrackingName(TrackingNames.PostTransform)
                    .Where(static m => m is not null)!;
 
         context.ReportDiagnostics(
             classesToGenerate
                .Where(static m => m.Errors.Count > 0)
-               .SelectMany(static (x, _) => x.Errors));
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.Diagnostics));
 
         var validClasses = classesToGenerate
                           .Where(static m => m.Value.IsValid)
-                          .Select(static (x, _) => x.Value.ClassToGenerate);
+                          .Select(static (x, _) => x.Value.ClassToGenerate)
+                          .WithTrackingName(TrackingNames.ValidValues);
 
         context.RegisterSourceOutput(
             validClasses,

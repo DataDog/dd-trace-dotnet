@@ -55,9 +55,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             initResult.Success.Should().BeFalse();
             initResult.FailedToLoadRules.Should().Be(0);
             initResult.LoadedRules.Should().Be(0);
-            initResult.Errors.Should().Equal(new Dictionary<string, object> { { "diagnostics-error", "Waf could not provide diagnostics on rules or diagnostic format is incorrect" } });
-            initResult.HasErrors.Should().BeTrue();
-            initResult.ErrorMessage.Should().Be("{\"diagnostics-error\":\"Waf could not provide diagnostics on rules or diagnostic format is incorrect\"}");
+            initResult.UnusableRuleFile.Should().BeTrue();
         }
     }
 }

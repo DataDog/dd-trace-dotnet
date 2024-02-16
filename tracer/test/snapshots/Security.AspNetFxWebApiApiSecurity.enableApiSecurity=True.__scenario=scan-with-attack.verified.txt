@@ -1,0 +1,72 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet-webapi.request,
+    Resource: POST /api/home/api-security/{id},
+    Service: sample,
+    Type: web,
+    ParentId: Id_3,
+    Tags: {
+      aspnet.route: api/home/api-security/{id},
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 403,
+      http.url: http://localhost:00000/api/home/api-security/12,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      span.kind: server,
+      _dd.origin: appsec
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet.request,
+    Resource: POST /api/home/api-security/{id},
+    Service: sample,
+    Type: web,
+    Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.blocked: true,
+      appsec.event: true,
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.method: POST,
+      http.request.headers.content-length: 80,
+      http.request.headers.content-type: application/json; charset=utf-8,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
+      http.response.headers.content-length: 167,
+      http.response.headers.content-type: application/json; charset=utf-8,
+      http.route: api/home/api-security/{id},
+      http.status_code: 403,
+      http.url: http://localhost:00000/api/home/api-security/12,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      network.client.ip: ::1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-932-160","name":"Remote Command Execution: Unix Shell Code Found","tags":{"category":"attack_attempt","type":"command_injection"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dev/zero"],"key_path":["model","Dog2"],"value":"dev/zero"}]}]}]},
+      _dd.appsec.s.req.body: [{"model":[{"Dog":[4],"Dog2":[8],"Dog3":[16],"Dog4":[16],"Dog5":[1]}]}],
+      _dd.appsec.s.req.cookies: [{"cookie-key":[[[8]],{"len":1}]}],
+      _dd.appsec.s.req.headers: [{"content-length":[[[8]],{"len":1}],"content-type":[[[8]],{"len":1}],"expect":[[[8]],{"len":1}],"host":[[[8]],{"len":1}],"traceparent":[[[8]],{"len":1}],"tracestate":[[[8]],{"len":1}],"user-agent":[[[8]],{"len":1}],"x-datadog-parent-id":[[[8]],{"len":1}],"x-datadog-sampling-priority":[[[8]],{"len":1}],"x-datadog-tags":[[[8]],{"len":1}],"x-datadog-trace-id":[[[8]],{"len":1}],"x-forwarded-for":[[[8]],{"len":1}]}],
+      _dd.appsec.s.req.params: [{"id":[4]}],
+      _dd.appsec.s.req.query: [{}],
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  }
+]

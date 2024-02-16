@@ -3,7 +3,7 @@ Json:
 {
   "gt": [
     {
-      "count": {
+      "len": {
         "filter": [
           {
             "ref": "CollectionLocal"

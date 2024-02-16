@@ -22,6 +22,8 @@ internal class OverheadController
     /// For testing only.
     /// Note that this API does NOT replace the global OverheadController instance on security and iast instances.
     /// </summary>
+    /// <param name="maxConcurrentRequest">The max concurrent request number></param>
+    /// <param name="samplingParameter">The sampling parameter in percentage, not as decimal, but 5, 10 %...></param>
     internal OverheadController(int maxConcurrentRequest, int samplingParameter)
     {
         _maxConcurrentRequests = maxConcurrentRequest;
@@ -31,18 +33,23 @@ internal class OverheadController
 
     public bool AcquireRequest()
     {
+        var result = true;
         lock (this)
         {
-            if (_executedRequests++ % _sampling != 0 || _availableRequests <= 0)
+            if (_availableRequests <= 0 || _sampling == 0 || _executedRequests % _sampling != 0)
             {
                 Log.Debug<int, int>("Could not acquire request from OverheadController, sampling is {Sampling} and available requests are {AvailableRequests}", _sampling, _availableRequests);
-                return false;
+                result = false;
+            }
+            else
+            {
+                _availableRequests--;
             }
 
-            _availableRequests--;
+            _executedRequests++;
         }
 
-        return true;
+        return result;
     }
 
     public void ReleaseRequest()
@@ -64,5 +71,5 @@ internal class OverheadController
         }
     }
 
-    private static int ComputeSamplingParameter(int pct) => pct <= 0 ? 0 : (int)Math.Round(100m / pct);
+    private static int ComputeSamplingParameter(int samplingPercent) => samplingPercent <= 0 ? 0 : (int)Math.Round(100m / samplingPercent);
 }

@@ -41,7 +41,6 @@ src/Datadog.Trace/TaggingUtils.cs
 src/Datadog.Trace/Tags.AppSec.cs
 src/Datadog.Trace/Tags.cs
 src/Datadog.Trace/TimeConstants.cs
-src/Datadog.Trace/TraceContext.cs
 src/Datadog.Trace/Tracer.cs
 src/Datadog.Trace/TracerConstants.cs
 src/Datadog.Trace/TracerManager.cs
@@ -69,9 +68,7 @@ src/Datadog.Trace/Agent/TracesTransportStrategy.cs
 src/Datadog.Trace/Agent/TracesTransportType.cs
 src/Datadog.Trace/AppSec/AddressesConstants.cs
 src/Datadog.Trace/AppSec/AppSecRateLimiter.cs
-src/Datadog.Trace/AppSec/BlockException.cs
 src/Datadog.Trace/AppSec/BlockingAction.cs
-src/Datadog.Trace/AppSec/ControllerContextExtensions.Framework.cs
 src/Datadog.Trace/AppSec/CoreHttpContextStore.cs
 src/Datadog.Trace/AppSec/EventTrackingSdk.cs
 src/Datadog.Trace/AppSec/IDatadogSecurity.cs
@@ -305,7 +302,6 @@ src/Datadog.Trace/Agent/Transports/SocketHandlerRequestFactory.cs
 src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Core.cs
 src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Framework.cs
 src/Datadog.Trace/AppSec/Coordinator/HttpTransportBase.cs
-src/Datadog.Trace/AppSec/Waf/IResult.cs
 src/Datadog.Trace/AppSec/Waf/IWaf.cs
 src/Datadog.Trace/AppSec/Waf/WafConstants.cs
 src/Datadog.Trace/AppSec/Waf/WafReturnCode.cs

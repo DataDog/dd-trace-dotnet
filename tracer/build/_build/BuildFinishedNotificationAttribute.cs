@@ -3,7 +3,7 @@ using Nuke.Common.Execution;
 
 public partial class BuildFinishedNotificationAttribute : BuildExtensionAttributeBase, IOnBuildFinished
 {
-#if !IS_WINDOWS
+#if !NUKE_NOTIFY
     public void OnBuildFinished(NukeBuild build)
     {}
 #endif

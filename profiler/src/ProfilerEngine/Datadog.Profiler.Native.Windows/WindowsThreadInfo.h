@@ -13,6 +13,8 @@ public:
     DWORD GetOsThreadId() const override;
     shared::WSTRING const& GetThreadName() const override;
     HANDLE GetOsThreadHandle() const override;
+    std::string GetProfileThreadId() override;
+    std::string GetProfileThreadName() override;
 
 private:
     ScopedHandle _handle;

@@ -44,12 +44,16 @@ namespace Datadog.Trace.Ci.Configuration
             CodeCoverageSnkFilePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile).AsString();
             CodeCoveragePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoveragePath).AsString();
             CodeCoverageEnableJitOptimizations = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations).AsBool(true);
+            CodeCoverageMode = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageMode).AsString();
 
             // Git upload
             GitUploadEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.GitUploadEnabled).AsBool();
 
             // Force evp proxy
             ForceAgentsEvpProxy = config.WithKeys(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy).AsBool(false);
+
+            // Check if Datadog.Trace should be installed in the GAC
+            InstallDatadogTraceInGac = config.WithKeys(ConfigurationKeys.CIVisibility.InstallDatadogTraceInGac).AsBool(true);
         }
 
         /// <summary>
@@ -118,6 +122,11 @@ namespace Datadog.Trace.Ci.Configuration
         public bool CodeCoverageEnableJitOptimizations { get; }
 
         /// <summary>
+        /// Gets the code coverage mode
+        /// </summary>
+        public string? CodeCoverageMode { get; private set; }
+
+        /// <summary>
         /// Gets a value indicating whether the Git Upload metadata is going to be used.
         /// </summary>
         public bool? GitUploadEnabled { get; private set; }
@@ -136,6 +145,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets a value indicating whether EVP Proxy must be used.
         /// </summary>
         public bool ForceAgentsEvpProxy { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether we ensure Datadog.Trace GAC installation.
+        /// </summary>
+        public bool InstallDatadogTraceInGac { get; }
 
         /// <summary>
         /// Gets the tracer settings
@@ -162,6 +176,11 @@ namespace Datadog.Trace.Ci.Configuration
             Agentless = enabled;
             ApiKey = apiKey;
             AgentlessUrl = agentlessUrl;
+        }
+
+        internal void SetCodeCoverageMode(string? coverageMode)
+        {
+            CodeCoverageMode = coverageMode;
         }
 
         internal void SetDefaultManualInstrumentationSettings()

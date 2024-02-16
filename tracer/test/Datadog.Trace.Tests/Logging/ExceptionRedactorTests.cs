@@ -56,54 +56,60 @@ public class ExceptionRedactorTests
         redacted.Should().BeEmpty();
     }
 
-    [Theory]
-    [MemberData(nameof(TestData.MethodsToRedact), MemberType = typeof(TestData))]
-    public void RedactStackTrace_RedactsUserCode(object method)
+    [Fact]
+    public void RedactStackTrace_RedactsUserCode()
     {
-        var methodBase = method.Should().NotBeNull().And.BeAssignableTo<MethodBase>().Subject;
-        var stackFrame = new TestStackFrame(methodBase);
-        var stackTrace = new StackTrace(stackFrame);
-
-        var sb = new StringBuilder();
-        ExceptionRedactor.RedactStackTrace(sb, stackTrace);
-        var redacted = sb.ToString();
-
-        redacted.Should().Be($"{ExceptionRedactor.StackFrameAt}{ExceptionRedactor.Redacted}" + Environment.NewLine);
-    }
-
-    [Theory]
-    [MemberData(nameof(TestData.MethodsToNotRedact), MemberType = typeof(TestData))]
-    public void RedactStackTrace_DoesNotRedactBclAndDatadog(object method)
-    {
-        var methodBase = method.Should().NotBeNull().And.BeAssignableTo<MethodBase>().Subject;
-        var stackFrame = new TestStackFrame(methodBase);
-        var stackTrace = new StackTrace(stackFrame);
-
-        var sb = new StringBuilder();
-        ExceptionRedactor.RedactStackTrace(sb, stackTrace);
-        var redacted = sb.ToString();
-
-        redacted.Should().Be(stackTrace.ToString());
-    }
-
-    [Theory]
-    [MemberData(nameof(TestData.ToStringTestData), MemberType = typeof(TestData))]
-    public void RedactStackTrace_ContainsExpectedStrings(StackTrace stackTrace, string expectedToString)
-    {
-        var sb = new StringBuilder();
-        ExceptionRedactor.RedactStackTrace(sb, stackTrace);
-        var redacted = sb.ToString();
-
-        if (expectedToString.Length == 0)
+        foreach (var method in TestData.MethodsToRedact())
         {
-            redacted.Should().BeEmpty();
-            return;
+            var methodBase = method.Should().NotBeNull().And.BeAssignableTo<MethodBase>().Subject;
+            var stackFrame = new TestStackFrame(methodBase);
+            var stackTrace = new StackTrace(stackFrame);
+
+            var sb = new StringBuilder();
+            ExceptionRedactor.RedactStackTrace(sb, stackTrace);
+            var redacted = sb.ToString();
+
+            redacted.Should().Be($"{ExceptionRedactor.StackFrameAt}{ExceptionRedactor.Redacted}" + Environment.NewLine);
         }
+    }
 
-        redacted.Should().Contain(expectedToString);
-        redacted.Should().EndWith(Environment.NewLine);
+    [Fact]
+    public void RedactStackTrace_DoesNotRedactBclAndDatadog()
+    {
+        foreach (var method in TestData.MethodsToNotRedact())
+        {
+            var methodBase = method.Should().NotBeNull().And.BeAssignableTo<MethodBase>().Subject;
+            var stackFrame = new TestStackFrame(methodBase);
+            var stackTrace = new StackTrace(stackFrame);
 
-        HasExpectedFrames(stackTrace, redacted);
+            var sb = new StringBuilder();
+            ExceptionRedactor.RedactStackTrace(sb, stackTrace);
+            var redacted = sb.ToString();
+
+            redacted.Should().Be(stackTrace.ToString());
+        }
+    }
+
+    [Fact]
+    public void RedactStackTrace_ContainsExpectedStrings()
+    {
+        foreach (var (stackTrace, expectedToString) in TestData.ToStringTestData())
+        {
+            var sb = new StringBuilder();
+            ExceptionRedactor.RedactStackTrace(sb, stackTrace);
+            var redacted = sb.ToString();
+
+            if (expectedToString.Length == 0)
+            {
+                redacted.Should().BeEmpty();
+                return;
+            }
+
+            redacted.Should().Contain(expectedToString);
+            redacted.Should().EndWith(Environment.NewLine);
+
+            HasExpectedFrames(stackTrace, redacted);
+        }
     }
 
     [Fact]
@@ -165,18 +171,18 @@ public class ExceptionRedactorTests
 
     public static class TestData
     {
-        public static TheoryData<object> MethodsToRedact() => new()
-        {
+        public static List<object> MethodsToRedact() =>
+        [
             typeof(AssertionExtensions).GetMethod(nameof(AssertionExtensions.Should), types: new[] { typeof(object) }),
             typeof(Xunit.Assert).GetMethod(nameof(Assert.False), types: new[] { typeof(bool) }),
             typeof(VerifyTests.VerifierSettings).GetMethod(nameof(VerifyTests.VerifierSettings.DisableClipboard)),
             typeof(VerifyTests.VerifierSettings).GetProperty(nameof(VerifyTests.VerifierSettings.StrictJson))?.GetMethod,
             typeof(VerifyTests.VerifierSettings).GetProperty(nameof(VerifyTests.VerifierSettings.StrictJson))?.SetMethod,
             typeof(VerifyTests.SerializationSettings).GetConstructor(Array.Empty<Type>()),
-        };
+        ];
 
-        public static TheoryData<object> MethodsToNotRedact() => new()
-        {
+        public static List<object> MethodsToNotRedact() =>
+        [
             typeof(ExceptionRedactorTests.TestData).GetMethod(nameof(NoParameters)),
             typeof(Datadog.Trace.Tracer).GetMethod(nameof(Tracer.UnsafeSetTracerInstance), BindingFlags.Static | BindingFlags.NonPublic),
             typeof(Datadog.Trace.Tracer).GetProperty(nameof(Tracer.Instance))?.GetMethod,
@@ -198,19 +204,19 @@ public class ExceptionRedactorTests
             typeof(Microsoft.CodeAnalysis.DiagnosticDescriptor).GetProperty(nameof(Microsoft.CodeAnalysis.DiagnosticDescriptor.Id))?.GetMethod,
             typeof(Microsoft.Extensions.DependencyInjection.ServiceCollection).GetMethod(nameof(Microsoft.Extensions.DependencyInjection.ServiceCollection.Contains), types: new[] { typeof(Microsoft.Extensions.DependencyInjection.ServiceDescriptor) }),
 #endif
-        };
+        ];
 
-        public static IEnumerable<object[]> ToStringTestData()
-        {
-            yield return new object[] { new StackTrace(InvokeException()), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.ThrowException()" };
-            yield return new object[] { new StackTrace(new Exception()), string.Empty };
-            yield return new object[] { NoParameters(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.NoParameters()" };
-            yield return new object[] { OneParameter(1), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.OneParameter(Int32 x)" };
-            yield return new object[] { TwoParameters(1, null), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.TwoParameters(Int32 x, String y)" };
-            yield return new object[] { Generic<int>(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.Generic[T]()" };
-            yield return new object[] { Generic<int, string>(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.Generic[T1,T2]()" };
-            yield return new object[] { new ClassWithConstructor().StackTrace, "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.ClassWithConstructor..ctor()" };
-        }
+        public static List<(StackTrace StackTrace, string ExpectedToString)> ToStringTestData() =>
+        [
+            (new StackTrace(InvokeException()), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.ThrowException()"),
+            (new StackTrace(new Exception()), string.Empty),
+            (NoParameters(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.NoParameters()"),
+            (OneParameter(1), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.OneParameter(Int32 x)"),
+            (TwoParameters(1, null), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.TwoParameters(Int32 x, String y)"),
+            (Generic<int>(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.Generic[T]()"),
+            (Generic<int, string>(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.Generic[T1,T2]()"),
+            (new ClassWithConstructor().StackTrace, "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.ClassWithConstructor..ctor()"),
+        ];
 
         [MethodImpl(MethodImplOptions.NoOptimization | MethodImplOptions.NoInlining)]
         public static unsafe StackTrace FunctionPointerParameter(delegate*<void> x) => new();

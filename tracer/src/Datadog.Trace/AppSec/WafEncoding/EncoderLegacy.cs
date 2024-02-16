@@ -222,6 +222,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 {
                     string s => sb.Append(s),
                     int i => sb.Append(i),
+                    float i => sb.Append(i),
                     long i => sb.Append(i),
                     uint i => sb.Append(i),
                     ulong i => sb.Append(i),

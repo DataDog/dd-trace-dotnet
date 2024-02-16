@@ -45,6 +45,9 @@
     <Filter Include="Threads">
       <UniqueIdentifier>{9343cd1c-a26e-4f7d-a006-85e4612d0813}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ETW">
+      <UniqueIdentifier>{6543675b-3ddb-42a5-8285-c63e2a93ff6a}</UniqueIdentifier>
+    </Filter>
     <Filter Include="libdatadog">
       <UniqueIdentifier>{5152df0e-33a6-4ea0-8ece-19a6d38ca88e}</UniqueIdentifier>
     </Filter>
@@ -374,6 +377,12 @@
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
     <ClInclude Include="MetadataProvider.h" />
+    <ClInclude Include="IEtwEventsManager.h">
+      <Filter>ETW</Filter>
+    </ClInclude>
+    <ClInclude Include="EventPipeEventsManager.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
     <ClInclude Include="Profile.h">
       <Filter>libdatadog</Filter>
     </ClInclude>
@@ -418,6 +427,9 @@
     </ClInclude>
     <ClInclude Include="FileSaver.hpp">
       <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameworkThreadInfo.h">
+      <Filter>Threads</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -601,6 +613,9 @@
     <ClCompile Include="TimelineSampleType.cpp">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClCompile>
+    <ClCompile Include="EventPipeEventsManager.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClCompile>
     <ClCompile Include="Profile.cpp">
       <Filter>libdatadog</Filter>
     </ClCompile>
@@ -627,6 +642,9 @@
     </ClCompile>
     <ClCompile Include="Success.cpp">
       <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameworkThreadInfo.cpp">
+      <Filter>Threads</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

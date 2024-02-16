@@ -12,6 +12,8 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST.Tainted;
 
 public class RedactionTests
 {
+    private const double _regexTimeout = 0;
+
     [Theory]
     [InlineData("password")]
     [InlineData("passwd")]
@@ -53,7 +55,7 @@ public class RedactionTests
     [InlineData("authentication")]
     public void GivenASensitiveString_WhenProcessedAsKey_ItIsRedacted(string key)
     {
-        var redactor = Utils.GetDefaultRedactor();
+        var redactor = Utils.GetDefaultRedactor(_regexTimeout);
         Assert.True(redactor.IsKeySensitive(key));
     }
 
@@ -67,7 +69,7 @@ public class RedactionTests
     [InlineData("key")]
     public void GivenANonSensitiveString_WhenProcessedAsKey_ItIsNotRedacted(string key)
     {
-        var redactor = Utils.GetDefaultRedactor();
+        var redactor = Utils.GetDefaultRedactor(_regexTimeout);
         Assert.False(redactor.IsKeySensitive(key));
     }
 
@@ -137,7 +139,7 @@ public class RedactionTests
     [InlineData("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCRUM4Ax6c9yVDvPlTeLdBjDiVC6KMTLGcSBNeSTzwvbSagUFTi8mRKC69ResbM2If5YxZZZMBcFMN204cClAlJ1TQ/iVj7Q/cvDdZ5lp60+bnzdpwOVoKT0Nqo9CeOln/0MuqbHWvklgBlsKK5dYwDSXMlQ46eLC33gFYKfPf7QtusLuM2yJoLtxFzWSaP82a7zJ0Dh6inji0kyVpdv2edQjGCVSbTIvU0M5POiRM/TcVrsla3jqAyjpyjvnWdibjczA5v9xjRSHr6Ln1zNe4KzSEWlbISRAkONxA1eDL1y0jRH8mcFtDKRIkbwLRwH2ex/Bu25EhBWuCiPrl6uVdr")]
     public void GivenASensitiveValue_WhenProcessedAsValue_ItIsRedacted(string value)
     {
-        var redactor = Utils.GetDefaultRedactor();
+        var redactor = Utils.GetDefaultRedactor(_regexTimeout);
         Assert.True(redactor.IsValueSensitive(value));
     }
 }

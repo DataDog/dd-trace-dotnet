@@ -32,7 +32,7 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
             _timeout = timeout;
             _logger = logger;
 
-            var options = RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace | RegexOptions.IgnorePatternWhitespace;
+            var options = RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace;
 
 #if NETCOREAPP3_1_OR_GREATER
             options |= RegexOptions.NonBacktracking;

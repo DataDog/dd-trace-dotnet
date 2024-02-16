@@ -68,6 +68,7 @@ public:
     MOCK_METHOD(bool, IsSystemCallsShieldEnabled, (), (const override));
     MOCK_METHOD(bool, IsCIVisibilityEnabled, (), (const override));
     MOCK_METHOD(std::uint64_t, GetCIVisibilitySpanId, (), (const override));
+    MOCK_METHOD(bool, IsEtwEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter
