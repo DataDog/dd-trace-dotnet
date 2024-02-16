@@ -22,7 +22,7 @@ internal class AwsSqsHeadersAdapters
         return new StringBuilderJsonAdapter(carrier);
     }
 
-    public static IBinaryHeadersCollection GetExtractionAdapter(IDictionary messageAttributes)
+    public static IBinaryHeadersCollection GetExtractionAdapter(IDictionary? messageAttributes)
     {
         return new MessageAttributesAdapter(messageAttributes);
     }
@@ -60,24 +60,23 @@ internal class AwsSqsHeadersAdapters
     /// </summary>
     private readonly struct MessageAttributesAdapter : IBinaryHeadersCollection
     {
-        private readonly IDictionary _messageAttributes;
+        private readonly Dictionary<string, string>? _ddAttributes;
 
-        public MessageAttributesAdapter(IDictionary messageAttributes)
+        public MessageAttributesAdapter(IDictionary? messageAttributes)
         {
-            _messageAttributes = messageAttributes;
+            // IDictionary returns null if the key is not present
+            var json = messageAttributes?[ContextPropagation.SqsKey]?.DuckCast<IMessageAttributeValue>();
+            if (json != null && json.StringValue != null)
+            {
+                _ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.StringValue);
+            }
         }
 
         public byte[] TryGetLastBytes(string name)
         {
-            // IDictionary returns null if the key is not present
-            var json = _messageAttributes?[ContextPropagation.SqsKey]?.DuckCast<IMessageAttributeValue>();
-            if (json != null && json.StringValue != null)
+            if (_ddAttributes != null && _ddAttributes.TryGetValue(name, out var b64))
             {
-                var ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.StringValue);
-                if (ddAttributes != null && ddAttributes.TryGetValue(name, out var b64))
-                {
-                    return Convert.FromBase64String(b64);
-                }
+                return Convert.FromBase64String(b64);
             }
 
             return Array.Empty<byte>();
