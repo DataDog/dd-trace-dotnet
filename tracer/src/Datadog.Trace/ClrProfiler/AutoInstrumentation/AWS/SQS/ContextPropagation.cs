@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -137,7 +138,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 if (json != null)
                 {
                     var ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.StringValue);
-                    if (ddAttributes.TryGetValue(name, out var b64))
+                    if (ddAttributes != null && ddAttributes.TryGetValue(name, out var b64))
                     {
                         return Convert.FromBase64String(b64);
                     }

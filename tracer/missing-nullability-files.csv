@@ -732,9 +732,7 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SDK/IInvocationResponse.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SDK/ILambdaContext.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SNS/CachedMessageHeadersHelper.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/CachedMessageHeadersHelper.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ContextPropagation.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/IAmazonSQSRequestWithQueueUrl.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/IContainsMessageAttributes.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ICreateQueueRequest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ICreateQueueResponse.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ISendMessageBatchRequest.cs
