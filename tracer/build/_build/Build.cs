@@ -59,7 +59,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.47.0";
+    readonly string Version = "2.48.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -79,6 +79,9 @@ partial class Build : NukeBuild
     [Parameter("Enables code coverage")]
     readonly bool CodeCoverage;
 
+    [Parameter("Enable or Disable fast developer loop")]
+    readonly bool FastDevLoop;
+    
     [Parameter("The directory containing the tool .nupkg file")]
     readonly AbsolutePath ToolSource;
 
@@ -529,6 +532,8 @@ partial class Build : NukeBuild
                     CopyDirectoryRecursively(resultsDirectory, BuildDataDirectory / "benchmarks",
                                              DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                 }
+
+                CopyDumpsToBuildData();
             }
         });
 

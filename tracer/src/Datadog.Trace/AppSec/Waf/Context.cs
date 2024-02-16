@@ -58,7 +58,13 @@ namespace Datadog.Trace.AppSec.Waf
             return new Context(contextHandle, waf, wafLibraryInvoker, encoder);
         }
 
-        public unsafe IResult? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
+        public IResult? Run(IDictionary<string, object> addressData, ulong timeoutMicroSeconds)
+            => RunInternal(addressData, null, timeoutMicroSeconds);
+
+        public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds)
+            => RunInternal(null, ephemeralAddressData, timeoutMicroSeconds);
+
+        private IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds)
         {
             if (_disposed)
             {
@@ -75,8 +81,12 @@ namespace Datadog.Trace.AppSec.Waf
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                var parameters = Encoder.FormatArgs(addresses);
-                Log.Debug("DDAS-0010-00: Executing AppSec In-App WAF with parameters: {Parameters}", parameters);
+                var persistentParameters = persistentAddressData == null ? string.Empty : Encoder.FormatArgs(persistentAddressData);
+                var ephemeralParameters = ephemeralAddressData == null ? string.Empty : Encoder.FormatArgs(ephemeralAddressData);
+                Log.Debug(
+                    "DDAS-0010-00: Executing AppSec In-App WAF with parameters: persistent: {PersistentParameters}, ephemeral: {EphemeralParameters}",
+                    persistentParameters,
+                    ephemeralParameters);
             }
 
             // not restart cause it's the total runtime over runs, and we run several * during request
@@ -84,12 +94,35 @@ namespace Datadog.Trace.AppSec.Waf
             WafReturnCode code;
             lock (_stopwatch)
             {
-                var args = _encoder.Encode(addresses, applySafetyLimits: true);
-                var pwArgs = args.Result;
-                _argCache.Add(args);
+                // NOTE: the WAF must be called with either pwPersistentArgs or pwEphemeralArgs (or both) pointing to
+                // a valid structure. Failure to do so, results in a WAF error. It doesn't makes sense to propagate this
+                // error.
+                // Calling _encoder.Encode(null) results in a null object that will cause the WAF to error
+                // The WAF can be called with an empty dictionary (though we should avoid doing this).
 
-                // WARNING: DO NOT DISPOSE pwArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
-                code = _waf.Run(_contextHandle, pwArgs, ref retNative, timeoutMicroSeconds);
+                var pwPersistentArgs = IntPtr.Zero;
+                if (persistentAddressData != null)
+                {
+                    var persistentArgs = _encoder.Encode(persistentAddressData, applySafetyLimits: true);
+                    pwPersistentArgs = persistentArgs.Result;
+                    _argCache.Add(persistentArgs);
+                }
+
+                // pwEphemeralArgs follow a different lifecycle and should be disposed immediately
+                using var ephemeralArgs =
+                    ephemeralAddressData is { Count: > 0 }
+                    ? _encoder.Encode(ephemeralAddressData, applySafetyLimits: true)
+                    : null;
+                var pwEphemeralArgs = ephemeralArgs?.Result ?? IntPtr.Zero;
+
+                if (pwPersistentArgs == IntPtr.Zero && pwEphemeralArgs == IntPtr.Zero)
+                {
+                    Log.Error("Both pwPersistentArgs and pwEphemeralArgs are null");
+                    return null;
+                }
+
+                // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
+                code = _waf.Run(_contextHandle, pwPersistentArgs, pwEphemeralArgs,  ref retNative, timeoutMicroSeconds);
             }
 
             _stopwatch.Stop();

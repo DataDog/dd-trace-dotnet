@@ -8,15 +8,17 @@ using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Reflection;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Primitives;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using Newtonsoft.Json;
 using Samples.Security.Data;
 
@@ -55,6 +57,7 @@ namespace Samples.Security.AspNetCore5.Controllers
     public class IastController : ControllerBase
     {
         static SQLiteConnection dbConnection = null;
+        static IMongoDatabase mongoDb = null;
 
         public IActionResult Index()
         {
@@ -119,6 +122,42 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return BadRequest($"No query or username was provided");
+        }
+        
+        [HttpGet("NoSqlQueryMongoDb")]
+        [Route("NoSqlQueryMongoDb")]
+        public IActionResult NoSqlQueryMongoDb(string price, string query)
+        {
+            try
+            {
+                if (mongoDb is null)
+                {
+                    mongoDb = MongoDbHelper.CreateMongoDb();
+                }
+
+                if (!string.IsNullOrEmpty(price))
+                {
+                    var taintedQuery = "{ \"Price\" :\"" + price + "\"}";
+                    var document = BsonDocument.Parse(taintedQuery);
+                    var collection = mongoDb.GetCollection<BsonDocument>("Books");
+                    var find = collection.Find(document).ToList();
+                    return Content($"Found {find.Count} books with price {price}");
+                }
+
+                if (!string.IsNullOrEmpty(query))
+                {
+                    var document = BsonDocument.Parse(query);
+                    var collection = mongoDb.GetCollection<BsonDocument>("Books");
+                    var find = collection.Find(document).ToList();
+                    return Content($"Found {find.Count} books with query {query}");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return BadRequest($"No price or query was provided");
         }
 
         [HttpGet("ExecuteCommand")]
@@ -696,6 +735,25 @@ namespace Samples.Security.AspNetCore5.Controllers
                 Response.Headers.Add("extraName", new StringValues(new[] { returnedValue, "extraValue" }));
             }
             return Content($"returned header {returnedName},{returnedValue}");
+        }
+        
+        private readonly string xmlContent = @"<?xml version=""1.0"" encoding=""ISO-8859-1""?>
+                <data><user><name>jaime</name><password>1234</password><account>administrative_account</account></user>
+                <user><name>tom</name><password>12345</password><account>toms_acccount</account></user>
+                <user><name>guest</name><password>anonymous1234</password><account>guest_account</account></user>
+                </data>";
+
+        [HttpGet("XpathInjection")]
+        [Route("XpathInjection")]
+        public ActionResult XpathInjection(string user, string value)
+        {
+            var findUserXPath = "/data/user[name/text()='" + user + "' and password/text()='" + value + "}']";
+            var doc = new XmlDocument();
+            doc.LoadXml(xmlContent);
+            var result = doc.SelectSingleNode(findUserXPath);
+            return result is null ?
+                Content($"Invalid user/password") :
+                Content($"User " + result.ChildNodes[0].InnerText + " successfully logged.");
         }
 
         static string CopyStringAvoidTainting(string original)

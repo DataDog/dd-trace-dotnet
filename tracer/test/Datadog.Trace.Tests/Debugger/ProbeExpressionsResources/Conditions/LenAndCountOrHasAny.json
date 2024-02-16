@@ -1,5 +1,5 @@
 {
-  "dsl": "len(ref String) > 2 || count(ref CollectionLocal) > 2 || hasAny(filter(ref CollectionLocal {@it > 4}) { @it == hello})",
+  "dsl": "len(ref String) > 2 || len(ref CollectionLocal) > 2 || any(filter(ref CollectionLocal {@it > 4}) { @it == hello})",
   "and": [
     {
       "gt": [
@@ -18,7 +18,7 @@
         {
           "gt": [
             {
-              "count": [
+              "len": [
                 {
                   "ref": "CollectionLocal"
                 }
@@ -28,7 +28,7 @@
           ]
         },
         {
-          "hasAny": [
+          "any": [
             {
               "filter": [
                 {

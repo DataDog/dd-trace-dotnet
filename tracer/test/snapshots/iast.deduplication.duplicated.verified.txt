@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -17,6 +17,10 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
+      "location": {
+        "path": "Samples.Deduplication.Program",
+        "method": "ComputeHashNTimes"
+      },
       "evidence": {
         "value": "MD5"
       }
@@ -50,6 +54,10 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
+      "location": {
+        "path": "Samples.Deduplication.Program",
+        "method": "ComputeHashNTimes"
+      },
       "evidence": {
         "value": "MD5"
       }
@@ -83,6 +91,10 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
+      "location": {
+        "path": "Samples.Deduplication.Program",
+        "method": "ComputeHashNTimes"
+      },
       "evidence": {
         "value": "MD5"
       }
@@ -116,6 +128,10 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
+      "location": {
+        "path": "Samples.Deduplication.Program",
+        "method": "ComputeHashNTimes"
+      },
       "evidence": {
         "value": "MD5"
       }
@@ -149,6 +165,10 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
+      "location": {
+        "path": "Samples.Deduplication.Program",
+        "method": "ComputeHashNTimes"
+      },
       "evidence": {
         "value": "MD5"
       }

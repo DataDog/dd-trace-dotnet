@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using Datadog.Trace.Ci;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner
@@ -16,7 +17,8 @@ namespace Datadog.Trace.Tools.Runner
         private static readonly IReadOnlyDictionary<string, CIName> CiNamesMapping
             = new Dictionary<string, CIName>(StringComparer.OrdinalIgnoreCase)
             {
-                ["azp"] = CIName.AzurePipelines
+                ["azp"] = CIName.AzurePipelines,
+                ["jenkins"] = CIName.Jenkins
             };
 
         private readonly ApplicationContext _applicationContext;
@@ -32,6 +34,7 @@ namespace Datadog.Trace.Tools.Runner
             AddArgument(_nameArgument);
 
             AddExample("dd-trace ci configure azp");
+            AddExample("dd-trace ci configure jenkins");
 
             this.SetHandler(Execute);
         }
@@ -62,7 +65,8 @@ namespace Datadog.Trace.Tools.Runner
                 _applicationContext.RunnerFolder,
                 _applicationContext.Platform,
                 _tracerSettings,
-                reducePathLength: true);
+                reducePathLength: true,
+                ciVisibilityOptions: new(CIVisibility.Settings.InstallDatadogTraceInGac, true));
 
             if (profilerEnvironmentVariables == null)
             {

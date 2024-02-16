@@ -96,6 +96,7 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
 }
 
 void GarbageCollectionProvider::OnGarbageCollectionStart(
+    uint64_t timestamp,
     int32_t number,
     uint32_t generation,
     GCReason reason,

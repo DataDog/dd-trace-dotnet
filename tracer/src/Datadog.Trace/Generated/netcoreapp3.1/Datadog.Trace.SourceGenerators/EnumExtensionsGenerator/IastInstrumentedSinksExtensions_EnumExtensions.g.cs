@@ -17,7 +17,7 @@ internal static partial class IastInstrumentedSinksExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 19;
+    public const int Length = 21;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks"/> value.
@@ -49,6 +49,8 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing => "vulnerability_type:hsts_header_missing",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection => "vulnerability_type:header_injection",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak => "vulnerability_type:stacktrace_leak",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection => "vulnerability_type:nosql_mongodb_injection",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection => "vulnerability_type:xpath_injection",
             _ => value.ToString(),
         };
 
@@ -81,6 +83,8 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection,
         };
 
     /// <summary>
@@ -113,6 +117,8 @@ internal static partial class IastInstrumentedSinksExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection),
         };
 
     /// <summary>
@@ -145,5 +151,7 @@ internal static partial class IastInstrumentedSinksExtensions
             "vulnerability_type:hsts_header_missing",
             "vulnerability_type:header_injection",
             "vulnerability_type:stacktrace_leak",
+            "vulnerability_type:nosql_mongodb_injection",
+            "vulnerability_type:xpath_injection",
         };
 }

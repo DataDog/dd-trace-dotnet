@@ -13,6 +13,10 @@ internal class NullDiscoveryService : IDiscoveryService
 {
     public static readonly NullDiscoveryService Instance = new();
 
+    private NullDiscoveryService()
+    {
+    }
+
     public void SubscribeToChanges(Action<AgentConfiguration> callback)
     {
     }

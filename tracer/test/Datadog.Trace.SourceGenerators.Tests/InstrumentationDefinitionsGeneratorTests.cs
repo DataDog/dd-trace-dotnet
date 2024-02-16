@@ -23,7 +23,8 @@ namespace MyTests
     }
 }";
 
-            var (diagnostics, output) = TestHelpers.GetGeneratedOutput<InstrumentationDefinitionsGenerator>(input);
+            // No tracked steps execute, so have to disable the tracked step assertions
+            var (diagnostics, output) = TestHelpers.GetGeneratedTrees<InstrumentationDefinitionsGenerator>([input], assertOutput: false);
             Assert.Empty(output);
             Assert.Empty(diagnostics);
         }

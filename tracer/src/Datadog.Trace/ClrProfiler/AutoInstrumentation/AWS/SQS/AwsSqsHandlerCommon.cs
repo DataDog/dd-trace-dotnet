@@ -55,9 +55,14 @@ internal static class AwsSqsHandlerCommon
         return new CallTargetState(scope);
     }
 
-    private static void InjectForSingleMessage<TSendMessageRequest>(DataStreamsManager dataStreamsManager, TSendMessageRequest request, Scope scope, string queueName)
+    private static void InjectForSingleMessage<TSendMessageRequest>(DataStreamsManager? dataStreamsManager, TSendMessageRequest request, Scope scope, string queueName)
     {
         var requestProxy = request.DuckCast<ISendMessageRequest>();
+        if (requestProxy == null)
+        {
+            return;
+        }
+
         if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
         {
             var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
@@ -67,7 +72,7 @@ internal static class AwsSqsHandlerCommon
         ContextPropagation.InjectHeadersIntoMessage<TSendMessageRequest>(requestProxy, scope.Span.Context, dataStreamsManager);
     }
 
-    private static void InjectForBatch<TSendMessageBatchRequest>(DataStreamsManager dataStreamsManager, TSendMessageBatchRequest request, Scope scope, string queueName)
+    private static void InjectForBatch<TSendMessageBatchRequest>(DataStreamsManager? dataStreamsManager, TSendMessageBatchRequest request, Scope scope, string queueName)
     {
         var requestProxy = request.DuckCast<ISendMessageBatchRequest>();
         if (requestProxy == null)
@@ -79,15 +84,18 @@ internal static class AwsSqsHandlerCommon
         foreach (var e in requestProxy.Entries)
         {
             var entry = e.DuckCast<IContainsMessageAttributes>();
-            // this has no effect is DSM is disabled
-            scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-            // this needs to be done for context propagation even when DSM is disabled
-            // (when DSM is enabled, it injects the pathway context on top of the trace context)
-            ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context, dataStreamsManager);
+            if (entry != null)
+            {
+                // this has no effect is DSM is disabled
+                scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                // this needs to be done for context propagation even when DSM is disabled
+                // (when DSM is enabled, it injects the pathway context on top of the trace context)
+                ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context, dataStreamsManager);
+            }
         }
     }
 
-    internal static TResponse AfterSend<TResponse>(TResponse response, Exception exception, in CallTargetState state)
+    internal static TResponse AfterSend<TResponse>(TResponse response, Exception? exception, in CallTargetState state)
     {
         state.Scope.DisposeWithException(exception);
         return response;
@@ -115,7 +123,7 @@ internal static class AwsSqsHandlerCommon
         return new CallTargetState(scope, queueName);
     }
 
-    internal static TResponse AfterReceive<TResponse>(TResponse response, Exception exception, in CallTargetState state)
+    internal static TResponse AfterReceive<TResponse>(TResponse response, Exception? exception, in CallTargetState state)
         where TResponse : IReceiveMessageResponse
     {
         if (response.Instance != null && response.Messages != null && response.Messages.Count > 0 && state.State != null)
@@ -138,7 +146,7 @@ internal static class AwsSqsHandlerCommon
                         int.TryParse(sentTimeStr, out sentTime);
                     }
 
-                    var adapter = new ContextPropagation.MessageAttributesAdapter(message.MessageAttributes);
+                    var adapter = AwsSqsHeadersAdapters.GetExtractionAdapter(message.MessageAttributes);
                     var parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
                     state.Scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
                 }

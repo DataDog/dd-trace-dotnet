@@ -19,22 +19,27 @@ namespace Datadog.Trace.Tools.Runner
             Log.Information("Detecting CI provider...");
             ci ??= AutodetectCi();
 
+            // Excluding powershell.exe and DTAExecutionHost.exe due to interference in the azure agent making that subsequence script tasks fail.
+            if (environmentVariables.TryGetValue("DD_PROFILER_EXCLUDE_PROCESSES", out var excludeProcesses))
+            {
+                excludeProcesses += ";DTAExecutionHost.exe;powershell.exe";
+            }
+            else
+            {
+                excludeProcesses = "DTAExecutionHost.exe;powershell.exe";
+            }
+
+            environmentVariables["DD_PROFILER_EXCLUDE_PROCESSES"] = excludeProcesses;
+
             switch (ci)
             {
                 case CIName.AzurePipelines:
                     Log.Information("Setting up the environment variables for auto-instrumentation for Azure Pipelines.");
-                    // Excluding powershell.exe and DTAExecutionHost.exe due to interference in the azure agent making that subsequence script tasks fail.
-                    if (environmentVariables.TryGetValue("DD_PROFILER_EXCLUDE_PROCESSES", out var excludeProcesses))
-                    {
-                        excludeProcesses += ";DTAExecutionHost.exe;powershell.exe";
-                    }
-                    else
-                    {
-                        excludeProcesses = "DTAExecutionHost.exe;powershell.exe";
-                    }
-
-                    environmentVariables["DD_PROFILER_EXCLUDE_PROCESSES"] = excludeProcesses;
                     SetupAzureEnvironmentVariables(environmentVariables);
+                    return true;
+                case CIName.Jenkins:
+                    Log.Information("Setting up the environment variables for auto-instrumentation in Jenkins.");
+                    SetupJenkinsEnvironmentVariables(environmentVariables);
                     return true;
             }
 
@@ -53,6 +58,14 @@ namespace Datadog.Trace.Tools.Runner
                 // See https://github.com/spectreconsole/spectre.console/issues/1122
 
                 Console.WriteLine($"##vso[task.setvariable variable={item.Key};]{item.Value}");
+            }
+        }
+
+        private static void SetupJenkinsEnvironmentVariables(Dictionary<string, string> environmentVariables)
+        {
+            foreach (var item in environmentVariables)
+            {
+                Console.WriteLine($@"{item.Key}={item.Value}");
             }
         }
 

@@ -11,9 +11,13 @@ class LinuxThreadInfo : public IThreadInfo
 {
 public:
     LinuxThreadInfo(DWORD threadId, shared::WSTRING name);
+
+    // Inherited via IThreadInfo
     DWORD GetOsThreadId() const override;
     shared::WSTRING const& GetThreadName() const override;
     HANDLE GetOsThreadHandle() const override;
+    std::string GetProfileThreadId() override;
+    std::string GetProfileThreadName() override;
 
 private:
     DWORD _threadId;

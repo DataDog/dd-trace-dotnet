@@ -24,8 +24,6 @@ namespace Datadog.Trace.Security.Unit.Tests
     [Collection(nameof(SecuritySequentialTests))]
     public class WafMemoryTests : WafLibraryRequiredTest
     {
-        public const int TimeoutMicroSeconds = 1_000_000;
-
         public const int OverheadMargin = 40_000_000; // 40Mb margin
 
         public void InitMemoryLeakCheck()
@@ -62,7 +60,8 @@ namespace Datadog.Trace.Security.Unit.Tests
                 using var context = waf.CreateContext();
                 var result = context.Run(args, TimeoutMicroSeconds);
                 result.ReturnCode.Should().Be(WafReturnCode.Match);
-                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
+                var jsonString = JsonConvert.SerializeObject(result.Data);
+                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
                 resultData.Rule.Tags.Type.Should().Be("security_scanner");
                 resultData.Rule.Id.Should().Be("crs-913-120");
             }
@@ -146,7 +145,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             if (isAttack)
             {
                 result.ReturnCode.Should().Be(WafReturnCode.Match);
-                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
+                var jsonString = JsonConvert.SerializeObject(result.Data);
+                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
                 resultData.Rule.Tags.Type.Should().Be(flow);
                 resultData.Rule.Id.Should().Be(rule);
                 resultData.RuleMatches[0].Parameters[0].Address.Should().Be(address);

@@ -35,14 +35,17 @@ public:
     bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) override;
     bool SetThreadName(ThreadID clrThreadId, const shared::WSTRING& threadName) override;
     uint32_t Count() override;
+    uint32_t GetHighCountAndReset() override;
+    uint32_t GetLowCountAndReset() override;
     uint32_t CreateIterator() override;
     std::shared_ptr<ManagedThreadInfo> LoopNext(uint32_t iterator) override;
     HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
     std::shared_ptr<ManagedThreadInfo> GetOrCreate(ThreadID clrThreadId) override;
+    bool TryGetThreadInfo(uint32_t osThreadId, std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
 
 private:
     const char* _serviceName = "ManagedThreadList";
-    static const std::uint32_t MinBufferSize;
+    static const std::uint32_t DefaultThreadListSize;
 
 private:
     // We do most operations under this lock.
@@ -55,12 +58,18 @@ private:
     // Also, threads are "directly" accessible from their CLR ThreadID via an index
     std::vector<std::shared_ptr<ManagedThreadInfo>> _threads;
     std::unordered_map<ThreadID, std::shared_ptr<ManagedThreadInfo>> _lookupByClrThreadId;
+    std::unordered_map<uint32_t, std::shared_ptr<ManagedThreadInfo>> _lookupByOsThreadId;
 
     // An iterator is just a position in the vector corresponding to the next thread to be returned by LoopNext
     // so keep track of them in a vector of positions initialized to 0
     std::vector<uint32_t> _iterators;
 
     ICorProfilerInfo4* _pCorProfilerInfo;
+
+    // Keep track of the highest/lowest number of threads
+    // Will be reset each time the value is read
+    uint32_t _highCount;
+    uint32_t _lowCount;
 
 private:
     void UpdateIterators(uint32_t pos);

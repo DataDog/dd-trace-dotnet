@@ -349,4 +349,13 @@ std::string GetProcessStartTime()
     return ss.str();
 }
 
+std::unique_ptr<IEtwEventsManager> CreateEtwEventsManager(
+    IAllocationsListener* pAllocationListener,
+    IContentionListener* pContentionListener,
+    IGCSuspensionsListener* pGCSuspensionsListener,
+    IConfiguration* pConfiguration)
+{
+    // No ETW implementation on Linux
+    return nullptr;
+}
 } // namespace OsSpecificApi

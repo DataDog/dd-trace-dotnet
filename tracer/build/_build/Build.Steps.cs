@@ -61,9 +61,9 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.15.1";
+    const string LibDdwafVersion = "1.16.0";
 
-    string[] OlderLibDdwafVersions = new[] { "1.3.0", "1.10.0", "1.14.0" };
+    string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0" };
 
     AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
@@ -212,6 +212,11 @@ partial class Build
         .Unlisted()
         .Executes(() =>
         {
+            if (FastDevLoop)
+            {
+                return;
+            }
+
             if (IsWin)
             {
                 NuGetTasks.NuGetRestore(s => s
@@ -278,8 +283,10 @@ partial class Build
         {
             DeleteDirectory(NativeTracerProject.Directory / "build");
 
+            var finalArchs = FastDevLoop ? new[]  { "arm64" } : OsxArchs;
+            
             var lstNativeBinaries = new List<string>();
-            foreach (var arch in OsxArchs)
+            foreach (var arch in finalArchs)
             {
                 var buildDirectory = NativeBuildDirectory + "_" + arch;
                 EnsureExistingDirectory(buildDirectory);
@@ -883,7 +890,7 @@ partial class Build
     Target ZipMonitoringHomeLinux => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
-        .DependsOn(PrepareMonitoringHomeLinux, BuildDdDotnet)
+        .DependsOn(PrepareMonitoringHomeLinux)
         .OnlyWhenStatic(() => IsLinux)
         .Requires(() => Version)
         .Executes(() =>
