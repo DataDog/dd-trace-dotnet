@@ -442,6 +442,7 @@ partial class Build
                 "tracer/samples/ConsoleApp/Alpine3.10.dockerfile",
                 "tracer/samples/ConsoleApp/Alpine3.9.dockerfile",
                 "tracer/samples/ConsoleApp/Debian.dockerfile",
+                "tracer/samples/OpenTelemetry/Debian.dockerfile",
                 "tracer/samples/WindowsContainer/Dockerfile",
                 "tracer/src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
                 "tracer/src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
