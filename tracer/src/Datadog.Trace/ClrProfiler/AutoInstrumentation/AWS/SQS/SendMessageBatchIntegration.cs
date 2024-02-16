@@ -66,8 +66,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 foreach (var e in requestProxy.Entries)
                 {
                     var entry = e.DuckCast<IContainsMessageAttributes>();
-                    scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-                    ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context, dataStreamsManager);
+                    if (entry != null)
+                    {
+                        scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                        ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context, dataStreamsManager);
+                    }
                 }
             }
 

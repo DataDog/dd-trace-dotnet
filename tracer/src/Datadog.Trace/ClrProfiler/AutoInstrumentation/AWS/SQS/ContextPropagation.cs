@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
     {
         internal const string SqsKey = "_datadog";
 
-        private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes, DataStreamsManager dataStreamsManager)
+        private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             messageAttributes[SqsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(resultString);
         }
 
-        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext, DataStreamsManager dataStreamsManager)
+        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext, DataStreamsManager? dataStreamsManager)
         {
             // add distributed tracing headers to the message
             if (carrier.MessageAttributes == null)
@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             {
                 // In .NET Fx and Net Core 2.1, removing an element while iterating on keys throws.
 #if !NETCOREAPP2_1_OR_GREATER
-                List<string> attributesToRemove = null;
+                List<string>? attributesToRemove = null;
 #endif
                 // Make sure we do not propagate any other datadog header here in the rare cases where users would have added them manually
                 foreach (var attribute in carrier.MessageAttributes.Keys)

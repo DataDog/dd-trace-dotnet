@@ -71,7 +71,7 @@ internal class AwsSqsHeadersAdapters
         {
             // IDictionary returns null if the key is not present
             var json = _messageAttributes?[ContextPropagation.SqsKey]?.DuckCast<IMessageAttributeValue>();
-            if (json != null)
+            if (json != null && json.StringValue != null)
             {
                 var ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.StringValue);
                 if (ddAttributes != null && ddAttributes.TryGetValue(name, out var b64))

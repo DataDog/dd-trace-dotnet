@@ -67,11 +67,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 foreach (var e in requestProxy.Entries)
                 {
                     var entry = e.DuckCast<IContainsMessageAttributes>();
-                    // this has no effect is DSM is disabled
-                    scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-                    // this needs to be done for context propagation even when DSM is disabled
-                    // (when DSM is enabled, it injects the pathway context on top of the trace context)
-                    ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context, dataStreamsManager);
+                    if (entry != null)
+                    {
+                        // this has no effect is DSM is disabled
+                        scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                        // this needs to be done for context propagation even when DSM is disabled
+                        // (when DSM is enabled, it injects the pathway context on top of the trace context)
+                        ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context, dataStreamsManager);
+                    }
                 }
             }
 

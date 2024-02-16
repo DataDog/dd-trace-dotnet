@@ -98,9 +98,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                             int.TryParse(sentTimeStr, out sentTime);
                         }
 
-                        var adapter = AwsSqsHeadersAdapters.GetExtractionAdapter(message.MessageAttributes);
-                        var parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
-                        state.Scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
+                        if (message.MessageAttributes != null)
+                        {
+                            var adapter = AwsSqsHeadersAdapters.GetExtractionAdapter(message.MessageAttributes);
+                            var parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
+                            state.Scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
+                        }
                     }
                 }
             }
