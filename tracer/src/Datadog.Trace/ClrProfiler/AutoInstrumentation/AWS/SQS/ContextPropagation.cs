@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
             sb.Append('{');
             SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
-            dataStreamsManager?.InjectPathwayContext(context.PathwayContext, new StringBuilderJsonAdapter(sb));
+            dataStreamsManager?.InjectPathwayContext(context.PathwayContext, AwsSqsHeadersAdapters.GetInjectionAdapter(sb));
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
             sb.Append('}');
 
@@ -88,68 +88,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             public void Set(StringBuilder carrier, string key, string value)
             {
                 carrier.AppendFormat("\"{0}\":\"{1}\",", key, value);
-            }
-        }
-
-        /// <summary>
-        /// The adapter to use to append stuff to a string builder where a json is being built
-        /// </summary>
-        private readonly struct StringBuilderJsonAdapter : IBinaryHeadersCollection
-        {
-            private readonly StringBuilder _carrier;
-
-            public StringBuilderJsonAdapter(StringBuilder carrier)
-            {
-                _carrier = carrier;
-            }
-
-            public byte[] TryGetLastBytes(string name)
-            {
-                throw new NotImplementedException("this adapter can only be use to write to a StringBuilder, not to read data");
-            }
-
-            public void Add(string key, byte[] value)
-            {
-                _carrier
-                    .Append('"')
-                    .Append(key)
-                    .Append("\":\"")
-                    .Append(Convert.ToBase64String(value))
-                    .Append("\",");
-            }
-        }
-
-        /// <summary>
-        /// The adapter to use to read attributes packed in a json string under the _datadog key
-        /// </summary>
-        public readonly struct MessageAttributesAdapter : IBinaryHeadersCollection
-        {
-            private readonly IDictionary _messageAttributes;
-
-            public MessageAttributesAdapter(IDictionary messageAttributes)
-            {
-                _messageAttributes = messageAttributes;
-            }
-
-            public byte[] TryGetLastBytes(string name)
-            {
-                // IDictionary returns null if the key is not present
-                var json = _messageAttributes?[SqsKey]?.DuckCast<IMessageAttributeValue>();
-                if (json != null)
-                {
-                    var ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.StringValue);
-                    if (ddAttributes != null && ddAttributes.TryGetValue(name, out var b64))
-                    {
-                        return Convert.FromBase64String(b64);
-                    }
-                }
-
-                return Array.Empty<byte>();
-            }
-
-            public void Add(string name, byte[] value)
-            {
-                throw new NotImplementedException("this is meant to read attributes only, not write them");
             }
         }
     }

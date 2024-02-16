@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                             int.TryParse(sentTimeStr, out sentTime);
                         }
 
-                        var adapter = new ContextPropagation.MessageAttributesAdapter(message.MessageAttributes);
+                        var adapter = AwsSqsHeadersAdapters.GetExtractionAdapter(message.MessageAttributes);
                         var parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
                         state.Scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
                     }
