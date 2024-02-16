@@ -3,7 +3,7 @@
 
   <metadata>
     <id>Datadog.Trace.Aot</id>
-    <version>1.0.27</version>
+    <version>1.0.32</version>
     <title>Datadog.Trace.Aot</title>
     <authors>Datadog</authors>
     <owners>Datadog</owners>
@@ -23,8 +23,8 @@
     </frameworkAssemblies>
   </metadata>
   <files>
-    <file src="bin\Release\netstandard2.0\*.dll" target="build" />
+    <file src="bin\Debug\netstandard2.0\*.dll" target="build" />
     <file src="build\Datadog.Trace.Aot.targets" target="build" />
-    <file src="..\Datadog.Trace\bin\Release\net6.0\Datadog.Trace.dll" target="lib/net6.0" />
+    <file src="..\Datadog.Trace\bin\Debug\net6.0\Datadog.Trace.dll" target="lib/net6.0" />
   </files>
 </package>

@@ -72,7 +72,7 @@ public class InjectDatadog : Task
             var aotProcessorType = loadContext.LoadFromAssemblyName(typeof(InjectDatadog).Assembly.GetName()).GetType("Datadog.Trace.NativeAotTask.AotProcessor");
             aotProcessorType.InvokeMember(
                 "Invoke",
-                BindingFlags.InvokeMethod | BindingFlags.Static | BindingFlags.NonPublic,
+                BindingFlags.InvokeMethod | BindingFlags.Static | BindingFlags.Public,
                 null,
                 null,
                 [assembliesToPatch, new Action<string>(s => Log.LogWarning(s))]);

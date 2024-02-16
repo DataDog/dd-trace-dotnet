@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
     /// <summary>
     /// HttpRequestMessage interface for ducktyping
     /// </summary>
+    [DuckType(targetType: "System.Net.Http.HttpRequestMessage", "System.Net.Http")]
     internal interface IHttpRequestMessage : IDuckType
     {
         /// <summary>

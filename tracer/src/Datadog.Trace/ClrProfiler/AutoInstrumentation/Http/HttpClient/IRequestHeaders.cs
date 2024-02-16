@@ -4,12 +4,14 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
     /// <summary>
     /// RequestHeaders interface for ducktyping
     /// </summary>
+    [DuckType(targetType: "System.Net.Http.Headers.HttpRequestHeaders", "System.Net.Http")]
     internal interface IRequestHeaders
     {
         /// <summary>
