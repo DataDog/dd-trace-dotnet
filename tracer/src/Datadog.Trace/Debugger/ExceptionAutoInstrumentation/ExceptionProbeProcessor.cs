@@ -92,20 +92,20 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             foreach (var status in statuses)
             {
                 var probe = instrumentedProbes.FirstOrDefault(p => p.ProbeId == status.ProbeId);
-                if (probe != null && status.Status is Status.INSTALLED or Status.ERROR)
+                if (probe != null && status.Status is Status.INSTALLED or Status.INSTRUMENTED or Status.ERROR)
                 {
                     probe.ProbeStatus = status.Status;
                 }
             }
 
-            if (!instrumentedProbes.All(p => p.ProbeStatus is Status.INSTALLED or Status.ERROR))
+            if (!instrumentedProbes.All(p => p.ProbeStatus is Status.INSTALLED or Status.INSTRUMENTED or Status.ERROR))
             {
                 // Not all probes have been confirmed as installed or errored out yet
                 return null;
             }
 
             var installedProbes = instrumentedProbes
-                                    .Where(p => p.ProbeStatus == Status.INSTALLED)
+                                    .Where(p => p.ProbeStatus is Status.INSTRUMENTED)
                                     .ToArray();
 
             if (reverseOrder)

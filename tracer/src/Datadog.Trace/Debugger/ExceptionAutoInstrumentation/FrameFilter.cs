@@ -56,10 +56,10 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return false;
             }
 
-            return ShouldSkip(method) == false;
+            return IsBlockList(method) == false;
         }
 
-        internal static bool ShouldSkip(MethodBase method)
+        internal static bool IsBlockList(MethodBase method)
         {
             if (method == null)
             {
@@ -72,6 +72,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             if (method.GetType().Name.Equals("RTDynamicMethod", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (method.DeclaringType == null)
             {
                 return true;
             }
@@ -124,7 +129,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal static bool ShouldSkipNamespaceIfOnTopOfStack(MethodBase method)
         {
-            return ShouldSkip(method);
+            return IsBlockList(method);
         }
     }
 }

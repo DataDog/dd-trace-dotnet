@@ -232,6 +232,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType.Name);
             span.Tags.SetTag(tagPrefix + "snapshot_id", snapshotId);
 
+            tagPrefix = tagPrefix.Replace("_", string.Empty);
+
+            span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
+            span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType.Name);
+            span.Tags.SetTag(tagPrefix + "snapshot_id", snapshotId);
+
             LiveDebugger.Instance.AddSnapshot(probeId, snapshot);
         }
 
@@ -364,7 +370,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     continue;
                 }
 
-                if (FrameFilter.ShouldSkip(method))
+                if (ShouldSkip(method))
+                {
+                    continue;
+                }
+
+                if (FrameFilter.IsBlockList(method))
                 {
                     yield return new ParticipatingFrame(frame, ParticipatingFrameState.Blacklist);
                 }
@@ -372,6 +383,19 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 {
                     yield return new ParticipatingFrame(frame, defaultState);
                 }
+            }
+        }
+
+        private static bool ShouldSkip(MethodBase method)
+        {
+            try
+            {
+                // ReSharper disable once BitwiseOperatorOnEnumWithoutFlags
+                return (method.MethodImplementationFlags & MethodImplAttributes.AggressiveInlining) == MethodImplAttributes.AggressiveInlining;
+            }
+            catch
+            {
+                return true;
             }
         }
     }
