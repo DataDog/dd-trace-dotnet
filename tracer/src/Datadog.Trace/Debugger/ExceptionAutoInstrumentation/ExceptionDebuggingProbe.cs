@@ -12,6 +12,7 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink.Models;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
@@ -35,6 +36,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal ExceptionDebuggingProcessor ExceptionDebuggingProcessor { get; private set; }
 
+        internal bool MayBeOmittedFromCallStack { get; private set; }
+
         internal Status ProbeStatus { get; set; }
 
         internal bool IsInstrumented
@@ -51,11 +54,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 ProbeId = Guid.NewGuid().ToString();
                 ExceptionDebuggingProcessor = new ExceptionDebuggingProcessor(ProbeId, Method);
+                MayBeOmittedFromCallStack = CheckIfMethodMayBeOmittedFromCallStack();
 
                 return true;
             }
 
             return false;
+        }
+
+        private bool CheckIfMethodMayBeOmittedFromCallStack()
+        {
+            return RuntimeHelper.IsCoreClr() && RuntimeHelper.IsNetOnward(6) && RuntimeHelper.IsModuleDebugCompiled(Method.Method.DeclaringType.Assembly);
         }
 
         private void ProcessCase(ExceptionCase @case)
@@ -107,15 +116,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         System.Diagnostics.Debugger.Break();
                     }
 
-                    var method = Method.Method;
-
-                    var rejitRequest = new NativeMethodProbeDefinition(ProbeId, method.DeclaringType.FullName, method.Name, targetParameterTypesFullName: null);
-
-                    DebuggerNativeMethods.InstrumentProbes(
-                    new[] { rejitRequest },
-                    Array.Empty<NativeLineProbeDefinition>(),
-                    Array.Empty<NativeSpanProbeDefinition>(),
-                    Array.Empty<NativeRemoveProbeRequest>());
+                    InstrumentationRequester.Instrument(ProbeId, Method.Method);
                 }
 
                 _exceptionCases.Add(@case);

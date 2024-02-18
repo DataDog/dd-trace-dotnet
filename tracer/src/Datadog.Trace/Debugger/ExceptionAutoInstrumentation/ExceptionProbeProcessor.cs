@@ -83,7 +83,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             var instrumentedProbes = probes.Where(p => p.IsInstrumented).ToArray();
 
             var probeIds = instrumentedProbes
-                            .Where(p => p.ProbeStatus == Status.RECEIVED)
+                            .Where(p => p.ProbeStatus == Status.RECEIVED || (p.ProbeStatus == Status.INSTALLED && !p.MayBeOmittedFromCallStack))
                             .Select(p => p.ProbeId)
                             .ToArray();
 
@@ -98,9 +98,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
             }
 
-            if (!instrumentedProbes.All(p => p.ProbeStatus is Status.INSTALLED or Status.INSTRUMENTED or Status.ERROR))
+            if (instrumentedProbes.Any(p => p.ProbeStatus is Status.RECEIVED))
             {
-                // Not all probes have been confirmed as installed or errored out yet
+                // Not all probes have been confirmed as installed, instrumented or errored out yet
+                return null;
+            }
+
+            if (instrumentedProbes.Any(p => !p.MayBeOmittedFromCallStack && p.ProbeStatus == Status.INSTALLED))
+            {
+                // Not all request rejit carried out yet.
                 return null;
             }
 
