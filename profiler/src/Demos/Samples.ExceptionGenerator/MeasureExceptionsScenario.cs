@@ -142,7 +142,7 @@ namespace Samples.ExceptionGenerator
 
         private void ThrowBadImageFormat()
         {
-            try { throw new BadImageFormatException("Baaad format","foo.dll"); } catch { }
+            try { throw new BadImageFormatException("Baaad format", "foo.dll"); } catch { }
         }
 
         private void ThrowArgument()
