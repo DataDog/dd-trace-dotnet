@@ -130,6 +130,9 @@ internal class Utils
             ["COR_PROFILER"] = Profilerid,
             ["COR_PROFILER_PATH_32"] = tracerProfiler32,
             ["COR_PROFILER_PATH_64"] = tracerProfiler64,
+            // Preventively set EnableDiagnostics to override any ambient value
+            ["COMPlus_EnableDiagnostics"] = "1",
+            ["DOTNET_EnableDiagnostics"] = "1",
         };
 
         if (!string.IsNullOrEmpty(ldPreload))

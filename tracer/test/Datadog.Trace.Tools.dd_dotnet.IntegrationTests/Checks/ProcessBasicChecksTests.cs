@@ -495,6 +495,39 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         }
     }
 
+    [SkippableTheory]
+    [Trait("RunOnWindows", "True")]
+    [InlineData("DOTNET_EnableDiagnostics", "1")]
+    [InlineData("DOTNET_EnableDiagnostics", "0")]
+    [InlineData("COMPlus_EnableDiagnostics", "1")]
+    [InlineData("COMPlus_EnableDiagnostics", "0")]
+    public async Task EnableDiagnostics(string key, string value)
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        using var helper = await StartConsole(enableProfiler: true, (key, value));
+        var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
+
+        processInfo.Should().NotBeNull();
+
+        using var console = ConsoleHelper.Redirect();
+
+        var result = ProcessBasicCheck.Run(processInfo!, MockRegistryService(Array.Empty<string>(), ProfilerPath));
+
+        using var scope = new AssertionScope();
+        scope.AddReportable("Output", console.Output);
+
+        if (value == "1")
+        {
+            result.Should().BeTrue();
+            console.Output.Should().NotContain(EnableDiagnosticsSet(key));
+        }
+        else
+        {
+            result.Should().BeFalse();
+            console.Output.Should().Contain(EnableDiagnosticsSet(key));
+        }
+    }
+
     private static IRegistryService MockRegistryService(string[] frameworkKeyValues, string? profilerKeyValue, bool wow64 = false)
     {
         var registryService = new Mock<IRegistryService>();
