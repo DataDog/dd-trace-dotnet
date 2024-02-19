@@ -11,7 +11,9 @@ using System.Web;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Sink
@@ -74,8 +76,41 @@ namespace Datadog.Trace.Debugger.Sink
 
             try
             {
-                sb.Append($"env:{Tracer.Instance.Settings.EnvironmentInternal}," +
-                          $"version:{Tracer.Instance.Settings.ServiceVersionInternal}");
+                var environment = TraceUtil.NormalizeTag(Tracer.Instance.Settings.EnvironmentInternal);
+                if (!string.IsNullOrEmpty(environment))
+                {
+                    sb.Append($"env:{environment},");
+                }
+
+                var version = Tracer.Instance.Settings.ServiceVersionInternal;
+                if (!string.IsNullOrEmpty(version))
+                {
+                    sb.Append($"version:{version},");
+                }
+
+                var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;
+                if (!string.IsNullOrEmpty(hostName))
+                {
+                    sb.Append($"host_name:{hostName},");
+                }
+
+                var runtimeId = Tracer.RuntimeId;
+                if (!string.IsNullOrEmpty(runtimeId))
+                {
+                    sb.Append($"{Tags.RuntimeId}:{runtimeId},");
+                }
+
+                var gitRepoUrl = Tracer.Instance.Settings.GitRepositoryUrl;
+                if (!string.IsNullOrEmpty(gitRepoUrl))
+                {
+                    sb.Append($"{Tags.GitRepositoryUrl}:{gitRepoUrl},");
+                }
+
+                var gitCommitSha = Tracer.Instance.Settings.GitCommitSha;
+                if (!string.IsNullOrEmpty(gitCommitSha))
+                {
+                    sb.Append($"{Tags.GitCommitSha}:{gitCommitSha},");
+                }
 
                 foreach (var kvp in Tracer.Instance.Settings.GlobalTagsInternal)
                 {
