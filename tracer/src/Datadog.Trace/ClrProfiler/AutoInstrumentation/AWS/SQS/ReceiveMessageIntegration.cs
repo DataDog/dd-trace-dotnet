@@ -8,9 +8,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
@@ -30,8 +27,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ReceiveMessageIntegration
     {
-        private const string Operation = "ReceiveMessage";
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -43,24 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         internal static CallTargetState OnMethodBegin<TTarget, TReceiveMessageRequest>(TTarget instance, TReceiveMessageRequest request)
             where TReceiveMessageRequest : IReceiveMessageRequest
         {
-            if (request.Instance is null)
-            {
-                return CallTargetState.GetDefault();
-            }
-
-            var queueName = AwsSqsCommon.GetQueueName(request.QueueUrl);
-            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out var tags, spanKind: SpanKinds.Consumer);
-            if (tags is not null && request.QueueUrl is not null)
-            {
-                tags.QueueUrl = request.QueueUrl;
-                tags.QueueName = queueName;
-            }
-
-            // request the message attributes that a datadog instrumentation might have set when sending
-            request.MessageAttributeNames.AddDistinct(ContextPropagation.SqsKey);
-            request.AttributeNames.AddDistinct("SentTimestamp");
-
-            return new CallTargetState(scope, queueName);
+            return AwsSqsHandlerCommon.BeforeReceive(request);
         }
 
         /// <summary>
@@ -73,38 +51,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
             where TResponse : IReceiveMessageResponse
         {
-            if (response.Instance != null && response.Messages != null && response.Messages.Count > 0 && state.State != null)
-            {
-                var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-                if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
-                {
-                    var edgeTags = new[] { "direction:in", $"topic:{(string)state.State}", "type:sqs" };
-                    foreach (var o in response.Messages)
-                    {
-                        var message = o.DuckCast<IMessage>();
-                        if (message == null)
-                        {
-                            continue; // should not happen
-                        }
-
-                        var sentTime = 0;
-                        if (message.Attributes != null && message.Attributes.TryGetValue("SentTimestamp", out var sentTimeStr) && sentTimeStr != null)
-                        {
-                            int.TryParse(sentTimeStr, out sentTime);
-                        }
-
-                        var adapter = AwsSqsHeadersAdapters.GetExtractionAdapter(message.MessageAttributes);
-                        var parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
-                        state.Scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
-                    }
-                }
-            }
-
-            state.Scope.DisposeWithException(exception);
-            return new CallTargetReturn<TResponse>(response);
+            return new CallTargetReturn<TResponse>(AwsSqsHandlerCommon.AfterReceive(response, exception, in state));
         }
     }
 }
