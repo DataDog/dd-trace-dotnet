@@ -6,14 +6,15 @@
 #include "RawSample.h"
 #include "Sample.h"
 
-class GCBaseRawSample : public RawSample
+template <class TRealRawSample>
+class GCBaseRawSample : public RawSample<TRealRawSample>
 {
 public:
     GCBaseRawSample() = default;
 
     GCBaseRawSample(GCBaseRawSample&& other) noexcept
         :
-        RawSample(std::move(other)),
+        RawSample<TRealRawSample>(std::move(other)),
         Number(other.Number),
         Generation(other.Generation),
         Duration(other.Duration)
@@ -24,7 +25,7 @@ public:
     {
         if (this != &other)
         {
-            RawSample::operator=(std::move(other));
+            RawSample<TRealRawSample>::operator=(std::move(other));
             Number = other.Number;
             Generation = other.Generation;
             Duration = other.Duration;
@@ -62,9 +63,9 @@ public:
     virtual void DoAdditionalTransform(std::shared_ptr<Sample> sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffset) const = 0;
 
 public:
-    int32_t Number;
-    uint32_t Generation;
-    int64_t Duration;
+    int32_t Number = 0;
+    uint32_t Generation = 0;
+    int64_t Duration = 0;
 
 private:
     inline static void AddGenerationLabel(std::shared_ptr<Sample>& sample, uint32_t generation)

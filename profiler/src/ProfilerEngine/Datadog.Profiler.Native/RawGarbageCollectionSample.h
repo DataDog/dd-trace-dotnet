@@ -11,14 +11,14 @@
 #include <string>
 #include <vector>
 
-class RawGarbageCollectionSample : public GCBaseRawSample
+class RawGarbageCollectionSample : public GCBaseRawSample<RawGarbageCollectionSample>
 {
 public:
     RawGarbageCollectionSample() = default;
 
     RawGarbageCollectionSample(RawGarbageCollectionSample&& other) noexcept
         :
-        GCBaseRawSample(std::move(other)),
+        GCBaseRawSample<RawGarbageCollectionSample>(std::move(other)),
         Reason(other.Reason),
         Type(other.Type),
         IsCompacting(other.IsCompacting),
@@ -31,7 +31,7 @@ public:
     {
         if (this == &other)
         {
-            GCBaseRawSample::operator=(std::move(other));
+            GCBaseRawSample<RawGarbageCollectionSample>::operator=(std::move(other));
             Reason = other.Reason;
             Type = other.Type;
             IsCompacting = other.IsCompacting;

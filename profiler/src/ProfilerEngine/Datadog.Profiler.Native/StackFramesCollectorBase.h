@@ -45,7 +45,10 @@ public:
     virtual void OnDeadlock();
 
     void RequestAbortCurrentCollection();
-    void PrepareForNextCollection();
+
+    template <class TRawSample>
+    void PrepareForNextCollection(TRawSample* rawSample);
+
     bool SuspendTargetThread(ManagedThreadInfo* pThreadInfo, bool* pIsTargetThreadSuspended);
     void ResumeTargetThreadIfRequired(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR);
     StackSnapshotResultBuffer* CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR);
@@ -64,3 +67,23 @@ private:
     bool _isCIVisibilityEnabled;
     uint64_t _ciVisibilitySpanId;
 };
+
+template <class TRawSample>
+void StackFramesCollectorBase::PrepareForNextCollection(TRawSample* rawSample)
+{
+    // We cannot allocate memory once a thread is suspended.
+    // This is because malloc() uses a lock and so if we suspend a thread that was allocating, we will deadlock.
+    // So we pre-allocate the memory buffer and reset it before suspending the target thread.
+    _pStackSnapshotResult->Reset();
+    _pStackSnapshotResult->Initialize(rawSample);
+
+    // Clear the current collection thread pointer:
+    _pCurrentCollectionThreadInfo = nullptr;
+
+    // Clean up initialization state:
+    _isCurrentCollectionAbortRequested.store(false);
+    _isRequestedCollectionAbortSuccessful = false;
+
+    // Subclasses can implement their own specific initialization before each collection. Invoke it:
+    PrepareForNextCollectionImplementation();
+}

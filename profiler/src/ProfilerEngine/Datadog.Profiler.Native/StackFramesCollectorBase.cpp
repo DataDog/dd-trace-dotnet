@@ -142,23 +142,6 @@ StackSnapshotResultBuffer* StackFramesCollectorBase::GetStackSnapshotResult()
 // They perform the work required for the shared base implementation (this class) and then invoke the respective XxxImplementaiton(..) method.
 // This is less error-prone than simply making these methods virtual and relying on the sub-classes to remember calling the base class method.
 
-void StackFramesCollectorBase::PrepareForNextCollection()
-{
-    // We cannot allocate memory once a thread is suspended.
-    // This is because malloc() uses a lock and so if we suspend a thread that was allocating, we will deadlock.
-    // So we pre-allocate the memory buffer and reset it before suspending the target thread.
-    _pStackSnapshotResult->Reset();
-
-    // Clear the current collection thread pointer:
-    _pCurrentCollectionThreadInfo = nullptr;
-
-    // Clean up initialization state:
-    _isCurrentCollectionAbortRequested.store(false);
-    _isRequestedCollectionAbortSuccessful = false;
-
-    // Subclasses can implement their own specific initialization before each collection. Invoke it:
-    PrepareForNextCollectionImplementation();
-}
 
 bool StackFramesCollectorBase::SuspendTargetThread(ManagedThreadInfo* pThreadInfo, bool* pIsTargetThreadSuspended)
 {

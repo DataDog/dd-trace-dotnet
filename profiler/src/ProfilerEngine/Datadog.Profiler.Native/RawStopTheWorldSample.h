@@ -7,7 +7,7 @@
 #include "RawSample.h"
 #include "Sample.h"
 
-class RawStopTheWorldSample : public GCBaseRawSample
+class RawStopTheWorldSample : public GCBaseRawSample<RawStopTheWorldSample>
 {
 public:
     RawStopTheWorldSample() = default;
