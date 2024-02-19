@@ -845,3 +845,63 @@ TEST(ConfigurationTest, CheckEtwIsDisabledIfEnvVarSetToFalse)
     auto expectedValue = false;
     ASSERT_THAT(configuration.IsEtwEnabled(), expectedValue);
 }
+
+TEST(ConfigurationTest, CheckSsiDeployedByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsSsiDeployed(), false);
+}
+
+TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarConstainsProfiling)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer,profiling"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsSsiDeployed(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarDoesNotContainProfiling)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsSsiDeployed(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarIsEmpty)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr(""));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsSsiDeployed(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiActivatedByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsSsiActivated(), false);
+}
+
+TEST(ConfigurationTest, CheckSsiIsActivatedIfEnvVarConstainsProfiling)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer,profiling"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsSsiActivated(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsNotActivatedIfEnvVarDoesNotContainProfiling)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsSsiActivated(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsNotActivatedIfEnvVarIsEmpty)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr(""));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsSsiActivated(), expectedValue);
+}
