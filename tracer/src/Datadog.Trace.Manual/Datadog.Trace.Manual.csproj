@@ -18,6 +18,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- If you want to run the manual span benchmark or ducktyping unit tests  />-->
+    <!-- <Compile Include="..\Datadog.Trace\DuckTyping\*.cs" Link="DuckTyping\%(Filename)%(Extension)" />-->
     <Compile Include="..\Datadog.Trace\Ci\Benchmark*.cs" Link="Ci\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Attributes\*.cs" Link="Ci\Coverage\Attributes\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Exceptions\*.cs" Link="Ci\Coverage\Exceptions\%(Filename)%(Extension)" />

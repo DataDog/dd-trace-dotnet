@@ -34,6 +34,7 @@ namespace Datadog.Trace.Tests.ManualInstrumentation;
 [TracerRestorer]
 public class DuckTypingTests
 {
+    private const string Skip = "We can't test these as-is because we rely on automatic instrumentation for ducktyping. To test these, import the DuckTyping folder into Datadog.Trace.Manual";
     private readonly AsyncLocalScopeManager _scopeManager = new();
     private readonly TracerSettings _settings = new() { StartupDiagnosticLogEnabled = false };
     private readonly Tracer _tracer;
@@ -43,7 +44,7 @@ public class DuckTypingTests
         _tracer = new Tracer(_settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object, scopeManager: _scopeManager, statsd: null);
     }
 
-    [Fact]
+    [Fact(Skip = Skip)]
     public void CanDuckTypeManualSpanContextAsISpanContext()
     {
         var scope = _tracer.StartActiveInternal("manual");
@@ -59,7 +60,7 @@ public class DuckTypingTests
         manualContext.TraceId.Should().Be(spanContext.TraceId);
     }
 
-    [Fact]
+    [Fact(Skip = Skip)]
     public void CanDuckTypeManualScopeAsIScope()
     {
         var scope = _tracer.StartActiveInternal("manual");
@@ -91,7 +92,7 @@ public class DuckTypingTests
         manualScope.Dispose();
     }
 
-    [Fact]
+    [Fact(Skip = Skip)]
     public void CanDuckTypeManualTestSessionAsISession()
     {
         var session = TestSession.GetOrCreate("blah");

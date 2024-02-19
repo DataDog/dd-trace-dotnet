@@ -51,7 +51,10 @@ namespace Benchmarks.Trace
         /// <summary>
         /// Starts and finishes scope benchmark using the manual instrumentation
         /// </summary>
-        [Benchmark]
+        // Skipping this test because it's not representative any more - this relies on 
+        // duck typing, which requires automatic instrumentation. If you want to
+        // benchmark it, first import the DuckTyping folder into Datadog.Trace.Manual 
+        // [Benchmark]
         public void ManualStartFinishScope()
         {
             var manualTracer = ManualTracer.DuckCast<ITracerProxy>();
@@ -65,7 +68,7 @@ namespace Benchmarks.Trace
                 SpanExtensionsSetTraceSamplingPriorityIntegration.OnMethodBegin<ManualTracer, ManualISpan>(ref span, SamplingPriority.UserReject);
             }
         }
-        
+
         /// <summary>
         /// Starts and finishes span benchmark
         /// </summary>
