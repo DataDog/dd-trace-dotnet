@@ -38,6 +38,6 @@ public class GetActiveScopeIntegration
         // (Not ideal for clarity, but generics prevent returning null directly)
         return scope is null
                    ? new CallTargetReturn<TReturn>(returnValue)
-                   : new CallTargetReturn<TReturn>((TReturn)ScopeHelper<TReturn>.CreateManualScope(scope).Proxy);
+                   : new CallTargetReturn<TReturn>(ScopeHelper<TReturn>.CreateManualScope(scope) is { } manualScope ? (TReturn)manualScope : returnValue);
     }
 }

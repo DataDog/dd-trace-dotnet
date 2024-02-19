@@ -9,6 +9,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 
@@ -48,8 +49,14 @@ public class StartActiveImplementationIntegration
 
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
     {
-        // The return value is a "manual scope" proxy that we reverse duck type as an IScope and set on the return value's
-        var proxy = (TReturn)ScopeHelper<TReturn>.CreateManualScope(state.Scope!).Proxy;
-        return new CallTargetReturn<TReturn>(proxy);
+        // The return value is a ManualScope (Datadog.Trace.Manual) proxy that we duck type and set all the context values on
+        if (returnValue is not null)
+        {
+            returnValue
+               .DuckCast<IManualScopeProxy>()
+               .SetAutomatic(state.Scope, state.Scope.Span, state.Scope.Span.Context);
+        }
+
+        return new CallTargetReturn<TReturn>(returnValue);
     }
 }

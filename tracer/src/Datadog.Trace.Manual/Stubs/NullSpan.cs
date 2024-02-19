@@ -9,6 +9,10 @@ internal class NullSpan : ISpan
 {
     public static readonly NullSpan Instance = new();
 
+    private NullSpan()
+    {
+    }
+
     public string OperationName
     {
         get => string.Empty;

@@ -13,14 +13,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 
 internal static class SpanContextHelper
 {
-    [return:NotNullIfNotNull(nameof(context))]
+    [return: NotNullIfNotNull(nameof(context))]
     public static ISpanContext? GetContext<T>(T context)
         => context switch
         {
             null => null,
             SpanContext c => c,
-            ManualSpanContext { AutomaticContext: { } automaticContext } => automaticContext,
             ISpanContext c => c,
+            _ when context.TryDuckCast<ManualSpanContextProxy>(out var manualSpanContext) => (SpanContext?)manualSpanContext.AutomaticContext,
             _ when context.TryDuckCast<SpanContextProxy>(out var spanContextProxy) => new SpanContext(
                 new TraceId(Upper: spanContextProxy.TraceIdUpper, Lower: spanContextProxy.TraceId),
                 spanContextProxy.SpanId,

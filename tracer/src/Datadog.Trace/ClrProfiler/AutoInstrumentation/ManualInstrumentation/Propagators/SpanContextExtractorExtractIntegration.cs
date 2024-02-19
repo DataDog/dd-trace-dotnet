@@ -40,8 +40,9 @@ public class SpanContextExtractorExtractIntegration
 
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
-        var updatedReturn = state.State is ISpanContext spanContext
-                                ? (TReturn)ScopeHelper<TReturn>.CreateManualSpanContext(spanContext).Proxy
+        var updatedReturn = state.State is SpanContext spanContext
+                         && ScopeHelper<TReturn>.CreateManualSpanContext(spanContext) is { } manualSpanContext
+                                ? (TReturn)manualSpanContext
                                 : returnValue; // This is always null, so lets us satisfy the types easily
         return new CallTargetReturn<TReturn>(updatedReturn);
     }

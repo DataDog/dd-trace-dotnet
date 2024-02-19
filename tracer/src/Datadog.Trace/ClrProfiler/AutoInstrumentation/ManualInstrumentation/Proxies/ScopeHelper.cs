@@ -5,31 +5,60 @@
 
 #nullable enable
 
-using System;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 
 internal static class ScopeHelper<TMarkerType>
 {
-    private static readonly Type IScopeType;
-    private static readonly Type ISpanType;
-    private static readonly Type ISpanContextType;
+    // ReSharper disable once StaticMemberInGenericType
+    private static readonly ActivatorHelper? ManualScopeActivator;
+    // ReSharper disable once StaticMemberInGenericType
+    private static readonly ActivatorHelper? ManualSpanContextActivator;
 
     static ScopeHelper()
     {
-        var assembly = typeof(TMarkerType).Assembly;
-        IScopeType = assembly.GetType("Datadog.Trace.IScope")!;
-        ISpanType = assembly.GetType("Datadog.Trace.ISpan")!;
-        ISpanContextType = assembly.GetType("Datadog.Trace.ISpanContext")!;
+        var scopeType = typeof(TMarkerType).Assembly.GetType("Datadog.Trace.ManualScope");
+        // Should never be null, but be safe.
+        if (scopeType != null)
+        {
+            ManualScopeActivator = new ActivatorHelper(scopeType);
+        }
+
+        var spanType = typeof(TMarkerType).Assembly.GetType("Datadog.Trace.ManualSpanContext");
+        // Should never be null, but be safe.
+        if (spanType != null)
+        {
+            ManualSpanContextActivator = new ActivatorHelper(spanType);
+        }
     }
 
-    public static ManualScope CreateManualScope(IScope scope)
-        => new(scope, CreateManualSpan(scope.Span), IScopeType);
+    public static object? CreateManualScope(IScope scope)
+    {
+        if (ManualScopeActivator is null)
+        {
+            return null;
+        }
 
-    public static ManualSpan CreateManualSpan(ISpan span)
-        => new(span, CreateManualSpanContext(span.Context), ISpanType);
+        var manualScope = ManualScopeActivator.CreateInstance();
+        manualScope
+           .DuckCast<IManualScopeProxy>()
+           .SetAutomatic(scope, scope.Span, scope.Span.Context);
+        return manualScope;
+    }
 
-    public static ManualSpanContext CreateManualSpanContext(ISpanContext context)
-        => new(context, ISpanContextType);
+    public static object? CreateManualSpanContext(ISpanContext context)
+    {
+        if (ManualSpanContextActivator is null)
+        {
+            return null;
+        }
+
+        var manualSpan = ManualSpanContextActivator.CreateInstance();
+        manualSpan
+           .DuckCast<IManualSpanContextProxy>()
+           .SetAutomatic(context);
+        return manualSpan;
+    }
 }

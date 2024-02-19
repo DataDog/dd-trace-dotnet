@@ -9,6 +9,10 @@ internal class NullScope : IScope
 {
     public static readonly NullScope Instance = new();
 
+    private NullScope()
+    {
+    }
+
     public ISpan Span { get; } = NullSpan.Instance;
 
     public void Dispose()

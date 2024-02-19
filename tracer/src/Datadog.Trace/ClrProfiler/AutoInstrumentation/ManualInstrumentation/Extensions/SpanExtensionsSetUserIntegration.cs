@@ -33,10 +33,10 @@ public class SpanExtensionsSetUserIntegration
         // Annoyingly, this takes an ISpan, so we have to do some duckTyping to make it work
         ISpan? realSpan = null;
 
-        if (span is IDuckType { Instance: ManualSpan { AutomaticSpan: { } duckTyped } })
+        if (span.TryDuckCast<ManualSpanProxy>(out var wrapped)
+         && wrapped.AutomaticSpan is Span s)
         {
-            // this is the "typical" scenario
-            realSpan = duckTyped;
+            realSpan = s;
         }
         else if (span is Span autoSpan)
         {
