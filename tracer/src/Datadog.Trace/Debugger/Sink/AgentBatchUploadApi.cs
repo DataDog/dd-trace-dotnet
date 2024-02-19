@@ -7,10 +7,12 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Sink
 {
@@ -20,6 +22,7 @@ namespace Datadog.Trace.Debugger.Sink
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private string? _endpoint = null;
+        private string? _tags = null;
 
         private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
         {
@@ -40,8 +43,8 @@ namespace Datadog.Trace.Debugger.Sink
                 return false;
             }
 
-            var uri = _apiRequestFactory.GetEndpoint(endpoint);
-            var request = _apiRequestFactory.Create(uri);
+            var uri = BuildUri(endpoint);
+            var request = _apiRequestFactory.Create(new Uri(uri));
 
             using var response = await request.PostAsync(data, MimeTypes.Json).ConfigureAwait(false);
             if (response.StatusCode is not (>= 200 and <= 299))
@@ -52,6 +55,39 @@ namespace Datadog.Trace.Debugger.Sink
             }
 
             return true;
+        }
+
+        private string BuildUri(string endpoint)
+        {
+            var uri = _apiRequestFactory.GetEndpoint(endpoint);
+            var builder = new UriBuilder(uri);
+            var query = HttpUtility.ParseQueryString(builder.Query);
+            _tags ??= GetDefaultTagsMergedWithGlobalTags();
+            query["ddtags"] = _tags;
+            builder.Query = query.ToString();
+            return builder.ToString();
+        }
+
+        private string GetDefaultTagsMergedWithGlobalTags()
+        {
+            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+
+            try
+            {
+                sb.Append($"env:{Tracer.Instance.Settings.EnvironmentInternal}," +
+                          $"version:{Tracer.Instance.Settings.ServiceVersionInternal}");
+
+                foreach (var kvp in Tracer.Instance.Settings.GlobalTagsInternal)
+                {
+                    sb.Append($",{kvp.Key}:{kvp.Value}");
+                }
+
+                return sb.ToString();
+            }
+            finally
+            {
+                StringBuilderCache.Release(sb);
+            }
         }
     }
 }
