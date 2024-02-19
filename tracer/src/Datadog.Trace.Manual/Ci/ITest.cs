@@ -80,7 +80,7 @@ public interface ITest
     /// </summary>
     /// <param name="hostInfo">Host info</param>
     /// <param name="jobInfo">Job info</param>
-    void SetBenchmarkMetadata(BenchmarkHostInfo hostInfo, BenchmarkJobInfo jobInfo);
+    void SetBenchmarkMetadata(in BenchmarkHostInfo hostInfo, in BenchmarkJobInfo jobInfo);
 
     /// <summary>
     /// Add benchmark data
@@ -88,7 +88,7 @@ public interface ITest
     /// <param name="measureType">Measure type</param>
     /// <param name="info">Measure info</param>
     /// <param name="statistics">Statistics values</param>
-    void AddBenchmarkData(BenchmarkMeasureType measureType, string info, BenchmarkDiscreteStats statistics);
+    void AddBenchmarkData(BenchmarkMeasureType measureType, string info, in BenchmarkDiscreteStats statistics);
 
     /// <summary>
     /// Close test
