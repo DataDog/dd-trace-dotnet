@@ -526,6 +526,8 @@ namespace Datadog.Trace.Tools.Runner
                 // Preventively set EnableDiagnostics to override any ambient value
                 ["COMPlus_EnableDiagnostics"] = "1",
                 ["DOTNET_EnableDiagnostics"] = "1",
+                ["DOTNET_EnableDiagnostics_Profiler"] = "1",
+                ["COMPlus_EnableDiagnostics_Profiler"] = "1",
             };
 
             if (!string.IsNullOrEmpty(ldPreload))

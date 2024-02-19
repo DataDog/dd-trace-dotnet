@@ -501,6 +501,10 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     [InlineData("DOTNET_EnableDiagnostics", "0")]
     [InlineData("COMPlus_EnableDiagnostics", "1")]
     [InlineData("COMPlus_EnableDiagnostics", "0")]
+    [InlineData("DOTNET_EnableDiagnostics_Profiler", "0")]
+    [InlineData("DOTNET_EnableDiagnostics_Profiler", "1")]
+    [InlineData("COMPlus_EnableDiagnostics_Profiler", "0")]
+    [InlineData("COMPlus_EnableDiagnostics_Profiler", "1")]
     public async Task EnableDiagnostics(string key, string value)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);

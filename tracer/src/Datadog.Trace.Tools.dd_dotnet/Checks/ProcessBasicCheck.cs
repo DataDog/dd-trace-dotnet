@@ -696,19 +696,20 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         private static bool CheckEnableDiagnostics(ProcessInfo process)
         {
-            if (process.EnvironmentVariables.TryGetValue("DOTNET_EnableDiagnostics", out var value) && value == "0")
+            var variablesToCheck = new[] { "DOTNET_EnableDiagnostics", "COMPlus_EnableDiagnostics", "DOTNET_EnableDiagnostics_Profiler", "COMPlus_EnableDiagnostics_Profiler" };
+
+            bool result = true;
+
+            foreach (var key in variablesToCheck)
             {
-                Utils.WriteError(EnableDiagnosticsSet("DOTNET_EnableDiagnostics"));
-                return false;
+                if (process.EnvironmentVariables.TryGetValue(key, out var value) && value == "0")
+                {
+                    Utils.WriteError(EnableDiagnosticsSet(key));
+                    result = false;
+                }
             }
 
-            if (process.EnvironmentVariables.TryGetValue("COMPlus_EnableDiagnostics", out value) && value == "0")
-            {
-                Utils.WriteError(EnableDiagnosticsSet("COMPlus_EnableDiagnostics"));
-                return false;
-            }
-
-            return true;
+            return result;
         }
     }
 }
