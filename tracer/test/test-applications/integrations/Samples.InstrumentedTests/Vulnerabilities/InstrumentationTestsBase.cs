@@ -138,6 +138,18 @@ public class InstrumentationTestsBase : IDisposable
         spans.Count.Should().Be(spansGenerated);
     }
 
+    protected void AssertSameHash(int vulnerabilities)
+    {
+        var vulnerabilityList = GetGeneratedVulnerabilities();
+        vulnerabilityList.Count.Should().Be(vulnerabilities);
+
+        foreach (var vulnerability in vulnerabilityList)
+        {
+            var hash = vulnerability.GetHashCode();
+            hash.Should().Be(vulnerabilityList[0].GetHashCode());
+        }
+    }
+
     protected void AssertVulnerable(string expectedType = null, string expectedEvidence = null, bool evidenceTainted = true, byte sourceType = 0, int vulnerabilities = 1)
     {
         var vulnerabilityList = GetGeneratedVulnerabilities();

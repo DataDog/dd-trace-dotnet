@@ -5,6 +5,9 @@
 
 using System.IO;
 using System.Security.Cryptography;
+#if NET6_0_OR_GREATER
+using AspNetCoreRateLimit;
+#endif
 using Moq;
 using Xunit;
 
@@ -35,6 +38,49 @@ public class HashAlgorithmTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
+#if NET6_0_OR_GREATER
+
+    class RateLimitCustom : RateLimitProcessor
+    {
+        public RateLimitCustom(RateLimitOptions options, IRateLimitCounterStore counterStore, ICounterKeyBuilder counterKeyBuilder, IRateLimitConfiguration config) 
+            : base(options, counterStore, counterKeyBuilder, config)
+        {
+        }
+
+        public string BuildCounterKey()
+        {
+            ClientRequestIdentity identity = new();
+            RateLimitRule rule = new();
+            var result = BuildCounterKey(identity, rule);
+            return result;
+        }
+    }
+
+    class CounterKeyBuilder : ICounterKeyBuilder
+    {
+        public string Build(ClientRequestIdentity requestIdentity, RateLimitRule rule)
+        {
+            return "key";
+        }
+    }
+
+    [Fact]
+    public void SameHashes()
+    {
+        //         AspNetCoreRateLimit.RateLimitProcessor::BuildCounterKey
+        var rateLimit = new RateLimitCustom(new RateLimitOptions(), new Mock<IRateLimitCounterStore>().Object,
+            new CounterKeyBuilder(), new Mock<IRateLimitConfiguration>().Object);
+        BuildCounterMethod(rateLimit);
+        BuildCounterMethod(rateLimit);
+        AssertSameHash(vulnerabilities: 2);
+    }
+
+    private static void BuildCounterMethod(RateLimitCustom rateLimit)
+    {
+        rateLimit.BuildCounterKey();
+    }
+#endif
+
 #if NETFRAMEWORK
     [Fact]
     public void GivenAHMACRIPEMD160_WhenComputeHash_NotVulnerable()
@@ -49,5 +95,7 @@ public class HashAlgorithmTests : InstrumentationTestsBase
         RIPEMD160Managed.Create().ComputeHash(new MemoryStream(100));
         AssertNotVulnerable();
     }
+    
+
 #endif
 }

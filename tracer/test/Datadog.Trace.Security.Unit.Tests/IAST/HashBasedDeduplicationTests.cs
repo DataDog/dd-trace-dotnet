@@ -202,4 +202,34 @@ public class HashBasedDeduplicationTests
         result = instance.Add(new Vulnerability(VulnerabilityTypeName.NoSameSiteCookie, null, new Evidence("value")), date);
         result.Should().Be(expectedResult2);
     }
+
+    [Fact]
+    public void GivenTwoDifferentVulnerabilitiesEqualMethodType_WhenAddedToDeduplication_OneIsStored2()
+    {
+        var instance = new HashBasedDeduplication();
+        Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, null, null, null, "type1"), new Evidence("SHA1", null))));
+        Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, null, null, null, "type1"), new Evidence("SHA1", null))));
+        Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, null, null, null, "type1"), new Evidence("SHA1", null))));
+        Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, null, null, null, "type1"), new Evidence("SHA1", null))));
+    }
+
+    [Fact]
+    public void GivenTwoDifferentVulnerabilitiesEqualMethodType_WhenAddedToDeduplication_OneIsStored3()
+    {
+        var instance = new HashBasedDeduplication();
+        Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("AspNetCoreRateLimit.RateLimitProcessor::BuildCounterKey", null, null, null, null), new Evidence("SHA1", null))));
+        Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("AspNetCoreRateLimit.RateLimitProcessor::BuildCounterKey", null, null, null, null), new Evidence("SHA1", null))));
+        Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("AspNetCoreRateLimit.RateLimitProcessor::BuildCounterKey", null, null, null, null), new Evidence("SHA1", null))));
+        Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("AspNetCoreRateLimit.RateLimitProcessor::BuildCounterKey", null, null, null, null), new Evidence("SHA1", null))));
+    }
+
+    [Fact]
+    public void GivenTwoDifferentVulnerabilitiesEqualMethodType_WhenAddedToDeduplication_OneIsStored4()
+    {
+        var instance = new HashBasedDeduplication();
+        Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, null, null, null, "AspNetCoreRateLimit.RateLimitProcessor::BuildCounterKey"), new Evidence("SHA1", null))));
+        Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, null, null, null, "AspNetCoreRateLimit.RateLimitProcessor::BuildCounterKey"), new Evidence("SHA1", null))));
+        Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, null, null, null, "AspNetCoreRateLimit.RateLimitProcessor::BuildCounterKey"), new Evidence("SHA1", null))));
+        Assert.False(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, null, null, null, "AspNetCoreRateLimit.RateLimitProcessor::BuildCounterKey"), new Evidence("SHA1", null))));
+    }
 }
