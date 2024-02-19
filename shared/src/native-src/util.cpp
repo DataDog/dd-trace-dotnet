@@ -121,6 +121,21 @@ namespace shared
         return false;
     }
 
+    bool EnvironmentExist(const WSTRING& name)
+    {
+#ifdef _WIN32
+        auto len = ::GetEnvironmentVariable((LPWSTR)name.data(), (LPWSTR)nullptr, 0);
+        if (len > 0)
+        {
+            return true;
+        }
+
+        return (::GetLastError() != ERROR_ENVVAR_NOT_FOUND);
+#else
+        auto cstr = std::getenv(ToString(name).c_str());
+        return (cstr != nullptr);
+#endif
+    }
 
     WSTRING GetEnvironmentValue(const WSTRING& name)
     {

@@ -67,6 +67,9 @@ public:
     bool IsCIVisibilityEnabled() const override;
     std::uint64_t GetCIVisibilitySpanId() const override;
     bool IsEtwEnabled() const override;
+    bool IsSsiDeployed() const override;
+    bool IsSsiActivated() const override;
+
 
 
 private:
@@ -89,6 +92,7 @@ private:
     static int32_t ExtractCpuThreadsThreshold();
     static int32_t ExtractCodeHotspotsThreadsThreshold();
     static bool GetContention();
+    static void ExtractSsiState(bool& ssiDeployed, bool& ssiEnabled);
 
 private:
     static std::string const DefaultProdSite;
@@ -151,4 +155,6 @@ private:
     bool _isCIVisibilityEnabled;
     std::uint64_t _internalCIVisibilitySpanId;
     bool _isEtwEnabled;
+    bool _isSsiDeployed;
+    bool _isSsiActivated;
 };
