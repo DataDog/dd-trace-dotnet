@@ -8,9 +8,14 @@
 #include "corprof.h"
 // end
 
+#include "RawSampleTraits.hpp"
+
+#include "shared/src/native-src/dd_span.hpp"
+
 #include <array>
-#include <vector>
 #include <cstdint>
+#include <type_traits>
+#include <vector>
 
 /// <summary>
 /// Allocating when a thread is suspended can lead to deadlocks.
@@ -23,14 +28,17 @@ class StackSnapshotResultBuffer
 public:
     static constexpr std::uint16_t MaxSnapshotStackDepth_Limit = 2049;
 
-    inline std::uint64_t GetUnixTimeUtc() const;
-    inline std::uint64_t SetUnixTimeUtc(std::uint64_t value);
+    template <class TRawSample>
+    void Initialize(TRawSample* sample)
+    {
+        _localRootSpanId = &sample->LocalRootSpanId;
+        _spanId = &sample->SpanId;
 
-    inline std::uint64_t GetRepresentedDurationNanoseconds() const;
-    inline std::uint64_t SetRepresentedDurationNanoseconds(std::uint64_t value);
-
-    inline AppDomainID GetAppDomainId() const;
-    inline AppDomainID SetAppDomainId(AppDomainID appDomainId);
+        if constexpr (std::is_same_v<std::vector<std::uintptr_t>, typename RawSampleTraits<TRawSample>::collection_type>)
+        {
+            _instructionPointers = shared::span(_internalIps.data(), _internalIps.size());
+        }
+    }
 
     inline std::uint64_t GetLocalRootSpanId() const;
     inline std::uint64_t SetLocalRootSpanId(std::uint64_t value);
@@ -41,8 +49,6 @@ public:
     inline std::size_t GetFramesCount() const;
     inline void SetFramesCount(std::uint16_t count);
     inline void CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const;
-
-    inline void DetermineAppDomain(ThreadID threadId, ICorProfilerInfo4* pCorProfilerInfo);
 
     void Reset();
 
@@ -56,75 +62,42 @@ public:
 
 protected:
 
-    std::uint64_t _unixTimeUtc;
-    std::uint64_t _representedDurationNanoseconds;
-    AppDomainID _appDomainId;
-    std::array<uintptr_t, MaxSnapshotStackDepth_Limit> _instructionPointers;
+    //std::uintptr_t* _instructionPointers;
+    shared::span<uintptr_t> _instructionPointers;
+
     std::uint16_t _currentFramesCount;
 
-    std::uint64_t _localRootSpanId;
-    std::uint64_t _spanId;
+    // just an indirection
+    std::uint64_t* _localRootSpanId;
+    std::uint64_t* _spanId;
+private:
+
+    std::array<uintptr_t, MaxSnapshotStackDepth_Limit> _internalIps;
 };
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
 
-inline std::uint64_t StackSnapshotResultBuffer::GetUnixTimeUtc() const
-{
-    return _unixTimeUtc;
-}
-
-inline std::uint64_t StackSnapshotResultBuffer::SetUnixTimeUtc(std::uint64_t value)
-{
-    std::uint64_t prevValue = _unixTimeUtc;
-    _unixTimeUtc = value;
-    return prevValue;
-}
-
-inline std::uint64_t StackSnapshotResultBuffer::GetRepresentedDurationNanoseconds() const
-{
-    return _representedDurationNanoseconds;
-}
-
-inline std::uint64_t StackSnapshotResultBuffer::SetRepresentedDurationNanoseconds(std::uint64_t value)
-{
-    std::uint64_t prevValue = _representedDurationNanoseconds;
-    _representedDurationNanoseconds = value;
-    return prevValue;
-}
-
-inline AppDomainID StackSnapshotResultBuffer::GetAppDomainId() const
-{
-    return _appDomainId;
-}
-
-inline AppDomainID StackSnapshotResultBuffer::SetAppDomainId(AppDomainID value)
-{
-    AppDomainID prevValue = _appDomainId;
-    _appDomainId = value;
-    return prevValue;
-}
-
 inline std::uint64_t StackSnapshotResultBuffer::GetLocalRootSpanId() const
 {
-    return _localRootSpanId;
+    return *_localRootSpanId;
 }
 
 inline std::uint64_t StackSnapshotResultBuffer::SetLocalRootSpanId(std::uint64_t value)
 {
-    std::uint64_t prevValue = _localRootSpanId;
-    _localRootSpanId = value;
+    std::uint64_t prevValue = *_localRootSpanId;
+    *_localRootSpanId = value;
     return prevValue;
 }
 
 inline std::uint64_t StackSnapshotResultBuffer::GetSpanId() const
 {
-    return _spanId;
+    return *_spanId;
 }
 
 inline std::uint64_t StackSnapshotResultBuffer::SetSpanId(std::uint64_t value)
 {
-    std::uint64_t prevValue = _spanId;
-    _spanId = value;
+    std::uint64_t prevValue = *_spanId;
+    *_spanId = value;
     return prevValue;
 }
 
@@ -143,36 +116,7 @@ inline void StackSnapshotResultBuffer::CopyInstructionPointers(std::vector<std::
     ips.reserve(_currentFramesCount);
 
     // copy the instruction pointer to the out-parameter
-    ips.insert(ips.end(), _instructionPointers.begin(), _instructionPointers.begin() + _currentFramesCount);
-}
-
-inline void StackSnapshotResultBuffer::DetermineAppDomain(ThreadID threadId, ICorProfilerInfo4* pCorProfilerInfo)
-{
-    // Determine the AppDomain currently running the sampled thread:
-    //
-    // (Note: On Windows, the target thread is still suspended and the AddDomain ID will be correct.
-    // However, on Linux the signal handler that performed the stack walk has finished and the target
-    // thread is making progress again.
-    // So, it is possible that since we walked the stack, the thread's AppDomain changed and the AppDomain ID we
-    // read here does not correspond to the stack sample. In practice we expect this to occur very rarely,
-    // so we accept this for now.
-    // If, however, this is observed frequently enough to present a problem, we will need to move the AppDomain
-    // ID read logic into _pStackFramesCollector->CollectStackSample(). Collectors that suspend the target thread
-    // will be able to read the ID at any time, but non-suspending collectors (e.g. Linux) will need to do it from
-    // within the signal handler. An example for this is the
-    // StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot() API which exists
-    // to address the same synchronization issue with TraceContextTracking-related data.
-    // There is an additional complexity with the AppDomain case, because it is likely not safe to call
-    // _pCorProfilerInfo->GetThreadAppDomain() from the collector's signal handler directly (needs to be investigated).
-    // To address this, we will need to do it via a SynchronousOffThreadWorkerBase-based mechanism, similar to how
-    // the SymbolsResolver uses a Worker and synchronously waits for results to avoid calling
-    // symbol resolution APIs on a CLR thread.)
-    AppDomainID appDomainId;
-    HRESULT hr = pCorProfilerInfo->GetThreadAppDomain(threadId, &appDomainId);
-    if (SUCCEEDED(hr))
-    {
-        SetAppDomainId(appDomainId);
-    }
+    ips.insert(ips.end(), _instructionPointers.data(), _instructionPointers.data() + _currentFramesCount);
 }
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------

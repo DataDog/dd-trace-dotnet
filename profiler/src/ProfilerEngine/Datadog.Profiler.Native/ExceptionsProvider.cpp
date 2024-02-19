@@ -142,7 +142,8 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     uint32_t hrCollectStack = E_FAIL;
     const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
 
-    pStackFramesCollector->PrepareForNextCollection();
+    RawExceptionSample rawSample;
+    pStackFramesCollector->PrepareForNextCollection(&rawSample);
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
 
     static uint64_t failureCount = 0;
@@ -154,20 +155,14 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         return false;
     }
 
-    result->SetUnixTimeUtc(GetCurrentTimestamp());
-    result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
-
-    RawExceptionSample rawSample;
-
-    rawSample.Timestamp = result->GetUnixTimeUtc();
-    rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
-    rawSample.SpanId = result->GetSpanId();
-    rawSample.AppDomainId = result->GetAppDomainId();
+    rawSample.Timestamp = GetCurrentTimestamp();
+    rawSample.AppDomainId = threadInfo->GetAppDomainId(_pCorProfilerInfo);
     result->CopyInstructionPointers(rawSample.Stack);
     rawSample.ThreadInfo = threadInfo;
     rawSample.ExceptionMessage = std::move(message);
     rawSample.ExceptionType = std::move(name);
     Add(std::move(rawSample));
+
     _sampledExceptionsCountMetric->Incr();
 
     return true;

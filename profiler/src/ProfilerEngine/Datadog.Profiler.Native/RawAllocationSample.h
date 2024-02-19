@@ -6,7 +6,7 @@
 #include "RawSample.h"
 #include "Sample.h"
 
-class RawAllocationSample : public RawSample
+class RawAllocationSample : public RawSample<RawAllocationSample>
 {
 public:
     RawAllocationSample() = default;

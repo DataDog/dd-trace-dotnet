@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <type_traits>
 
 // from dotnet coreclr includes
 #include "cor.h"
@@ -23,11 +24,14 @@
 #include "RawWallTimeSample.h"
 #include "MetricsRegistry.h"
 #include "MeanMaxMetric.h"
+#include "StackFramesCollectorBase.h"
+#include "StackSnapshotResultBuffer.h"
+#include "ScopeFinalizer.h"
+
 #include "shared/src/native-src/string.h"
 
 // forward declarations
 class StackFramesCollectorBase;
-class StackSnapshotResultBuffer;
 class StackSamplerLoopManager;
 class IThreadsCpuManager;
 class IManagedThreadList;
@@ -104,15 +108,14 @@ private:
     void CpuProfilingIteration();
     void WalltimeProfilingIteration();
     void CodeHotspotIteration();
+
+    template <class TRawSample>
     void CollectOneThreadStackSample(std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
                                      int64_t thisSampleTimestampNanosecs,
                                      int64_t duration,
-                                     PROFILING_TYPE profilingType);
+                                     TRawSample&& rawSample);
+
     int64_t ComputeWallTime(int64_t currentTimestampNs, int64_t prevTimestampNs);
     static void UpdateSnapshotInfos(StackSnapshotResultBuffer* pStackSnapshotResult, int64_t representedDurationNanosecs, time_t currentUnixTimestamp);
-    void UpdateStatistics(HRESULT hrCollectStack, std::size_t countCollectedStackFrames);
     static time_t GetCurrentTimestamp();
-    void PersistStackSnapshotResults(StackSnapshotResultBuffer const* pSnapshotResult,
-                                     std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
-                                     PROFILING_TYPE profilingType);
 };

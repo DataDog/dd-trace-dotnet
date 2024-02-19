@@ -6,7 +6,7 @@
 #include "RawSample.h"
 #include "Sample.h"
 
-class RawContentionSample : public RawSample
+class RawContentionSample : public RawSample<RawContentionSample>
 {
 public:
     inline static const std::string BucketLabelName = "Duration bucket";

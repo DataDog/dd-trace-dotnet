@@ -4,33 +4,25 @@
 #include "StackSnapshotResultBuffer.h"
 
 StackSnapshotResultBuffer::StackSnapshotResultBuffer() :
-    _unixTimeUtc{0},
-    _representedDurationNanoseconds{0},
-    _appDomainId{0},
     _instructionPointers{},
     _currentFramesCount{0},
-    _localRootSpanId{0},
-    _spanId{0}
+    _localRootSpanId{nullptr},
+    _spanId{nullptr},
+    _internalIps{}
 {
 }
 
 StackSnapshotResultBuffer::~StackSnapshotResultBuffer()
 {
-    _unixTimeUtc = 0;
-    _representedDurationNanoseconds = 0;
-    _appDomainId = static_cast<AppDomainID>(0);
     _currentFramesCount = 0;
-    _localRootSpanId = 0;
-    _spanId = 0;
+    _localRootSpanId = nullptr;
+    _spanId = nullptr;
 }
 
 void StackSnapshotResultBuffer::Reset()
 {
-    _localRootSpanId = 0;
-    _spanId = 0;
+    _localRootSpanId = nullptr;
+    _spanId = nullptr;
 
     _currentFramesCount = 0;
-    _appDomainId = static_cast<AppDomainID>(0);
-    _representedDurationNanoseconds = 0;
-    _unixTimeUtc = 0;
 }

@@ -3,39 +3,64 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <memory>
+#include <stdint.h>
 #include <vector>
+
+#include "IThreadInfo.h"
+#include "SampleValueTypeProvider.h"
+#include "RawSampleTraits.hpp"
 
 #include "cor.h"
 #include "corprof.h"
-#include "IThreadInfo.h"
-#include "SampleValueTypeProvider.h"
 
 class Sample;
 
+template <class RealSampleType>
 class RawSample
 {
 public:
-    RawSample() noexcept;
+    RawSample() noexcept
+        :
+        Timestamp{0},
+        AppDomainId{0},
+        LocalRootSpanId{0},
+        SpanId{0},
+        ThreadInfo{nullptr},
+        Stack{}
+    {
+    }
     virtual ~RawSample() = default;
 
     RawSample(RawSample const&) = delete;
     RawSample& operator=(RawSample const&) = delete;
 
-    RawSample(RawSample&& other) noexcept;
-    RawSample& operator=(RawSample&& other) noexcept;
+    RawSample(RawSample&& other) noexcept
+    {
+        *this = std::move(other);
+    }
+
+    RawSample& operator=(RawSample&& other) noexcept
+    {
+        Timestamp = other.Timestamp;
+        AppDomainId = other.AppDomainId;
+        LocalRootSpanId = other.LocalRootSpanId;
+        SpanId = other.SpanId;
+        ThreadInfo = std::move(other.ThreadInfo);
+        Stack = std::move(other.Stack);
+
+        return *this;
+    }
 
     // set values and additional labels on target sample
     virtual void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffset) const = 0;
 
 public:
-    std::uint64_t Timestamp;        // _unixTimeUtc;
+    std::uint64_t Timestamp; // _unixTimeUtc;
     AppDomainID AppDomainId;
-    std::uint64_t LocalRootSpanId;  // _localRootSpanId;
-    std::uint64_t SpanId;           // _spanId;
+    std::uint64_t LocalRootSpanId; // _localRootSpanId;
+    std::uint64_t SpanId;          // _spanId;
     std::shared_ptr<IThreadInfo> ThreadInfo;
 
-    // array of instruction pointers (32 or 64 bit address)
-    std::vector<std::uintptr_t> Stack;
+    typename RawSampleTraits<RealSampleType>::collection_type Stack;
 };
