@@ -165,13 +165,23 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     var capturedFrames = resultCallStackTree.Frames;
                     var allFrames = @case.ExceptionId.StackTrace;
 
-                    var frameIndex = allFrames.Length - 1;
-                    var capturedFrameIndex = capturedFrames.Count - 1;
-                    var assignIndex = 0;
-                    var tagged = 0;
+                    // Upload head frame
+                    var frameIndex = 0;
+
+                    while (frameIndex < allFrames.Length &&
+                           !allFrames[frameIndex].Method.Equals(capturedFrames[0].MethodInfo.Method))
+                    {
+                        frameIndex += 1;
+                    }
+
+                    TagAndUpload(rootSpan, $"{debugErrorPrefix}.{allFrames.Length - frameIndex - 1}.", capturedFrames[0]);
 
                     // Upload tail frames
-                    while (frameIndex >= 0 && capturedFrameIndex >= 0 && tagged < MaxFramesToCapture)
+                    frameIndex = allFrames.Length - 1;
+                    var capturedFrameIndex = capturedFrames.Count - 1;
+                    var assignIndex = 0;
+
+                    while (capturedFrameIndex >= 1 && frameIndex >= 0)
                     {
                         var frame = capturedFrames[capturedFrameIndex];
 
@@ -182,26 +192,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         }
 
                         capturedFrameIndex -= 1;
-                        tagged += 1;
 
                         var prefix = $"{debugErrorPrefix}.{assignIndex++}.";
-                        TagAndUpload(rootSpan, prefix, frame);
-                    }
-
-                    // Upload head frame
-                    if (capturedFrames.Count > MaxFramesToCapture)
-                    {
-                        var frame = capturedFrames[0];
-
-                        frameIndex = 0;
-
-                        while (frameIndex < allFrames.Length &&
-                               !allFrames[frameIndex].Method.Equals(frame.MethodInfo.Method))
-                        {
-                            frameIndex += 1;
-                        }
-
-                        var prefix = $"{debugErrorPrefix}.{allFrames.Length - frameIndex - 1}.";
                         TagAndUpload(rootSpan, prefix, frame);
                     }
 
