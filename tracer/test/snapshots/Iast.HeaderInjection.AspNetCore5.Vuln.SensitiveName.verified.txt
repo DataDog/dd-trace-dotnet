@@ -26,6 +26,7 @@
   "vulnerabilities": [
     {
       "type": "HEADER_INJECTION",
+      "hash": -1975200107,
       "evidence": {
         "valueParts": [
           {
