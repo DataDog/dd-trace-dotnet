@@ -353,10 +353,10 @@ TEST(ConfigurationTest, CheckMinimumCoresThresholdWhenVariableIsSet)
     ASSERT_EQ(configuration.MinimumCores(), 0.5);
 }
 
-TEST(ConfigurationTest, CheckContentionProfilingIsDisabledByDefault)
+TEST(ConfigurationTest, CheckContentionProfilingIsEnabledByDefault)
 {
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), true);
 }
 
 TEST(ConfigurationTest, CheckContentionProfilingIsEnabledIfEnvVarSetToTrue)
