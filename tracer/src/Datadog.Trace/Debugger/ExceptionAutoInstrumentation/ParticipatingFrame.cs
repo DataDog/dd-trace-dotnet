@@ -19,17 +19,16 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     {
         private const int UndefinedIlOffset = -1;
 
-        private ParticipatingFrame(MethodBase method, ParticipatingFrameState state, int ilOffset = UndefinedIlOffset, bool isInBlackList = false)
+        private ParticipatingFrame(MethodBase method, ParticipatingFrameState state, int ilOffset = UndefinedIlOffset)
         {
             Method = method;
             MethodIdentifier = new MethodUniqueIdentifier(method.Module.ModuleVersionId, method.MetadataToken, method);
-            IsInBlackList = isInBlackList;
             ILOffset = ilOffset;
             State = state;
         }
 
-        public ParticipatingFrame(StackFrame stackFrame, ParticipatingFrameState state, bool isInBlackList = false)
-            : this(stackFrame?.GetMethod(), state, stackFrame?.GetILOffset() ?? UndefinedIlOffset, isInBlackList)
+        public ParticipatingFrame(StackFrame stackFrame, ParticipatingFrameState state)
+            : this(stackFrame?.GetMethod(), state, stackFrame?.GetILOffset() ?? UndefinedIlOffset)
         {
         }
 
@@ -38,8 +37,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public MethodBase Method { get; }
 
         public MethodUniqueIdentifier MethodIdentifier { get; }
-
-        public bool IsInBlackList { get; }
 
         public int ILOffset { get; }
 
@@ -66,7 +63,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public override string ToString()
         {
             var methodName = Method?.DeclaringType?.FullName + "." + Method?.Name ?? "Unknown Method";
-            var blacklistStatus = IsInBlackList ? "Blacklisted" : "Not Blacklisted";
+            var blacklistStatus = State == ParticipatingFrameState.Blacklist ? "Blacklisted" : "Not Blacklisted";
             var ilOffsetInfo = ILOffset != UndefinedIlOffset ? $"IL Offset: {ILOffset}" : "IL Offset: Undefined";
             return $"ParticipatingFrame: Method={methodName}, State={State}, {ilOffsetInfo}, {blacklistStatus}";
         }

@@ -95,6 +95,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 if (probe != null && status.Status is Status.INSTALLED or Status.INSTRUMENTED or Status.ERROR)
                 {
                     probe.ProbeStatus = status.Status;
+                    probe.ErrorMessage = status.ErrorMessage;
                 }
             }
 

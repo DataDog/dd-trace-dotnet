@@ -34,7 +34,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                         .AsInt32(DefaultMaxFramesToCapture, maxDepth => maxDepth > 0)
                                         .Value;
 
-            MaximumFramesToCapture = CaptureFullCallStack ? int.MaxValue : maximumFramesToCapture;
+            MaximumFramesToCapture = CaptureFullCallStack ? short.MaxValue : maximumFramesToCapture;
 
             var seconds = config
                          .WithKeys(ConfigurationKeys.Debugger.RateLimitSeconds)

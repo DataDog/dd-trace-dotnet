@@ -40,6 +40,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal Status ProbeStatus { get; set; }
 
+        internal string ErrorMessage { get; set; }
+
         internal bool IsInstrumented
         {
             get
@@ -113,7 +115,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     if (!ProbeExpressionsProcessor.Instance.TryAddProbeProcessor(ProbeId, ExceptionDebuggingProcessor))
                     {
                         Log.Error("Could not add ExceptionDebuggingProcessor. Method: {TypeName}.{MethodName}", Method.Method.DeclaringType.Name, Method.Method.Name);
-                        System.Diagnostics.Debugger.Break();
                     }
 
                     InstrumentationRequester.Instrument(ProbeId, Method.Method);

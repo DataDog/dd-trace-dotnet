@@ -11,19 +11,15 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
-using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.PInvoke;
-using Datadog.Trace.Debugger.RateLimiting;
+using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Debugger.Symbols;
+using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.Vendors.Serilog.Events;
+using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
+using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
@@ -149,13 +145,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     if (trackedExceptionCase.ExceptionCase.Probes.All(p => p.IsInstrumented && (p.ProbeStatus == Status.ERROR || p.ProbeStatus == Status.BLOCKED)))
                     {
                         Log.Information("Reverting the exception case of the empty stack tree since none of the methods were instrumented, for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
-                        trackedExceptionCase.Revert();
+                        if (trackedExceptionCase.Revert())
+                        {
+                            CachedDoneExceptions.Add(trackedExceptionCase.ExceptionToString);
+                        }
                     }
                 }
                 else
                 {
-                    // TODO Ensure all snapshots present. I.e we are not in partial capturing scenario.
-
                     // Attach tags to the root span
                     var debugErrorPrefix = "_dd.debug.error";
                     rootSpan.Tags.SetTag("error.debug_info_captured", "true");
@@ -174,7 +171,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         frameIndex += 1;
                     }
 
-                    TagAndUpload(rootSpan, $"{debugErrorPrefix}.{allFrames.Length - frameIndex - 1}.", capturedFrames[0]);
+                    var frame = capturedFrames[0];
+                    TagAndUpload(rootSpan, $"{debugErrorPrefix}.{allFrames.Length - frameIndex - 1}.", frame.MethodInfo.Method, frame.SnapshotId, frame.Snapshot, frame.ProbeId);
 
                     // Upload tail frames
                     frameIndex = allFrames.Length - 1;
@@ -183,7 +181,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                     while (capturedFrameIndex >= 1 && frameIndex >= 0)
                     {
-                        var frame = capturedFrames[capturedFrameIndex];
+                        frame = capturedFrames[capturedFrameIndex];
 
                         if (!allFrames[frameIndex--].Method.Equals(frame.MethodInfo.Method))
                         {
@@ -194,7 +192,52 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         capturedFrameIndex -= 1;
 
                         var prefix = $"{debugErrorPrefix}.{assignIndex++}.";
-                        TagAndUpload(rootSpan, prefix, frame);
+                        TagAndUpload(rootSpan, prefix, frame.MethodInfo.Method, frame.SnapshotId, frame.Snapshot, frame.ProbeId);
+                    }
+
+                    // Upload missing frames
+                    var maxFramesToCaptureIncludingHead = MaxFramesToCapture + 1;
+                    if (capturedFrames.Count < maxFramesToCaptureIncludingHead &&
+                        allFrames.Length > capturedFrames.Count)
+                    {
+                        frameIndex = allFrames.Length - 1;
+                        var probesIndex = @case.Probes.Length - 1;
+                        assignIndex = -1;
+
+                        while (frameIndex >= 0 && maxFramesToCaptureIncludingHead > 0)
+                        {
+                            maxFramesToCaptureIncludingHead -= 1;
+                            var participatingFrame = allFrames[frameIndex--];
+                            assignIndex++;
+
+                            if (participatingFrame.State == ParticipatingFrameState.Blacklist)
+                            {
+                                var snapshotAndIdTuple = CreateEvaluationErrorSnapshot($"The method {participatingFrame.Method.GetFullyQualifiedName()} is blacklisted.", participatingFrame.Method);
+                                TagAndUpload(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, snapshotAndIdTuple.Item1, snapshotAndIdTuple.Item2, Guid.Empty.ToString());
+                            }
+                            else if (participatingFrame.Method.IsAbstract)
+                            {
+                                var snapshotAndIdTuple = CreateEvaluationErrorSnapshot($"The method {participatingFrame.Method.GetFullyQualifiedName()} is abstract.", participatingFrame.Method);
+                                TagAndUpload(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, snapshotAndIdTuple.Item1, snapshotAndIdTuple.Item2, Guid.Empty.ToString());
+                            }
+                            else if (probesIndex >= 0)
+                            {
+                                var probe = @case.Probes[probesIndex--];
+
+                                if (probe.ProbeStatus == Status.INSTALLED && probe.MayBeOmittedFromCallStack)
+                                {
+                                    // Frame is non-optimized in .NET 6+.
+                                    var snapshotAndIdTuple = CreateEvaluationErrorSnapshot($"The method {participatingFrame.Method.GetFullyQualifiedName()} could not be captured.", participatingFrame.Method);
+                                    TagAndUpload(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, snapshotAndIdTuple.Item1, snapshotAndIdTuple.Item2, Guid.Empty.ToString());
+                                }
+                                else if (probe.ProbeStatus == Status.ERROR)
+                                {
+                                    // Frame is failed to instrument.
+                                    var snapshotAndIdTuple = CreateEvaluationErrorSnapshot($"The method {participatingFrame.Method.GetFullyQualifiedName()} has failed in instrumentation. Failure reason: {probe.ErrorMessage}", participatingFrame.Method);
+                                    TagAndUpload(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, snapshotAndIdTuple.Item1, snapshotAndIdTuple.Item2, Guid.Empty.ToString());
+                                }
+                            }
+                        }
                     }
 
                     Log.Information("Reverting an exception case for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
@@ -213,13 +256,19 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        private static void TagAndUpload(Span span, string tagPrefix, ExceptionStackNodeRecord record)
+        private static Tuple<string, string> CreateEvaluationErrorSnapshot(string errorMessage, MethodBase method)
         {
-            var method = record.MethodInfo.Method;
-            var snapshotId = record.SnapshotId;
-            var snapshot = record.Snapshot;
-            var probeId = record.ProbeId;
+            using var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: false, location: ProbeLocation.Method, hasCondition: false, Array.Empty<string>());
+            var result = new ExpressionEvaluationResult();
+            result.Errors ??= new List<EvaluationError>();
+            result.Errors.Add(new EvaluationError { Message = errorMessage });
+            snapshotCreator.SetEvaluationResult(ref result);
+            var info = new CaptureInfo<object>(0, MethodState.BeginLine, method: method, invocationTargetType: method.DeclaringType);
+            return Tuple.Create(snapshotCreator.SnapshotId, snapshotCreator.FinalizeMethodSnapshot(Guid.Empty.ToString(), 1, ref info));
+        }
 
+        private static void TagAndUpload(Span span, string tagPrefix, MethodBase method, string snapshotId, string snapshot, string probeId)
+        {
             span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
             span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType.Name);
             span.Tags.SetTag(tagPrefix + "snapshot_id", snapshotId);
