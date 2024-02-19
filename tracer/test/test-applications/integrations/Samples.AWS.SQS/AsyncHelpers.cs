@@ -31,15 +31,7 @@ namespace Samples.AWS.SQS
                 await GetQueueUrlAsync(sqsClient);
                 await PurgeQueueAsync(sqsClient);
 
-                try
-                {
-                    await RunValidationsWithoutReceiveLoopAsync(sqsClient);
-                }
-                catch
-                {
-                    await DeleteQueueAsync(sqsClient);
-                    return;
-                }
+                await RunValidationsWithoutReceiveLoopAsync(sqsClient);
 
                 var receiveMessageTask = Task.Run(() => ReceiveMessageAndDeleteMessageAsync(sqsClient)); // Run on separate thread
                 var receiveMessageBatchTask = Task.Run(() => ReceiveMessagesAndDeleteMessageBatchAsync(sqsClient)); // Run on separate thread
