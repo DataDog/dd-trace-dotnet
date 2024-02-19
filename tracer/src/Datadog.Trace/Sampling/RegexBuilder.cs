@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 #if NETCOREAPP3_1_OR_GREATER
 using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
@@ -22,6 +23,7 @@ internal static class RegexBuilder
     {
         if (pattern is null)
         {
+            // no pattern means match anything (i.e. catch-all)
             return null;
         }
 
@@ -36,15 +38,29 @@ internal static class RegexBuilder
         switch (format)
         {
             case SamplingRulesFormat.Regex:
+                // the "any" pattern matches any value regardless of type (e.g. string, int, floating point, etc).
+                // for tags, it means the tag must exist, but its value can be anything.
+                if (pattern.Equals(".*", StringComparison.Ordinal))
+                {
+                    return null; // match all without using a regex
+                }
+
                 return new Regex(
                     WrapWithLineCharacters(pattern),
                     options,
                     timeout);
 
             case SamplingRulesFormat.Glob:
+                // the "any" pattern matches any value regardless of type (e.g. string, int, floating point, etc).
+                // for tags, it means the tag must exist, but its value can be anything.
+                if (pattern.Length > 0 && pattern.All(c => c == '*'))
+                {
+                    return null; // match all without using a regex
+                }
+
                 // convert glob pattern to regex
                 return new Regex(
-                    $"^{Regex.Escape(pattern).Replace("\\?", ".").Replace("\\*", ".*")}$",
+                    $"^{Regex.Escape(pattern).Replace(@"\?", ".").Replace(@"\*", ".*")}$",
                     options,
                     timeout);
 

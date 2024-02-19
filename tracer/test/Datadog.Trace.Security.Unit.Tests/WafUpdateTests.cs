@@ -25,8 +25,6 @@ namespace Datadog.Trace.Security.Unit.Tests
 {
     public class WafUpdateTests : WafLibraryRequiredTest
     {
-        public const int TimeoutMicroSeconds = 1_000_000;
-
         [Fact]
         public void RulesUpdate()
         {
