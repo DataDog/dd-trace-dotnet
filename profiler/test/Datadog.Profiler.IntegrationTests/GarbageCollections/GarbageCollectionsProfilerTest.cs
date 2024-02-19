@@ -43,10 +43,11 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
 
-            // disable default profilers
+            // disable default profilers except GC
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
