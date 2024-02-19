@@ -9,8 +9,8 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
@@ -52,16 +52,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             // for the InjectHeadersIntoMessage<TSendMessageRequest> call below
             var requestProxy = request.DuckCast<ISendMessageRequest>();
 
+            var queueName = AwsSqsCommon.GetQueueName(requestProxy.QueueUrl);
             var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out var tags, spanKind: SpanKinds.Producer);
             if (tags is not null && requestProxy.QueueUrl is not null)
             {
                 tags.QueueUrl = requestProxy.QueueUrl;
-                tags.QueueName = AwsSqsCommon.GetQueueName(requestProxy.QueueUrl);
+                tags.QueueName = queueName;
             }
 
-            if (scope?.Span.Context != null)
+            if (scope?.Span.Context != null && !string.IsNullOrEmpty(queueName))
             {
-                ContextPropagation.InjectHeadersIntoMessage<TSendMessageRequest>(requestProxy, scope.Span.Context);
+                var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
+                if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
+                {
+                    var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
+                    scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                }
+
+                ContextPropagation.InjectHeadersIntoMessage<TSendMessageRequest>(requestProxy, scope.Span.Context, dataStreamsManager);
             }
 
             return new CallTargetState(scope);

@@ -9,8 +9,8 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
@@ -52,19 +52,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             // for the InjectHeadersIntoMessage<TSendMessageRequest> call below
             var requestProxy = request.DuckCast<ISendMessageBatchRequest>();
 
+            var queueName = AwsSqsCommon.GetQueueName(requestProxy.QueueUrl);
             var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out var tags, spanKind: SpanKinds.Producer);
             if (tags is not null && requestProxy.QueueUrl is not null)
             {
                 tags.QueueUrl = requestProxy.QueueUrl;
-                tags.QueueName = AwsSqsCommon.GetQueueName(requestProxy.QueueUrl);
+                tags.QueueName = queueName;
             }
 
-            if (scope?.Span?.Context != null && requestProxy.Entries.Count > 0)
+            if (scope?.Span?.Context != null && requestProxy.Entries.Count > 0 && !string.IsNullOrEmpty(queueName))
             {
-                for (int i = 0; i < requestProxy.Entries.Count; i++)
+                var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
+                var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
+                foreach (var e in requestProxy.Entries)
                 {
-                    var entry = requestProxy.Entries[i].DuckCast<IContainsMessageAttributes>();
-                    ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context);
+                    var entry = e.DuckCast<IContainsMessageAttributes>();
+                    if (entry != null)
+                    {
+                        // this has no effect is DSM is disabled
+                        scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                        // this needs to be done for context propagation even when DSM is disabled
+                        // (when DSM is enabled, it injects the pathway context on top of the trace context)
+                        ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context, dataStreamsManager);
+                    }
                 }
             }
 

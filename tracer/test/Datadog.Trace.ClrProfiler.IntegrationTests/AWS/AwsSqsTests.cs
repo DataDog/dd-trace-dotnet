@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -18,6 +17,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
+    [Collection(nameof(AwsSqsTestsCollection))]
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
     public class AwsSqsTests : TracingIntegrationTest
@@ -105,6 +105,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                         _ => string.Empty
                     };
             }
+        }
+
+        [CollectionDefinition(nameof(AwsSqsTestsCollection), DisableParallelization = true)]
+        public class AwsSqsTestsCollection
+        {
+            // Just an empty collection that's going to be used to prevent different SQS tests relying on the same "backend" (an SQS queue)
+            // from running at the same time, which would cause unwanted interactions between them and make tests fail.
         }
     }
 }

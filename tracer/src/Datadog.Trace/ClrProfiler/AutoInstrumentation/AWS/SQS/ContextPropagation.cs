@@ -3,25 +3,31 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     internal static class ContextPropagation
     {
-        private const string SqsKey = "_datadog";
+        internal const string SqsKey = "_datadog";
 
-        private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes)
+        private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
             sb.Append('{');
             SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
+            dataStreamsManager?.InjectPathwayContext(context.PathwayContext, AwsSqsHeadersAdapters.GetInjectionAdapter(sb));
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
             sb.Append('}');
 
@@ -29,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             messageAttributes[SqsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(resultString);
         }
 
-        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext)
+        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext, DataStreamsManager? dataStreamsManager)
         {
             // add distributed tracing headers to the message
             if (carrier.MessageAttributes == null)
@@ -40,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             {
                 // In .NET Fx and Net Core 2.1, removing an element while iterating on keys throws.
 #if !NETCOREAPP2_1_OR_GREATER
-                List<string> attributesToRemove = null;
+                List<string>? attributesToRemove = null;
 #endif
                 // Make sure we do not propagate any other datadog header here in the rare cases where users would have added them manually
                 foreach (var attribute in carrier.MessageAttributes.Keys)
@@ -73,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             // Only inject if there's room
             if (carrier.MessageAttributes.Count < 10)
             {
-                Inject<TMessageRequest>(spanContext, carrier.MessageAttributes);
+                Inject<TMessageRequest>(spanContext, carrier.MessageAttributes, dataStreamsManager);
             }
         }
 
