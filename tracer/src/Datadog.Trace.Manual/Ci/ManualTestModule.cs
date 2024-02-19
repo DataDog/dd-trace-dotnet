@@ -44,7 +44,7 @@ internal class ManualTestModule : ITestModule
 
     [DuckTypeTarget]
     internal void SetAutomatic(object testModule)
-        => SetAutomatic(testModule.DuckCast<ITestModuleProxy>());
+        => SetAutomatic(testModule.DuckCast<ITestModuleProxy>() ?? NullTestModule.Instance);
 
     internal void SetAutomatic(ITestModuleProxy testModule)
     {

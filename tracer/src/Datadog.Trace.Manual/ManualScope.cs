@@ -34,7 +34,7 @@ internal class ManualScope : IScope
     internal void SetAutomatic(object scope, object span, object spanContext)
     {
         AutomaticScope = scope;
-        _proxy = scope.DuckCast<IScope>();
+        _proxy = scope.DuckCast<IScope>() ?? NullScope.Instance;
         _manualSpan.SetAutomatic(span, spanContext);
     }
 }

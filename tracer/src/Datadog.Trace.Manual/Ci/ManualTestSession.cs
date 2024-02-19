@@ -68,6 +68,6 @@ internal class ManualTestSession : ITestSession
     [DuckTypeTarget]
     internal void SetAutomatic(object testSession)
     {
-        _proxy = testSession.DuckCast<ITestSessionProxy>();
+        _proxy = testSession.DuckCast<ITestSessionProxy>() ?? NullTestSession.Instance;
     }
 }

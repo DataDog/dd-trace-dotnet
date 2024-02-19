@@ -33,6 +33,6 @@ internal class ManualSpanContext : ISpanContext
     internal void SetAutomatic(object context)
     {
         AutomaticContext = context;
-        _proxy = context.DuckCast<ISpanContext>();
+        _proxy = context.DuckCast<ISpanContext>() ?? NullSpanContext.Instance;
     }
 }

@@ -80,7 +80,7 @@ internal class ManualSpan : ISpan
     internal void SetAutomatic(object span, object spanContext)
     {
         AutomaticSpan = span;
-        _proxy = span.DuckCast<ISpan>();
+        _proxy = span.DuckCast<ISpan>() ?? NullSpan.Instance;
         _spanContext.SetAutomatic(spanContext);
     }
 }
