@@ -3,19 +3,21 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#nullable enable
+using Datadog.Trace.Ci.Proxies;
 
 namespace Datadog.Trace.Ci.Stubs;
 
-internal class NullTestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate) : ITestSession
+internal class NullTestSession : ITestSession, ITestSessionProxy
 {
-    public string? Command { get; } = command;
+    public static readonly NullTestSession Instance = new();
 
-    public string? WorkingDirectory { get; } = workingDirectory;
+    public string? Command => null;
 
-    public DateTimeOffset StartTime { get; } = startDate ?? DateTimeOffset.UtcNow;
+    public string? WorkingDirectory => null;
 
-    public string? Framework { get; } = framework;
+    public DateTimeOffset StartTime { get; } = DateTimeOffset.UtcNow;
+
+    public string? Framework => null;
 
     public void SetTag(string key, string? value)
     {
@@ -45,12 +47,21 @@ internal class NullTestSession(string? command, string? workingDirectory, string
 
     public Task CloseAsync(TestStatus status, TimeSpan? duration) => Task.CompletedTask;
 
-    public ITestModule CreateModule(string name)
-        => new NullTestModule(name, null, null);
+    ITestModule ITestSession.CreateModule(string name)
+        => NullTestModule.Instance;
 
-    public ITestModule CreateModule(string name, string framework, string frameworkVersion)
-        => new NullTestModule(name, framework, null);
+    ITestModule ITestSession.CreateModule(string name, string framework, string frameworkVersion)
+        => NullTestModule.Instance;
 
-    public ITestModule CreateModule(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
-        => new NullTestModule(name, framework, startDate);
+    ITestModule ITestSession.CreateModule(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
+        => NullTestModule.Instance;
+
+    public ITestModuleProxy CreateModule(string name)
+        => NullTestModule.Instance;
+
+    public ITestModuleProxy CreateModule(string name, string framework, string frameworkVersion)
+        => NullTestModule.Instance;
+
+    public ITestModuleProxy CreateModule(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
+        => NullTestModule.Instance;
 }

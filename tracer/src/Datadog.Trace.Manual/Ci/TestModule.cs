@@ -4,7 +4,6 @@
 // </copyright>
 #nullable enable
 
-using Datadog.Trace.Ci.Stubs;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Ci;
@@ -45,5 +44,5 @@ public static class TestModule
 
     [Instrumented]
     internal static ITestModule InternalCreate(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
-        => new NullTestModule(name, framework, startDate);
+        => new ManualTestModule();
 }

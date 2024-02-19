@@ -8,24 +8,23 @@ extern alias DatadogTraceManual;
 using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using BenchmarkDiscreteStats = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkDiscreteStats;
 using BenchmarkHostInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkHostInfo;
 using BenchmarkJobInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkJobInfo;
+using BenchmarkMeasureType = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkMeasureType;
 using CustomIScope = DatadogTraceManual::Datadog.Trace.IScope;
-using CustomISpan = DatadogTraceManual::Datadog.Trace.ISpan;
 using CustomISpanContext = DatadogTraceManual::Datadog.Trace.ISpanContext;
-using ITestSession = DatadogTraceManual::Datadog.Trace.Ci.ITestSession;
 using ManualScope = DatadogTraceManual::Datadog.Trace.ManualScope;
 using ManualSpan = DatadogTraceManual::Datadog.Trace.ManualSpan;
 using ManualSpanContext = DatadogTraceManual::Datadog.Trace.ManualSpanContext;
+using ManualTestSession = DatadogTraceManual::Datadog.Trace.Ci.ManualTestSession;
 using TestParameters = DatadogTraceManual::Datadog.Trace.Ci.TestParameters;
 using TestStatus = DatadogTraceManual::Datadog.Trace.Ci.TestStatus;
 
@@ -96,11 +95,15 @@ public class DuckTypingTests
     public void CanDuckTypeManualTestSessionAsISession()
     {
         var session = TestSession.GetOrCreate("blah");
-        var proxy = (ITestSession)TestObjectsHelper<ITestSession>.CreateTestSession(session);
-        proxy.Should().NotBeNull();
+        var manualSession = new ManualTestSession();
+        // This is normally done by the automatic instrumentation
+        manualSession.SetAutomatic(session);
+        manualSession.StartTime.Should().Be(session.StartTime);
+        manualSession.Command.Should().Be(session.Command);
+        manualSession.WorkingDirectory.Should().Be(manualSession.WorkingDirectory);
 
         // call the methods to make sure it works
-        var module = proxy.CreateModule("somemodule");
+        var module = manualSession.CreateModule("somemodule");
         module.Should().NotBeNull();
 
         var suite = module.GetOrCreateSuite("mysuite");
@@ -111,10 +114,12 @@ public class DuckTypingTests
 
         test.SetParameters(new TestParameters { Arguments = new(), Metadata = new() });
         test.SetBenchmarkMetadata(new BenchmarkHostInfo() { RuntimeVersion = "123" }, new BenchmarkJobInfo() { Description = "weeble" });
+        var stats = new BenchmarkDiscreteStats(100, 100, 100, 100, 100, 0, 0, 0, 0, 100, 100, 100);
+        test.AddBenchmarkData(BenchmarkMeasureType.ApplicationLaunch, info: "something", in stats);
 
         test.Close(TestStatus.Pass);
         suite.Close();
         module.Close();
-        proxy.Close(TestStatus.Pass);
+        manualSession.Close(TestStatus.Pass);
     }
 }
