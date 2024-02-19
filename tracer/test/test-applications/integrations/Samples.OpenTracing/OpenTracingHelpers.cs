@@ -34,7 +34,7 @@ public static class OpenTracingHelpers
 
     public static ulong? GetParentId(this Datadog.Trace.ISpanContext spanContext)
     {
-        // spanContext will be a reverse-ducktyped ISpanContext which implements IDuckType where the underlying type is ManualSpanContext
+        // spanContext will be a ManualSpanContext
         var autoSpanContext = GetAutomaticSpanContext(spanContext);
         var parentIdMethod = autoSpanContext
                             .GetType()
@@ -58,18 +58,12 @@ public static class OpenTracingHelpers
 
     public static (TimeSpan Duration, DateTimeOffset StartTime) GetInternalProperties(this Datadog.Trace.ISpan span)
     {
-        // span will be a reverse-ducktyped ISpan which implements IDuckType where the underlying type is ManualSpan
-        var instanceMethod = span
+        // span will be a ManualSpanContext
+        var autoSpanMethod = span
                             .GetType()
-                            .GetProperty("Instance", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                            .GetProperty("AutomaticSpan", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                             .GetMethod;
-
-        var manualSpan = instanceMethod.Invoke(span, []);
-        var autoSpanMethod = manualSpan
-                         .GetType()
-                         .GetProperty("AutomaticSpan", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                          .GetMethod;
-        var autoSpan = autoSpanMethod.Invoke(manualSpan, []);
+        var autoSpan = autoSpanMethod.Invoke(span, []);
         var durationMethod = autoSpan
                             .GetType()
                             .GetProperty("Duration", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
@@ -87,17 +81,12 @@ public static class OpenTracingHelpers
 
     private static object GetAutomaticSpanContext(Datadog.Trace.ISpanContext spanContext)
     {
-        var instanceMethod = spanContext
-                            .GetType()
-                            .GetProperty("Instance", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                            .GetMethod;
-
-        var manualSpanContext = instanceMethod.Invoke(spanContext, []);
-        var autoContextMethod = manualSpanContext
+        // span will be a ManualSpanContext
+        var autoContextMethod = spanContext
                                .GetType()
                                .GetProperty("AutomaticContext", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                                .GetMethod;
-        var autoSpanContext = autoContextMethod.Invoke(manualSpanContext, []);
+        var autoSpanContext = autoContextMethod.Invoke(spanContext, []);
         return autoSpanContext;
     }
 }
