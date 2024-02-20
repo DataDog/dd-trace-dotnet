@@ -50,7 +50,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
-            Assert.NotNull(originalObject);
+            Assert.Same(obscureObject, originalObject);
 
             // *
             Assert.Equal("10", duckInterface.PublicStaticGetReferenceType);
@@ -83,7 +83,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
-            Assert.NotNull(originalObject);
+            Assert.Same(obscureObject, originalObject);
 
             Assert.Equal("20", duckInterface.PublicStaticGetSetReferenceType);
             Assert.Equal("20", duckAbstract.PublicStaticGetSetReferenceType);
@@ -206,7 +206,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
-            Assert.NotNull(originalObject);
+            Assert.Same(obscureObject, originalObject);
 
             // *
             Assert.Equal("30", duckInterface.PublicGetReferenceType);
@@ -239,7 +239,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
-            Assert.NotNull(originalObject);
+            Assert.Same(obscureObject, originalObject);
 
             Assert.Equal("40", duckInterface.PublicGetSetReferenceType);
             Assert.Equal("40", duckAbstract.PublicGetSetReferenceType);
@@ -342,7 +342,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
-            Assert.NotNull(originalObject);
+            Assert.Same(obscureObject, originalObject);
 
             duckInterface["1"] = "100";
             Assert.Equal("100", duckInterface["1"]);
