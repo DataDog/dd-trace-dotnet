@@ -45,10 +45,7 @@ namespace Datadog.Profiler.IntegrationTests.Threads
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
 
-            // disable default profilers
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            EnvironmentHelper.DisableDefaultProfilers(runner);
 
             // only thread lifetime profiler is enabled so should only see the corresponding samples
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);

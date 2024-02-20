@@ -22,7 +22,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
         public void ShouldGetGarbageCollectionSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
@@ -38,7 +38,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             Assert.True(CheckSamplesAreGC(runner.Environment.PprofDir));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
         public void ShouldGetGarbageCollectionSamplesByDefault(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
