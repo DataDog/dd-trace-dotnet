@@ -35,9 +35,6 @@ LiveObjectsProvider::LiveObjectsProvider(
     MetricsRegistry& metricsRegistry)
     :
     _pCorProfilerInfo(pCorProfilerInfo),
-    _pFrameStore(pFrameStore),
-    _pAppDomainStore(pAppDomainStore),
-    _pRuntimeIdStore(pRuntimeIdStore),
     _isTimestampsAsLabelEnabled(pConfiguration->IsTimestampsAsLabelEnabled())
 {
     _pAllocationsProvider = std::make_unique<AllocationsProvider>(
@@ -162,11 +159,13 @@ bool LiveObjectsProvider::IsAlive(ObjectHandleID handle) const
         return false;
     }
 
-    ObjectID object = NULL;
+    static ObjectID NullObjectID = static_cast<ObjectID>(NULL);
+
+    auto object = NullObjectID;
     auto hr = _pCorProfilerInfo->GetObjectIDFromHandle(handle, &object);
     if (SUCCEEDED(hr))
     {
-        return object != NULL;
+        return object != NullObjectID;
     }
 
     return false;
@@ -174,7 +173,7 @@ bool LiveObjectsProvider::IsAlive(ObjectHandleID handle) const
 
 ObjectHandleID LiveObjectsProvider::CreateWeakHandle(uintptr_t address) const
 {
-    if (address == NULL)
+    if (reinterpret_cast<void*>(address) == nullptr)
     {
         return nullptr;
     }

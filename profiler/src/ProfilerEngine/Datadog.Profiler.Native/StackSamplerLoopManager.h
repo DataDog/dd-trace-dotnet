@@ -236,6 +236,5 @@ private:
     MetricsRegistry& _metricsRegistry;
     std::shared_ptr<CounterMetric> _deadlockCountMetric;
 
-    IClrLifetime const* _pClrLifetime;
     bool _isStopped = false;
 };
