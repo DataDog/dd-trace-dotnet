@@ -8,6 +8,7 @@
 #include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
 #include "StackSnapshotResultBuffer.h"
+#include "RawWallTimeSample.h"
 
 #include "ProfilerMockedInterface.h"
 
@@ -670,7 +671,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
     StackSnapshotResultBuffer* buffer;
 
     {
-        collector.PrepareForNextCollection();
+        RawWallTimeSample sample;
+        collector.PrepareForNextCollection(&sample);
         // validate it's working
         ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, S_OK);
@@ -684,12 +686,13 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
 
     {
         // profiler handler was replaced, so the signal will be lost and we will return after 2s
-        collector.PrepareForNextCollection();
+        RawWallTimeSample sample;
+        collector.PrepareForNextCollection(&sample);
         ASSERT_DURATION_LE(3s, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, E_FAIL);
 
         // At this point, the profiler restored its handler, ensure it's working as expected
-        collector.PrepareForNextCollection();
+        collector.PrepareForNextCollection(&sample);
         ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, S_OK);
     }
@@ -700,14 +703,15 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
 
     {
         // profiler handler was replaced, so the signal will be lost and we will return after 2s
-        collector.PrepareForNextCollection();
+        RawWallTimeSample sample;
+        collector.PrepareForNextCollection(&sample);
         ASSERT_DURATION_LE(3s, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, E_FAIL);
 
         ResetCallbackState();
 
         // At this point, we stop restoring the profiler signal handler and stop profiling
-        collector.PrepareForNextCollection();
+        collector.PrepareForNextCollection(&sample);
         ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, E_FAIL);
     }
