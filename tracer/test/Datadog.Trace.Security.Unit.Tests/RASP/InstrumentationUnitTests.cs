@@ -15,8 +15,8 @@ public class InstrumentationUnitTests
     [Fact]
     public void TestRaspInstrumentation()
     {
-        var aspects = Instrumentation.GetRaspAspects(AspectDefinitions.Aspects, out var error);
-        error.Should().BeFalse();
+        var ok = Instrumentation.GetRaspAspects(AspectDefinitions.Aspects, out var aspects);
+        ok.Should().BeTrue();
     }
 
     [Fact]
@@ -54,8 +54,8 @@ public class InstrumentationUnitTests
 "  [AspectCtorReplace(\"System.Uri::.ctor(System.String,System.UriKind)\",\"\",[0],[False],[StringLiteral_1],Default,[])] Init(System.String,System.UriKind)",
         };
 
-        var raspAspects = Instrumentation.GetRaspAspects(aspects, out var error);
-        error.Should().BeFalse();
+        var ok = Instrumentation.GetRaspAspects(aspects, out var raspAspects);
+        ok.Should().BeTrue();
         raspAspects.Should().NotBeNull();
         raspAspects.Count().Should().Be(17);
     }
