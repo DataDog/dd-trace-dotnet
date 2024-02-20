@@ -6,6 +6,8 @@
 using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.ExtensionMethods;
+
 #pragma warning disable SA1649 // File name must match first type name
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
@@ -18,10 +20,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         {
             try
             {
-                DynamicMethod dynMethod = IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), Array.Empty<Type>());
+                var dynMethod = IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), Array.Empty<Type>());
                 if (dynMethod != null)
                 {
-                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateInstanceDelegate(typeof(InvokeDelegate));
                 }
             }
             catch (Exception ex)
@@ -30,10 +32,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             }
             finally
             {
-                if (_invokeDelegate is null)
-                {
-                    _invokeDelegate = instance => CallTargetState.GetDefault();
-                }
+                _invokeDelegate ??= instance => CallTargetState.GetDefault();
             }
         }
 

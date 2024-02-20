@@ -10,7 +10,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -55,17 +57,17 @@ namespace Datadog.Trace.Activity
                 var onShouldListenToResultMethod = onShouldListenToResultMethodInfo.MakeGenericMethod(sourceProxyResultProxyType);
 
                 // Create delegate for OnShouldListenTo<T> where T is Source
-                var onShouldListenToDyn = new DynamicMethod("OnShouldListenToDyn", typeof(void), new[] { typeof(object) }, typeof(ActivityListener).Module, true);
+                var onShouldListenToDyn = new DynamicMethod("OnShouldListenToDyn", typeof(void), new[] { typeof(object), typeof(object) }, typeof(ActivityListener).Module, true);
 
                 var sourceProxyResultProxyTypeCtor = sourceProxyResultProxyType.GetConstructors()[0];
                 var onShouldListenToDynIl = onShouldListenToDyn.GetILGenerator();
-                onShouldListenToDynIl.Emit(OpCodes.Ldarg_0);
+                onShouldListenToDynIl.Emit(OpCodes.Ldarg_1);
                 onShouldListenToDynIl.Emit(OpCodes.Newobj, sourceProxyResultProxyTypeCtor);
                 onShouldListenToDynIl.Emit(OpCodes.Dup);
                 onShouldListenToDynIl.EmitCall(OpCodes.Call, onShouldListenToMethod, null);
                 onShouldListenToDynIl.EmitCall(OpCodes.Call, onShouldListenToResultMethod, null);
                 onShouldListenToDynIl.Emit(OpCodes.Ret);
-                OnShouldListenToDelegate = (Action<object>)onShouldListenToDyn.CreateDelegate(typeof(Action<object>));
+                OnShouldListenToDelegate = (Action<object>)onShouldListenToDyn.CreateInstanceDelegate(typeof(Action<object>));
             }
             catch (Exception ex)
             {

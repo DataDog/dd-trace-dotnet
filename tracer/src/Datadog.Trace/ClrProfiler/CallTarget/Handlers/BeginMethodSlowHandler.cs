@@ -6,6 +6,7 @@
 using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
@@ -17,10 +18,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         {
             try
             {
-                DynamicMethod dynMethod = IntegrationMapper.CreateSlowBeginMethodDelegate(typeof(TIntegration), typeof(TTarget));
+                var dynMethod = IntegrationMapper.CreateSlowBeginMethodDelegate(typeof(TIntegration), typeof(TTarget));
                 if (dynMethod != null)
                 {
-                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateInstanceDelegate(typeof(InvokeDelegate));
                 }
             }
             catch (Exception ex)
@@ -29,10 +30,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             }
             finally
             {
-                if (_invokeDelegate is null)
-                {
-                    _invokeDelegate = (instance, arguments) => CallTargetState.GetDefault();
-                }
+                _invokeDelegate ??= (instance, arguments) => CallTargetState.GetDefault();
             }
         }
 

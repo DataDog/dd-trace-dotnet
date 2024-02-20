@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             DynamicMethod callMethod = new DynamicMethod(
                      $"{onMethodBeginMethodInfo.DeclaringType.Name}.{onMethodBeginMethodInfo.Name}",
                      typeof(CallTargetState),
-                     new Type[] { targetType }.Concat(argumentsTypes),
+                     new Type[] { typeof(object), targetType }.Concat(argumentsTypes),
                      onMethodBeginMethodInfo.Module,
                      true);
 
@@ -104,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             // Load the instance if is needed
             if (mustLoadInstance)
             {
-                ilWriter.Emit(OpCodes.Ldarg_0);
+                ilWriter.Emit(OpCodes.Ldarg_1);
 
                 if (instanceGenericConstraint != null)
                 {
@@ -162,7 +162,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
                 if (!targetParameterType.IsByRef)
                 {
-                    WriteLoadArgument(ilWriter, i, mustLoadInstance);
+                    WriteLoadArgument(ilWriter, i + 1, mustLoadInstance);
                     sourceParameterType = sourceParameterType.IsByRef ? sourceParameterType.GetElementType() : sourceParameterType;
                     ilWriter.Emit(OpCodes.Ldobj, sourceParameterType);
 
@@ -173,7 +173,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 }
                 else if (parameterProxyType == null)
                 {
-                    WriteLoadArgument(ilWriter, i, mustLoadInstance);
+                    WriteLoadArgument(ilWriter, i + 1, mustLoadInstance);
                 }
                 else
                 {
@@ -246,7 +246,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             DynamicMethod callMethod = new DynamicMethod(
                      $"{onMethodBeginMethodInfo.DeclaringType.Name}.{onMethodBeginMethodInfo.Name}",
                      typeof(CallTargetState),
-                     new Type[] { targetType, typeof(object[]) },
+                     new Type[] { typeof(object), targetType, typeof(object[]) },
                      onMethodBeginMethodInfo.Module,
                      true);
 
@@ -255,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             // Load the instance if is needed
             if (mustLoadInstance)
             {
-                ilWriter.Emit(OpCodes.Ldarg_0);
+                ilWriter.Emit(OpCodes.Ldarg_1);
 
                 if (instanceGenericConstraint != null)
                 {
@@ -285,7 +285,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                     }
                 }
 
-                ilWriter.Emit(OpCodes.Ldarg_1);
+                ilWriter.Emit(OpCodes.Ldarg_2);
                 WriteIntValue(ilWriter, i - (mustLoadInstance ? 1 : 0));
                 ilWriter.Emit(OpCodes.Ldelem_Ref);
 
@@ -382,7 +382,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             DynamicMethod callMethod = new DynamicMethod(
                      $"{onMethodEndMethodInfo.DeclaringType.Name}.{onMethodEndMethodInfo.Name}",
                      typeof(CallTargetReturn),
-                     new Type[] { targetType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
+                     new Type[] { typeof(object), targetType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
                      onMethodEndMethodInfo.Module,
                      true);
 
@@ -391,7 +391,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             // Load the instance if is needed
             if (mustLoadInstance)
             {
-                ilWriter.Emit(OpCodes.Ldarg_0);
+                ilWriter.Emit(OpCodes.Ldarg_1);
 
                 if (instanceGenericConstraint != null)
                 {
@@ -400,10 +400,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             }
 
             // Load the exception
-            ilWriter.Emit(OpCodes.Ldarg_1);
+            ilWriter.Emit(OpCodes.Ldarg_2);
 
             // Load the state
-            ilWriter.Emit(OpCodes.Ldarg_2);
+            ilWriter.Emit(OpCodes.Ldarg_3);
             if (!stateParameterType.IsByRef)
             {
                 ilWriter.Emit(OpCodes.Ldobj, typeof(CallTargetState));
@@ -521,7 +521,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             DynamicMethod callMethod = new DynamicMethod(
                      $"{onMethodEndMethodInfo.DeclaringType.Name}.{onMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
                      typeof(CallTargetReturn<>).MakeGenericType(returnType),
-                     new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
+                     new Type[] { typeof(object), targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
                      onMethodEndMethodInfo.Module,
                      true);
 
@@ -530,7 +530,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             // Load the instance if is needed
             if (mustLoadInstance)
             {
-                ilWriter.Emit(OpCodes.Ldarg_0);
+                ilWriter.Emit(OpCodes.Ldarg_1);
 
                 if (instanceGenericConstraint != null)
                 {
@@ -539,17 +539,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             }
 
             // Load the return value
-            ilWriter.Emit(OpCodes.Ldarg_1);
+            ilWriter.Emit(OpCodes.Ldarg_2);
             if (returnValueProxyType != null)
             {
                 WriteCreateNewProxyInstance(ilWriter, returnValueProxyType, returnType);
             }
 
             // Load the exception
-            ilWriter.Emit(OpCodes.Ldarg_2);
+            ilWriter.Emit(OpCodes.Ldarg_3);
 
             // Load the state
-            ilWriter.Emit(OpCodes.Ldarg_3);
+            ilWriter.Emit(OpCodes.Ldarg_S, 4);
             if (!stateParameterType.IsByRef)
             {
                 ilWriter.Emit(OpCodes.Ldobj, typeof(CallTargetState));
@@ -694,7 +694,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             DynamicMethod callMethod = new DynamicMethod(
                      $"{onAsyncMethodEndMethodInfo.DeclaringType.Name}.{onAsyncMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
                      dynMethodReturnType,
-                     new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
+                     new Type[] { typeof(object), targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
                      onAsyncMethodEndMethodInfo.Module,
                      true);
 
@@ -703,7 +703,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             // Load the instance if is needed
             if (mustLoadInstance)
             {
-                ilWriter.Emit(OpCodes.Ldarg_0);
+                ilWriter.Emit(OpCodes.Ldarg_1);
 
                 if (instanceGenericConstraint != null)
                 {
@@ -712,17 +712,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             }
 
             // Load the return value
-            ilWriter.Emit(OpCodes.Ldarg_1);
+            ilWriter.Emit(OpCodes.Ldarg_2);
             if (returnValueProxyType != null)
             {
                 WriteCreateNewProxyInstance(ilWriter, returnValueProxyType, returnType);
             }
 
             // Load the exception
-            ilWriter.Emit(OpCodes.Ldarg_2);
+            ilWriter.Emit(OpCodes.Ldarg_3);
 
             // Load the state
-            ilWriter.Emit(OpCodes.Ldarg_3);
+            ilWriter.Emit(OpCodes.Ldarg_S, 4);
             if (!stateParameterType.IsByRef)
             {
                 ilWriter.Emit(OpCodes.Ldobj, typeof(CallTargetState));

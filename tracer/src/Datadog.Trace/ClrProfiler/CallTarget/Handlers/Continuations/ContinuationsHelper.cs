@@ -6,6 +6,7 @@
 using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
@@ -46,11 +47,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
             static Converter()
             {
-                DynamicMethod dMethod = new DynamicMethod($"Converter<{typeof(TFrom).Name},{typeof(TTo).Name}>", typeof(TTo), new[] { typeof(TFrom) }, typeof(ConvertDelegate).Module, true);
+                DynamicMethod dMethod = new DynamicMethod($"Converter<{typeof(TFrom).Name},{typeof(TTo).Name}>", typeof(TTo), new[] { typeof(object), typeof(TFrom) }, typeof(ConvertDelegate).Module, true);
                 ILGenerator il = dMethod.GetILGenerator();
-                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldarg_1);
                 il.Emit(OpCodes.Ret);
-                _converter = (ConvertDelegate)dMethod.CreateDelegate(typeof(ConvertDelegate));
+                _converter = (ConvertDelegate)dMethod.CreateInstanceDelegate(typeof(ConvertDelegate));
             }
 
             private delegate TTo ConvertDelegate(TFrom value);

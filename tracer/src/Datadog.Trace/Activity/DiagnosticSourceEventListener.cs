@@ -10,7 +10,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -34,7 +36,7 @@ namespace Datadog.Trace.Activity
                 }
 
                 // Create delegate for OnNext + Activity
-                var onNextActivityDynMethod = new DynamicMethod("OnNextActivityDyn", typeof(void), new[] { typeof(string), typeof(KeyValuePair<string, object>), typeof(object) }, typeof(ActivityListener).Module, true);
+                var onNextActivityDynMethod = new DynamicMethod("OnNextActivityDyn", typeof(void), new[] { typeof(object), typeof(string), typeof(KeyValuePair<string, object>), typeof(object) }, typeof(ActivityListener).Module, true);
 
                 DuckType.CreateTypeResult onNextActivityProxyResult;
                 if (activityType!.GetField("_traceId", DuckAttribute.DefaultFlags) is not null)
@@ -55,13 +57,13 @@ namespace Datadog.Trace.Activity
                 var onNextActivityMethod = onNextActivityMethodInfo.MakeGenericMethod(onNextActivityProxyResultProxyType);
                 var onNextActivityProxyTypeCtor = onNextActivityProxyResultProxyType.GetConstructors()[0];
                 var onNextActivityDynMethodIl = onNextActivityDynMethod.GetILGenerator();
-                onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_0);
                 onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_1);
                 onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_2);
+                onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_3);
                 onNextActivityDynMethodIl.Emit(OpCodes.Newobj, onNextActivityProxyTypeCtor);
                 onNextActivityDynMethodIl.EmitCall(OpCodes.Call, onNextActivityMethod, null);
                 onNextActivityDynMethodIl.Emit(OpCodes.Ret);
-                OnNextActivityDelegate = (Action<string, KeyValuePair<string, object>, object?>)onNextActivityDynMethod.CreateDelegate(typeof(Action<string, KeyValuePair<string, object>, object?>));
+                OnNextActivityDelegate = (Action<string, KeyValuePair<string, object>, object?>)onNextActivityDynMethod.CreateInstanceDelegate(typeof(Action<string, KeyValuePair<string, object>, object?>));
             }
             catch (Exception ex)
             {
