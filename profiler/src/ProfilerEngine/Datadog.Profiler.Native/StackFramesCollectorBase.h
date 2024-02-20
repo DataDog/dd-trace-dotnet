@@ -21,9 +21,6 @@ protected:
     bool TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
     bool AddFrame(std::uintptr_t ip);
     void AddFakeFrame();
-    void SetFrameCount(std::uint16_t count);
-
-    std::pair<uintptr_t*, std::uint16_t> Data();
 
     StackSnapshotResultBuffer* GetStackSnapshotResult();
     bool IsCurrentCollectionAbortRequested();
