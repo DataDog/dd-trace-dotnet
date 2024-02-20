@@ -900,7 +900,90 @@ public class AotProcessor
             {
                 onAsyncMethodEndMethodOpen!.IsPublic = true;
 
+                if (method.ReturnType.Name == "Task")
+                {
+                    Log($"Task not implemented");
+                    return;
+                }
+                else if (method.ReturnType.Name == "Task`1")
+                {
+                    var taskContinuationGeneratorOpen = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations.TaskContinuationGenerator`4");
+                    taskContinuationGeneratorOpen.IsPublic = true;
 
+                    var taskContinuationGenerator = taskContinuationGeneratorOpen.MakeGenericInstanceType(
+                        method.Module.ImportReference(instrumentationType),
+                        method.Module.ImportReference(method.DeclaringType),
+                        method.Module.ImportReference(method.ReturnType),
+                        method.Module.ImportReference(((GenericInstanceType)method.ReturnType).GenericArguments[0]));
+
+                    var syncCallbackHandler = taskContinuationGeneratorOpen.NestedTypes.First(t => t.Name == "SyncCallbackHandler");
+                    syncCallbackHandler.IsNestedPublic = true;
+
+                    var continuationGeneratorTypeOpen = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations.ContinuationGenerator`3");
+                    continuationGeneratorTypeOpen.IsPublic = true;
+
+                    var continuationGeneratorType = continuationGeneratorTypeOpen.MakeGenericInstanceType(
+                        method.Module.ImportReference(method.DeclaringType),
+                        method.Module.ImportReference(method.ReturnType),
+                        method.Module.ImportReference(((GenericInstanceType)method.ReturnType).GenericArguments[0]));
+
+                    var continuationMethodDelegate = continuationGeneratorType.Resolve().NestedTypes.First(t => t.Name == "ContinuationMethodDelegate");
+                    continuationMethodDelegate.IsNestedPublic = true;
+
+                    var continuationMethodDelegateGeneric = continuationMethodDelegate.MakeGenericInstanceType(
+                        method.Module.ImportReference(method.DeclaringType),
+                        method.Module.ImportReference(method.ReturnType),
+                        method.Module.ImportReference(((GenericInstanceType)method.ReturnType).GenericArguments[0]));
+
+                    ilProcessor.Append(Instruction.Create(OpCodes.Ldnull));
+                    newEnd = ilProcessor.Body.Instructions.Last();
+
+                    var onAsyncMethodEnd = instrumentationType.Methods.First(m => m.Name == "OnAsyncMethodEnd");
+                    var genericOnAsyncMethodEnd = new GenericInstanceMethod(onAsyncMethodEnd);
+                    genericOnAsyncMethodEnd.GenericArguments.Add(method.DeclaringType);
+                    genericOnAsyncMethodEnd.GenericArguments.Add(((GenericInstanceType)method.ReturnType).GenericArguments[0]);
+
+                    ilProcessor.Append(Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(genericOnAsyncMethodEnd)));
+
+                    ilProcessor.Append(Instruction.Create(OpCodes.Newobj, method.Module.ImportReference(continuationMethodDelegate.Resolve().Methods.First(m => m.IsConstructor).MakeGenericMethod(continuationMethodDelegateGeneric))));
+
+                    ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4_0));
+
+                    var genericSyncCallbackHandler = syncCallbackHandler.MakeGenericInstanceType(
+                            method.Module.ImportReference(instrumentationType),
+                            method.Module.ImportReference(method.DeclaringType),
+                            method.Module.ImportReference(method.ReturnType),
+                            method.Module.ImportReference(((GenericInstanceType)method.ReturnType).GenericArguments[0]));
+
+                    var ctor = syncCallbackHandler.Methods.First(m => m.IsConstructor);
+
+                    ilProcessor.Append(Instruction.Create(OpCodes.Newobj, method.Module.ImportReference(ctor.MakeGenericMethod(genericSyncCallbackHandler))));
+
+                    ilProcessor.Append(Instruction.Create(OpCodes.Ldarg_0));
+                    ilProcessor.Append(Instruction.Create(OpCodes.Ldloc, returnVariable));
+                    ilProcessor.Append(Instruction.Create(OpCodes.Ldnull));
+                    ilProcessor.Append(Instruction.Create(OpCodes.Ldloca, callTargetStateVariable));
+
+                    var executeCallbackMethodOpen = syncCallbackHandler.Resolve().Methods.First(m => m.Name == "ExecuteCallback");
+
+                    ilProcessor.Append(Instruction.Create(OpCodes.Callvirt, method.Module.ImportReference(executeCallbackMethodOpen.MakeGenericMethod(genericSyncCallbackHandler))));
+                    ilProcessor.Append(Instruction.Create(OpCodes.Ret));
+                }
+                else if (method.ReturnType.Name == "ValueTask")
+                {
+                    Log($"ValueTask not implemented");
+                    return;
+                }
+                else if (method.ReturnType.Name == "ValueTask`1")
+                {
+                    Log($"ValueTask`1 not implemented");
+                    return;
+                }
+                else
+                {
+                    Log($"Skipping {method.Name} because it's not an async method");
+                    return;
+                }
             }
 
             // Change all returns to LEAVE_S

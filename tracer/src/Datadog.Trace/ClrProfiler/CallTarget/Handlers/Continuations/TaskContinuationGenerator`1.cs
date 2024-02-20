@@ -5,8 +5,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 #pragma warning disable SA1649 // File name must match first type name
@@ -46,6 +48,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     $"TaskContinuationGenerator<{typeof(TIntegration).FullName}, {typeof(TTarget).FullName}, {typeof(TReturn).FullName}, {typeof(TResult).FullName}>",
                     Resolver.GetType().FullName);
             }
+        }
+
+        internal static Task<WebResponse> Test()
+        {
+            return new TaskContinuationGenerator<WebRequest_GetResponseAsync_Integration, WebRequest, Task<WebResponse>, WebResponse>.SyncCallbackHandler(new ContinuationGenerator<WebRequest, Task<WebResponse>, WebResponse>.ContinuationMethodDelegate(WebRequest_GetResponseAsync_Integration.OnAsyncMethodEnd<WebRequest, WebResponse>), false).ExecuteCallback(null, null, null, default);
         }
 
         public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
