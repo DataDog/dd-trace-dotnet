@@ -32,7 +32,7 @@ namespace Datadog.Trace.DuckTyping
         /// </summary>
         /// <typeparam name="TReturn">Return type (should be compatible with Type)</typeparam>
         /// <returns>Returns the instance</returns>
-        ref TReturn GetInternalDuckTypeInstance<TReturn>();
+        ref TReturn GetInternalDuckTypedInstance<TReturn>();
 
         /// <summary>
         /// Calls ToString() on the instance
