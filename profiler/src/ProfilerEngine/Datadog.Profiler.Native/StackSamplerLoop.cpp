@@ -454,6 +454,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
     StackSnapshotResultBuffer* pStackSnapshotResult = nullptr;
     std::size_t countCollectedStackFrames = 0;
     bool isStackSnapshotSuccessful = false;
+    time_t currentUnixTimestamp = {};
     {
         // The StackSamplerLoopManager may determine that the target thread is not fit for a sample collection right now.
         // This may be because it has caused some recent deadlocks.
@@ -473,7 +474,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             // Get the timestamp of the current collection
             // /!\ Must not be called while the thread is suspended:
             // current implementation uses time function which allocates
-            time_t currentUnixTimestamp = GetCurrentTimestamp();
+            currentUnixTimestamp = GetCurrentTimestamp();
 
             // Get the high-precision timestamp for this sample (this is a time-unit counter, not a real time value).
             pThreadInfo->SetLastKnownSampleUnixTimestamp(currentUnixTimestamp, thisSampleTimestampNanosecs);
@@ -528,14 +529,6 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             // Keep track of how many times we sampled this thread:
             pThreadInfo->IncSnapshotsPerformedCount(isStackSnapshotSuccessful);
 
-            if (isStackSnapshotSuccessful)
-            {
-                rawSample.Duration = duration;
-                rawSample.Timestamp = currentUnixTimestamp;
-                rawSample.AppDomainId = pThreadInfo->GetAppDomainId(_pCorProfilerInfo);
-                pStackSnapshotResult->CopyInstructionPointers(rawSample.Stack);
-            }
-
             // If we got here, then either target thread == sampler thread (we are sampling the current thread),
             // or we have suspended the target thread.
             // We must now resume the target thread.
@@ -564,6 +557,12 @@ void StackSamplerLoop::CollectOneThreadStackSample(
     {
         return;
     }
+
+    rawSample.Duration = duration;
+    rawSample.Timestamp = currentUnixTimestamp;
+    rawSample.AppDomainId = pThreadInfo->GetAppDomainId(_pCorProfilerInfo);
+    pStackSnapshotResult->CopyInstructionPointers(rawSample.Stack);
+    rawSample.ThreadInfo = pThreadInfo;
 
     if constexpr (std::is_same_v<TRawSample, RawWallTimeSample>)
     {
