@@ -25,14 +25,14 @@ internal static class InsecureAuthAnalyzer
     {
         try
         {
-            // Check for Authorization header
-            const string headerName = HeaderNames.Authorization;
-            if (!headers.TryGetValue(headerName, out var authHeader))
+            if (IgnoredStatusCode(statusCode))
             {
                 return;
             }
 
-            if (IgnoredStatusCode(statusCode))
+            // Check for Authorization header
+            const string headerName = HeaderNames.Authorization;
+            if (!headers.TryGetValue(headerName, out var authHeader))
             {
                 return;
             }
