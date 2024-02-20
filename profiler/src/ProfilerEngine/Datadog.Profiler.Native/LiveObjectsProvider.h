@@ -80,10 +80,6 @@ private:
     static std::vector<SampleValueType> SampleTypeDefinitions;
 
     ICorProfilerInfo13* _pCorProfilerInfo = nullptr;
-    IFrameStore* _pFrameStore = nullptr;
-    IAppDomainStore* _pAppDomainStore = nullptr;
-    IRuntimeIdStore* _pRuntimeIdStore = nullptr;
-    IThreadsCpuManager* _pThreadsCpuManager = nullptr;
     std::unique_ptr<AllocationsProvider> _pAllocationsProvider;
 
     bool _isTimestampsAsLabelEnabled = false;

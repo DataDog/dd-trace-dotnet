@@ -79,8 +79,8 @@ ProfileExporter::ProfileExporter(
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
-    _metadataProvider{metadataProvider},
     _allocationsRecorder{allocationsRecorder},
+    _metadataProvider{metadataProvider},
     _configuration{configuration}
 {
     _exporter = CreateExporter(_configuration, CreateTags(_configuration, runtimeInfo, enabledProfilers));

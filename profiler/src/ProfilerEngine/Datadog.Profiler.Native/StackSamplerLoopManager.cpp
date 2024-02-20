@@ -38,8 +38,14 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     ) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pConfiguration{pConfiguration},
+    _pThreadsCpuManager{pThreadsCpuManager},
+    _pManagedThreadList{pManagedThreadList},
+    _pCodeHotspotsThreadList{pCodeHotspotThreadList},
+    _pWallTimeCollector{pWallTimeCollector},
+    _pCpuTimeCollector{pCpuTimeCollector},
     _pStackFramesCollector{nullptr},
     _pStackSamplerLoop{nullptr},
+    _deadlockInterventionInProgress{0},
     _pWatcherThread{nullptr},
     _isWatcherShutdownRequested{false},
     _pTargetThread{nullptr},
@@ -52,13 +58,6 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _totalDeadlockDetectionsCount{0},
     _metricsSender{metricsSender},
     _statisticsReadyToSend{nullptr},
-    _pClrLifetime{clrLifetime},
-    _pThreadsCpuManager{pThreadsCpuManager},
-    _pManagedThreadList{pManagedThreadList},
-    _pCodeHotspotsThreadList{pCodeHotspotThreadList},
-    _pWallTimeCollector{pWallTimeCollector},
-    _pCpuTimeCollector{pCpuTimeCollector},
-    _deadlockInterventionInProgress{0},
     _metricsRegistry{metricsRegistry}
 {
     _pCorProfilerInfo->AddRef();
