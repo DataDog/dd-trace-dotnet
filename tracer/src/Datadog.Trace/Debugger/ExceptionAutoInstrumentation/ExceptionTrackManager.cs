@@ -184,7 +184,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     }
 
                     var frame = capturedFrames[0];
-                    TagAndUpload(rootSpan, $"{debugErrorPrefix}.{allFrames.Length - frameIndex - 1}.", frame.MethodInfo.Method, frame.SnapshotId, frame.Snapshot, frame.ProbeId);
+                    TagAndUpload(rootSpan, $"{debugErrorPrefix}.{allFrames.Length - frameIndex - 1}.", frame);
 
                     // Upload tail frames
                     frameIndex = allFrames.Length - 1;
@@ -204,7 +204,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         capturedFrameIndex -= 1;
 
                         var prefix = $"{debugErrorPrefix}.{assignIndex++}.";
-                        TagAndUpload(rootSpan, prefix, frame.MethodInfo.Method, frame.SnapshotId, frame.Snapshot, frame.ProbeId);
+                        TagAndUpload(rootSpan, prefix, frame);
                     }
 
                     // Upload missing frames
@@ -222,15 +222,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                             var participatingFrame = allFrames[frameIndex--];
                             assignIndex++;
 
+                            var noCaptureReason = string.Empty;
+
                             if (participatingFrame.State == ParticipatingFrameState.Blacklist)
                             {
-                                var snapshotAndIdTuple = CreateEvaluationErrorSnapshot($"The method {participatingFrame.Method.GetFullyQualifiedName()} is blacklisted.", participatingFrame.Method);
-                                TagAndUpload(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, snapshotAndIdTuple.Item1, snapshotAndIdTuple.Item2, Guid.Empty.ToString());
+                                noCaptureReason = $"The method {participatingFrame.Method.GetFullyQualifiedName()} is blacklisted.";
                             }
                             else if (participatingFrame.Method.IsAbstract)
                             {
-                                var snapshotAndIdTuple = CreateEvaluationErrorSnapshot($"The method {participatingFrame.Method.GetFullyQualifiedName()} is abstract.", participatingFrame.Method);
-                                TagAndUpload(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, snapshotAndIdTuple.Item1, snapshotAndIdTuple.Item2, Guid.Empty.ToString());
+                                noCaptureReason = $"The method {participatingFrame.Method.GetFullyQualifiedName()} is abstract.";
                             }
                             else if (probesIndex >= 0)
                             {
@@ -239,15 +239,18 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                 if (probe.ProbeStatus == Status.INSTALLED && probe.MayBeOmittedFromCallStack)
                                 {
                                     // Frame is non-optimized in .NET 6+.
-                                    var snapshotAndIdTuple = CreateEvaluationErrorSnapshot($"The method {participatingFrame.Method.GetFullyQualifiedName()} could not be captured.", participatingFrame.Method);
-                                    TagAndUpload(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, snapshotAndIdTuple.Item1, snapshotAndIdTuple.Item2, Guid.Empty.ToString());
+                                    noCaptureReason = $"The method {participatingFrame.Method.GetFullyQualifiedName()} could not be captured.";
                                 }
                                 else if (probe.ProbeStatus == Status.ERROR)
                                 {
                                     // Frame is failed to instrument.
-                                    var snapshotAndIdTuple = CreateEvaluationErrorSnapshot($"The method {participatingFrame.Method.GetFullyQualifiedName()} has failed in instrumentation. Failure reason: {probe.ErrorMessage}", participatingFrame.Method);
-                                    TagAndUpload(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, snapshotAndIdTuple.Item1, snapshotAndIdTuple.Item2, Guid.Empty.ToString());
+                                    noCaptureReason = $"The method {participatingFrame.Method.GetFullyQualifiedName()} has failed in instrumentation. Failure reason: {probe.ErrorMessage}";
                                 }
+                            }
+
+                            if (noCaptureReason != string.Empty)
+                            {
+                                TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, noCaptureReason);
                             }
                         }
                     }
@@ -268,19 +271,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        private static Tuple<string, string> CreateEvaluationErrorSnapshot(string errorMessage, MethodBase method)
+        private static void TagAndUpload(Span span, string tagPrefix, ExceptionStackNodeRecord record)
         {
-            using var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: false, location: ProbeLocation.Method, hasCondition: false, Array.Empty<string>());
-            var result = new ExpressionEvaluationResult();
-            result.Errors ??= new List<EvaluationError>();
-            result.Errors.Add(new EvaluationError { Message = errorMessage });
-            snapshotCreator.SetEvaluationResult(ref result);
-            var info = new CaptureInfo<object>(0, MethodState.BeginLine, method: method, invocationTargetType: method.DeclaringType);
-            return Tuple.Create(snapshotCreator.SnapshotId, snapshotCreator.FinalizeMethodSnapshot(Guid.Empty.ToString(), 1, ref info));
-        }
+            var method = record.MethodInfo.Method;
+            var snapshotId = record.SnapshotId;
+            var probeId = record.ProbeId;
+            var snapshot = record.Snapshot;
 
-        private static void TagAndUpload(Span span, string tagPrefix, MethodBase method, string snapshotId, string snapshot, string probeId)
-        {
             span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
             span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType.Name);
             span.Tags.SetTag(tagPrefix + "snapshot_id", snapshotId);
@@ -292,6 +289,19 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             span.Tags.SetTag(tagPrefix + "snapshot_id", snapshotId);
 
             LiveDebugger.Instance.AddSnapshot(probeId, snapshot);
+        }
+
+        private static void TagMissingFrame(Span span, string tagPrefix, MethodBase method, string reason)
+        {
+            span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
+            span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType.Name);
+            span.Tags.SetTag(tagPrefix + "no_capture_reason", reason);
+
+            tagPrefix = tagPrefix.Replace("_", string.Empty);
+
+            span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
+            span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType.Name);
+            span.Tags.SetTag(tagPrefix + "no_capture_reason", reason);
         }
 
         private static bool ShouldReportException(Exception ex, ParticipatingFrame[] framesToRejit)
