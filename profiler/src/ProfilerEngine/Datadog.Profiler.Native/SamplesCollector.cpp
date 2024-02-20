@@ -5,6 +5,7 @@
 
 #include "Log.h"
 #include "OpSysTools.h"
+#include "SamplesEnumerator.h"
 
 SamplesCollector::SamplesCollector(
     IConfiguration* configuration,
@@ -15,7 +16,8 @@ SamplesCollector::SamplesCollector(
     _mustStop{false},
     _pThreadsCpuManager{pThreadsCpuManager},
     _metricsSender{metricsSender},
-    _exporter{exporter}
+    _exporter{exporter},
+    _cachedSample{std::make_shared<Sample>(0, std::string_view{}, 2048)}
 {
 }
 
@@ -136,14 +138,14 @@ void SamplesCollector::CollectSamples(std::forward_list<std::pair<ISamplesProvid
         {
             std::lock_guard lock(_exportLock);
 
-            auto result = samplesProvider.first->GetSamples();
-            samplesProvider.second += result.size();
+            auto samples = samplesProvider.first->GetSamples();
+            samplesProvider.second += samples->size();
 
-            for (auto const& sample : result)
+            while (samples->MoveNext(_cachedSample))
             {
-                if (!sample->GetCallstack().empty())
+                if (!_cachedSample->GetCallstack().empty())
                 {
-                    _exporter->Add(sample);
+                    _exporter->Add(_cachedSample);
                 }
             }
         }

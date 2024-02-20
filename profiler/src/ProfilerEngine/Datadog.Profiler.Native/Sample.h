@@ -22,10 +22,10 @@ struct SampleValueType
 
 typedef std::vector<int64_t> Values;
 typedef std::pair<std::string_view, std::string> Label;
-typedef std::list<Label> Labels;
+typedef std::vector<Label> Labels;
 typedef std::pair<std::string_view, int64_t> NumericLabel;
 typedef std::pair<std::string_view, uint64_t> SpanLabel;
-typedef std::list<NumericLabel> NumericLabels;
+typedef std::vector<NumericLabel> NumericLabels;
 typedef std::vector<FrameInfoView> CallStack;
 
 class Sample
@@ -34,13 +34,17 @@ public:
     static size_t ValuesCount;
 
 public:
-    Sample(std::string_view runtimeId); // only for tests
     Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCount);
+    Sample(std::string_view runtimeId); // only for tests
 
-    Sample(const Sample&) = delete;
-    Sample& operator=(const Sample& sample) = delete;
-    Sample(Sample&& sample) noexcept = delete;
-    Sample& operator=(Sample&& other) noexcept = delete;
+#ifndef DD_TEST
+private:
+#endif
+    // let compiler generating the move and copy ctors/assignment operators
+    Sample(const Sample&) = default;
+    Sample& operator=(const Sample& sample) = default;
+    Sample(Sample&& sample) noexcept = default;
+    Sample& operator=(Sample&& other) noexcept = default;
 
 public:
     uint64_t GetTimeStamp() const;
@@ -124,6 +128,25 @@ public:
         AddLabel(Label{ThreadNameLabel, std::forward<T>(name)});
     }
 
+    void SetTimestamp(std::uint64_t timestamp)
+    {
+        _timestamp = timestamp;
+    }
+
+    void SetRuntimeId(std::string_view runtimeId)
+    {
+        _runtimeId = runtimeId;
+    }
+
+    void Reset()
+    {
+        _timestamp = 0;
+        _callstack.clear();
+        _runtimeId = {};
+        _numericLabels.clear();
+        _labels.clear();
+        std::fill(_values.begin(), _values.end(), 0);
+    }
     // well known labels
 public:
     static const std::string ThreadIdLabel;

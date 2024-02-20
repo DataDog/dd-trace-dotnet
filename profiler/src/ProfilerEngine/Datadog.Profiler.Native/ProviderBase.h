@@ -13,7 +13,6 @@ class ProviderBase : public ISamplesProvider
 {
 public:
     ProviderBase(const char* name);
-    std::list<std::shared_ptr<Sample>> GetSamples() override = 0;
     const char* GetName() override;
 
 protected:

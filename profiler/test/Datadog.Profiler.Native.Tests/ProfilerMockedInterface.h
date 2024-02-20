@@ -13,6 +13,7 @@
 #include "ISamplesCollector.h"
 #include "ISamplesProvider.h"
 #include "Sample.h"
+#include "SamplesEnumerator.h"
 #include "TagsHelper.h"
 
 #include <memory>
@@ -93,7 +94,7 @@ public:
 class MockSampleProvider : public ISamplesProvider
 {
 public:
-    MOCK_METHOD(std::list<std::shared_ptr<Sample>>, GetSamples, (), (override));
+    MOCK_METHOD(std::unique_ptr<SamplesEnumerator>, GetSamples, (), (override));
     MOCK_METHOD(const char*, GetName, (), (override));
 };
 
@@ -148,7 +149,7 @@ public:
 class MockProcessSamplesProvider : public ISamplesProvider
 {
 public:
-    MOCK_METHOD(std::list<std::shared_ptr<Sample>>, GetSamples, (), (override));
+    MOCK_METHOD(std::unique_ptr<SamplesEnumerator>, GetSamples, (), (override));
     MOCK_METHOD(const char*, GetName, (), (override));
 };
 
