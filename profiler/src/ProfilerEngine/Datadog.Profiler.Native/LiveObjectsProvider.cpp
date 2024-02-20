@@ -9,6 +9,7 @@
 #include "LiveObjectsProvider.h"
 #include "OpSysTools.h"
 #include "Sample.h"
+#include "SamplesEnumerator.h"
 #include "SampleValueTypeProvider.h"
 
 std::vector<SampleValueType> LiveObjectsProvider::SampleTypeDefinitions(
@@ -21,7 +22,6 @@ const uint32_t MAX_LIVE_OBJECTS = 1024;
 
 const std::string LiveObjectsProvider::Gen1("1");
 const std::string LiveObjectsProvider::Gen2("2");
-
 
 LiveObjectsProvider::LiveObjectsProvider(
     SampleValueTypeProvider& valueTypeProvider,
@@ -61,7 +61,7 @@ void LiveObjectsProvider::OnGarbageCollectionStart(
     uint32_t generation,
     GCReason reason,
     GCType type
-    )
+)
 {
     // The address provided during AllocationTick event is not pointing to real object
     // so we tried to wait for the next garbage collection to create a wrapping weak handle.
@@ -77,8 +77,7 @@ void LiveObjectsProvider::OnGarbageCollectionEnd(
     bool isCompacting,
     uint64_t pauseDuration,
     uint64_t totalDuration,
-    uint64_t endTimestamp
-    )
+    uint64_t endTimestamp)
 {
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
 
@@ -97,30 +96,63 @@ void LiveObjectsProvider::OnGarbageCollectionEnd(
     });
 }
 
-std::list<std::shared_ptr<Sample>> LiveObjectsProvider::GetSamples()
+class LiveObjectsEnumerator : public SamplesEnumerator
 {
-    // return the live object samples
-    std::list<std::shared_ptr<Sample>> liveObjectsSamples;
-
-    // limit lock scope
+public:
+    LiveObjectsEnumerator(std::size_t size) :
+        _currentPos{0}
     {
-        std::lock_guard<std::mutex> lock(_liveObjectsLock);
-
-        int64_t currentTimestamp = OpSysTools::GetHighPrecisionTimestamp();
-        for (auto const& info : _monitoredObjects)
-        {
-            // gen2 objects are candidates for leaking however collections could be rare and only gen1 objects
-            // are available for live heap profiling
-            auto sample = info.GetSample();
-            liveObjectsSamples.push_back(sample);
-
-            // update samples lifetime
-            sample->ReplaceLabel(Label{Sample::ObjectLifetimeLabel, std::to_string(sample->GetTimeStamp() - currentTimestamp)});
-            sample->ReplaceLabel(Label{Sample::ObjectGenerationLabel, info.IsGen2() ? Gen2 : Gen1});
-        }
+        _samples.reserve(size);
     }
 
-    return liveObjectsSamples;
+    void Add(std::shared_ptr<Sample> sample)
+    {
+        _samples.push_back(std::move(sample));
+    }
+
+    // Inherited via SamplesEnumerator
+    std::size_t size() const override
+    {
+        return _samples.size();
+    }
+
+    bool MoveNext(std::shared_ptr<Sample>& sample) override
+    {
+        if (_currentPos >= _samples.size())
+            return false;
+
+        sample = _samples[_currentPos++];
+        return true;
+    }
+
+    std::vector<std::shared_ptr<Sample>> _samples;
+    std::size_t _currentPos;
+};
+
+std::unique_ptr<SamplesEnumerator> LiveObjectsProvider::GetSamples()
+{
+    std::lock_guard<std::mutex> lock(_liveObjectsLock);
+
+    int64_t currentTimestamp = OpSysTools::GetHighPrecisionTimestamp();
+    std::size_t nbSamples = 0;
+
+    // OPTIM maybe use an allocator
+    auto samples = std::make_unique<LiveObjectsEnumerator>(_monitoredObjects.size());
+
+    for (auto const& info : _monitoredObjects)
+    {
+        // gen2 objects are candidates for leaking however collections could be rare and only gen1 objects
+        // are available for live heap profiling
+        auto sample = info.GetSample();
+
+        // update samples lifetime
+        sample->ReplaceLabel(Label{Sample::ObjectLifetimeLabel, std::to_string(sample->GetTimeStamp() - currentTimestamp)});
+        sample->ReplaceLabel(Label{Sample::ObjectGenerationLabel, info.IsGen2() ? Gen2 : Gen1});
+
+        samples->Add(sample);
+    }
+
+    return samples;
 }
 
 void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)

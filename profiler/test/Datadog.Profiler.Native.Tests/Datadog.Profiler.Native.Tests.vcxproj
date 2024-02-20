@@ -60,6 +60,7 @@
     <ClCompile Include="EnvironmentHelper.cpp" />
     <ClCompile Include="ErrorCodeTest.cpp" />
     <ClCompile Include="ExporterTest.cpp" />
+    <ClCompile Include="FakeSamples.cpp" />
     <ClCompile Include="FrameStoreHelper.cpp" />
     <ClCompile Include="IMetricsSenderFactoryTest.cpp" />
     <ClCompile Include="ProfileExporterTest.cpp" />
@@ -88,6 +89,7 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\IMetricsSenderFactory.cpp" />
     <ClInclude Include="AppDomainStoreHelper.h" />
     <ClInclude Include="EnvironmentHelper.h" />
+    <ClInclude Include="FakeSamples.h" />
     <ClInclude Include="FrameStoreHelper.h" />
     <ClInclude Include="ProfilerMockedInterface.h" />
     <ClInclude Include="RuntimeIdStoreHelper.h" />
