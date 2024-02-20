@@ -19,6 +19,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     {
         public const int DefaultMaxFramesToCapture = 3;
         public const int DefaultRateLimitSeconds = 60 * 60; // 1 hour
+        public const int DefaultMaxExceptionAnalysisLimit = 100;
 
         public ExceptionDebuggingSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
@@ -42,6 +43,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                          .Value;
 
             RateLimit = TimeSpan.FromSeconds(seconds);
+
+            MaxExceptionAnalysisLimit = config
+                                       .WithKeys(ConfigurationKeys.Debugger.MaxExceptionAnalysisLimit)
+                                       .AsInt32(DefaultMaxExceptionAnalysisLimit, x => x > 0)
+                                       .Value;
         }
 
         public bool Enabled { get; }
@@ -51,6 +57,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public bool CaptureFullCallStack { get; }
 
         public TimeSpan RateLimit { get; }
+
+        public int MaxExceptionAnalysisLimit { get; }
 
         public static ExceptionDebuggingSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {

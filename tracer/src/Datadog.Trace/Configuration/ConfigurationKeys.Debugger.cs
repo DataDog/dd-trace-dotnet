@@ -118,6 +118,13 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="ExceptionDebuggingSettings.RateLimit"/>
             public const string RateLimitSeconds = "DD_EXCEPTION_DEBUGGING_RATE_LIMIT_SECONDS";
+
+            /// <summary>
+            /// Configuration key for setting the maximum number of exceptions to be analyzed by Exception Debugging within a 1-second time interval.
+            /// Default value is <c>100</c>.
+            /// </summary>
+            /// <seealso cref="ExceptionDebuggingSettings.MaxExceptionAnalysisLimit"/>
+            public const string MaxExceptionAnalysisLimit = "DD_EXCEPTION_DEBUGGING_MAX_EXCEPTION_ANALYSIS_LIMIT";
         }
     }
 }

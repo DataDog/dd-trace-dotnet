@@ -18,6 +18,7 @@ using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Vendors.Serilog.Events;
 using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
@@ -33,6 +34,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static readonly ExceptionCaseScheduler ExceptionsScheduler = new();
         private static readonly int MaxFramesToCapture = ExceptionDebugging.Settings.MaximumFramesToCapture;
         private static readonly TimeSpan RateLimit = ExceptionDebugging.Settings.RateLimit;
+        private static readonly BasicCircuitBreaker ReportingCircuitBreaker = new(ExceptionDebugging.Settings.MaxExceptionAnalysisLimit, TimeSpan.FromSeconds(1));
         private static Task _exceptionProcessorTask;
 
         private static async Task StartExceptionProcessingAsync(CancellationToken cancellationToken)
@@ -73,6 +75,16 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             if (CachedDoneExceptions.Contains(exception.ToString()))
             {
                 // Quick exit.
+                return;
+            }
+
+            if (ReportingCircuitBreaker.Trip() == CircuitBreakerState.Opened)
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(exception, "The circuit breaker is opened, skipping the processing of an exception.");
+                }
+
                 return;
             }
 
@@ -330,6 +342,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static void Stop()
         {
             Cts.Cancel();
+            ReportingCircuitBreaker.Dispose();
 
             try
             {
