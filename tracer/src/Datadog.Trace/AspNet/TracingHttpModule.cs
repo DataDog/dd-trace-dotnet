@@ -284,6 +284,7 @@ namespace Datadog.Trace.AspNet
                                 try
                                 {
                                     ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode, app.Context.Request.Url.Scheme);
+                                    InsecureAuthAnalyzer.AnalyzeInsecureAuth(app.Context.Request.Headers, IntegrationId, app.Context.Response.StatusCode);
                                 }
                                 catch (PlatformNotSupportedException ex)
                                 {
@@ -297,7 +298,6 @@ namespace Datadog.Trace.AspNet
                                 }
                             }
 
-                            InsecureAuthAnalyzer.AnalyzeInsecureAuth(app.Context.Request.Headers, IntegrationId, app.Context.Response.StatusCode);
                             CookieAnalyzer.AnalyzeCookies(app.Context.Response.Cookies, IntegrationId);
                         }
 
