@@ -123,7 +123,7 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         {
             // log every 1000 failures
             failureCount++;
-            Log::Warn("Failed to walk ", failureCount, " stacks for sampled contention: ", HResultConverter::ToStringWithCode(hrCollectStack));
+            Log::Info("Failed to walk ", failureCount, " stacks for sampled contention: ", HResultConverter::ToStringWithCode(hrCollectStack));
             return;
         }
 
@@ -145,7 +145,7 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         {
             // log every 1000 failures
             failureCount++;
-            Log::Warn("Failed to get ", failureCount, " call stacks for sampled contention");
+            Log::Info("Failed to get ", failureCount, " call stacks for sampled contention");
             return;
         }
 
