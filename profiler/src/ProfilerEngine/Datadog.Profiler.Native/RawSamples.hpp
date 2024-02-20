@@ -27,7 +27,7 @@ public:
     RawSamples(RawSamples const&) = delete;
     RawSamples& operator=(RawSamples const& other) = delete;
 
-    RawSamples<TRawSample> FetchRawSamples()
+    RawSamples<TRawSample> Move()
     {
         std::lock_guard<std::mutex> lock(_lock);
 

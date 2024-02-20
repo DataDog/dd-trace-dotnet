@@ -147,11 +147,12 @@ std::unique_ptr<SamplesEnumerator> LiveObjectsProvider::GetSamples()
         // gen2 objects are candidates for leaking however collections could be rare and only gen1 objects
         // are available for live heap profiling
         auto sample = info.GetSample();
-        samples->Add(sample);
 
         // update samples lifetime
         sample->ReplaceLabel(Label{Sample::ObjectLifetimeLabel, std::to_string(sample->GetTimeStamp() - currentTimestamp)});
         sample->ReplaceLabel(Label{Sample::ObjectGenerationLabel, info.IsGen2() ? Gen2 : Gen1});
+
+        samples->Add(sample);
     }
 
     return samples;

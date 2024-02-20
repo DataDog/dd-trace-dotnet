@@ -23,9 +23,12 @@ public:
     {
     }
 
+    CpuSampleEnumerator(CpuSampleEnumerator const&) = delete;
+    CpuSampleEnumerator& operator=(CpuSampleEnumerator const&) = delete;
+
     void Set(std::shared_ptr<Sample> sample)
     {
-        _sample = sample;
+        _sample = std::move(sample);
     }
 
     // Inherited via SamplesEnumerator
@@ -36,10 +39,11 @@ public:
 
     bool MoveNext(std::shared_ptr<Sample>& sample) override
     {
-        if (_alreadyCalled)
+        if (_sample == nullptr)
         {
             return false;
         }
+        // not thread-safe but ok since this enumerator will be consumed by only one thread (when exporting)
         sample = _sample;
         _sample.reset();
 
@@ -47,7 +51,6 @@ public:
     }
 
     std::shared_ptr<Sample> _sample;
-    bool _alreadyCalled;
 };
 
 std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()

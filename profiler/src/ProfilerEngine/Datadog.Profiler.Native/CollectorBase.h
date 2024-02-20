@@ -130,7 +130,7 @@ public:
 
     std::unique_ptr<SamplesEnumerator> GetSamples() override
     {
-        return std::make_unique<SamplesEnumeratorImpl>(_collectedSamples.FetchRawSamples(), this);
+        return std::make_unique<SamplesEnumeratorImpl>(_collectedSamples.Move(), this);
     }
 
 protected:
