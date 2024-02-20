@@ -27,6 +27,7 @@
 
 #include "IConfiguration.h"
 #include "IThreadInfo.h"
+#include "LibunwindUnwinders.h"
 #include "LinuxStackFramesCollector.h"
 #include "LinuxThreadInfo.h"
 #include "Log.h"
@@ -57,7 +58,8 @@ std::pair<DWORD, std::string> GetLastErrorMessage()
 
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
 {
-    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration);
+    auto unwinder = LibunwindUnwinders::Create(pConfiguration);
+    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), std::move(unwinder),  pConfiguration);
 }
 
 // https://linux.die.net/man/5/proc
