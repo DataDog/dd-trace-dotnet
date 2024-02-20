@@ -94,6 +94,27 @@ namespace Datadog.Trace.ClrProfiler
 
         sb.AppendLine("""
         };
+
+""");
+
+        sb.AppendLine("""
+        public static string[] RaspAspects = new string[] {
+""");
+
+        foreach (var aspectClass in aspectClasses.OrderBy(p => p.AspectClass, StringComparer.Ordinal))
+        {
+            if (aspectClass.AspectClass.Contains(",Sink,"))
+            {
+                sb.AppendLine(FormatLine(aspectClass.AspectClass));
+                foreach (var aspect in aspectClass.Aspects)
+                {
+                    sb.AppendLine(FormatLine(aspect));
+                }
+            }
+        }
+
+        sb.AppendLine("""
+        };
     }
 }
 """);

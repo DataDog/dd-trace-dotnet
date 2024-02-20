@@ -558,17 +558,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 string[] inputAspects = null;
 
-                if (isIast)
-                {
-                    inputAspects = AspectDefinitions.Aspects;
-                }
-                else
-                {
-                    if (GetRaspAspects(AspectDefinitions.Aspects, out string[] raspAspects))
-                    {
-                        inputAspects = raspAspects;
-                    }
-                }
+                inputAspects = isIast ? AspectDefinitions.Aspects : AspectDefinitions.RaspAspects;
 
                 if (inputAspects != null)
                 {
@@ -594,51 +584,6 @@ namespace Datadog.Trace.ClrProfiler
                     }
                 }
             }
-        }
-
-        // We instrument only the sinks when RASP is enabled
-        internal static bool GetRaspAspects(string[] aspects, out string[] raspAspects)
-        {
-            raspAspects = null;
-
-            try
-            {
-                var raspAspectsList = new List<string>();
-                var classAspectType = string.Empty;
-                foreach (var aspect in aspects)
-                {
-                    var trimmed = aspect.Trim();
-                    // AspectClass
-                    if (trimmed.StartsWith("[AspectClass"))
-                    {
-                        var lastQuoteIndex = trimmed.LastIndexOf("\"");
-                        if (lastQuoteIndex != -1)
-                        {
-                            classAspectType = trimmed.Substring(lastQuoteIndex + 2).Split(',')[1];
-                        }
-                        else
-                        {
-                            // This should never happen
-                            Log.Error("Error reading aspectType from aspect {Aspect}", aspect);
-                            return false;
-                        }
-                    }
-
-                    if (classAspectType.Equals("Sink", StringComparison.OrdinalIgnoreCase))
-                    {
-                        raspAspectsList.Add(aspect);
-                    }
-                }
-
-                raspAspects = raspAspectsList.ToArray();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error getting RASP aspects");
-                return false;
-            }
-
-            return true;
         }
 
         internal static void DisableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
