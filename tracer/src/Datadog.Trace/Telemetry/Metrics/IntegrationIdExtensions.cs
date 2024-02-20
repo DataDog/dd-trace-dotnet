@@ -75,6 +75,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.TestPlatformAssemblyResolver => MetricTags.IntegrationName.TestPlatformAssemblyResolver,
             IntegrationId.StackTraceLeak => MetricTags.IntegrationName.StackTraceLeak,
             IntegrationId.XpathInjection => MetricTags.IntegrationName.XpathInjection,
+            IntegrationId.SystemReflection => MetricTags.IntegrationName.SystemReflection,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }

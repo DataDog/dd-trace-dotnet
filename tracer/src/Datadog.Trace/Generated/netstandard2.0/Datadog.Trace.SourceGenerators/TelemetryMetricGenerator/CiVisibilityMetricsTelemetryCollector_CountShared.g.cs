@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class CiVisibilityMetricsTelemetryCollector
 {
-    private const int CountSharedLength = 201;
+    private const int CountSharedLength = 204;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.CountShared" /> values.
@@ -221,6 +221,9 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "integration_name:xpathinjection", "error_type:duck_typing" }),
             new(new[] { "integration_name:xpathinjection", "error_type:invoker" }),
             new(new[] { "integration_name:xpathinjection", "error_type:execution" }),
+            new(new[] { "integration_name:systemreflection", "error_type:duck_typing" }),
+            new(new[] { "integration_name:systemreflection", "error_type:invoker" }),
+            new(new[] { "integration_name:systemreflection", "error_type:execution" }),
         };
 
     /// <summary>
@@ -229,7 +232,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountSharedEntryCounts { get; }
-        = new int[]{ 201, };
+        = new int[]{ 204, };
 
     public void RecordCountSharedIntegrationsError(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationError tag2, int increment = 1)
     {

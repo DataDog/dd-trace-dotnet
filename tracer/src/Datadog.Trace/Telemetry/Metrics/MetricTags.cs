@@ -220,6 +220,7 @@ internal static class MetricTags
         [Description("integration_name:testplatformassemblyresolver")] TestPlatformAssemblyResolver,
         [Description("integration_name:stacktraceleak")] StackTraceLeak,
         [Description("integration_name:xpathinjection")] XpathInjection,
+        [Description("integration_name:systemreflection")] SystemReflection,
     }
 
     public enum InstrumentationError
@@ -283,6 +284,7 @@ internal static class MetricTags
         [Description("vulnerability_type:stacktrace_leak")] StackTraceLeak = 18,
         [Description("vulnerability_type:nosql_mongodb_injection")] NoSqlMongoDbInjection = 19,
         [Description("vulnerability_type:xpath_injection")] XPathInjection = 20,
+        [Description("vulnerability_type:reflection_injection")] ReflectionInjection = 21,
     }
 
     public enum CIVisibilityTestFramework

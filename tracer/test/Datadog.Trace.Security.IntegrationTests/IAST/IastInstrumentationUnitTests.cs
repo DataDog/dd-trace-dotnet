@@ -90,6 +90,18 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(XmlNode), null, null, true)]
     [InlineData(typeof(Extensions), null, null, true)]
     [InlineData(typeof(XPathExpression), null, null, true)]
+    [InlineData(typeof(Activator), "CreateInstance", new string[] { "System.Object CreateInstance(System.Type, System.Reflection.BindingFlags, System.Reflection.Binder, System.Object[], System.Globalization.CultureInfo)", "System.Object CreateInstance(System.Type, System.Object[])", "System.Object CreateInstance(System.Type, System.Object[], System.Object[])", "System.Object CreateInstance(System.Type, System.Reflection.BindingFlags, System.Reflection.Binder, System.Object[], System.Globalization.CultureInfo, System.Object[])", "System.Runtime.Remoting.ObjectHandle CreateInstance(System.ActivationContext, System.String[])" }, true)]
+#if NETCOREAPP3_0_OR_GREATER
+    [InlineData(typeof(Activator), "CreateInstanceFrom")]
+#endif
+#if NETFRAMEWORK
+    [InlineData(typeof(Activator), "CreateComInstanceFrom")]
+#endif
+    [InlineData(typeof(Type), "GetType", null, true)]
+    [InlineData(typeof(Type), "GetMethod")]
+    [InlineData(typeof(Type), "InvokeMember", null, true)]
+    [InlineData(typeof(Assembly), "Load", null, true)]
+    [InlineData(typeof(Assembly), "LoadFrom", null, true)]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestMethodsAspectCover(Type typeToCheck, string methodToCheck, string[] overloadsToExclude = null, bool excludeParameterlessMethods = false)
@@ -212,6 +224,20 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(XmlNode))]
     [InlineData(typeof(Extensions))]
     [InlineData(typeof(XPathExpression))]
+    [InlineData(typeof(Activator), new string[] { "System.Activator::CreateInstance(System.AppDomain,System.String,System.String)" })]
+#if !NETFRAMEWORK
+    #if NET6_0_OR_GREATER
+    [InlineData(typeof(Type))]
+    #else
+    [InlineData(typeof(Type), new string[] { "System.Type::GetMethod(System.String,System.Reflection.BindingFlags,System.Type[])" })]
+    #endif
+#else
+    [InlineData(typeof(Type), new string[] { "System.Type::GetMethod(System.String,System.Int32,System.Reflection.BindingFlags,System.Reflection.Binder,System.Reflection.CallingConventions,System.Type[],System.Reflection.ParameterModifier[])", "System.Type::GetMethod(System.String,System.Int32,System.Reflection.BindingFlags,System.Reflection.Binder,System.Type[],System.Reflection.ParameterModifier[])", "System.Type::GetMethod(System.String,System.Int32,System.Type[],System.Reflection.ParameterModifier[])", "System.Type::GetMethod(System.String,System.Reflection.BindingFlags,System.Type[])", "System.Type::GetMethod(System.String,System.Int32,System.Type[])" })]
+#endif
+#if NETFRAMEWORK
+    [InlineData(typeof(Assembly))]
+#endif
+    [InlineData(typeof(Assembly), new string[] { "System.Reflection.Assembly::Load(System.String,System.Security.Policy.Evidence)" })]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestAllAspectsHaveACorrespondingMethod(Type type, string[] aspectsToExclude = null)
