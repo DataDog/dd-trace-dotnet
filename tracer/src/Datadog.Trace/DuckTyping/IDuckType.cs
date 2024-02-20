@@ -28,6 +28,13 @@ namespace Datadog.Trace.DuckTyping
         Type Type { get; }
 
         /// <summary>
+        /// Gets the instance without boxing to an object
+        /// </summary>
+        /// <typeparam name="TReturn">Return type (should be compatible with Type)</typeparam>
+        /// <returns>Returns the instance</returns>
+        ref TReturn GetInternalDuckTypeInstance<TReturn>();
+
+        /// <summary>
         /// Calls ToString() on the instance
         /// </summary>
         /// <returns>ToString result</returns>

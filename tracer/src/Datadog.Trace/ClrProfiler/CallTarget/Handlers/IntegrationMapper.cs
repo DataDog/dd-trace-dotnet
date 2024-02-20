@@ -803,13 +803,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         private static TTo UnwrapReturnValue<TFrom, TTo>(TFrom returnValue)
             where TFrom : IDuckType
         {
-            return (TTo)returnValue.Instance;
+            return returnValue.GetInternalDuckTypeInstance<TTo>();
         }
 
         private static async Task<TTo> UnwrapTaskReturnValue<TFrom, TTo>(Task<TFrom> returnValue, bool preserveContext)
             where TFrom : IDuckType
         {
-            return (TTo)(await returnValue.ConfigureAwait(preserveContext)).Instance;
+            return (await returnValue.ConfigureAwait(preserveContext)).GetInternalDuckTypeInstance<TTo>();
         }
 
         private static void WriteIntValue(ILGenerator il, int value)

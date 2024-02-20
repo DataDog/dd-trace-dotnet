@@ -459,6 +459,15 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Ret);
             propType.SetGetMethod(getPropType);
 
+            MethodBuilder getInstanceMethod = proxyTypeBuilder.DefineMethod(
+                "GetInternalDuckTypeInstance",
+                MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot);
+            var getInstanceGenericTypeParameters = getInstanceMethod.DefineGenericParameters("TReturn");
+            getInstanceMethod.SetReturnType(getInstanceGenericTypeParameters[0].MakeByRefType());
+            il = getInstanceMethod.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ret);
+
             var toStringTargetType = targetType.GetMethod("ToString", Type.EmptyTypes);
             if (toStringTargetType is not null)
             {
