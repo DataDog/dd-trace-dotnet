@@ -414,7 +414,6 @@
     <ClCompile Include="ProfileExporter.cpp" />
     <ClCompile Include="ProfilerEngineStatus.cpp" />
     <ClCompile Include="RawExceptionSample.cpp" />
-    <ClCompile Include="RawSample.cpp" />
     <ClCompile Include="RuntimeIdStore.cpp" />
     <ClCompile Include="RuntimeInfo.cpp" />
     <ClCompile Include="Sample.cpp" />

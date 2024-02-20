@@ -31,8 +31,8 @@ public:
     template <class TRawSample>
     void Initialize(TRawSample* sample)
     {
-        _localRootSpanId = &sample->LocalRootSpanId;
-        _spanId = &sample->SpanId;
+        _localRootSpanId = &(sample->LocalRootSpanId);
+        _spanId = &(sample->SpanId);
 
         if constexpr (std::is_same_v<std::vector<std::uintptr_t>, typename RawSampleTraits<TRawSample>::collection_type>)
         {
@@ -79,11 +79,17 @@ private:
 
 inline std::uint64_t StackSnapshotResultBuffer::GetLocalRootSpanId() const
 {
+    if (_localRootSpanId == nullptr)
+        return 0;
+
     return *_localRootSpanId;
 }
 
 inline std::uint64_t StackSnapshotResultBuffer::SetLocalRootSpanId(std::uint64_t value)
 {
+    if (_localRootSpanId == nullptr)
+        return 0;
+
     std::uint64_t prevValue = *_localRootSpanId;
     *_localRootSpanId = value;
     return prevValue;
@@ -91,11 +97,17 @@ inline std::uint64_t StackSnapshotResultBuffer::SetLocalRootSpanId(std::uint64_t
 
 inline std::uint64_t StackSnapshotResultBuffer::GetSpanId() const
 {
+    if (_spanId == nullptr)
+        return 0;
+
     return *_spanId;
 }
 
 inline std::uint64_t StackSnapshotResultBuffer::SetSpanId(std::uint64_t value)
 {
+    if (_spanId == nullptr)
+        return 0;
+
     std::uint64_t prevValue = *_spanId;
     *_spanId = value;
     return prevValue;

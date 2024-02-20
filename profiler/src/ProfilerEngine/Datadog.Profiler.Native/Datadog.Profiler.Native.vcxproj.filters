@@ -505,9 +505,6 @@
     <ClCompile Include="CpuTimeProvider.cpp">
       <Filter>CpuTime</Filter>
     </ClCompile>
-    <ClCompile Include="RawSample.cpp">
-      <Filter>Profiler-Driver</Filter>
-    </ClCompile>
     <ClCompile Include="ExceptionsProvider.cpp">
       <Filter>Exceptions</Filter>
     </ClCompile>
