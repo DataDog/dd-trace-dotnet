@@ -466,7 +466,7 @@ namespace Datadog.Trace.DuckTyping
             getInstanceMethod.SetReturnType(getInstanceGenericTypeParameters[0].MakeByRefType());
             il = getInstanceMethod.GetILGenerator();
             il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Ldfld, instanceField);
+            il.Emit(OpCodes.Ldflda, instanceField);
             il.Emit(OpCodes.Ret);
 
             var toStringTargetType = targetType.GetMethod("ToString", Type.EmptyTypes);
