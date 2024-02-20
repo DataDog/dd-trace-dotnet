@@ -32,18 +32,36 @@ internal static class InsecureAuthAnalyzer
 
             // Check for Authorization header
             const string headerName = HeaderNames.Authorization;
-            if (!headers.TryGetValue(headerName, out var authHeader))
+            if (!headers.TryGetValue(headerName, out var authHeader) || string.IsNullOrEmpty(authHeader))
             {
                 return;
             }
 
-            var detectedScheme = InsecureSchemeDetected(authHeader);
-            if (detectedScheme is null)
+            // The StringValues can have multiple values because of a concatenation of multiple Authorization headers
+            // This is not a standard practice for the Authorization header but can theoretically happen.
+            if (authHeader.Count == 1)
             {
-                return;
-            }
+                var detectedScheme = InsecureSchemeDetected(authHeader);
+                if (detectedScheme is null)
+                {
+                    return;
+                }
 
-            IastModule.OnInsecureAuthProtocol($"{headerName}: {detectedScheme}", integrationId);
+                IastModule.OnInsecureAuthProtocol($"{headerName}: {detectedScheme}", integrationId);
+            }
+            else
+            {
+                foreach (var header in authHeader)
+                {
+                    var detectedScheme = InsecureSchemeDetected(header);
+                    if (detectedScheme is null)
+                    {
+                        continue;
+                    }
+
+                    IastModule.OnInsecureAuthProtocol($"{headerName}: {detectedScheme}", integrationId);
+                }
+            }
         }
         catch (Exception error)
         {
@@ -57,6 +75,11 @@ internal static class InsecureAuthAnalyzer
     {
         try
         {
+            if (IgnoredStatusCode(statusCode))
+            {
+                return;
+            }
+
             // Check for Authorization header
             const string headerName = "Authorization";
             var authHeader = headers[headerName];
@@ -65,18 +88,19 @@ internal static class InsecureAuthAnalyzer
                 return;
             }
 
-            if (IgnoredStatusCode(statusCode))
+            // The auth header can be a concatenation of multiple Authorization headers (concatenated by a comma)
+            // This is not a standard practice for the Authorization header but can theoretically happen.
+            var authHeaders = authHeader.Split(',');
+            foreach (var header in authHeaders)
             {
-                return;
-            }
+                var detectedScheme = InsecureSchemeDetected(header);
+                if (detectedScheme is null)
+                {
+                    continue;
+                }
 
-            var detectedScheme = InsecureSchemeDetected(authHeader);
-            if (detectedScheme is null)
-            {
-                return;
+                IastModule.OnInsecureAuthProtocol($"{headerName}: {detectedScheme}", integrationId);
             }
-
-            IastModule.OnInsecureAuthProtocol($"{headerName}: {detectedScheme}", integrationId);
         }
         catch (Exception error)
         {
@@ -95,19 +119,15 @@ internal static class InsecureAuthAnalyzer
 
     private static string? InsecureSchemeDetected(string authHeader)
     {
-        var insecureSchemes = new[] { "Basic", "Digest" };
-
-        // The auth header can be a concatenation of multiple Authorization headers (concatenated by a comma)
-        // This is not a standard practice for the Authorization header but can theoretically happen.
-        var elements = authHeader.Split(',');
-        foreach (var element in elements)
+        var trimmedElement = authHeader.TrimStart();
+        if (trimmedElement.StartsWith("Basic", StringComparison.OrdinalIgnoreCase))
         {
-            var scheme = element.Trim(' ').Split(' ')[0];
-            var detectedScheme = insecureSchemes.FirstOrDefault(s => s.Equals(scheme, StringComparison.OrdinalIgnoreCase));
-            if (detectedScheme is not null)
-            {
-                return detectedScheme;
-            }
+            return "Basic";
+        }
+
+        if (trimmedElement.StartsWith("Digest", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Digest";
         }
 
         return null;
