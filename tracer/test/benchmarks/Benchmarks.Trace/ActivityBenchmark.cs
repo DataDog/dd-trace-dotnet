@@ -9,6 +9,7 @@ using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 using ActivityIdFormat = System.Diagnostics.ActivityIdFormat;
 using ActivityKind = Datadog.Trace.Activity.DuckTypes.ActivityKind;
 using ActivityListener = System.Diagnostics.ActivityListener;
@@ -251,6 +252,11 @@ internal class MockActivity : IActivity
     public object SetStartTime(DateTime startTimeUtc)
     {
         return _activity.SetStartTime(startTimeUtc);
+    }
+
+    public ref TReturn GetInternalDuckTypedInstance<TReturn>()
+    {
+        return ref Unsafe.As<Activity, TReturn>(ref Unsafe.AsRef(in _activity));
     }
 
     string IDuckType.ToString()
