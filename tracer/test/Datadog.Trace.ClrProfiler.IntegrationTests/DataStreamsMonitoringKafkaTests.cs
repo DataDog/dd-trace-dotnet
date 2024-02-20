@@ -1,4 +1,4 @@
-// <copyright file="DataStreamsMonitoringTests.cs" company="Datadog">
+// <copyright file="DataStreamsMonitoringKafkaTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,9 +19,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 [UsesVerify]
 [Collection(nameof(KafkaTests.KafkaTestsCollection))]
 [Trait("RequiresDockerDependency", "true")]
-public class DataStreamsMonitoringTests : TestHelper
+public class DataStreamsMonitoringKafkaTests : TestHelper
 {
-    public DataStreamsMonitoringTests(ITestOutputHelper output)
+    public DataStreamsMonitoringKafkaTests(ITestOutputHelper output)
         : base("DataStreams.Kafka", output)
     {
         SetServiceVersion("1.0.0");
@@ -78,39 +78,16 @@ public class DataStreamsMonitoringTests : TestHelper
         settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
         settings.AddDataStreamsScrubber();
         await Verifier.Verify(payload, settings)
-                      .UseFileName($"{nameof(DataStreamsMonitoringTests)}.{nameof(SubmitsDataStreams)}")
+                      .UseFileName($"{nameof(DataStreamsMonitoringKafkaTests)}.{nameof(SubmitsDataStreams)}")
                       .DisableRequireUniquePrefix();
     }
 
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     /// <summary>
     /// This sample tests a fan in + out scenario:
-    ///  - service -> topic 1 -|
+    ///  - service -> topic 1 -|                  | -> topic 2 -> Consumer 2
     ///  - service -> topic 1 -|---> Consumer 1  -| -> topic 2 -> Consumer 2
     ///  - service -> topic 1 -|                  | -> topic 2 -> Consumer 2
-    /// Each node (apart from 'service') in the pipelines above have a unique hash
-    ///
-    /// In mermaid (view at https://mermaid.live/), this looks a little like:
-    /// sequenceDiagram
-    ///     participant A as Root Service<br>(12926600137239154356)
-    ///     participant T1 as Topic 1<br>(3184837087859198448)
-    ///     participant C1 as Consumer 1<br>(428893431238664991)
-    ///     participant T2a as Topic 2<br>(4701874528067105417)
-    ///     participant C2a as Consumer 2<br>(5603712524956936337)
-    ///     participant T3a as Topic 3<br>(713412453862704155)
-    ///     participant T2 as Topic 2<br>(9146411116191305908)
-    ///     participant C2 as Consumer 2<br>(9288243326407318747)
-    ///     participant T3 as Topic 3<br>(17029362228578737937 )
-    ///
-    ///     A->>+T1: Produce
-    ///     T1-->>-C1: Consume
-    ///     C1->>+T2a: Produce
-    ///     T2a-->>-C2a: Consume
-    ///     C2a->>+T3a: Produce
-    ///
-    ///     A->>+T2: Produce
-    ///     T2-->>-C2: Consume
-    ///     C2->>+T3: Produce
     /// </summary>
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
@@ -133,7 +110,7 @@ public class DataStreamsMonitoringTests : TestHelper
         settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
         settings.AddDataStreamsScrubber();
         await Verifier.Verify(payload, settings)
-                      .UseFileName($"{nameof(DataStreamsMonitoringTests)}.{nameof(HandlesFanIn)}")
+                      .UseFileName($"{nameof(DataStreamsMonitoringKafkaTests)}.{nameof(HandlesFanIn)}")
                       .DisableRequireUniquePrefix();
     }
 
