@@ -33,16 +33,6 @@ void StackFramesCollectorBase::AddFakeFrame()
     _pStackSnapshotResult->AddFakeFrame();
 }
 
-void StackFramesCollectorBase::SetFrameCount(std::uint16_t count)
-{
-    _pStackSnapshotResult->SetFramesCount(count);
-}
-
-std::pair<uintptr_t*, std::uint16_t> StackFramesCollectorBase::Data()
-{
-    return {_pStackSnapshotResult->Data(), StackSnapshotResultBuffer::MaxSnapshotStackDepth_Limit};
-}
-
 void StackFramesCollectorBase::RequestAbortCurrentCollection()
 {
     std::lock_guard<std::mutex> lock(_collectionAbortNotificationLock);

@@ -10,6 +10,7 @@ StackSnapshotResultBuffer::StackSnapshotResultBuffer() :
     _spanId{nullptr},
     _internalIps{}
 {
+    _instructionPointers = shared::span(_internalIps.data(), _internalIps.size());
 }
 
 StackSnapshotResultBuffer::~StackSnapshotResultBuffer()
@@ -24,5 +25,6 @@ void StackSnapshotResultBuffer::Reset()
     _localRootSpanId = nullptr;
     _spanId = nullptr;
 
+    _instructionPointers = shared::span(_internalIps.data(), _internalIps.size());
     _currentFramesCount = 0;
 }

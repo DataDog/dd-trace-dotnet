@@ -55,14 +55,13 @@ public:
     inline bool AddFrame(std::uintptr_t ip);
     inline bool AddFakeFrame();
 
-    inline uintptr_t* Data();
+    inline shared::span<uintptr_t> Data();
 
     StackSnapshotResultBuffer();
     ~StackSnapshotResultBuffer();
 
 protected:
 
-    //std::uintptr_t* _instructionPointers;
     shared::span<uintptr_t> _instructionPointers;
 
     std::uint16_t _currentFramesCount;
@@ -155,7 +154,7 @@ inline bool StackSnapshotResultBuffer::AddFakeFrame()
     return AddFrame(0);
 }
 
-inline uintptr_t* StackSnapshotResultBuffer::Data()
+inline shared::span<uintptr_t> StackSnapshotResultBuffer::Data()
 {
-    return _instructionPointers.data();
+    return _instructionPointers;
 }
