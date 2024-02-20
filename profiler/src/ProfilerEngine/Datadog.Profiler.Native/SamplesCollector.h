@@ -60,4 +60,12 @@ private:
     std::promise<void> _workerThreadPromise;
     IMetricsSender* _metricsSender;
     IExporter* _exporter;
+
+    // OPTIM
+    // It safe to have only one cached sample with no synchronization
+    // This field is only used by one thread at a time:
+    // - worker thread responsible to collect and push samples in the profile
+    // - thread executing the Stop: at that time, the worker thread has stopped
+    //   and the thread will be the only one using this field to collect the last samples
+    std::shared_ptr<Sample> _cachedSample;
 };

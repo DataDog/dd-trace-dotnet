@@ -154,6 +154,9 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\ProfilerLogger.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.cpp" />
+    <ClCompile Include="FakeSamples.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">
@@ -181,5 +184,8 @@
       <Filter>Helpers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.h" />
+    <ClInclude Include="FakeSamples.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

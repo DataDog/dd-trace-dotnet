@@ -104,7 +104,7 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         }
     }
 
-    RawContentionSample rawSample;
+    auto rawSample = CreateRawSample();
 
     // Synchronous case where the current thread is the contended thread
     // (i.e. receiving the contention events directly from ICorProfilerCallback)
@@ -130,12 +130,12 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         result->SetUnixTimeUtc(GetCurrentTimestamp());
         result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
 
-        rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
-        rawSample.SpanId = result->GetSpanId();
-        rawSample.AppDomainId = result->GetAppDomainId();
-        rawSample.Timestamp = result->GetUnixTimeUtc();
-        result->CopyInstructionPointers(rawSample.Stack);
-        rawSample.ThreadInfo = threadInfo;
+        rawSample->LocalRootSpanId = result->GetLocalRootSpanId();
+        rawSample->SpanId = result->GetSpanId();
+        rawSample->AppDomainId = result->GetAppDomainId();
+        rawSample->Timestamp = result->GetUnixTimeUtc();
+        result->CopyInstructionPointers(rawSample->Stack);
+        rawSample->ThreadInfo = threadInfo;
     }
     else
     // CLR events are received asynchronously from the Agent
@@ -151,9 +151,9 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
 
         // We know that we don't have any span ID nor end point details
 
-        rawSample.Timestamp = timestamp;
-        rawSample.Stack.reserve(stack.size());
-        rawSample.Stack.insert(rawSample.Stack.end(), stack.begin(), stack.end());
+        rawSample->Timestamp = timestamp;
+        rawSample->Stack.reserve(stack.size());
+        rawSample->Stack.insert(rawSample->Stack.end(), stack.begin(), stack.end());
 
         // we need to create a fake IThreadInfo if there is no thread in ManagedThreadList with the same OS thread id
         // There is one race condition here: the contention events are received asynchronously so the event thread might be dead
@@ -167,7 +167,7 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         std::shared_ptr<ManagedThreadInfo> threadInfo;
         if (_pManagedThreadList->TryGetThreadInfo(threadId, threadInfo))
         {
-            rawSample.ThreadInfo = threadInfo;
+            rawSample->ThreadInfo = threadInfo;
 
             // TODO: we need to check that threads are not jumping from one AppDomain to the other too frequently
             // because we might be receiving this event 1 second after it has been emitted
@@ -175,23 +175,22 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
             AppDomainID appDomainId;
             if (SUCCEEDED(_pCorProfilerInfo->GetThreadAppDomain(threadInfo->GetClrThreadId(), &appDomainId)))
             {
-                rawSample.AppDomainId = appDomainId;
+                rawSample->AppDomainId = appDomainId;
             }
             else
             {
-                rawSample.AppDomainId = -1;
+                rawSample->AppDomainId = -1;
             }
         }
         else  // create a fake IThreadInfo that wraps the OS thread id (no name, no profiler thread id)
         {
-            rawSample.ThreadInfo = std::make_shared<FrameworkThreadInfo>(threadId);
+            rawSample->ThreadInfo = std::make_shared<FrameworkThreadInfo>(threadId);
         }
     }
 
-    rawSample.ContentionDuration = contentionDurationNs;
-    rawSample.Bucket = std::move(bucket);
+    rawSample->ContentionDuration = contentionDurationNs;
+    rawSample->Bucket = std::move(bucket);
 
-    Add(std::move(rawSample));
     _sampledLockContentionsCountMetric->Incr();
     _sampledLockContentionsDurationMetric->Add(contentionDurationNs);
 }

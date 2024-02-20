@@ -157,17 +157,17 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     result->SetUnixTimeUtc(GetCurrentTimestamp());
     result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
 
-    RawExceptionSample rawSample;
+    auto rawSample = CreateRawSample();
 
-    rawSample.Timestamp = result->GetUnixTimeUtc();
-    rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
-    rawSample.SpanId = result->GetSpanId();
-    rawSample.AppDomainId = result->GetAppDomainId();
-    result->CopyInstructionPointers(rawSample.Stack);
-    rawSample.ThreadInfo = threadInfo;
-    rawSample.ExceptionMessage = std::move(message);
-    rawSample.ExceptionType = std::move(name);
-    Add(std::move(rawSample));
+    rawSample->Timestamp = result->GetUnixTimeUtc();
+    rawSample->LocalRootSpanId = result->GetLocalRootSpanId();
+    rawSample->SpanId = result->GetSpanId();
+    rawSample->AppDomainId = result->GetAppDomainId();
+    result->CopyInstructionPointers(rawSample->Stack);
+    rawSample->ThreadInfo = threadInfo;
+    rawSample->ExceptionMessage = std::move(message);
+    rawSample->ExceptionType = std::move(name);
+
     _sampledExceptionsCountMetric->Incr();
 
     return true;

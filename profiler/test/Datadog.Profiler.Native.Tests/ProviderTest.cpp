@@ -3,26 +3,25 @@
 
 #include "gtest/gtest.h"
 
-#include <memory>
-#include <vector>
-#include <unordered_map>
 #include <chrono>
+#include <memory>
+#include <unordered_map>
+#include <vector>
 
-#include "ProfilerMockedInterface.h"
 #include "AppDomainStoreHelper.h"
-#include "RuntimeIdStoreHelper.h"
-#include "IFrameStore.h"
-#include "IAppDomainStore.h"
-#include "FrameStoreHelper.h"
-#include "WallTimeProvider.h"
 #include "CpuTimeProvider.h"
+#include "FrameStoreHelper.h"
+#include "IAppDomainStore.h"
+#include "IFrameStore.h"
+#include "ProfilerMockedInterface.h"
 #include "RawCpuSample.h"
 #include "RawWallTimeSample.h"
+#include "RuntimeIdStoreHelper.h"
 #include "SampleValueTypeProvider.h"
 #include "ThreadsCpuManagerHelper.h"
+#include "WallTimeProvider.h"
 
 using namespace std::chrono_literals;
-
 
 RawWallTimeSample GetWallTimeRawSample(
     std::uint64_t timeStamp,
@@ -30,8 +29,7 @@ RawWallTimeSample GetWallTimeRawSample(
     AppDomainID appDomainId,
     std::uint64_t traceId,
     std::uint64_t spanId,
-    size_t frameCount
-    )
+    size_t frameCount)
 {
     RawWallTimeSample raw;
     raw.Timestamp = timeStamp;
@@ -58,12 +56,11 @@ RawCpuSample GetRawCpuSample(
     AppDomainID appDomainId,
     std::uint64_t traceId,
     std::uint64_t spanId,
-    size_t frameCount
-    )
+    size_t frameCount)
 {
     RawCpuSample raw;
     raw.Timestamp = timeStamp;
-    raw.Duration = duration;  // in milliseconds
+    raw.Duration = duration; // in milliseconds
     raw.AppDomainId = appDomainId;
     raw.LocalRootSpanId = traceId;
     raw.SpanId = spanId;
@@ -80,10 +77,9 @@ RawCpuSample GetRawCpuSample(
     return raw;
 }
 
-
 TEST(WallTimeProviderTest, CheckNoMissingSample)
 {
-// collect samples and check none are missing on the provider side (just count)
+    // collect samples and check none are missing on the provider side (just count)
     auto frameStore = FrameStoreHelper(true, "Frame", 1);
     auto appDomainStore = AppDomainStoreHelper(2);
     auto threadscpuManager = ThreadsCpuManagerHelper();
@@ -104,15 +100,15 @@ TEST(WallTimeProviderTest, CheckNoMissingSample)
     provider.Add(RawWallTimeSample());
 
     auto samples = provider.GetSamples();
-    ASSERT_EQ(3, samples.size());
+    ASSERT_EQ(3, samples->size());
 
     provider.Stop();
 }
 
 TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
 {
-// add samples and check their appdomain, and pid labels
-// Note: thread labels cannot be checked because ThreadInfo is nullptr
+    // add samples and check their appdomain, and pid labels
+    // Note: thread labels cannot be checked because ThreadInfo is nullptr
     auto frameStore = FrameStoreHelper(true, "Frame", 1);
     auto appDomainStore = AppDomainStoreHelper(2);
     auto [configuration, mockConfiguration] = CreateConfiguration();
@@ -130,7 +126,7 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     Sample::ValuesCount = 1;
     provider.Start();
 
-    std::vector<size_t> expectedAppDomainId { 1, 2, 2, 1};
+    std::vector<size_t> expectedAppDomainId{1, 2, 2, 1};
     //                                                       V-- check the appdomains are correct
     provider.Add(GetWallTimeRawSample(0, 0, static_cast<AppDomainID>(expectedAppDomainId[0]), 0, 0, 1));
     provider.Add(GetWallTimeRawSample(0, 0, static_cast<AppDomainID>(expectedAppDomainId[1]), 0, 0, 2));
@@ -144,7 +140,9 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     provider.Stop();
 
     size_t currentSample = 0;
-    for (auto const& sample : samples)
+    auto sample = std::make_shared<Sample>(0, std::string_view{}, 10);
+
+    while (samples->MoveNext(sample))
     {
         const auto& currentRuntimeId = sample->GetRuntimeId();
         if (expectedAppDomainId[currentSample] == 1)
@@ -175,11 +173,9 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
             {
                 ASSERT_EQ(expectedPid, label.second);
             }
-            else
-            if (
+            else if (
                 (label.first == Sample::ThreadIdLabel) ||
-                (label.first == Sample::ThreadNameLabel)
-                )
+                (label.first == Sample::ThreadNameLabel))
             {
                 // can't test thread info
             }
@@ -196,7 +192,7 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
 
 TEST(WallTimeProviderTest, CheckFrames)
 {
-// add samples and check their frames
+    // add samples and check their frames
     auto frameStore = FrameStoreHelper(true, "Frame", 4);
     auto appDomainStore = AppDomainStoreHelper(1);
     auto [configuration, mockConfiguration] = CreateConfiguration();
@@ -224,22 +220,24 @@ TEST(WallTimeProviderTest, CheckFrames)
     provider.Stop();
 
     std::vector<std::string> expectedFrames =
-    {
-        "Frame #1",
-        "Frame #2",
-        "Frame #3",
-        "Frame #4",
-    };
+        {
+            "Frame #1",
+            "Frame #2",
+            "Frame #3",
+            "Frame #4",
+        };
 
     std::vector<std::string> expectedModules =
-    {
-        "module #1",
-        "module #2",
-        "module #3",
-        "module #4",
-    };
+        {
+            "module #1",
+            "module #2",
+            "module #3",
+            "module #4",
+        };
 
-    for (auto const& sample : samples)
+    auto sample = std::make_shared<Sample>(0, std::string_view{}, 10);
+
+    while (samples->MoveNext(sample))
     {
         size_t currentFrame = 0;
         auto frames = sample->GetCallstack();
@@ -283,7 +281,9 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
     provider.Stop();
 
     size_t currentSample = 1;
-    for (auto const& sample : samples)
+    auto sample = std::make_shared<Sample>(0, std::string_view{}, 10);
+
+    while (samples->MoveNext(sample))
     {
         ASSERT_EQ(currentSample * 1000, sample->GetTimeStamp());
 
@@ -322,10 +322,13 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
     std::this_thread::sleep_for(200ms);
 
     auto samples = provider.GetSamples();
+    ASSERT_EQ(4, samples->size());
     provider.Stop();
 
     size_t currentSample = 1;
-    for (auto const& sample : samples)
+    auto sample = std::make_shared<Sample>(0, std::string_view{}, 10);
+
+    while (samples->MoveNext(sample))
     {
         ASSERT_EQ(currentSample * 1000, sample->GetTimeStamp());
 

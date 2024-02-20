@@ -48,7 +48,8 @@ public:
     bool Stop() override;
 
     // Inherited via IBatchedSamplesProvider
-    std::list<std::shared_ptr<Sample>> GetSamples() override;
+    std::unique_ptr<SamplesEnumerator> GetSamples() override;
+
     const char* GetName() override;
 
     // Inherited via ISampledAllocationsListener

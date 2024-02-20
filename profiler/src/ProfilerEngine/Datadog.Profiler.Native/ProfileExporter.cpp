@@ -21,6 +21,7 @@
 #include "OsSpecificApi.h"
 #include "Profile.h"
 #include "Sample.h"
+#include "SamplesEnumerator.h"
 #include "ScopeFinalizer.h"
 #include "dd_profiler_version.h"
 
@@ -425,9 +426,16 @@ void ProfileExporter::AddUpscalingRules(libdatadog::Profile* profile, std::vecto
 std::list<std::shared_ptr<Sample>> ProfileExporter::GetProcessSamples()
 {
     std::list<std::shared_ptr<Sample>> samples;
+
+    std::shared_ptr<Sample> sample(nullptr); // for process-level samples, we do not need to initialize
     for (auto const& provider : _processSamplesProviders)
     {
-        samples.splice(samples.end(), provider->GetSamples());
+        auto processedSamples = provider->GetSamples();
+
+        while (processedSamples->MoveNext(sample))
+        {
+            samples.push_back(sample);
+        }
     }
     return samples;
 }
