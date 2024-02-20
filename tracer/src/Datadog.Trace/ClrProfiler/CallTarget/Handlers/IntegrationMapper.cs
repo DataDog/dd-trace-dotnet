@@ -888,14 +888,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
         private static T ConvertType<T>(object value)
         {
-            var conversionType = typeof(T);
-            if (value is null || conversionType == typeof(object))
-            {
-                return (T)value;
-            }
-
-            Type valueType = value.GetType();
-            if (valueType == conversionType || conversionType.IsAssignableFrom(valueType))
+            if (value is null or T)
             {
                 return (T)value;
             }
