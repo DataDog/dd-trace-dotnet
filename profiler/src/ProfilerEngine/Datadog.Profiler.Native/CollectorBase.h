@@ -67,6 +67,8 @@ public:
         _collectedSamples{}
     {
         _valueOffsets = std::move(valueOffsets);
+        auto factory = RawSamplesFactory(nullptr);
+        _collectedSamples = factory.Create<TRawSample>();
     }
 
     // interfaces implementation
@@ -88,7 +90,7 @@ public:
 
     void Add(TRawSample&& sample) override
     {
-        _collectedSamples.Add(std::forward<TRawSample>(sample));
+        _collectedSamples->Add(std::forward<TRawSample>(sample));
     }
 
     void TransformRawSample(const TRawSample& rawSample, std::shared_ptr<Sample>& sample)
@@ -130,7 +132,7 @@ public:
 
     std::unique_ptr<SamplesEnumerator> GetSamples() override
     {
-        return std::make_unique<SamplesEnumeratorImpl>(_collectedSamples.Move(), this);
+        return std::make_unique<SamplesEnumeratorImpl>(_collectedSamples->Move(), this);
     }
 
 protected:
@@ -149,21 +151,21 @@ private:
     class SamplesEnumeratorImpl : public SamplesEnumerator
     {
     public:
-        SamplesEnumeratorImpl(RawSamples<TRawSample> rawSamples, CollectorBase<TRawSample>* collector) :
+        SamplesEnumeratorImpl(std::unique_ptr<RawSamples<TRawSample>> rawSamples, CollectorBase<TRawSample>* collector) :
             _rawSamples{std::move(rawSamples)}, _collector{collector}
         {
-            _currentRawSample = _rawSamples.cbegin();
+            _currentRawSample = _rawSamples->cbegin();
         }
 
         // Inherited via SamplesEnumerator
         std::size_t size() const override
         {
-            return _rawSamples.size();
+            return _rawSamples->size();
         }
 
         bool MoveNext(std::shared_ptr<Sample>& sample) override
         {
-            if (_currentRawSample == _rawSamples.cend())
+            if (_currentRawSample == _rawSamples->cend())
                 return false;
 
             _collector->TransformRawSample(*_currentRawSample, sample);
@@ -173,7 +175,7 @@ private:
         }
 
     private:
-        RawSamples<TRawSample> _rawSamples;
+        std::unique_ptr<RawSamples<TRawSample>> _rawSamples;
         CollectorBase<TRawSample>* _collector;
         typename RawSamples<TRawSample>::const_iterator _currentRawSample;
     };
@@ -255,6 +257,6 @@ private:
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
     bool _isNativeFramesEnabled = false;
 
-    RawSamples<TRawSample> _collectedSamples;
+    std::unique_ptr<RawSamples<TRawSample>> _collectedSamples;
     std::vector<SampleValueTypeProvider::Offset> _valueOffsets;
 };
