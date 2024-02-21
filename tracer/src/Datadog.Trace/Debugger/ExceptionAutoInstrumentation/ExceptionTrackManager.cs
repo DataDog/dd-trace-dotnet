@@ -88,7 +88,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return;
             }
 
-            var nonEmptyShadowStack = ShadowStackContainer.IsShadowStackTrackingEnabled && ShadowStackContainer.ShadowStack.ContainsReport(exception);
+            var nonEmptyShadowStack = ShadowStackHolder.IsShadowStackTrackingEnabled && ShadowStackHolder.ShadowStack.ContainsReport(exception);
             if (nonEmptyShadowStack)
             {
                 ProcessException(exception, errorOrigin, rootSpan);
@@ -142,13 +142,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     return;
                 }
 
-                if (!ShadowStackContainer.IsShadowStackTrackingEnabled)
+                if (!ShadowStackHolder.IsShadowStackTrackingEnabled)
                 {
                     Log.Warning("The shadow stack is not enabled, while processing IsCollecting state of an exception. Exception details: {FullName} {Message}.", exception.GetType().FullName, exception.Message);
                     return;
                 }
 
-                var resultCallStackTree = ShadowStackContainer.ShadowStack.CreateResultReport(exceptionPath: exception);
+                var resultCallStackTree = ShadowStackHolder.ShadowStack.CreateResultReport(exceptionPath: exception);
                 if (resultCallStackTree == null || !resultCallStackTree.Frames.Any())
                 {
                     Log.Error("ExceptionTrackManager: Received an empty tree from the shadow stack for exception: {Exception}.", exception.ToString());

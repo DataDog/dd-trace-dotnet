@@ -34,7 +34,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public bool ShouldProcess(in ProbeData probeData)
         {
-            var shadowStack = ShadowStackContainer.EnsureShadowStackEnabled();
+            if (!ShadowStackHolder.IsShadowStackTrackingEnabled)
+            {
+                // In Exception Debugging V1, we only care about exceptions propagating up the call stack in webservice apps, when there's a request in-flight.
+                // When we will support Caught & Logged Exceptions, we will need to adjust this.
+                // `IsShadowStackTrackingEnabled` is equivalent to using `ShadowStackTree.IsInRequestContext`, as of now.
+                return false;
+            }
+
+            var shadowStack = ShadowStackHolder.EnsureShadowStackEnabled();
 
             if (shadowStack.CurrentStackFrameNode?.IsInvalidPath == true)
             {
@@ -58,7 +66,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         break;
                     case MethodState.EntryStart:
                     case MethodState.EntryAsync:
-                        shadowStack = ShadowStackContainer.EnsureShadowStackEnabled();
+                        shadowStack = ShadowStackHolder.EnsureShadowStackEnabled();
                         snapshotCreator.EnterHash = shadowStack.CurrentStackFrameNode?.EnterSequenceHash ?? 0;
 
                         var shouldProcess = false;
@@ -83,7 +91,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                             return false;
                         }
 
-                        shadowStack = ShadowStackContainer.EnsureShadowStackEnabled();
+                        shadowStack = ShadowStackHolder.EnsureShadowStackEnabled();
 
                         if (snapshotCreator.TrackedStackFrameNode.IsInvalidPath)
                         {
@@ -192,7 +200,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return;
             }
 
-            var shadowStack = ShadowStackContainer.EnsureShadowStackEnabled();
+            var shadowStack = ShadowStackHolder.EnsureShadowStackEnabled();
             shadowStack.Leave(snapshotCreator.TrackedStackFrameNode);
         }
 

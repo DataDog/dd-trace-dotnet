@@ -29,6 +29,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public TrackedStackFrameNode CurrentStackFrameNode => _trackedStackFrameActiveNode.Value;
 
+        public bool IsInRequestContext { get; set; }
+
         public TrackedStackFrameNode Enter(MethodBase method, bool isInvalidPath = false)
         {
             _trackedStackFrameActiveNode.Value = new TrackedStackFrameNode(_trackedStackFrameActiveNode.Value, method, isInvalidPath);
@@ -166,6 +168,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 _lock.ExitWriteLock();
             }
+        }
+
+        public void Clear()
+        {
+            _trackedStackFrameRootNode?.Dispose();
+            _trackedStackFrameRootNode = null;
+            _trackedStackFrameActiveNode.Value?.Dispose();
+            _trackedStackFrameActiveNode.Value = null;
+            IsInRequestContext = false;
         }
     }
 }

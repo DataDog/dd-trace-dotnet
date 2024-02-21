@@ -50,5 +50,34 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             ExceptionTrackManager.Report(span, exception);
         }
+
+        public static bool TryBeginRequest(out ShadowStackTree? tree)
+        {
+            if (!Settings.Enabled)
+            {
+                tree = null;
+                return false;
+            }
+
+            tree = ShadowStackHolder.EnsureShadowStackEnabled();
+            tree.Clear();
+            tree.IsInRequestContext = true;
+            return true;
+        }
+
+        public static void EndRequest(ShadowStackTree? tree)
+        {
+            if (!Settings.Enabled)
+            {
+                return;
+            }
+
+            tree?.Clear();
+        }
+
+        public static void EndRequest()
+        {
+            EndRequest(ShadowStackHolder.ShadowStack);
+        }
     }
 }

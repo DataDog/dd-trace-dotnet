@@ -109,6 +109,8 @@ internal class BlockingMiddleware
             }
         }
 
+        Debugger.ExceptionAutoInstrumentation.ExceptionDebugging.TryBeginRequest(out var tree);
+
         if (_next != null && !endedResponse)
         {
             // unlikely that security is disabled and there's a block exception, but might happen as race condition
@@ -137,6 +139,10 @@ internal class BlockingMiddleware
                         Log.Debug("No span available, can't report the request");
                     }
                 }
+            }
+            finally
+            {
+                Debugger.ExceptionAutoInstrumentation.ExceptionDebugging.EndRequest(tree);
             }
         }
     }
