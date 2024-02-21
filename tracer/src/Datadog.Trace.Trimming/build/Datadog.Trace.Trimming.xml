@@ -827,6 +827,7 @@
       <type fullname="System.UriComponents" />
       <type fullname="System.UriCreationOptions" />
       <type fullname="System.UriFormat" />
+      <type fullname="System.UriHostNameType" />
       <type fullname="System.UriKind" />
       <type fullname="System.ValueTuple`1" />
       <type fullname="System.ValueTuple`2" />
