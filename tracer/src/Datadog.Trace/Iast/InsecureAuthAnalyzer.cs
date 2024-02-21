@@ -119,13 +119,32 @@ internal static class InsecureAuthAnalyzer
 
     private static string? InsecureSchemeDetected(string authHeader)
     {
-        var trimmedElement = authHeader.TrimStart();
-        if (trimmedElement.StartsWith("Basic", StringComparison.OrdinalIgnoreCase))
+        // Trim whitespaces from the beginning of the string
+        var i = 0;
+        while (i < authHeader.Length && char.IsWhiteSpace(authHeader[i]))
+        {
+            i++;
+        }
+
+        // Check if the string starts with "Basic" (case insensitive)
+        if (i + 5 < authHeader.Length &&
+            (authHeader[i] == 'B' || authHeader[i] == 'b') &&
+            (authHeader[i + 1] == 'A' || authHeader[i + 1] == 'a') &&
+            (authHeader[i + 2] == 'S' || authHeader[i + 2] == 's') &&
+            (authHeader[i + 3] == 'I' || authHeader[i + 3] == 'i') &&
+            (authHeader[i + 4] == 'C' || authHeader[i + 4] == 'c'))
         {
             return "Basic";
         }
 
-        if (trimmedElement.StartsWith("Digest", StringComparison.OrdinalIgnoreCase))
+        // Check if the string starts with "Digest" (case insensitive)
+        if (i + 6 < authHeader.Length &&
+            (authHeader[i] == 'D' || authHeader[i] == 'd') &&
+            (authHeader[i + 1] == 'I' || authHeader[i + 1] == 'i') &&
+            (authHeader[i + 2] == 'G' || authHeader[i + 2] == 'g') &&
+            (authHeader[i + 3] == 'E' || authHeader[i + 3] == 'e') &&
+            (authHeader[i + 4] == 'S' || authHeader[i + 4] == 's') &&
+            (authHeader[i + 5] == 'T' || authHeader[i + 5] == 't'))
         {
             return "Digest";
         }
