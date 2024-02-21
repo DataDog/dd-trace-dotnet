@@ -87,10 +87,13 @@ namespace iast
         bool IsThrow();
         bool IsRet();
         bool IsDup();
+        bool IsAddressLoad();
 
         bool IsField();
         bool IsLocal();
         bool IsArgument();
+
+        void ConvertToNonAddressLoad();
 
         mdToken InferTypeToken();
         SignatureInfo* GetArgumentSignature();
