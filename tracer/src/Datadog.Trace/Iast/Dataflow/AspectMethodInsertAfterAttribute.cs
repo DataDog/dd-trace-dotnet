@@ -14,9 +14,4 @@ internal sealed class AspectMethodInsertAfterAttribute : AspectAttribute
         : base(targetMethod, string.Empty, new int[0], new bool[0], new AspectFilter[0], AspectType.Default)
     {
     }
-
-    public AspectMethodInsertAfterAttribute(string targetMethod, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
-        : base(targetMethod, string.Empty, new int[0], new bool[0], new AspectFilter[0], aspectType, vulnerabilityTypes)
-    {
-    }
 }

@@ -21,14 +21,4 @@ internal sealed class AspectCtorReplaceAttribute : AspectAttribute
         : base(targetMethod, string.Empty, new int[0], new bool[0], filters, AspectType.Default)
     {
     }
-
-    public AspectCtorReplaceAttribute(string targetMethod, AspectType aspectType = AspectType.Default, params VulnerabilityType[] vulnerabilityTypes)
-        : base(targetMethod, string.Empty, new int[0], new bool[0], new AspectFilter[0], AspectType.Default, vulnerabilityTypes)
-    {
-    }
-
-    public AspectCtorReplaceAttribute(string targetMethod, AspectFilter[] filters, AspectType aspectType = AspectType.Default, params VulnerabilityType[] vulnerabilityTypes)
-        : base(targetMethod, string.Empty, new int[0], new bool[0], filters, AspectType.Default, vulnerabilityTypes)
-    {
-    }
 }
