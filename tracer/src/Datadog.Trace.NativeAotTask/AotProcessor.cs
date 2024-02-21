@@ -1126,17 +1126,22 @@ public class AotProcessor
                     instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Nop));
                     ilProcessor.Replace(branch, Instruction.Create(OpCodes.Brtrue, instruction));
 
-                    // Call EndMethodHandler.Invoke
-                    // CallTargetReturn<TReturn> Invoke(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
-                    var endMethodHandlerInvoke = endMethodHandlerOpen.Methods.Single(m => m.Name == "Invoke");
-                    endMethodHandlerInvoke.IsPublic = true;
+                    // Call Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.EndMethod
+                    // CallTargetReturn<TReturn> EndMethod<TIntegration, TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+                    var callTargetInvoker = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
+                    var endMethodOpen = callTargetInvoker.Methods.Single(t => t.Name == "EndMethod" && t.GenericParameters.Count == 3 && t.Parameters.Last().Attributes.HasFlag(ParameterAttributes.In));
+
+                    var endMethod = new GenericInstanceMethod(endMethodOpen);
+                    endMethod.GenericArguments.Add(method.Module.ImportReference(instrumentationType));
+                    endMethod.GenericArguments.Add(method.Module.ImportReference(method.DeclaringType));
+                    endMethod.GenericArguments.Add(method.Module.ImportReference(method.ReturnType));
 
                     instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldarg_0));
                     instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloc, returnVariable));
                     instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloc, exceptionVariable));
                     instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloca, callTargetStateVariable));
 
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(endMethodHandlerInvoke.MakeGenericMethod(endMethodHandler))));
+                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(endMethod)));
                     instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stloc, callTargetReturnVariable));
 
                     // Unwrap the CallTargetReturn
