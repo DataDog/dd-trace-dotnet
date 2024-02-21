@@ -259,7 +259,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.Net.WebUtility::HtmlEncode(System.String)\",\"\",[0],[False],[None],Default,[])] Review(System.String)",
 "[AspectClass(\"System.Text.Json\",[None],Source,[])] Datadog.Trace.Iast.Aspects.System.Text.Json.JsonDocumentAspects",
 "  [AspectMethodReplace(\"System.Text.Json.JsonDocument::Parse(System.String,System.Text.Json.JsonDocumentOptions)\",\"\",[0],[False],[None],Default,[])] Parse(System.String,System.Text.Json.JsonDocumentOptions)",
-"  [AspectMethodReplace(\"System.Text.Json.JsonElement::GetString()\",[0],[0],[False],[True],Default,[])] GetString(System.Object)",
+"  [AspectMethodReplace(\"System.Text.Json.JsonElement::GetString()\",\"\",[0],[True],[None],Default,[])] GetString(System.Object)",
 "[AspectClass(\"System.Web\",[None],Sink,[UnvalidatedRedirect])] Datadog.Trace.Iast.Aspects.System.Web.HttpResponseAspect",
 "  [AspectMethodInsertBefore(\"System.Web.HttpResponse::Redirect(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String)",
 "  [AspectMethodInsertBefore(\"System.Web.HttpResponse::Redirect(System.String,System.Boolean)\",\"\",[1],[False],[None],Default,[])] Redirect(System.String)",

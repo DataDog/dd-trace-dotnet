@@ -37,7 +37,7 @@ public class JsonDocumentAspects
     /// </summary>
     /// <param name="target">the JsonElement instance</param>
     /// <returns>the string result</returns>
-    [AspectMethodReplace("System.Text.Json.JsonElement::GetString()", paramShift: [0], boxParam: [true])]
+    [AspectMethodReplace("System.Text.Json.JsonElement::GetString()", [0], [true])]
     public static string? GetString(object target)
     {
         Console.WriteLine(target);
