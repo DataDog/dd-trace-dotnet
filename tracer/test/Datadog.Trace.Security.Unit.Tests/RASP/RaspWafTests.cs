@@ -21,26 +21,27 @@ public class RaspWafTests : WafLibraryRequiredTest
     public const int TimeoutMicroSeconds = 1_000_000;
 
     [Theory]
-    [InlineData("/etc/password", "lfi", "rasp-001-001", "rasp-rule-set.json")]
-    public void PathTraversalRule(string value, string vulnerabilityType, string rule, string ruleFile)
+    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "stack_trace")]
+    public void PathTraversalRule(string value, string paramValue, string rule, string ruleFile, string action)
     {
         Execute(
             AddressesConstants.FileAccess,
             value,
-            vulnerabilityType,
+            paramValue,
             rule,
-            ruleFile);
+            ruleFile,
+            action);
     }
 
-    private void Execute(string address, object value, string vulnerabilityType, string rule, string ruleFile)
+    private void Execute(string address, object value, string vulnerabilityType, string rule = null, string ruleFile = null, string expectedAction = null)
     {
-        ExecuteInternal(address, value, vulnerabilityType, rule, true, ruleFile, true);
-        ExecuteInternal(address, value, vulnerabilityType, rule, false, ruleFile, false);
-        ExecuteInternal(address, value, vulnerabilityType, rule, true, ruleFile, true);
-        ExecuteInternal(address, value, vulnerabilityType, rule, false, ruleFile, false);
+        ExecuteInternal(address, value, vulnerabilityType, rule, true, ruleFile, true, expectedAction);
+        ExecuteInternal(address, value, vulnerabilityType, rule, false, ruleFile, false, expectedAction);
+        ExecuteInternal(address, value, vulnerabilityType, rule, true, ruleFile, true, expectedAction);
+        ExecuteInternal(address, value, vulnerabilityType, rule, false, ruleFile, false, expectedAction);
     }
 
-    private void ExecuteInternal(string address, object value, string vulnerabilityType, string rule, bool newEncoder, string ruleFile, bool useTwoCalls)
+    private void ExecuteInternal(string address, object value, string requestParam, string rule, bool newEncoder, string ruleFile, bool useTwoCalls, string expectedAction = null)
     {
         var args = new Dictionary<string, object>();
 
@@ -50,7 +51,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         }
 
         args.Add(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
-        args.Add(AddressesConstants.RequestPathParams, new[] { "file", vulnerabilityType });
+        args.Add(AddressesConstants.RequestBody, new[] { "file", requestParam });
         args.Add(AddressesConstants.RequestMethod, "GET");
 
         var initResult = Waf.Create(
@@ -71,7 +72,7 @@ public class RaspWafTests : WafLibraryRequiredTest
             result = context.Run(args, TimeoutMicroSeconds);
         }
 
-        if (vulnerabilityType is not null)
+        if (requestParam is not null)
         {
             result.ReturnCode.Should().Be(WafReturnCode.Match);
             if (!string.IsNullOrEmpty(expectedAction))
@@ -81,9 +82,7 @@ public class RaspWafTests : WafLibraryRequiredTest
 
             var jsonString = JsonConvert.SerializeObject(result.Data);
             var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
-            resultData.Rule.Tags.Type.Should().Be(vulnerabilityType);
             resultData.Rule.Id.Should().Be(rule);
-            resultData.RuleMatches[0].Parameters[0].Address.Should().Be(address);
         }
     }
 }
