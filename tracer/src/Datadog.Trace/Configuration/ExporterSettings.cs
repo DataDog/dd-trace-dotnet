@@ -292,13 +292,13 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the transport used to connect to the DogStatsD.
         /// Default is <c>TransportStrategy.Tcp</c>.
         /// </summary>
-        [IgnoreForSnapshot] // We don't record this in telemetry currently, but if we do, we'll record it when we set its
+        [IgnoreForSnapshot] // We don't record this in telemetry currently, but if we do, we'll record it when we set it
         internal MetricsTransportType MetricsTransport { get; private set; }
 
         /// <summary>
         /// Gets or sets the agent host to use when <see cref="MetricsTransport"/> is <see cref="TransportType.UDP"/>
         /// </summary>
-        [IgnoreForSnapshot] // We don't record this in telemetry currently, but if we do, we'll record it when we set its
+        [IgnoreForSnapshot] // We don't record this in telemetry currently, but if we do, we'll record it when we set it
         internal string MetricsHostname { get; private set; }
 #pragma warning restore SA1624
 
