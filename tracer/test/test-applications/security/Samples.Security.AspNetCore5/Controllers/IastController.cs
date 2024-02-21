@@ -17,6 +17,7 @@ using System.Xml;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Primitives;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -65,6 +66,18 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content("Ok\n");
         }
 
+        private SQLiteConnection DbConnection 
+        {
+            get 
+            {
+                if (dbConnection is null)
+                {
+                    dbConnection = IastControllerHelper.CreateDatabase();
+                }
+                return dbConnection;
+            }
+        }
+
         [HttpGet("HardcodedSecrets")]
         [Route("HardcodedSecrets")]
         public IActionResult HardcodedSecrets()
@@ -99,21 +112,16 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                if (dbConnection is null)
-                {
-                    dbConnection = IastControllerHelper.CreateDatabase();
-                }
-
                 if (!string.IsNullOrEmpty(username))
                 {
                     var taintedQuery = "SELECT Surname from Persons where name = '" + username + "'";
-                    var rname = new SQLiteCommand(taintedQuery, dbConnection).ExecuteScalar();
+                    var rname = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar();
                     return Content($"Result: " + rname);
                 }
 
                 if (!string.IsNullOrEmpty(query))
                 {
-                    var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+                    var rname = new SQLiteCommand(query, DbConnection).ExecuteScalar();
                     return Content($"Result: " + rname);
                 }
             }
@@ -198,11 +206,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                if (dbConnection is null)
-                {
-                    dbConnection = IastControllerHelper.CreateDatabase();
-                }
-
                 return Query(query);
             }
             catch (Exception ex)
@@ -268,14 +271,9 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                if (dbConnection is null)
-                {
-                    dbConnection = IastControllerHelper.CreateDatabase();
-                }
-
                 if (!string.IsNullOrEmpty(query))
                 {
-                    var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+                    var rname = new SQLiteCommand(query, DbConnection).ExecuteScalar();
                     return Content($"Result: " + rname);
                 }
             }
@@ -292,11 +290,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                if (dbConnection is null)
-                {
-                    dbConnection = IastControllerHelper.CreateDatabase();
-                }
-
                 if (!string.IsNullOrEmpty(queryjson))
                 {
                     var query = JsonConvert.DeserializeObject<QueryData>(queryjson);
@@ -490,7 +483,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         private ActionResult ExecuteQuery(string query)
         {
-            var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+            var rname = new SQLiteCommand(query, DbConnection).ExecuteScalar();
             return Content($"Result: " + rname);
         }
 
@@ -776,6 +769,58 @@ namespace Samples.Security.AspNetCore5.Controllers
             
             return BadRequest($"No type was provided");
         }
+
+        [HttpGet("CustomAttribute")]
+        [Route("CustomAttribute")]
+        public ActionResult CustomAttribute(string userName)
+        {
+            string result = GetCustomString(userName);
+            return Content(result, "text/html");
+        }
+
+        [Datadog.Trace.Annotations.Trace(OperationName = "span.custom.attribute", ResourceName = "IastController.GetCustomString")]
+        public string GetCustomString(string userName)
+        {
+            string result = string.Empty;
+            try
+            {
+                var taintedQuery = "SELECT Surname from Persons where name = '" + userName + "'";
+                result = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar()?.ToString();
+            }
+            catch
+            {
+                result = "Error in query.";
+            }
+            return result;
+        }
+
+        [HttpGet("CustomManual")]
+        [Route("CustomManual")]
+        public ActionResult CustomManual(string userName)
+        {
+            string result = string.Empty;
+            try
+            {
+                using (var parentScope =Datadog.Trace.Tracer.Instance.StartActive("span.custom.manual"))
+                {
+                    parentScope.Span.ResourceName = "<CUSTOM MANUAL PARENT RESOURCE NAME>";
+                    using (var childScope = Datadog.Trace.Tracer.Instance.StartActive("SQLiteCommand.ExecutScalar"))
+                    {
+                        // Nest using statements around the code to trace
+                        childScope.Span.ResourceName = "<CUSTOM MANUAL CHILD RESOURCE NAME>";
+                        var taintedQuery = "SELECT Surname from Persons where name = '" + userName + "'";
+                        result = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar()?.ToString();
+                    }
+                }
+            }
+            catch
+            {
+                result = "Error in request.";
+            }
+
+            return Content(result, "text/html");
+        }
+
 
         static string CopyStringAvoidTainting(string original)
         {

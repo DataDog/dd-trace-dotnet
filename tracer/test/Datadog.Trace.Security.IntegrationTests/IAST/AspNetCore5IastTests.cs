@@ -755,6 +755,47 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
     }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastCustomSpanRequestAttribute()
+    {
+        Skip.If(IastEnabled, "Known bug. Custom Attribute Spans inhibit CallSite instrumentation");
+        var filename = "Iast.CustomAttribute.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/Iast/CustomAttribute?userName=Vicent";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, 4, new string[] { url });
+        var spansFiltered = spans.Where(s => !s.Resource.StartsWith("CREATE TABLE") && !s.Resource.StartsWith("INSERT INTO")).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastCustomSpanRequestManual()
+    {
+        var filename = "Iast.CustomManual.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/Iast/CustomManual?userName=Vicent";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, 4, new string[] { url });
+        var spansFiltered = spans.Where(s => !s.Resource.StartsWith("CREATE TABLE") && !s.Resource.StartsWith("INSERT INTO")).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
 }
 
 public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
