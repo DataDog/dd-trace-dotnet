@@ -324,7 +324,7 @@ public class IastInstrumentationUnitTests : TestHelper
     private void TestMethodOverloads(Type typeToCheck, string methodToCheck, List<string> overloadsToExclude = null, bool excludeParameterlessMethods = false)
     {
         var overloadsToExcludeNormalized = overloadsToExclude?.Select(NormalizeName).ToList();
-        var aspects = ClrProfiler.AspectDefinitions.Aspects.Where(x => x.Contains(typeToCheck.FullName + "::")).ToList();
+        var aspects = ClrProfiler.AspectDefinitions.GetAspects().Where(x => x.Contains(typeToCheck.FullName + "::")).ToList();
         List<MethodBase> typeMethods = new();
         typeMethods.AddRange(string.IsNullOrEmpty(methodToCheck) ?
             typeToCheck?.GetMethods().Where(x => x.IsPublic && !x.IsVirtual) :
@@ -354,7 +354,7 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         var aspectsToExcludeNormalized = aspectsToExclude?.Select(NormalizeName).ToList();
 
-        foreach (var aspect in ClrProfiler.AspectDefinitions.Aspects)
+        foreach (var aspect in ClrProfiler.AspectDefinitions.GetAspects())
         {
             if (aspectsToExcludeNormalized?.FirstOrDefault(x => NormalizeName(x).Contains(x)) is null)
             {
