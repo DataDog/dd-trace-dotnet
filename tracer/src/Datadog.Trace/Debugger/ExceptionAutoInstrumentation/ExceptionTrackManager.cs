@@ -308,16 +308,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             try
             {
-                // Both OutOfMemoryException and ThreadAbortException may be thrown anywhere from non-deterministic reasons, which means it won't
-                // necessarily re-occur with the same callstack. We should not attempt to rejit methods nor track these exceptions.
-
-                // ThreadAbortException is particularly problematic because is it often thrown in legacy ASP.NET apps whenever
-                // there is an HTTP Redirect. See also https://stackoverflow.com/questions/2777105/why-response-redirect-causes-system-threading-threadabortexception
-                if (ex is OutOfMemoryException || ex is ThreadAbortException)
-                {
-                    return false;
-                }
-
                 return AtLeastOneFrameBelongToUserCode() && ThereIsNoFrameThatBelongsToDatadogClrProfilerAgentCode();
             }
             catch
@@ -347,7 +337,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             ex != typeof(InvalidProgramException) &&
             ex != typeof(TypeInitializationException) &&
             ex != typeof(TypeLoadException) &&
-            ex != typeof(OutOfMemoryException);
+            // Both OutOfMemoryException and ThreadAbortException may be thrown anywhere from non-deterministic reasons, which means it won't
+            // necessarily re-occur with the same callstack. We should not attempt to rejit methods nor track these exceptions.
+            // ThreadAbortException is particularly problematic because is it often thrown in legacy ASP.NET apps whenever
+            // there is an HTTP Redirect. See also https://stackoverflow.com/questions/2777105/why-response-redirect-causes-system-threading-threadabortexception
+            ex != typeof(OutOfMemoryException) &&
+            ex != typeof(ThreadAbortException);
 
         private static void Stop()
         {

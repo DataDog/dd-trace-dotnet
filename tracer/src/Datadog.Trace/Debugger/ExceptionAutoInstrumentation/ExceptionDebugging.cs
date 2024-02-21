@@ -74,10 +74,5 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             tree?.Clear();
         }
-
-        public static void EndRequest()
-        {
-            EndRequest(ShadowStackHolder.ShadowStack);
-        }
     }
 }

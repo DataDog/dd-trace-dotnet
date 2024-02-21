@@ -133,6 +133,8 @@ namespace Datadog.Trace
             // first span added is the local root span
             if (Interlocked.CompareExchange(ref _rootSpan, span, null) == null)
             {
+                span.RootSpanStarted();
+
                 // if we don't have a sampling priority yet, make a sampling decision now
                 if (_samplingPriority == null)
                 {

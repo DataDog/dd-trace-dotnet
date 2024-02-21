@@ -107,8 +107,6 @@ namespace Datadog.Trace.AspNet
             bool shouldDisposeScope = true;
             try
             {
-                Debugger.ExceptionAutoInstrumentation.ExceptionDebugging.TryBeginRequest(out _);
-
                 var tracer = Tracer.Instance;
 
                 if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
@@ -226,8 +224,6 @@ namespace Datadog.Trace.AspNet
 
             try
             {
-                Debugger.ExceptionAutoInstrumentation.ExceptionDebugging.EndRequest();
-
                 var tracer = Tracer.Instance;
                 if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
                 {
