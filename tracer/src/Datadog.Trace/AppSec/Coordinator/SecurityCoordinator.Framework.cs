@@ -18,6 +18,7 @@ using System.Web;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
@@ -389,27 +390,33 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        var queryDic = new Dictionary<string, string[]>(request.QueryString.AllKeys.Length);
-        foreach (var originalKey in request.QueryString.AllKeys)
+        var queryString = QueryStringHelper.GetQueryString(request);
+        Dictionary<string, string[]>? queryDic = null;
+
+        if (queryString is not null)
         {
-            var values = request.QueryString.GetValues(originalKey);
-            if (string.IsNullOrEmpty(originalKey))
+            queryDic = new Dictionary<string, string[]>(queryString.AllKeys.Length);
+            foreach (var originalKey in queryString.AllKeys)
             {
-                foreach (var v in values)
+                var values = queryString.GetValues(originalKey);
+                if (string.IsNullOrEmpty(originalKey))
                 {
-                    if (!queryDic.ContainsKey(v))
+                    foreach (var v in values)
                     {
-                        queryDic.Add(v, new string[0]);
+                        if (!queryDic.ContainsKey(v))
+                        {
+                            queryDic.Add(v, new string[0]);
+                        }
                     }
                 }
-            }
-            else if (!queryDic.ContainsKey(originalKey))
-            {
-                queryDic.Add(originalKey, values);
-            }
-            else
-            {
-                Log.Warning("Query string {Key} couldn't be added as argument to the waf", originalKey);
+                else if (!queryDic.ContainsKey(originalKey))
+                {
+                    queryDic.Add(originalKey, values);
+                }
+                else
+                {
+                    Log.Warning("Query string {Key} couldn't be added as argument to the waf", originalKey);
+                }
             }
         }
 
@@ -417,12 +424,17 @@ internal readonly partial struct SecurityCoordinator
         {
             { AddressesConstants.RequestMethod, request.HttpMethod },
             { AddressesConstants.RequestUriRaw, request.Url.PathAndQuery },
-            { AddressesConstants.RequestQuery, queryDic },
             { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
             { AddressesConstants.RequestHeaderNoCookies, headersDic },
             { AddressesConstants.RequestCookies, cookiesDic },
             { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
         };
+
+        if (queryDic is not null)
+        {
+            dict[AddressesConstants.RequestQuery] = queryDic;
+        }
+
         if (_localRootSpan.Context.TraceContext.Tags.GetTag(Tags.User.Id) is { } userIdTag)
         {
             dict.Add(AddressesConstants.UserId, userIdTag);

@@ -17,6 +17,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast;
@@ -204,17 +205,7 @@ internal class IastRequestContext
                 helper.AddExecutedSource(IastInstrumentedSources.RequestUri);
             }
 
-            NameValueCollection? queryString = null;
-
-            try
-            {
-                // we can get an exception if the query string fails validation
-                queryString = request.QueryString;
-            }
-            catch (HttpRequestValidationException)
-            {
-                Log.Debug("Error reading request QueryString.");
-            }
+            var queryString = QueryStringHelper.GetQueryString(request);
 
             if (queryString != null)
             {
@@ -300,7 +291,7 @@ internal class IastRequestContext
             }
 
             AddQueryPath(request.Path);
-            AddQueryStringRaw(request.QueryString.Value);
+            AddQueryStringRaw(QueryStringHelper.GetQueryString(request).Value);
             AddRequestHeaders(request.Headers);
             AddRequestCookies(request.Cookies);
             _querySourcesAdded = true;
