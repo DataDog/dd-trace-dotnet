@@ -779,7 +779,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         }
 
         [Datadog.Trace.Annotations.Trace(OperationName = "span.custom.attribute", ResourceName = "IastController.GetCustomString")]
-        public string GetCustomString(string userName)
+        private string GetCustomString(string userName)
         {
             string result = string.Empty;
             try
@@ -801,13 +801,13 @@ namespace Samples.Security.AspNetCore5.Controllers
             string result = string.Empty;
             try
             {
-                using (var parentScope =Datadog.Trace.Tracer.Instance.StartActive("span.custom.manual"))
+                using (var parentScope = SampleHelpers.CreateScope("span.custom.manual"))
                 {
-                    parentScope.Span.ResourceName = "<CUSTOM MANUAL PARENT RESOURCE NAME>";
-                    using (var childScope = Datadog.Trace.Tracer.Instance.StartActive("SQLiteCommand.ExecutScalar"))
+                    SampleHelpers.TrySetResourceName(parentScope, "<CUSTOM MANUAL PARENT RESOURCE NAME>");
+                    using (var childScope = SampleHelpers.CreateScope("SQLiteCommand.ExecutScalar"))
                     {
                         // Nest using statements around the code to trace
-                        childScope.Span.ResourceName = "<CUSTOM MANUAL CHILD RESOURCE NAME>";
+                        SampleHelpers.TrySetResourceName(childScope, "<CUSTOM MANUAL CHILD RESOURCE NAME>");
                         var taintedQuery = "SELECT Surname from Persons where name = '" + userName + "'";
                         result = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar()?.ToString();
                     }

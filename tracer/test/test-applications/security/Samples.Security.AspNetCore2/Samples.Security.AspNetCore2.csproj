@@ -27,6 +27,7 @@
     <Compile Include="..\Samples.Security.AspNetCore5\Data\**\*.cs" Link="Data\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Samples.Security.AspNetCore5\Models\**\*.*" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Samples.Security.AspNetCore5\IdentityStores\**\*.*" Link="IdentityStores\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\..\src\Datadog.Trace.Annotations\TraceAttribute.cs" Link="TraceAttribute.cs" />
     <Compile Include="..\Samples.Security.AspNetCore5\Extensions.cs" Link="%(RecursiveDir)%(Filename)%(Extension)" />
     <Content Include="..\Samples.Security.AspNetCore5\Data\**\*.db-*" Link="Data\%(RecursiveDir)%(Filename)%(Extension)" />
     <Content Include="..\Samples.Security.AspNetCore5\Data\**\*.db" Link="Data\%(RecursiveDir)%(Filename)%(Extension)" />
@@ -37,6 +38,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
   </ItemGroup>
 </Project>
