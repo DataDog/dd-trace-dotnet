@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Web;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
@@ -203,14 +204,26 @@ internal class IastRequestContext
                 helper.AddExecutedSource(IastInstrumentedSources.RequestUri);
             }
 
-            if (request.QueryString != null)
+            NameValueCollection? queryString = null;
+
+            try
             {
-                foreach (var key in request.QueryString.AllKeys)
+                // we can get an exception if the query string fails validation
+                queryString = request.QueryString;
+            }
+            catch (HttpRequestValidationException)
+            {
+                Log.Debug("Error reading request QueryString.");
+            }
+
+            if (queryString != null)
+            {
+                foreach (var key in queryString.AllKeys)
                 {
-                    AddRequestParameter(key, request.QueryString[key]);
+                    AddRequestParameter(key, queryString[key]);
                 }
 
-                AddQueryStringRaw(request.QueryString.ToString());
+                AddQueryStringRaw(queryString.ToString());
             }
 
             AddRequestHeaders(request.Headers);
