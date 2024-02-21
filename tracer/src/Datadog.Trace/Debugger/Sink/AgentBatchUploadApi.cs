@@ -91,7 +91,7 @@ namespace Datadog.Trace.Debugger.Sink
                 var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;
                 if (!string.IsNullOrEmpty(hostName))
                 {
-                    sb.Append($"host_name:{hostName},");
+                    sb.Append($"host:{hostName},");
                 }
 
                 var runtimeId = Tracer.RuntimeId;
