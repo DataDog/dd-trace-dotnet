@@ -18,6 +18,7 @@ namespace Datadog.Trace.Util;
 internal static class QueryStringHelper
 {
 #if NETFRAMEWORK
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(QueryStringHelper));
 
     // Get the querystring from a HttpRequest
     internal static NameValueCollection? GetQueryString(HttpRequest request)
@@ -28,6 +29,7 @@ internal static class QueryStringHelper
         }
         catch (HttpRequestValidationException)
         {
+            Log.Debug("Error reading QueryString from the request.");
             return null;
         }
     }
