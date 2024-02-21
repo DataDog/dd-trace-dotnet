@@ -44,4 +44,22 @@ internal static class CecilExtensions
 
         return genericReference;
     }
+
+    public static FieldReference MakeGenericField(this FieldReference field, TypeReference genericDeclaringType)
+    {
+        var genericReference = new FieldReference(field.Name, field.FieldType, genericDeclaringType);
+        return genericReference;
+    }
+
+    public static void MakePublic(this TypeDefinition type)
+    {
+        if (type.IsNested)
+        {
+            type.IsNestedPublic = true;
+        }
+        else
+        {
+            type.IsPublic = true;
+        }
+    }
 }
