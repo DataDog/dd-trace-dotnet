@@ -220,7 +220,7 @@ internal static class MetricTags
         [Description("integration_name:testplatformassemblyresolver")] TestPlatformAssemblyResolver,
         [Description("integration_name:stacktraceleak")] StackTraceLeak,
         [Description("integration_name:xpathinjection")] XpathInjection,
-        [Description("integration_name:systemreflection")] SystemReflection,
+        [Description("integration_name:reflectioninjection")] ReflectionInjection,
     }
 
     public enum InstrumentationError

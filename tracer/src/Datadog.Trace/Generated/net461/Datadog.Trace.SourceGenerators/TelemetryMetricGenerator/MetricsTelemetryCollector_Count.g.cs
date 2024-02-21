@@ -92,7 +92,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:testplatformassemblyresolver" }),
             new(new[] { "integration_name:stacktraceleak" }),
             new(new[] { "integration_name:xpathinjection" }),
-            new(new[] { "integration_name:systemreflection" }),
+            new(new[] { "integration_name:reflectioninjection" }),
             // spans_finished, index = 72
             new(null),
             // spans_enqueued_for_serialization, index = 73
@@ -315,7 +315,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:testplatformassemblyresolver" }),
             new(new[] { "integration_name:stacktraceleak" }),
             new(new[] { "integration_name:xpathinjection" }),
-            new(new[] { "integration_name:systemreflection" }),
+            new(new[] { "integration_name:reflectioninjection" }),
             // direct_log_api.requests, index = 273
             new(null),
             // direct_log_api.responses, index = 274

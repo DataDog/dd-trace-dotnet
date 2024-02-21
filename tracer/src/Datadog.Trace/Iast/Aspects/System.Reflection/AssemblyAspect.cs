@@ -30,7 +30,7 @@ public class AssemblyAspect
     [AspectMethodInsertBefore("System.Reflection.AssemblyName::.ctor(System.String)", 0)]
     public static string ReflectionAssemblyInjection(string assemblyString)
     {
-        IastModule.OnReflectionInjection(assemblyString, IntegrationId.SystemReflection);
+        IastModule.OnReflectionInjection(assemblyString, IntegrationId.ReflectionInjection);
         return assemblyString;
     }
 }

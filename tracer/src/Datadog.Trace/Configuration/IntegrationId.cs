@@ -74,6 +74,6 @@ namespace Datadog.Trace.Configuration
         TestPlatformAssemblyResolver,
         StackTraceLeak,
         XpathInjection,
-        SystemReflection,
+        ReflectionInjection,
     }
 }

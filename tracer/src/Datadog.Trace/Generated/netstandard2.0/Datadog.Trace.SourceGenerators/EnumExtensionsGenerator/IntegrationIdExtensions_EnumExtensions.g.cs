@@ -92,7 +92,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.TestPlatformAssemblyResolver => nameof(Datadog.Trace.Configuration.IntegrationId.TestPlatformAssemblyResolver),
             Datadog.Trace.Configuration.IntegrationId.StackTraceLeak => nameof(Datadog.Trace.Configuration.IntegrationId.StackTraceLeak),
             Datadog.Trace.Configuration.IntegrationId.XpathInjection => nameof(Datadog.Trace.Configuration.IntegrationId.XpathInjection),
-            Datadog.Trace.Configuration.IntegrationId.SystemReflection => nameof(Datadog.Trace.Configuration.IntegrationId.SystemReflection),
+            Datadog.Trace.Configuration.IntegrationId.ReflectionInjection => nameof(Datadog.Trace.Configuration.IntegrationId.ReflectionInjection),
             _ => value.ToString(),
         };
 
@@ -168,7 +168,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.TestPlatformAssemblyResolver,
             Datadog.Trace.Configuration.IntegrationId.StackTraceLeak,
             Datadog.Trace.Configuration.IntegrationId.XpathInjection,
-            Datadog.Trace.Configuration.IntegrationId.SystemReflection,
+            Datadog.Trace.Configuration.IntegrationId.ReflectionInjection,
         };
 
     /// <summary>
@@ -244,6 +244,6 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.TestPlatformAssemblyResolver),
             nameof(Datadog.Trace.Configuration.IntegrationId.StackTraceLeak),
             nameof(Datadog.Trace.Configuration.IntegrationId.XpathInjection),
-            nameof(Datadog.Trace.Configuration.IntegrationId.SystemReflection),
+            nameof(Datadog.Trace.Configuration.IntegrationId.ReflectionInjection),
         };
 }

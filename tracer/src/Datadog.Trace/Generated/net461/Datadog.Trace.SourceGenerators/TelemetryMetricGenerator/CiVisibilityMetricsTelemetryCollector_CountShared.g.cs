@@ -221,9 +221,9 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "integration_name:xpathinjection", "error_type:duck_typing" }),
             new(new[] { "integration_name:xpathinjection", "error_type:invoker" }),
             new(new[] { "integration_name:xpathinjection", "error_type:execution" }),
-            new(new[] { "integration_name:systemreflection", "error_type:duck_typing" }),
-            new(new[] { "integration_name:systemreflection", "error_type:invoker" }),
-            new(new[] { "integration_name:systemreflection", "error_type:execution" }),
+            new(new[] { "integration_name:reflectioninjection", "error_type:duck_typing" }),
+            new(new[] { "integration_name:reflectioninjection", "error_type:invoker" }),
+            new(new[] { "integration_name:reflectioninjection", "error_type:execution" }),
         };
 
     /// <summary>
