@@ -17,7 +17,7 @@ public class QueryStringHelperTests
     [Fact]
     public void GivenADangerousQueryString_WhenGetQueryString_HelperAvoidsException()
     {
-        var request = new HttpRequest("file", "http://random.com/benchmarks", "data=<script>alert(1)</script>");
+        var request = new HttpRequest("file", "http://localhost/benchmarks", "data=<script>alert(1)</script>");
         request.ValidateInput();
 
         try
@@ -27,7 +27,7 @@ public class QueryStringHelperTests
         }
         catch (HttpRequestValidationException)
         {
-            var request2 = new HttpRequest("file", "http://random.com/benchmarks", "data=<script>alert(1)</script>");
+            var request2 = new HttpRequest("file", "http://localhost/benchmarks", "data=<script>alert(1)</script>");
             request2.ValidateInput();
             var queryString = QueryStringHelper.GetQueryString(request2);
             queryString.Should().BeNull();
