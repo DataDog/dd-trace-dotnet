@@ -7,6 +7,7 @@
 #include "Log.h"
 #include "OsSpecificApi.h"
 #include "RawCpuSample.h"
+#include "SamplesEnumerator.h"
 
 NativeThreadsCpuProviderBase::NativeThreadsCpuProviderBase(CpuTimeProvider* cpuTimeProvider) :
     _cpuTimeProvider{cpuTimeProvider},
@@ -14,14 +15,51 @@ NativeThreadsCpuProviderBase::NativeThreadsCpuProviderBase(CpuTimeProvider* cpuT
 {
 }
 
-std::list<std::shared_ptr<Sample>> NativeThreadsCpuProviderBase::GetSamples()
+class CpuSampleEnumerator : public SamplesEnumerator
+{
+public:
+    CpuSampleEnumerator() :
+        _sample{nullptr}
+    {
+    }
+
+    CpuSampleEnumerator(CpuSampleEnumerator const&) = delete;
+    CpuSampleEnumerator& operator=(CpuSampleEnumerator const&) = delete;
+
+    void Set(std::shared_ptr<Sample> sample)
+    {
+        _sample = std::move(sample);
+    }
+
+    // Inherited via SamplesEnumerator
+    std::size_t size() const override
+    {
+        return _sample == nullptr ? 0 : 1;
+    }
+
+    bool MoveNext(std::shared_ptr<Sample>& sample) override
+    {
+        if (_sample == nullptr)
+        {
+            return false;
+        }
+        // not thread-safe but ok since this enumerator will be consumed by only one thread (when exporting)
+        sample = _sample;
+        _sample.reset();
+
+        return true;
+    }
+
+    std::shared_ptr<Sample> _sample;
+};
+
+std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()
 {
     std::uint64_t cpuTime = 0;
     for (auto const& thread : GetThreads())
     {
         cpuTime += OsSpecificApi::GetThreadCpuTime(thread.get());
     }
-
 
     auto currentTotalCpuTime = cpuTime;
     // There is a case where it's possible to have currentTotalCpuTime < _previousTotalCpuTime: native threads died in the meantime
@@ -32,11 +70,11 @@ std::list<std::shared_ptr<Sample>> NativeThreadsCpuProviderBase::GetSamples()
     // For native threads, we need to keep the last cpu time
     _previousTotalCpuTime = currentTotalCpuTime;
 
-    auto samples = std::list<std::shared_ptr<Sample>>();
+    auto enumerator = std::make_unique<CpuSampleEnumerator>();
     if (cpuTime == 0)
     {
         Log::Debug(GetName(), " CPU time sums up to 0. No sample will be created.");
-        return samples;
+        return enumerator;
     }
 
     RawCpuSample rawSample;
@@ -54,8 +92,9 @@ std::list<std::shared_ptr<Sample>> NativeThreadsCpuProviderBase::GetSamples()
         sample->AddFrame(frame);
     }
 
-    samples.push_back(sample);
-    return samples;
+    enumerator->Set(sample);
+
+    return enumerator;
 }
 
 void NativeThreadsCpuProviderBase::OnCpuDuration(std::uint64_t cpuTime)

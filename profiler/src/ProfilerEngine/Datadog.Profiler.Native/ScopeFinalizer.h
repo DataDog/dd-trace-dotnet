@@ -70,4 +70,4 @@ FinalizerInvocationWrapper<F> operator*(DeferDummy, F&& f)
 #define DEFER_(LINE) zz_defer##LINE
 #define DEFER(LINE) DEFER_(LINE)
 #define on_leave \
-    const auto& DEFER(__COUNTER__) = DeferDummy{}* [&]()
+    [[maybe_unused]] const auto& DEFER(__COUNTER__) = DeferDummy{}* [&]()

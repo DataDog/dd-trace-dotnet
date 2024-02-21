@@ -22,8 +22,6 @@ namespace Datadog.Trace.Security.Unit.Tests
 {
     public class WafEphemeralDataTests : WafLibraryRequiredTest
     {
-        public const int TimeoutMicroSeconds = 1_000_000;
-
         [Theory]
         [InlineData("appscan_fingerprint", "security_scanner", "crs-913-120")]
         [InlineData("<script>", "xss", "crs-941-110")]

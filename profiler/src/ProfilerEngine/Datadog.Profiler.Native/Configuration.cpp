@@ -36,7 +36,7 @@ Configuration::Configuration()
     _isNativeFrameEnabled = GetEnvironmentValue(EnvironmentVariables::NativeFramesEnabled, false);
     _isCpuProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::CpuProfilingEnabled, true);
     _isWallTimeProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WallTimeProfilingEnabled, true);
-    _isExceptionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ExceptionProfilingEnabled, false);
+    _isExceptionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ExceptionProfilingEnabled, true);
     _isAllocationProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationProfilingEnabled, false);
     _isContentionProfilingEnabled = GetContention();
     _isGarbageCollectionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::GCProfilingEnabled, true);
@@ -53,7 +53,7 @@ Configuration::Configuration()
     _apiKey = GetEnvironmentValue(EnvironmentVariables::ApiKey, DefaultEmptyString);
     _serviceName = GetEnvironmentValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName());
     _isAgentLess = GetEnvironmentValue(EnvironmentVariables::Agentless, false);
-    _exceptionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ExceptionSampleLimit, 100);
+    _exceptionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ExceptionSampleLimit, 500);
     _allocationSampleLimit = GetEnvironmentValue(EnvironmentVariables::AllocationSampleLimit, 2000);
     _contentionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ContentionSampleLimit, 3000);
     _contentionDurationThreshold = GetEnvironmentValue(EnvironmentVariables::ContentionDurationThreshold, 100);
@@ -89,6 +89,7 @@ Configuration::Configuration()
     }
 
     _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, false);
+     ExtractSsiState(_isSsiDeployed, _isSsiActivated);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -487,8 +488,8 @@ int32_t Configuration::ExtractCpuThreadsThreshold()
 
 bool Configuration::GetContention()
 {
-    // disabled by default
-    bool lockContentionEnabled = false;
+    // enabled by default
+    bool lockContentionEnabled = true;
 
     // first look at the supported env var
     if (IsEnvironmentValueSet(EnvironmentVariables::LockContentionProfilingEnabled, lockContentionEnabled))
@@ -497,7 +498,7 @@ bool Configuration::GetContention()
     }
 
     // if not there, look at the deprecated one
-    return GetEnvironmentValue(EnvironmentVariables::DeprecatedContentionProfilingEnabled, false);
+    return GetEnvironmentValue(EnvironmentVariables::DeprecatedContentionProfilingEnabled, lockContentionEnabled);
 }
 
 bool Configuration::GetDefaultDebugLogEnabled()
@@ -534,6 +535,16 @@ bool Configuration::IsEtwEnabled() const
 #else
     return _isEtwEnabled;
 #endif
+}
+
+bool Configuration::IsSsiDeployed() const
+{
+    return _isSsiDeployed;
+}
+
+bool Configuration::IsSsiActivated() const
+{
+    return _isSsiActivated;
 }
 
 
@@ -603,4 +614,31 @@ bool Configuration::IsEnvironmentValueSet(shared::WSTRING const& name, T& value)
 
     value = result;
     return true;
+}
+
+void Configuration::ExtractSsiState(bool& ssiDeployed, bool& ssiEnabled)
+{
+    // if the profiler has been deployed via Single Step Instrumentation,
+    // the DD_INJECTION_ENABLED env var exists.
+    // if the profiler has been activated via Single Step Instrumentation,
+    // the DD_INJECTION_ENABLED env var should contain "profiling" (it is a list of SSI installed products)
+    //
+    if (!shared::EnvironmentExist(EnvironmentVariables::SsiDeployed))
+    {
+        ssiDeployed = false;
+        ssiEnabled = false;
+        return;
+    }
+
+    ssiDeployed = true;
+
+    auto r = shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed);
+    if (r.empty())
+    {
+        ssiEnabled = false;
+        return;
+    }
+
+    auto pos = r.find(WStr("profiling"));
+    ssiEnabled = (pos != shared::WSTRING::npos);
 }

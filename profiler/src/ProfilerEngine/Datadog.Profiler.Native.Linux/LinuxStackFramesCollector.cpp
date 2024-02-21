@@ -29,9 +29,9 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(ProfilerSignalManager* sign
     StackFramesCollectorBase(configuration),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
-    _errorStatistics{},
     _processId{OpSysTools::GetProcId()},
     _signalManager{signalManager},
+    _errorStatistics{},
     _useBacktrace2{configuration->UseBacktrace2()}
 {
     _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
@@ -85,6 +85,16 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
     if (selfCollect)
     {
+        // In case we are self-unwinding, we do not want to be interrupted by the signal-based profilers (walltime and cpu)
+        // This will crashing in libunwind (accessing a memory area  which was unmapped)
+        // This lock is acquired by the signal-based profiler (see StackSamplerLoop->StackSamplerLoopManager)
+        pThreadInfo->GetStackWalkLock().Acquire();
+
+        on_leave
+        {
+            pThreadInfo->GetStackWalkLock().Release();
+        };
+
         errorCode = CollectCallStackCurrentThread(nullptr);
     }
     else
@@ -174,7 +184,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
     try
     {
         // Collect data for TraceContext tracking:
-        bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
+        TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
         return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
     }

@@ -40,6 +40,7 @@ internal static class IastModule
     private const string OperationNameUnvalidatedRedirect = "unvalidated_redirect";
     private const string OperationNameHeaderInjection = "header_injection";
     private const string OperationNameXPathInjection = "xpath_injection";
+    private const string OperationNameReflectionInjection = "reflection_injection";
     private const string ReferrerHeaderName = "Referrer";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
@@ -53,7 +54,7 @@ internal static class IastModule
 
     internal static string? OnUnvalidatedRedirect(string? evidence)
     {
-        if (evidence != null && OnUnvalidatedRedirect(evidence, IntegrationId.UnvalidatedRedirect).VulnerabilityAdded)
+        if (Iast.Instance.Settings.Enabled && evidence != null && OnUnvalidatedRedirect(evidence, IntegrationId.UnvalidatedRedirect).VulnerabilityAdded)
         {
             return new string(evidence.ToCharArray());
         }
@@ -103,6 +104,11 @@ internal static class IastModule
             return true;
         }
 
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.UnvalidatedRedirect);
@@ -117,6 +123,11 @@ internal static class IastModule
 
     internal static IastModuleResponse OnTrustBoundaryViolation(string name)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.TrustBoundaryViolation);
@@ -131,6 +142,11 @@ internal static class IastModule
 
     internal static IastModuleResponse OnLdapInjection(string evidence)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.LdapInjection);
@@ -145,6 +161,11 @@ internal static class IastModule
 
     internal static IastModuleResponse OnSSRF(string evidence)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.Ssrf);
@@ -159,6 +180,11 @@ internal static class IastModule
 
     internal static IastModuleResponse OnWeakRandomness(string evidence)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakRandomness);
@@ -173,6 +199,11 @@ internal static class IastModule
 
     public static IastModuleResponse OnPathTraversal(string evidence)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.PathTraversal);
@@ -187,6 +218,11 @@ internal static class IastModule
 
     public static IastModuleResponse OnSqlQuery(string query, IntegrationId integrationId)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.SqlInjection);
@@ -201,6 +237,11 @@ internal static class IastModule
 
     public static IastModuleResponse OnNoSqlMongoDbQuery(string query, IntegrationId integrationId)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.NoSqlMongoDbInjection);
@@ -215,6 +256,11 @@ internal static class IastModule
 
     public static IastModuleResponse OnCommandInjection(string file, string argumentLine, Collection<string> argumentList, IntegrationId integrationId)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.CommandInjection);
@@ -224,6 +270,20 @@ internal static class IastModule
         catch (Exception ex)
         {
             Log.Error(ex, "Error while checking for command injection.");
+            return IastModuleResponse.Empty;
+        }
+    }
+
+    public static IastModuleResponse OnReflectionInjection(string param, IntegrationId integrationId)
+    {
+        try
+        {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.ReflectionInjection);
+            return GetScope(param, integrationId, VulnerabilityTypeName.ReflectionInjection, OperationNameReflectionInjection, Always);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for reflection injection.");
             return IastModuleResponse.Empty;
         }
     }
@@ -269,6 +329,11 @@ internal static class IastModule
 
     public static IastModuleResponse OnInsecureCookie(IntegrationId integrationId, string cookieName)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         OnExecutedSinkTelemetry(IastInstrumentedSinks.InsecureCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
         return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.InsecureCookie, (VulnerabilityTypeName.InsecureCookie.ToString() + ":" + cookieName).GetStaticHashCode());
@@ -276,6 +341,11 @@ internal static class IastModule
 
     public static IastModuleResponse OnNoHttpOnlyCookie(IntegrationId integrationId, string cookieName)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         OnExecutedSinkTelemetry(IastInstrumentedSinks.NoHttpOnlyCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
         return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoHttpOnlyCookie, (VulnerabilityTypeName.NoHttpOnlyCookie.ToString() + ":" + cookieName).GetStaticHashCode());
@@ -283,6 +353,11 @@ internal static class IastModule
 
     public static IastModuleResponse OnNoSamesiteCookie(IntegrationId integrationId, string cookieName)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         OnExecutedSinkTelemetry(IastInstrumentedSinks.NoSameSiteCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
         return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoSameSiteCookie, (VulnerabilityTypeName.NoSameSiteCookie.ToString() + ":" + cookieName).GetStaticHashCode());
@@ -290,18 +365,29 @@ internal static class IastModule
 
     public static void OnHardcodedSecret(Vulnerability vulnerability)
     {
-        // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose();
+        if (Iast.Instance.Settings.Enabled)
+        {
+            // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
+            AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose();
+        }
     }
 
     public static void OnHardcodedSecret(List<Vulnerability> vulnerabilities)
     {
-        // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerabilities).SingleSpan?.Dispose();
+        if (Iast.Instance.Settings.Enabled)
+        {
+            // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
+            AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerabilities).SingleSpan?.Dispose();
+        }
     }
 
     public static IastModuleResponse OnCipherAlgorithm(Type type, IntegrationId integrationId)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakCipher);
         var algorithm = type.BaseType?.Name;
 
@@ -315,6 +401,11 @@ internal static class IastModule
 
     public static IastModuleResponse OnStackTraceLeak(Exception ex, IntegrationId integrationId)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         OnExecutedSinkTelemetry(IastInstrumentedSinks.StackTraceLeak);
         var evidence = $"{ex.Source},{ex.GetType().Name}";
         // We report the stack of the exception instead of the current stack
@@ -324,6 +415,11 @@ internal static class IastModule
 
     public static IastModuleResponse OnHashingAlgorithm(string? algorithm, IntegrationId integrationId)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakHash);
         if (algorithm == null || !InvalidHashAlgorithm(algorithm))
         {
@@ -594,6 +690,11 @@ internal static class IastModule
 
     internal static void OnHeaderInjection(IntegrationId integrationId, string headerName, string headerValue)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return;
+        }
+
         var evidence = StringAspects.Concat(headerName, HeaderInjectionEvidenceSeparator, headerValue);
         var hash = ("HEADER_INJECTION:" + headerName).GetStaticHashCode();
         GetScope(evidence, integrationId, VulnerabilityTypeName.HeaderInjection, OperationNameHeaderInjection, Always, false, hash);
@@ -601,6 +702,11 @@ internal static class IastModule
 
     internal static IastModuleResponse OnXpathInjection(string xpath)
     {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.XPathInjection);

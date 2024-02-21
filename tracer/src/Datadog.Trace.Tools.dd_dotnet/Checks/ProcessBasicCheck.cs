@@ -187,6 +187,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 Utils.WriteSuccess(CorrectlySetupEnvironment(corEnableKey, "1"));
             }
 
+            ok &= CheckEnableDiagnostics(process);
+
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey, out var corProfilerPathValue);
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey32, out var corProfilerPathValue32);
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey64, out var corProfilerPathValue64);
@@ -417,6 +419,55 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             return ok;
         }
 
+        internal static void CheckLinuxInstallation(string installDirectory)
+        {
+            string archFolder;
+            var osArchitecture = RuntimeInformation.OSArchitecture;
+
+            if (osArchitecture == Architecture.X64)
+            {
+                archFolder = Utils.IsAlpine() ? "linux-musl-x64" : "linux-x64";
+            }
+            else if (osArchitecture == Architecture.Arm64)
+            {
+                archFolder = "linux-arm64";
+            }
+            else
+            {
+                Utils.WriteError(UnsupportedLinuxArchitecture(osArchitecture.ToString()));
+                return;
+            }
+
+            try
+            {
+                var joinedPath = Path.Join(installDirectory, archFolder);
+
+                if (Directory.Exists(joinedPath))
+                {
+                    Utils.WriteSuccess(CorrectLinuxDirectoryFound(joinedPath));
+                }
+                else
+                {
+                    string[] directories = Directory.GetDirectories(installDirectory);
+
+                    // Iterate through directories and filter based on the starting string
+                    foreach (string directory in directories)
+                    {
+                        DirectoryInfo dirInfo = new DirectoryInfo(directory);
+                        if (dirInfo.Name.StartsWith("linux-", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Utils.WriteError(WrongLinuxFolder(archFolder, dirInfo.Name));
+                            return;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteError(ErrorCheckingLinuxDirectory(ex.Message));
+            }
+        }
+
         private static bool CheckClsid(IRegistryService registry, string registryKey)
         {
             var profilerPath = registry.GetLocalMachineValue(registryKey);
@@ -643,53 +694,22 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             return versionFound;
         }
 
-        internal static void CheckLinuxInstallation(string installDirectory)
+        private static bool CheckEnableDiagnostics(ProcessInfo process)
         {
-            string archFolder;
-            var osArchitecture = RuntimeInformation.OSArchitecture;
+            var variablesToCheck = new[] { "DOTNET_EnableDiagnostics", "COMPlus_EnableDiagnostics", "DOTNET_EnableDiagnostics_Profiler", "COMPlus_EnableDiagnostics_Profiler" };
 
-            if (osArchitecture == Architecture.X64)
-            {
-                archFolder = Utils.IsAlpine() ? "linux-musl-x64" : "linux-x64";
-            }
-            else if (osArchitecture == Architecture.Arm64)
-            {
-                archFolder = "linux-arm64";
-            }
-            else
-            {
-                Utils.WriteError(UnsupportedLinuxArchitecture(osArchitecture.ToString()));
-                return;
-            }
+            bool result = true;
 
-            try
+            foreach (var key in variablesToCheck)
             {
-                var joinedPath = Path.Join(installDirectory, archFolder);
-
-                if (Directory.Exists(joinedPath))
+                if (process.EnvironmentVariables.TryGetValue(key, out var value) && value == "0")
                 {
-                    Utils.WriteSuccess(CorrectLinuxDirectoryFound(joinedPath));
-                }
-                else
-                {
-                    string[] directories = Directory.GetDirectories(installDirectory);
-
-                    // Iterate through directories and filter based on the starting string
-                    foreach (string directory in directories)
-                    {
-                        DirectoryInfo dirInfo = new DirectoryInfo(directory);
-                        if (dirInfo.Name.StartsWith("linux-", StringComparison.OrdinalIgnoreCase))
-                        {
-                            Utils.WriteError(WrongLinuxFolder(archFolder, dirInfo.Name));
-                            return;
-                        }
-                    }
+                    Utils.WriteError(EnableDiagnosticsSet(key));
+                    result = false;
                 }
             }
-            catch (Exception ex)
-            {
-                Utils.WriteError(ErrorCheckingLinuxDirectory(ex.Message));
-            }
+
+            return result;
         }
     }
 }

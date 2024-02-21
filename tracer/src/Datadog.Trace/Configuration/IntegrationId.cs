@@ -73,6 +73,7 @@ namespace Datadog.Trace.Configuration
         UnvalidatedRedirect,
         TestPlatformAssemblyResolver,
         StackTraceLeak,
-        XpathInjection
+        XpathInjection,
+        ReflectionInjection,
     }
 }

@@ -353,10 +353,30 @@ TEST(ConfigurationTest, CheckMinimumCoresThresholdWhenVariableIsSet)
     ASSERT_EQ(configuration.MinimumCores(), 0.5);
 }
 
-TEST(ConfigurationTest, CheckContentionProfilingIsDisabledByDefault)
+TEST(ConfigurationTest, CheckExceptionProfilingIsEnabledByDefault)
 {
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
+    ASSERT_THAT(configuration.IsExceptionProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckExceptionProfilingIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ExceptionProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsExceptionProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckExceptionProfilingIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ExceptionProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsExceptionProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckContentionProfilingIsEnabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), true);
 }
 
 TEST(ConfigurationTest, CheckContentionProfilingIsEnabledIfEnvVarSetToTrue)
@@ -824,4 +844,64 @@ TEST(ConfigurationTest, CheckEtwIsDisabledIfEnvVarSetToFalse)
     auto configuration = Configuration{};
     auto expectedValue = false;
     ASSERT_THAT(configuration.IsEtwEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiDeployedByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsSsiDeployed(), false);
+}
+
+TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarConstainsProfiling)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer,profiling"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsSsiDeployed(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarDoesNotContainProfiling)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsSsiDeployed(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarIsEmpty)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr(""));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsSsiDeployed(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiActivatedByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsSsiActivated(), false);
+}
+
+TEST(ConfigurationTest, CheckSsiIsActivatedIfEnvVarConstainsProfiling)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer,profiling"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsSsiActivated(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsNotActivatedIfEnvVarDoesNotContainProfiling)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsSsiActivated(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsNotActivatedIfEnvVarIsEmpty)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr(""));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsSsiActivated(), expectedValue);
 }

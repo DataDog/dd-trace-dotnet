@@ -117,7 +117,9 @@
     <div><a href="javascript:GetCookieHeaderData('file=value1', 'name', 'myName', 'value', 'myValue', '/Iast/HeaderInjection')">GET /HeaderInjection</a></div>
 
     <div><a href="/Iast/NoSqlQueryMongoDb?price=42">GET /Iast/NoSqlQueryMongoDb</a></div>
-    
+
+    <div><a href="/Iast/TypeReflectionInjection/?type=System.String">GET /Iast/ReflectionInjection [Type: System.String]</a></div>
+
     <div>
         @Html.Raw(Context.Request.Query["q"])
     </div>
