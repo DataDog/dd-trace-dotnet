@@ -48,9 +48,9 @@ namespace Datadog.Trace.Propagators
         private const string TraceStateOriginKey = "o";
 
         // the key used for the last seen parent Datadog span ID in the key/value pairs embedded inside the "dd" value
-        // "key1=value1,dd=s:1;o:rum;lp.id:0123456789abcdef,key2=value2"
-        //                           ^^^^^
-        private const string TraceStateLastParentKey = "lp.id";
+        // "key1=value1,dd=s:1;o:rum;p:0123456789abcdef,key2=value2"
+        //                           ^
+        private const string TraceStateLastParentKey = "p";
 
         // character bounds validation
         private const char LowerBound = '\u0020'; // decimal: 32, ' ' (space)
@@ -162,9 +162,9 @@ namespace Datadog.Trace.Propagators
                     sb.Append("o:").Append(replacedOrigin).Append(TraceStateDatadogPairsSeparator);
                 }
 
-                // last parent ("lp.id:<value>")
+                // last parent ("p:<value>")
                 var lastParent = HexString.ToHexString(context.SpanId, lowerCase: true);
-                sb.Append("lp.id:").Append(lastParent).Append(TraceStateDatadogPairsSeparator);
+                sb.Append("p:").Append(lastParent).Append(TraceStateDatadogPairsSeparator);
 
                 // propagated tags ("t.<key>:<value>")
                 var propagatedTags = context.PrepareTagsForPropagation();
@@ -334,7 +334,7 @@ namespace Datadog.Trace.Propagators
             {
                 // "dd" section not found or it is too short
                 // shortest valid length is 6 as in "dd=a:b"
-                // note for this case the lp.id will be viewed as 0 if added as a span tag
+                // note for this case the p will be viewed as 0 if added as a span tag
                 return new W3CTraceState(null, null, null, null, additionalValues);
             }
 

@@ -96,7 +96,7 @@ public class SpanMessagePackFormatterTests
                 if (!string.IsNullOrEmpty(expected.Context.LastParentId))
                 {
                     tagsProcessor.Remaining.Should()
-                                 .HaveCount(2).And.Contain(new KeyValuePair<string, string>("language", "dotnet"), new KeyValuePair<string, string>("_dd.lp.id", "0123456789abcdef"));
+                                 .HaveCount(2).And.Contain(new KeyValuePair<string, string>("language", "dotnet"), new KeyValuePair<string, string>("_dd.parent_id", "0123456789abcdef"));
                 }
                 else
                 {
@@ -262,7 +262,7 @@ public class SpanMessagePackFormatterTests
         var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(1));
 
         var span0 = traceChunks[0][0];
-        var tagValue0 = span0.GetTag("_dd.lp.id");
+        var tagValue0 = span0.GetTag("_dd.parent_id");
 
         tagValue0.Should().Be("0123456789abcdef");
     }
