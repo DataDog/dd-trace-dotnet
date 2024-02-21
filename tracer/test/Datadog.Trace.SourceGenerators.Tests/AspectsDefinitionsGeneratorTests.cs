@@ -33,10 +33,10 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
-        public static string[] Aspects = new string[] {
+        public static string[] GetAspects() => new string[] {
         };
 
-        public static string[] RaspAspects = new string[] {
+        public static string[] GetRaspAspects() => new string[] {
         };
     }
 }
@@ -87,13 +87,13 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
-        public static string[] Aspects = new string[] {
+        public static string[] GetAspects() => new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] MyTests.TestAspectClass",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.Object,System.Object,System.Object)",
         };
 
-        public static string[] RaspAspects = new string[] {
+        public static string[] GetRaspAspects() => new string[] {
         };
     }
 }
@@ -139,13 +139,13 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
-        public static string[] Aspects = new string[] {
+        public static string[] GetAspects() => new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] MyTests.TestAspectClass",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
         };
 
-        public static string[] RaspAspects = new string[] {
+        public static string[] GetRaspAspects() => new string[] {
         };
     }
 }
@@ -210,7 +210,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
-        public static string[] Aspects = new string[] {
+        public static string[] GetAspects() => new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] MyTests.TestAspectClass1",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.Object,System.Object,System.Object)",
@@ -219,7 +219,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.Object,System.Object,System.Object)",
         };
 
-        public static string[] RaspAspects = new string[] {
+        public static string[] GetRaspAspects() => new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Sink,[WeakCipher,WeakHash])] MyTests.TestAspectClass2",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.Object,System.Object,System.Object)",
@@ -276,14 +276,14 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
-        public static string[] Aspects = new string[] {
+        public static string[] GetAspects() => new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringLiteral_0,StringLiteral_1],Sink,[WeakCipher])] MyTests.TestAspectClass2",
 "  [AspectMethodReplace(\"System.Text.StringBuilder::.ctor(System.String)\",\"System.Text.StringBuilder\",[0],[False],[StringLiterals_Any],Default,[])] Init(System.String)",
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringLiterals_Any,StringLiterals],Source,[WeakCipher,WeakHash])] MyTests.TestAspectClass1",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
         };
 
-        public static string[] RaspAspects = new string[] {
+        public static string[] GetRaspAspects() => new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringLiteral_0,StringLiteral_1],Sink,[WeakCipher])] MyTests.TestAspectClass2",
 "  [AspectMethodReplace(\"System.Text.StringBuilder::.ctor(System.String)\",\"System.Text.StringBuilder\",[0],[False],[StringLiterals_Any],Default,[])] Init(System.String)",
         };
@@ -330,12 +330,12 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
-        public static string[] Aspects = new string[] {
+        public static string[] GetAspects() => new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[None],Propagation,[])] MyTests.TestAspectClass1",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String[])\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String[])",
         };
 
-        public static string[] RaspAspects = new string[] {
+        public static string[] GetRaspAspects() => new string[] {
         };
     }
 }

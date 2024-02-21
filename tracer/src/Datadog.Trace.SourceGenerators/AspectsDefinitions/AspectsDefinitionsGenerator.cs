@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
-        public static string[] Aspects = new string[] {
+        public static string[] GetAspects() => new string[] {
 """);
 
         foreach (var aspectClass in aspectClasses.OrderBy(p => p.AspectClass, StringComparer.Ordinal))
@@ -98,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler
 """);
 
         sb.AppendLine("""
-        public static string[] RaspAspects = new string[] {
+        public static string[] GetRaspAspects() => new string[] {
 """);
 
         foreach (var aspectClass in aspectClasses.OrderBy(p => p.AspectClass, StringComparer.Ordinal))

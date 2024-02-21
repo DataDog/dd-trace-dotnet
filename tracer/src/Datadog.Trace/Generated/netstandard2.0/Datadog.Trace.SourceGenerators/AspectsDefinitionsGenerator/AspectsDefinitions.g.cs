@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
-        public static string[] Aspects = new string[] {
+        public static string[] GetAspects() => new string[] {
 "[AspectClass(\"EntityFramework\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.EntityCommandAspect",
 "  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReader(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
@@ -520,7 +520,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.Text.StringBuilder::set_Length(System.Int32)\",\"\",[0],[False],[None],Default,[])] SetLength(System.Text.StringBuilder,System.Int32)",
         };
 
-        public static string[] RaspAspects = new string[] {
+        public static string[] GetRaspAspects() => new string[] {
 "[AspectClass(\"Microsoft.AspNetCore.Http\",[None],Sink,[UnvalidatedRedirect])] Datadog.Trace.Iast.Aspects.AspNetCore.Http.HttpResponseAspect",
 "  [AspectMethodInsertBefore(\"Microsoft.AspNetCore.Http.HttpResponse::Redirect(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String)",
 "  [AspectMethodInsertBefore(\"Microsoft.AspNetCore.Http.HttpResponse::Redirect(System.String,System.Boolean)\",\"\",[1],[False],[None],Default,[])] Redirect(System.String)",

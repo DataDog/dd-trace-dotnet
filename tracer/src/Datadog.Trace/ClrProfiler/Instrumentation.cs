@@ -558,7 +558,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 string[] inputAspects = null;
 
-                inputAspects = isIast ? AspectDefinitions.Aspects : AspectDefinitions.RaspAspects;
+                inputAspects = isIast ? AspectDefinitions.GetAspects() : AspectDefinitions.GetRaspAspects();
 
                 if (inputAspects != null)
                 {
@@ -710,7 +710,7 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Information<int, int>("{Defs} IAST definitions and {Derived} IAST derived definitions added to the profiler.", defs, derived);
 
                     Log.Debug("Registering IAST Callsite Dataflow Aspects into native library.");
-                    var aspects = NativeMethods.RegisterIastAspects(AspectDefinitions.Aspects);
+                    var aspects = NativeMethods.RegisterIastAspects(AspectDefinitions.GetAspects());
                     Log.Information<int>("{Aspects} IAST Callsite Dataflow Aspects added to the profiler.", aspects);
                     TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.IastAspects, aspects);
                 }
