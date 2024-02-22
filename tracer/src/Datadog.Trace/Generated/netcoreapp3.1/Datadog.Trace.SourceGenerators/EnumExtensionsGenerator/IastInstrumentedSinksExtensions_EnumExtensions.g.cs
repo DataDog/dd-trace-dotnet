@@ -17,7 +17,7 @@ internal static partial class IastInstrumentedSinksExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 22;
+    public const int Length = 23;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks"/> value.
@@ -52,6 +52,7 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection => "vulnerability_type:nosql_mongodb_injection",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection => "vulnerability_type:xpath_injection",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.ReflectionInjection => "vulnerability_type:reflection_injection",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss => "vulnerability_type:xss",
             _ => value.ToString(),
         };
 
@@ -87,6 +88,7 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.ReflectionInjection,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss,
         };
 
     /// <summary>
@@ -122,6 +124,7 @@ internal static partial class IastInstrumentedSinksExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.ReflectionInjection),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss),
         };
 
     /// <summary>
@@ -157,5 +160,6 @@ internal static partial class IastInstrumentedSinksExtensions
             "vulnerability_type:nosql_mongodb_injection",
             "vulnerability_type:xpath_injection",
             "vulnerability_type:reflection_injection",
+            "vulnerability_type:xss",
         };
 }

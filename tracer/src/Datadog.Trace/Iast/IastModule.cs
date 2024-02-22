@@ -439,7 +439,7 @@ internal static class IastModule
 
         try
         {
-            OnExecutedSinkTelemetry(IastInstrumentedSinks.SqlInjection);
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.Xss);
             return GetScope(text!, IntegrationId.Xss, VulnerabilityTypeName.Xss, OperationNameXss, Always);
         }
         catch (Exception ex)
