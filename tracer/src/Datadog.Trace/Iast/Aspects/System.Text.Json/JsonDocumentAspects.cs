@@ -10,6 +10,7 @@ using System;
 using System.Text.Json;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast.Aspects.System.Text.Json;
 
@@ -19,6 +20,8 @@ namespace Datadog.Trace.Iast.Aspects.System.Text.Json;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class JsonDocumentAspects
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<JsonDocumentAspects>();
+
     /// <summary>
     /// Parse method aspect
     /// Taint all Parent from JsonElement that are string
@@ -30,7 +33,16 @@ public class JsonDocumentAspects
     public static object Parse(string json, JsonDocumentOptions options)
     {
         var doc = JsonDocument.Parse(json, options);
-        TaintJsonElements(json, doc);
+
+        try
+        {
+            TaintJsonElements(json, doc);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error tainting JsonDocument.Parse result");
+        }
+
         return doc;
     }
 
@@ -49,11 +61,18 @@ public class JsonDocumentAspects
             return null;
         }
 
-        var taintedObjects = IastModule.GetIastContext()?.GetTaintedObjects();
-        var taintedTarget = taintedObjects?.Get(element.Parent);
-        if (taintedObjects is not null && taintedTarget is not null)
+        try
         {
-            taintedObjects.Taint(str, [new Range(0, str.Length)]);
+            var taintedObjects = IastModule.GetIastContext()?.GetTaintedObjects();
+            var taintedTarget = taintedObjects?.Get(element.Parent);
+            if (taintedObjects is not null && taintedTarget is not null)
+            {
+                taintedObjects.Taint(str, [new Range(0, str.Length)]);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error tainting JsonElement.GetString result");
         }
 
         return str;
@@ -68,24 +87,24 @@ public class JsonDocumentAspects
             return;
         }
 
-        TaintStringElement(doc.RootElement, taintedObjects);
+        RecursiveTaintStringParents(doc.RootElement, taintedObjects);
     }
 
-    private static void TaintStringElement(JsonElement element, TaintedObjects map)
+    private static void RecursiveTaintStringParents(JsonElement element, TaintedObjects map)
     {
         switch (element.ValueKind)
         {
             case JsonValueKind.Object:
                 foreach (var property in element.EnumerateObject())
                 {
-                    TaintStringElement(property.Value, map);
+                    RecursiveTaintStringParents(property.Value, map);
                 }
 
                 break;
             case JsonValueKind.Array:
                 foreach (var item in element.EnumerateArray())
                 {
-                    TaintStringElement(item, map);
+                    RecursiveTaintStringParents(item, map);
                 }
 
                 break;

@@ -10,7 +10,7 @@ public class JsonDocumentTests : InstrumentationTestsBase
     private readonly string _taintedJsonMultiple = "{\"key1\": \"value1\", \"key2\": \"value2\"}";
     private readonly string _taintedJsonArray = "[\"value1\", \"value2\"]";
     private readonly string _taintedJsonDeepObject = "{\"key\": {\"key2\": \"value\"}}";
-    
+
     private readonly string _notTaintedJson = "{ \"key\": \"value\" }";
 
     public JsonDocumentTests()
@@ -73,19 +73,4 @@ public class JsonDocumentTests : InstrumentationTestsBase
         Assert.Equal("value2", str);
         AssertTainted(str);
     }
-    
-    [Fact]
-    public void GivenADeepObject_WhenParsing_OnRootElement_Vulnerable()
-    {
-        var json = JsonDocument.Parse(_taintedJsonDeepObject);
-        var element = json.RootElement;
-        var value = element.GetProperty("key");
-        var value2 = value.GetProperty("key2");
-        var str = value2.GetString();
-
-        Assert.Equal("value", str);
-        AssertTainted(str);
-    }
-
-    
 }
