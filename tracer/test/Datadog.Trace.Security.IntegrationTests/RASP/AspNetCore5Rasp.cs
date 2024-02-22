@@ -8,7 +8,6 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -82,7 +81,11 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
     [Trait("RunOnWindows", "True")]
     public async Task TestRaspRequest(string url, string exploit)
     {
-        var testName = IastEnabled ? "RaspIast.AspNetCore5" : "Rasp.AspNetCore5";
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+        SetEnvironmentVariable("DD_APPSEC_RULES", "C:\\CommonFolder\\shared\\repos\\dd-trace-5\\tracer\\test\\Datadog.Trace.Security.Unit.Tests\\rasp-rule-set.json");
+        var filePath = "/etc/password";
+        var filename = IastEnabled ? "Rasp.PathTraversal.AspNetCore5.IastEnabled" : "Rasp.PathTraversal.AspNetCore5.IastDisabled";
+        var url = $"/Iast/GetFileContent?file={filePath}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;

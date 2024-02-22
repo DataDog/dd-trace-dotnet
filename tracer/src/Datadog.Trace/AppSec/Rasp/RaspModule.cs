@@ -18,7 +18,18 @@ internal static class RaspModule
         CheckVulnerability(AddressesConstants.FileAccess, file);
     }
 
-    private static void CheckVulnerability(string address, string valueToCheck)
+    internal static void CheckAndBlock(IResult? result)
+    {
+        if (result is not null)
+        {
+            if (result!.ShouldBlock)
+            {
+                throw new BlockException(result);
+            }
+        }
+    }
+
+    private static void RunWaf(Dictionary<string, object> arguments)
     {
         var security = Security.Instance;
 
@@ -34,14 +45,30 @@ internal static class RaspModule
             return;
         }
 
-        var arguments = new Dictionary<string, object> { [address] = valueToCheck };
-        RunWaf(arguments);
-    }
+        IResult? result = null;
+        SecurityCoordinator? securityCoordinator = null;
 
-    private static void RunWaf(Dictionary<string, object> arguments)
-    {
-        var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, Tracer.Instance.InternalActiveScope.Root.Span);
-        var result = securityCoordinator.RunWaf(arguments, (log, ex) => log.Error(ex, "Error in RASP OnLfi"));
-        securityCoordinator.CheckAndBlockRasp(result);
+#if NETFRAMEWORK
+        var context = HttpContext.Current;
+        securityCoordinator = new SecurityCoordinator(security, context, rootSpan);
+        result = securityCoordinator?.RunWaf(arguments);
+#else
+        if (CoreHttpContextStore.Instance.Get() is { } httpContext)
+        {
+            var transport = new SecurityCoordinator.HttpTransport(httpContext);
+            if (!transport.IsBlocked)
+            {
+                securityCoordinator = new SecurityCoordinator(security, httpContext, rootSpan, transport);
+                result = securityCoordinator?.RunWaf(arguments);
+            }
+        }
+#endif
+        if (result is not null)
+        {
+            CheckAndBlock(result);
+            securityCoordinator?.TryReport(result, false);
+            var json = JsonConvert.SerializeObject(result.Data);
+            Log.Information("RASP WAF result: {Result}", json);
+        }
     }
 }
