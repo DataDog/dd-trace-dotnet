@@ -24,9 +24,4 @@ internal sealed class AspectMethodReplaceAttribute : AspectAttribute
         : base(targetMethod, targetType, new int[0], new bool[0], filters, AspectType.Default)
     {
     }
-
-    public AspectMethodReplaceAttribute(string targetMethod, AspectFilter[] filters, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
-        : base(targetMethod, string.Empty, new int[0], new bool[0], filters, aspectType, vulnerabilityTypes)
-    {
-    }
 }

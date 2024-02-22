@@ -57,6 +57,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static void ResetChecks() => _checkNumber = 1;
 
+        public static string EnableDiagnosticsSet(string key) => $"The environment variable {key} is set to 0, which disables profiling.";
+
         public static string GetProcessError(string error) => $"Could not fetch information about target process: {error}. Make sure to run the command from an elevated prompt, and check that the pid is correct.";
 
         public static string TracerNotEnabled(string value) => $"Tracing is explicitly disabled through DD_TRACE_ENABLED with a value of {value}, to enable automatic tracing set it to true.";

@@ -8,6 +8,7 @@ using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
@@ -754,6 +755,26 @@ namespace Samples.Security.AspNetCore5.Controllers
             return result is null ?
                 Content($"Invalid user/password") :
                 Content($"User " + result.ChildNodes[0].InnerText + " successfully logged.");
+        }
+
+        [HttpGet("TypeReflectionInjection")]
+        [Route("TypeReflectionInjection")]
+        public IActionResult TypeReflectionInjection(string type)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(type))
+                {
+                    var vulnerableType = Type.GetType(type);
+                    return Content($"Result: " + vulnerableType);
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
+            
+            return BadRequest($"No type was provided");
         }
 
         static string CopyStringAvoidTainting(string original)
