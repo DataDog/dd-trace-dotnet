@@ -352,29 +352,12 @@ namespace Datadog.Trace.AppSec
 
         private string GetJsonResponse()
         {
-            try
+            if (_blockedJsonTemplateCache != null)
             {
-                if (_blockedJsonTemplateCache != null)
-                {
-                    return _blockedJsonTemplateCache;
-                }
+                return _blockedJsonTemplateCache;
+            }
 
-                if (_settings.BlockedJsonTemplatePath != null && AppDomain.CurrentDomain.BaseDirectory != null)
-                {
-                    var fullPath =
-                        Path.IsPathRooted(_settings.BlockedJsonTemplatePath)
-                            ? _settings.BlockedJsonTemplatePath
-                            : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _settings.BlockedJsonTemplatePath);
-                    if (File.Exists(fullPath))
-                    {
-                        _blockedJsonTemplateCache = File.ReadAllText(fullPath);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error setting json blocking template, defaulting in built in template");
-            }
+            _blockedJsonTemplateCache = GetFileTemplate(_settings.BlockedJsonTemplatePath);
 
             if (_blockedJsonTemplateCache == null)
             {
@@ -386,29 +369,12 @@ namespace Datadog.Trace.AppSec
 
         private string GetHtmlResponse()
         {
-            try
+            if (_blockedHtmlTemplateCache != null)
             {
-                if (_blockedHtmlTemplateCache != null)
-                {
-                    return _blockedHtmlTemplateCache;
-                }
+                return _blockedHtmlTemplateCache;
+            }
 
-                if (_settings.BlockedHtmlTemplatePath != null && AppDomain.CurrentDomain.BaseDirectory != null)
-                {
-                    var fullPath =
-                        Path.IsPathRooted(_settings.BlockedHtmlTemplatePath)
-                            ? _settings.BlockedHtmlTemplatePath
-                            : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _settings.BlockedHtmlTemplatePath);
-                    if (File.Exists(fullPath))
-                    {
-                        _blockedHtmlTemplateCache = File.ReadAllText(fullPath);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error setting html blocking template, defaulting in built in template");
-            }
+            _blockedHtmlTemplateCache = GetFileTemplate(_settings.BlockedHtmlTemplatePath);
 
             if (_blockedHtmlTemplateCache == null)
             {
@@ -416,6 +382,34 @@ namespace Datadog.Trace.AppSec
             }
 
             return _blockedHtmlTemplateCache;
+        }
+
+        private string? GetFileTemplate(string? templatePath)
+        {
+            try
+            {
+                var rootDir = AppDomain.CurrentDomain.BaseDirectory ?? Directory.GetCurrentDirectory();
+                if (templatePath != null)
+                {
+                    var fullPath =
+                        Path.IsPathRooted(templatePath)
+                            ? templatePath
+                            : Path.Combine(rootDir, templatePath);
+
+                    if (File.Exists(fullPath))
+                    {
+                        return File.ReadAllText(fullPath);
+                    }
+
+                    Log.Warning("Response template doesn't exist, templatePath: {TemplatePath} {FullPath}", templatePath, fullPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error setting blocking template, will default to built in template, templatePath: {TemplatePath}", templatePath);
+            }
+
+            return null;
         }
 
         /// <summary> Frees resources </summary>
