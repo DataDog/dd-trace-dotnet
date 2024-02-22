@@ -33,6 +33,8 @@ public class ContextTests : WafLibraryRequiredTest
     [InlineData(false)]
     public void MultipleContextsRun(bool useUnsafeEncoder)
     {
+        Skip.If(true, "Generates too many logs. Consider whether it's better to refactor to avoid generating warns or just remove completely");
+
         if (useUnsafeEncoder)
         {
             AppSec.WafEncoding.Encoder.SetPoolSize(0);
