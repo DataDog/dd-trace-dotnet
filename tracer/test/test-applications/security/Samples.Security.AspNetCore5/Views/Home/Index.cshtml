@@ -126,6 +126,8 @@
 
     <div><a href="javascript:getWithHeaders('/Iast/InsecureAuthProtocol', {'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='})">GET /Iast/InsecureAuthProtocol [Basic Scheme]</a></div>
     
+	<div><a href="/Iast/ReflectedXss/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXss </a></div>
+
     <div>
         @Html.Raw(Context.Request.Query["q"])
     </div>

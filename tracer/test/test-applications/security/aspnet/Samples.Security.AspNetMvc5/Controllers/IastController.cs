@@ -605,5 +605,14 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             throw new SystemException("Custom exception message");
         }
+
+        [ValidateInput(false)]
+        [Route("ReflectedXss")]
+        public ActionResult ReflectedXss(string param)
+        {
+            ViewData["XSS"] = param;
+            return View();
+        }
+
     }
 }

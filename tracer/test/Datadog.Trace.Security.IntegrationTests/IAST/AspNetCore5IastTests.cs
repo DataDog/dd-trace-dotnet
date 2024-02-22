@@ -712,6 +712,26 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
                             .DisableRequireUniquePrefix();
     }
 
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastReflectedXssRequest()
+    {
+        var filename = "Iast.ReflectedXss.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/Iast/ReflectedXss?param=<b>RawValue</b>";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
     // In header injections, we should exclude some headers to prevent false positives:
     // location: it is already reported in UNVALIDATED_REDIRECT vulnerability detection.
     // Sec-WebSocket-Location, Sec-WebSocket-Accept, Upgrade, Connection: Usually the framework gets info from request
