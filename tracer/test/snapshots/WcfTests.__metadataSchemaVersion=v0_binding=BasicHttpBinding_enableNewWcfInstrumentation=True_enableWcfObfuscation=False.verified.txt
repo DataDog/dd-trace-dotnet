@@ -88,10 +88,16 @@
     Service: Samples.Wcf,
     Type: web,
     ParentId: Id_9,
+    Error: 1,
     Tags: {
       component: Wcf,
       custom-tag: DispatchMessageInspector,
       env: integration_tests,
+      error.msg: Something happened,
+      error.stack:
+System.ServiceModel.FaultException: Something happened
+at Samples.Wcf.Server.CalculatorService.EndServerAsyncAdd(IAsyncResult asyncResult),
+      error.type: System.ServiceModel.FaultException,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
@@ -142,10 +148,16 @@
     Service: Samples.Wcf,
     Type: web,
     ParentId: Id_13,
+    Error: 1,
     Tags: {
       component: Wcf,
       custom-tag: DispatchMessageInspector,
       env: integration_tests,
+      error.msg: Something happened,
+      error.stack:
+System.ServiceModel.FaultException: Something happened
+at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2, Boolean throwsException, Boolean synchronouslyCompletes, AsyncCallback callback, Object state),
+      error.type: System.ServiceModel.FaultException,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
