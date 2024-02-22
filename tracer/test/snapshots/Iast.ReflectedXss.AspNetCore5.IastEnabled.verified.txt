@@ -26,9 +26,10 @@
   "vulnerabilities": [
     {
       "type": "XSS",
+      "hash": -623616875,
       "location": {
         "spanId": XXX,
-        "path": "AspNetCoreGeneratedDocument.Views_Iast_ReflectedXss+<<ExecuteAsync>b__8_1>d",
+        "path": "AspNetCore.Views_Iast_ReflectedXss+<<ExecuteAsync>b__8_1>d",
         "method": "MoveNext"
       },
       "evidence": {

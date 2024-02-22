@@ -520,6 +520,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
+        settings.AddRegexScrubber(IastVerifyScrubberExtensions.AspnetMethod);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
