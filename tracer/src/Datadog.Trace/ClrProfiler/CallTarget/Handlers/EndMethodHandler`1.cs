@@ -6,6 +6,7 @@
 using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
 #pragma warning disable SA1649 // File name must match first type name
@@ -14,8 +15,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
     internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
     {
-        private static readonly InvokeDelegate _invokeDelegate = null;
-        private static readonly ContinuationGenerator<TTarget, TReturn> _continuationGenerator = null;
+        private static InvokeDelegate _invokeDelegate = null;
+        private static ContinuationGenerator<TTarget, TReturn> _continuationGenerator = null;
+
+#if NET6_0_OR_GREATER
+
+        private static bool _isInitialized = false;
+#endif
 
         static EndMethodHandler()
         {
@@ -68,6 +74,74 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
         internal delegate CallTargetReturn<TReturn> InvokeDelegate(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
 
+#if NET6_0_OR_GREATER
+        // ReSharper disable once UnusedMember.Global - Use by NativeAOT
+        internal static unsafe void EnsureInitializedForNativeAot<TResult>(
+            bool isTask,
+            delegate*<TTarget, TReturn, Exception, in CallTargetState, CallTargetReturn<TReturn>> invokeDelegate,
+            IntPtr callback,
+            bool isAsyncCallback,
+            bool preserveContext)
+        {
+            if (!_isInitialized)
+            {
+                if (invokeDelegate != default)
+                {
+                    _invokeDelegate = (TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state) => invokeDelegate(instance, returnValue, exception, in state);
+                }
+
+                if (callback != IntPtr.Zero)
+                {
+                    if (isTask)
+                    {
+                        TaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult>.EnsureInitializedForNativeAot(callback, isAsyncCallback, preserveContext);
+                        _continuationGenerator = new TaskContinuationGenerator<TIntegration, TTarget, TReturn>();
+                    }
+                    else
+                    {
+                        ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult>.EnsureInitializedForNativeAot(callback, isAsyncCallback, preserveContext);
+                        _continuationGenerator = new ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn>();
+                    }
+                }
+
+                _isInitialized = true;
+            }
+        }
+
+        // ReSharper disable once UnusedMember.Global - Use by NativeAOT
+        internal static unsafe void EnsureInitializedForNativeAot(
+            bool isTask,
+            delegate*<TTarget, TReturn, Exception, in CallTargetState, CallTargetReturn<TReturn>> invokeDelegate,
+            IntPtr callback,
+            bool isAsyncCallback,
+            bool preserveContext)
+        {
+            if (!_isInitialized)
+            {
+                if (invokeDelegate != default)
+                {
+                    _invokeDelegate = (TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state) => invokeDelegate(instance, returnValue, exception, in state);
+                }
+
+                if (callback != IntPtr.Zero)
+                {
+                    if (isTask)
+                    {
+                        TaskContinuationGenerator<TIntegration, TTarget, TReturn>.EnsureInitializedForNativeAot(callback, isAsyncCallback, preserveContext);
+                        _continuationGenerator = new TaskContinuationGenerator<TIntegration, TTarget, TReturn>();
+                    }
+                    else
+                    {
+                        ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn>.EnsureInitializedForNativeAot(callback, isAsyncCallback, preserveContext);
+                        _continuationGenerator = new ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn>();
+                    }
+                }
+
+                _isInitialized = true;
+            }
+        }
+#endif
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static CallTargetReturn<TReturn> Invoke(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
@@ -86,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             if (_invokeDelegate != null)
             {
-                CallTargetReturn<TReturn> returnWrap = _invokeDelegate(instance, returnValue, exception, in state);
+                var returnWrap = _invokeDelegate(instance, returnValue, exception, in state);
                 returnValue = returnWrap.GetReturnValue();
             }
 

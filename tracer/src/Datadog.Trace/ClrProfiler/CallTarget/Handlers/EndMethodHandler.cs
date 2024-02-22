@@ -6,13 +6,14 @@
 using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
     internal static class EndMethodHandler<TIntegration, TTarget>
     {
-        private static readonly InvokeDelegate _invokeDelegate;
+        private static InvokeDelegate _invokeDelegate;
 
         static EndMethodHandler()
         {
@@ -44,5 +45,23 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         {
             return _invokeDelegate(instance, exception, in state);
         }
+
+#if NET6_0_OR_GREATER
+        // ReSharper disable once UnusedMember.Global - Use by NativeAOT
+        internal static unsafe void EnsureInitializedForNativeAot(delegate*<TTarget, Exception, in CallTargetState, CallTargetReturn> invokeDelegate)
+        {
+            if (_invokeDelegate is null)
+            {
+                if (invokeDelegate == default)
+                {
+                    _invokeDelegate = (TTarget instance, Exception exception, in CallTargetState state) => CallTargetReturn.GetDefault();
+                }
+                else
+                {
+                    _invokeDelegate = (TTarget instance, Exception exception, in CallTargetState state) => invokeDelegate(instance, exception, in state);
+                }
+            }
+        }
+#endif
     }
 }

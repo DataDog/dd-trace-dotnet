@@ -6,13 +6,14 @@
 using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+
 #pragma warning disable SA1649 // File name must match first type name
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
     internal static class BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3>
     {
-        private static readonly InvokeDelegate _invokeDelegate;
+        private static InvokeDelegate _invokeDelegate;
 
         static BeginMethodHandler()
         {
@@ -41,6 +42,24 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         }
 
         internal delegate CallTargetState InvokeDelegate(TTarget instance, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3);
+
+#if NET6_0_OR_GREATER
+        // ReSharper disable once UnusedMember.Global - Use by NativeAOT
+        internal static unsafe void EnsureInitializedForNativeAot(delegate*<TTarget, ref TArg1, ref TArg2, ref TArg3, CallTargetState> invokeDelegate)
+        {
+            if (_invokeDelegate is null)
+            {
+                if (invokeDelegate == default)
+                {
+                    _invokeDelegate = (TTarget instance, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3) => CallTargetState.GetDefault();
+                }
+                else
+                {
+                    _invokeDelegate = (TTarget instance, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3) => invokeDelegate(instance, ref arg1, ref arg2, ref arg3);
+                }
+            }
+        }
+#endif
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static CallTargetState Invoke(TTarget instance, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3)

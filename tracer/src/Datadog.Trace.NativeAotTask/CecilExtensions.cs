@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -61,5 +63,10 @@ internal static class CecilExtensions
         {
             type.IsPublic = true;
         }
+    }
+
+    public static void MakePublic(this MethodDefinition method)
+    {
+        method.IsPublic = true;
     }
 }

@@ -824,19 +824,6 @@ public class AotProcessor
 
             // TODO: we probably want to use some attributes to make the bits of logic to delete
             type.Methods.Remove(cctor);
-
-            foreach (var field in type.Fields)
-            {
-                field.IsPublic = true;
-                field.IsInitOnly = false;
-
-                var fieldType = field.FieldType.Resolve();
-
-                if (fieldType.Module == _datadogAssembly.MainModule)
-                {
-                    fieldType.MakePublic();
-                }
-            }
         }
     }
 
@@ -916,7 +903,7 @@ public class AotProcessor
         });
     }
 
-    private MethodDefinition GetMethodBeginInvoke(TypeDefinition instrumentationType, MethodDefinition method)
+    private MethodDefinition? GetMethodBeginInvoke(TypeDefinition instrumentationType, MethodDefinition method)
     {
         var callbackMethodName = $"<>onMethodBegin_{instrumentationType.FullName.Replace('.', '_')}";
 
@@ -924,6 +911,21 @@ public class AotProcessor
 
         if (methodBeginInvoke == null)
         {
+            var onMethodBegin = instrumentationType.Methods.SingleOrDefault(m => m.Name == "OnMethodBegin");
+
+            if (onMethodBegin == null)
+            {
+                return null;
+            }
+
+            var onMethodBeginGeneric = new GenericInstanceMethod(onMethodBegin);
+            onMethodBeginGeneric.GenericArguments.Add(method.DeclaringType);
+
+            foreach (var parameter in method.Parameters)
+            {
+                onMethodBeginGeneric.GenericArguments.Add(parameter.ParameterType);
+            }
+
             var callTargetState = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
 
             var attributes = MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.Static;
@@ -948,21 +950,83 @@ public class AotProcessor
                 ilProcessor.Append(Instruction.Create(OpCodes.Ldarga, parameter));
             }
 
-            // TODO: Handle the case where there is no OnMethodBegin on the integration
-            var onMethodBegin = instrumentationType.Methods.Single(m => m.Name == "OnMethodBegin");
-            var onMethodBeginGeneric = new GenericInstanceMethod(onMethodBegin);
-            onMethodBeginGeneric.GenericArguments.Add(method.DeclaringType);
-
-            foreach (var parameter in method.Parameters)
-            {
-                onMethodBeginGeneric.GenericArguments.Add(parameter.ParameterType);
-            }
-
             ilProcessor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(onMethodBeginGeneric)));
             ilProcessor.Append(Instruction.Create(OpCodes.Ret));
         }
 
         return methodBeginInvoke;
+    }
+
+    private MethodDefinition? GetMethodEndInvoke(TypeDefinition instrumentationType, MethodDefinition method)
+    {
+        var callbackMethodName = $"<>onMethodEnd_{instrumentationType.FullName.Replace('.', '_')}";
+
+        var methodEndInvoke = method.DeclaringType.Methods.FirstOrDefault(m => m.Name == callbackMethodName);
+
+        // CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+
+        if (methodEndInvoke == null)
+        {
+            var onMethodEnd = instrumentationType.Methods.SingleOrDefault(m => m.Name == "OnMethodEnd");
+
+            if (onMethodEnd == null)
+            {
+                return null;
+            }
+
+            TypeReference callTargetReturn;
+
+            if (method.ReturnType == null)
+            {
+                callTargetReturn = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn");
+            }
+            else
+            {
+                var callTargetReturnOpen = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1");
+                callTargetReturn = callTargetReturnOpen.MakeGenericInstanceType(method.ReturnType);
+            }
+
+            var callTargetState = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
+
+            var attributes = MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.Static;
+
+            methodEndInvoke = new MethodDefinition(callbackMethodName, attributes, method.Module.ImportReference(callTargetReturn));
+            method.DeclaringType.Methods.Add(methodEndInvoke);
+
+            methodEndInvoke.Parameters.Add(new ParameterDefinition(method.DeclaringType));
+
+            if (method.ReturnType != null)
+            {
+                methodEndInvoke.Parameters.Add(new ParameterDefinition(method.ReturnType));
+            }
+
+            methodEndInvoke.Parameters.Add(new ParameterDefinition(method.Module.ImportReference(typeof(Exception))));
+            methodEndInvoke.Parameters.Add(new ParameterDefinition(method.Module.ImportReference(callTargetState)) { IsIn = true });
+
+            var ilProcessor = methodEndInvoke.Body.GetILProcessor();
+
+            var onMethodEndGeneric = new GenericInstanceMethod(onMethodEnd);
+            onMethodEndGeneric.GenericArguments.Add(method.DeclaringType);
+            onMethodEndGeneric.GenericArguments.Add(method.ReturnType);
+
+            // TODO: 🦆-typing
+            int parameterIndex = 0;
+
+            ilProcessor.Append(Instruction.Create(OpCodes.Ldarg, methodEndInvoke.Parameters[parameterIndex++])); // instance
+
+            if (method.ReturnType != null)
+            {
+                ilProcessor.Append(Instruction.Create(OpCodes.Ldarg, methodEndInvoke.Parameters[parameterIndex++])); // returnValue
+            }
+
+            ilProcessor.Append(Instruction.Create(OpCodes.Ldarg, methodEndInvoke.Parameters[parameterIndex++])); // exception
+            ilProcessor.Append(Instruction.Create(OpCodes.Ldarga, methodEndInvoke.Parameters[parameterIndex])); // in state
+
+            ilProcessor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(onMethodEndGeneric)));
+            ilProcessor.Append(Instruction.Create(OpCodes.Ret));
+        }
+
+        return methodEndInvoke;
     }
 
     private (Instruction Begin, Instruction End) InsertOnMethodBegin(
@@ -998,29 +1062,23 @@ public class AotProcessor
 
         var beginMethodHandler = beginMethodHandlerOpen.MakeGenericInstanceType(beginMethodHandlerGenericArguments.ToArray());
 
-        var invokeDelegateField = beginMethodHandlerOpen.Fields.Single(f => f.Name == "_invokeDelegate");
+        var methodBeginInvoke = GetMethodBeginInvoke(instrumentationType, method);
 
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldsfld, method.Module.ImportReference(invokeDelegateField.MakeGenericField(beginMethodHandler))));
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Nop));
+        var ensureInitialized = beginMethodHandlerOpen.Methods.Single(m => m.Name == "EnsureInitializedForNativeAot");
+        ensureInitialized.MakePublic();
 
-        var branch = instruction;
+        // EnsureInitializedForNativeAot(IntPtr invokeDelegate)
+        if (methodBeginInvoke != null)
+        {
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(methodBeginInvoke)));
+        }
+        else
+        {
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldc_I4_0));
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Conv_I));
+        }
 
-        var callbackMethod = GetMethodBeginInvoke(instrumentationType, method);
-
-        var invokeDelegate = beginMethodHandlerOpen.NestedTypes.Single(t => t.Name == "InvokeDelegate");
-        invokeDelegate.MakePublic();
-
-        var invokeDelegateGeneric = invokeDelegate.MakeGenericInstanceType(beginMethodHandlerGenericArguments.ToArray());
-
-        var invokeDelegateCtor = invokeDelegate.Methods.Single(m => m.Name == ".ctor" && m.Parameters.Count == 2);
-
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldnull));
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(callbackMethod)));
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Newobj, method.Module.ImportReference(invokeDelegateCtor.MakeGenericMethod(invokeDelegateGeneric))));
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stsfld, method.Module.ImportReference(invokeDelegateField.MakeGenericField(beginMethodHandler))));
-
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Nop));
-        ilProcessor.Replace(branch, Instruction.Create(OpCodes.Brtrue, instruction));
+        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(ensureInitialized.MakeGenericMethod(beginMethodHandler))));
 
         var callTargetInvoker = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
         var beginMethod = callTargetInvoker.Methods.Single(
@@ -1103,6 +1161,8 @@ public class AotProcessor
         VariableDefinition exceptionVariable,
         VariableDefinition returnVariable)
     {
+        // TODO: Check that async method returning Task (not Task<T>) are properly handled. Looks like we're expected to return Task<object> somewhere
+
         var instruction = position;
 
         var ilProcessor = method.Body.GetILProcessor();
@@ -1110,168 +1170,165 @@ public class AotProcessor
         var onMethodEndMethodOpen = instrumentationType.Methods.SingleOrDefault(m => m.Name == "OnMethodEnd");
         var onAsyncMethodEndMethodOpen = instrumentationType.Methods.SingleOrDefault(m => m.Name == "OnAsyncMethodEnd");
 
-        if (onMethodEndMethodOpen != null || onAsyncMethodEndMethodOpen != null)
+        onMethodEndMethodOpen?.MakePublic();
+        onAsyncMethodEndMethodOpen?.MakePublic();
+
+        bool isTask = false;
+        bool hasAsyncReturnValue = false;
+        bool isAsyncCallback = false;
+        bool preserveContext = false;
+
+        if (method.ReturnType != null)
         {
-            if (onMethodEndMethodOpen != null)
+            isTask = method.ReturnType.Name is "Task" or "Task`1";
+            hasAsyncReturnValue = method.ReturnType.GenericParameters.Count > 0;
+        }
+
+        if (onAsyncMethodEndMethodOpen != null)
+        {
+            preserveContext = onAsyncMethodEndMethodOpen.CustomAttributes.Any(a => a.AttributeType.Name == "PreserveContextAttribute");
+            isAsyncCallback = onAsyncMethodEndMethodOpen.ReturnType.Name is "Task" or "Task`1";
+        }
+
+        if (method.ReturnType == null)
+        {
+            var endMethodHandlerOpen = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.Handlers.EndMethodHandler`2");
+
+            var endMethodHandler = endMethodHandlerOpen.MakeGenericInstanceType(
+                method.Module.ImportReference(instrumentationType),
+                method.Module.ImportReference(method.DeclaringType));
+
+            var ensureInitialized = endMethodHandlerOpen.Methods.Single(m => m.Name == "EnsureInitializedForNativeAot");
+            ensureInitialized.MakePublic();
+
+            var methodEndInvoke = GetMethodEndInvoke(instrumentationType, method);
+
+            // EnsureInitializedForNativeAot(IntPtr invokeDelegate)
+            if (methodEndInvoke != null)
             {
-                onMethodEndMethodOpen.IsPublic = true;
-
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldarg_0));
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloc, returnVariable));
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloc, exceptionVariable));
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloca, callTargetStateVariable));
-
-                var onMethodEndMethod = new GenericInstanceMethod(onMethodEndMethodOpen);
-                onMethodEndMethod.GenericArguments.Add(method.DeclaringType);
-                onMethodEndMethod.GenericArguments.Add(method.ReturnType);
-
-                var onMethodEndMethodRef = method.Module.ImportReference(onMethodEndMethod);
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, onMethodEndMethodRef));
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stloc, callTargetReturnVariable));
-
-                var callTargetReturnType = callTargetReturnVariable.VariableType.Resolve();
-
-                var getReturnValueMethod = callTargetReturnType.Resolve().Methods.First(m => m.Name == "GetReturnValue");
-
-                var getReturnValueMethodGenericReference = new MethodReference(getReturnValueMethod.Name, getReturnValueMethod.ReturnType, callTargetReturnType)
-                {
-                    CallingConvention = getReturnValueMethod.CallingConvention,
-                    HasThis = getReturnValueMethod.HasThis,
-                    ExplicitThis = getReturnValueMethod.ExplicitThis,
-                };
-
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloca, callTargetReturnVariable));
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(getReturnValueMethodGenericReference)));
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stloc, returnVariable));
-                // instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Leave_S, lastReturn));
+                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(methodEndInvoke)));
             }
             else
             {
-                onAsyncMethodEndMethodOpen!.IsPublic = true;
-
-                if (method.ReturnType.Name == "Task")
-                {
-                    Log($"Task not implemented");
-                }
-                else if (method.ReturnType.Name == "Task`1")
-                {
-                    // TODO: Initialize _invokeDelegate when there is an OnMethodEnd method
-
-                    var onAsyncMethodEnd = instrumentationType.Methods.Single(m => m.Name == "OnAsyncMethodEnd");
-
-                    bool isAsyncCallback = onAsyncMethodEnd.ReturnType.Name is "Task" or "Task`1";
-                    bool preserveContext = onAsyncMethodEnd.CustomAttributes.Any(a => a.AttributeType.Name == "PreserveContextAttribute");
-
-                    var endMethodHandlerOpen = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.Handlers.EndMethodHandler`3");
-
-                    var endMethodHandler = endMethodHandlerOpen.MakeGenericInstanceType(
-                        method.Module.ImportReference(instrumentationType),
-                        method.Module.ImportReference(method.DeclaringType),
-                        method.Module.ImportReference(method.ReturnType));
-
-                    var invokeDelegateField = endMethodHandlerOpen.Fields.Single(f => f.Name == "_invokeDelegate");
-                    var continuationGeneratorField = endMethodHandlerOpen.Fields.Single(f => f.Name == "_continuationGenerator");
-
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldsfld, method.Module.ImportReference(invokeDelegateField.MakeGenericField(endMethodHandler))));
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Nop));
-
-                    var branch = instruction;
-
-                    // new TaskContinuationGenerator<TIntegration, TTarget, TReturn>();
-                    var taskContinuationGeneratorOpen = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations.TaskContinuationGenerator`4");
-
-                    var taskContinuationGenerator = taskContinuationGeneratorOpen.MakeGenericInstanceType(
-                        method.Module.ImportReference(instrumentationType),
-                        method.Module.ImportReference(method.DeclaringType),
-                        method.Module.ImportReference(method.ReturnType),
-                        method.Module.ImportReference(((GenericInstanceType)method.ReturnType).GenericArguments[0]));
-
-                    var taskContinuationGeneratorCtor = taskContinuationGeneratorOpen.Methods.First(m => m.IsConstructor && !m.IsStatic);
-
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Newobj, method.Module.ImportReference(taskContinuationGeneratorCtor.MakeGenericMethod(taskContinuationGenerator))));
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stsfld, method.Module.ImportReference(continuationGeneratorField.MakeGenericField(endMethodHandler))));
-
-                    // Initialize TaskContinuationGenerator.Resolver
-                    var resolverField = taskContinuationGeneratorOpen.Fields.First(f => f.Name == "Resolver");
-
-                    var callbackHandler = taskContinuationGeneratorOpen.NestedTypes.First(t => t.Name == (isAsyncCallback ? "AsyncCallbackHandler" : "SyncCallbackHandler"));
-                    callbackHandler.IsNestedPublic = true;
-
-                    var genericCallbackHandler = callbackHandler.MakeGenericInstanceType(
-                        method.Module.ImportReference(instrumentationType),
-                        method.Module.ImportReference(method.DeclaringType),
-                        method.Module.ImportReference(method.ReturnType),
-                        method.Module.ImportReference(((GenericInstanceType)method.ReturnType).GenericArguments[0]));
-
-                    var callbackHandlerCtor = callbackHandler.Methods.First(m => m.IsConstructor && !m.IsStatic);
-
-                    var genericOnAsyncMethodEnd = new GenericInstanceMethod(onAsyncMethodEnd);
-                    genericOnAsyncMethodEnd.GenericArguments.Add(method.DeclaringType);
-                    genericOnAsyncMethodEnd.GenericArguments.Add(((GenericInstanceType)method.ReturnType).GenericArguments[0]);
-
-                    var continuationGeneratorTypeOpen = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations.ContinuationGenerator`3");
-                    continuationGeneratorTypeOpen.IsPublic = true;
-
-                    var continuationMethodDelegate = continuationGeneratorTypeOpen.NestedTypes.First(t => t.Name == (isAsyncCallback ? "AsyncContinuationMethodDelegate" : "ContinuationMethodDelegate"));
-                    continuationMethodDelegate.IsNestedPublic = true;
-
-                    var continuationMethodDelegateGeneric = continuationMethodDelegate.MakeGenericInstanceType(
-                        method.Module.ImportReference(method.DeclaringType),
-                        method.Module.ImportReference(method.ReturnType),
-                        method.Module.ImportReference(((GenericInstanceType)method.ReturnType).GenericArguments[0]));
-
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldnull));
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(genericOnAsyncMethodEnd)));
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Newobj, method.Module.ImportReference(continuationMethodDelegate.Methods.First(m => m.IsConstructor).MakeGenericMethod(continuationMethodDelegateGeneric))));
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(preserveContext ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
-
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Newobj, method.Module.ImportReference(callbackHandlerCtor.MakeGenericMethod(genericCallbackHandler))));
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stsfld, method.Module.ImportReference(resolverField.MakeGenericField(taskContinuationGenerator))));
-
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Nop));
-                    ilProcessor.Replace(branch, Instruction.Create(OpCodes.Brtrue, instruction));
-
-                    // Call Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.EndMethod
-                    // CallTargetReturn<TReturn> EndMethod<TIntegration, TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
-                    var callTargetInvoker = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
-                    var endMethodOpen = callTargetInvoker.Methods.Single(t => t.Name == "EndMethod" && t.GenericParameters.Count == 3 && t.Parameters.Last().Attributes.HasFlag(ParameterAttributes.In));
-
-                    var endMethod = new GenericInstanceMethod(endMethodOpen);
-                    endMethod.GenericArguments.Add(method.Module.ImportReference(instrumentationType));
-                    endMethod.GenericArguments.Add(method.Module.ImportReference(method.DeclaringType));
-                    endMethod.GenericArguments.Add(method.Module.ImportReference(method.ReturnType));
-
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldarg_0));
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloc, returnVariable));
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloc, exceptionVariable));
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloca, callTargetStateVariable));
-
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(endMethod)));
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stloc, callTargetReturnVariable));
-
-                    // Unwrap the CallTargetReturn
-                    var callTargetReturnOpenType = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1");
-                    var callTargetReturnType = callTargetReturnOpenType.MakeGenericInstanceType(method.ReturnType);
-
-                    var getReturnValueMethod = callTargetReturnOpenType.Methods.Single(m => m.Name == "GetReturnValue");
-
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloca, callTargetReturnVariable));
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(getReturnValueMethod.MakeGenericMethod(callTargetReturnType))));
-                    instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stloc, returnVariable));
-                }
-                else if (method.ReturnType.Name == "ValueTask")
-                {
-                    Log($"ValueTask not implemented");
-                }
-                else if (method.ReturnType.Name == "ValueTask`1")
-                {
-                    Log($"ValueTask`1 not implemented");
-                }
-                else
-                {
-                    Log($"Skipping {method.Name} because it's not an async method");
-                }
+                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldc_I4_0));
+                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Conv_I));
             }
+
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(ensureInitialized.MakeGenericMethod(endMethodHandler))));
+
+            // Call Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.EndMethod
+            // CallTargetReturn EndMethod<TIntegration, TTarget>(TTarget instance, Exception exception, in CallTargetState state)
+            var callTargetInvoker = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
+            var endMethodOpen = callTargetInvoker.Methods.Single(t => t.Name == "EndMethod" && t.GenericParameters.Count == 2 && t.Parameters.Last().Attributes.HasFlag(ParameterAttributes.In));
+
+            var endMethod = new GenericInstanceMethod(endMethodOpen);
+            endMethod.GenericArguments.Add(method.Module.ImportReference(instrumentationType));
+            endMethod.GenericArguments.Add(method.Module.ImportReference(method.DeclaringType));
+
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldarg_0));
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloc, exceptionVariable));
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloca, callTargetStateVariable));
+
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(endMethod)));
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stloc, callTargetReturnVariable));
+
+            // pop the CallTargetReturn
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Pop));
+        }
+        else
+        {
+            var endMethodHandlerOpen = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.Handlers.EndMethodHandler`3");
+
+            var endMethodHandler = endMethodHandlerOpen.MakeGenericInstanceType(
+                method.Module.ImportReference(instrumentationType),
+                method.Module.ImportReference(method.DeclaringType),
+                method.Module.ImportReference(method.ReturnType));
+
+            var ensureInitializedOpen = endMethodHandlerOpen.Methods.Single(
+                m => m.Name == "EnsureInitializedForNativeAot" && m.GenericParameters.Count == (hasAsyncReturnValue ? 1 : 0));
+            ensureInitializedOpen.MakePublic();
+
+            MethodReference ensureInitialized;
+
+            if (hasAsyncReturnValue)
+            {
+                var ensureInitializedGeneric = new GenericInstanceMethod(ensureInitializedOpen);
+                ensureInitializedGeneric.GenericArguments.Add(method.Module.ImportReference(((GenericInstanceType)method.ReturnType).GenericArguments[0]));
+                ensureInitialized = ensureInitializedGeneric;
+            }
+            else
+            {
+                ensureInitialized = ensureInitializedOpen;
+            }
+
+            var methodEndInvoke = GetMethodEndInvoke(instrumentationType, method);
+
+            // EnsureInitializedForNativeAot(bool isTask, IntPtr invokeDelegate, IntPtr callback, bool isAsyncCallback, bool preserveContext)
+
+            // isTask
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(isTask ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+
+            // invokeDelegate
+            if (methodEndInvoke != null)
+            {
+                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(methodEndInvoke)));
+            }
+            else
+            {
+                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldc_I4_0));
+                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Conv_I));
+            }
+
+            // callback
+            if (onAsyncMethodEndMethodOpen != null)
+            {
+                var genericOnAsyncMethodEnd = new GenericInstanceMethod(onAsyncMethodEndMethodOpen);
+                genericOnAsyncMethodEnd.GenericArguments.Add(method.DeclaringType);
+                genericOnAsyncMethodEnd.GenericArguments.Add(((GenericInstanceType)method.ReturnType).GenericArguments[0]);
+
+                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(genericOnAsyncMethodEnd)));
+            }
+            else
+            {
+                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldc_I4_0));
+                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Conv_I));
+            }
+
+            // isAsyncCallback
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(isAsyncCallback ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+
+            // preserveContext
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(preserveContext ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(ensureInitialized.MakeGenericMethod(endMethodHandler))));
+
+            // Call Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.EndMethod
+            // CallTargetReturn<TReturn> EndMethod<TIntegration, TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            var callTargetInvoker = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
+            var endMethodOpen = callTargetInvoker.Methods.Single(t => t.Name == "EndMethod" && t.GenericParameters.Count == 3 && t.Parameters.Last().Attributes.HasFlag(ParameterAttributes.In));
+
+            var endMethod = new GenericInstanceMethod(endMethodOpen);
+            endMethod.GenericArguments.Add(method.Module.ImportReference(instrumentationType));
+            endMethod.GenericArguments.Add(method.Module.ImportReference(method.DeclaringType));
+            endMethod.GenericArguments.Add(method.Module.ImportReference(method.ReturnType));
+
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldarg_0));
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloc, returnVariable));
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloc, exceptionVariable));
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloca, callTargetStateVariable));
+
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(endMethod)));
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stloc, callTargetReturnVariable));
+
+            // Unwrap the CallTargetReturn
+            var callTargetReturnOpenType = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1");
+            var callTargetReturnType = callTargetReturnOpenType.MakeGenericInstanceType(method.ReturnType);
+
+            var getReturnValueMethod = callTargetReturnOpenType.Methods.Single(m => m.Name == "GetReturnValue");
+
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloca, callTargetReturnVariable));
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(getReturnValueMethod.MakeGenericMethod(callTargetReturnType))));
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stloc, returnVariable));
         }
 
         return (position.Next, instruction);

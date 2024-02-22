@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
     internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn> : ContinuationGenerator<TTarget, TReturn>
     {
-        private static readonly CallbackHandler Resolver;
+        private static CallbackHandler _resolver;
 
         static ValueTaskContinuationGenerator()
         {
@@ -23,17 +23,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     (result.Method.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(result.Method.ReturnType)))
                 {
                     var asyncContinuation = (AsyncObjectContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncObjectContinuationMethodDelegate));
-                    Resolver = new AsyncCallbackHandler(asyncContinuation, result.PreserveContext);
+                    _resolver = new AsyncCallbackHandler(asyncContinuation, result.PreserveContext);
                 }
                 else
                 {
                     var continuation = (ObjectContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ObjectContinuationMethodDelegate));
-                    Resolver = new SyncCallbackHandler(continuation, result.PreserveContext);
+                    _resolver = new SyncCallbackHandler(continuation, result.PreserveContext);
                 }
             }
             else
             {
-                Resolver = new NoOpCallbackHandler();
+                _resolver = new NoOpCallbackHandler();
             }
 
             if (Log.IsEnabled(LogEventLevel.Debug))
@@ -41,13 +41,34 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 Log.Debug(
                     "== {TaskContinuationGenerator} using Resolver: {Resolver}",
                     $"TaskContinuationGenerator<{typeof(TIntegration).FullName}, {typeof(TTarget).FullName}, {typeof(TReturn).FullName}>",
-                    Resolver.GetType().FullName);
+                    _resolver.GetType().FullName);
             }
         }
 
+#if NET6_0_OR_GREATER
+        internal static void EnsureInitializedForNativeAot(IntPtr callback, bool isAsyncCallback, bool preserveContext)
+        {
+            if (_resolver is null)
+            {
+                if (callback == IntPtr.Zero)
+                {
+                    _resolver = new NoOpCallbackHandler();
+                }
+                else if (isAsyncCallback)
+                {
+                    _resolver = new AsyncCallbackHandler(callback, preserveContext);
+                }
+                else
+                {
+                    _resolver = new SyncCallbackHandler(callback, preserveContext);
+                }
+            }
+        }
+#endif
+
         public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            return Resolver.ExecuteCallback(instance, returnValue, exception, in state);
+            return _resolver.ExecuteCallback(instance, returnValue, exception, in state);
         }
 
         private class SyncCallbackHandler : CallbackHandler
@@ -58,6 +79,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             public SyncCallbackHandler(ObjectContinuationMethodDelegate continuation, bool preserveContext)
             {
                 _continuation = continuation;
+                _preserveContext = preserveContext;
+            }
+
+            public unsafe SyncCallbackHandler(IntPtr continuation, bool preserveContext)
+            {
+                var callback = (delegate*<TTarget, object, Exception, in CallTargetState, object>)continuation;
+                _continuation = (TTarget instance, object returnValue, Exception exception, in CallTargetState state) => callback(instance, returnValue, exception, in state);
                 _preserveContext = preserveContext;
             }
 
@@ -118,6 +146,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             public AsyncCallbackHandler(AsyncObjectContinuationMethodDelegate asyncContinuation, bool preserveContext)
             {
                 _asyncContinuation = asyncContinuation;
+                _preserveContext = preserveContext;
+            }
+
+            public unsafe AsyncCallbackHandler(IntPtr asyncContinuation, bool preserveContext)
+            {
+                var callback = (delegate*<TTarget, object, Exception, in CallTargetState, Task<object>>)asyncContinuation;
+                _asyncContinuation = (TTarget instance, object returnValue, Exception exception, in CallTargetState state) => callback(instance, returnValue, exception, in state);
                 _preserveContext = preserveContext;
             }
 

@@ -6,13 +6,14 @@
 using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+
 #pragma warning disable SA1649 // File name must match first type name
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
     internal static class BeginMethodHandler<TIntegration, TTarget>
     {
-        private static readonly InvokeDelegate _invokeDelegate;
+        private static InvokeDelegate _invokeDelegate;
 
         static BeginMethodHandler()
         {
@@ -38,6 +39,24 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         }
 
         internal delegate CallTargetState InvokeDelegate(TTarget instance);
+
+#if NET6_0_OR_GREATER
+        // ReSharper disable once UnusedMember.Global - Use by NativeAOT
+        internal static unsafe void EnsureInitializedForNativeAot(delegate*<TTarget, CallTargetState> invokeDelegate)
+        {
+            if (_invokeDelegate is null)
+            {
+                if (invokeDelegate == default)
+                {
+                    _invokeDelegate = _ => CallTargetState.GetDefault();
+                }
+                else
+                {
+                    _invokeDelegate = instance => invokeDelegate(instance);
+                }
+            }
+        }
+#endif
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static CallTargetState Invoke(TTarget instance)
