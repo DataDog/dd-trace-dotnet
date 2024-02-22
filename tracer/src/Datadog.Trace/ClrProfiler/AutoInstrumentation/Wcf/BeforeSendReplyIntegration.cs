@@ -1,4 +1,4 @@
-// <copyright file="ImmutableDispatchRuntimeIntegration.cs" company="Datadog">
+// <copyright file="BeforeSendReplyIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,20 +14,21 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
     /// <summary>
-    /// System.ServiceModel.Dispatcher.ImmutableDispatchRuntime calltarget instrumentation
+    /// System.ServiceModel.Dispatcher.ImmutableDispatchRuntime.AfterReceiveRequest calltarget instrumentation.
+    /// This integration ends the WCF server span when DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED=true.
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "System.ServiceModel",
         TypeName = "System.ServiceModel.Dispatcher.ImmutableDispatchRuntime",
-        MethodName = "Dispatch",
-        ReturnTypeName = ClrNames.Bool,
-        ParameterTypeNames = new[] { "System.ServiceModel.Dispatcher.MessageRpc&", ClrNames.Bool },
+        MethodName = "BeforeSendReply",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { "System.ServiceModel.Dispatcher.MessageRpc&", $"{ClrNames.Exception}&", $"{ClrNames.Bool}&" },
         MinimumVersion = "4.0.0",
         MaximumVersion = "4.*.*",
         IntegrationName = WcfCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ImmutableDispatchRuntimeIntegration
+    public class BeforeSendReplyIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -36,41 +37,38 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <typeparam name="TMessageRpc">Type of the rpc message</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="rpc">MessageRpc instance</param>
-        /// <param name="isOperationContextSet">Flag indicating whether the operation context is set.</param>
+        /// <param name="exception">The exception instance from preparing the message reply</param>
+        /// <param name="thereIsAnUnhandledException">A flag indicating whether exception caught from preparing the message reply is unhandled</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TMessageRpc>(TTarget instance, ref TMessageRpc rpc, bool isOperationContextSet)
+        internal static CallTargetState OnMethodBegin<TTarget, TMessageRpc>(TTarget instance, ref TMessageRpc rpc, ref Exception exception, ref bool thereIsAnUnhandledException)
         {
-            // TODO Just use the OperationContext.Current object to get the span information
-            // context.IncomingMessageHeaders contains:
-            //  - Action
-            //  - To
-            //
-            // context.IncomingMessageProperties contains:
-            // - ["httpRequest"] key to find distributed tracing headers
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !Tracer.Instance.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
             {
                 return CallTargetState.GetDefault();
             }
 
             var rpcProxy = rpc.DuckCast<MessageRpcStruct>();
-            var useWcfWebHttpResourceNames = Tracer.Instance.Settings.WcfWebHttpResourceNamesEnabled;
-            return new CallTargetState(WcfCommon.CreateScope(rpcProxy.Request, useWcfWebHttpResourceNames));
+            if (((IDuckType?)rpcProxy.OperationContext.RequestContext)?.Instance is object requestContextInstance
+                && WcfCommon.Scopes.TryGetValue(requestContextInstance, out var scope))
+            {
+                return new CallTargetState(scope);
+            }
+
+            return CallTargetState.GetDefault();
         }
 
         /// <summary>
         /// OnMethodEnd callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TReturn">Type of the response</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="returnValue">Return value</param>
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
-            return new CallTargetReturn<TReturn>(returnValue);
+            return CallTargetReturn.GetDefault();
         }
     }
 }

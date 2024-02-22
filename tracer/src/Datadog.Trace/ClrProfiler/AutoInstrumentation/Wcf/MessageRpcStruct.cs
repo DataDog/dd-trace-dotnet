@@ -17,4 +17,10 @@ internal struct MessageRpcStruct
     /// </summary>
     [DuckField(Name = "Request")]
     public IMessage Request;
+
+    /// <summary>
+    /// Gets the OperatonContext object
+    /// </summary>
+    [DuckField(Name = "OperationContext")]
+    public IOperationContextStruct OperationContext;
 }
