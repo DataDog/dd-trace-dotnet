@@ -7,6 +7,7 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -42,6 +43,7 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         : base("AspNetCore5", outputHelper, "/shutdown", testName: "AspNetCore5.SecurityEnabled")
     {
         EnableRasp();
+        SetSecurity(true);
         EnableIast(enableIast);
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
@@ -74,7 +76,9 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
     [Trait("RunOnWindows", "True")]
     public async Task TestRaspIastPathTraversalRequest()
     {
-        var filePath = "file.csv";
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+        SetEnvironmentVariable("DD_APPSEC_RULES", "C:\\CommonFolder\\shared\\repos\\dd-trace-5\\tracer\\test\\Datadog.Trace.Security.Unit.Tests\\rasp-rule-set.json");
+        var filePath = "/etc/password";
         var filename = IastEnabled ? "Rasp.PathTraversal.AspNetCore5.IastEnabled" : "Rasp.PathTraversal.AspNetCore5.IastDisabled";
         var url = $"/Iast/GetFileContent?file={filePath}";
         IncludeAllHttpSpans = true;
