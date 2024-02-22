@@ -14,11 +14,13 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [UsesVerify]
     public class NUnitTests : TestHelper
     {
         private const int ExpectedSpanCount = 33;
@@ -77,6 +79,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // Check the span count
                         spans.Should().HaveCount(ExpectedSpanCount);
+
+                        var settings = VerifyHelper.GetSpanVerifierSettings(packageVersion);
+                        await Verifier.Verify(spans.OrderBy(s => s.Resource), settings);
 
                         foreach (var targetSpan in spans.ToArray())
                         {
