@@ -163,7 +163,7 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        settings.AddIastScrubbing(true);
+        settings.AddIastScrubbing();
         var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName($"{_testName}.path={sanitisedPath}")
@@ -181,7 +181,7 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        settings.AddIastScrubbing(true);
+        settings.AddIastScrubbing();
         var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName($"{_testName}.path={sanitisedPath}")
@@ -254,7 +254,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        settings.AddIastScrubbing(false);
+        settings.AddIastScrubbing();
         var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName($"{_testName}.path={sanitisedPath}")
@@ -504,7 +504,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        settings.AddIastScrubbing(scrubHash: false);
+        settings.AddIastScrubbing();
         var filename = testName + "." + contentType.Replace("/", string.Empty) +
             "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(hstsHeaderValue) ? "empty" : hstsHeaderValue)
             + "." + (string.IsNullOrEmpty(xForwardedProto) ? "empty" : xForwardedProto);
@@ -563,7 +563,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        settings.AddIastScrubbing(scrubHash: false);
+        settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName($"{testName}.path={sanitisedUrl}")
                           .DisableRequireUniquePrefix();

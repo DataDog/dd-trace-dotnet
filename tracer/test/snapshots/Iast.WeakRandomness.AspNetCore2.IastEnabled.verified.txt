@@ -25,6 +25,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_RANDOMNESS",
+      "hash": -877103513,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",

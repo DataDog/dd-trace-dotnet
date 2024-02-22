@@ -17,6 +17,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
+      "hash": -119867285,
       "location": {
         "path": "Samples.WeakCipher.Program",
         "method": "VulnerableSection"
@@ -54,6 +55,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
+      "hash": -119867285,
       "location": {
         "path": "Samples.WeakCipher.Program",
         "method": "VulnerableSection"
@@ -91,6 +93,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
+      "hash": -119867285,
       "location": {
         "path": "Samples.WeakCipher.Program",
         "method": "VulnerableSection"
@@ -128,6 +131,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
+      "hash": -119867285,
       "location": {
         "path": "Samples.WeakCipher.Program",
         "method": "VulnerableSection"
@@ -165,6 +169,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
+      "hash": -119867285,
       "location": {
         "path": "Samples.WeakCipher.Program",
         "method": "VulnerableSection"
@@ -202,6 +207,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
+      "hash": -119867285,
       "location": {
         "path": "Samples.WeakCipher.Program",
         "method": "VulnerableSection"

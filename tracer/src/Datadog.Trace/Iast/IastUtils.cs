@@ -86,23 +86,26 @@ internal static class IastUtils
             return -1;
         }
 
-        fixed (char* charPtr = target)
+        unchecked
         {
-            var int32Length = target.Length / 2;
-            var intPtr = (int*)charPtr;
-
-            var hash = StartHash;
-            for (var i = 0; i < int32Length; i++)
+            fixed (char* charPtr = target)
             {
-                hash += intPtr[i] * GoldenRatio;
-            }
+                var int32Length = target.Length / 2;
+                var intPtr = (int*)charPtr;
 
-            if (target.Length % 2 != 0)
-            {
-                hash += ((int)charPtr[target.Length - 1]) * GoldenRatio;
-            }
+                var hash = StartHash;
+                for (var i = 0; i < int32Length; i++)
+                {
+                    hash += intPtr[i] * GoldenRatio;
+                }
 
-            return hash;
+                if (target.Length % 2 != 0)
+                {
+                    hash += ((int)charPtr[target.Length - 1]) * GoldenRatio;
+                }
+
+                return hash;
+            }
         }
     }
 }
