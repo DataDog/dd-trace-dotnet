@@ -6,7 +6,6 @@
 using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
 #pragma warning disable SA1649 // File name must match first type name
@@ -95,12 +94,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                     if (isTask)
                     {
                         TaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult>.EnsureInitializedForNativeAot(callback, isAsyncCallback, preserveContext);
-                        _continuationGenerator = new TaskContinuationGenerator<TIntegration, TTarget, TReturn>();
+                        _continuationGenerator = new TaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult>();
                     }
                     else
                     {
                         ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult>.EnsureInitializedForNativeAot(callback, isAsyncCallback, preserveContext);
-                        _continuationGenerator = new ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn>();
+                        _continuationGenerator = new ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult>();
                     }
                 }
 

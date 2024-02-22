@@ -44,6 +44,11 @@ internal static class CecilExtensions
             genericReference.Parameters.Add(new ParameterDefinition(parameter.ParameterType));
         }
 
+        foreach (var genericParameter in method.GenericParameters)
+        {
+            genericReference.GenericParameters.Add(new GenericParameter(genericParameter.Name, genericReference));
+        }
+
         return genericReference;
     }
 

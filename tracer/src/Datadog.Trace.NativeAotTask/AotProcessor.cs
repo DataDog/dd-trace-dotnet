@@ -1232,7 +1232,7 @@ public class AotProcessor
         if (method.ReturnType != null)
         {
             isTask = method.ReturnType.Name is "Task" or "Task`1";
-            hasAsyncReturnValue = method.ReturnType.GenericParameters.Count > 0;
+            hasAsyncReturnValue = method.ReturnType.Name is "Task`1" or "ValueTask`1";
         }
 
         if (onAsyncMethodEndMethodOpen != null)
@@ -1302,13 +1302,13 @@ public class AotProcessor
 
             if (hasAsyncReturnValue)
             {
-                var ensureInitializedGeneric = new GenericInstanceMethod(ensureInitializedOpen);
-                ensureInitializedGeneric.GenericArguments.Add(method.Module.ImportReference(((GenericInstanceType)method.ReturnType).GenericArguments[0]));
+                var ensureInitializedGeneric = new GenericInstanceMethod(ensureInitializedOpen.MakeGenericMethod(endMethodHandler));
+                ensureInitializedGeneric.GenericArguments.Add(method.Module.ImportReference(((GenericInstanceType)method.ReturnType).GenericArguments[0].Resolve()));
                 ensureInitialized = ensureInitializedGeneric;
             }
             else
             {
-                ensureInitialized = ensureInitializedOpen;
+                ensureInitialized = ensureInitializedOpen.MakeGenericMethod(endMethodHandler);
             }
 
             // EnsureInitializedForNativeAot(bool isTask, IntPtr invokeDelegate, IntPtr callback, bool isAsyncCallback, bool preserveContext)
@@ -1348,7 +1348,7 @@ public class AotProcessor
             // preserveContext
             instruction = ilProcessor.AddAfter(instruction, Instruction.Create(preserveContext ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
 
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(ensureInitialized.MakeGenericMethod(endMethodHandler))));
+            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(ensureInitialized)));
 
             // Call Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.EndMethod
             // CallTargetReturn<TReturn> EndMethod<TIntegration, TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
