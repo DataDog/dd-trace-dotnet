@@ -93,7 +93,7 @@ namespace Datadog.Trace.AppSec
                                            .Value;
 
             UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
-                                     .AsBool(true);
+                                     .AsBool(false);
 
             // For now, RASP is disabled by default.
             RaspEnabled = config.WithKeys(ConfigurationKeys.AppSec.RaspEnabled)
