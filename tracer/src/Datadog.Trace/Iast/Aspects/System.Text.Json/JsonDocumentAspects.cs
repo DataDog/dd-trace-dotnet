@@ -8,18 +8,20 @@
 #if !NETFRAMEWORK && !NETSTANDARD2_0
 using System;
 using System.Text.Json;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects.System.Text.Json;
 
-/// <summary> Xpath injection class aspect </summary>
+/// <summary> System.Text.Json JsonDocument class aspect </summary>
 [AspectClass("System.Text.Json", AspectType.Source)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class JsonDocumentAspects
 {
     /// <summary>
-    /// Taint all string values from deserialized JSON
+    /// Parse method aspect
+    /// Taint all Parent from JsonElement that are string
     /// </summary>
     /// <param name="json">the JsonDocument result of Parse</param>
     /// <param name="options">the JsonDocumentOptions</param>
@@ -34,30 +36,27 @@ public class JsonDocumentAspects
 
     /// <summary>
     /// GetString method aspect
+    /// Taint the string result when the parent is tainted
     /// </summary>
     /// <param name="target">the JsonElement instance</param>
     /// <returns>the string result</returns>
     [AspectMethodReplace("System.Text.Json.JsonElement::GetString()", [0], [true])]
     public static string? GetString(object target)
     {
-        Console.WriteLine(target);
-        return string.Empty;
-        /*
-        var str = target.GetString();
-        if (str is null)
+        var str = target.TryDuckCast<IJsonElement>(out var element) ? element.GetString() : null;
+        if (element is null || str is null)
         {
             return null;
         }
 
         var taintedObjects = IastModule.GetIastContext()?.GetTaintedObjects();
-        var taintedTarget = taintedObjects?.Get(target);
+        var taintedTarget = taintedObjects?.Get(element.Parent);
         if (taintedObjects is not null && taintedTarget is not null)
         {
             taintedObjects.Taint(str, [new Range(0, str.Length)]);
         }
 
         return str;
-        */
     }
 
     private static void TaintJsonElements(string json, JsonDocument doc)
@@ -91,7 +90,8 @@ public class JsonDocumentAspects
 
                 break;
             case JsonValueKind.String:
-                map.Taint(element, [new Range(0, 0)]);
+                var duckedElement = element.DuckCast<IJsonElement>();
+                map.Taint(duckedElement.Parent, [new Range(0, 0)]);
                 break;
         }
     }
