@@ -23,6 +23,7 @@
   "vulnerabilities": [
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
+      "hash": -1443319821,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
@@ -39,6 +40,7 @@
     },
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
+      "hash": -1443319821,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
@@ -55,6 +57,7 @@
     },
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
+      "hash": -1443319821,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
@@ -71,6 +74,7 @@
     },
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
+      "hash": -1443319821,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
@@ -87,12 +91,14 @@
     },
     {
       "type": "NO_SAMESITE_COOKIE",
+      "hash": 264671858,
       "evidence": {
         "value": "ASP.NET_SessionId"
       }
     },
     {
       "type": "INSECURE_COOKIE",
+      "hash": -974040902,
       "evidence": {
         "value": "ASP.NET_SessionId"
       }

@@ -151,7 +151,7 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
         var spans = await SendRequestsAsync(agent, new string[] { url });
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing(scrubHash: false);
+        settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
@@ -414,7 +414,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing(scrubHash: false);
+        settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
