@@ -15,11 +15,13 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [UsesVerify]
     public class XUnitTests : TestHelper
     {
         private const string TestBundleName = "Samples.XUnitTests";
@@ -62,6 +64,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // Check the span count
                         Assert.Equal(ExpectedSpanCount, spans.Count);
+
+                        var settings = VerifyHelper.GetSpanVerifierSettings(packageVersion);
+                        await Verifier.Verify(spans.OrderBy(s => s.Resource), settings);
 
                         // ***************************************************************************
 

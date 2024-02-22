@@ -12,17 +12,21 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 #pragma warning disable SA1402
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [UsesVerify]
     public class MsTestV2Tests(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests", output);
 
+    [UsesVerify]
     public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output);
 
     [Collection("MsTestV2Tests")]
+    [UsesVerify]
     public abstract class MsTestV2TestsBase : TestHelper
     {
         private readonly GacFixture _gacFixture;
@@ -74,6 +78,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // Check the span count
                         Assert.Equal(expectedSpanCount, spans.Count);
+
+                        var settings = VerifyHelper.GetSpanVerifierSettings(packageVersion);
+                        await Verifier.Verify(spans.OrderBy(s => s.Resource), settings);
 
                         foreach (var targetSpan in spans)
                         {
