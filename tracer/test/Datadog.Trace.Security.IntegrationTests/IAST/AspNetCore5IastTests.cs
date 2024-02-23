@@ -315,7 +315,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
 
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
-    public async Task TestJsonParseTainting()
+    public async Task TestNewtonsoftJsonParseTainting()
     {
         var filename = "Iast.NewtonsoftJsonParseTainting.AspNetCore5.IastEnabled";
         var url = "/Iast/NewtonsoftJsonParseTainting?json={\"key\": \"value\"}";
@@ -367,6 +367,24 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
 
         newFixture.Dispose();
         newFixture.SetOutput(null);
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestJsonParseTainting()
+    {
+        var filename = "Iast.JsonParseTainting.AspNetCore5.IastEnabled";
+        var url = "/Iast/JsonParseTainting?json={\"key\": \"value\"}";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
     }
 }
 

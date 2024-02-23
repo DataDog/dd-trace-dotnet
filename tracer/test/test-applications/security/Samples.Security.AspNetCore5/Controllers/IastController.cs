@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
@@ -170,7 +171,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return BadRequest($"No price or query was provided");
         }
-        
+
         [HttpGet("NewtonsoftJsonParseTainting")]
         [Route("NewtonsoftJsonParseTainting")]
         public IActionResult NewtonsoftJsonParseTainting(string json)
@@ -182,6 +183,29 @@ namespace Samples.Security.AspNetCore5.Controllers
                     var doc = JObject.Parse(json);
                     var str = doc.Value<string>("key");
 
+                    // Trigger a vulnerability with the tainted string
+                    return ExecuteCommandInternal(str, "");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return BadRequest($"No json was provided");
+        }
+
+        [HttpGet("JsonParseTainting")]
+        [Route("JsonParseTainting")]
+        public IActionResult JsonParseTainting(string json)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(json))
+                {
+                    var doc = JsonDocument.Parse(json);
+                    var str = doc.RootElement.GetProperty("key").GetString();
+                    
                     // Trigger a vulnerability with the tainted string
                     return ExecuteCommandInternal(str, "");
                 }
