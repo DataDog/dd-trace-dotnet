@@ -779,7 +779,7 @@ internal class IntelligentTestRunnerClient
 
         // Sanitize object list (on some cases we get a "fatal: expected object ID, got garbage" error because the object list has invalid escape chars)
         var objectsOutput = getObjectsCommand!.Output;
-        var lstObjectsSha = ((IList<Match>)Regex.Matches(objectsOutput, "[a-f0-9]{40}")).Select(m => m.Value).ToList();
+        var lstObjectsSha = ((IList<Match>)ShaRegex.Matches(objectsOutput)).Select(m => m.Value).ToList();
         if (lstObjectsSha.Count == 0)
         {
             // If not objects has been returned we skip the pack + upload.
