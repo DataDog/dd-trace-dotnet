@@ -88,18 +88,22 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
     ///  - service -> topic 1 -|                  | -> topic 2 -> Consumer 2
     ///  - service -> topic 1 -|---> Consumer 1  -| -> topic 2 -> Consumer 2
     ///  - service -> topic 1 -|                  | -> topic 2 -> Consumer 2
+    ///
+    /// It aims to replicate what happens when a bunch of messages are read at once,
+    /// then processed in a loop before new outputs are produced.
     /// </summary>
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")]
-    public async Task HandlesFanIn()
+    public async Task HandlesBatchProcessing()
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
-        SetEnvironmentVariable(ConfigurationKeys.KafkaCreateConsumerScopeEnabled, "0"); // only way to do fan-in properly
+        // set variable to create short spans on receive instead of spans that last until the next consume
+        SetEnvironmentVariable(ConfigurationKeys.KafkaCreateConsumerScopeEnabled, "0");
 
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-        using var processResult = await RunSampleAndWaitForExit(agent, arguments: "--fan-in");
+        using var processResult = await RunSampleAndWaitForExit(agent, "--batch-processing");
 
         using var assertionScope = new AssertionScope();
 
@@ -110,7 +114,7 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
         settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
         settings.AddDataStreamsScrubber();
         await Verifier.Verify(payload, settings)
-                      .UseFileName($"{nameof(DataStreamsMonitoringKafkaTests)}.{nameof(HandlesFanIn)}")
+                      .UseFileName($"{nameof(DataStreamsMonitoringKafkaTests)}.{nameof(HandlesBatchProcessing)}")
                       .DisableRequireUniquePrefix();
     }
 

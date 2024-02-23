@@ -14,10 +14,10 @@ using Config = Samples.Kafka.Config;
 var sw = new Stopwatch();
 sw.Start();
 
-var runFanIn = args.Contains("--fan-in");
+var runBatchProcessing = args.Contains("--batch-processing");
 var extractScopesManually = Environment.GetEnvironmentVariable("DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED") == "0";
 
-await (runFanIn ? RunFanInAndOutScenario() : RunStandardPipelineScenario());
+await (runBatchProcessing ? RunBatchProcessingScenario() : RunStandardPipelineScenario());
 
 async Task RunStandardPipelineScenario()
 {
@@ -119,10 +119,10 @@ async Task RunStandardPipelineScenario()
     }
 }
 
-async Task RunFanInAndOutScenario()
+async Task RunBatchProcessingScenario()
 {
     // Create Topics
-    var topicPrefix = "data-streams-fan-in-out";
+    var topicPrefix = "data-streams-batch-processing";
 
     var topic1 = $"{topicPrefix}-1";
     var topic2 = $"{topicPrefix}-2";
