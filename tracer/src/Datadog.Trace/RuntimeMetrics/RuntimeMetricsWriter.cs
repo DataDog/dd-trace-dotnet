@@ -192,7 +192,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext)
         {
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
             return new RuntimeEventListener(statsd, delay);
 #elif NETFRAMEWORK
 
