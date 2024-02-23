@@ -312,6 +312,18 @@ internal class IntelligentTestRunnerClient
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var branchName = await _getBranchNameTask.ConfigureAwait(false);
         var currentShaCommand = await _getShaTask.ConfigureAwait(false);
+        if (repository is null)
+        {
+            Log.Warning("ITR: 'git config --get remote.origin.url' command is null");
+            return default;
+        }
+
+        if (branchName is null)
+        {
+            Log.Warning("ITR: 'git branch --show-current' command is null");
+            return default;
+        }
+
         if (currentShaCommand is null)
         {
             Log.Warning("ITR: 'git rev-parse HEAD' command is null");
@@ -407,6 +419,12 @@ internal class IntelligentTestRunnerClient
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var currentShaCommand = await _getShaTask.ConfigureAwait(false);
+        if (repository is null)
+        {
+            Log.Warning("ITR: 'git config --get remote.origin.url' command is null");
+            return new SkippableTestsResponse();
+        }
+
         if (currentShaCommand is null)
         {
             Log.Warning("ITR: 'git rev-parse HEAD' command is null");
