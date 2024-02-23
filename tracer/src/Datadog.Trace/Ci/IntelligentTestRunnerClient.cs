@@ -1021,7 +1021,15 @@ internal class IntelligentTestRunnerClient
 
         TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        var gitOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", arguments, _workingDirectory), input).ConfigureAwait(false);
+        var gitOutput = await ProcessHelpers.RunCommandAsync(
+                            new ProcessHelpers.Command(
+                                "git",
+                                arguments,
+                                _workingDirectory,
+                                outputEncoding: Encoding.Default,
+                                errorEncoding: Encoding.Default,
+                                inputEncoding: Encoding.Default),
+                            input).ConfigureAwait(false);
         TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
         if (gitOutput is null)
         {

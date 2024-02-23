@@ -168,6 +168,11 @@ namespace Datadog.Trace.Util
                 processStartInfo.UseShellExecute = false;
                 processStartInfo.RedirectStandardOutput = true;
                 processStartInfo.RedirectStandardError = true;
+                processStartInfo.StandardOutputEncoding = command.OutputEncoding ?? processStartInfo.StandardOutputEncoding;
+                processStartInfo.StandardErrorEncoding = command.ErrorEncoding ?? processStartInfo.StandardErrorEncoding;
+#if NETCOREAPP
+                processStartInfo.StandardInputEncoding = command.InputEncoding ?? processStartInfo.StandardInputEncoding;
+#endif
             }
             else
             {
@@ -188,13 +193,19 @@ namespace Datadog.Trace.Util
             public readonly string? Arguments;
             public readonly string? WorkingDirectory;
             public readonly string? Verb;
+            public readonly Encoding? OutputEncoding;
+            public readonly Encoding? ErrorEncoding;
+            public readonly Encoding? InputEncoding;
 
-            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null)
+            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null, Encoding? outputEncoding = null, Encoding? errorEncoding = null, Encoding? inputEncoding = null)
             {
                 Cmd = cmd;
                 Arguments = arguments;
                 WorkingDirectory = workingDirectory;
                 Verb = verb;
+                OutputEncoding = outputEncoding;
+                ErrorEncoding = errorEncoding;
+                InputEncoding = inputEncoding;
             }
         }
 
