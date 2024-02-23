@@ -13,9 +13,7 @@ using Datadog.Trace.Configuration;
 namespace Datadog.Trace.Iast.SensitiveData;
 
 /// <summary>
-/// Tokenizer for LDAP_INJECTION vulnerability
-/// It locates all literals in a LDAP query, which may be multiple (las term after '=')
-/// ((objectCategory=group)(member=CN=Jon Brion,OU=Employees,DC=theitbros,DC=com)) -> ((objectCategory = group)(member = CN =?, OU =?, DC =?, DC =?))
+/// Tokenizer based on evidence tainted ranges
 /// </summary>
 internal class TaintedRangeBasedTokenizer : ITokenizer
 {

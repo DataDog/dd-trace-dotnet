@@ -512,7 +512,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         (Regex RegexPattern, string Replacement) pathScrubber = (new Regex("\"path\": \"AspNetCore[^\\.]+\\."), "\"path\": \"AspNetCore.");
         (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": -953468592,"), "\"hash\": -623616875,");
 
-        var filename = "Iast.ReflectedXss.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        var filename = "Iast.ReflectedXss.AspNetCore2." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = "/Iast/ReflectedXss?param=<b>RawValue</b>";
         IncludeAllHttpSpans = true;
@@ -534,7 +534,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
     [Trait("RunOnWindows", "True")]
     public async Task TestIastReflectedXssEscapedRequest()
     {
-        var filename = "Iast.ReflectedXssEscaped.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        var filename = "Iast.ReflectedXssEscaped.AspNetCore2." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         var url = "/Iast/ReflectedXssEscaped?param=<b>RawValue</b>";
         IncludeAllHttpSpans = true;
         await TryStartApp();

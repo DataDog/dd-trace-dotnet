@@ -37,6 +37,9 @@
           {
             "value": "<b>RawValue</b>",
             "source": 0
+          },
+          {
+            "redacted": true
           }
         ]
       }
