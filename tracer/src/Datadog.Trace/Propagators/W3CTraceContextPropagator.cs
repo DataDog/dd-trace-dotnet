@@ -325,7 +325,7 @@ namespace Datadog.Trace.Propagators
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
             if (string.IsNullOrWhiteSpace(header))
             {
-                return default;
+                return new W3CTraceState(null, null, "0000000000000000", null, null);
             }
 
             SplitTraceStateValues(header, out var ddValues, out var additionalValues);
@@ -335,7 +335,7 @@ namespace Datadog.Trace.Propagators
                 // "dd" section not found or it is too short
                 // shortest valid length is 6 as in "dd=a:b"
                 // note for this case the p will be viewed as 0 if added as a span tag
-                return new W3CTraceState(null, null, null, null, additionalValues);
+                return new W3CTraceState(null, null, "0000000000000000", null, additionalValues);
             }
 
             int? samplingPriority = null;

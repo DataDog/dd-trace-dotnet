@@ -18,6 +18,7 @@ namespace Datadog.Trace.Tests.Propagators
     public class MultiSpanContextPropagatorTests
     {
         private const string PropagatedTagsString = "_dd.p.key1=value1,_dd.p.key2=value2";
+        private const string ZeroLastParentId = "0000000000000000";
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
         private static readonly TraceTagCollection PropagatedTagsCollection = new(
@@ -352,6 +353,7 @@ namespace Datadog.Trace.Tests.Propagators
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
                            PropagatedTags = EmptyPropagatedTags,
                            IsRemote = true,
+                           LastParentId = ZeroLastParentId,
                        });
         }
 
@@ -389,6 +391,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
+                           LastParentId = ZeroLastParentId,
                        });
         }
 
@@ -538,7 +541,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { "00-11111111111111110000000000000001-000000003ade68b1-01" });
             headers.Setup(h => h.GetValues("tracestate"))
-                   .Returns(new[] { "dd=s:2;o:rum;t.tid:1111111111111111,foo=1" });
+                   .Returns(new[] { "dd=s:2;o:rum;p:0123456789abcdef;t.tid:1111111111111111,foo=1" });
             headers.Setup(h => h.GetValues("x-datadog-trace-id"))
                    .Returns(new[] { "1" });
             headers.Setup(h => h.GetValues("x-datadog-parent-id"))
@@ -577,6 +580,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
+                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
                        });
         }
 
@@ -593,7 +597,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { "00-11111111111111110000000000000002-000000003ade68b1-01" });
             headers.Setup(h => h.GetValues("tracestate"))
-                   .Returns(new[] { "dd=s:1;t.tid:1111111111111111,foo=1" });
+                   .Returns(new[] { "dd=s:1;p:0123456789abcdef;t.tid:1111111111111111,foo=1" });
             headers.Setup(h => h.GetValues("x-datadog-trace-id"))
                    .Returns(new[] { "2" });
             headers.Setup(h => h.GetValues("x-datadog-parent-id"))
@@ -629,6 +633,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
+                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
                        });
         }
 
@@ -681,6 +686,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
+                           LastParentId = w3CHeaderFirst ? ZeroLastParentId : null,
                        });
         }
 
@@ -788,6 +794,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
+                           LastParentId = w3CHeaderFirst ? ZeroLastParentId : null,
                        });
         }
 
