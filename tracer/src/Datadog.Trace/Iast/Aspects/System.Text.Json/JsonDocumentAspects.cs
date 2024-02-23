@@ -47,12 +47,13 @@ public class JsonDocumentAspects
     }
 
     /// <summary>
-    /// GetString method aspect
+    /// GetString and GetRawText method aspect
     /// Taint the string result when the parent is tainted
     /// </summary>
     /// <param name="target">the JsonElement instance</param>
     /// <returns>the string result</returns>
     [AspectMethodReplace("System.Text.Json.JsonElement::GetString()", [0], [true])]
+    [AspectMethodReplace("System.Text.Json.JsonElement::GetRawText()", [0], [true])]
     public static string? GetString(object target)
     {
         var str = target.TryDuckCast<IJsonElement>(out var element) ? element.GetString() : null;

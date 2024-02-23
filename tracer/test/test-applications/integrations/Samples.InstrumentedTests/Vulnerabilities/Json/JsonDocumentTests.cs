@@ -73,4 +73,17 @@ public class JsonDocumentTests : InstrumentationTestsBase
         Assert.Equal("value2", str);
         AssertTainted(str);
     }
+    
+    [Fact]
+    public void GivenASimpleJson_WhenParsing_GetProperty_GetRawText_Vulnerable()
+    {
+        var json = JsonDocument.Parse(_taintedJson);
+        var element = json.RootElement;
+        var value = element.GetProperty("key");
+        var str = value.GetRawText();
+
+        Assert.Equal("value", str);
+        AssertTainted(str);
+    }
+    
 }
