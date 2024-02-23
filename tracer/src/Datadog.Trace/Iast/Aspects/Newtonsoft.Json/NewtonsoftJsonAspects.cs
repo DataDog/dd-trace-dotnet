@@ -1,4 +1,4 @@
-// <copyright file="JObjectAspects.cs" company="Datadog">
+// <copyright file="NewtonsoftJsonAspects.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,20 +8,23 @@ using System.Collections;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Logging;
 
 #nullable enable
 
 namespace Datadog.Trace.Iast.Aspects.Newtonsoft.Json;
 
-/// <summary> uri class aspects </summary>
+/// <summary> Newtonsoft.Json class aspects </summary>
 [AspectClass("Newtonsoft.Json")]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class JObjectAspects
+public class NewtonsoftJsonAspects
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NewtonsoftJsonAspects>();
+
     private static readonly MethodInfo? ParseMethodObject = Type.GetType("Newtonsoft.Json.Linq.JObject, Newtonsoft.Json")!.GetMethod("Parse", [typeof(string)])!;
     private static readonly MethodInfo? ParseMethodArray = Type.GetType("Newtonsoft.Json.Linq.JArray, Newtonsoft.Json")!.GetMethod("Parse", [typeof(string)])!;
+    private static readonly MethodInfo? ParseMethodToken = Type.GetType("Newtonsoft.Json.Linq.JToken, Newtonsoft.Json")!.GetMethod("Parse", [typeof(string)])!;
 
     /// <summary>
     /// JObject Parse aspect.
@@ -41,8 +44,7 @@ public class JObjectAspects
         }
         catch (Exception ex)
         {
-            // TODO: log
-            Console.WriteLine(ex);
+            Log.Warning(ex, "Error while tainting the JObject");
         }
 
         return result;
@@ -70,8 +72,30 @@ public class JObjectAspects
         }
         catch (Exception ex)
         {
-            // TODO: log
-            Console.WriteLine(ex);
+            Log.Warning(ex, "Error while tainting the JArray");
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// JToken Parse aspect.
+    /// </summary>
+    /// <param name="json">The parsed Json string.</param>
+    /// <returns>The parsed JToken instance created.</returns>
+    [AspectMethodReplace("Newtonsoft.Json.Linq.JToken::Parse(System.String)")]
+    public static object? ParseToken(string json)
+    {
+        var result = ParseMethodToken?.Invoke(null, [json]);
+
+        try
+        {
+            var taintedObjects = IastModule.GetIastContext()?.GetTaintedObjects();
+            RecursiveJTokenStringTaint(result, taintedObjects);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error while tainting the JToken");
         }
 
         return result;
@@ -89,7 +113,7 @@ public class JObjectAspects
             return;
         }
 
-        switch (jToken?.Type)
+        switch (jToken.Type)
         {
             case JTokenTypeProxy.Object:
                 RecursiveJObjectStringTaint(token.DuckCast<IJObject>(), taintedObjects);

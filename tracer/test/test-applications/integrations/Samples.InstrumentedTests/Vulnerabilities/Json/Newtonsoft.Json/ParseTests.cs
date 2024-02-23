@@ -8,20 +8,16 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.Json.Newtonsoft.Json;
 public class ParseTests : InstrumentationTestsBase
 {
     private readonly string _taintedJson = "{ \"key\": \"value\" }";
-    private readonly string _taintedJsonMultiple = "{\"key1\": \"value1\", \"key2\": \"value2\"}";
     private readonly string _taintedJsonObjectWithArray = "{\"key\": [\"value1\", \"value2\", {\"key2\": \"value\"}]}";
     private readonly string _taintedJsonArray = "[\"value1\", \"value2\"]";
-    private readonly string _taintedJsonDeepObject = "{\"key\": {\"key2\": \"value\"}}";
     private readonly string _taintedJsonDifferentTypes = "{ \"name\": \"Chris\", \"age\": 23, \"address\": { \"city\": \"New York\", \"country\": \"America\" }, \"friends\": [ { \"name\": \"Emily\", \"hobbies\": [ \"biking\", \"music\", \"gaming\" ] }, { \"name\": \"John\", \"hobbies\": [ \"soccer\", \"gaming\" ] }, [ \"aString\", { \"obj\": \"val\" } ] ] }";
 
     public ParseTests()
     {
         // Add all tainted values
         AddTainted(_taintedJson);
-        AddTainted(_taintedJsonMultiple);
         AddTainted(_taintedJsonObjectWithArray);
         AddTainted(_taintedJsonArray);
-        AddTainted(_taintedJsonDeepObject);
         AddTainted(_taintedJsonDifferentTypes);
     }
 
@@ -50,7 +46,7 @@ public class ParseTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenObjectArrayJSON_WhenParsing_MultipleValues_Vulnerable()
+    public void GivenObjectArrayJSON_WhenParsing_Vulnerable()
     {
         var json = JObject.Parse(_taintedJsonObjectWithArray);
         var val1 = json["key"]?[0]?.ToString();
@@ -63,7 +59,7 @@ public class ParseTests : InstrumentationTestsBase
     }
     
     [Fact]
-    public void GivenObjectArrayJSON_WhenParsing_MultipleValuesWithObject_Vulnerable()
+    public void GivenAllTypesJSON_WhenParsing_Vulnerable()
     {
         var json = JObject.Parse(_taintedJsonDifferentTypes);
         var name = json["name"]?.ToString();
@@ -99,7 +95,7 @@ public class ParseTests : InstrumentationTestsBase
     }
     
     [Fact]
-    public void GivenASimpleJSON_WhenParsing_Array_Vulnerable()
+    public void GivenASimpleJSON_WhenJArrayParsing_Vulnerable()
     {
         var json = JArray.Parse(_taintedJsonArray);
         var val1 = json[0]?.ToString();
@@ -111,11 +107,11 @@ public class ParseTests : InstrumentationTestsBase
     }
     
     [Fact]
-    public void GivenASimpleJSON_WhenParsing_DeepObject_Vulnerable()
+    public void GivenASimpleJSON_WhenJTokenParsing_Vulnerable()
     {
-        var json = JToken.Parse("23");
-        var val = json.ToString();
-        Assert.Equal("23", val);
-        AssertTainted(val);
+        var json = JToken.Parse(_taintedJson);
+        var keyStr = json["key"]?.ToString();
+        Assert.Equal("value", keyStr);
+        AssertTainted(keyStr);
     }
 }

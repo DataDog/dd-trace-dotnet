@@ -55,6 +55,7 @@ namespace Datadog.Trace.ClrProfiler
 "[AspectClass(\"Newtonsoft.Json\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.Newtonsoft.Json.JObjectAspects",
 "  [AspectMethodReplace(\"Newtonsoft.Json.Linq.JObject::Parse(System.String)\",\"\",[0],[False],[None],Default,[])] ParseObject(System.String)",
 "  [AspectMethodReplace(\"Newtonsoft.Json.Linq.JArray::Parse(System.String)\",\"\",[0],[False],[None],Default,[])] ParseArray(System.String)",
+"  [AspectMethodReplace(\"Newtonsoft.Json.Linq.JToken::Parse(System.String)\",\"\",[0],[False],[None],Default,[])] ParseToken(System.String)",
 "[AspectClass(\"System,System.Runtime\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.UriAspect",
 "  [AspectCtorReplace(\"System.Uri::.ctor(System.String)\",\"\",[0],[False],[StringLiteral_1],Default,[])] Init(System.String)",
 "  [AspectCtorReplace(\"System.Uri::.ctor(System.Uri,System.String,System.Boolean)\",\"\",[0],[False],[None],Default,[])] Init(System.Uri,System.String,System.Boolean)",
