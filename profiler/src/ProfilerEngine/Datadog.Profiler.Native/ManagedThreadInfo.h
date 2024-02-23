@@ -159,7 +159,7 @@ inline void ManagedThreadInfo::BuildProfileThreadId()
 {
     std::stringstream builder;
     builder << "<" << std::dec << _profilerThreadInfoId << "> [#" << _osThreadId << "]";
-    _profileThreadId = std::move(builder.str());
+    _profileThreadId = builder.str();
 }
 
 inline void ManagedThreadInfo::BuildProfileThreadName()

@@ -11,8 +11,8 @@
 
 ProfilerSignalManager::ProfilerSignalManager() noexcept :
     _canReplaceSignalHandler{true},
-    _handler{nullptr},
     _signalToSend{SIGUSR1},
+    _handler{nullptr},
     _processId{OpSysTools::GetProcId()},
     _isHandlerInPlace{false},
     _previousAction{},

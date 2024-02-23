@@ -14,17 +14,15 @@ namespace Datadog.Trace.Security.IntegrationTests.IAST
     {
         private static readonly (Regex RegexPattern, string Replacement) ClientIp = (new Regex(@"["" ""]*http.client_ip: .*,(\r|\n){1,2}"), string.Empty);
         private static readonly (Regex RegexPattern, string Replacement) NetworkClientIp = (new Regex(@"["" ""]*network.client.ip: .*,(\r|\n){1,2}"), string.Empty);
-        private static readonly (Regex RegexPattern, string Replacement) HashRegex = (new Regex(@"(\S)*""hash"": (-){0,1}([0-9]){1,12},(\r|\n){1,2}      "), string.Empty);
         private static readonly (Regex RegexPattern, string Replacement) RequestTaintedRegex = (new Regex(@"_dd.iast.telemetry.request.tainted:(\s)*([1-9])(\d*).?(\d*),"), "_dd.iast.telemetry.request.tainted:,");
         private static readonly (Regex RegexPattern, string Replacement) TelemetryExecutedSinks = (new Regex(@"_dd\.iast\.telemetry\.executed\.sink\.weak_.+: .{3},"), string.Empty);
 
         private static readonly (Regex RegexPattern, string Replacement) SpanIdRegex = (new Regex("\"spanId\": \\d+"), "\"spanId\": XXX");
         private static readonly (Regex RegexPattern, string Replacement) LineRegex = (new Regex("\"line\": \\d+"), "\"line\": XXX");
 
-        public static VerifySettings AddIastScrubbing(this VerifySettings settings, bool scrubHash = true)
+        public static VerifySettings AddIastScrubbing(this VerifySettings settings)
         {
             var scrubbers = new List<(Regex RegexPattern, string Replacement)>();
-            if (scrubHash) { scrubbers.Add(HashRegex); }
             return AddIastScrubbing(settings, scrubbers);
         }
 

@@ -33,14 +33,6 @@
 using namespace std::chrono_literals;
 constexpr const WCHAR* ThreadName = WStr("DD.Profiler.StackSamplerLoop.Thread");
 
-#ifdef NDEBUG
-// Release build logs collection stats every 30 mins:
-constexpr uint64_t StackSamplerLoop_StackSnapshotResultsStats_LogPeriodNS = (30 * 60 * 1000000000ull);
-#else
-// Debug build build logs collection stats every 1 mins:
-constexpr uint64_t StackSamplerLoop_StackSnapshotResultsStats_LogPeriodNS = (1 * 60 * 1000000000ull);
-#endif
-
 StackSamplerLoop::StackSamplerLoop(
     ICorProfilerInfo4* pCorProfilerInfo,
     IConfiguration* pConfiguration,
@@ -54,9 +46,9 @@ StackSamplerLoop::StackSamplerLoop(
     MetricsRegistry& metricsRegistry)
     :
     _pCorProfilerInfo{pCorProfilerInfo},
-    _pConfiguration{pConfiguration},
     _pStackFramesCollector{pStackFramesCollector},
     _pManager{pManager},
+    _pConfiguration{pConfiguration},
     _pThreadsCpuManager{pThreadsCpuManager},
     _pManagedThreadList{pManagedThreadList},
     _pCodeHotspotsThreadList{pCodeHotspotThreadList},
@@ -67,6 +59,7 @@ StackSamplerLoop::StackSamplerLoop(
     _targetThread(nullptr),
     _iteratorWallTime{0},
     _iteratorCpuTime{0},
+    _iteratorCodeHotspot{0},
     _walltimeThreadsThreshold{pConfiguration->WalltimeThreadsThreshold()},
     _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()},
     _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()},
@@ -327,8 +320,8 @@ void StackSamplerLoop::CpuProfilingIteration()
                     // detect overlapping CPU usage
                     if ((int64_t)(lastCpuTimestamp + cpuForSample * 1000000) > thisSampleTimestampNanosecs)
                     {
-                        int64_t cpuOverlap = (lastCpuTimestamp + cpuForSample * 1000000 - thisSampleTimestampNanosecs) / 1000000;
 #ifndef NDEBUG
+                        int64_t cpuOverlap = (lastCpuTimestamp + cpuForSample * 1000000 - thisSampleTimestampNanosecs) / 1000000;
                         // TODO: uncomment when debugging this issue
                         // Log::Warn("Overlapping CPU samples off ", cpuOverlap, " ms (", currentConsumption, " - ", lastConsumption, ")");
 #endif

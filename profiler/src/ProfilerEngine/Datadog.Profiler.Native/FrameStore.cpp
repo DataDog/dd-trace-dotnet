@@ -24,8 +24,8 @@ PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte);
 
 FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* debugInfoStore) :
     _pCorProfilerInfo{pCorProfilerInfo},
-    _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()},
-    _pDebugInfoStore{debugInfoStore}
+    _pDebugInfoStore{debugInfoStore},
+    _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()}
 {
 }
 
@@ -181,7 +181,7 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     // look into the cache first
     TypeDesc* pTypeDesc = nullptr;  // if already in the cache
     TypeDesc typeDesc;              // if needed to be built from a given classId
-    bool isEncoded = true;
+
     bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc);
     // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
 
@@ -896,7 +896,7 @@ std::tuple<std::string, std::string, std::string> FrameStore::GetManagedTypeName
 
     if (isArray)
     {
-        return std::make_tuple(std::move(ns), std::move(typeName), std::move(genericParameters + arraySuffix));
+        return std::make_tuple(std::move(ns), std::move(typeName), genericParameters + arraySuffix);
     }
     else
     {
@@ -935,7 +935,6 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     ULONG codeRva;
 
     // get the coded signature from metadata
-    ULONG nameCharCount = 0;
     HRESULT hr = pMetaData->GetMethodProps(mdTokenFunc, nullptr, nullptr, 0, nullptr, &attributes, &pSigBlob, &blobSize, &codeRva, &flags);
     if (FAILED(hr))
     {
@@ -956,8 +955,8 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     std::unique_ptr<ClassID[]> methodTypeArgs = nullptr;
     ULONG genericArgCount = 0;
     UINT32 methodTypeArgCount = 0;
-    ULONG32 classTypeArgCount = 0;
     std::vector<std::string> classTypeArgs;
+
     if ((callConv & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0)
     {
         ModuleID moduleId;

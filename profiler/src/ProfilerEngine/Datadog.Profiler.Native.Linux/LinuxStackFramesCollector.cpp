@@ -29,9 +29,9 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(ProfilerSignalManager* sign
     StackFramesCollectorBase(configuration),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
-    _errorStatistics{},
     _processId{OpSysTools::GetProcId()},
     _signalManager{signalManager},
+    _errorStatistics{},
     _useBacktrace2{configuration->UseBacktrace2()}
 {
     _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
@@ -184,7 +184,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
     try
     {
         // Collect data for TraceContext tracking:
-        bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
+        TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
         return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
     }

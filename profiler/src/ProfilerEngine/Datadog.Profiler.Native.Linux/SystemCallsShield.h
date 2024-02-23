@@ -10,7 +10,7 @@
 #include <memory>
 
 class IConfiguration;
-class ManagedThreadInfo;
+struct ManagedThreadInfo;
 
 class SystemCallsShield : public IService
 {

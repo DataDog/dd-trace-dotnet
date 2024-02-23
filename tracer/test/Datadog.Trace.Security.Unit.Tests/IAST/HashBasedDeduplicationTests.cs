@@ -12,6 +12,14 @@ namespace Datadog.Trace.Security.Unit.Tests.Iast;
 public class HashBasedDeduplicationTests
 {
     [Fact]
+    public void GivenAKownVulnerability_WhenCalculatedHash_ValueIsEspected()
+    {
+        var vulnerability = new Vulnerability(VulnerabilityTypeName.WeakHash, new Location(null, "AspNetCoreRateLimit.RateLimitProcessor::BuildCounterKey", null, 849303611103961300, null), new Evidence("SHA1"));
+        var hashCode = vulnerability.GetHashCode();
+        Assert.Equal(-367182571, hashCode);
+    }
+
+    [Fact]
     public void GivenTheSameVulnerabilityInstance_WhenAddedToDeduplication_OnlyOneIsStored()
     {
         var instance = new HashBasedDeduplication();
