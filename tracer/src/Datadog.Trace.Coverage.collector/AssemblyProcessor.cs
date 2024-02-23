@@ -806,8 +806,8 @@ namespace Datadog.Trace.Coverage.Collector
                 case TracerTarget.Net461:
                     targetFolder = "net461";
                     break;
-                case TracerTarget.Netstandard20:
-                    targetFolder = "netstandard2.0";
+                case TracerTarget.Netcoreapp21:
+                    targetFolder = "netcoreapp2.1";
                     break;
                 case TracerTarget.Netcoreapp31:
                     targetFolder = "netcoreapp3.1";
@@ -831,8 +831,8 @@ namespace Datadog.Trace.Coverage.Collector
                     case TracerTarget.Net461:
                         targetFolder = "net461";
                         break;
-                    case TracerTarget.Netstandard20:
-                        targetFolder = "netstandard2.0";
+                    case TracerTarget.Netcoreapp21:
+                        targetFolder = "netcoreapp2.1";
                         break;
                     case TracerTarget.Netcoreapp31:
                         targetFolder = "netcoreapp3.1";
@@ -908,8 +908,8 @@ namespace Datadog.Trace.Coverage.Collector
 
                             if (version >= 2.0 && version <= 3.0)
                             {
-                                _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netstandard20 from {targetValue}");
-                                return TracerTarget.Netstandard20;
+                                _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netcoreapp21 from {targetValue}");
+                                return TracerTarget.Netcoreapp21;
                             }
 
                             if (version > 3.0 && version <= 5.0)
@@ -935,8 +935,8 @@ namespace Datadog.Trace.Coverage.Collector
                 case "netstandard" when coreLibrary is AssemblyNameReference coreAsmRef && coreAsmRef.Version.Major == 2:
                 case "System.Private.CoreLib":
                 case "System.Runtime":
-                    _logger.Debug("GetTracerTarget: Returning TracerTarget.Netstandard20");
-                    return TracerTarget.Netstandard20;
+                    _logger.Debug("GetTracerTarget: Returning TracerTarget.Netcoreapp21");
+                    return TracerTarget.Netcoreapp21;
             }
 
             _logger.Debug("GetTracerTarget: Returning TracerTarget.Net461");

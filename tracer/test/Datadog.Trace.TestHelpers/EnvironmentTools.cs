@@ -109,7 +109,7 @@ namespace Datadog.Trace.TestHelpers
 #elif NETCOREAPP3_1_OR_GREATER
             return "netcoreapp3.1";
 #elif NETCOREAPP || NETSTANDARD
-            return "netstandard2.0";
+            return "netcoreapp2.1";
 #elif NETFRAMEWORK
             return "net461";
 #else
