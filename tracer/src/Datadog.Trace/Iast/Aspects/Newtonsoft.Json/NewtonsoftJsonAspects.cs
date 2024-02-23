@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections;
-using System.Reflection;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
@@ -22,9 +21,9 @@ public class NewtonsoftJsonAspects
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NewtonsoftJsonAspects>();
 
-    private static readonly MethodInfo? ParseMethodObject = Type.GetType("Newtonsoft.Json.Linq.JObject, Newtonsoft.Json")!.GetMethod("Parse", [typeof(string)])!;
-    private static readonly MethodInfo? ParseMethodArray = Type.GetType("Newtonsoft.Json.Linq.JArray, Newtonsoft.Json")!.GetMethod("Parse", [typeof(string)])!;
-    private static readonly MethodInfo? ParseMethodToken = Type.GetType("Newtonsoft.Json.Linq.JToken, Newtonsoft.Json")!.GetMethod("Parse", [typeof(string)])!;
+    private static readonly Type JObjectType = Type.GetType("Newtonsoft.Json.Linq.JObject, Newtonsoft.Json")!;
+    private static readonly Type JArrayType = Type.GetType("Newtonsoft.Json.Linq.JArray, Newtonsoft.Json")!;
+    private static readonly Type JTokenType = Type.GetType("Newtonsoft.Json.Linq.JToken, Newtonsoft.Json")!;
 
     /// <summary>
     /// JObject Parse aspect.
@@ -34,7 +33,18 @@ public class NewtonsoftJsonAspects
     [AspectMethodReplace("Newtonsoft.Json.Linq.JObject::Parse(System.String)")]
     public static object? ParseObject(string json)
     {
-        var result = ParseMethodObject?.Invoke(null, [json]); // TODO: Change to IL
+        var proxyResult = DuckType.GetOrCreateProxyType(typeof(ICanParse), JObjectType);
+        object? result;
+        if (proxyResult.Success)
+        {
+            var proxy = (ICanParse)proxyResult.CreateInstance(null!);
+            result = proxy.Parse(json);
+        }
+        else
+        {
+            Log.Warning("Failed to create JObject proxy");
+            return null;
+        }
 
         try
         {
@@ -58,7 +68,18 @@ public class NewtonsoftJsonAspects
     [AspectMethodReplace("Newtonsoft.Json.Linq.JArray::Parse(System.String)")]
     public static object? ParseArray(string json)
     {
-        var result = ParseMethodArray?.Invoke(null, [json]);
+        var proxyResult = DuckType.GetOrCreateProxyType(typeof(ICanParse), JArrayType);
+        object? result;
+        if (proxyResult.Success)
+        {
+            var proxy = (ICanParse)proxyResult.CreateInstance(null!);
+            result = proxy.Parse(json);
+        }
+        else
+        {
+            Log.Warning("Failed to create JArray proxy");
+            return null;
+        }
 
         try
         {
@@ -86,7 +107,18 @@ public class NewtonsoftJsonAspects
     [AspectMethodReplace("Newtonsoft.Json.Linq.JToken::Parse(System.String)")]
     public static object? ParseToken(string json)
     {
-        var result = ParseMethodToken?.Invoke(null, [json]);
+        var proxyResult = DuckType.GetOrCreateProxyType(typeof(ICanParse), JTokenType);
+        object? result;
+        if (proxyResult.Success)
+        {
+            var proxy = (ICanParse)proxyResult.CreateInstance(null!);
+            result = proxy.Parse(json);
+        }
+        else
+        {
+            Log.Warning("Failed to create JToken proxy");
+            return null;
+        }
 
         try
         {

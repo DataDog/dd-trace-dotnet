@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoDatabase::RunCommandAsync(MongoDB.Driver.Command`1<!!0>,MongoDB.Driver.ReadPreference,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] AnalyzeCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoCollectionExtensions::Find(MongoDB.Driver.IMongoCollection`1<!!0>,MongoDB.Driver.FilterDefinition`1<!!0>,MongoDB.Driver.FindOptions)\",\"\",[1],[False],[None],Default,[])] AnalyzeCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"MongoDB.Driver.IMongoCollectionExtensions::FindAsync(MongoDB.Driver.IMongoCollection`1<!!0>,MongoDB.Driver.FilterDefinition`1<!!0>,MongoDB.Driver.FindOptions`2<!!0,!!0>,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] AnalyzeCommand(System.Object)",
-"[AspectClass(\"Newtonsoft.Json\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.Newtonsoft.Json.JObjectAspects",
+"[AspectClass(\"Newtonsoft.Json\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.Newtonsoft.Json.NewtonsoftJsonAspects",
 "  [AspectMethodReplace(\"Newtonsoft.Json.Linq.JObject::Parse(System.String)\",\"\",[0],[False],[None],Default,[])] ParseObject(System.String)",
 "  [AspectMethodReplace(\"Newtonsoft.Json.Linq.JArray::Parse(System.String)\",\"\",[0],[False],[None],Default,[])] ParseArray(System.String)",
 "  [AspectMethodReplace(\"Newtonsoft.Json.Linq.JToken::Parse(System.String)\",\"\",[0],[False],[None],Default,[])] ParseToken(System.String)",
