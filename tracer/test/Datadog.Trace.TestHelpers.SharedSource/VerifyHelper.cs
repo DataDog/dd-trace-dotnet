@@ -183,7 +183,7 @@ namespace Datadog.Trace.TestHelpers
                   .OrderBy(x => x.Key)
                   .ToDictionary(x => x.Key, x => x.Value);
         }
-        
+
         public static Dictionary<string, string> ScrubCIVisibilityTags(MockSpan span, Dictionary<string, string> tags)
         {
             return tags
