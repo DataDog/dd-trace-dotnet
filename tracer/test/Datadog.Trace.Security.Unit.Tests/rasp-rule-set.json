@@ -1,52 +1,52 @@
 {
   "version": "2.2",
   "metadata": {
-    "rules_version": "1.3.0"
+    "rules_version": "1.10.0"
   },
   "rules": [
-      {
-        "id": "rasp-001-001",
-        "name": "Path traversal attack",
-        "tags": {
-          "type": "lfi",
-          "category": "vulnerability_trigger",
-          "module": "rasp"
-        },
-        "conditions": [
-          {
-            "operator": "lfi_detector",
-            "parameters": {
-              "resource": [
-                {
-                  "address": "server.io.fs.file"
-                }
-              ],
-              "params": [
-                {
-                  "address": "server.request.query"
-                },
-                {
-                  "address": "server.request.body"
-                },
-                {
-                  "address": "server.request.path_params"
-                },
-                {
-                  "address": "grpc.server.request.message"
-                },
-                {
-                  "address": "graphql.server.all_resolvers"
-                },
-                {
-                  "address": "graphql.server.resolver"
-                }
-              ]
-            }
+    {
+      "id": "rasp-001-001",
+      "name": "Path traversal attack",
+      "tags": {
+        "type": "lfi",
+        "category": "vulnerability_trigger",
+        "module": "rasp"
+      },
+      "conditions": [
+        {
+          "operator": "lfi_detector",
+          "parameters": {
+            "resource": [
+              {
+                "address": "server.io.fs.file"
+              }
+            ],
+            "params": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              },
+              {
+                "address": "grpc.server.request.message"
+              },
+              {
+                "address": "graphql.server.all_resolvers"
+              },
+              {
+                "address": "graphql.server.resolver"
+              }
+            ]
           }
-        ],
-        "on_match": [
-          "stack_trace"
-        ]
-      }
+        }
+      ],
+      "on_match": [
+        "stack_trace"
+      ]
+    }
   ]
 }

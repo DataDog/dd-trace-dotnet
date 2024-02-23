@@ -76,10 +76,10 @@ internal static class RaspModule
 #endif
         if (result is not null)
         {
-            CheckAndBlock(result);
-            securityCoordinator?.TryReport(result, false);
+            securityCoordinator?.TryReport(result, result.ShouldBlock);
             var json = JsonConvert.SerializeObject(result.Data);
             Log.Information("RASP WAF result: {Result}", json);
+            CheckAndBlock(result);
         }
     }
 }
