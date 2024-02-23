@@ -36,6 +36,9 @@
           {
             "value": "<b>RawValue</b>",
             "source": 0
+          },
+          {
+            "value": "<b>More Text</b>"
           }
         ]
       }

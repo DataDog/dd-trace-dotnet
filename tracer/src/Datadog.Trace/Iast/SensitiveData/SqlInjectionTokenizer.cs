@@ -57,8 +57,11 @@ internal class SqlInjectionTokenizer : ITokenizer
         };
     }
 
-    public List<Range> GetTokens(string value, IntegrationId? integrationId = null)
+    public List<Range> GetTokens(Evidence evidence, IntegrationId? integrationId = null)
     {
+        var value = evidence.Value;
+        if (value is null) { return []; }
+
         Regex? pattern = null;
         if (integrationId != null) { _dialectPatterns.TryGetValue(integrationId.Value, out pattern); }
         if (pattern == null) { pattern = _ansiDialectRegex; }

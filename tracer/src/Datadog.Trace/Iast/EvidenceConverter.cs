@@ -298,6 +298,12 @@ internal class EvidenceConverter : JsonConverter<Evidence?>
                         valueParts.Add(new ValuePart(pattern, Source, true));
                     }
                 }
+                else
+                {
+                    // Null source
+                    var pattern = Source.RedactString(chunk);
+                    valueParts.Add(new ValuePart(pattern, Source, true));
+                }
             }
         }
     }

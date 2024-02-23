@@ -28,8 +28,11 @@ internal class UrlTokenizer : ITokenizer
         _patternUrl = new Regex(string.Join("|", AuthorityRegex, QueryFragmentGroup), RegexOptions.Compiled | RegexOptions.IgnoreCase, timeout);
     }
 
-    public List<Range> GetTokens(string value, IntegrationId? integrationId = null)
+    public List<Range> GetTokens(Evidence evidence, IntegrationId? integrationId = null)
     {
+        var value = evidence.Value;
+        if (value is null) { return []; }
+
         var res = new List<Range>(1);
         foreach (Match? match in _patternUrl.Matches(value))
         {
