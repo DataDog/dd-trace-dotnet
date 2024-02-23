@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // Check the span count
                         Assert.Equal(ExpectedSpanCount, spans.Count);
 
-                        var settings = VerifyHelper.GetSpanVerifierSettings(packageVersion);
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(packageVersion);
                         await Verifier.Verify(spans.OrderBy(s => s.Resource), settings);
 
                         // ***************************************************************************
