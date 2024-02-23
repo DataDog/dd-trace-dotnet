@@ -64,7 +64,7 @@ internal class IntelligentTestRunnerClient
     private readonly EventPlatformProxySupport _eventPlatformProxySupport;
     private readonly Task<string> _getRepositoryUrlTask;
     private readonly Task<string> _getBranchNameTask;
-    private readonly Task<ProcessHelpers.CommandOutput?> _getShaTask;
+    private readonly Task<string> _getShaTask;
 
     public IntelligentTestRunnerClient(string workingDirectory, CIVisibilitySettings? settings = null)
     {
@@ -81,7 +81,7 @@ internal class IntelligentTestRunnerClient
 
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
         _getBranchNameTask = GetBranchNameAsync();
-        _getShaTask = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory));
+        _getShaTask = GetCommitShaAsync();
         _apiRequestFactory = CIVisibility.GetRequestFactory(new ImmutableTracerSettings(_settings.TracerSettings, true), TimeSpan.FromSeconds(45));
 
         const string settingsUrlPath = "api/v2/libraries/tests/services/setting";
@@ -311,7 +311,7 @@ internal class IntelligentTestRunnerClient
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var branchName = await _getBranchNameTask.ConfigureAwait(false);
-        var currentShaCommand = await _getShaTask.ConfigureAwait(false);
+        var currentSha = await _getShaTask.ConfigureAwait(false);
         if (string.IsNullOrEmpty(repository))
         {
             Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
@@ -324,13 +324,6 @@ internal class IntelligentTestRunnerClient
             return default;
         }
 
-        if (currentShaCommand is null)
-        {
-            Log.Warning("ITR: 'git rev-parse HEAD' command is null");
-            return default;
-        }
-
-        var currentSha = currentShaCommand.Output.Replace("\n", string.Empty);
         if (string.IsNullOrEmpty(currentSha))
         {
             Log.Warning("ITR: 'git rev-parse HEAD' command returned null or empty");
@@ -423,20 +416,13 @@ internal class IntelligentTestRunnerClient
         Log.Debug("ITR: Getting skippable tests...");
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var currentShaCommand = await _getShaTask.ConfigureAwait(false);
+        var currentSha = await _getShaTask.ConfigureAwait(false);
         if (string.IsNullOrEmpty(repository))
         {
             Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
             return new SkippableTestsResponse();
         }
 
-        if (currentShaCommand is null)
-        {
-            Log.Warning("ITR: 'git rev-parse HEAD' command is null");
-            return new SkippableTestsResponse();
-        }
-
-        var currentSha = currentShaCommand.Output.Replace("\n", string.Empty);
         if (string.IsNullOrEmpty(currentSha))
         {
             Log.Warning("ITR: 'git rev-parse HEAD' command returned null or empty");
@@ -1012,6 +998,18 @@ internal class IntelligentTestRunnerClient
 
         var gitOutput = await RunGitCommandAsync("branch --show-current", MetricTags.CIVisibilityCommands.GetBranch).ConfigureAwait(false);
         return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
+    }
+
+    private async Task<string> GetCommitShaAsync()
+    {
+        var gitOutput = await RunGitCommandAsync("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
+        var gitSha = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
+        if (string.IsNullOrEmpty(gitSha) && CIEnvironmentValues.Instance.Commit is { Length: > 0 } commitSha)
+        {
+            return commitSha;
+        }
+
+        return gitSha;
     }
 
     private async Task<ProcessHelpers.CommandOutput?> RunGitCommandAsync(string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
