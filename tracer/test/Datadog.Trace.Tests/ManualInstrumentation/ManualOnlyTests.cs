@@ -12,9 +12,6 @@ using BenchmarkDiscreteStats = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkDis
 using BenchmarkHostInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkHostInfo;
 using BenchmarkJobInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkJobInfo;
 using BenchmarkMeasureType = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkMeasureType;
-using ManualScope = DatadogTraceManual::Datadog.Trace.ManualScope;
-using ManualSpan = DatadogTraceManual::Datadog.Trace.ManualSpan;
-using ManualSpanContext = DatadogTraceManual::Datadog.Trace.ManualSpanContext;
 using ManualTest = DatadogTraceManual::Datadog.Trace.Ci.ManualTest;
 using ManualTestModule = DatadogTraceManual::Datadog.Trace.Ci.ManualTestModule;
 using ManualTestSession = DatadogTraceManual::Datadog.Trace.Ci.ManualTestSession;
@@ -26,24 +23,6 @@ namespace Datadog.Trace.Tests.ManualInstrumentation;
 
 public class ManualOnlyTests
 {
-    [Fact]
-    public void CreatingAManualSpanDoesNotCrash()
-    {
-        using var scope = DatadogTraceManual::Datadog.Trace.Tracer.Instance.StartActive("manual");
-        scope.Should().BeOfType<ManualScope>().And.NotBeNull();
-
-        var span = scope.Span.Should().NotBeNull().And.BeOfType<ManualSpan>().Subject;
-        span.SetException(new Exception());
-        span.SetTag("James", "Bond");
-        span.GetTag("James").Should().BeNull();
-        span.OperationName.Should().BeNullOrEmpty();
-        span.ResourceName.Should().BeNullOrEmpty();
-
-        var context = span.Context.Should().NotBeNull().And.BeOfType<ManualSpanContext>().Subject;
-        context.Should().NotBeNull();
-        context.ServiceName.Should().BeNullOrEmpty();
-    }
-
     [Fact]
     public void CreatingAManualOnlyCiSessionDoesNotCrash()
     {

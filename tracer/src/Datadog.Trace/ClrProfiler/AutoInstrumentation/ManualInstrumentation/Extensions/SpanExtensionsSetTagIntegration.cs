@@ -35,10 +35,10 @@ public class SpanExtensionsSetTagIntegration
         TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetTag);
 
         // Annoyingly, this takes an ISpan, so we have to do some duckTyping to make it work
-        // it's most likely to be a ManualSpan, so try that first
-        if (span.TryDuckCast<ManualSpanProxy>(out var wrapped)
-            && wrapped.AutomaticSpan is Span s)
+        // it's most likely to be a duck-typed Span, so try that first
+        if (span is IDuckType { Instance: Span s })
         {
+            // this is the "typical" scenario
             s.SetTagInternal(key, value);
         }
         else if (span is Span autoSpan)

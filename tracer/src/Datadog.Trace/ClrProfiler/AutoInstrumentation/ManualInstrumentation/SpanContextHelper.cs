@@ -20,7 +20,7 @@ internal static class SpanContextHelper
             null => null,
             SpanContext c => c,
             ISpanContext c => c,
-            _ when context.TryDuckCast<ManualSpanContextProxy>(out var manualSpanContext) => (SpanContext?)manualSpanContext.AutomaticContext,
+            IDuckType { Instance: SpanContext c } => c,
             _ when context.TryDuckCast<SpanContextProxy>(out var spanContextProxy) => new SpanContext(
                 new TraceId(Upper: spanContextProxy.TraceIdUpper, Lower: spanContextProxy.TraceId),
                 spanContextProxy.SpanId,

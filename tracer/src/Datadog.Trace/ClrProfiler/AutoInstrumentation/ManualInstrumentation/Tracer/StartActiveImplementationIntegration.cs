@@ -49,14 +49,9 @@ public class StartActiveImplementationIntegration
 
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
     {
-        // The return value is a ManualScope (Datadog.Trace.Manual) proxy that we duck type and set all the context values on
-        if (returnValue is not null)
-        {
-            returnValue
-               .DuckCast<IManualScopeProxy>()
-               .SetAutomatic(state.Scope, state.Scope.Span, state.Scope.Span.Context);
-        }
-
-        return new CallTargetReturn<TReturn>(returnValue);
+        // Duck cast Scope as an IScope (DataDog.Trace.Manual) and return it
+        return state.Scope is { } scope
+                   ? new CallTargetReturn<TReturn>(scope.DuckCast<TReturn>())
+                   : new CallTargetReturn<TReturn>(returnValue);
     }
 }

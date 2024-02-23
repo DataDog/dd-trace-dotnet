@@ -34,8 +34,8 @@ public static class OpenTracingHelpers
 
     public static ulong? GetParentId(this Datadog.Trace.ISpanContext spanContext)
     {
-        // spanContext will be a ManualSpanContext
-        var autoSpanContext = GetAutomaticSpanContext(spanContext);
+        // spanContext will be a duck-typed Datadog.Trace SpanContext
+        var autoSpanContext = GetDuckTypedInstance(spanContext);
         var parentIdMethod = autoSpanContext
                             .GetType()
                             .GetProperty("ParentId", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
@@ -46,8 +46,8 @@ public static class OpenTracingHelpers
 
     public static object GetTraceContext(this Datadog.Trace.ISpanContext spanContext)
     {
-        // spanContext will be a reverse-ducktyped ISpanContext which implements IDuckType where the underlying type is ManualSpanContext
-        var autoSpanContext = GetAutomaticSpanContext(spanContext);
+        // spanContext will be a duck-typed Datadog.Trace SpanContext
+        var autoSpanContext = GetDuckTypedInstance(spanContext);
         var traceContext = autoSpanContext
                             .GetType()
                             .GetProperty("TraceContext", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
@@ -58,12 +58,8 @@ public static class OpenTracingHelpers
 
     public static (TimeSpan Duration, DateTimeOffset StartTime) GetInternalProperties(this Datadog.Trace.ISpan span)
     {
-        // span will be a ManualSpanContext
-        var autoSpanMethod = span
-                            .GetType()
-                            .GetProperty("AutomaticSpan", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                            .GetMethod;
-        var autoSpan = autoSpanMethod.Invoke(span, []);
+        // span will be a duck-typed Datadog.Trace Span
+        var autoSpan = GetDuckTypedInstance(span);
         var durationMethod = autoSpan
                             .GetType()
                             .GetProperty("Duration", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
@@ -79,14 +75,14 @@ public static class OpenTracingHelpers
         return (Duration: duration, StartTime: startTime);
     }
 
-    private static object GetAutomaticSpanContext(Datadog.Trace.ISpanContext spanContext)
+    private static object GetDuckTypedInstance(object duckType)
     {
-        // span will be a ManualSpanContext
-        var autoContextMethod = spanContext
+        // span will be a duck-typed SpanContext
+        var autoContextMethod = duckType
                                .GetType()
-                               .GetProperty("AutomaticContext", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                               .GetProperty("Instance", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                                .GetMethod;
-        var autoSpanContext = autoContextMethod.Invoke(spanContext, []);
-        return autoSpanContext;
+        var originalInstance = autoContextMethod.Invoke(duckType, []);
+        return originalInstance;
     }
 }

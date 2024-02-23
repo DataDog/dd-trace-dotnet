@@ -5,6 +5,7 @@
 
 using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Stubs;
 
 namespace Datadog.Trace
 {
@@ -114,11 +115,11 @@ namespace Datadog.Trace
         private static object? GetAutomaticTracerInstance() => null;
 
         /// <summary>
-        /// Automatic instrumentation intercepts this method and updates the ManualScope.
+        /// Automatic instrumentation intercepts this method and returns a duck-typed Scope from Datadog.Trace.
         /// </summary>
         [Instrumented]
         private IScope StartActive(string operationName, ISpanContext? parent, string? serviceName, DateTimeOffset? startTime, bool? finishOnClose)
-            => new ManualScope();
+            => NullScope.Instance;
 
         /// <summary>
         /// Creates a new <see cref="ISpan"/> with the specified parameters.
@@ -131,6 +132,6 @@ namespace Datadog.Trace
         /// <returns>The newly created span</returns>
         [Instrumented]
         ISpan IDatadogOpenTracingTracer.StartSpan(string operationName, ISpanContext? parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope)
-            => new ManualSpan();
+            => NullSpan.Instance;
     }
 }

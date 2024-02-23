@@ -8,6 +8,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 
@@ -38,6 +39,6 @@ public class GetActiveScopeIntegration
         // (Not ideal for clarity, but generics prevent returning null directly)
         return scope is null
                    ? new CallTargetReturn<TReturn>(returnValue)
-                   : new CallTargetReturn<TReturn>(ScopeHelper<TReturn>.CreateManualScope(scope) is { } manualScope ? (TReturn)manualScope : returnValue);
+                   : new CallTargetReturn<TReturn>(state.Scope.DuckCast<TReturn>());
     }
 }

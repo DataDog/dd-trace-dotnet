@@ -48,12 +48,9 @@ namespace Benchmarks.Trace
                                         .Invoke(new object[] { Tracer, manualSettings });
         }
 
-        /// <summary>
-        /// Starts and finishes scope benchmark using the manual instrumentation
-        /// </summary>
-        // Skipping this test because it's not representative any more - this relies on 
-        // duck typing, which requires automatic instrumentation. If you want to
-        // benchmark it, first import the DuckTyping folder into Datadog.Trace.Manual 
+        // /// <summary>
+        // /// Starts and finishes scope benchmark using the manual instrumentation
+        // /// </summary>
         // [Benchmark]
         public void ManualStartFinishScope()
         {

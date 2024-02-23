@@ -10,6 +10,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -19,11 +20,9 @@ using BenchmarkDiscreteStats = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkDis
 using BenchmarkHostInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkHostInfo;
 using BenchmarkJobInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkJobInfo;
 using BenchmarkMeasureType = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkMeasureType;
-using CustomIScope = DatadogTraceManual::Datadog.Trace.IScope;
-using CustomISpanContext = DatadogTraceManual::Datadog.Trace.ISpanContext;
-using ManualScope = DatadogTraceManual::Datadog.Trace.ManualScope;
-using ManualSpan = DatadogTraceManual::Datadog.Trace.ManualSpan;
-using ManualSpanContext = DatadogTraceManual::Datadog.Trace.ManualSpanContext;
+using ManualIScope = DatadogTraceManual::Datadog.Trace.IScope;
+using ManualISpan = DatadogTraceManual::Datadog.Trace.ISpan;
+using ManualISpanContext = DatadogTraceManual::Datadog.Trace.ISpanContext;
 using ManualTestSession = DatadogTraceManual::Datadog.Trace.Ci.ManualTestSession;
 using TestParameters = DatadogTraceManual::Datadog.Trace.Ci.TestParameters;
 using TestStatus = DatadogTraceManual::Datadog.Trace.Ci.TestStatus;
@@ -44,39 +43,18 @@ public class DuckTypingTests
         _tracer = new Tracer(_settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object, scopeManager: _scopeManager, statsd: null);
     }
 
-    [Fact(Skip = Skip)]
-    public void CanDuckTypeManualSpanContextAsISpanContext()
+    [Fact]
+    public void CanDuckTypeScopeAsManualIScope()
     {
         var scope = _tracer.StartActiveInternal("manual");
-        var spanContext = scope.Span.Context;
-        var obj = ScopeHelper<CustomISpanContext>.CreateManualSpanContext(spanContext);
-
-        // verify properties are ok
-        var manualContext = obj.Should().BeOfType<ManualSpanContext>().Subject;
-        manualContext.Should().NotBeNull();
-        manualContext.AutomaticContext.Should().Be(spanContext);
-        manualContext.ServiceName.Should().Be(spanContext.ServiceName);
-        manualContext.SpanId.Should().Be(spanContext.SpanId);
-        manualContext.TraceId.Should().Be(spanContext.TraceId);
-    }
-
-    [Fact(Skip = Skip)]
-    public void CanDuckTypeManualScopeAsIScope()
-    {
-        var scope = _tracer.StartActiveInternal("manual");
-        var obj = ScopeHelper<CustomIScope>.CreateManualScope(scope);
         var span = scope.Span;
+        var spanContext = span.Context;
 
-        // verify properties are ok
-        var manualScope = obj.Should().BeOfType<ManualScope>().Subject;
-        manualScope.Should().NotBeNull();
-        manualScope.AutomaticScope.Should().Be(scope);
+        var manualScope = scope.DuckCast<ManualIScope>();
 
         // call all the properties to check for duck typing issues
-        var manualSpan = manualScope.Span.Should().BeOfType<ManualSpan>().Subject;
-        manualSpan.AutomaticSpan.Should().Be(span);
+        var manualSpan = manualScope.Span.Should().BeAssignableTo<ManualISpan>().Subject;
         manualSpan.SpanId.Should().Be(span.SpanId);
-        manualSpan.Context.Should().BeOfType<ManualSpanContext>();
         manualSpan.SetException(new Exception("MyException"));
         manualSpan.Error.Should().Be(span.Error).And.BeTrue();
         manualSpan.Type.Should().Be(span.Type);
@@ -87,6 +65,11 @@ public class DuckTypingTests
         manualSpan.SetTag("Test", "SomeValue");
         manualSpan.GetTag("Test").Should().Be("SomeValue");
         span.GetTag("Test").Should().Be("SomeValue"); // check it was mirrored
+
+        var manualSpanContext = manualSpan.Context.Should().BeAssignableTo<ManualISpanContext>().Subject;
+        manualSpanContext.SpanId.Should().Be(spanContext.SpanId);
+        manualSpanContext.ServiceName.Should().Be(spanContext.ServiceName);
+        manualSpanContext.TraceId.Should().Be(spanContext.TraceId);
 
         manualScope.Close();
         manualScope.Dispose();
