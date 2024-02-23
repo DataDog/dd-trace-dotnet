@@ -31,6 +31,7 @@ namespace Datadog.Trace.Ci
         private static Task? _skippableTestsTask;
         private static string? _skippableTestsCorrelationId;
         private static Dictionary<string, Dictionary<string, IList<SkippableTest>>>? _skippableTestsBySuiteAndName;
+        private static string? _osVersion;
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
@@ -412,47 +413,54 @@ namespace Datadog.Trace.Ci
 
         internal static string GetOperatingSystemVersion()
         {
-            switch (FrameworkDescription.Instance.OSPlatform)
+            // we cache the OS version because is called multiple times during the test execution
+            // and we want to avoid multiple system calls for Linux and macOS
+            return _osVersion ??= GetOperatingSystemVersionInternal();
+
+            static string GetOperatingSystemVersionInternal()
             {
-                case OSPlatformName.Linux:
-                    if (!string.IsNullOrEmpty(HostMetadata.Instance.KernelRelease))
-                    {
-                        return HostMetadata.Instance.KernelRelease!;
-                    }
-
-                    break;
-                case OSPlatformName.MacOS:
-                    var context = SynchronizationContext.Current;
-                    try
-                    {
-                        if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
+                switch (FrameworkDescription.Instance.OSPlatform)
+                {
+                    case OSPlatformName.Linux:
+                        if (!string.IsNullOrEmpty(HostMetadata.Instance.KernelRelease))
                         {
-                            SynchronizationContext.SetSynchronizationContext(null);
+                            return HostMetadata.Instance.KernelRelease!;
                         }
 
-                        var osxVersionCommand = AsyncUtil.RunSync(() => ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")));
-                        var osxVersion = osxVersionCommand?.Output.Trim(' ', '\n');
-                        if (!string.IsNullOrEmpty(osxVersion))
+                        break;
+                    case OSPlatformName.MacOS:
+                        var context = SynchronizationContext.Current;
+                        try
                         {
-                            return osxVersion!;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warning(ex, "Error getting OS version on macOS");
-                    }
-                    finally
-                    {
-                        if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
-                        {
-                            SynchronizationContext.SetSynchronizationContext(null);
-                        }
-                    }
+                            if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
+                            {
+                                SynchronizationContext.SetSynchronizationContext(null);
+                            }
 
-                    break;
+                            var osxVersionCommand = AsyncUtil.RunSync(() => ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")));
+                            var osxVersion = osxVersionCommand?.Output.Trim(' ', '\n');
+                            if (!string.IsNullOrEmpty(osxVersion))
+                            {
+                                return osxVersion!;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning(ex, "Error getting OS version on macOS");
+                        }
+                        finally
+                        {
+                            if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
+                            {
+                                SynchronizationContext.SetSynchronizationContext(null);
+                            }
+                        }
+
+                        break;
+                }
+
+                return Environment.OSVersion.VersionString;
             }
-
-            return Environment.OSVersion.VersionString;
         }
 
         /// <summary>
