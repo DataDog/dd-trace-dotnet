@@ -28,7 +28,7 @@ public class ContextTests : WafLibraryRequiredTest
     // here we use just 1 sec instead of the 20sec common one as we dont really care about the result, just that it runs
     public const int WafRunTimeoutMicroSeconds = 1_000_000;
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(true)]
     [InlineData(false)]
     public void MultipleContextsRun(bool useUnsafeEncoder)
