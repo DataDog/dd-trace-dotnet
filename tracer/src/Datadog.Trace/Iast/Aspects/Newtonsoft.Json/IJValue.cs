@@ -9,5 +9,7 @@ namespace Datadog.Trace.Iast.Aspects.Newtonsoft.Json;
 
 internal interface IJValue
 {
-    object Value { get; }
+    object Value { get; } // as an interface because in a struct it would fail with an AmbiguousMatchException
+
+    JTokenTypeProxy Type { get; }
 }

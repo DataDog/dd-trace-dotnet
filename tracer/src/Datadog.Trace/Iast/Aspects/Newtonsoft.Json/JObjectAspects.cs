@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections;
+using System.Reflection;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -18,6 +20,9 @@ namespace Datadog.Trace.Iast.Aspects.Newtonsoft.Json;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class JObjectAspects
 {
+    private static readonly MethodInfo? ParseMethodObject = Type.GetType("Newtonsoft.Json.Linq.JObject, Newtonsoft.Json")!.GetMethod("Parse", [typeof(string)])!;
+    private static readonly MethodInfo? ParseMethodArray = Type.GetType("Newtonsoft.Json.Linq.JArray, Newtonsoft.Json")!.GetMethod("Parse", [typeof(string)])!;
+
     /// <summary>
     /// JObject Parse aspect.
     /// </summary>
@@ -26,9 +31,7 @@ public class JObjectAspects
     [AspectMethodReplace("Newtonsoft.Json.Linq.JObject::Parse(System.String)")]
     public static object? ParseObject(string json)
     {
-        var type = Type.GetType("Newtonsoft.Json.Linq.JObject, Newtonsoft.Json")!;
-        var method = type.GetMethod("Parse", [typeof(string)]);
-        var result = method?.Invoke(null, [json]);
+        var result = ParseMethodObject?.Invoke(null, [json]); // TODO: Change to IL
 
         try
         {
@@ -53,15 +56,17 @@ public class JObjectAspects
     [AspectMethodReplace("Newtonsoft.Json.Linq.JArray::Parse(System.String)")]
     public static object? ParseArray(string json)
     {
-        var type = Type.GetType("Newtonsoft.Json.Linq.JArray, Newtonsoft.Json")!;
-        var method = type.GetMethod("Parse", [typeof(string)]);
-        var result = method?.Invoke(null, [json]);
+        var result = ParseMethodArray?.Invoke(null, [json]);
 
         try
         {
-            var duckedResult = result.DuckCast<IJObject>();
+            if (result is null)
+            {
+                return null;
+            }
+
             var taintedObjects = IastModule.GetIastContext()?.GetTaintedObjects();
-            RecursiveJObjectStringTaint(duckedResult, taintedObjects);
+            RecursiveJArrayStringTaint((IEnumerable)result, taintedObjects);
         }
         catch (Exception ex)
         {
@@ -70,6 +75,47 @@ public class JObjectAspects
         }
 
         return result;
+    }
+
+    private static void RecursiveJTokenStringTaint(object? token, TaintedObjects? taintedObjects)
+    {
+        if (token == null || taintedObjects == null)
+        {
+            return;
+        }
+
+        if (!token.TryDuckCast<IJToken>(out var jToken))
+        {
+            return;
+        }
+
+        switch (jToken?.Type)
+        {
+            case JTokenTypeProxy.Object:
+                RecursiveJObjectStringTaint(token.DuckCast<IJObject>(), taintedObjects);
+                break;
+
+            case JTokenTypeProxy.Array:
+                RecursiveJArrayStringTaint((IEnumerable)token, taintedObjects);
+                break;
+
+            case JTokenTypeProxy.String:
+                RecursiveJValueStringTaint(token.DuckCast<IJValue>(), taintedObjects);
+                break;
+        }
+    }
+
+    private static void RecursiveJArrayStringTaint(IEnumerable? array, TaintedObjects? taintedObjects)
+    {
+        if (array == null || taintedObjects == null)
+        {
+            return;
+        }
+
+        foreach (var value in array)
+        {
+            RecursiveJTokenStringTaint(value, taintedObjects);
+        }
     }
 
     private static void RecursiveJObjectStringTaint(IJObject? obj, TaintedObjects? taintedObjects)
@@ -81,32 +127,26 @@ public class JObjectAspects
 
         foreach (var value in obj.Properties())
         {
-            var duckedProperty = value.DuckCast<JPropertyStruct>();
-            var token = duckedProperty.Value.DuckCast<IJToken>();
-            switch (token.Type)
+            if (value == null)
             {
-                case JTokenTypeProxy.Object:
-                    var dockedObject = duckedProperty.Value.DuckCast<IJObject>();
-                    RecursiveJObjectStringTaint(dockedObject, taintedObjects);
-                    break;
-                case JTokenTypeProxy.Array:
-                    var arrayValue = (object[])duckedProperty.Value.DuckCast<IJValue>().Value;
-                    foreach (var item in arrayValue)
-                    {
-                        var duckedItem = item.DuckCast<IJObject>(); // JToken??
-                        RecursiveJObjectStringTaint(duckedItem, taintedObjects);
-                    }
-
-                    break;
-                case JTokenTypeProxy.String:
-                    var propertyValue = duckedProperty.Value.DuckCast<IJValue>();
-                    if (propertyValue.Value is string str)
-                    {
-                        taintedObjects.Taint(str, [new Range(0, str.Length)]);
-                    }
-
-                    break;
+                continue;
             }
+
+            var duckedProperty = value.DuckCast<JPropertyStruct>();
+            RecursiveJTokenStringTaint(duckedProperty.Value, taintedObjects);
+        }
+    }
+
+    private static void RecursiveJValueStringTaint(IJValue? value, TaintedObjects? taintedObjects)
+    {
+        if (value == null || taintedObjects == null)
+        {
+            return;
+        }
+
+        if (value is { Type: JTokenTypeProxy.String, Value: string str })
+        {
+            taintedObjects.Taint(str, [new Range(0, str.Length)]);
         }
     }
 }

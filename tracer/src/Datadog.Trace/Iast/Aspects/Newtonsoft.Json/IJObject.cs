@@ -10,7 +10,5 @@ namespace Datadog.Trace.Iast.Aspects.Newtonsoft.Json;
 
 internal interface IJObject
 {
-    public JTokenTypeProxy Type { get; }
-
     public IEnumerable<object> Properties();
 }
