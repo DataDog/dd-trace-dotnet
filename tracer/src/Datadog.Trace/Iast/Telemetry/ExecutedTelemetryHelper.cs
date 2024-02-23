@@ -150,6 +150,7 @@ internal class ExecutedTelemetryHelper
             IastInstrumentedSinks.XPathInjection => BasicExecutedTag + SinkExecutedTag + "xpath_injection",
             IastInstrumentedSinks.ReflectionInjection => BasicExecutedTag + SinkExecutedTag + "reflection_injection",
             IastInstrumentedSinks.InsecureAuthProtocol => BasicExecutedTag + SinkExecutedTag + "insecure_auth_protocol",
+            IastInstrumentedSinks.Xss => BasicExecutedTag + SinkExecutedTag + "xss",
             IastInstrumentedSinks.None => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
             _ => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
         };

@@ -833,6 +833,15 @@ namespace Samples.Security.AspNetCore5.Controllers
             return View("ReflectedXss");
         }
 
+        [HttpGet("ReflectedXssEscaped")]
+        [Route("ReflectedXssEscaped")]
+        public IActionResult ReflectedXssEscaped(string param)
+        {
+            ViewData["XSS"] = WebUtility.HtmlEncode(param);
+            return View("ReflectedXss");
+        }
+
+
         static string CopyStringAvoidTainting(string original)
         {
             return new string(original.AsEnumerable().ToArray());

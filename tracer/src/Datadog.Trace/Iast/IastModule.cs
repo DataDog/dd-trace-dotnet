@@ -22,7 +22,7 @@ using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast;
 
-internal static class IastModule
+internal static partial class IastModule
 {
     public const string HeaderInjectionEvidenceSeparator = ": ";
     private const string OperationNameStackTraceLeak = "stacktrace_leak";
@@ -440,13 +440,13 @@ internal static class IastModule
 
     public static IastModuleResponse OnXss(string? text)
     {
-        if (!Iast.Instance.Settings.Enabled || string.IsNullOrEmpty(text))
-        {
-            return IastModuleResponse.Empty;
-        }
-
         try
         {
+            if (!Iast.Instance.Settings.Enabled || string.IsNullOrEmpty(text))
+            {
+                return IastModuleResponse.Empty;
+            }
+
             OnExecutedSinkTelemetry(IastInstrumentedSinks.Xss);
             return GetScope(text!, IntegrationId.Xss, VulnerabilityTypeName.Xss, OperationNameXss, Always);
         }
