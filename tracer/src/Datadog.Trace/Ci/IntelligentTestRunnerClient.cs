@@ -795,8 +795,9 @@ internal class IntelligentTestRunnerClient
 
         // Sanitize object list (on some cases we get a "fatal: expected object ID, got garbage" error because the object list has invalid escape chars)
         var objectsOutput = getObjectsCommand!.Output;
-        var lstObjectsSha = new List<string>();
-        foreach (Match? match in ShaRegex.Matches(objectsOutput))
+        var matches = ShaRegex.Matches(objectsOutput);
+        var lstObjectsSha = new List<string>(matches.Count);
+        foreach (Match? match in matches)
         {
             if (match is not null)
             {
