@@ -517,7 +517,11 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 }
 
                 default:
-                    Log.Warning("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Warning("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
+                    }
+
                     ddwafObjectStruct = GetStringObject(string.Empty);
                     break;
             }

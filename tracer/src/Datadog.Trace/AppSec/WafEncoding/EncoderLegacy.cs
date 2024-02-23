@@ -59,7 +59,10 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
         private static Obj EncodeUnknownType(object o, WafLibraryInvoker wafLibraryInvoker)
         {
-            Log.Warning("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
+            }
 
             var s = o.ToString() ?? string.Empty;
 
