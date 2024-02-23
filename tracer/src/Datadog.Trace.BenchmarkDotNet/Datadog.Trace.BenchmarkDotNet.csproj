@@ -17,6 +17,9 @@
     <NoWarn>NU5100;NU5128;NU1901;NU1902;NU1903;NU1904</NoWarn>
     <PackageOutputPath Condition="'$(PackageOutputPath)' == '' ">bin\$(Configuration)\packages</PackageOutputPath>
     <DefineConstants Condition=" '$(ExtraDefineConstants)' != '' ">$(DefineConstants);$(ExtraDefineConstants)</DefineConstants>
+    
+    <!-- System.CodeDom complains that we're targetting .NET Core 2.1 instead of netstandard2.0  -->
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
   </PropertyGroup>
 
   <!-- For VS testing purposes only, copy all implementation assemblies to the
