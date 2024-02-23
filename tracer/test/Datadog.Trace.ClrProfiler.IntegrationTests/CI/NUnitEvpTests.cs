@@ -87,6 +87,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
             SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
 
+            const string gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
+            const string gitBranch = "main";
+            const string gitCommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitRepository, gitRepositoryUrl);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
+
             try
             {
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
@@ -202,7 +209,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             Assert.Equal(correlationId, targetTest.CorrelationId);
 
                             // check the CIEnvironmentValues decoration.
-                            CheckCIEnvironmentValuesDecoration(targetTest);
+                            CheckCIEnvironmentValuesDecoration(targetTest, gitRepositoryUrl, gitBranch, gitCommitSha);
 
                             // check the runtime values
                             CheckRuntimeValues(targetTest);
@@ -399,7 +406,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             targetTest.Meta.Remove(key);
         }
 
-        private static void CheckCIEnvironmentValuesDecoration(MockCIVisibilityTest targetTest)
+        private static void CheckCIEnvironmentValuesDecoration(MockCIVisibilityTest targetTest, string repository, string branch, string commitSha)
         {
             var context = new SpanContext(parent: null, traceContext: null, serviceName: null);
             var span = new Span(context, DateTimeOffset.UtcNow);
@@ -414,9 +421,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             AssertEqual(CommonTags.CIJobName);
             AssertEqual(CommonTags.StageName);
             AssertEqual(CommonTags.CIWorkspacePath);
-            AssertEqual(CommonTags.GitRepository);
-            AssertEqual(CommonTags.GitCommit);
-            AssertEqual(CommonTags.GitBranch);
+            AssertEqual(CommonTags.GitRepository, repository);
+            AssertEqual(CommonTags.GitCommit, commitSha);
+            AssertEqual(CommonTags.GitBranch, branch);
             AssertEqual(CommonTags.GitTag);
             AssertEqual(CommonTags.GitCommitAuthorName);
             AssertEqual(CommonTags.GitCommitAuthorEmail);
@@ -427,11 +434,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             AssertEqual(CommonTags.GitCommitMessage);
             AssertEqual(CommonTags.BuildSourceRoot);
 
-            void AssertEqual(string key)
+            void AssertEqual(string key, string value = null)
             {
-                if (span.GetTag(key) is { } keyValue)
+                if (value is null)
                 {
-                    Assert.Equal(keyValue, targetTest.Meta[key]);
+                    if (span.GetTag(key) is { } keyValue)
+                    {
+                        Assert.Equal(keyValue, targetTest.Meta[key]);
+                        targetTest.Meta.Remove(key);
+                    }
+                }
+                else
+                {
+                    Assert.Equal(value, targetTest.Meta[key]);
                     targetTest.Meta.Remove(key);
                 }
             }
