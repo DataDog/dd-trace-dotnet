@@ -312,15 +312,15 @@ internal class IntelligentTestRunnerClient
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var branchName = await _getBranchNameTask.ConfigureAwait(false);
         var currentShaCommand = await _getShaTask.ConfigureAwait(false);
-        if (repository is null)
+        if (string.IsNullOrEmpty(repository))
         {
-            Log.Warning("ITR: 'git config --get remote.origin.url' command is null");
+            Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
             return default;
         }
 
-        if (branchName is null)
+        if (string.IsNullOrEmpty(branchName))
         {
-            Log.Warning("ITR: 'git branch --show-current' command is null");
+            Log.Warning("ITR: 'git branch --show-current' command returned null or empty");
             return default;
         }
 
@@ -331,6 +331,11 @@ internal class IntelligentTestRunnerClient
         }
 
         var currentSha = currentShaCommand.Output.Replace("\n", string.Empty);
+        if (string.IsNullOrEmpty(currentSha))
+        {
+            Log.Warning("ITR: 'git rev-parse HEAD' command returned null or empty");
+            return default;
+        }
 
         var query = new DataEnvelope<Data<SettingsQuery>>(
             new Data<SettingsQuery>(
@@ -419,9 +424,9 @@ internal class IntelligentTestRunnerClient
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var currentShaCommand = await _getShaTask.ConfigureAwait(false);
-        if (repository is null)
+        if (string.IsNullOrEmpty(repository))
         {
-            Log.Warning("ITR: 'git config --get remote.origin.url' command is null");
+            Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
             return new SkippableTestsResponse();
         }
 
@@ -432,6 +437,11 @@ internal class IntelligentTestRunnerClient
         }
 
         var currentSha = currentShaCommand.Output.Replace("\n", string.Empty);
+        if (string.IsNullOrEmpty(currentSha))
+        {
+            Log.Warning("ITR: 'git rev-parse HEAD' command returned null or empty");
+            return default;
+        }
 
         var query = new DataEnvelope<Data<SkippableTestsQuery>>(
             new Data<SkippableTestsQuery>(
@@ -559,6 +569,12 @@ internal class IntelligentTestRunnerClient
         }
 
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
+        if (string.IsNullOrEmpty(repository))
+        {
+            Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
+            return 0;
+        }
+
         var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, default), repository), SerializerSettings);
         Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
@@ -779,7 +795,12 @@ internal class IntelligentTestRunnerClient
 
         // Sanitize object list (on some cases we get a "fatal: expected object ID, got garbage" error because the object list has invalid escape chars)
         var objectsOutput = getObjectsCommand!.Output;
-        var lstObjectsSha = ((IList<Match>)ShaRegex.Matches(objectsOutput)).Select(m => m.Value).ToList();
+        var lstObjectsSha = new List<string>();
+        foreach (Match match in ShaRegex.Matches(objectsOutput))
+        {
+            lstObjectsSha.Add(match.Value);
+        }
+        
         if (lstObjectsSha.Count == 0)
         {
             // If not objects has been returned we skip the pack + upload.
