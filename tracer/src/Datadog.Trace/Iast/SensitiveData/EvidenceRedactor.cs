@@ -44,6 +44,7 @@ internal class EvidenceRedactor
             { VulnerabilityTypeName.UnvalidatedRedirect, urlTokenizer },
             { VulnerabilityTypeName.HeaderInjection, new HeaderInjectionTokenizer(_timeout) },
             { VulnerabilityTypeName.NoSqlMongoDbInjection, new JsonTokenizer(_timeout) },
+            { VulnerabilityTypeName.Xss, new TaintedRangeBasedTokenizer(_timeout) },
         };
     }
 
@@ -107,7 +108,7 @@ internal class EvidenceRedactor
     internal Vulnerability RedactVulnerability(Vulnerability vulnerability)
     {
         var evidenceValue = vulnerability.Evidence?.Value;
-        if (string.IsNullOrEmpty(evidenceValue))
+        if (vulnerability.Evidence is null || string.IsNullOrEmpty(vulnerability.Evidence?.Value))
         {
             return vulnerability;
         }
@@ -118,7 +119,7 @@ internal class EvidenceRedactor
         {
             try
             {
-                sensitive = tokenizer.GetTokens(evidenceValue!, vulnerability.GetIntegrationId());
+                sensitive = tokenizer.GetTokens(vulnerability.Evidence!.Value, vulnerability.GetIntegrationId());
             }
             catch (RegexMatchTimeoutException ex)
             {

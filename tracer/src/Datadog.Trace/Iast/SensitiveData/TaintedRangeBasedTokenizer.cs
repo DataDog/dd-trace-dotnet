@@ -1,4 +1,4 @@
-// <copyright file="LdapTokenizer.cs" company="Datadog">
+// <copyright file="TaintedRangeBasedTokenizer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,35 +17,38 @@ namespace Datadog.Trace.Iast.SensitiveData;
 /// It locates all literals in a LDAP query, which may be multiple (las term after '=')
 /// ((objectCategory=group)(member=CN=Jon Brion,OU=Employees,DC=theitbros,DC=com)) -> ((objectCategory = group)(member = CN =?, OU =?, DC =?, DC =?))
 /// </summary>
-internal class LdapTokenizer : ITokenizer
+internal class TaintedRangeBasedTokenizer : ITokenizer
 {
-    private const string _ldapPattern = @"\(.*?(?:~=|=|<=|>=)(?<LITERAL>[^)]+)\)";
-    private Regex _ldapRegex;
-
-    public LdapTokenizer(TimeSpan timeout)
+    public TaintedRangeBasedTokenizer(TimeSpan timeout)
     {
-        _ldapRegex = new Regex(_ldapPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline, timeout);
     }
 
     public List<Range> GetTokens(Evidence evidence, IntegrationId? integrationId = null)
     {
         var value = evidence.Value;
-        if (value is null) { return []; }
+        var ranges = evidence.Ranges;
+        if (value is null || ranges is null) { return []; }
 
-        var res = new List<Range>(5);
-        foreach (Match? match in _ldapRegex.Matches(value))
+        var res = new List<Range>(ranges.Length);
+        int pos = 0;
+        foreach (var range in ranges)
         {
-            if (match != null && match.Success)
+            if (range.Start <= pos)
             {
-                var group = match.Groups["LITERAL"];
-                if (group != null && group.Success)
-                {
-                    int start = group.Index;
-                    int end = group.Index + group.Length;
-
-                    res.Add(new Range(start, end - start, null));
-                }
+                pos = range.Start + range.Length;
             }
+            else
+            {
+                var next = new Range(pos, range.Start - pos);
+                pos = range.Start + range.Length;
+                res.Add(next);
+            }
+        }
+
+        if (pos < value.Length)
+        {
+            var next = new Range(pos, value.Length - pos);
+            res.Add(next);
         }
 
         return res;
