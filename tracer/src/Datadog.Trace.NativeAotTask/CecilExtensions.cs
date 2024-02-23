@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.IO;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -12,22 +13,14 @@ namespace Datadog.Trace.NativeAotTask;
 
 internal static class CecilExtensions
 {
-    public static Instruction Add(this ILProcessor processor, Instruction instruction)
+    public static Cursor OpenCursor(this ILProcessor ilProcessor, SeekOrigin origin = SeekOrigin.Begin)
     {
-        processor.Append(instruction);
-        return instruction;
+        return new Cursor(ilProcessor, origin);
     }
 
-    public static Instruction AddBefore(this ILProcessor processor, Instruction target, Instruction instruction)
+    public static Cursor OpenCursor(this ILProcessor ilProcessor, Instruction position)
     {
-        processor.InsertBefore(target, instruction);
-        return instruction;
-    }
-
-    public static Instruction AddAfter(this ILProcessor processor, Instruction target, Instruction instruction)
-    {
-        processor.InsertAfter(target, instruction);
-        return instruction;
+        return new Cursor(ilProcessor, position);
     }
 
     public static MethodReference MakeGenericMethod(this MethodReference method, TypeReference genericDeclaringType)

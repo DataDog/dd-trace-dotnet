@@ -830,6 +830,8 @@ public class AotProcessor
     private void InstrumentCallTargetMethod(TypeDefinition instrumentationType, MethodDefinition method)
     {
         var ilProcessor = method.Body.GetILProcessor();
+        var beginCursor = ilProcessor.OpenCursor();
+        var endCursor = ilProcessor.OpenCursor(SeekOrigin.End);
 
         // Define variables
         var callTargetState = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
@@ -852,107 +854,110 @@ public class AotProcessor
         var callTargetReturnVariable = new VariableDefinition(method.Module.ImportReference(callTargetReturnType));
         var exceptionVariable = new VariableDefinition(method.Module.ImportReference(typeof(Exception)));
 
-        ilProcessor.Body.Variables.Add(callTargetStateVariable);
-        ilProcessor.Body.Variables.Add(callTargetReturnVariable);
-        ilProcessor.Body.Variables.Add(exceptionVariable);
+        method.Body.Variables.Add(callTargetStateVariable);
+        method.Body.Variables.Add(callTargetReturnVariable);
+        method.Body.Variables.Add(exceptionVariable);
 
         VariableDefinition? returnVariable = null;
 
         if (method.ReturnType != null)
         {
             returnVariable = new VariableDefinition(method.ReturnType);
-            ilProcessor.Body.Variables.Add(returnVariable);
+            method.Body.Variables.Add(returnVariable);
         }
 
         // Initialize variables
-        var currentInstruction = ilProcessor.AddBefore(ilProcessor.Body.Instructions[0], Instruction.Create(OpCodes.Ldnull));
-        currentInstruction = ilProcessor.AddAfter(currentInstruction, Instruction.Create(OpCodes.Stloc, exceptionVariable));
+        beginCursor.Append(Instruction.Create(OpCodes.Ldnull));
+        beginCursor.Append(Instruction.Create(OpCodes.Stloc, exceptionVariable));
 
         var getDefaultCallTargetReturn = callTargetReturnTypeOpen.Methods.Single(m => m.Name == "GetDefault");
-        currentInstruction = ilProcessor.AddAfter(currentInstruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(getDefaultCallTargetReturn.MakeGenericMethod(callTargetReturnType))));
-        currentInstruction = ilProcessor.AddAfter(currentInstruction, Instruction.Create(OpCodes.Stloc, callTargetReturnVariable));
+        beginCursor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(getDefaultCallTargetReturn.MakeGenericMethod(callTargetReturnType))));
+        beginCursor.Append(Instruction.Create(OpCodes.Stloc, callTargetReturnVariable));
 
         var getDefaultCallTargetState = callTargetState.Methods.Single(m => m.Name == "GetDefault");
-        currentInstruction = ilProcessor.AddAfter(currentInstruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(getDefaultCallTargetState)));
-        currentInstruction = ilProcessor.AddAfter(currentInstruction, Instruction.Create(OpCodes.Stloc, callTargetStateVariable));
+        beginCursor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(getDefaultCallTargetState)));
+        beginCursor.Append(Instruction.Create(OpCodes.Stloc, callTargetStateVariable));
 
         if (method.ReturnType != null)
         {
             if (method.ReturnType.IsValueType)
             {
-                currentInstruction = ilProcessor.AddAfter(currentInstruction, Instruction.Create(OpCodes.Ldloca, returnVariable));
-                currentInstruction = ilProcessor.AddAfter(currentInstruction, Instruction.Create(OpCodes.Initobj, method.ReturnType));
+                beginCursor.Append(Instruction.Create(OpCodes.Ldloca, returnVariable));
+                beginCursor.Append(Instruction.Create(OpCodes.Initobj, method.ReturnType));
             }
             else
             {
-                currentInstruction = ilProcessor.AddAfter(currentInstruction, Instruction.Create(OpCodes.Ldnull));
-                currentInstruction = ilProcessor.AddAfter(currentInstruction, Instruction.Create(OpCodes.Stloc, returnVariable));
+                beginCursor.Append(Instruction.Create(OpCodes.Ldnull));
+                beginCursor.Append(Instruction.Create(OpCodes.Stloc, returnVariable));
             }
         }
 
-        var endInitializationBlock = currentInstruction;
-
         // OnMethodBegin
-        var onMethodBegin = InsertOnMethodBegin(instrumentationType, method, endInitializationBlock, callTargetStateVariable);
+        var onMethodBegin = beginCursor.Clone();
+        InsertOnMethodBegin(instrumentationType, method, ref beginCursor, callTargetStateVariable);
+
+        // Catch block for the method execution
+        var outerCatchStart = endCursor.Append(Instruction.Create(OpCodes.Stloc, exceptionVariable)).Instruction;
+        var outerCatchEnd = endCursor.Append(Instruction.Create(OpCodes.Rethrow)).Instruction;
+
+        // OnMethodEnd
+        InsertOnMethodEnd(instrumentationType, method, ref endCursor, callTargetStateVariable, callTargetReturnVariable, exceptionVariable, returnVariable);
+
+        // End block
+        endCursor.Append(Instruction.Create(OpCodes.Endfinally));
 
         Instruction lastReturn;
 
         if (method.ReturnType != null)
         {
-            lastReturn = ilProcessor.Add(Instruction.Create(OpCodes.Ldloc, returnVariable));
-            ilProcessor.Add(Instruction.Create(OpCodes.Ret));
+            lastReturn = endCursor.Append(Instruction.Create(OpCodes.Ldloc, returnVariable)).Instruction;
+            endCursor.Append(Instruction.Create(OpCodes.Ret));
         }
         else
         {
-            lastReturn = ilProcessor.Add(Instruction.Create(OpCodes.Ret));
+            lastReturn = endCursor.Append(Instruction.Create(OpCodes.Ret)).Instruction;
         }
 
-        // OnMethodEnd
-        var endFinally = ilProcessor.AddBefore(lastReturn, Instruction.Create(OpCodes.Endfinally));
+        RewriteReturnBlocks(ilProcessor, returnVariable, lastReturn);
 
-        var onMethodEnd = InsertOnMethodEnd(
-            instrumentationType, method, endFinally.Previous, callTargetStateVariable, callTargetReturnVariable, exceptionVariable, returnVariable);
+        method.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
+        {
+            TryStart = onMethodBegin.Instruction.Next,
+            TryEnd = outerCatchStart,
+            HandlerStart = outerCatchStart,
+            HandlerEnd = outerCatchEnd.Next,
+            CatchType = method.Module.ImportReference(typeof(Exception))
+        });
 
+        method.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally)
+        {
+            TryStart = onMethodBegin.Instruction.Next,
+            TryEnd = outerCatchEnd.Next,
+            HandlerStart = outerCatchEnd.Next,
+            HandlerEnd = lastReturn
+        });
+    }
+
+    private void RewriteReturnBlocks(ILProcessor ilProcessor, VariableDefinition? returnVariable, Instruction jumpTarget)
+    {
         // Change all returns to LEAVE_S
         foreach (var instruction in ilProcessor.Body.Instructions.ToList())
         {
-            if (instruction == onMethodEnd.Begin)
+            if (instruction == jumpTarget)
             {
                 break;
             }
 
             if (instruction.OpCode == OpCodes.Ret)
             {
-                if (method.ReturnType != null)
+                if (returnVariable != null)
                 {
                     ilProcessor.InsertBefore(instruction, Instruction.Create(OpCodes.Stloc, returnVariable));
                 }
 
-                ilProcessor.Replace(instruction, Instruction.Create(OpCodes.Leave_S, lastReturn));
+                ilProcessor.Replace(instruction, Instruction.Create(OpCodes.Leave_S, jumpTarget));
             }
         }
-
-        var outerCatchStart = ilProcessor.AddBefore(onMethodEnd.Begin, Instruction.Create(OpCodes.Stloc, exceptionVariable));
-        var outerCatchEnd = ilProcessor.AddAfter(outerCatchStart, Instruction.Create(OpCodes.Rethrow));
-
-        outerCatchEnd = outerCatchEnd.Next;
-
-        ilProcessor.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
-        {
-            TryStart = onMethodBegin.Begin,
-            TryEnd = outerCatchStart,
-            HandlerStart = outerCatchStart,
-            HandlerEnd = outerCatchEnd,
-            CatchType = method.Module.ImportReference(typeof(Exception))
-        });
-
-        ilProcessor.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally)
-        {
-            TryStart = onMethodBegin.Begin,
-            TryEnd = outerCatchEnd,
-            HandlerStart = outerCatchEnd,
-            HandlerEnd = lastReturn
-        });
     }
 
     private MethodDefinition? GetMethodBeginInvoke(TypeDefinition instrumentationType, MethodDefinition method)
@@ -992,18 +997,18 @@ public class AotProcessor
                 methodBeginInvoke.Parameters.Add(new ParameterDefinition(parameter.ParameterType));
             }
 
-            var ilProcessor = methodBeginInvoke.Body.GetILProcessor();
+            var cursor = methodBeginInvoke.Body.GetILProcessor().OpenCursor();
 
-            ilProcessor.Append(Instruction.Create(OpCodes.Ldarg_0));
+            cursor.Append(Instruction.Create(OpCodes.Ldarg_0));
 
             foreach (var parameter in method.Parameters)
             {
                 // TODO: 🦆-typing
-                ilProcessor.Append(Instruction.Create(OpCodes.Ldarga, parameter));
+                cursor.Append(Instruction.Create(OpCodes.Ldarga, parameter));
             }
 
-            ilProcessor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(onMethodBeginGeneric)));
-            ilProcessor.Append(Instruction.Create(OpCodes.Ret));
+            cursor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(onMethodBeginGeneric)));
+            cursor.Append(Instruction.Create(OpCodes.Ret));
         }
 
         return methodBeginInvoke;
@@ -1055,7 +1060,7 @@ public class AotProcessor
             methodEndInvoke.Parameters.Add(new ParameterDefinition(method.Module.ImportReference(typeof(Exception))));
             methodEndInvoke.Parameters.Add(new ParameterDefinition(method.Module.ImportReference(callTargetState)) { IsIn = true });
 
-            var ilProcessor = methodEndInvoke.Body.GetILProcessor();
+            var cursor = methodEndInvoke.Body.GetILProcessor().OpenCursor();
 
             var onMethodEndGeneric = new GenericInstanceMethod(onMethodEnd);
             onMethodEndGeneric.GenericArguments.Add(method.DeclaringType);
@@ -1064,33 +1069,39 @@ public class AotProcessor
             // TODO: 🦆-typing
             int parameterIndex = 0;
 
-            ilProcessor.Append(Instruction.Create(OpCodes.Ldarg, methodEndInvoke.Parameters[parameterIndex++])); // instance
+            cursor.Append(Instruction.Create(OpCodes.Ldarg, methodEndInvoke.Parameters[parameterIndex++])); // instance
 
             if (method.ReturnType != null)
             {
-                ilProcessor.Append(Instruction.Create(OpCodes.Ldarg, methodEndInvoke.Parameters[parameterIndex++])); // returnValue
+                cursor.Append(Instruction.Create(OpCodes.Ldarg, methodEndInvoke.Parameters[parameterIndex++])); // returnValue
             }
 
-            ilProcessor.Append(Instruction.Create(OpCodes.Ldarg, methodEndInvoke.Parameters[parameterIndex++])); // exception
-            ilProcessor.Append(Instruction.Create(OpCodes.Ldarga, methodEndInvoke.Parameters[parameterIndex])); // in state
+            cursor.Append(Instruction.Create(OpCodes.Ldarg, methodEndInvoke.Parameters[parameterIndex++])); // exception
+            cursor.Append(Instruction.Create(OpCodes.Ldarga, methodEndInvoke.Parameters[parameterIndex])); // in state
 
-            ilProcessor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(onMethodEndGeneric)));
-            ilProcessor.Append(Instruction.Create(OpCodes.Ret));
+            cursor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(onMethodEndGeneric)));
+            cursor.Append(Instruction.Create(OpCodes.Ret));
         }
 
         return methodEndInvoke;
     }
 
-    private (Instruction Begin, Instruction End) InsertOnMethodBegin(
+    private void InsertOnMethodBegin(
         TypeDefinition instrumentationType,
         MethodDefinition method,
-        Instruction position,
+        ref Cursor cursor,
         VariableDefinition callTargetStateVariable)
     {
-        var instruction = position;
-        var end = position.Next;
+        var start = cursor.Instruction;
 
-        var ilProcessor = method.Body.GetILProcessor();
+        // Add a nop to mark the end of the block, it makes it easier to manage jumps out of the try/catch block
+        var end = cursor.Clone().Append(Instruction.Create(OpCodes.Nop));
+
+        if (method.IsStatic && method.DeclaringType.IsValueType)
+        {
+            Log($"Skipping {method.Name} because it's a static method on a value type");
+            return;
+        }
 
         var onMethodBeginMethodOpen = instrumentationType.Methods.FirstOrDefault(m => m.Name == "OnMethodBegin");
 
@@ -1122,15 +1133,15 @@ public class AotProcessor
         // EnsureInitializedForNativeAot(IntPtr invokeDelegate)
         if (methodBeginInvoke != null)
         {
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(methodBeginInvoke)));
+            cursor.Append(Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(methodBeginInvoke)));
         }
         else
         {
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldc_I4_0));
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Conv_I));
+            cursor.Append(Instruction.Create(OpCodes.Ldc_I4_0));
+            cursor.Append(Instruction.Create(OpCodes.Conv_I));
         }
 
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(ensureInitialized.MakeGenericMethod(beginMethodHandler))));
+        cursor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(ensureInitialized.MakeGenericMethod(beginMethodHandler))));
 
         var callTargetInvoker = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
         var beginMethod = callTargetInvoker.Methods.Single(
@@ -1147,34 +1158,29 @@ public class AotProcessor
 
         if (method.IsStatic)
         {
-            if (method.DeclaringType.IsValueType)
-            {
-                Log($"Skipping {method.Name} because it's a static method on a value type");
-                return (position.Next, end.Previous);
-            }
-
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldnull));
+            // If static, we know that DeclaringType is not a value type (this is filtered at the beginning)
+            cursor.Append(Instruction.Create(OpCodes.Ldnull));
         }
         else
         {
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldarg_0));
+            cursor.Append(Instruction.Create(OpCodes.Ldarg_0));
 
             if (method.DeclaringType.IsValueType)
             {
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldobj, method.DeclaringType));
+                cursor.Append(Instruction.Create(OpCodes.Ldobj, method.DeclaringType));
             }
         }
 
         foreach (var parameter in method.Parameters)
         {
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldarga, parameter));
+            cursor.Append(Instruction.Create(OpCodes.Ldarga, parameter));
         }
 
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(beginMethodGeneric)));
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stloc, callTargetStateVariable));
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Leave_S, end));
+        cursor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(beginMethodGeneric)));
+        cursor.Append(Instruction.Create(OpCodes.Stloc, callTargetStateVariable));
+        cursor.Append(Instruction.Create(OpCodes.Leave_S, end.Instruction));
 
-        var tryEnd = instruction;
+        var tryEnd = cursor.Instruction;
 
         // Insert catch block
         var logException = callTargetInvoker.Methods.Single(m => m.Name == "LogException");
@@ -1182,28 +1188,28 @@ public class AotProcessor
         logExceptionGeneric.GenericArguments.Add(instrumentationType);
         logExceptionGeneric.GenericArguments.Add(method.DeclaringType);
 
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(logExceptionGeneric)));
-        var handlerStart = instruction;
+        cursor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(logExceptionGeneric)));
+        var handlerStart = cursor.Instruction;
 
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Leave_S, end));
-        var handlerEnd = instruction;
+        cursor.Append(Instruction.Create(OpCodes.Leave_S, end.Instruction));
+        var handlerEnd = cursor.Instruction;
 
-        ilProcessor.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
+        method.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
         {
-            TryStart = position.Next,
+            TryStart = start.Next,
             TryEnd = tryEnd.Next,
             HandlerStart = handlerStart,
             HandlerEnd = handlerEnd.Next,
             CatchType = method.Module.ImportReference(typeof(Exception))
         });
 
-        return (position.Next, end.Previous);
+        cursor = end;
     }
 
-    private (Instruction Begin, Instruction End) InsertOnMethodEnd(
+    private void InsertOnMethodEnd(
         TypeDefinition instrumentationType,
         MethodDefinition method,
-        Instruction position,
+        ref Cursor cursor,
         VariableDefinition callTargetStateVariable,
         VariableDefinition callTargetReturnVariable,
         VariableDefinition exceptionVariable,
@@ -1211,8 +1217,10 @@ public class AotProcessor
     {
         // TODO: Check that async method returning Task (not Task<T>) are properly handled. Looks like we're expected to return Task<object> somewhere
 
-        var instruction = position;
-        var end = position.Next;
+        var start = cursor.Instruction;
+
+        // Add a nop to mark the end of the block, it makes it easier to manage jumps out of the try/catch block
+        var end = cursor.Clone().Append(Instruction.Create(OpCodes.Nop));
 
         var ilProcessor = method.Body.GetILProcessor();
 
@@ -1257,15 +1265,15 @@ public class AotProcessor
             // EnsureInitializedForNativeAot(IntPtr invokeDelegate)
             if (methodEndInvoke != null)
             {
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(methodEndInvoke)));
+                cursor.Append(Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(methodEndInvoke)));
             }
             else
             {
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldc_I4_0));
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Conv_I));
+                cursor.Append(Instruction.Create(OpCodes.Ldc_I4_0));
+                cursor.Append(Instruction.Create(OpCodes.Conv_I));
             }
 
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(ensureInitialized.MakeGenericMethod(endMethodHandler))));
+            cursor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(ensureInitialized.MakeGenericMethod(endMethodHandler))));
 
             // Call Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.EndMethod
             // CallTargetReturn EndMethod<TIntegration, TTarget>(TTarget instance, Exception exception, in CallTargetState state)
@@ -1275,15 +1283,15 @@ public class AotProcessor
             endMethod.GenericArguments.Add(method.Module.ImportReference(instrumentationType));
             endMethod.GenericArguments.Add(method.Module.ImportReference(method.DeclaringType));
 
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldarg_0));
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloc, exceptionVariable));
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloca, callTargetStateVariable));
+            cursor.Append(Instruction.Create(OpCodes.Ldarg_0));
+            cursor.Append(Instruction.Create(OpCodes.Ldloc, exceptionVariable));
+            cursor.Append(Instruction.Create(OpCodes.Ldloca, callTargetStateVariable));
 
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(endMethod)));
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stloc, callTargetReturnVariable));
+            cursor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(endMethod)));
+            cursor.Append(Instruction.Create(OpCodes.Stloc, callTargetReturnVariable));
 
             // pop the CallTargetReturn
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Pop));
+            cursor.Append(Instruction.Create(OpCodes.Pop));
         }
         else
         {
@@ -1314,17 +1322,17 @@ public class AotProcessor
             // EnsureInitializedForNativeAot(bool isTask, IntPtr invokeDelegate, IntPtr callback, bool isAsyncCallback, bool preserveContext)
 
             // isTask
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(isTask ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+            cursor.Append(Instruction.Create(isTask ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
 
             // invokeDelegate
             if (methodEndInvoke != null)
             {
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(methodEndInvoke)));
+                cursor.Append(Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(methodEndInvoke)));
             }
             else
             {
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldc_I4_0));
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Conv_I));
+                cursor.Append(Instruction.Create(OpCodes.Ldc_I4_0));
+                cursor.Append(Instruction.Create(OpCodes.Conv_I));
             }
 
             // callback
@@ -1334,21 +1342,21 @@ public class AotProcessor
                 genericOnAsyncMethodEnd.GenericArguments.Add(method.DeclaringType);
                 genericOnAsyncMethodEnd.GenericArguments.Add(((GenericInstanceType)method.ReturnType).GenericArguments[0]);
 
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(genericOnAsyncMethodEnd)));
+                cursor.Append(Instruction.Create(OpCodes.Ldftn, method.Module.ImportReference(genericOnAsyncMethodEnd)));
             }
             else
             {
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldc_I4_0));
-                instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Conv_I));
+                cursor.Append(Instruction.Create(OpCodes.Ldc_I4_0));
+                cursor.Append(Instruction.Create(OpCodes.Conv_I));
             }
 
             // isAsyncCallback
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(isAsyncCallback ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+            cursor.Append(Instruction.Create(isAsyncCallback ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
 
             // preserveContext
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(preserveContext ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+            cursor.Append(Instruction.Create(preserveContext ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
 
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(ensureInitialized)));
+            cursor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(ensureInitialized)));
 
             // Call Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.EndMethod
             // CallTargetReturn<TReturn> EndMethod<TIntegration, TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
@@ -1359,13 +1367,13 @@ public class AotProcessor
             endMethod.GenericArguments.Add(method.Module.ImportReference(method.DeclaringType));
             endMethod.GenericArguments.Add(method.Module.ImportReference(method.ReturnType));
 
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldarg_0));
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloc, returnVariable));
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloc, exceptionVariable));
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloca, callTargetStateVariable));
+            cursor.Append(Instruction.Create(OpCodes.Ldarg_0));
+            cursor.Append(Instruction.Create(OpCodes.Ldloc, returnVariable));
+            cursor.Append(Instruction.Create(OpCodes.Ldloc, exceptionVariable));
+            cursor.Append(Instruction.Create(OpCodes.Ldloca, callTargetStateVariable));
 
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(endMethod)));
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stloc, callTargetReturnVariable));
+            cursor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(endMethod)));
+            cursor.Append(Instruction.Create(OpCodes.Stloc, callTargetReturnVariable));
 
             // Unwrap the CallTargetReturn
             var callTargetReturnOpenType = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1");
@@ -1373,13 +1381,13 @@ public class AotProcessor
 
             var getReturnValueMethod = callTargetReturnOpenType.Methods.Single(m => m.Name == "GetReturnValue");
 
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Ldloca, callTargetReturnVariable));
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(getReturnValueMethod.MakeGenericMethod(callTargetReturnType))));
-            instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Stloc, returnVariable));
+            cursor.Append(Instruction.Create(OpCodes.Ldloca, callTargetReturnVariable));
+            cursor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(getReturnValueMethod.MakeGenericMethod(callTargetReturnType))));
+            cursor.Append(Instruction.Create(OpCodes.Stloc, returnVariable));
         }
 
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Leave_S, end));
-        var tryEnd = instruction;
+        cursor.Append(Instruction.Create(OpCodes.Leave_S, end.Instruction));
+        var tryEnd = cursor.Instruction;
 
         // Insert catch block
         var logException = callTargetInvoker.Methods.Single(m => m.Name == "LogException");
@@ -1387,28 +1395,26 @@ public class AotProcessor
         logExceptionGeneric.GenericArguments.Add(instrumentationType);
         logExceptionGeneric.GenericArguments.Add(method.DeclaringType);
 
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Call, method.Module.ImportReference(logExceptionGeneric)));
-        var handlerStart = instruction;
+        cursor.Append(Instruction.Create(OpCodes.Call, method.Module.ImportReference(logExceptionGeneric)));
+        var handlerStart = cursor.Instruction;
 
-        instruction = ilProcessor.AddAfter(instruction, Instruction.Create(OpCodes.Leave_S, end));
-        var handlerEnd = instruction;
+        cursor.Append(Instruction.Create(OpCodes.Leave_S, end.Instruction));
+        var handlerEnd = cursor.Instruction;
 
         ilProcessor.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
         {
-            TryStart = position.Next,
+            TryStart = start.Next,
             TryEnd = tryEnd.Next,
             HandlerStart = handlerStart,
             HandlerEnd = handlerEnd.Next,
             CatchType = method.Module.ImportReference(typeof(Exception))
         });
 
-        return (position.Next, instruction);
+        cursor = end;
     }
 
     private void PatchEntryPoint()
     {
-        var ilProcessor = _entryPointAssembly.EntryPoint.Body.GetILProcessor();
-
         var agentType = _datadogAssembly.MainModule.GetType("Datadog.Trace.ClrProfiler.Instrumentation");
         agentType.IsPublic = true;
 
@@ -1417,9 +1423,9 @@ public class AotProcessor
 
         var runMethodRef = _entryPointAssembly.MainModule.ImportReference(runMethod);
 
-        var start = ilProcessor.Body.Instructions[0];
+        var cursor = _entryPointAssembly.EntryPoint.Body.GetILProcessor().OpenCursor();
 
-        ilProcessor.InsertBefore(start, Instruction.Create(OpCodes.Ldnull));
-        ilProcessor.InsertBefore(start, Instruction.Create(OpCodes.Call, runMethodRef));
+        cursor.Append(Instruction.Create(OpCodes.Ldnull));
+        cursor.Append(Instruction.Create(OpCodes.Call, runMethodRef));
     }
 }
