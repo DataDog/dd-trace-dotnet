@@ -759,9 +759,21 @@ internal class IntelligentTestRunnerClient
             return new ObjectPackFilesResult(Array.Empty<string>(), temporaryFolder);
         }
 
-        Log.Debug("ITR: Packing objects...");
+        // Sanitize object list (on some cases we get a "fatal: expected object ID, got garbage" error because the object list has invalid escape chars)
+        var objectsOutput = getObjectsCommand!.Output;
+        var lstObjectsSha = ((IList<Match>)Regex.Matches(objectsOutput, "[a-f0-9]{40}")).Select(m => m.Value).ToList();
+        if (lstObjectsSha.Count == 0)
+        {
+            // If not objects has been returned we skip the pack + upload.
+            Log.Debug("ITR: No valid objects were returned from the git rev-list command.");
+            return new ObjectPackFilesResult(Array.Empty<string>(), temporaryFolder);
+        }
+
+        objectsOutput = string.Join("\n", lstObjectsSha) + "\n";
+
+        Log.Debug<int>("ITR: Packing {NumObjects} objects...", lstObjectsSha.Count);
         var getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-        var packObjectsResultCommand = await RunGitCommandAsync(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, getObjectsCommand!.Output).ConfigureAwait(false);
+        var packObjectsResultCommand = await RunGitCommandAsync(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, objectsOutput).ConfigureAwait(false);
         if (packObjectsResultCommand is null)
         {
             Log.Warning("ITR: 'git pack-objects...' command is null");
