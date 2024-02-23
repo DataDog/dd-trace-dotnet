@@ -66,6 +66,9 @@ namespace Datadog.Trace.Util
             if (input is not null)
             {
                 processStartInfo.RedirectStandardInput = true;
+#if NETCOREAPP
+                processStartInfo.StandardInputEncoding = command.InputEncoding ?? processStartInfo.StandardInputEncoding;
+#endif
             }
 
             using var processInfo = Process.Start(processStartInfo);
@@ -117,6 +120,9 @@ namespace Datadog.Trace.Util
             if (input is not null)
             {
                 processStartInfo.RedirectStandardInput = true;
+#if NETCOREAPP
+                processStartInfo.StandardInputEncoding = command.InputEncoding ?? processStartInfo.StandardInputEncoding;
+#endif
             }
 
             using var processInfo = Process.Start(processStartInfo);
@@ -170,9 +176,6 @@ namespace Datadog.Trace.Util
                 processStartInfo.RedirectStandardError = true;
                 processStartInfo.StandardOutputEncoding = command.OutputEncoding ?? processStartInfo.StandardOutputEncoding;
                 processStartInfo.StandardErrorEncoding = command.ErrorEncoding ?? processStartInfo.StandardErrorEncoding;
-#if NETCOREAPP
-                processStartInfo.StandardInputEncoding = command.InputEncoding ?? processStartInfo.StandardInputEncoding;
-#endif
             }
             else
             {
