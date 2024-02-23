@@ -17,6 +17,8 @@ namespace Datadog.Trace.Tests.Propagators
 {
     public class W3CTraceContextPropagatorTests
     {
+        private const string ZeroLastParentId = "0000000000000000";
+
         private static readonly TraceTagCollection PropagatedTagsCollection = new(
             new List<KeyValuePair<string, string>>
             {
@@ -252,40 +254,43 @@ namespace Datadog.Trace.Tests.Propagators
 
         [Theory]
         // valid
-        [InlineData("dd=s:2", 2, null, null, null)]                                                                                  // sampling priority
-        [InlineData("dd=s:-1", -1, null, null, null)]                                                                                // sampling priority
-        [InlineData("dd=o:rum", null, "rum", null, null)]                                                                            // origin
-        [InlineData("dd=t.dm:-4;t.usr.id:12345", null, null, "_dd.p.dm=-4,_dd.p.usr.id=12345", null)]                                // propagated tags
-        [InlineData("key1=value1,key2=value2", null, null, null, "key1=value1,key2=value2")]                                         // additional values
-        [InlineData("key1=value1dd=,key2=value2", null, null, null, "key1=value1dd=,key2=value2")]                                   // additional values, ignore embedded "dd="
-        [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:12345~,key1=value1", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345=", "key1=value1")] // all, and '~' is converted to '='
+        [InlineData("dd=s:2", 2, null, null, null, ZeroLastParentId)]                                                                                                       // sampling priority
+        [InlineData("dd=s:-1", -1, null, null, null, ZeroLastParentId)]                                                                                                     // sampling priority
+        [InlineData("dd=o:rum", null, "rum", null, null, ZeroLastParentId)]                                                                                                 // origin
+        [InlineData("dd=t.dm:-4;t.usr.id:12345", null, null, "_dd.p.dm=-4,_dd.p.usr.id=12345", null, ZeroLastParentId)]                                                     // propagated tags
+        [InlineData("key1=value1,key2=value2", null, null, null, "key1=value1,key2=value2", ZeroLastParentId)]                                                                          // additional values
+        [InlineData("key1=value1dd=,key2=value2", null, null, null, "key1=value1dd=,key2=value2", ZeroLastParentId)]                                                                    // additional values, ignore embedded "dd="
+        [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:12345~,key1=value1", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345=", "key1=value1", ZeroLastParentId)]                      // all, but p, and '~' is converted to '='
+        [InlineData("dd=s:2;o:rum;p:0123456789abcdef;t.dm:-4;t.usr.id:12345~,key1=value1", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345=", "key1=value1", "0123456789abcdef")] // all, and '~' is converted to '='
         // invalid "dd" value
-        [InlineData(null, null, null, null, null)]         // null
-        [InlineData("", null, null, null, null)]           // empty
-        [InlineData(" ", null, null, null, null)]          // whitespace
-        [InlineData("dd=", null, null, null, null)]        // "dd=" prefix only
-        [InlineData("dd=:2", null, null, null, null)]      // no key
-        [InlineData("dd=s:", null, null, null, null)]      // no value
-        [InlineData("dd=s", null, null, null, null)]       // no colon
-        [InlineData("dd=xyz:123", null, null, null, null)] // unknown key
+        [InlineData(null, null, null, null, null, ZeroLastParentId)]         // null
+        [InlineData("", null, null, null, null, ZeroLastParentId)]           // empty
+        [InlineData(" ", null, null, null, null, ZeroLastParentId)]          // whitespace
+        [InlineData("dd=", null, null, null, null, ZeroLastParentId)]        // "dd=" prefix only
+        [InlineData("dd=:2", null, null, null, null, ZeroLastParentId)]      // no key
+        [InlineData("dd=s:", null, null, null, null, ZeroLastParentId)]      // no value
+        [InlineData("dd=s", null, null, null, null, ZeroLastParentId)]       // no colon
+        [InlineData("dd=xyz:123", null, null, null, null, ZeroLastParentId)] // unknown key
         // invalid propagated tag (first)
-        [InlineData("dd=s:2;o:rum;:12345;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null)]    // no key
-        [InlineData("dd=s:2;o:rum;t.usr.id:;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null)] // no value
-        [InlineData("dd=s:2;o:rum;:;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null)]         // no key or value
-        [InlineData("dd=s:2;o:rum;t.abc;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null)]     // no colon
+        [InlineData("dd=s:2;o:rum;:12345;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null, ZeroLastParentId)]    // no key
+        [InlineData("dd=s:2;o:rum;t.usr.id:;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null, ZeroLastParentId)] // no value
+        [InlineData("dd=s:2;o:rum;:;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null, ZeroLastParentId)]         // no key or value
+        [InlineData("dd=s:2;o:rum;t.abc;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null, ZeroLastParentId)]     // no colon
         // invalid propagated tag (last)
-        [InlineData("dd=s:2;o:rum;t.dm:-4;:12345", 2, "rum", "_dd.p.dm=-4", null)]    // no key
-        [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:", 2, "rum", "_dd.p.dm=-4", null)] // no value
-        [InlineData("dd=s:2;o:rum;t.dm:-4;:", 2, "rum", "_dd.p.dm=-4", null)]         // no key or value
-        [InlineData("dd=s:2;o:rum;t.dm:-4;t.abc", 2, "rum", "_dd.p.dm=-4", null)]     // no colon
+        [InlineData("dd=s:2;o:rum;t.dm:-4;:12345", 2, "rum", "_dd.p.dm=-4", null, ZeroLastParentId)]    // no key
+        [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:", 2, "rum", "_dd.p.dm=-4", null, ZeroLastParentId)] // no value
+        [InlineData("dd=s:2;o:rum;t.dm:-4;:", 2, "rum", "_dd.p.dm=-4", null, ZeroLastParentId)]         // no key or value
+        [InlineData("dd=s:2;o:rum;t.dm:-4;t.abc", 2, "rum", "_dd.p.dm=-4", null, ZeroLastParentId)]     // no colon
         // multiple top-level key/value pairs
-        [InlineData("key1=value1,key2=value2,dd=s:2;o:rum;t.dm:-4;t.usr.id:12345", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1,key2=value2")]                                                 // before "dd"
-        [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:12345,key3=value3,key4=value4", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key3=value3,key4=value4")]                                                 // after "dd"
-        [InlineData("key1=value1,key2=value2,dd=s:2;o:rum;t.dm:-4;t.usr.id:12345,key3=value3,key4=value4", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1,key2=value2,key3=value3,key4=value4")] // both sides
-        public void ParseTraceState(string header, int? samplingPriority, string origin, string propagatedTags, string additionalValues)
+        // before "dd"
+        [InlineData("key1=value1,key2=value2,dd=s:2;o:rum;p:0123456789abcdef;t.dm:-4;t.usr.id:12345", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1,key2=value2", "0123456789abcdef")]
+        // after "dd"
+        [InlineData("dd=s:2;o:rum;p:0123456789abcdef;t.dm:-4;t.usr.id:12345,key3=value3,key4=value4", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key3=value3,key4=value4", "0123456789abcdef")]
+        // both sides
+        [InlineData("key1=value1,key2=value2,dd=s:2;o:rum;p:0123456789abcdef;t.dm:-4;t.usr.id:12345,key3=value3,key4=value4", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1,key2=value2,key3=value3,key4=value4", "0123456789abcdef")]
+        public void ParseTraceState(string header, int? samplingPriority, string origin, string propagatedTags, string additionalValues, string lastParent)
         {
             var traceState = W3CTraceContextPropagator.ParseTraceState(header);
-            var lastParent = string.IsNullOrEmpty(header) ? null : "0000000000000000";
             var expected = new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues);
             traceState.Should().BeEquivalentTo(expected);
         }
@@ -311,7 +316,7 @@ namespace Datadog.Trace.Tests.Propagators
             var traceState = W3CTraceContextPropagator.ParseTraceState(header);
             var samplingPriority = 2;
             var origin = "rum";
-            var lastParent = "0000000000000000";
+            var lastParent = ZeroLastParentId;
             var propagatedTags = "_dd.p.dm=-4,_dd.p.usr.id=12345=";
             var additionalValues = "key1=value1";
             var expected = new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues);
@@ -351,7 +356,7 @@ namespace Datadog.Trace.Tests.Propagators
                            PropagatedTags = PropagatedTagsCollection,
                            Parent = null,
                            ParentId = null,
-                           LastParentId = "0000000000000000",
+                           LastParentId = ZeroLastParentId,
                        });
         }
 
@@ -396,6 +401,7 @@ namespace Datadog.Trace.Tests.Propagators
                            PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
+                           LastParentId = ZeroLastParentId,
                        });
         }
 
@@ -432,7 +438,7 @@ namespace Datadog.Trace.Tests.Propagators
                            PropagatedTags = PropagatedTagsCollection,
                            Parent = null,
                            ParentId = null,
-                           LastParentId = "0000000000000000"
+                           LastParentId = ZeroLastParentId
                        });
         }
 
@@ -476,7 +482,7 @@ namespace Datadog.Trace.Tests.Propagators
                         {
                             // multiple "tracestate" headers should be joined
                             "abc=123",
-                            "dd=s:2;o:rum;t.dm:-4;t.usr.id:12345",
+                            "dd=s:2;o:rum;p:0123456789abcdef;t.dm:-4;t.usr.id:12345",
                             "foo=bar"
                         });
 
@@ -503,6 +509,7 @@ namespace Datadog.Trace.Tests.Propagators
                            AdditionalW3CTraceState = "abc=123,foo=bar",
                            Parent = null,
                            ParentId = null,
+                           LastParentId = "0123456789abcdef",
                        });
         }
 
@@ -539,6 +546,7 @@ namespace Datadog.Trace.Tests.Propagators
                            PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
+                           LastParentId = ZeroLastParentId,
                        });
         }
 
@@ -673,6 +681,7 @@ namespace Datadog.Trace.Tests.Propagators
                            PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
+                           LastParentId = ZeroLastParentId,
                        });
         }
 
@@ -712,6 +721,7 @@ namespace Datadog.Trace.Tests.Propagators
                            PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
+                           LastParentId = ZeroLastParentId,
                        });
         }
 
@@ -753,6 +763,7 @@ namespace Datadog.Trace.Tests.Propagators
                                cachedPropagationHeader: null),
                            Parent = null,
                            ParentId = null,
+                           LastParentId = ZeroLastParentId,
                        });
         }
 
@@ -794,6 +805,7 @@ namespace Datadog.Trace.Tests.Propagators
                                cachedPropagationHeader: null),
                            Parent = null,
                            ParentId = null,
+                           LastParentId = ZeroLastParentId,
                        });
         }
 
@@ -830,6 +842,7 @@ namespace Datadog.Trace.Tests.Propagators
                            PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
+                           LastParentId = ZeroLastParentId,
                        });
         }
 
@@ -866,6 +879,7 @@ namespace Datadog.Trace.Tests.Propagators
                            PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
+                           LastParentId = ZeroLastParentId,
                        });
         }
 
@@ -902,6 +916,7 @@ namespace Datadog.Trace.Tests.Propagators
                            PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
+                           LastParentId = ZeroLastParentId,
                        });
         }
 
@@ -938,6 +953,7 @@ namespace Datadog.Trace.Tests.Propagators
                            PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
+                           LastParentId = ZeroLastParentId,
                        });
         }
     }
