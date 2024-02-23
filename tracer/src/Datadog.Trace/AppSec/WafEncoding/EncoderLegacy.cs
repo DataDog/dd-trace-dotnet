@@ -13,15 +13,17 @@ using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.WafEncoding
 {
     internal class EncoderLegacy : IEncoder
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EncoderLegacy));
-        private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
         private readonly WafLibraryInvoker _wafLibraryInvoker;
 
         public EncoderLegacy(WafLibraryInvoker wafLibraryInvoker)
@@ -133,14 +135,24 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
             if (applyLimits && remainingDepth-- <= 0)
             {
-                Log.Warning("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", objEnumerator));
+                TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", objEnumerator));
+                }
+
                 return new Obj(arrNat);
             }
 
             var count = objEnumerator is IList<object> objs ? objs.Count : objEnumerator.Count();
             if (applyLimits && count > WafConstants.MaxContainerSize)
             {
-                Log.Warning<int, int>("EncodeList: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxContainerSize);
+                TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug<int, int>("EncodeList: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxContainerSize);
+                }
+
                 objEnumerator = objEnumerator.Take(WafConstants.MaxContainerSize);
             }
 
@@ -159,7 +171,12 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
             if (applyLimits && remainingDepth-- <= 0)
             {
-                Log.Warning("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", objDictEnumerator.Select(x => $"{x.Key}, {x.Value}")));
+                TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", objDictEnumerator.Select(x => $"{x.Key}, {x.Value}")));
+                }
+
                 return new Obj(mapNat);
             }
 
@@ -167,7 +184,12 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
             if (applyLimits && count > WafConstants.MaxContainerSize)
             {
-                Log.Warning<int, int>("EncodeDictionary: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxContainerSize);
+                TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug<int, int>("EncodeDictionary: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxContainerSize);
+                }
+
                 objDictEnumerator = objDictEnumerator.Take(WafConstants.MaxContainerSize);
             }
 
@@ -181,7 +203,10 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 }
                 else
                 {
-                    Log.Warning("EncodeDictionary: ignoring dictionary member with null name");
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug("EncodeDictionary: ignoring dictionary member with null name");
+                    }
                 }
             }
 
