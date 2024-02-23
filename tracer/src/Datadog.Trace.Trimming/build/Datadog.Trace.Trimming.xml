@@ -351,6 +351,9 @@
       <type fullname="System.Net.Http.StreamContent" />
    </assembly>
    <assembly fullname="System.Net.Http.WinHttpHandler" />
+   <assembly fullname="System.Net.Mail">
+      <type fullname="System.Net.Mime.MediaTypeNames" />
+   </assembly>
    <assembly fullname="System.Net.NameResolution">
       <type fullname="System.Net.Dns" />
       <type fullname="System.Net.IPHostEntry" />
