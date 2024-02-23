@@ -61,7 +61,15 @@ namespace Datadog.Trace.TestHelpers
 
         public static VerifySettings GetSpanVerifierSettings(params object[] parameters) => GetSpanVerifierSettings(null, parameters);
 
+        public static VerifySettings GetCIVisibilitySpanVerifierSettings(params object[] parameters) => GetCIVisibilitySpanVerifierSettings(null, parameters);
+
         public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
+            => GetSpanVerifierSettings(scrubbers, parameters, ScrubTags);
+
+        public static VerifySettings GetCIVisibilitySpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
+            => GetSpanVerifierSettings(scrubbers, parameters, ScrubCIVisibilityTags);
+
+        public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters, ConvertMember<MockSpan, Dictionary<string, string>> tagsScrubber)
         {
             var settings = new VerifySettings();
 
@@ -76,7 +84,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 _.IgnoreMember<MockSpan>(s => s.Duration);
                 _.IgnoreMember<MockSpan>(s => s.Start);
-                _.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, ScrubTags);
+                _.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, tagsScrubber);
             });
 
             foreach (var (regexPattern, replacement) in scrubbers ?? SpanScrubbers)
@@ -157,6 +165,26 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public static Dictionary<string, string> ScrubTags(MockSpan span, Dictionary<string, string> tags)
+        {
+            return tags
+                  // remove propagated tags because their positions in the snapshots are not stable
+                  // with our span ordering. correct position (first span in every trace chunk) is covered by other tests.
+                  .Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
+                  // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
+                  // no matter what. That means we have unstable snapshot results.
+                  .Where(kvp => kvp.Key != Tags.GitRepositoryUrl && kvp.Key != Tags.GitCommitSha)
+                  .Select(
+                       kvp => kvp.Key switch
+                       {
+                           // scrub stack trace for errors
+                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, ScrubStackTrace(kvp.Value)),
+                           _ => kvp
+                       })
+                  .OrderBy(x => x.Key)
+                  .ToDictionary(x => x.Key, x => x.Value);
+        }
+        
+        public static Dictionary<string, string> ScrubCIVisibilityTags(MockSpan span, Dictionary<string, string> tags)
         {
             return tags
                   // remove propagated tags because their positions in the snapshots are not stable
