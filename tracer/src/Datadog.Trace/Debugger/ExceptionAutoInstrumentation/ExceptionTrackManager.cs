@@ -36,6 +36,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static readonly TimeSpan RateLimit = ExceptionDebugging.Settings.RateLimit;
         private static readonly BasicCircuitBreaker ReportingCircuitBreaker = new(ExceptionDebugging.Settings.MaxExceptionAnalysisLimit, TimeSpan.FromSeconds(1));
         private static Task _exceptionProcessorTask;
+        private static bool _isInitialized;
 
         private static async Task StartExceptionProcessingAsync(CancellationToken cancellationToken)
         {
@@ -52,6 +53,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public static void Report(Span span, Exception exception)
         {
+            if (!_isInitialized)
+            {
+                Log.Information(exception, "Exception Track Manager is not initialized yet. Skipping the processing of an exception. Span = {Span}", span);
+                return;
+            }
+
             // For V1 of Exception Debugging, we only care about exceptions propagating up the stack
             // and marked as error by the service entry/root span.
             if (!span.IsRootSpan || exception == null || !IsSupportedExceptionType(exception))
@@ -154,8 +161,27 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     Log.Error("ExceptionTrackManager: Received an empty tree from the shadow stack for exception: {Exception}.", exception.ToString());
 
                     // If we failed to instrument all the probes.
-                    if (trackedExceptionCase.ExceptionCase.Probes.All(p => p.IsInstrumented && (p.ProbeStatus == Status.ERROR || p.ProbeStatus == Status.BLOCKED)))
+                    if (trackedExceptionCase.ExceptionCase.Probes.All(p => p.IsInstrumented && (p.ProbeStatus == Status.ERROR || p.ProbeStatus == Status.BLOCKED || (p.ProbeStatus == Status.INSTALLED && p.MayBeOmittedFromCallStack))))
                     {
+                        var allFrames = trackedExceptionCase.ExceptionCase.ExceptionId.StackTrace;
+                        var allProbes = trackedExceptionCase.ExceptionCase.Probes;
+                        var frameIndex = allFrames.Length - 1;
+                        var debugErrorPrefix = "_dd.debug.error";
+                        var assignIndex = 0;
+
+                        while (frameIndex >= 0)
+                        {
+                            var participatingFrame = allFrames[frameIndex--];
+                            var noCaptureReason = GetNoCaptureReason(participatingFrame, allProbes.FirstOrDefault(p => p.Method.Equals(participatingFrame.MethodIdentifier)));
+
+                            if (noCaptureReason != string.Empty)
+                            {
+                                TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, noCaptureReason);
+                            }
+
+                            assignIndex += 1;
+                        }
+
                         Log.Information("Reverting the exception case of the empty stack tree since none of the methods were instrumented, for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
                         if (trackedExceptionCase.Revert())
                         {
@@ -214,44 +240,26 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     {
                         frameIndex = allFrames.Length - 1;
                         var probesIndex = @case.Probes.Length - 1;
-                        assignIndex = -1;
+                        assignIndex = 0;
 
                         while (frameIndex >= 0 && maxFramesToCaptureIncludingHead > 0)
                         {
                             maxFramesToCaptureIncludingHead -= 1;
                             var participatingFrame = allFrames[frameIndex--];
-                            assignIndex++;
 
-                            var noCaptureReason = string.Empty;
+                            var noCaptureReason = GetNoCaptureReasonForFrame(participatingFrame);
 
-                            if (participatingFrame.State == ParticipatingFrameState.Blacklist)
+                            if (noCaptureReason == string.Empty && probesIndex >= 0)
                             {
-                                noCaptureReason = $"The method {participatingFrame.Method.GetFullyQualifiedName()} is blacklisted.";
-                            }
-                            else if (participatingFrame.Method.IsAbstract)
-                            {
-                                noCaptureReason = $"The method {participatingFrame.Method.GetFullyQualifiedName()} is abstract.";
-                            }
-                            else if (probesIndex >= 0)
-                            {
-                                var probe = @case.Probes[probesIndex--];
-
-                                if (probe.ProbeStatus == Status.INSTALLED && probe.MayBeOmittedFromCallStack)
-                                {
-                                    // Frame is non-optimized in .NET 6+.
-                                    noCaptureReason = $"The method {participatingFrame.Method.GetFullyQualifiedName()} could not be captured.";
-                                }
-                                else if (probe.ProbeStatus == Status.ERROR)
-                                {
-                                    // Frame is failed to instrument.
-                                    noCaptureReason = $"The method {participatingFrame.Method.GetFullyQualifiedName()} has failed in instrumentation. Failure reason: {probe.ErrorMessage}";
-                                }
+                                noCaptureReason = GetNoCaptureReason(participatingFrame, @case.Probes[probesIndex--]);
                             }
 
                             if (noCaptureReason != string.Empty)
                             {
                                 TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, noCaptureReason);
                             }
+
+                            assignIndex++;
                         }
                     }
 
@@ -269,6 +277,50 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 Log.Information("New exception case occurred, initiating data collection for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
                 trackedExceptionCase.Instrument();
             }
+        }
+
+        private static string GetNoCaptureReason(ParticipatingFrame frame, ExceptionDebuggingProbe probe)
+        {
+            var noCaptureReason = GetNoCaptureReasonForFrame(frame);
+
+            if (noCaptureReason != string.Empty)
+            {
+                return noCaptureReason;
+            }
+
+            if (probe != null)
+            {
+                if (probe.ProbeStatus == Status.INSTALLED && probe.MayBeOmittedFromCallStack)
+                {
+                    // Frame is non-optimized in .NET 6+.
+                    noCaptureReason = $"The method {frame.Method.GetFullyQualifiedName()} could not be captured.";
+                }
+
+                if (probe.ProbeStatus == Status.ERROR)
+                {
+                    // Frame is failed to instrument.
+                    noCaptureReason = $"The method {frame.Method.GetFullyQualifiedName()} has failed in instrumentation. Failure reason: {probe.ErrorMessage}";
+                }
+            }
+
+            return noCaptureReason;
+        }
+
+        private static string GetNoCaptureReasonForFrame(ParticipatingFrame frame)
+        {
+            var noCaptureReason = string.Empty;
+
+            if (frame.State == ParticipatingFrameState.Blacklist)
+            {
+                noCaptureReason = $"The method {frame.Method.GetFullyQualifiedName()} is blacklisted.";
+            }
+
+            if (frame.Method.IsAbstract)
+            {
+                noCaptureReason = $"The method {frame.Method.GetFullyQualifiedName()} is abstract.";
+            }
+
+            return noCaptureReason;
         }
 
         private static void TagAndUpload(Span span, string tagPrefix, ExceptionStackNodeRecord record)
@@ -308,7 +360,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             try
             {
-                return AtLeastOneFrameBelongToUserCode() && ThereIsNoFrameThatBelongsToDatadogClrProfilerAgentCode();
+                return AtLeastOneFrameBelongToUserCode();
             }
             catch
             {
@@ -317,7 +369,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             bool AtLeastOneFrameBelongToUserCode() => framesToRejit.All(f => !FrameFilter.IsUserCode(f)) == false;
-            bool ThereIsNoFrameThatBelongsToDatadogClrProfilerAgentCode() => framesToRejit.Any(f => FrameFilter.IsDatadogAssembly(f.Method.Module.Assembly.GetName().Name)) == false;
         }
 
         private static bool IsSupportedExceptionType(Exception ex) =>
@@ -330,6 +381,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                           .Unwrap();
 
             LifetimeManager.Instance.AddShutdownTask(Stop);
+
+            _isInitialized = true;
         }
 
         public static bool IsSupportedExceptionType(Type ex) =>

@@ -23,9 +23,10 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ShadowStackTree));
 
         private readonly AsyncLocal<TrackedStackFrameNode> _trackedStackFrameActiveNode = new();
-        private readonly HashSet<uint> _uniqueSequencesLeaves = new();
-        private readonly ReaderWriterLockSlim _lock = new();
+        private ReaderWriterLockSlim _lock;
+        private HashSet<uint> _uniqueSequencesLeaves;
         private TrackedStackFrameNode _trackedStackFrameRootNode;
+        private ConcurrentDictionary<TrackedStackFrameNode, Exception> _prematurelyUnwoundedFrames;
 
         public TrackedStackFrameNode CurrentStackFrameNode => _trackedStackFrameActiveNode.Value;
 
@@ -37,37 +38,45 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return _trackedStackFrameActiveNode.Value;
         }
 
-        public bool LeaveWithException(TrackedStackFrameNode trackedStackFrameNode, Exception ex)
+        public bool Leave(TrackedStackFrameNode trackedStackFrameNode, Exception exception)
         {
             var currentActiveNode = _trackedStackFrameActiveNode.Value;
 
+            // If the top of the shadow stack is different from the unwinding frame, we consider it to be 'prematurely unwounded' and keep it for future unwindings.
             if (trackedStackFrameNode != currentActiveNode)
             {
-                System.Diagnostics.Debugger.Break();
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Leave: The top of the shadowstack is different than the unwinding method, keeping it aside for future unwindings");
+                }
+
+                _prematurelyUnwoundedFrames.TryAdd(trackedStackFrameNode, exception);
+                return false;
             }
 
-            var parent = currentActiveNode.RecordFunctionExit(ex);
+            var parent = currentActiveNode!.RecordFunctionExit(exception);
 
-            if (parent == null)
+            if (parent == null && exception != null)
             {
                 _trackedStackFrameRootNode = currentActiveNode;
             }
 
             _trackedStackFrameActiveNode.Value = parent;
 
+            // Try to handle previously collected prematurely unwounded frames.
+            if (!_prematurelyUnwoundedFrames.IsEmpty &&
+                _trackedStackFrameActiveNode.Value != null &&
+                _prematurelyUnwoundedFrames.TryRemove(_trackedStackFrameActiveNode.Value, out var prematureException))
+            {
+                Leave(_trackedStackFrameActiveNode.Value, prematureException);
+            }
+
             return _trackedStackFrameRootNode == currentActiveNode;
         }
 
         public void Leave(TrackedStackFrameNode trackedStackFrameNode)
         {
-            var currentActiveNode = _trackedStackFrameActiveNode.Value;
-
-            if (trackedStackFrameNode != currentActiveNode)
-            {
-                System.Diagnostics.Debugger.Break();
-            }
-
-            _trackedStackFrameActiveNode.Value = currentActiveNode.RecordFunctionExit();
+            Leave(trackedStackFrameNode, exception: null);
         }
 
         public ExceptionStackTreeRecord CreateResultReport(Exception exceptionPath, int stackSize = int.MaxValue)
@@ -177,6 +186,19 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _trackedStackFrameActiveNode.Value?.Dispose();
             _trackedStackFrameActiveNode.Value = null;
             IsInRequestContext = false;
+            _uniqueSequencesLeaves?.Clear();
+            _uniqueSequencesLeaves = null;
+            _prematurelyUnwoundedFrames?.Clear();
+            _prematurelyUnwoundedFrames = null;
+            _lock?.Dispose();
+            _lock = null;
+        }
+
+        public void Init()
+        {
+            _uniqueSequencesLeaves = new HashSet<uint>();
+            _prematurelyUnwoundedFrames = new ConcurrentDictionary<TrackedStackFrameNode, Exception>();
+            _lock = new ReaderWriterLockSlim();
         }
     }
 }

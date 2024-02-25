@@ -230,6 +230,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public TrackedStackFrameNode RecordFunctionExit(Exception ex)
         {
+            if (ex == null)
+            {
+                return RecordFunctionExit();
+            }
+
             LeavingException = ex;
             ClearNonRelevantChildNodes();
 
@@ -254,7 +259,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return _parent;
         }
 
-        public TrackedStackFrameNode RecordFunctionExit()
+        private TrackedStackFrameNode RecordFunctionExit()
         {
             var parent = _parent;
             Dispose();

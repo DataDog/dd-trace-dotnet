@@ -393,7 +393,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 try
                 {
-                    if (ExceptionDebugging.Settings.Enabled)
+                    if (ExceptionDebugging.Enabled)
                     {
                         ExceptionDebugging.Initialize();
                     }

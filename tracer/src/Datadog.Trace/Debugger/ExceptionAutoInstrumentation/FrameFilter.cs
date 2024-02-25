@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
@@ -20,10 +21,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     internal static class FrameFilter
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FrameFilter));
-        private static readonly HashSet<string> ThirdPartyModuleNames = new()
-        {
-            "Serilog.AspNetCore"
-        };
 
         internal static bool IsDatadogAssembly(string assemblyName)
         {
@@ -84,7 +81,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             var moduleName = GetModuleNameWithoutExtension(method.Module.Name);
 
             return string.IsNullOrEmpty(moduleName) ||
-                   ThirdPartyModuleNames.Contains(moduleName) ||
+                   ThirdPartyModules.Contains(moduleName) ||
                    AssemblyFilter.ShouldSkipAssembly(method.Module.Assembly);
         }
 

@@ -114,7 +114,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         {
                             if (processor.Leave(leavingExceptionType, snapshotCreator))
                             {
-                                var isRoot = shadowStack.LeaveWithException(snapshotCreator.TrackedStackFrameNode, exception);
+                                var isRoot = shadowStack.Leave(snapshotCreator.TrackedStackFrameNode, exception);
 
                                 if (!isRoot && snapshotCreator.TrackedStackFrameNode.NumOfChildren > _maxFramesToCapture)
                                 {
