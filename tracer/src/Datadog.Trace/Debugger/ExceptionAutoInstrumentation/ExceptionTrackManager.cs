@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
@@ -340,7 +341,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType.Name);
             span.Tags.SetTag(tagPrefix + "snapshot_id", snapshotId);
 
-            LiveDebugger.Instance.AddSnapshot(probeId, snapshot);
+            ExceptionDebugging.AddSnapshot(probeId, snapshot);
         }
 
         private static void TagMissingFrame(Span span, string tagPrefix, MethodBase method, string reason)
@@ -380,8 +381,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                                async () => await StartExceptionProcessingAsync(Cts.Token).ConfigureAwait(false), TaskCreationOptions.LongRunning)
                                           .Unwrap();
 
-            LifetimeManager.Instance.AddShutdownTask(Stop);
-
             _isInitialized = true;
         }
 
@@ -397,7 +396,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             ex != typeof(OutOfMemoryException) &&
             ex != typeof(ThreadAbortException);
 
-        private static void Stop()
+        public static void Dispose()
         {
             Cts.Cancel();
             ReportingCircuitBreaker.Dispose();

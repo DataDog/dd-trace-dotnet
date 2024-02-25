@@ -22,7 +22,11 @@ namespace Datadog.Trace.Debugger.Sink
 
         private BoundedConcurrentQueue<ProbeStatus> _queue;
 
-        private ProbeStatusSink(string serviceName, int batchSize, TimeSpan interval)
+        protected ProbeStatusSink()
+        {
+        }
+
+        protected ProbeStatusSink(string serviceName, int batchSize, TimeSpan interval)
         {
             _serviceName = serviceName;
             _batchSize = batchSize;
@@ -37,27 +41,27 @@ namespace Datadog.Trace.Debugger.Sink
             return new ProbeStatusSink(serviceName, settings.UploadBatchSize, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
         }
 
-        internal void AddReceived(string probeId)
+        internal virtual void AddReceived(string probeId)
         {
             AddProbeStatus(probeId, Status.RECEIVED);
         }
 
-        internal void AddInstalled(string probeId)
+        internal virtual void AddInstalled(string probeId)
         {
             AddProbeStatus(probeId, Status.INSTALLED);
         }
 
-        internal void AddBlocked(string probeId)
+        internal virtual void AddBlocked(string probeId)
         {
             AddProbeStatus(probeId, Status.BLOCKED);
         }
 
-        internal void AddError(string probeId, Exception e)
+        internal virtual void AddError(string probeId, Exception e)
         {
             AddProbeStatus(probeId, Status.ERROR, exception: e);
         }
 
-        public void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception exception = null, string errorMessage = null)
+        public virtual void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception exception = null, string errorMessage = null)
         {
             var shouldSkip =
                 _diagnostics.TryGetValue(probeId, out var current) &&
@@ -119,12 +123,12 @@ namespace Datadog.Trace.Debugger.Sink
             return queue;
         }
 
-        public void Remove(string probeId)
+        public virtual void Remove(string probeId)
         {
             _diagnostics.TryRemove(probeId, out _);
         }
 
-        public List<ProbeStatus> GetDiagnostics()
+        public virtual List<ProbeStatus> GetDiagnostics()
         {
             var now = Clock.UtcNow;
             foreach (var timedMessage in _diagnostics.Values)

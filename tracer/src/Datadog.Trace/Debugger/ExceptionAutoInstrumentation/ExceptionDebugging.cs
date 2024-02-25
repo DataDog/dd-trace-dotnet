@@ -5,15 +5,14 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
+using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.dnlib;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
@@ -22,6 +21,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static ExceptionDebuggingSettings? _settings;
         private static int _firstInitialization = 1;
         private static bool _isDisabled;
+        private static DebuggerSink? _sink;
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionDebugging));
 
@@ -49,8 +49,37 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
             else
             {
+                InitSnapshotsSink();
                 ExceptionTrackManager.Initialize();
+                LifetimeManager.Instance.AddShutdownTask(Dispose);
             }
+        }
+
+        private static void InitSnapshotsSink()
+        {
+            var tracer = Tracer.Instance;
+            var debuggerSettings = DebuggerSettings.FromDefaultSource();
+
+            // Set configs relevant for DI and Exception Debugging, using DI's environment keys.
+            DebuggerSnapshotSerializer.SetConfig(debuggerSettings);
+            Redaction.SetConfig(debuggerSettings);
+
+            // Set up the snapshots sink.
+            var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
+            var snapshotStatusSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+            var apiFactory = AgentTransportStrategy.Get(
+                tracer.Settings.ExporterInternal,
+                productName: "debugger",
+                tcpTimeout: TimeSpan.FromSeconds(15),
+                AgentHttpHeaderNames.MinimalHeaders,
+                () => new MinimalAgentHeaderHelper(),
+                uri => uri);
+            var discoveryService = tracer.TracerManager.DiscoveryService;
+            var batchApi = AgentBatchUploadApi.Create(apiFactory, discoveryService);
+            var batchUploader = BatchUploader.Create(batchApi);
+            _sink = DebuggerSink.Create(snapshotStatusSink, new NopProbeStatusSink(), batchUploader, debuggerSettings);
+
+            Task.Run(async () => await _sink.StartFlushingAsync().ConfigureAwait(false));
         }
 
         public static void Report(Span span, Exception exception)
@@ -86,6 +115,23 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             tree?.Clear();
+        }
+
+        public static void AddSnapshot(string probeId, string snapshot)
+        {
+            if (_sink == null)
+            {
+                Log.Warning("The sink of the Exception Debugging is null. Skipping the reporting of the snapshot: {Snapshot}", snapshot);
+                return;
+            }
+
+            _sink.AddSnapshot(probeId, snapshot);
+        }
+
+        public static void Dispose()
+        {
+            ExceptionTrackManager.Dispose();
+            _sink?.Dispose();
         }
     }
 }

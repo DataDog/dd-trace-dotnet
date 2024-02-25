@@ -399,7 +399,7 @@ namespace Datadog.Trace.ClrProfiler
                     }
                     else
                     {
-                        Log.Debug("Exception Debugging is not enabled.");
+                        Log.Information("Exception Debugging is disabled. To enable it, please set DD_EXCEPTION_DEBUGGING_ENABLED environment variable to 'true'.");
                     }
                 }
                 catch (Exception ex)
