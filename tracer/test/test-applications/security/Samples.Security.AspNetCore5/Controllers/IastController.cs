@@ -12,7 +12,9 @@ using System.Reflection;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
+#if NETCOREAPP3_0_OR_GREATER
 using System.Text.Json;
+#endif
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
@@ -194,7 +196,8 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return BadRequest($"No json was provided");
         }
-
+        
+#if NETCOREAPP3_0_OR_GREATER
         [HttpGet("JsonParseTainting")]
         [Route("JsonParseTainting")]
         public IActionResult JsonParseTainting(string json)
@@ -217,6 +220,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return BadRequest($"No json was provided");
         }
+#endif
 
         [HttpGet("ExecuteCommand")]
         [Route("ExecuteCommand")]

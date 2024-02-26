@@ -369,6 +369,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         newFixture.SetOutput(null);
     }
 
+#if !NETFRAMEWORK && !NETSTANDARD2_0
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
     public async Task TestJsonParseTainting()
@@ -386,6 +387,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
     }
+#endif
 }
 
 public class AspNetCore5IastTestsFullSamplingIastDisabled : AspNetCore5IastTestsFullSampling
