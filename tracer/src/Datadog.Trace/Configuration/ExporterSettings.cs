@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Vendors.StatsdClient.Transport;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
 
 namespace Datadog.Trace.Configuration
@@ -34,9 +35,14 @@ namespace Datadog.Trace.Configuration
         private Uri _agentUri;
 
         /// <summary>
-        /// The default port value for dogstatsd.
+        /// The default port value for dogstatsd when sending over UDP.
         /// </summary>
         internal const int DefaultDogstatsdPort = 8125;
+
+        /// <summary>
+        /// The default port value for dogstatsd when sending over UDP.
+        /// </summary>
+        internal const string DefaultDogstatsdHostname = "127.0.0.1";
 
         /// <summary>
         /// Default metrics UDS path.
@@ -153,7 +159,11 @@ namespace Datadog.Trace.Configuration
                 // In the case the url was a UDS one, we do not change anything.
                 if (TracesTransport == TracesTransportType.Default)
                 {
+                    // This behaviour could be unexpected, but it's the existing behavior
+                    // If we expose a separate property for setting the stats URL we should consider
+                    // dropping this behaviour
                     MetricsTransport = MetricsTransportType.UDP;
+                    MetricsHostname = GetMetricsHostNameFromAgentUri(_agentUri);
                 }
             }
         }
@@ -284,31 +294,52 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         [IgnoreForSnapshot] // We don't record this in telemetry currently, but if we do, we'll record it when we set its
         internal MetricsTransportType MetricsTransport { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the agent host to use when <see cref="MetricsTransport"/> is <see cref="TransportType.UDP"/>
+        /// </summary>
+        [IgnoreForSnapshot] // We don't record this in telemetry currently, but if we do, we'll record it when we set its
+        internal string MetricsHostname { get; private set; }
 #pragma warning restore SA1624
 
         internal List<string> ValidationWarnings { get; }
 
         internal IConfigurationTelemetry Telemetry => _telemetry;
 
+        private static string GetMetricsHostNameFromAgentUri(Uri agentUri)
+        {
+            // If the customer has enabled UDS traces then the AgentUri will have
+            // the UDS path set for it, and the DnsSafeHost returns "".
+            var traceHostname = agentUri.DnsSafeHost;
+            return string.IsNullOrEmpty(traceHostname) ? DefaultDogstatsdHostname : traceHostname;
+        }
+
+        [MemberNotNull(nameof(MetricsHostname))]
         private void ConfigureMetricsTransport(string? traceAgentUrl, string? agentHost, int dogStatsdPort, string? metricsPipeName, string? metricsUnixDomainSocketPath)
         {
             // Agent port is set to zero in places like AAS where it's needed to prevent port conflict
-            // The agent will fail to start if it can not bind a port, so we need to override 8126 to prevent port conflict
+            // The agent will fail to start if it can not bind a port, so we need to override 8125 to prevent port conflict
             // Port 0 means it will pick some random available port
             if (dogStatsdPort < 0)
             {
                 ValidationWarnings.Add("The provided dogStatsD port isn't valid, it should be positive.");
             }
 
-            if (!string.IsNullOrWhiteSpace(traceAgentUrl) && !traceAgentUrl!.StartsWith(UnixDomainSocketPrefix) && Uri.TryCreate(traceAgentUrl, UriKind.Absolute, out var uri))
+            if (!string.IsNullOrWhiteSpace(traceAgentUrl)
+             && !traceAgentUrl!.StartsWith(UnixDomainSocketPrefix)
+             && Uri.TryCreate(traceAgentUrl, UriKind.Absolute, out var uri))
             {
-                // No need to set AgentHost, it is taken from the AgentUri and set in ConfigureTrace
                 MetricsTransport = MetricsTransportType.UDP;
+                MetricsHostname = GetMetricsHostNameFromAgentUri(uri);
             }
             else if (dogStatsdPort > 0 || agentHost != null)
             {
-                // No need to set AgentHost, it is taken from the AgentUri and set in ConfigureTrace
                 MetricsTransport = MetricsTransportType.UDP;
+                MetricsHostname = agentHost!; // assumes that agentHost is a valid hostname or IP address, just warn if it's not
+                if (Uri.CheckHostName(agentHost) is not (UriHostNameType.IPv4 or UriHostNameType.IPv6 or UriHostNameType.Dns))
+                {
+                    ValidationWarnings.Add($"The provided agent host '{agentHost}' is not a valid hostname or IP address.");
+                }
             }
             else if (!string.IsNullOrWhiteSpace(metricsPipeName))
             {
@@ -334,10 +365,12 @@ namespace Datadog.Trace.Configuration
             else
             {
                 MetricsTransport = MetricsTransportType.UDP;
+                MetricsHostname = DefaultDogstatsdHostname;
                 DogStatsdPortInternal = DefaultDogstatsdPort;
             }
 
             DogStatsdPortInternal = dogStatsdPort > 0 ? dogStatsdPort : DefaultDogstatsdPort;
+            MetricsHostname ??= DefaultDogstatsdHostname;
         }
 
         private void RecordTraceTransport(string transport, ConfigurationOrigins origin = ConfigurationOrigins.Default)

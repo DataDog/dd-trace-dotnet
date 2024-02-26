@@ -232,46 +232,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    // remove any leftover junk they may be left in the headers
-                    message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext);
-                    message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryEdgeTags);
+                    // TODO: we could pool these arrays to reduce allocations
+                    // NOTE: the tags must be sorted in alphabetical order
+                    var edgeTags = string.IsNullOrEmpty(topic)
+                                       ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
+                                       : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
 
-                    if (!tracer.Settings.KafkaCreateConsumerScopeEnabledInternal && message?.Headers is not null)
+                    span.SetDataStreamsCheckpoint(
+                        dataStreamsManager,
+                        CheckpointKind.Consume,
+                        edgeTags,
+                        message is null ? 0 : GetMessageSize(message),
+                        tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs,
+                        pathwayContext);
+
+                    message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext); // remove eventual junk
+                    if (!tracer.Settings.KafkaCreateConsumerScopeEnabledInternal && message?.Headers is not null && span.Context.PathwayContext != null)
                     {
-                        // This is a brilliant and horrible approach to let customers who are already
-                        // extracting the span context from a Kafka message automatically get
-                        // checkpointing support in their custom instrumentation
-                        if (message.Headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey, out var bytes))
-                        {
-                            // annoyingly we have to re-encode the pathwayContext as base64 so we can read it as
-                            // a string in SpanContextExtractor.Extract
-                            // if there was no pathway context, we don't need to encode it
-                            var base64PathwayContext = System.Convert.ToBase64String(bytes);
-                            message.Headers.Add(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext, Encoding.UTF8.GetBytes(base64PathwayContext));
-                        }
-
-                        // ','is not a valid character in kafka topic or group names, so we use as the
-                        // separator here NOTE: the tags must be sorted in alphabetical order
-                        var edgeTags = string.IsNullOrEmpty(topic)
-                                           ? $"direction:in,group:{groupId},type:kafka"
-                                           : $"direction:in,group:{groupId},topic:{topic},type:kafka";
-                        message.Headers.Add(DataStreamsPropagationHeaders.TemporaryEdgeTags, Encoding.UTF8.GetBytes(edgeTags));
-                    }
-                    else
-                    {
-                        // TODO: we could pool these arrays to reduce allocations
-                        // NOTE: the tags must be sorted in alphabetical order
-                        var edgeTags = string.IsNullOrEmpty(topic)
-                                           ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
-                                           : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
-
-                        span.SetDataStreamsCheckpoint(
-                            dataStreamsManager,
-                            CheckpointKind.Consume,
-                            edgeTags,
-                            message is null ? 0 : GetMessageSize(message),
-                            tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs,
-                            pathwayContext);
+                        // write the _new_ pathway (the "consume" checkpoint that we just set above) to the headers as a way to pass its value to an eventual
+                        // call to SpanContextExtractor.Extract by a user who'd like to re-pair pathways after a batch consume.
+                        // Note that this header only exists on the consume side, and Kafka never sees it.
+                        var base64PathwayContext = Convert.ToBase64String(BitConverter.GetBytes(span.Context.PathwayContext.Value.Hash.Value));
+                        message.Headers.Add(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext, Encoding.UTF8.GetBytes(base64PathwayContext));
                     }
                 }
             }

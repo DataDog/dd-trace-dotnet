@@ -14,10 +14,10 @@ using Config = Samples.Kafka.Config;
 var sw = new Stopwatch();
 sw.Start();
 
-var runFanIn = args.Contains("--fan-in");
+var runBatchProcessing = args.Contains("--batch-processing");
 var extractScopesManually = Environment.GetEnvironmentVariable("DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED") == "0";
 
-await (runFanIn ? RunFanInAndOutScenario() : RunStandardPipelineScenario());
+await (runBatchProcessing ? RunBatchProcessingScenario() : RunStandardPipelineScenario());
 
 async Task RunStandardPipelineScenario()
 {
@@ -119,10 +119,10 @@ async Task RunStandardPipelineScenario()
     }
 }
 
-async Task RunFanInAndOutScenario()
+async Task RunBatchProcessingScenario()
 {
     // Create Topics
-    var topicPrefix = "data-streams-fan-in-out";
+    var topicPrefix = "data-streams-batch-processing";
 
     var topic1 = $"{topicPrefix}-1";
     var topic2 = $"{topicPrefix}-2";
@@ -163,7 +163,7 @@ async Task RunFanInAndOutScenario()
     while (true)
     {
         var consumed = Volatile.Read(ref topic2ConsumeCount);
-        if (consumed >= 2)
+        if (consumed >= 3)
         {
             Console.WriteLine($"All messages produced and consumed");
             break;
@@ -211,21 +211,17 @@ async Task RunFanInAndOutScenario()
         _fanInMessages.Add(consumeResult);
         if (_fanInMessages.Count == 3)
         {
-            Stack<IDisposable> scopes = new();
+            var iteration = 1;
             foreach (var fanInMessage in _fanInMessages)
             {
-                scopes.Push(
-                    SampleHelpers.CreateScopeWithPropagation(
-                        "kafka.consume",
-                        fanInMessage.Message.Headers,
-                        ConsumerBase.ExtractValues));
-            }
-            
-            Console.WriteLine($"Producing to {topic2} x2");
-            Producer.Produce(topic2, numMessages: 2, config, handleDelivery: true, isTombstone: false, explicitPartitions: true);
-            foreach (var scope in scopes)
-            {
-                scope.Dispose();
+                using (SampleHelpers.CreateScopeWithPropagation(
+                           "kafka.consume",
+                           fanInMessage.Message.Headers,
+                           ConsumerBase.ExtractValues))
+                {
+                    Console.WriteLine($"Producing to {topic2} - {iteration++} of 3");
+                    Producer.Produce(topic2, numMessages: 1, config, handleDelivery: true, isTombstone: false, explicitPartitions: true);
+                }
             }
         }
 
