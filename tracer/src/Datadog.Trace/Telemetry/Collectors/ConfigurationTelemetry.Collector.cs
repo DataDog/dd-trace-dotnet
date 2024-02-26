@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration.Telemetry
@@ -18,18 +17,6 @@ namespace Datadog.Trace.Configuration.Telemetry
     // This is the "collector" implementation
     internal partial class ConfigurationTelemetry
     {
-        private static readonly IReadOnlyDictionary<string, string> ConfigurationKeysMapping = new Dictionary<string, string>
-        {
-            ["DD_TRACE_ENABLED"] = "trace_enabled",
-            ["DD_PROFILING_ENABLED"] = "profiling_enabled",
-            ["DD_APPSEC_ENABLED"] = "appsec_enabled",
-            ["DD_DATA_STREAMS_ENABLED"] = "data_streams_enabled",
-            ["DD_TAGS"] = "trace_tags",
-            ["DD_TRACE_HEADER_TAGS"] = "trace_header_tags",
-            ["DD_LOGS_INJECTION"] = "logs_injection_enabled",
-            ["DD_TRACE_SAMPLE_RATE"] = "trace_sample_rate"
-        };
-
         private ConcurrentQueue<ConfigurationTelemetryEntry> _backBuffer = new();
 
         public bool HasChanges() => !_entries.IsEmpty || !_backBuffer.IsEmpty;
@@ -89,11 +76,6 @@ namespace Datadog.Trace.Configuration.Telemetry
             while (buffer.TryDequeue(out var entry))
             {
                 destination.Add(GetConfigKeyValue(entry));
-
-                if (ConfigurationKeysMapping.TryGetValue(entry.Key, out var mappedKey))
-                {
-                    destination.Add(MapConfigKeyValueAsString(entry, mappedKey));
-                }
             }
         }
 
