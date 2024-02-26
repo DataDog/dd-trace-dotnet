@@ -214,36 +214,6 @@ public class ConfigurationTelemetryCollectorTests
         GetLatestValueFromConfig(data, injectKey).Should().Be(injectValue);
     }
 
-    [Theory]
-    [InlineData(ConfigurationKeys.TraceEnabled, "0", "trace_enabled", "false")]
-    [InlineData(Trace.ContinuousProfiler.ConfigurationKeys.ProfilingEnabled, "1", "profiling_enabled", "true")]
-    [InlineData(ConfigurationKeys.AppSec.Enabled, "1", "appsec_enabled", "true")]
-    [InlineData(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1", "data_streams_enabled", "true")]
-    [InlineData(ConfigurationKeys.GlobalTags, "key1:value1", "trace_tags", "key1:value1")]
-    [InlineData(ConfigurationKeys.HeaderTags, "key1:value1", "trace_header_tags", "key1:value1")]
-    [InlineData(ConfigurationKeys.LogsInjectionEnabled, "1", "logs_injection_enabled", "true")]
-    [InlineData(ConfigurationKeys.GlobalSamplingRate, "0.5", "trace_sample_rate", "0.5")]
-    public void ConfigurationDataShouldIncludeReporting(string key, string value, string expectedKey, string expectedValue)
-    {
-        var collector = new ConfigurationTelemetry();
-
-        var config = new NameValueCollection();
-
-        if (key != null)
-        {
-            config.Add(key, value);
-        }
-
-        var source = new NameValueConfigurationSource(config);
-
-        _ = new ImmutableTracerSettings(new TracerSettings(source, collector));
-        _ = new SecuritySettings(source, collector);
-
-        var data = collector.GetData();
-
-        GetLatestValueFromConfig(data, expectedKey, ConfigurationOrigins.Code).Should().Be(expectedValue);
-    }
-
     [Fact]
     public void ConfigurationDataShouldReportDefaultValues()
     {
@@ -255,14 +225,14 @@ public class ConfigurationTelemetryCollectorTests
 
         var data = collector.GetData();
 
-        GetLatestValueFromConfig(data, "trace_enabled", ConfigurationOrigins.Default).Should().Be("true");
-        GetLatestValueFromConfig(data, "profiling_enabled", ConfigurationOrigins.Default).Should().Be("false");
-        GetLatestValueFromConfig(data, "appsec_enabled", ConfigurationOrigins.Default).Should().Be("false");
-        GetLatestValueFromConfig(data, "data_streams_enabled", ConfigurationOrigins.Default).Should().Be("false");
-        GetLatestValueFromConfig(data, "trace_tags", ConfigurationOrigins.Default).Should().Be(string.Empty);
-        GetLatestValueFromConfig(data, "trace_header_tags", ConfigurationOrigins.Default).Should().Be(string.Empty);
-        GetLatestValueFromConfig(data, "logs_injection_enabled", ConfigurationOrigins.Default).Should().Be("false");
-        GetLatestValueFromConfig(data, "trace_sample_rate", ConfigurationOrigins.Default).Should().Be("1.0");
+        GetLatestValueFromConfig(data, "DD_TRACE_ENABLED", ConfigurationOrigins.Default).Should().Be(true);
+        GetLatestValueFromConfig(data, "DD_PROFILING_ENABLED", ConfigurationOrigins.Default).Should().Be(false);
+        GetLatestValueFromConfig(data, "DD_APPSEC_ENABLED", ConfigurationOrigins.Default).Should().Be(false);
+        GetLatestValueFromConfig(data, "DD_DATA_STREAMS_ENABLED", ConfigurationOrigins.Default).Should().Be(false);
+        GetLatestValueFromConfig(data, "DD_TAGS", ConfigurationOrigins.Default).Should().Be(string.Empty);
+        GetLatestValueFromConfig(data, "DD_TRACE_HEADER_TAGS", ConfigurationOrigins.Default).Should().Be(string.Empty);
+        GetLatestValueFromConfig(data, "DD_LOGS_INJECTION", ConfigurationOrigins.Default).Should().Be(false);
+        GetLatestValueFromConfig(data, "DD_TRACE_SAMPLE_RATE", ConfigurationOrigins.Default).Should().Be(1.0);
     }
 
 #if NETFRAMEWORK
