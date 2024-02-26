@@ -25,6 +25,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Html
        MaximumVersion = "8.*.*",
        IntegrationName = nameof(Configuration.IntegrationId.Xss),
        InstrumentationCategory = InstrumentationCategory.Iast)]
+    [InstrumentMethod(
+       AssemblyName = "System.Web",
+       TypeName = "System.Web.HtmlString",
+       MethodName = ".ctor",
+       ParameterTypeNames = new[] { ClrNames.String },
+       ReturnTypeName = ClrNames.Void,
+       MinimumVersion = "4.0.0",
+       MaximumVersion = "4.*.*",
+       IntegrationName = nameof(Configuration.IntegrationId.Xss),
+       InstrumentationCategory = InstrumentationCategory.Iast)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class HtmlStringIntegration

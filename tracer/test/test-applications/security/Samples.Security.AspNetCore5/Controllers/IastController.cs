@@ -841,7 +841,6 @@ namespace Samples.Security.AspNetCore5.Controllers
             return View("ReflectedXss");
         }
 
-
         static string CopyStringAvoidTainting(string original)
         {
             return new string(original.AsEnumerable().ToArray());

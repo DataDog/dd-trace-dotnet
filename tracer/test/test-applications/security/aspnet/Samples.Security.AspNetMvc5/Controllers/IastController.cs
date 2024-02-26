@@ -610,9 +610,16 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("ReflectedXss")]
         public ActionResult ReflectedXss(string param)
         {
-            ViewData["XSS"] = param;
+            ViewData["XSS"] = param + "<b>More Text</b>";
             return View();
         }
 
+        [ValidateInput(false)]
+        [Route("ReflectedXssEscaped")]
+        public ActionResult ReflectedXssEscaped(string param)
+        {
+            ViewData["XSS"] = WebUtility.HtmlEncode(param + "<b>More Text</b>");
+            return View("ReflectedXss");
+        }
     }
 }
