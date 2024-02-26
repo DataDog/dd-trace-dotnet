@@ -4,6 +4,8 @@ using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.Json;
 
+#if NETCOREAPP3_0_OR_GREATER
+
 public class JsonDocumentTests : InstrumentationTestsBase
 {
     private readonly string _taintedJson = "{ \"key\": \"value\" }";
@@ -85,5 +87,6 @@ public class JsonDocumentTests : InstrumentationTestsBase
         Assert.Equal("value", str);
         AssertTainted(str);
     }
-    
 }
+
+#endif
