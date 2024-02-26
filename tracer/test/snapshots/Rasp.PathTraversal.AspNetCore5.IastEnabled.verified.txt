@@ -35,6 +35,7 @@
   "vulnerabilities": [
     {
       "type": "PATH_TRAVERSAL",
+      "hash": -1927798418,
       "location": {
         "spanId": XXX,
         "path": "IastController.cs",

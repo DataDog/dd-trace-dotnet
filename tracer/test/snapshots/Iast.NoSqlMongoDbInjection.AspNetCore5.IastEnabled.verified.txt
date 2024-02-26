@@ -26,6 +26,7 @@
   "vulnerabilities": [
     {
       "type": "NOSQL_MONGODB_INJECTION",
+      "hash": 507455816,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
