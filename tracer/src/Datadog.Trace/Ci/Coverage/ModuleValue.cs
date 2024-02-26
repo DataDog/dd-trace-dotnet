@@ -4,7 +4,6 @@
 // </copyright>
 #nullable enable
 
-using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci.Coverage.Metadata;
@@ -14,16 +13,16 @@ namespace Datadog.Trace.Ci.Coverage;
 internal class ModuleValue
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ModuleValue(ModuleCoverageMetadata metadata, Module module, int maxMethods)
+    public ModuleValue(ModuleCoverageMetadata metadata, Module module, int numberOfFiles)
     {
         Metadata = metadata;
         Module = module;
-        Methods = maxMethods == 0 ? Array.Empty<MethodValues>() : new MethodValues[maxMethods];
+        Files = numberOfFiles == 0 ? [] : new FileValue[numberOfFiles];
     }
 
     public ModuleCoverageMetadata Metadata { get; }
 
     public Module Module { get; }
 
-    public MethodValues?[] Methods { get; }
+    public FileValue[] Files { get; }
 }

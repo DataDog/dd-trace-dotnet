@@ -57,11 +57,12 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
             lock (_coverages)
             {
                 var sw = Stopwatch.StartNew();
-                const int HIDDEN = 0xFEEFEE;
+                // const int HIDDEN = 0xFEEFEE;
                 var globalCoverage = new GlobalCoverageInfo();
                 var moduleProcessed = new HashSet<Module>();
                 var fromGlobalContainer = GlobalContainer?.CloseContext() ?? Array.Empty<ModuleValue>();
                 var fromTestsContainers = _coverages.SelectMany(c => c?.CloseContext() ?? Array.Empty<ModuleValue>());
+                /*
                 foreach (var moduleValue in fromGlobalContainer.Concat(fromTestsContainers))
                 {
                     if (moduleValue is null)
@@ -145,6 +146,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                     moduleProcessed.Add(moduleValue.Module);
                     globalCoverage.Add(componentCoverageInfo);
                 }
+                */
 
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {

@@ -32,7 +32,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
         try
         {
             var modules = context.CloseContext();
-            const int HIDDEN = 0xFEEFEE;
+            // const int HIDDEN = 0xFEEFEE;
 
             Dictionary<string, FileCoverage>? fileDictionary = null;
             foreach (var moduleValue in modules)
@@ -53,6 +53,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                     }
                 }
 
+                /*
                 for (var i = 0; i < moduleValue.Methods.Length; i++)
                 {
                     var currentMethod = moduleValue.Methods[i];
@@ -101,6 +102,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                         }
                     }
                 }
+                */
             }
 
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityCodeCoverageFiles(fileDictionary?.Count ?? 0);

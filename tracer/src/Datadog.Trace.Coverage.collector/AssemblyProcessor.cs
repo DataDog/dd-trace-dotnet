@@ -204,6 +204,7 @@ namespace Datadog.Trace.Coverage.Collector
 
                 // Process all types defined in the module
                 var moduleTypes = module.GetTypes().ToList();
+                var fileDictionaryIndex = new Dictionary<string, FileMetadata>();
 
                 var moduleCoverageMetadataTypeDefinition = datadogTracerAssembly.MainModule.GetType(typeof(ModuleCoverageMetadata).FullName);
                 var moduleCoverageMetadataTypeReference = module.ImportReference(moduleCoverageMetadataTypeDefinition);
@@ -219,27 +220,10 @@ namespace Datadog.Trace.Coverage.Collector
                     MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig | MethodAttributes.RTSpecialName,
                     module.TypeSystem.Void);
 
-                // Get TotalInstructions field
-                var moduleCoverageMetadataImplTotalInstructionsField = new FieldReference("TotalInstructions", module.TypeSystem.Int64, moduleCoverageMetadataTypeReference);
-
-                // Create number of types array
-                var totalMethods = 0;
-                var sequencePointArrayCountInstruction = Instruction.Create(OpCodes.Ldc_I4, totalMethods);
-                var metadataArrayCountInstruction = Instruction.Create(OpCodes.Ldc_I4, totalMethods);
-
-                var moduleCoverageMetadataImplSequencePointField = new FieldReference("SequencePoints", new ArrayType(module.TypeSystem.Int32), moduleCoverageMetadataTypeReference);
-                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
-                moduleCoverageMetadataImplCtor.Body.Instructions.Add(sequencePointArrayCountInstruction);
-                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr, module.TypeSystem.Int32));
-                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplSequencePointField));
-
+                // Create metadata instructions list
                 var lstMetadataInstructions = new List<Instruction>();
-                var moduleCoverageMetadataImplMetadataField = new FieldReference("Metadata", new ArrayType(module.TypeSystem.Int64), moduleCoverageMetadataTypeReference);
-                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
-                lstMetadataInstructions.Add(metadataArrayCountInstruction);
-                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Newarr, module.TypeSystem.Int64));
-                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplMetadataField));
 
+                // Add the .ctor to the metadata type
                 moduleCoverageMetadataImplTypeDef.Methods.Add(moduleCoverageMetadataImplCtor);
 
                 var coverageReporterTypeDefinition = datadogTracerAssembly.MainModule.GetType(typeof(CoverageReporter<>).FullName);
@@ -247,16 +231,15 @@ namespace Datadog.Trace.Coverage.Collector
                 var reportTypeGenericInstance = new GenericInstanceType(coverageReporterTypeReference);
                 reportTypeGenericInstance.GenericArguments.Add(moduleCoverageMetadataImplTypeDef);
 
-                var reportGetCountersMethod = new MethodReference("GetCounters", new ArrayType(module.TypeSystem.Int32), reportTypeGenericInstance)
+                var reportGetCountersMethod = new MethodReference("GetFileCounter", new ArrayType(module.TypeSystem.Int32), reportTypeGenericInstance)
                 {
                     HasThis = false,
                     Parameters =
                     {
-                        new ParameterDefinition(module.TypeSystem.Int32) { Name = "methodIndex" }
+                        new ParameterDefinition(module.TypeSystem.Int32) { Name = "fileIndex" }
                     }
                 };
 
-                long totalSequencePoints = 0;
                 // GenericInstanceMethod? arrayEmptyOfIntMethodReference = null;
                 for (var typeIndex = 0; typeIndex < moduleTypes.Count; typeIndex++)
                 {
@@ -397,7 +380,7 @@ namespace Datadog.Trace.Coverage.Collector
 
                             var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
 
-                            string? file = null;
+                            FileMetadata fileMetadata = default;
                             foreach (var pt in sequencePoints)
                             {
                                 if (pt.IsHidden || pt.Document is null || string.IsNullOrWhiteSpace(pt.Document.Url))
@@ -405,17 +388,34 @@ namespace Datadog.Trace.Coverage.Collector
                                     continue;
                                 }
 
-                                file = pt.Document.Url;
-                                break;
+                                var documentUrl = pt.Document.Url;
+                                if (string.IsNullOrEmpty(documentUrl))
+                                {
+                                    continue;
+                                }
+
+                                if (!fileDictionaryIndex.TryGetValue(documentUrl, out fileMetadata))
+                                {
+                                    fileMetadata = new FileMetadata(documentUrl);
+                                    fileDictionaryIndex[documentUrl] = fileMetadata;
+                                }
+
+                                fileMetadata.Lines.Add(pt.StartLine);
+                                if (pt.StartLine != pt.EndLine)
+                                {
+                                    for (var line = pt.StartLine + 1; line <= pt.EndLine; line++)
+                                    {
+                                        fileMetadata.Lines.Add(line);
+                                    }
+                                }
                             }
 
-                            if (file is not null && FiltersHelper.FilteredBySourceFile(file, _settings.ExcludeSourceFiles))
+                            if (fileMetadata.FileName is not null && FiltersHelper.FilteredBySourceFile(fileMetadata.FileName, _settings.ExcludeSourceFiles))
                             {
                                 _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, ignored by settings source filter");
                                 continue;
                             }
 
-                            totalMethods++;
                             var methodBody = moduleTypeMethod.Body;
                             var instructions = methodBody.Instructions;
                             var instructionsOriginalLength = instructions.Count;
@@ -431,13 +431,13 @@ namespace Datadog.Trace.Coverage.Collector
                             }
 
                             // Step 2 - Clone sequence points
-                            var instructionsWithValidSequencePoints = new List<Instruction>();
+                            var instructionsWithValidSequencePoints = new List<(Instruction Instruction, SequencePoint SequencePoint)>();
                             for (var i = 0; i < sequencePoints.Count; i++)
                             {
                                 var currentSequencePoint = sequencePoints[i];
                                 if (!currentSequencePoint.IsHidden)
                                 {
-                                    instructionsWithValidSequencePoints.Add(instructions.First(i => i.Offset == currentSequencePoint.Offset));
+                                    instructionsWithValidSequencePoints.Add((instructions.First(i => i.Offset == currentSequencePoint.Offset), currentSequencePoint));
                                 }
                             }
 
@@ -445,39 +445,17 @@ namespace Datadog.Trace.Coverage.Collector
                             var countersVariable = new VariableDefinition(new ArrayType(module.TypeSystem.Int32));
                             methodBody.Variables.Add(countersVariable);
 
-                            // Step 4 - Create methods sequence points array
-                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
-                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldfld, moduleCoverageMetadataImplSequencePointField));
-                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, (totalMethods - 1)));
-                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, instructionsWithValidSequencePoints.Count));
-                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stelem_I4));
-
-                            lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
-                            lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldfld, moduleCoverageMetadataImplMetadataField));
-                            lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, (totalMethods - 1)));
-                            var indexes = ((long)typeIndex << 32) | (long)methodIndex;
-                            if (indexes > int.MaxValue)
-                            {
-                                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I8, indexes));
-                            }
-                            else
-                            {
-                                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)indexes));
-                                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Conv_I8));
-                            }
-
-                            lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stelem_I8));
-                            totalSequencePoints += instructionsWithValidSequencePoints.Count;
-
-                            // Step 5 - Insert the counter retriever
-                            instructions.Insert(0, Instruction.Create(OpCodes.Ldc_I4, (totalMethods - 1)));
+                            // Step 4 - Insert the counter retriever
+                            instructions.Insert(0, Instruction.Create(OpCodes.Ldc_I4, fileMetadata.Index));
                             instructions.Insert(1, Instruction.Create(OpCodes.Call, reportGetCountersMethod));
                             instructions.Insert(2, Instruction.Create(OpCodes.Stloc, countersVariable));
 
-                            // Step 6 - Insert line reporter
+                            // Step 5 - Insert line reporter
                             for (var i = 0; i < instructionsWithValidSequencePoints.Count; i++)
                             {
-                                var currentInstruction = instructionsWithValidSequencePoints[i];
+                                var currentInstructionAndSequencePoint = instructionsWithValidSequencePoints[i];
+                                var currentInstruction = currentInstructionAndSequencePoint.Instruction;
+                                var currentSequencePoint = currentInstructionAndSequencePoint.SequencePoint;
                                 var currentInstructionIndex = instructions.IndexOf(currentInstruction);
                                 var currentInstructionClone = CloneInstruction(currentInstruction);
 
@@ -490,18 +468,23 @@ namespace Datadog.Trace.Coverage.Collector
                                     // If the jit optimizations are enabled and instructions count is >= 2,
                                     // we do a `_ = counters[{lastIndex}];` at the first report.
                                     // This will remove later counters bound checks improving the overall performance.
-                                    instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I4, instructionsWithValidSequencePoints.Count - 1));
+                                    instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I4, fileMetadata.MaxLine - 1));
                                     instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldelem_I4));
                                     instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Pop));
                                     instructions.Insert(currentInstructionIndex + 4, Instruction.Create(OpCodes.Ldloc, countersVariable));
                                     optIdx = 4;
                                 }
 
+                                if (currentSequencePoint.StartLine != currentSequencePoint.EndLine)
+                                {
+                                    break;
+                                }
+
                                 switch (_coverageMode)
                                 {
                                     case CoverageMode.LineCallCount:
                                         // Increments items in the counters array (to have the number of times a line was executed)
-                                        instructions.Insert(currentInstructionIndex + optIdx + 1, Instruction.Create(OpCodes.Ldc_I4, i));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 1, Instruction.Create(OpCodes.Ldc_I4, currentSequencePoint.StartLine - 1));
                                         instructions.Insert(currentInstructionIndex + optIdx + 2, Instruction.Create(OpCodes.Ldelema, module.TypeSystem.Int32));
                                         instructions.Insert(currentInstructionIndex + optIdx + 3, Instruction.Create(OpCodes.Dup));
                                         instructions.Insert(currentInstructionIndex + optIdx + 4, Instruction.Create(OpCodes.Ldind_I4));
@@ -512,7 +495,7 @@ namespace Datadog.Trace.Coverage.Collector
                                         break;
                                     case CoverageMode.LineExecution:
                                         // Set 1 to items in the counters array (to check if the line was executed or not)
-                                        instructions.Insert(currentInstructionIndex + optIdx + 1, Instruction.Create(OpCodes.Ldc_I4, i));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 1, Instruction.Create(OpCodes.Ldc_I4, currentSequencePoint.StartLine - 1));
                                         instructions.Insert(currentInstructionIndex + optIdx + 2, Instruction.Create(OpCodes.Ldc_I4_1));
                                         instructions.Insert(currentInstructionIndex + optIdx + 3, Instruction.Create(OpCodes.Stelem_I4));
                                         instructions.Insert(currentInstructionIndex + optIdx + 4, currentInstructionClone);
@@ -525,9 +508,36 @@ namespace Datadog.Trace.Coverage.Collector
                     }
                 }
 
-                sequencePointArrayCountInstruction.Operand = totalMethods;
-                metadataArrayCountInstruction.Operand = totalMethods;
-                module.Types.Add(moduleCoverageMetadataImplTypeDef);
+                // ****************************************************************************************************
+                // Module metadata: Files field
+                var fileCoverageMetadataTypeDefinition = datadogTracerAssembly.MainModule.GetType(typeof(FileCoverageMetadata).FullName);
+                var fileCoverageMetadataTypeReference = module.ImportReference(fileCoverageMetadataTypeDefinition);
+                var moduleCoverageMetadataImplFileMetadataField = new FieldReference("Files", new ArrayType(fileCoverageMetadataTypeReference), moduleCoverageMetadataTypeReference);
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, fileDictionaryIndex.Count));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Newarr, fileCoverageMetadataTypeReference));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplFileMetadataField));
+
+                // Going through the fileDictionaryIndex to add the FileMetadata to the Files field
+                var moduleCoverageMetadataImplFileMetadataCtor = new MethodReference(".ctor", module.TypeSystem.Void, fileCoverageMetadataTypeReference)
+                {
+                    HasThis = true,
+                    Parameters = { new ParameterDefinition(module.TypeSystem.String), new ParameterDefinition(module.TypeSystem.Int32) }
+                };
+
+                foreach (FileMetadata fileMetadata in fileDictionaryIndex.Values.OrderBy(v => v.Index))
+                {
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldfld, moduleCoverageMetadataImplFileMetadataField));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, fileMetadata.Index));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldstr, fileMetadata.FileName));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, fileMetadata.MaxLine));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Newobj, moduleCoverageMetadataImplFileMetadataCtor));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stelem_Any, fileCoverageMetadataTypeReference));
+                }
+
+                // ****************************************************************************************************
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ret));
 
                 // Copy metadata instructions to the .ctor
                 foreach (var instruction in lstMetadataInstructions)
@@ -535,20 +545,7 @@ namespace Datadog.Trace.Coverage.Collector
                     moduleCoverageMetadataImplCtor.Body.Instructions.Add(instruction);
                 }
 
-                // Sets the TotalInstructions field
-                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
-                if (totalSequencePoints > int.MaxValue)
-                {
-                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I8, totalSequencePoints));
-                }
-                else
-                {
-                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)totalSequencePoints));
-                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Conv_I8));
-                }
-
-                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplTotalInstructionsField));
-                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+                module.Types.Add(moduleCoverageMetadataImplTypeDef);
 
                 // Change attributes to drop native bits
                 if ((module.Attributes & ModuleAttributes.ILLibrary) == ModuleAttributes.ILLibrary)
@@ -858,6 +855,32 @@ namespace Datadog.Trace.Coverage.Collector
             public void SetTracerAssemblyLocation(string assemblyLocation)
             {
                 _tracerAssemblyLocation = assemblyLocation;
+            }
+        }
+
+#pragma warning disable SA1201
+        private struct FileMetadata
+        {
+            private static int _globalIndex;
+
+            public FileMetadata(string fileName)
+            {
+                Index = _globalIndex++;
+                FileName = fileName;
+                Lines = new HashSet<int>();
+            }
+
+            public int Index { get; private set; }
+
+            public string FileName { get; }
+
+            public HashSet<int> Lines { get; }
+
+            public int MaxLine => Lines.Max();
+
+            public static void Reset()
+            {
+                _globalIndex = 0;
             }
         }
     }

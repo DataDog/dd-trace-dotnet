@@ -7,7 +7,6 @@
 using System;
 using System.ComponentModel;
 using System.Reflection;
-using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Ci.Coverage.Util;
 
@@ -38,7 +37,7 @@ public static class CoverageReporter<TMeta>
         var globalModuleValue = globalCoverageContextContainer.GetModuleValue(Module);
         if (globalModuleValue is null)
         {
-            globalModuleValue = new ModuleValue(Metadata, Module, Metadata.GetMethodsCount());
+            globalModuleValue = new ModuleValue(Metadata, Module, Metadata.GetNumberOfFiles());
             globalCoverageContextContainer.Add(globalModuleValue);
         }
 
@@ -46,11 +45,11 @@ public static class CoverageReporter<TMeta>
     }
 
     /// <summary>
-    /// Gets the coverage counters for the method
+    /// Gets the coverage counter for the file
     /// </summary>
-    /// <param name="methodIndex">Method index</param>
-    /// <returns>Counters array for the method</returns>
-    public static int[] GetCounters(int methodIndex)
+    /// <param name="fileIndex">File index</param>
+    /// <returns>Counters array for the file</returns>
+    public static int[] GetFileCounter(int fileIndex)
     {
         ModuleValue? module;
 
@@ -62,7 +61,7 @@ public static class CoverageReporter<TMeta>
             if (module is null)
             {
                 // If the module is not found, we create a new one for this container
-                module = new ModuleValue(Metadata, Module, Metadata.GetMethodsCount());
+                module = new ModuleValue(Metadata, Module, Metadata.GetNumberOfFiles());
                 container.Add(module);
             }
         }
@@ -72,9 +71,14 @@ public static class CoverageReporter<TMeta>
             module = _globalModuleValue;
         }
 
-        // Get the method from the module and return the sequence points array for the method
-        ref var method = ref module.Methods.FastGetReference(methodIndex);
-        method ??= new MethodValues(Metadata.GetTotalSequencePointsOfMethod(methodIndex));
-        return method.SequencePoints;
+        // Get the file value from the module and return the lines array for the method
+        ref var fileValue = ref module.Files.FastGetReference(fileIndex);
+        if (fileValue.Lines is { } lines)
+        {
+            return lines;
+        }
+
+        fileValue = new FileValue(Metadata.GetLastExecutableLineFromFile(fileIndex));
+        return fileValue.Lines!;
     }
 }
