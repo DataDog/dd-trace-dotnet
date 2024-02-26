@@ -939,6 +939,15 @@
       <type fullname="System.Text.UnicodeEncoding" />
       <type fullname="System.Text.UTF8Encoding" />
    </assembly>
+   <assembly fullname="System.Text.Json">
+      <type fullname="System.Text.Json.JsonDocument" />
+      <type fullname="System.Text.Json.JsonDocumentOptions" />
+      <type fullname="System.Text.Json.JsonElement" />
+      <type fullname="System.Text.Json.JsonElement/ArrayEnumerator" />
+      <type fullname="System.Text.Json.JsonElement/ObjectEnumerator" />
+      <type fullname="System.Text.Json.JsonProperty" />
+      <type fullname="System.Text.Json.JsonValueKind" />
+   </assembly>
    <assembly fullname="System.Text.RegularExpressions">
       <type fullname="System.Text.RegularExpressions.Capture" />
       <type fullname="System.Text.RegularExpressions.CaptureCollection" />
