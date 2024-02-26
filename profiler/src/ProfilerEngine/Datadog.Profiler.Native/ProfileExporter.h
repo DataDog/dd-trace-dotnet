@@ -26,6 +26,7 @@ class IAllocationsRecorder;
 class IProcessSamplesProvider;
 class IMetadataProvider;
 class IConfiguration;
+class IProfilerTelemetry;
 
 namespace libdatadog {
 class Exporter;
@@ -44,7 +45,8 @@ public:
         IEnabledProfilers* enabledProfilers,
         MetricsRegistry& metricsRegistry,
         IMetadataProvider* metadataProvider,
-        IAllocationsRecorder* allocationsRecorder);
+        IAllocationsRecorder* allocationsRecorder,
+        IProfilerTelemetry* profilerTelemetry);
     ~ProfileExporter() override;
 
     bool Export() override;
@@ -97,7 +99,9 @@ private:
     std::list<std::shared_ptr<Sample>> GetProcessSamples();
     std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
     std::string GetMetadata() const;
+    bool IsShortLived() const;
 
+private:
     static tags CommonTags;
     static std::string const ProcessId;
     static int const RequestTimeOutMs;
@@ -130,6 +134,7 @@ private:
     IMetadataProvider* _metadataProvider;
     std::unique_ptr<libdatadog::Exporter> _exporter;
     IConfiguration* _configuration;
+    IProfilerTelemetry* _profilerTelemetry;
 
 public: // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

@@ -42,6 +42,7 @@
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 #include "ProfilerEngineStatus.h"
+#include "ProfilerTelemetry.h"
 #include "RuntimeIdStore.h"
 #include "RuntimeInfo.h"
 #include "Sample.h"
@@ -452,7 +453,8 @@ bool CorProfilerCallback::InitializeServices()
         _pEnabledProfilers.get(),
         _metricsRegistry,
         _pMetadataProvider.get(),
-        _pAllocationsRecorder.get()
+        _pAllocationsRecorder.get(),
+        _pProfilerTelemetry.get()
         );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
@@ -995,6 +997,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     _pMetadataProvider = std::make_unique<MetadataProvider>();
     _pMetadataProvider->Initialize();
     PrintEnvironmentVariables();
+    _pProfilerTelemetry = std::make_unique<ProfilerTelemetry>(_pConfiguration.get());
+    _pProfilerTelemetry->ProcessStart();
 
     double coresThreshold = _pConfiguration->MinimumCores();
     double cpuLimit = 0;
@@ -1216,6 +1220,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 {
     Log::Info("CorProfilerCallback::Shutdown()");
+
+    _pProfilerTelemetry->ProcessEnd();
 
     // A final .pprof should be generated before exiting
     // The aggregator must be stopped before the provider, since it will call them to get the last samples

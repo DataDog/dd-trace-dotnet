@@ -20,6 +20,7 @@
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 #include "Profile.h"
+#include "ProfilerTelemetry.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "ScopeFinalizer.h"
@@ -76,13 +77,15 @@ ProfileExporter::ProfileExporter(
     IEnabledProfilers* enabledProfilers,
     MetricsRegistry& metricsRegistry,
     IMetadataProvider* metadataProvider,
-    IAllocationsRecorder* allocationsRecorder) :
+    IAllocationsRecorder* allocationsRecorder,
+    IProfilerTelemetry* profilerTelemetry) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
     _allocationsRecorder{allocationsRecorder},
     _metadataProvider{metadataProvider},
-    _configuration{configuration}
+    _configuration{configuration},
+    _profilerTelemetry{profilerTelemetry}
 {
     _exporter = CreateExporter(_configuration, CreateTags(_configuration, runtimeInfo, enabledProfilers));
     _outputPath = CreatePprofOutputPath(_configuration);
@@ -448,9 +451,33 @@ void ProfileExporter::AddProcessSamples(libdatadog::Profile* profile, std::list<
     }
 }
 
+bool ProfileExporter::IsShortLived() const
+{
+    auto lifetime = OsSpecificApi::GetProcessLifetime();
+    if (lifetime < 30) // TODO add a configuration for this value
+    {
+        return true;
+    }
+
+    return false;
+}
+
 bool ProfileExporter::Export()
 {
     bool exported = false;
+
+    if (!_profilerTelemetry->IsSpanCreated())
+    {
+        _profilerTelemetry->SkippedProfile(SkipProfileHeuristicType::NoSpan);
+    }
+    else if (IsShortLived())
+    {
+        _profilerTelemetry->SkippedProfile(SkipProfileHeuristicType::ShortLived);
+    }
+    else
+    {
+        _profilerTelemetry->SentProfile();
+    }
 
     if (_allocationsRecorder != nullptr)
     {

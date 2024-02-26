@@ -19,6 +19,7 @@
 #include "IExporter.h"
 #include "IFrameStore.h"
 #include "IMetricsSender.h"
+#include "IProfilerTelemetry.h"
 #include "ISamplesProvider.h"
 #include "WallTimeProvider.h"
 #include "CpuTimeProvider.h"
@@ -204,6 +205,7 @@ public:
     IApplicationStore* GetApplicationStore() { return _pApplicationStore; }
     IExporter* GetExporter() { return _pExporter.get(); }
     SamplesCollector* GetSamplesCollector() { return _pSamplesCollector; }
+    void TraceContextHasBeenSet() { _pProfilerTelemetry->OnSpanCreated(); }
 
 private :
     static CorProfilerCallback* _this;
@@ -262,6 +264,8 @@ private :
     std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
     bool _isETWStarted = false;
     MemoryResourceManager _memoryResourceManager;
+
+    std::unique_ptr<IProfilerTelemetry> _pProfilerTelemetry = nullptr;
 
 private:
     static void ConfigureDebugLog();
