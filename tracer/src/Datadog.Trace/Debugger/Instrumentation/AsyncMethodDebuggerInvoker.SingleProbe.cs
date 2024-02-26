@@ -238,7 +238,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return asyncState.ProbeData.Processor.Process(ref localInfo, asyncState.SnapshotCreator, in probeData);
             }
 
-            var unreachableLocalInfo = new DebuggerSnapshotSerializer.UnreachableLocal(local);
+            var unreachableLocalInfo = new DebuggerSnapshotSerializer.UnreachableLocal(local, DebuggerSnapshotSerializer.UnreachableLocalReason.NotHoistedLocalInAsyncMethod);
             var captureInfo = new CaptureInfo<DebuggerSnapshotSerializer.UnreachableLocal>(asyncState.MethodMetadataIndex, value: unreachableLocalInfo, type: typeof(TLocal), methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
             return asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator, in probeData);
         }

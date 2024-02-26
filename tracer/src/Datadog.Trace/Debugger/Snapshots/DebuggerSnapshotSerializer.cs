@@ -88,7 +88,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     jsonWriter.WriteValue(type.Name);
                     jsonWriter.WritePropertyName("value");
                     jsonWriter.WriteValue(unreachable.Value);
-                    WriteNotCapturedReason(jsonWriter, NotCapturedReason.valueIsUnreachable);
+                    WriteNotCapturedReason(jsonWriter, unreachable.Reason);
                     jsonWriter.WriteEndObject();
                     return true;
                 }
@@ -378,8 +378,13 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static void WriteNotCapturedReason(JsonWriter writer, NotCapturedReason notCapturedReason)
         {
+            WriteNotCapturedReason(writer, Enum.GetName(typeof(NotCapturedReason), notCapturedReason));
+        }
+
+        private static void WriteNotCapturedReason(JsonWriter writer, string notCapturedReason)
+        {
             writer.WritePropertyName("notCapturedReason");
-            writer.WriteValue(Enum.GetName(typeof(NotCapturedReason), notCapturedReason));
+            writer.WriteValue(notCapturedReason);
         }
 
         private static string GetAutoPropertyOrFieldName(string fieldName)

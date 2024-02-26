@@ -20,10 +20,18 @@ namespace Datadog.Trace.Debugger.Snapshots
             // we are boxing it anyway in the serialization phase
             internal object Value;
 
-            public UnreachableLocal(object value)
+            public readonly string Reason;
+
+            public UnreachableLocal(object value, string reason)
             {
                 Value = value;
+                Reason = reason;
             }
+        }
+
+        internal static class UnreachableLocalReason
+        {
+            internal const string NotHoistedLocalInAsyncMethod = "The value of the variable in an asynchronous method may not be available at this point in time. You can put a line probe after the variable has been assigned to get its value.";
         }
     }
 }
