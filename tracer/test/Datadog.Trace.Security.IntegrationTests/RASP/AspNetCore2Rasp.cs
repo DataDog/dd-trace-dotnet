@@ -44,11 +44,14 @@ public abstract class AspNetCore2Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         : base("AspNetCore2", outputHelper, "/shutdown", testName: "AspNetCore2.SecurityEnabled")
     {
         EnableRasp();
+        SetSecurity(true);
         EnableIast(enableIast);
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "true");
+        var externalRulesFile = "C:\\CommonFolder\\shared\\repos\\dd-trace-5\\tracer\\test\\Datadog.Trace.Security.Unit.Tests\\rasp-rule-set.json";
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, externalRulesFile);
         EnableEvidenceRedaction(false);
         EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
         IastEnabled = enableIast;
