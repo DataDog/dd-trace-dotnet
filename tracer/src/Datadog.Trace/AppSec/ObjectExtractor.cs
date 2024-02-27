@@ -42,6 +42,11 @@ namespace Datadog.Trace.AppSec
 
         internal static object Extract(object body)
         {
+            if (body == null)
+            {
+                return null;
+            }
+
             var visited = new HashSet<object>();
             var item = ExtractType(body.GetType(), body, 0, visited);
             return item;
