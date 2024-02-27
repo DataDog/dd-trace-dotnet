@@ -8,7 +8,6 @@ using System;
 using System.ComponentModel;
 using System.Reflection;
 using Datadog.Trace.Ci.Coverage.Metadata;
-using Datadog.Trace.Ci.Coverage.Util;
 
 #pragma warning disable SA1649 // File name must match first type name
 
@@ -25,19 +24,21 @@ public static class CoverageReporter<TMeta>
 {
     private static readonly TMeta Metadata;
     private static readonly Module Module;
+    private static readonly int ModuleMemorySize;
     private static ModuleValue _globalModuleValue;
 
     static CoverageReporter()
     {
         Metadata = new TMeta();
         Module = typeof(TMeta).Module;
+        ModuleMemorySize = Metadata.CoverageMode == 0 ? Metadata.TotalLines * sizeof(byte) : Metadata.TotalLines * sizeof(int);
 
         // Caching the module from the global shared container in case an async container is null
         var globalCoverageContextContainer = CoverageReporter.GlobalContainer;
         var globalModuleValue = globalCoverageContextContainer.GetModuleValue(Module);
         if (globalModuleValue is null)
         {
-            globalModuleValue = new ModuleValue(Metadata, Module, Metadata.GetNumberOfFiles());
+            globalModuleValue = new ModuleValue(Metadata, Module, ModuleMemorySize);
             globalCoverageContextContainer.Add(globalModuleValue);
         }
 
@@ -49,7 +50,7 @@ public static class CoverageReporter<TMeta>
     /// </summary>
     /// <param name="fileIndex">File index</param>
     /// <returns>Counters for the file</returns>
-    public static unsafe int* GetFileCounter(int fileIndex)
+    public static unsafe void* GetFileCounter(int fileIndex)
     {
         ModuleValue? module;
 
@@ -61,7 +62,7 @@ public static class CoverageReporter<TMeta>
             if (module is null)
             {
                 // If the module is not found, we create a new one for this container
-                module = new ModuleValue(Metadata, Module, Metadata.TotalLines);
+                module = new ModuleValue(Metadata, Module, ModuleMemorySize);
                 container.Add(module);
             }
         }
@@ -72,7 +73,11 @@ public static class CoverageReporter<TMeta>
         }
 
         // Gets the file counter by using the file offset over the global module memory segment
-        var fileOffset = ((int*)module.FilesLines) + Metadata.GetOffset(fileIndex);
-        return fileOffset;
+        if (Metadata.CoverageMode == 0)
+        {
+            return ((byte*)module.FilesLines) + Metadata.GetOffset(fileIndex);
+        }
+
+        return ((int*)module.FilesLines) + Metadata.GetOffset(fileIndex);
     }
 }

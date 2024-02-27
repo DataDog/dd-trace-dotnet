@@ -22,13 +22,15 @@ public abstract class ModuleCoverageMetadata
     public readonly int TotalLines;
 
     /// <summary>
+    /// Gets or sets the coverage mode
+    /// </summary>
+    public readonly int CoverageMode;
+
+    /// <summary>
     /// Gets or sets the file metadata array
     /// </summary>
     protected readonly FileCoverageMetadata[] Files = Array.Empty<FileCoverageMetadata>();
 #pragma warning restore SA1401
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal int GetNumberOfFiles() => Files.Length;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal int GetOffset(int fileIndex)

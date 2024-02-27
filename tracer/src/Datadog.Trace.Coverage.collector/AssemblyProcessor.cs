@@ -232,7 +232,7 @@ namespace Datadog.Trace.Coverage.Collector
                 var reportTypeGenericInstance = new GenericInstanceType(coverageReporterTypeReference);
                 reportTypeGenericInstance.GenericArguments.Add(moduleCoverageMetadataImplTypeDef);
 
-                var reportGetCountersMethod = new MethodReference("GetFileCounter", new PointerType(module.TypeSystem.Int32), reportTypeGenericInstance)
+                var reportGetCountersMethod = new MethodReference("GetFileCounter", new PointerType(module.TypeSystem.Void), reportTypeGenericInstance)
                 {
                     HasThis = false,
                     Parameters =
@@ -446,7 +446,15 @@ namespace Datadog.Trace.Coverage.Collector
                             if (instructionsWithValidSequencePoints.Count > 1)
                             {
                                 // Step 3 - Modify local var to add the Coverage counters instance.
-                                countersVariable = new VariableDefinition(new PointerType(module.TypeSystem.Int32));
+                                if (_coverageMode == CoverageMode.LineExecution)
+                                {
+                                    countersVariable = new VariableDefinition(new PointerType(module.TypeSystem.Byte));
+                                }
+                                else
+                                {
+                                    countersVariable = new VariableDefinition(new PointerType(module.TypeSystem.Int32));
+                                }
+
                                 methodBody.Variables.Add(countersVariable);
                             }
 
@@ -501,20 +509,17 @@ namespace Datadog.Trace.Coverage.Collector
                                         {
                                             if (indexValue == 1)
                                             {
-                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
                                                 instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
                                             }
                                             else if (indexValue > 1)
                                             {
                                                 instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4, indexValue));
-                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Conv_I));
-                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
-                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Mul));
                                                 instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
                                             }
 
-                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I8, (long)0x100000001));
-                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I8));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4, 257));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I2));
                                             if (currentInstructionClone.OpCode != OpCodes.Nop)
                                             {
                                                 instructions.Insert(++optIdx, currentInstructionClone);
@@ -528,70 +533,113 @@ namespace Datadog.Trace.Coverage.Collector
                                     }
                                 }
 
-                                if (indexValue == 1)
-                                {
-                                    if (countersVariable is not null)
-                                    {
-                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
-                                    }
-                                    else
-                                    {
-                                        currentInstruction.OpCode = OpCodes.Ldc_I4_4;
-                                        currentInstruction.Operand = null;
-                                    }
-
-                                    instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
-                                }
-                                else if (indexValue > 1)
-                                {
-                                    if (countersVariable is not null)
-                                    {
-                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4, indexValue));
-                                    }
-                                    else
-                                    {
-                                        currentInstruction.OpCode = OpCodes.Ldc_I4;
-                                        currentInstruction.Operand = indexValue;
-                                    }
-
-                                    instructions.Insert(++optIdx, Instruction.Create(OpCodes.Conv_I));
-                                    instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
-                                    instructions.Insert(++optIdx, Instruction.Create(OpCodes.Mul));
-                                    instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
-                                }
-
                                 switch (_coverageMode)
                                 {
                                     case CoverageMode.LineCallCount:
                                         // Increments items in the counters array (to have the number of times a line was executed)
-                                        if (indexValue == 0 && countersVariable is null)
+                                        if (countersVariable is null)
                                         {
-                                            currentInstruction.OpCode = OpCodes.Dup;
-                                            currentInstruction.Operand = null;
+                                            if (indexValue == 1)
+                                            {
+                                                currentInstruction.OpCode = OpCodes.Ldc_I4_4;
+                                                currentInstruction.Operand = null;
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+                                            else if (indexValue > 1)
+                                            {
+                                                currentInstruction.OpCode = OpCodes.Ldc_I4;
+                                                currentInstruction.Operand = indexValue;
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Conv_I));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Mul));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+
+                                            if (indexValue == 0)
+                                            {
+                                                currentInstruction.OpCode = OpCodes.Dup;
+                                                currentInstruction.Operand = null;
+                                            }
+                                            else
+                                            {
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Dup));
+                                            }
+
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldind_I4));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I4));
                                         }
                                         else
                                         {
+                                            if (indexValue == 1)
+                                            {
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+                                            else if (indexValue > 1)
+                                            {
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4, indexValue));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Conv_I));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Mul));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+
                                             instructions.Insert(++optIdx, Instruction.Create(OpCodes.Dup));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldind_I4));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I4));
                                         }
 
-                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldind_I4));
-                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
-                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
-                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I4));
                                         break;
                                     case CoverageMode.LineExecution:
                                         // Set 1 to items in the counters pointer (to check if the line was executed or not)
-                                        if (indexValue == 0 && countersVariable is null)
+                                        if (countersVariable is null)
                                         {
-                                            currentInstruction.OpCode = OpCodes.Ldc_I4_1;
-                                            currentInstruction.Operand = null;
+                                            if (indexValue == 1)
+                                            {
+                                                currentInstruction.OpCode = OpCodes.Ldc_I4_1;
+                                                currentInstruction.Operand = null;
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+                                            else if (indexValue > 1)
+                                            {
+                                                currentInstruction.OpCode = OpCodes.Ldc_I4;
+                                                currentInstruction.Operand = indexValue;
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+
+                                            if (indexValue == 0)
+                                            {
+                                                currentInstruction.OpCode = OpCodes.Ldc_I4_1;
+                                                currentInstruction.Operand = null;
+                                            }
+                                            else
+                                            {
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
+                                            }
+
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I1));
                                         }
                                         else
                                         {
+                                            if (indexValue == 1)
+                                            {
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+                                            else if (indexValue > 1)
+                                            {
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4, indexValue));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+
                                             instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I1));
                                         }
 
-                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I4));
                                         break;
                                 }
 
@@ -651,6 +699,11 @@ namespace Datadog.Trace.Coverage.Collector
                 lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
                 lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)fileOffset + 1));
                 lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplFileTotalLinesField));
+
+                var moduleCoverageMetadataImplFileCoverageModeField = new FieldReference("CoverageMode", module.TypeSystem.Int32, moduleCoverageMetadataTypeReference);
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)_coverageMode));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplFileCoverageModeField));
 
                 // ****************************************************************************************************
                 lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ret));

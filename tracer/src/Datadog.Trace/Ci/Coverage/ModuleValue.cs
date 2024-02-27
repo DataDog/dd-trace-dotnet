@@ -15,11 +15,11 @@ namespace Datadog.Trace.Ci.Coverage;
 internal class ModuleValue : IDisposable
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ModuleValue(ModuleCoverageMetadata metadata, Module module, int totalLinesInModule)
+    public ModuleValue(ModuleCoverageMetadata metadata, Module module, int fileLinesMemorySize)
     {
         Metadata = metadata;
         Module = module;
-        FilesLines = Marshal.AllocHGlobal(totalLinesInModule * sizeof(int));
+        FilesLines = Marshal.AllocHGlobal(fileLinesMemorySize);
     }
 
     public ModuleCoverageMetadata Metadata { get; }
