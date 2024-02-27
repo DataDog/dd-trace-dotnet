@@ -466,19 +466,6 @@ bool ProfileExporter::Export()
 {
     bool exported = false;
 
-    if (!_profilerTelemetry->IsSpanCreated())
-    {
-        _profilerTelemetry->SkippedProfile(SkipProfileHeuristicType::NoSpan);
-    }
-    else if (IsShortLived())
-    {
-        _profilerTelemetry->SkippedProfile(SkipProfileHeuristicType::ShortLived);
-    }
-    else
-    {
-        _profilerTelemetry->SentProfile();
-    }
-
     if (_allocationsRecorder != nullptr)
     {
         auto const& applicationInfo = _applicationStore->GetApplicationInfo("");
@@ -554,8 +541,24 @@ bool ProfileExporter::Export()
         if (profile == nullptr || samplesCount == 0)
         {
             Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
+
+            // TODO: send telemetry about empty profiles
             continue;
         }
+
+        if (!_profilerTelemetry->IsSpanCreated())
+        {
+            _profilerTelemetry->SkippedProfile(SkipProfileHeuristicType::NoSpan);
+        }
+        else if (IsShortLived())
+        {
+            _profilerTelemetry->SkippedProfile(SkipProfileHeuristicType::ShortLived);
+        }
+        else
+        {
+            _profilerTelemetry->SentProfile();
+        }
+
 
         if (_exporter == nullptr)
         {
@@ -597,6 +600,8 @@ bool ProfileExporter::Export()
         if (!error_code)
         {
             Log::Error(error_code.message());
+
+            // TODO: send telemetry about failed sendings
         }
         exported &= error_code;
     }

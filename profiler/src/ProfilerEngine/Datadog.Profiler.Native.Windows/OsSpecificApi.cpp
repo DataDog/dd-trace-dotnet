@@ -353,7 +353,6 @@ double GetProcessLifetime()
         return 0;
     }
 
-    SYSTEMTIME sCurrentTime;
     ::GetSystemTimeAsFileTime(&exitTime);
 
     // Convert the FILETIME structures to ULARGE_INTEGER to make arithmetic calculations easier.
