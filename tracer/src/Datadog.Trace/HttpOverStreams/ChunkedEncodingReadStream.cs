@@ -252,6 +252,9 @@ internal sealed partial class ChunkedEncodingReadStream : DelegatingStream
             {
                 int carriageReturnIndex = lineFeedIndex - 1;
 
+                // Note that this has a bounds check on both the high and lower end
+                // if lineFeedIndex == 0, and carriageReturnIndex == -1, then
+                // (uint)carriageReturnIndex == uint.MaxValue, and the check will be false
                 int lengthFromStart = (uint)carriageReturnIndex < (uint)(_currentPosition.Offset + _currentPosition.Length) && _streamBuffer[carriageReturnIndex] == '\r'
                                  ? carriageReturnIndex
                                  : lineFeedIndex;

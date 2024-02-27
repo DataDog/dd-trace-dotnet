@@ -22,14 +22,16 @@ public class ChunkedEncodingReadStreamTests
     public static readonly int[] ChunkSizes = [5, 9, 50, 127, 255, 256, 257, 1053, 4095, 4096, 4097, 8192,];
     private static readonly int[] Offsets = [0, 1, 5, 15];
     private static readonly int[] BufferSizesRelativeToChunk = [-100, -10, -1, 0, 1, 10, 100];
+    private static readonly string[] LineEndings = ["\r\n", "\n"]; // only \r\n is compliant, but play it safe
 
     public static IEnumerable<object[]> GetChunkAndBufferSizes()
         => from chunkSize in ChunkSizes
            from offset in Offsets
            from bufferRelativeSize in BufferSizesRelativeToChunk
+           from lineEnding in LineEndings
            let bufferSize = chunkSize + bufferRelativeSize
            where bufferSize - offset > 0
-           select new object[] { bufferSize, chunkSize, offset };
+           select new object[] { bufferSize, chunkSize, offset, lineEnding };
 
     [Theory]
     [InlineData(0, "0")]
@@ -65,23 +67,26 @@ public class ChunkedEncodingReadStreamTests
 
     [Theory]
     [MemberData(nameof(GetChunkAndBufferSizes))]
-    public async Task ChunkedEncodingReadStream_IsReadCorrectly(int bufferSize, int chunkSize, int offset)
+    public async Task ChunkedEncodingReadStream_IsReadCorrectly(int bufferSize, int chunkSize, int offset, string lineEnding)
     {
         const int chunkCount = 10;
         var hexChunkSize = chunkSize.ToString("X");
         var chars = GetChunk(chunkSize);
         var expected = string.Join(string.Empty, Enumerable.Repeat(chars, chunkCount));
 
-        var chunk = hexChunkSize + "\r\n" + chars + "\r\n";
-
         var sb = new StringBuilder();
         for (var i = 0; i < chunkCount; i++)
         {
-            sb.Append(chunk);
+            sb.Append(hexChunkSize)
+              .Append(lineEnding)
+              .Append(chars)
+              .Append(lineEnding);
         }
 
         // final chunk
-        sb.Append("0\r\n\r\n");
+        sb.Append('0')
+          .Append(lineEnding)
+          .Append(lineEnding);
 
         var input = Utf8NoBom.GetBytes(sb.ToString());
 
@@ -96,8 +101,9 @@ public class ChunkedEncodingReadStreamTests
 
     [Theory]
     [MemberData(nameof(GetChunkAndBufferSizes))]
-    public async Task ChunkedEncodingReadStream_AndWriteStream_CanRoundTrip(int bufferSize, int chunkSize, int offset)
+    public async Task ChunkedEncodingReadStream_AndWriteStream_CanRoundTrip(int bufferSize, int chunkSize, int offset, string lineEnding)
     {
+        _ = lineEnding; // not used, stop xunit complaining
         const int chunkCount = 10;
 
         var chars = GetChunk(chunkSize);
