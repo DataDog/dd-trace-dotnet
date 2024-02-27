@@ -192,6 +192,7 @@ namespace Datadog.Trace.Coverage.Collector
                 using var datadogTracerAssembly = AssemblyDefinition.ReadAssembly(GetDatadogTracer(tracerTarget));
 
                 var isDirty = false;
+                var fileMetadataIndex = 0;
 
                 // Process all modules in the assembly
                 var module = assemblyDefinition.MainModule;
@@ -396,7 +397,7 @@ namespace Datadog.Trace.Coverage.Collector
 
                                 if (!fileDictionaryIndex.TryGetValue(documentUrl, out fileMetadata))
                                 {
-                                    fileMetadata = new FileMetadata(documentUrl);
+                                    fileMetadata = new FileMetadata(fileMetadataIndex++, documentUrl);
                                     fileDictionaryIndex[documentUrl] = fileMetadata;
                                 }
 
@@ -597,6 +598,15 @@ namespace Datadog.Trace.Coverage.Collector
                                 if (currentInstructionClone.OpCode != OpCodes.Nop)
                                 {
                                     instructions.Insert(++optIdx, currentInstructionClone);
+                                }
+                            }
+
+                            var nopList = instructions.Where(i => i.OpCode == OpCodes.Nop).ToList();
+                            foreach (var nopInstruction in nopList)
+                            {
+                                if (instructions.All(i => i.Operand != nopInstruction))
+                                {
+                                    instructions.Remove(nopInstruction);
                                 }
                             }
 
@@ -967,11 +977,9 @@ namespace Datadog.Trace.Coverage.Collector
 #pragma warning disable SA1201
         private struct FileMetadata
         {
-            private static int _globalIndex;
-
-            public FileMetadata(string fileName)
+            public FileMetadata(int index, string fileName)
             {
-                Index = _globalIndex++;
+                Index = index;
                 FileName = fileName;
                 Lines = new HashSet<int>();
             }
@@ -983,11 +991,6 @@ namespace Datadog.Trace.Coverage.Collector
             public HashSet<int> Lines { get; }
 
             public int MaxLine => Lines.Max();
-
-            public static void Reset()
-            {
-                _globalIndex = 0;
-            }
         }
     }
 }
