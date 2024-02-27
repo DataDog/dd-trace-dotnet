@@ -68,8 +68,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             telemetry.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
-            telemetry.AssertConfiguration(ConfigurationKeys.PropagationStyleExtract, "tracecontext,Datadog");
-            telemetry.AssertConfiguration(ConfigurationKeys.PropagationStyleInject, "tracecontext,Datadog");
+            telemetry.AssertConfiguration(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext");
+            telemetry.AssertConfiguration(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext");
 
             AssertService(telemetry, "Samples.Telemetry", ServiceVersion);
             AssertDependencies(telemetry, enableDependencies);
@@ -100,8 +100,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
-            agent.AssertConfiguration(ConfigurationKeys.PropagationStyleExtract, "tracecontext,Datadog");
-            agent.AssertConfiguration(ConfigurationKeys.PropagationStyleInject, "tracecontext,Datadog");
+            agent.AssertConfiguration(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext");
+            agent.AssertConfiguration(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext");
 
             AssertService(agent, "Samples.Telemetry", ServiceVersion);
             AssertDependencies(agent, enableDependencies);
