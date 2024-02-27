@@ -325,6 +325,7 @@
       <type fullname="System.Buffers.Binary.BinaryPrimitives" />
       <type fullname="System.Buffers.StandardFormat" />
       <type fullname="System.Buffers.Text.Utf8Formatter" />
+      <type fullname="System.Buffers.Text.Utf8Parser" />
       <type fullname="System.MemoryExtensions" />
       <type fullname="System.Runtime.InteropServices.MemoryMarshal" />
    </assembly>
