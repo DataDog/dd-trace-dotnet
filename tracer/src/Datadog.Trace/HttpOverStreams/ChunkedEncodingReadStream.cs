@@ -86,6 +86,11 @@ internal sealed partial class ChunkedEncodingReadStream : DelegatingStream
     }
 #endif
 
+    // This is not called by our production code, so we're yolo-ing it
+    // MockTracerAgent currently _does_ use this code path
+    public override int Read(byte[] buffer, int offset, int count)
+        => ReadAsync(buffer, offset, count, default).GetAwaiter().GetResult();
+
     public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -216,10 +221,11 @@ internal sealed partial class ChunkedEncodingReadStream : DelegatingStream
                     _state = ParsingState.ExpectChunkHeader;
                     break;
 
-                case ParsingState.Done: // Shouldn't be called once we're done
-                    Debug.Fail($"Unexpected state: {_state}");
-
-                    return default;
+                case ParsingState.Done:
+                    // This _shouldn't_ be called once we're done, but a badly behaved
+                    // parser may call read on the stream again after it's already received
+                    // a 0 for the end of the stream
+                    return 0;
             }
         }
     }
