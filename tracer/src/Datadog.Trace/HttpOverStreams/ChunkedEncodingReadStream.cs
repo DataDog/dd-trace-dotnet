@@ -12,7 +12,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Util.Streams;
+
+#if NETCOREAPP
+using ArrayPool = System.Buffers.ArrayPool<byte>;
+#else
 using ArrayPool = Datadog.Trace.VendoredMicrosoftCode.System.Buffers.ArrayPool<byte>;
+#endif
 
 namespace Datadog.Trace.HttpOverStreams;
 
