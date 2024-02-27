@@ -441,14 +441,21 @@ namespace Datadog.Trace.Coverage.Collector
                                 }
                             }
 
-                            // Step 3 - Modify local var to add the Coverage counters instance.
-                            var countersVariable = new VariableDefinition(new PointerType(module.TypeSystem.Int32));
-                            methodBody.Variables.Add(countersVariable);
+                            VariableDefinition? countersVariable = null;
+                            if (instructionsWithValidSequencePoints.Count > 1)
+                            {
+                                // Step 3 - Modify local var to add the Coverage counters instance.
+                                countersVariable = new VariableDefinition(new PointerType(module.TypeSystem.Int32));
+                                methodBody.Variables.Add(countersVariable);
+                            }
 
                             // Step 4 - Insert the counter retriever
                             instructions.Insert(0, Instruction.Create(OpCodes.Ldc_I4, fileMetadata.Index));
                             instructions.Insert(1, Instruction.Create(OpCodes.Call, reportGetCountersMethod));
-                            instructions.Insert(2, Instruction.Create(OpCodes.Stloc, countersVariable));
+                            if (countersVariable is not null)
+                            {
+                                instructions.Insert(2, Instruction.Create(OpCodes.Stloc, countersVariable));
+                            }
 
                             // Step 5 - Insert line reporter
                             for (var i = 0; i < instructionsWithValidSequencePoints.Count; i++)
@@ -465,8 +472,11 @@ namespace Datadog.Trace.Coverage.Collector
                                 var currentInstructionIndex = instructions.IndexOf(currentInstruction);
                                 var currentInstructionClone = CloneInstruction(currentInstruction);
 
-                                currentInstruction.OpCode = OpCodes.Ldloc;
-                                currentInstruction.Operand = countersVariable;
+                                if (countersVariable is not null)
+                                {
+                                    currentInstruction.OpCode = OpCodes.Ldloc;
+                                    currentInstruction.Operand = countersVariable;
+                                }
 
                                 var optIdx = currentInstructionIndex;
                                 var indexValue = currentSequencePoint.StartLine - 1;
@@ -519,12 +529,30 @@ namespace Datadog.Trace.Coverage.Collector
 
                                 if (indexValue == 1)
                                 {
-                                    instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
+                                    if (countersVariable is not null)
+                                    {
+                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
+                                    }
+                                    else
+                                    {
+                                        currentInstruction.OpCode = OpCodes.Ldc_I4_4;
+                                        currentInstruction.Operand = null;
+                                    }
+
                                     instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
                                 }
                                 else if (indexValue > 1)
                                 {
-                                    instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4, indexValue));
+                                    if (countersVariable is not null)
+                                    {
+                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4, indexValue));
+                                    }
+                                    else
+                                    {
+                                        currentInstruction.OpCode = OpCodes.Ldc_I4;
+                                        currentInstruction.Operand = indexValue;
+                                    }
+
                                     instructions.Insert(++optIdx, Instruction.Create(OpCodes.Conv_I));
                                     instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
                                     instructions.Insert(++optIdx, Instruction.Create(OpCodes.Mul));
@@ -535,7 +563,16 @@ namespace Datadog.Trace.Coverage.Collector
                                 {
                                     case CoverageMode.LineCallCount:
                                         // Increments items in the counters array (to have the number of times a line was executed)
-                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Dup));
+                                        if (indexValue == 0 && countersVariable is null)
+                                        {
+                                            currentInstruction.OpCode = OpCodes.Dup;
+                                            currentInstruction.Operand = null;
+                                        }
+                                        else
+                                        {
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Dup));
+                                        }
+
                                         instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldind_I4));
                                         instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
                                         instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
@@ -543,7 +580,16 @@ namespace Datadog.Trace.Coverage.Collector
                                         break;
                                     case CoverageMode.LineExecution:
                                         // Set 1 to items in the counters pointer (to check if the line was executed or not)
-                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
+                                        if (indexValue == 0 && countersVariable is null)
+                                        {
+                                            currentInstruction.OpCode = OpCodes.Ldc_I4_1;
+                                            currentInstruction.Operand = null;
+                                        }
+                                        else
+                                        {
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
+                                        }
+
                                         instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I4));
                                         break;
                                 }
