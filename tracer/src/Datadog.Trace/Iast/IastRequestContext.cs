@@ -95,7 +95,7 @@ internal class IastRequestContext
         }
     }
 
-    private void AddExtractedBody(object bodyExtracted, string? key)
+    private void AddExtractedBody(object? bodyExtracted, string? key)
     {
         if (bodyExtracted != null)
         {

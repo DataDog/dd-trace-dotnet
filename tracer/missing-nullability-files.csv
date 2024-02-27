@@ -73,7 +73,6 @@ src/Datadog.Trace/AppSec/CoreHttpContextStore.cs
 src/Datadog.Trace/AppSec/EventTrackingSdk.cs
 src/Datadog.Trace/AppSec/IDatadogSecurity.cs
 src/Datadog.Trace/AppSec/IEvent.cs
-src/Datadog.Trace/AppSec/ObjectExtractor.cs
 src/Datadog.Trace/AppSec/SecurityConstants.cs
 src/Datadog.Trace/AppSec/SpanExtensions.cs
 src/Datadog.Trace/AspNet/MimeTypes.cs

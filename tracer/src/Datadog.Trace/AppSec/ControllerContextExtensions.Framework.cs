@@ -88,7 +88,12 @@ namespace Datadog.Trace.AppSec
 
                     if (pathParamsDic.Count > 0)
                     {
-                        inputData.Add(AddressesConstants.RequestPathParams, ObjectExtractor.Extract(pathParamsDic));
+                        var pathParams = ObjectExtractor.Extract(pathParamsDic);
+
+                        if (pathParams is not null)
+                        {
+                            inputData.Add(AddressesConstants.RequestPathParams, pathParams);
+                        }
                     }
 
                     securityTransport.CheckAndBlock(inputData);

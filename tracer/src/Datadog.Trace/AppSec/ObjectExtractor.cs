@@ -16,12 +16,14 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
+#nullable enable
+
 namespace Datadog.Trace.AppSec
 {
     internal static class ObjectExtractor
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ObjectExtractor));
-        private static readonly IReadOnlyDictionary<string, object> EmptyDictionary = new ReadOnlyDictionary<string, object>(new Dictionary<string, object>(0));
+        private static readonly IReadOnlyDictionary<string, object?> EmptyDictionary = new ReadOnlyDictionary<string, object?>(new Dictionary<string, object?>(0));
 
         private static readonly ConcurrentDictionary<Type, FieldExtractor[]> TypeToExtractorMap = new();
 
@@ -40,7 +42,7 @@ namespace Datadog.Trace.AppSec
             typeof(ulong)
         };
 
-        internal static object Extract(object body)
+        internal static object? Extract(object body)
         {
             if (body == null)
             {
@@ -52,7 +54,7 @@ namespace Datadog.Trace.AppSec
             return item;
         }
 
-        private static IReadOnlyDictionary<string, object> ExtractProperties(object body, int depth, HashSet<object> visited)
+        private static IReadOnlyDictionary<string, object?> ExtractProperties(object body, int depth, HashSet<object> visited)
         {
             if (visited.Contains(body))
             {
@@ -112,7 +114,7 @@ namespace Datadog.Trace.AppSec
                     ilGen.Emit(OpCodes.Ret);
                     var func = (Func<object, object>)dynMethod.CreateDelegate(typeof(Func<object, object>));
 
-                    fieldExtractors[i] = new FieldExtractor() { Name = propertyName, Type = field.FieldType, Accessor = func };
+                    fieldExtractors[i] = new FieldExtractor(propertyName!, field.FieldType, func);
                 }
 
                 // this would be expect to fail sometimes, when several threads attempt process the same body
@@ -120,7 +122,7 @@ namespace Datadog.Trace.AppSec
             }
 
             var dictSize = Math.Min(WafConstants.MaxContainerSize, fieldExtractors.Length);
-            var dict = new Dictionary<string, object>(dictSize);
+            var dict = new Dictionary<string, object?>(dictSize);
 
             for (var i = 0; i < fieldExtractors.Length; i++)
             {
@@ -149,7 +151,7 @@ namespace Datadog.Trace.AppSec
             return dict;
         }
 
-        private static string GetPropertyName(string fieldName)
+        private static string? GetPropertyName(string fieldName)
         {
             if (fieldName[0] == '<')
             {
@@ -161,7 +163,7 @@ namespace Datadog.Trace.AppSec
             return null;
         }
 
-        private static object ExtractType(Type itemType, object value, int depth, HashSet<object> visited)
+        private static object? ExtractType(Type itemType, object value, int depth, HashSet<object> visited)
         {
             if (itemType == typeof(string))
             {
@@ -203,7 +205,7 @@ namespace Datadog.Trace.AppSec
             return nestedDict;
         }
 
-        private static Dictionary<string, object> ExtractDictionary(object value, Type dictType, int depth, HashSet<object> visited)
+        private static Dictionary<string, object?> ExtractDictionary(object value, Type dictType, int depth, HashSet<object> visited)
         {
             var gtkvp = typeof(KeyValuePair<,>);
             var tkvp = gtkvp.MakeGenericType(dictType.GetGenericArguments());
@@ -212,47 +214,53 @@ namespace Datadog.Trace.AppSec
 
             var sourceDict = value as IEnumerable;
 
-            Dictionary<string, object> items;
+            Dictionary<string, object?> items;
             // some types, like System.Web.Routing.RouteValueDictionary don't inherit ICollection, but ICollection<,> which never inherits ICollection but IEnumerable instead.
             if (value is ICollection sourceColl)
             {
                 var dictSize = Math.Min(WafConstants.MaxContainerSize, sourceColl.Count);
-                items = new Dictionary<string, object>(dictSize);
+                items = new Dictionary<string, object?>(dictSize);
             }
             else
             {
-                items = new Dictionary<string, object>();
+                items = new Dictionary<string, object?>();
             }
 
-            foreach (var item in sourceDict)
+            if (sourceDict is not null && keyProp is not null && valueProp is not null)
             {
-                var dictKey = keyProp.GetValue(item)?.ToString();
-                var dictValue = valueProp.GetValue(item);
+                foreach (var item in sourceDict)
+                {
+                    var dictKey = keyProp.GetValue(item)?.ToString();
+                    var dictValue = valueProp.GetValue(item);
 
-                if (dictValue is null)
-                {
-                    items.Add(dictKey, null);
-                }
-                else
-                {
-                    var extractedvalue = ExtractType(dictValue.GetType(), dictValue, depth + 1, visited);
-                    items.Add(dictKey, extractedvalue);
-                }
+                    if (dictKey is not null)
+                    {
+                        if (dictValue is null)
+                        {
+                            items.Add(dictKey, null);
+                        }
+                        else
+                        {
+                            var extractedvalue = ExtractType(dictValue.GetType(), dictValue, depth + 1, visited);
+                            items.Add(dictKey, extractedvalue);
+                        }
 
-                if (items.Count >= WafConstants.MaxContainerSize)
-                {
-                    break;
+                        if (items.Count >= WafConstants.MaxContainerSize)
+                        {
+                            break;
+                        }
+                    }
                 }
             }
 
             return items;
         }
 
-        private static List<object> ExtractListOrArray(object value, int depth, HashSet<object> visited)
+        private static List<object?> ExtractListOrArray(object value, int depth, HashSet<object> visited)
         {
             var sourceList = (ICollection)value;
             var listSize = Math.Min(WafConstants.MaxContainerSize, sourceList.Count);
-            var items = new List<object>(listSize);
+            var items = new List<object?>(listSize);
 
             foreach (var item in sourceList)
             {
@@ -277,6 +285,13 @@ namespace Datadog.Trace.AppSec
 
         private class FieldExtractor
         {
+            public FieldExtractor(string name, Type type, Func<object, object> accessor)
+            {
+                Name = name;
+                Type = type;
+                Accessor = accessor;
+            }
+
             public string Name { get; set; }
 
             public Type Type { get; set; }
