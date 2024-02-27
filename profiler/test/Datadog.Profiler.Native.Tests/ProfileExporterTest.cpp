@@ -12,6 +12,7 @@
 #include "IMetadataProvider.h"
 #include "MetricsRegistry.h"
 #include "ProfilerMockedInterface.h"
+#include "ProfilerTelemetry.h"
 #include "RuntimeInfoHelper.h"
 #include "SamplesEnumerator.h"
 
@@ -80,8 +81,9 @@ TEST(ProfileExporterTest, CheckProfileIsWrittenToDisk)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
+    ProfilerTelemetry telemetry(&mockConfiguration);
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo,
-                                    &enabledProfilers, metricsRegistry, metadataProvider, allocRecorder);
+                                    &enabledProfilers, metricsRegistry, metadataProvider, allocRecorder, &telemetry);
 
     // Add samples to only one application
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
@@ -195,8 +197,9 @@ TEST(ProfileExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
+    ProfilerTelemetry telemetry(&mockConfiguration);
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, allocRecorder, &telemetry);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
@@ -302,8 +305,9 @@ TEST(ProfileExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
+    ProfilerTelemetry telemetry(&mockConfiguration);
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, allocRecorder, &telemetry);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
@@ -394,8 +398,9 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
+    ProfilerTelemetry telemetry(&mockConfiguration);
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, allocRecorder, &telemetry);
 }
 
 TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
@@ -439,8 +444,9 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
+    ProfilerTelemetry telemetry(&mockConfiguration);
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, allocRecorder, &telemetry);
 }
 
 TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
@@ -477,8 +483,9 @@ TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
+    ProfilerTelemetry telemetry(&mockConfiguration);
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, allocRecorder, &telemetry);
 }
 
 TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
@@ -516,9 +523,10 @@ TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
     IAllocationsRecorder* allocRecorder = nullptr;
     MockProcessSamplesProvider processSamplesProvider;
     IMetadataProvider* metadataProvider = nullptr;
+    ProfilerTelemetry telemetry(&mockConfiguration);
     EXPECT_CALL(processSamplesProvider, GetSamples()).Times(1).WillOnce(Return(::testing::ByMove(std::make_unique<FakeSamples>())));
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, allocRecorder, &telemetry);
 
     exporter.RegisterProcessSamplesProvider(static_cast<ISamplesProvider*>(&processSamplesProvider));
 
@@ -560,8 +568,9 @@ TEST(ProfileExporterTest, MakeSureNoCrashForReallyLongCallstack)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
+    ProfilerTelemetry telemetry(&mockConfiguration);
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, allocRecorder, &telemetry);
 
     std::string runtimeId = "MyRid";
     auto callstack = CreateCallstack(2048);
