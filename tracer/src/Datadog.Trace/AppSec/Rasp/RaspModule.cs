@@ -28,21 +28,9 @@ internal static class RaspModule
         RunWaf(arguments);
     }
 
-    internal static void CheckAndBlock(IResult? result)
-    {
-        if (result is not null)
-        {
-            if (result!.ShouldBlock)
-            {
-                throw new BlockException(result);
-            }
-        }
-    }
-
     private static void RunWaf(Dictionary<string, object> arguments)
     {
         var security = Security.Instance;
-        Log.Information("ENTER FILEEEEE");
 
         if (!security.RaspEnabled)
         {
@@ -76,10 +64,16 @@ internal static class RaspModule
 #endif
         if (result is not null)
         {
-            securityCoordinator?.TryReport(result, result.ShouldBlock);
             var json = JsonConvert.SerializeObject(result.Data);
             Log.Information("RASP WAF result: {Result}", json);
-            CheckAndBlock(result);
+            if (result!.ShouldBlock)
+            {
+                throw new BlockException(result);
+            }
+            else
+            {
+                securityCoordinator?.TryReport(result, result.ShouldBlock);
+            }
         }
     }
 }
