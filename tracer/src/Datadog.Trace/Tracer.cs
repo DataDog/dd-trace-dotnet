@@ -429,7 +429,6 @@ namespace Datadog.Trace
                     traceContext.Origin = parentSpanContext.Origin;
                     traceContext.AdditionalW3CTraceState = parentSpanContext.AdditionalW3CTraceState;
                     lastParentId = parentSpanContext.LastParentId;
-                    parentSpanContext.LastParentId = null;
                 }
             }
             else
