@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -20,15 +19,6 @@ namespace Datadog.Trace.Tests
 {
     public class DatadogHttpClientTests
     {
-        private static readonly int[] Chunks = [1, 2, 5, 10, 15];
-        private static readonly int[] BufferSizes = [1, 2, 5, 10, 15];
-
-        public static IEnumerable<object[]> GetChunkSizes()
-            => from chunks in Chunks
-               from chunkSize in ChunkedEncodingReadStreamTests.ChunkSizes
-               from bufferSize in ChunkedEncodingReadStreamTests.ChunkSizes
-               select new object[] { chunks, chunkSize, bufferSize };
-
         [Fact]
         public async Task DatadogHttpClient_CanParseResponse()
         {
