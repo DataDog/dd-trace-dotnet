@@ -93,12 +93,7 @@ internal sealed partial class ChunkedEncodingReadStream : DelegatingStream
 
     public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
     {
-        if (cancellationToken.IsCancellationRequested)
-        {
-            // Cancellation requested.
-            await Task.FromCanceled(cancellationToken).ConfigureAwait(false);
-            return 0;
-        }
+        cancellationToken.ThrowIfCancellationRequested();
 
         while (true)
         {
@@ -163,7 +158,7 @@ internal sealed partial class ChunkedEncodingReadStream : DelegatingStream
 
                         // we might not have read the whole expected values, so just return what we have
                         _bytesRemainingInChunk -= (ulong)bytesReadFromStream;
-                        if (_bytesRemainingInChunk <= 0)
+                        if (_bytesRemainingInChunk == 0)
                         {
                             _state = ParsingState.ExpectChunkTerminator;
                         }
