@@ -8,12 +8,14 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
+using VerifyTests;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -49,6 +51,8 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "true");
+        var externalRulesFile = "C:\\CommonFolder\\shared\\repos\\dd-trace-5\\tracer\\test\\Datadog.Trace.Security.Unit.Tests\\rasp-rule-set.json";
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, externalRulesFile);
         EnableEvidenceRedaction(false);
         EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
         IastEnabled = enableIast;
@@ -72,26 +76,24 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         SetHttpPort(Fixture.HttpPort);
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [InlineData("/etc/password")]
+    [InlineData("filename")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestRaspIastPathTraversalRequest()
+    public async Task TestRaspIastPathTraversalRequest(string file)
     {
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
-        SetEnvironmentVariable("DD_APPSEC_RULES", "C:\\CommonFolder\\shared\\repos\\dd-trace-5\\tracer\\test\\Datadog.Trace.Security.Unit.Tests\\rasp-rule-set.json");
-        var filePath = "/etc/password";
-        var filename = IastEnabled ? "Rasp.PathTraversal.AspNetCore5.IastEnabled" : "Rasp.PathTraversal.AspNetCore5.IastDisabled";
-        var url = $"/Iast/GetFileContent?file={filePath}";
+        var methodName = "PathTraversal";
+        var testName = IastEnabled ? "RaspIast.AspNetCore5" : "Rasp.AspNetCore5";
+        var url = $"/Iast/GetFileContent?file={file}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-
         var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.UseParameters(file);
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: methodName);
     }
 }
 #endif

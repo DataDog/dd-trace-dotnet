@@ -7,6 +7,7 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -71,24 +72,24 @@ public abstract class AspNetCore2Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         SetHttpPort(Fixture.HttpPort);
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [InlineData("/etc/password")]
+    [InlineData("filename")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestRaspIastPathTraversalRequest()
+    public async Task TestRaspIastPathTraversalRequest(string file)
     {
-        var filePath = "file.csv";
-        var filename = IastEnabled ? "Rasp.PathTraversal.AspNetCore2.IastEnabled" : "Rasp.PathTraversal.AspNetCore2.IastDisabled";
-        var url = $"/Iast/GetFileContent?file={filePath}";
+        var methodName = "PathTraversal";
+        var testName = IastEnabled ? "RaspIast.AspNetCore2" : "Rasp.AspNetCore2";
+        var url = $"/Iast/GetFileContent?file={file}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-
         var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.UseParameters(file);
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: methodName);
     }
 }
 #endif
