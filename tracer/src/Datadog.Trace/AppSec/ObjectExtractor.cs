@@ -42,7 +42,7 @@ namespace Datadog.Trace.AppSec
             typeof(ulong)
         };
 
-        internal static object? Extract(object body)
+        internal static object? Extract(object? body)
         {
             if (body == null)
             {
