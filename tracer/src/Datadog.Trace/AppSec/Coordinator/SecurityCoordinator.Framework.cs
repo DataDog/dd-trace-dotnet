@@ -248,7 +248,7 @@ internal readonly partial struct SecurityCoordinator
         return formData;
     }
 
-    internal object GetPathParams() => ObjectExtractor.Extract(_context.Request.RequestContext.RouteData.Values);
+    internal object? GetPathParams() => ObjectExtractor.Extract(_context.Request.RequestContext.RouteData.Values);
 
     /// <summary>
     /// Framework can do it all at once, but framework only unfortunately
