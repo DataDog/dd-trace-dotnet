@@ -6,11 +6,10 @@
 #nullable enable
 
 using System.Reflection;
-using Datadog.Trace.Ci.Proxies;
 
 namespace Datadog.Trace.Ci.Stubs;
 
-internal class NullTest : ITest, ITestProxy
+internal class NullTest : ITest
 {
     public static readonly NullTest Instance = new();
 
@@ -45,33 +44,6 @@ internal class NullTest : ITest, ITestProxy
     }
 
     public void SetTraits(Dictionary<string, List<string>> traits)
-    {
-    }
-
-    public void SetParameters(TestParameters parameters)
-    {
-        // This shouldn't ever actually be invoked, but it simplifies some APIs!
-    }
-
-    public void SetBenchmarkMetadata(in BenchmarkHostInfo hostInfo, in BenchmarkJobInfo jobInfo)
-    {
-        // This shouldn't ever actually be invoked, but it simplifies some APIs!
-    }
-
-    public void AddBenchmarkData(BenchmarkMeasureType measureType, string info, in BenchmarkDiscreteStats statistics)
-    {
-        // This shouldn't ever actually be invoked, but it simplifies some APIs!
-    }
-
-    public void SetParameters(Dictionary<string, object>? metadata, Dictionary<string, object>? arguments)
-    {
-    }
-
-    public void SetBenchmarkMetadata(Dictionary<string, object?> values)
-    {
-    }
-
-    public void AddBenchmarkData(BenchmarkMeasureType measureType, string info, int n, double max, double min, double mean, double median, double standardDeviation, double standardError, double kurtosis, double skewness, double p99, double p95, double p90)
     {
     }
 

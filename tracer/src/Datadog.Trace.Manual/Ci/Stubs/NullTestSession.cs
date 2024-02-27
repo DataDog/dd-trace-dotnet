@@ -3,11 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Ci.Proxies;
-
 namespace Datadog.Trace.Ci.Stubs;
 
-internal class NullTestSession : ITestSession, ITestSessionProxy
+internal class NullTestSession : ITestSession
 {
     public static readonly NullTestSession Instance = new();
 
@@ -54,14 +52,5 @@ internal class NullTestSession : ITestSession, ITestSessionProxy
         => NullTestModule.Instance;
 
     ITestModule ITestSession.CreateModule(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
-        => NullTestModule.Instance;
-
-    public ITestModuleProxy CreateModule(string name)
-        => NullTestModule.Instance;
-
-    public ITestModuleProxy CreateModule(string name, string framework, string frameworkVersion)
-        => NullTestModule.Instance;
-
-    public ITestModuleProxy CreateModule(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
         => NullTestModule.Instance;
 }

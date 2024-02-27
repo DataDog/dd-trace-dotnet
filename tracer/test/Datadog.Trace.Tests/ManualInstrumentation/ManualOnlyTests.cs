@@ -6,16 +6,17 @@
 extern alias DatadogTraceManual;
 
 using System;
+using DatadogTraceManual::Datadog.Trace.Ci;
 using FluentAssertions;
 using Xunit;
 using BenchmarkDiscreteStats = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkDiscreteStats;
 using BenchmarkHostInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkHostInfo;
 using BenchmarkJobInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkJobInfo;
 using BenchmarkMeasureType = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkMeasureType;
-using ManualTest = DatadogTraceManual::Datadog.Trace.Ci.ManualTest;
-using ManualTestModule = DatadogTraceManual::Datadog.Trace.Ci.ManualTestModule;
-using ManualTestSession = DatadogTraceManual::Datadog.Trace.Ci.ManualTestSession;
-using ManualTestSuite = DatadogTraceManual::Datadog.Trace.Ci.ManualTestSuite;
+using ManualITest = DatadogTraceManual::Datadog.Trace.Ci.ITest;
+using ManualITestModule = DatadogTraceManual::Datadog.Trace.Ci.ITestModule;
+using ManualITestSession = DatadogTraceManual::Datadog.Trace.Ci.ITestSession;
+using ManualITestSuite = DatadogTraceManual::Datadog.Trace.Ci.ITestSuite;
 using TestParameters = DatadogTraceManual::Datadog.Trace.Ci.TestParameters;
 using TestStatus = DatadogTraceManual::Datadog.Trace.Ci.TestStatus;
 
@@ -26,21 +27,21 @@ public class ManualOnlyTests
     [Fact]
     public void CreatingAManualOnlyCiSessionDoesNotCrash()
     {
-        var manualSession = DatadogTraceManual::Datadog.Trace.Ci.TestSession.GetOrCreate("some sesssion");
-        manualSession.Should().BeOfType<ManualTestSession>().And.NotBeNull();
+        var manualSession = TestSession.GetOrCreate("some sesssion");
+        manualSession.Should().BeAssignableTo<ManualITestSession>().And.NotBeNull();
         manualSession.SetTag("session_key", "session_value");
 
         var module = manualSession.CreateModule("somemodule");
-        module.Should().BeOfType<ManualTestModule>().And.NotBeNull();
+        module.Should().BeAssignableTo<ManualITestModule>().And.NotBeNull();
         module.SetTag("module_key", "module_value");
         module.SetErrorInfo(new Exception());
 
         var suite = module.GetOrCreateSuite("mysuite");
-        suite.Should().BeOfType<ManualTestSuite>().And.NotBeNull();
+        suite.Should().BeAssignableTo<ManualITestSuite>().And.NotBeNull();
         suite.SetTag("suite_key", "suite_value");
 
         var test = suite.CreateTest("mytest");
-        test.Should().BeOfType<ManualTest>().And.NotBeNull();
+        test.Should().BeAssignableTo<ManualITest>().And.NotBeNull();
         test.SetTag("key", "value");
 
         test.SetParameters(new TestParameters { Arguments = new(), Metadata = new() });

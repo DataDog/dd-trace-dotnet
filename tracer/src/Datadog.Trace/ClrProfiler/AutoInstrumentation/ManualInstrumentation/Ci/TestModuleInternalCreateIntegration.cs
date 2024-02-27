@@ -7,7 +7,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.Ci;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Telemetry;
@@ -40,14 +40,7 @@ public class TestModuleInternalCreateIntegration
 
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, in CallTargetState state)
     {
-        // The return value is a ManualTestModule (Datadog.Trace.Manual) that we duck type and set the automatic module on
-        if (returnValue is not null)
-        {
-            returnValue
-               .DuckCast<IManualTestModuleProxy>()
-               .SetAutomatic(state.State);
-        }
-
-        return new CallTargetReturn<TReturn>(returnValue);
+        // Duck cast TestModule as an ITestModule
+        return new CallTargetReturn<TReturn>(state.State.DuckCast<TReturn>());
     }
 }

@@ -67,14 +67,11 @@ namespace Datadog.Trace.Ci
         string? Name { get; }
         System.DateTimeOffset StartTime { get; }
         Datadog.Trace.Ci.ITestSuite Suite { get; }
-        void AddBenchmarkData(Datadog.Trace.Ci.BenchmarkMeasureType measureType, string info, in Datadog.Trace.Ci.BenchmarkDiscreteStats statistics);
         void Close(Datadog.Trace.Ci.TestStatus status);
         void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration);
         void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration, string? skipReason);
-        void SetBenchmarkMetadata(in Datadog.Trace.Ci.BenchmarkHostInfo hostInfo, in Datadog.Trace.Ci.BenchmarkJobInfo jobInfo);
         void SetErrorInfo(System.Exception exception);
         void SetErrorInfo(string type, string message, string? callStack);
-        void SetParameters(Datadog.Trace.Ci.TestParameters parameters);
         void SetTag(string key, double? value);
         void SetTag(string key, string? value);
         void SetTestMethodInfo(System.Reflection.MethodInfo methodInfo);
@@ -127,6 +124,12 @@ namespace Datadog.Trace.Ci
         void SetErrorInfo(string type, string message, string? callStack);
         void SetTag(string key, double? value);
         void SetTag(string key, string? value);
+    }
+    public static class TestExtensions
+    {
+        public static void AddBenchmarkData(this Datadog.Trace.Ci.ITest test, Datadog.Trace.Ci.BenchmarkMeasureType measureType, string info, in Datadog.Trace.Ci.BenchmarkDiscreteStats statistics) { }
+        public static void SetBenchmarkMetadata(this Datadog.Trace.Ci.ITest test, in Datadog.Trace.Ci.BenchmarkHostInfo hostInfo, in Datadog.Trace.Ci.BenchmarkJobInfo jobInfo) { }
+        public static void SetParameters(this Datadog.Trace.Ci.ITest test, Datadog.Trace.Ci.TestParameters parameters) { }
     }
     public static class TestModule
     {

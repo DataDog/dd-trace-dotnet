@@ -3,11 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Ci.Proxies;
-
 namespace Datadog.Trace.Ci.Stubs;
 
-internal class NullTestSuite : ITestSuite, ITestSuiteProxy
+internal class NullTestSuite : ITestSuite
 {
     public static readonly NullTestSuite Instance = new();
 
@@ -44,12 +42,6 @@ internal class NullTestSuite : ITestSuite, ITestSuiteProxy
     public void Close(TimeSpan? duration)
     {
     }
-
-    ITestProxy ITestSuiteProxy.CreateTest(string name)
-        => NullTest.Instance;
-
-    ITestProxy ITestSuiteProxy.CreateTest(string name, DateTimeOffset startDate)
-        => NullTest.Instance;
 
     public ITest CreateTest(string name)
         => NullTest.Instance;

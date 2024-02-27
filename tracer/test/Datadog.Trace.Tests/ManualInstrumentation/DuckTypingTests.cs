@@ -8,7 +8,9 @@ extern alias DatadogTraceManual;
 using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
+using Datadog.Trace.Ci.Tagging;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Sampling;
@@ -16,15 +18,15 @@ using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
 using Xunit;
-using BenchmarkDiscreteStats = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkDiscreteStats;
-using BenchmarkHostInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkHostInfo;
-using BenchmarkJobInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkJobInfo;
-using BenchmarkMeasureType = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkMeasureType;
+using ManualBenchmarkDiscreteStats = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkDiscreteStats;
+using ManualBenchmarkHostInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkHostInfo;
+using ManualBenchmarkJobInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkJobInfo;
 using ManualIScope = DatadogTraceManual::Datadog.Trace.IScope;
 using ManualISpan = DatadogTraceManual::Datadog.Trace.ISpan;
 using ManualISpanContext = DatadogTraceManual::Datadog.Trace.ISpanContext;
-using ManualTestSession = DatadogTraceManual::Datadog.Trace.Ci.ManualTestSession;
-using TestParameters = DatadogTraceManual::Datadog.Trace.Ci.TestParameters;
+using ManualITest = DatadogTraceManual::Datadog.Trace.Ci.ITest;
+using ManualITestSession = DatadogTraceManual::Datadog.Trace.Ci.ITestSession;
+using ManualTestParameters = DatadogTraceManual::Datadog.Trace.Ci.TestParameters;
 using TestStatus = DatadogTraceManual::Datadog.Trace.Ci.TestStatus;
 
 namespace Datadog.Trace.Tests.ManualInstrumentation;
@@ -75,19 +77,15 @@ public class DuckTypingTests
         manualScope.Dispose();
     }
 
-    [Fact(Skip = Skip)]
+    [Fact]
     public void CanDuckTypeManualTestSessionAsISession()
     {
-        var session = TestSession.GetOrCreate("blah");
-        var manualSession = new ManualTestSession();
-        // This is normally done by the automatic instrumentation
-        manualSession.SetAutomatic(session);
-        manualSession.StartTime.Should().Be(session.StartTime);
-        manualSession.Command.Should().Be(session.Command);
-        manualSession.WorkingDirectory.Should().Be(manualSession.WorkingDirectory);
+        var autoSession = TestSession.GetOrCreate("blah");
+
+        var session = autoSession.DuckCast<ManualITestSession>();
 
         // call the methods to make sure it works
-        var module = manualSession.CreateModule("somemodule");
+        var module = session.CreateModule("somemodule");
         module.Should().NotBeNull();
 
         var suite = module.GetOrCreateSuite("mysuite");
@@ -96,14 +94,46 @@ public class DuckTypingTests
         var test = suite.CreateTest("mytest");
         test.Should().NotBeNull();
 
-        test.SetParameters(new TestParameters { Arguments = new(), Metadata = new() });
-        test.SetBenchmarkMetadata(new BenchmarkHostInfo() { RuntimeVersion = "123" }, new BenchmarkJobInfo() { Description = "weeble" });
-        var stats = new BenchmarkDiscreteStats(100, 100, 100, 100, 100, 0, 0, 0, 0, 100, 100, 100);
-        test.AddBenchmarkData(BenchmarkMeasureType.ApplicationLaunch, info: "something", in stats);
+        var stats = new ManualBenchmarkDiscreteStats(100, 100, 100, 100, 100, 0, 0, 0, 0, 100, 100, 100);
+        var statsDuckType = stats.DuckCast<IBenchmarkDiscreteStats>();
+        TestExtensionsAddBenchmarkDataIntegration.OnMethodBegin<ManualITestSession, ManualITest, IBenchmarkDiscreteStats>(test, Ci.BenchmarkMeasureType.RunTime, "some info", statsDuckType);
+        // test.AddBenchmarkData(BenchmarkMeasureType.ApplicationLaunch, info: "something", in stats);
+
+        var parameters = new ManualTestParameters { Arguments = new(), Metadata = new() };
+        var paramsDuckType = parameters.DuckCast<ITestParameters>();
+        TestExtensionsSetParametersIntegration.OnMethodBegin<ManualITestSession, ManualITest, ITestParameters>(test, paramsDuckType);
+        // test.SetParameters(new TestParameters { Arguments = new(), Metadata = new() });
+
+        var hostInfo = new ManualBenchmarkHostInfo { RuntimeVersion = "123" };
+        var jobInfo = new ManualBenchmarkJobInfo { Description = "weeble" };
+        var hostInfoDuckType = hostInfo.DuckCast<IBenchmarkHostInfo>();
+        var jobInfoDuckType = jobInfo.DuckCast<IBenchmarkJobInfo>();
+        TestExtensionsSetBenchmarkMetadataIntegration.OnMethodBegin<ManualITestSession, ManualITest, IBenchmarkHostInfo, IBenchmarkJobInfo>(test, in hostInfoDuckType, in jobInfoDuckType);
+        // test.SetBenchmarkMetadata(new BenchmarkHostInfo() { RuntimeVersion = "123" }, new BenchmarkJobInfo() { Description = "weeble" });
+
+        // basic check that things were pushed down correctly
+        var span = test.Should()
+                       .BeAssignableTo<IDuckType>()
+                       .Subject.Instance.Should()
+                       .BeOfType<Test>()
+                       .Subject.GetInternalSpan()
+                       .Should()
+                       .BeOfType<Span>()
+                       .Subject;
+        span.GetMetric("benchmark.run_time.run").Should().Be(100);
+
+        span.GetTag("host.runtime_version").Should().Be("123");
+        span.GetTag("test.configuration.job_description").Should().Be("weeble");
+
+        var tags = span.Tags.Should().BeOfType<TestSpanTags>().Subject;
+        tags.Parameters
+            .Should()
+            .NotBeNull()
+            .And.Be(new TestParameters { Arguments = new(), Metadata = new() }.ToJSON());
 
         test.Close(TestStatus.Pass);
         suite.Close();
         module.Close();
-        manualSession.Close(TestStatus.Pass);
+        session.Close(TestStatus.Pass);
     }
 }

@@ -66,5 +66,5 @@ public static class TestSession
 
     [Instrumented]
     internal static ITestSession InternalGetOrCreate(string command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables = false)
-        => new ManualTestSession();
+        => NullTestSession.Instance;
 }
