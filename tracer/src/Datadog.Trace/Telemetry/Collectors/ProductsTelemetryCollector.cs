@@ -11,12 +11,14 @@ namespace Datadog.Trace.Telemetry;
 
 internal class ProductsTelemetryCollector
 {
-    private ProductDetail?[] _productsByType;
+    private readonly ProductDetail?[] _allTime;
+    private readonly ProductDetail?[] _productsByType;
     private int _hasChangesFlag = 0;
 
     public ProductsTelemetryCollector()
     {
         _productsByType = new ProductDetail?[3];
+        _allTime = new ProductDetail?[3];
     }
 
     public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error)
@@ -43,29 +45,73 @@ internal class ProductsTelemetryCollector
     /// <summary>
     /// Gets all the product data recorded so far
     /// </summary>
-    public ProductsData? GetFullData() => BuildProductsData();
+    public ProductsData? GetFullData()
+    {
+        lock (_allTime)
+        {
+            var appsec = GetLatestData(_allTime, _productsByType, TelemetryProductType.AppSec);
+            var profiler = GetLatestData(_allTime, _productsByType, TelemetryProductType.Profiler);
+            var dynamicInstrumentation = GetLatestData(_allTime, _productsByType, TelemetryProductType.DynamicInstrumentation);
+
+            if (appsec is not null
+             || profiler is not null
+             || dynamicInstrumentation is not null)
+            {
+                return new ProductsData
+                {
+                    Appsec = appsec,
+                    Profiler = profiler,
+                    DynamicInstrumentation = dynamicInstrumentation,
+                };
+            }
+
+            return null;
+        }
+
+        static ProductData? GetLatestData(ProductDetail?[] allTime, ProductDetail?[] current, TelemetryProductType product)
+            // Current contains data added in this cycle, but may be null if not changed
+            => (current[(int)product] ?? allTime[(int)product]) is { } detail
+                   ? new ProductData(detail.Enabled, detail.Error)
+                   : null;
+    }
 
     private ProductsData? BuildProductsData()
     {
-        var results = Interlocked.Exchange(ref _productsByType, new ProductDetail?[3]);
-
-        var appsec = results[(int)TelemetryProductType.AppSec] is { } a ? new ProductData(a.Enabled, a.Error) : null;
-        var profiler = results[(int)TelemetryProductType.Profiler] is { } p ? new ProductData(p.Enabled, p.Error) : null;
-        var dynamicInstrumentation = results[(int)TelemetryProductType.DynamicInstrumentation] is { } d ? new ProductData(d.Enabled, d.Error) : null;
-
-        if (appsec is not null
-         || profiler is not null
-         || dynamicInstrumentation is not null)
+        lock (_allTime)
         {
-            return new ProductsData
+            // only include changes to products
+            var appsec = GetAndUpdateProductData(_allTime, _productsByType, TelemetryProductType.AppSec);
+            var profiler = GetAndUpdateProductData(_allTime, _productsByType, TelemetryProductType.Profiler);
+            var dynamicInstrumentation = GetAndUpdateProductData(_allTime, _productsByType, TelemetryProductType.DynamicInstrumentation);
+
+            if (appsec is not null
+             || profiler is not null
+             || dynamicInstrumentation is not null)
             {
-                Appsec = appsec,
-                Profiler = profiler,
-                DynamicInstrumentation = dynamicInstrumentation,
-            };
+                return new ProductsData
+                {
+                    Appsec = appsec,
+                    Profiler = profiler,
+                    DynamicInstrumentation = dynamicInstrumentation,
+                };
+            }
+
+            return null;
         }
 
-        return null;
+        static ProductData? GetAndUpdateProductData(ProductDetail?[] allTime, ProductDetail?[] productsByType, TelemetryProductType product)
+        {
+            var updated = productsByType[(int)product];
+            if (updated is { } latest)
+            {
+                allTime[(int)product] = latest;
+                productsByType[(int)product] = null;
+                return new ProductData(latest.Enabled, latest.Error);
+            }
+
+            // nothing to do
+            return null;
+        }
     }
 
     public bool HasChanges() => _hasChangesFlag == 1;
@@ -75,7 +121,7 @@ internal class ProductsTelemetryCollector
         Interlocked.Exchange(ref _hasChangesFlag, 1);
     }
 
-    internal struct ProductDetail
+    internal readonly record struct ProductDetail
     {
         public ProductDetail(bool enabled, ErrorData? error)
         {
@@ -85,6 +131,6 @@ internal class ProductsTelemetryCollector
 
         public bool Enabled { get; }
 
-        public ErrorData? Error { get; set; }
+        public ErrorData? Error { get; }
     }
 }
