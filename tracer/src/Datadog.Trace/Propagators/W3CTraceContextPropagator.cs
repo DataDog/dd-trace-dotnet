@@ -57,6 +57,10 @@ namespace Datadog.Trace.Propagators
         private const char UpperBound = '\u007e'; // decimal: 126, '~' (tilde)
         private const char OutOfBoundsReplacement = '_';
 
+        // zero value (16 zeroes) for when there isn't a last parent (`p`)
+        // this value indicates that the backend can make this span as the root span if necessary of a trace
+        private const string ZeroLastParent = "0000000000000000";
+
         private static readonly KeyValuePair<char, char>[] InjectOriginReplacements =
         {
             new(',', '_'),
@@ -325,7 +329,7 @@ namespace Datadog.Trace.Propagators
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
             if (string.IsNullOrWhiteSpace(header))
             {
-                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: "0000000000000000", propagatedTags: null, additionalValues: null);
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null);
             }
 
             SplitTraceStateValues(header, out var ddValues, out var additionalValues);
@@ -335,7 +339,7 @@ namespace Datadog.Trace.Propagators
                 // "dd" section not found or it is too short
                 // shortest valid length is 6 as in "dd=a:b"
                 // note for this case the p will be viewed as 0 if added as a span tag
-                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: "0000000000000000", propagatedTags: null, additionalValues);
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues);
             }
 
             int? samplingPriority = null;
@@ -463,7 +467,7 @@ namespace Datadog.Trace.Propagators
 
                 if (lastParent is null)
                 {
-                    lastParent = "0000000000000000";
+                    lastParent = ZeroLastParent;
                 }
 
                 return new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues);
