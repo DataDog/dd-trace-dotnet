@@ -416,6 +416,10 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content("The provided file " + file + " could not be opened");
             }
+            catch (DirectoryNotFoundException)
+            {
+                return Content("The provided file " + file + " could not be opened");
+            }
         }
 
         [HttpGet("InsecureCookie")]

@@ -31,7 +31,6 @@ internal static class RaspModule
     private static void RunWaf(Dictionary<string, object> arguments)
     {
         var security = Security.Instance;
-        Log.Information("ENTER FILEEEEE");
 
         if (!security.RaspEnabled)
         {
@@ -46,19 +45,20 @@ internal static class RaspModule
         }
 
         IResult? result = null;
+        SecurityCoordinator? securityCoordinator = null;
 
 #if NETFRAMEWORK
         var context = HttpContext.Current;
-        var securityCoordinator = new SecurityCoordinator(security, context, rootSpan);
-        result = securityCoordinator.RunWaf(arguments);
+        securityCoordinator = new SecurityCoordinator(security, context, rootSpan);
+        result = securityCoordinator?.RunWaf(arguments);
 #else
         if (CoreHttpContextStore.Instance.Get() is { } httpContext)
         {
             var transport = new SecurityCoordinator.HttpTransport(httpContext);
             if (!transport.IsBlocked)
             {
-                var securityCoordinator = new SecurityCoordinator(security, httpContext, rootSpan, transport);
-                result = securityCoordinator.RunWaf(arguments);
+                securityCoordinator = new SecurityCoordinator(security, httpContext, rootSpan, transport);
+                result = securityCoordinator?.RunWaf(arguments);
             }
         }
 #endif
@@ -66,6 +66,14 @@ internal static class RaspModule
         {
             var json = JsonConvert.SerializeObject(result.Data);
             Log.Information("RASP WAF result: {Result}", json);
+            if (result!.ShouldBlock)
+            {
+                throw new BlockException(result);
+            }
+            else
+            {
+                securityCoordinator?.TryReport(result, result.ShouldBlock);
+            }
         }
     }
 }
