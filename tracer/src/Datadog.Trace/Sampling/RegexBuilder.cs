@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 #nullable enable
@@ -41,10 +42,11 @@ internal static class RegexBuilder
 
             case SamplingRulesFormat.Glob:
                 // the "any" pattern matches any value regardless of type (e.g. string, int, floating point, etc).
-                // for tags, it means the tag must exist, but its value can be anything.
+                // for span tags, it means the tag must exist, but its value can be any value and any type.
                 if (pattern.Length > 0 && pattern.All(c => c == '*'))
                 {
-                    return null; // match all without using a regex
+                    // match all without using a regex
+                    return null;
                 }
 
                 // convert glob pattern to regex
