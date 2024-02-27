@@ -14,12 +14,7 @@
       component: aspnet_core,
       env: integration_tests,
       language: dotnet,
-<<<<<<<< HEAD:tracer/test/snapshots/RaspIast.AspNetCore5.Lfi_url=-Iast-GetFileContent-file=filename_exploit=Lfi.verified.txt
       span.kind: server
-========
-      span.kind: server,
-      _dd.origin: appsec
->>>>>>>> d3635aef71 (netcore integration tests):tracer/test/snapshots/RaspIast.AspNetCore5.PathTraversal_file=-etc-password.verified.txt
     }
   },
   {
@@ -30,32 +25,19 @@
     Service: Samples.Security.AspNetCore5,
     Type: web,
     Tags: {
-      actor.ip: 86.242.244.246,
-      appsec.blocked: true,
-      appsec.event: true,
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.IastController.GetFileContent (Samples.Security.AspNetCore5),
       aspnet_core.route: iast/getfilecontent,
       component: aspnet_core,
       env: integration_tests,
-      http.endpoint: iast/getfilecontent,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.request.headers.user-agent: Mistake Not...,
-      http.request.headers.x-forwarded-for: 86.242.244.246,
-      http.response.headers.content-type: application/json,
       http.route: iast/getfilecontent,
-<<<<<<<< HEAD:tracer/test/snapshots/RaspIast.AspNetCore5.Lfi_url=-Iast-GetFileContent-file=filename_exploit=Lfi.verified.txt
       http.status_code: 200,
       http.url: http://localhost:00000/Iast/GetFileContent?file=filename,
-========
-      http.status_code: 403,
-      http.url: http://localhost:00000/Iast/GetFileContent?file=/etc/password,
->>>>>>>> d3635aef71 (netcore integration tests):tracer/test/snapshots/RaspIast.AspNetCore5.PathTraversal_file=-etc-password.verified.txt
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"rasp-001-001","name":"Path traversal attack","tags":{"category":"vulnerability_trigger","type":"lfi"}},"rule_matches":[{"operator":"lfi_detector","operator_value":null,"parameters":[{"address":null,"highlight":["/etc/password"],"key_path":null,"value":null}]}]}]},
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -86,18 +68,15 @@
     }
   ]
 },
-      _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
-      _dd.appsec.waf.duration: 0.0,
-      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 2.0
+      _sampling_priority_v1: 1.0
     }
   }
 ]
