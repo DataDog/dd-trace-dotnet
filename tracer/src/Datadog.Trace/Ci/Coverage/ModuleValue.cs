@@ -4,25 +4,36 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Datadog.Trace.Ci.Coverage.Metadata;
 
 namespace Datadog.Trace.Ci.Coverage;
 
-internal class ModuleValue
+internal class ModuleValue : IDisposable
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ModuleValue(ModuleCoverageMetadata metadata, Module module, int numberOfFiles)
+    public ModuleValue(ModuleCoverageMetadata metadata, Module module, int totalLinesInModule)
     {
         Metadata = metadata;
         Module = module;
-        Files = numberOfFiles == 0 ? [] : new FileValue[numberOfFiles];
+        FilesLines = Marshal.AllocHGlobal(totalLinesInModule * sizeof(int));
     }
 
     public ModuleCoverageMetadata Metadata { get; }
 
     public Module Module { get; }
 
-    public FileValue[] Files { get; }
+    public IntPtr FilesLines { get; private set; }
+
+    public void Dispose()
+    {
+        if (FilesLines != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(FilesLines);
+            FilesLines = IntPtr.Zero;
+        }
+    }
 }

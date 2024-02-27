@@ -17,6 +17,11 @@ public readonly struct FileCoverageMetadata
     public readonly string Path;
 
     /// <summary>
+    /// Offset in the module
+    /// </summary>
+    public readonly int Offset;
+
+    /// <summary>
     /// Last executable line number
     /// </summary>
     public readonly int LastExecutableLine;
@@ -25,10 +30,12 @@ public readonly struct FileCoverageMetadata
     /// Initializes a new instance of the <see cref="FileCoverageMetadata"/> struct.
     /// </summary>
     /// <param name="path">File path</param>
+    /// <param name="offset">Offset in the module</param>
     /// <param name="lastExecutableLine">Last executable line number</param>
-    public FileCoverageMetadata(string path, int lastExecutableLine)
+    public FileCoverageMetadata(string path, int offset, int lastExecutableLine)
     {
         Path = path;
+        Offset = offset;
         LastExecutableLine = lastExecutableLine;
     }
 }

@@ -231,7 +231,7 @@ namespace Datadog.Trace.Coverage.Collector
                 var reportTypeGenericInstance = new GenericInstanceType(coverageReporterTypeReference);
                 reportTypeGenericInstance.GenericArguments.Add(moduleCoverageMetadataImplTypeDef);
 
-                var reportGetCountersMethod = new MethodReference("GetFileCounter", new ArrayType(module.TypeSystem.Int32), reportTypeGenericInstance)
+                var reportGetCountersMethod = new MethodReference("GetFileCounter", new PointerType(module.TypeSystem.Int32), reportTypeGenericInstance)
                 {
                     HasThis = false,
                     Parameters =
@@ -431,7 +431,7 @@ namespace Datadog.Trace.Coverage.Collector
                             }
 
                             // Step 2 - Clone sequence points
-                            var instructionsWithValidSequencePoints = new List<(Instruction Instruction, SequencePoint SequencePoint)>();
+                            var instructionsWithValidSequencePoints = new List<(Instruction Instruction, SequencePoint? SequencePoint)>();
                             for (var i = 0; i < sequencePoints.Count; i++)
                             {
                                 var currentSequencePoint = sequencePoints[i];
@@ -442,7 +442,7 @@ namespace Datadog.Trace.Coverage.Collector
                             }
 
                             // Step 3 - Modify local var to add the Coverage counters instance.
-                            var countersVariable = new VariableDefinition(new ArrayType(module.TypeSystem.Int32));
+                            var countersVariable = new VariableDefinition(new PointerType(module.TypeSystem.Int32));
                             methodBody.Variables.Add(countersVariable);
 
                             // Step 4 - Insert the counter retriever
@@ -456,50 +456,101 @@ namespace Datadog.Trace.Coverage.Collector
                                 var currentInstructionAndSequencePoint = instructionsWithValidSequencePoints[i];
                                 var currentInstruction = currentInstructionAndSequencePoint.Instruction;
                                 var currentSequencePoint = currentInstructionAndSequencePoint.SequencePoint;
+                                if (currentSequencePoint is null)
+                                {
+                                    // If is null is because we already wrote the line reporter for this instruction in an optimization.
+                                    continue;
+                                }
+
                                 var currentInstructionIndex = instructions.IndexOf(currentInstruction);
                                 var currentInstructionClone = CloneInstruction(currentInstruction);
 
                                 currentInstruction.OpCode = OpCodes.Ldloc;
                                 currentInstruction.Operand = countersVariable;
 
-                                var optIdx = 0;
-                                if (i == 0 && _enableJitOptimizations && instructionsWithValidSequencePoints.Count > 1)
+                                var optIdx = currentInstructionIndex;
+                                var indexValue = currentSequencePoint.StartLine - 1;
+
+                                if (_coverageMode == CoverageMode.LineExecution && i + 1 < instructionsWithValidSequencePoints.Count)
                                 {
-                                    // If the jit optimizations are enabled and instructions count is >= 2,
-                                    // we do a `_ = counters[{lastIndex}];` at the first report.
-                                    // This will remove later counters bound checks improving the overall performance.
-                                    instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I4, fileMetadata.MaxLine - 1));
-                                    instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldelem_I4));
-                                    instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Pop));
-                                    instructions.Insert(currentInstructionIndex + 4, Instruction.Create(OpCodes.Ldloc, countersVariable));
-                                    optIdx = 4;
+                                    var nextInstructionAndSequencePoint = instructionsWithValidSequencePoints[i + 1];
+                                    var nextInstruction = nextInstructionAndSequencePoint.Instruction;
+                                    var nextSequencePoint = nextInstructionAndSequencePoint.SequencePoint;
+                                    var nextInstructionIndex = instructions.IndexOf(nextInstruction);
+
+                                    if (nextInstructionIndex == currentInstructionIndex + 1 && nextSequencePoint is not null)
+                                    {
+                                        if (nextSequencePoint.StartLine == currentSequencePoint.StartLine)
+                                        {
+                                            // We skip the current counter insertion point, because the next instruction has a sequence point and is in the same line.
+                                            continue;
+                                        }
+
+                                        if (nextSequencePoint.StartLine == currentSequencePoint.StartLine + 1)
+                                        {
+                                            if (indexValue == 1)
+                                            {
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+                                            else if (indexValue > 1)
+                                            {
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4, indexValue));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Conv_I));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Mul));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I8, (long)0x100000001));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I8));
+                                            if (currentInstructionClone.OpCode != OpCodes.Nop)
+                                            {
+                                                instructions.Insert(++optIdx, currentInstructionClone);
+                                            }
+
+                                            // Replace the next instruction sequence point with null to avoid writing the counter again.
+                                            instructionsWithValidSequencePoints[i + 1] = (nextInstruction, null);
+
+                                            continue;
+                                        }
+                                    }
                                 }
 
-                                if (currentSequencePoint.StartLine != currentSequencePoint.EndLine)
+                                if (indexValue == 1)
                                 {
-                                    break;
+                                    instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
+                                    instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                }
+                                else if (indexValue > 1)
+                                {
+                                    instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4, indexValue));
+                                    instructions.Insert(++optIdx, Instruction.Create(OpCodes.Conv_I));
+                                    instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
+                                    instructions.Insert(++optIdx, Instruction.Create(OpCodes.Mul));
+                                    instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
                                 }
 
                                 switch (_coverageMode)
                                 {
                                     case CoverageMode.LineCallCount:
                                         // Increments items in the counters array (to have the number of times a line was executed)
-                                        instructions.Insert(currentInstructionIndex + optIdx + 1, Instruction.Create(OpCodes.Ldc_I4, currentSequencePoint.StartLine - 1));
-                                        instructions.Insert(currentInstructionIndex + optIdx + 2, Instruction.Create(OpCodes.Ldelema, module.TypeSystem.Int32));
-                                        instructions.Insert(currentInstructionIndex + optIdx + 3, Instruction.Create(OpCodes.Dup));
-                                        instructions.Insert(currentInstructionIndex + optIdx + 4, Instruction.Create(OpCodes.Ldind_I4));
-                                        instructions.Insert(currentInstructionIndex + optIdx + 5, Instruction.Create(OpCodes.Ldc_I4_1));
-                                        instructions.Insert(currentInstructionIndex + optIdx + 6, Instruction.Create(OpCodes.Add));
-                                        instructions.Insert(currentInstructionIndex + optIdx + 7, Instruction.Create(OpCodes.Stind_I4));
-                                        instructions.Insert(currentInstructionIndex + optIdx + 8, currentInstructionClone);
+                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Dup));
+                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldind_I4));
+                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
+                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I4));
                                         break;
                                     case CoverageMode.LineExecution:
-                                        // Set 1 to items in the counters array (to check if the line was executed or not)
-                                        instructions.Insert(currentInstructionIndex + optIdx + 1, Instruction.Create(OpCodes.Ldc_I4, currentSequencePoint.StartLine - 1));
-                                        instructions.Insert(currentInstructionIndex + optIdx + 2, Instruction.Create(OpCodes.Ldc_I4_1));
-                                        instructions.Insert(currentInstructionIndex + optIdx + 3, Instruction.Create(OpCodes.Stelem_I4));
-                                        instructions.Insert(currentInstructionIndex + optIdx + 4, currentInstructionClone);
+                                        // Set 1 to items in the counters pointer (to check if the line was executed or not)
+                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
+                                        instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I4));
                                         break;
+                                }
+
+                                if (currentInstructionClone.OpCode != OpCodes.Nop)
+                                {
+                                    instructions.Insert(++optIdx, currentInstructionClone);
                                 }
                             }
 
@@ -522,19 +573,28 @@ namespace Datadog.Trace.Coverage.Collector
                 var moduleCoverageMetadataImplFileMetadataCtor = new MethodReference(".ctor", module.TypeSystem.Void, fileCoverageMetadataTypeReference)
                 {
                     HasThis = true,
-                    Parameters = { new ParameterDefinition(module.TypeSystem.String), new ParameterDefinition(module.TypeSystem.Int32) }
+                    Parameters = { new ParameterDefinition(module.TypeSystem.String), new ParameterDefinition(module.TypeSystem.Int32), new ParameterDefinition(module.TypeSystem.Int32) }
                 };
 
+                var fileOffset = 0;
                 foreach (FileMetadata fileMetadata in fileDictionaryIndex.Values.OrderBy(v => v.Index))
                 {
+                    var maxLine = fileMetadata.MaxLine;
                     lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
                     lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldfld, moduleCoverageMetadataImplFileMetadataField));
                     lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, fileMetadata.Index));
                     lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldstr, fileMetadata.FileName));
-                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, fileMetadata.MaxLine));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, fileOffset));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, maxLine));
                     lstMetadataInstructions.Add(Instruction.Create(OpCodes.Newobj, moduleCoverageMetadataImplFileMetadataCtor));
                     lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stelem_Any, fileCoverageMetadataTypeReference));
+                    fileOffset += maxLine;
                 }
+
+                var moduleCoverageMetadataImplFileTotalLinesField = new FieldReference("TotalLines", module.TypeSystem.Int32, moduleCoverageMetadataTypeReference);
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)fileOffset + 1));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplFileTotalLinesField));
 
                 // ****************************************************************************************************
                 lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ret));

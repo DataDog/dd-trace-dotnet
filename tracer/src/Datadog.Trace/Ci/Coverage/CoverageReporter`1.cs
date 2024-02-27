@@ -48,8 +48,8 @@ public static class CoverageReporter<TMeta>
     /// Gets the coverage counter for the file
     /// </summary>
     /// <param name="fileIndex">File index</param>
-    /// <returns>Counters array for the file</returns>
-    public static int[] GetFileCounter(int fileIndex)
+    /// <returns>Counters for the file</returns>
+    public static unsafe int* GetFileCounter(int fileIndex)
     {
         ModuleValue? module;
 
@@ -61,7 +61,7 @@ public static class CoverageReporter<TMeta>
             if (module is null)
             {
                 // If the module is not found, we create a new one for this container
-                module = new ModuleValue(Metadata, Module, Metadata.GetNumberOfFiles());
+                module = new ModuleValue(Metadata, Module, Metadata.TotalLines);
                 container.Add(module);
             }
         }
@@ -71,14 +71,8 @@ public static class CoverageReporter<TMeta>
             module = _globalModuleValue;
         }
 
-        // Get the file value from the module and return the lines array for the method
-        ref var fileValue = ref module.Files.FastGetReference(fileIndex);
-        if (fileValue.Lines is { } lines)
-        {
-            return lines;
-        }
-
-        fileValue = new FileValue(Metadata.GetLastExecutableLineFromFile(fileIndex));
-        return fileValue.Lines!;
+        // Gets the file counter by using the file offset over the global module memory segment
+        var fileOffset = ((int*)module.FilesLines) + Metadata.GetOffset(fileIndex);
+        return fileOffset;
     }
 }

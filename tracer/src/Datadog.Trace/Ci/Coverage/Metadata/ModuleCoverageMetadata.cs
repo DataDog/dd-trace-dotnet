@@ -17,6 +17,11 @@ public abstract class ModuleCoverageMetadata
 {
 #pragma warning disable SA1401
     /// <summary>
+    /// Gets or sets the total lines in the module
+    /// </summary>
+    public readonly int TotalLines;
+
+    /// <summary>
     /// Gets or sets the file metadata array
     /// </summary>
     protected readonly FileCoverageMetadata[] Files = Array.Empty<FileCoverageMetadata>();
@@ -26,12 +31,12 @@ public abstract class ModuleCoverageMetadata
     internal int GetNumberOfFiles() => Files.Length;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal int GetLastExecutableLineFromFile(int fileIndex)
+    internal int GetOffset(int fileIndex)
     {
 #if NETCOREAPP3_0_OR_GREATER
-        return Files.FastGetReference(fileIndex).LastExecutableLine;
+        return Files.FastGetReference(fileIndex).Offset;
 #else
-        return Files[fileIndex].LastExecutableLine;
+        return Files[fileIndex].Offset;
 #endif
     }
 }
