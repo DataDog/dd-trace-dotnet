@@ -4,17 +4,31 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
+using Datadog.Trace.Tests.HttpOverStreams;
+using Datadog.Trace.Util;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests
 {
     public class DatadogHttpClientTests
     {
+        private static readonly int[] Chunks = [1, 2, 5, 10, 15];
+        private static readonly int[] BufferSizes = [1, 2, 5, 10, 15];
+
+        public static IEnumerable<object[]> GetChunkSizes()
+            => from chunks in Chunks
+               from chunkSize in ChunkedEncodingReadStreamTests.ChunkSizes
+               from bufferSize in ChunkedEncodingReadStreamTests.ChunkSizes
+               select new object[] { chunks, chunkSize, bufferSize };
+
         [Fact]
         public async Task DatadogHttpClient_CanParseResponse()
         {
@@ -71,6 +85,58 @@ namespace Datadog.Trace.Tests
             Assert.Equal("{}", content);
         }
 
+        [Fact]
+        public async Task DatadogHttpClient_CanHandleChunkedResponses()
+        {
+            // these are arbitrary - we test a range of values in ChunkedEncodingReadStreamTests, so not
+            // much point in being exhaustive here
+            const int chunks = 10;
+            const int chunkSize = 257;
+            const int bufferSize = 256;
+
+            var chunk = ChunkedEncodingReadStreamTests.GetChunk(chunkSize);
+
+            var sb = new StringBuilder();
+            sb.Append("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nServer: Test Server\r\nTransfer-Encoding: chunked\r\n\r\n");
+
+            for (var i = 0; i < chunks; i++)
+            {
+                sb.Append(chunkSize.ToString("X"))
+                  .Append("\r\n")
+                  .Append(chunk)
+                  .Append("\r\n");
+            }
+
+            // final chunk
+            sb.Append("0\r\n\r\n");
+
+            var httpResponse = sb.ToString();
+            // expected is the "un-chunked" response
+            var expected = string.Join(string.Empty, Enumerable.Repeat(chunk, chunks));
+
+            var client = new DatadogHttpClient(new TraceAgentHttpHeaderHelper());
+            var requestContent = new BufferContent(new ArraySegment<byte>(new byte[0]));
+            using var requestStream = new MemoryStream();
+            var responseBytes = EncodingHelpers.Utf8NoBom.GetBytes(httpResponse);
+            using var responseStream = new RegulatedStream(responseBytes, bufferSize);
+
+            var request = new HttpRequest("POST", "localhost", string.Empty, new HttpHeaders(), requestContent);
+            var response = await client.SendAsync(request, requestStream, responseStream);
+
+            response.StatusCode.Should().Be(200);
+            response.ResponseMessage.Should().Be("OK");
+            response.Headers.GetValue("Server").Should().Be("Test Server");
+            response.ContentType.Should().Be("application/json");
+            response.ContentLength.Should().BeNull();
+            response.Content.Length.Should().BeNull();
+
+            using var ms = new MemoryStream();
+            await response.Content.CopyToAsync(ms);
+
+            var actual = EncodingHelpers.Utf8NoBom.GetString(ms.GetBuffer(), index: 0, count: (int)ms.Length);
+            actual.Should().Be(expected);
+        }
+
         private static string[] HtmlResponseLines() =>
         new[]
         {
@@ -107,7 +173,8 @@ namespace Datadog.Trace.Tests
 
             public override int Read(byte[] buffer, int offset, int count)
             {
-                var bytesToRead = Math.Min(_bytesToRead, count);
+                var bytesRemaining = _buffer.Length - Position;
+                var bytesToRead = (int)Math.Min(bytesRemaining, Math.Min(_bytesToRead, count));
 
                 Buffer.BlockCopy(
                     src: _buffer,
