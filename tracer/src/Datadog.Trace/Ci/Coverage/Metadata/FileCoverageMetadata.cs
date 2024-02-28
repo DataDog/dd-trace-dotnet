@@ -27,15 +27,22 @@ public readonly struct FileCoverageMetadata
     public readonly int LastExecutableLine;
 
     /// <summary>
+    /// File bitmap with the executable lines
+    /// </summary>
+    public readonly byte[] Bitmap;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="FileCoverageMetadata"/> struct.
     /// </summary>
     /// <param name="path">File path</param>
     /// <param name="offset">Offset in the module</param>
     /// <param name="lastExecutableLine">Last executable line number</param>
-    public FileCoverageMetadata(string path, int offset, int lastExecutableLine)
+    /// <param name="bitmap">File bitmap with the executable lines</param>
+    public FileCoverageMetadata(string path, int offset, int lastExecutableLine, byte[] bitmap)
     {
         Path = path;
         Offset = offset;
         LastExecutableLine = lastExecutableLine;
+        Bitmap = bitmap;
     }
 }

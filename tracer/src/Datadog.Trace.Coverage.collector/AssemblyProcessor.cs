@@ -17,9 +17,11 @@ using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Attributes;
 using Datadog.Trace.Ci.Coverage.Metadata;
+using Datadog.Trace.Ci.Coverage.Util;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using CallSite = Mono.Cecil.CallSite;
+using FieldAttributes = Mono.Cecil.FieldAttributes;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using TypeAttributes = Mono.Cecil.TypeAttributes;
 
@@ -677,11 +679,17 @@ namespace Datadog.Trace.Coverage.Collector
                 var moduleCoverageMetadataImplFileMetadataCtor = new MethodReference(".ctor", module.TypeSystem.Void, fileCoverageMetadataTypeReference)
                 {
                     HasThis = true,
-                    Parameters = { new ParameterDefinition(module.TypeSystem.String), new ParameterDefinition(module.TypeSystem.Int32), new ParameterDefinition(module.TypeSystem.Int32) }
+                    Parameters =
+                    {
+                        new ParameterDefinition(module.TypeSystem.String),
+                        new ParameterDefinition(module.TypeSystem.Int32),
+                        new ParameterDefinition(module.TypeSystem.Int32),
+                        new ParameterDefinition(new ArrayType(module.TypeSystem.Byte))
+                    }
                 };
 
                 var fileOffset = 0;
-                foreach (FileMetadata fileMetadata in fileDictionaryIndex.Values.OrderBy(v => v.Index))
+                foreach (var fileMetadata in fileDictionaryIndex.Values.OrderBy(v => v.Index))
                 {
                     var maxLine = fileMetadata.MaxLine;
                     lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
@@ -690,6 +698,26 @@ namespace Datadog.Trace.Coverage.Collector
                     lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldstr, fileMetadata.FileName));
                     lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, fileOffset));
                     lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, maxLine));
+
+                    // Create file bitmap
+                    using var fileBitmap = new FileBitmap(maxLine);
+                    foreach (var line in fileMetadata.Lines)
+                    {
+                        fileBitmap.Set(line);
+                    }
+
+                    // Create bitmap array and set the values
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, fileBitmap.Size));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Newarr, module.TypeSystem.Byte));
+                    var arrayItem = 0;
+                    foreach (var bitmapItem in fileBitmap)
+                    {
+                        lstMetadataInstructions.Add(Instruction.Create(OpCodes.Dup));
+                        lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, arrayItem++));
+                        lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)bitmapItem));
+                        lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stelem_I1));
+                    }
+
                     lstMetadataInstructions.Add(Instruction.Create(OpCodes.Newobj, moduleCoverageMetadataImplFileMetadataCtor));
                     lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stelem_Any, fileCoverageMetadataTypeReference));
                     fileOffset += maxLine;
@@ -697,7 +725,7 @@ namespace Datadog.Trace.Coverage.Collector
 
                 var moduleCoverageMetadataImplFileTotalLinesField = new FieldReference("TotalLines", module.TypeSystem.Int32, moduleCoverageMetadataTypeReference);
                 lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
-                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)fileOffset + 1));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)fileOffset));
                 lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplFileTotalLinesField));
 
                 var moduleCoverageMetadataImplFileCoverageModeField = new FieldReference("CoverageMode", module.TypeSystem.Int32, moduleCoverageMetadataTypeReference);

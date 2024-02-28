@@ -87,8 +87,8 @@ namespace Datadog.Trace.Ci.Coverage.Metadata.Target
 		public ModuleCoverage()
 		{
 			Files = new FileCoverageMetadata[1];
-			Files[0] = new FileCoverageMetadata("/Users/tony.redondo/repos/CoverageRewriterAssembly/CoverageRewriterAssembly/Class1.cs", 0, 23);
-			TotalLines = 24;
+			Files[0] = new FileCoverageMetadata("/Users/tony.redondo/repos/CoverageRewriterAssembly/CoverageRewriterAssembly/Class1.cs", 0, 23, new byte[3] { 9, 250, 206 });
+			TotalLines = 23;
 			CoverageMode = 0;
 		}
 	}
