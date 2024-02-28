@@ -28,16 +28,17 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
     {
         try
         {
-            Log.Warning("Coverage File Hander: OnSessionFinished");
             var modules = context.CloseContext();
 
             Dictionary<string, FileCoverage>? fileDictionary = null;
+            var fileBitmapBuffer = stackalloc byte[512];
             foreach (var moduleValue in modules)
             {
                 var moduleFiles = moduleValue.Metadata.Files;
                 foreach (var moduleFile in moduleFiles)
                 {
-                    using var fileBitmap = new FileBitmap(moduleFile.LastExecutableLine);
+                    var fileBitmapSize = FileBitmap.GetSize(moduleFile.LastExecutableLine);
+                    using var fileBitmap = fileBitmapSize <= 512 ? new FileBitmap(fileBitmapBuffer, fileBitmapSize) : new FileBitmap(new byte[fileBitmapSize]);
                     if (moduleValue.Metadata.CoverageMode == 0)
                     {
                         var linesInFile = new VendoredMicrosoftCode.System.Span<byte>((byte*)moduleValue.FilesLines + moduleFile.Offset, moduleFile.LastExecutableLine);
@@ -76,7 +77,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                         }
                         else
                         {
-                            fileCoverage.Bitmap = (fileBitmap | new FileBitmap(fileCoverage.Bitmap))?.ToArray();
+                            fileCoverage.Bitmap = (fileBitmap | new FileBitmap(fileCoverage.Bitmap)).GetInternalArrayOrToArray();
                         }
                     }
                 }
@@ -92,7 +93,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
 
             var testCoverage = new TestCoverage { Files = fileDictionary.Values.ToList(), };
 
-            if (Log.IsEnabled(LogEventLevel.Debug))
+            // if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Information("Test Coverage: {Json}", JsonConvert.SerializeObject(testCoverage));
             }

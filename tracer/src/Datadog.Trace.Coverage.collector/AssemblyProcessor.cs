@@ -89,7 +89,7 @@ namespace Datadog.Trace.Coverage.Collector
 
         public bool HasTracerAssemblyCopied { get; private set; }
 
-        public void Process()
+        public unsafe void Process()
         {
             try
             {
@@ -676,6 +676,7 @@ namespace Datadog.Trace.Coverage.Collector
                 };
 
                 var fileOffset = 0;
+                var fileBitmapBuffer = stackalloc byte[512];
                 foreach (var fileMetadata in fileDictionaryIndex.Values.OrderBy(v => v.Index))
                 {
                     var maxLine = fileMetadata.MaxLine;
@@ -687,7 +688,8 @@ namespace Datadog.Trace.Coverage.Collector
                     lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, maxLine));
 
                     // Create file bitmap
-                    using var fileBitmap = new FileBitmap(maxLine);
+                    var fileBitmapSize = FileBitmap.GetSize(maxLine);
+                    using var fileBitmap = fileBitmapSize <= 512 ? new FileBitmap(fileBitmapBuffer, fileBitmapSize) : new FileBitmap(new byte[fileBitmapSize]);
                     foreach (var line in fileMetadata.Lines)
                     {
                         fileBitmap.Set(line);

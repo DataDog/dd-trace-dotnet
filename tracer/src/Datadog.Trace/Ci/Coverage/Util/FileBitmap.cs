@@ -8,63 +8,55 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 #if NETCOREAPP3_0_OR_GREATER
 using System.Runtime.Intrinsics;
 #endif
 using System.Text;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
+using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
 namespace Datadog.Trace.Ci.Coverage.Util;
 
-internal unsafe class FileBitmap : IDisposable, IEnumerable<byte>
+internal readonly unsafe ref struct FileBitmap
 {
-    private readonly int _numOfLines;
     private readonly int _size;
     private readonly bool _disposable;
-    private GCHandle _handle;
-    private byte* _bitmap;
+    private readonly StrongBox<GCHandle>? _handle;
+    private readonly byte* _bitmap;
 
-    public FileBitmap(int numOfLines)
+    public FileBitmap(byte* buffer, int size)
     {
-        _numOfLines = numOfLines;
-        _size = (numOfLines + 7) / 8; // round up to the nearest byte
-        _bitmap = (byte*)Marshal.AllocHGlobal(_size);
+        _handle = null;
+        _size = size;
+        _bitmap = buffer;
         for (var i = 0; i < _size; i++)
         {
             _bitmap[i] = 0;
         }
 
-        _disposable = true;
+        _disposable = false;
     }
 
     public FileBitmap(byte[] bitmapArray)
     {
-        _numOfLines = bitmapArray.Length * 8;
         _size = bitmapArray.Length;
-        _handle = GCHandle.Alloc(bitmapArray, GCHandleType.Pinned);
+        _handle = new StrongBox<GCHandle>(GCHandle.Alloc(bitmapArray, GCHandleType.Pinned));
         _bitmap = (byte*)Unsafe.AsPointer(ref bitmapArray.FastGetReference(0));
         _disposable = true;
     }
 
-    ~FileBitmap()
-    {
-        Dispose();
-    }
-
-    public int NumOfLines => _numOfLines;
-
     public int Size => _size;
 
-    public static FileBitmap? operator |(FileBitmap fileBitmapA, FileBitmap fileBitmapB)
+    public static FileBitmap operator |(FileBitmap fileBitmapA, FileBitmap fileBitmapB)
     {
         if (fileBitmapA._size != fileBitmapB._size)
         {
-            return null;
+            return default;
         }
 
-        var resBitmap = new FileBitmap(fileBitmapA._numOfLines);
+        var resBitmap = new FileBitmap(new byte[fileBitmapA._size]);
         var index = 0;
 
 #if NET8_0_OR_GREATER
@@ -121,14 +113,14 @@ internal unsafe class FileBitmap : IDisposable, IEnumerable<byte>
         return resBitmap;
     }
 
-    public static FileBitmap? operator &(FileBitmap fileBitmapA, FileBitmap fileBitmapB)
+    public static FileBitmap operator &(FileBitmap fileBitmapA, FileBitmap fileBitmapB)
     {
         if (fileBitmapA._size != fileBitmapB._size)
         {
-            return null;
+            return default;
         }
 
-        var resBitmap = new FileBitmap(fileBitmapA._numOfLines);
+        var resBitmap = new FileBitmap(new byte[fileBitmapA._size]);
         var index = 0;
 
 #if NET8_0_OR_GREATER
@@ -187,7 +179,7 @@ internal unsafe class FileBitmap : IDisposable, IEnumerable<byte>
 
     public static FileBitmap operator ~(FileBitmap fileBitmap)
     {
-        var resBitmap = new FileBitmap(fileBitmap._numOfLines);
+        var resBitmap = new FileBitmap(new byte[fileBitmap._size]);
         var index = 0;
         var size = fileBitmap._size;
         var bitmap = fileBitmap._bitmap;
@@ -239,6 +231,8 @@ internal unsafe class FileBitmap : IDisposable, IEnumerable<byte>
 
         return resBitmap;
     }
+
+    public static int GetSize(int numOfLines) => (numOfLines + 7) / 8;
 
     public void Set(int line)
     {
@@ -361,21 +355,13 @@ internal unsafe class FileBitmap : IDisposable, IEnumerable<byte>
 
     public void Dispose()
     {
-        if (_disposable && _bitmap != null)
+        if (_disposable && _handle is not null)
         {
-            if (_handle.IsAllocated)
+            if (_handle.Value.IsAllocated)
             {
-                _handle.Free();
+                _handle.Value.Free();
             }
-            else
-            {
-                Marshal.FreeHGlobal((IntPtr)_bitmap);
-            }
-
-            _bitmap = null;
         }
-
-        GC.SuppressFinalize(this);
     }
 
     public void Write(byte[] array)
@@ -393,11 +379,20 @@ internal unsafe class FileBitmap : IDisposable, IEnumerable<byte>
         return array;
     }
 
+    internal byte[]? GetInternalArrayOrToArray()
+    {
+        if (_handle?.Value.IsAllocated == true)
+        {
+            return _handle.Value.Target as byte[] ?? ToArray();
+        }
+
+        return ToArray();
+    }
+
     public override string ToString()
     {
         var sb = new StringBuilder();
-        var numBytes = (_numOfLines + 7) / 8;
-        for (var i = 0; i < numBytes; i++)
+        for (var i = 0; i < _size; i++)
         {
             sb.Append(Convert.ToString(_bitmap[i], 2).PadLeft(8, '0'));
         }
@@ -406,8 +401,6 @@ internal unsafe class FileBitmap : IDisposable, IEnumerable<byte>
     }
 
     public IEnumerator<byte> GetEnumerator() => new Enumerator(_bitmap, _size);
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public struct Enumerator(byte* bitMap, int size) : IEnumerator<byte>
     {
