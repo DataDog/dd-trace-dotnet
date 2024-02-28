@@ -445,7 +445,7 @@ namespace Datadog.Trace.Coverage.Collector
                             }
 
                             VariableDefinition? countersVariable = null;
-                            if (instructionsWithValidSequencePoints.Count > 1)
+                            if (instructionsWithValidSequencePoints.Count > 1 || instructions[0] != instructionsWithValidSequencePoints[0].Instruction)
                             {
                                 // Step 3 - Modify local var to add the Coverage counters instance.
                                 if (_coverageMode == CoverageMode.LineExecution)
@@ -468,7 +468,29 @@ namespace Datadog.Trace.Coverage.Collector
                                 instructions.Insert(2, Instruction.Create(OpCodes.Stloc, countersVariable));
                             }
 
-                            // Step 5 - Insert line reporter
+                            // Step 5 - Calculate instructions that cannot be removed
+                            var lstUntouchedInstructions = new HashSet<Instruction>();
+                            foreach (var exceptionHandler in methodBody.ExceptionHandlers)
+                            {
+                                lstUntouchedInstructions.Add(exceptionHandler.TryStart);
+                                lstUntouchedInstructions.Add(exceptionHandler.TryEnd);
+                                lstUntouchedInstructions.Add(exceptionHandler.HandlerStart);
+                                lstUntouchedInstructions.Add(exceptionHandler.HandlerEnd);
+                                if (exceptionHandler.FilterStart is not null)
+                                {
+                                    lstUntouchedInstructions.Add(exceptionHandler.FilterStart);
+                                }
+                            }
+
+                            foreach (var instruction in instructions)
+                            {
+                                if (instruction.Operand is Instruction operandInstruction)
+                                {
+                                    lstUntouchedInstructions.Add(operandInstruction);
+                                }
+                            }
+
+                            // Step 6 - Insert line reporter
                             for (var i = 0; i < instructionsWithValidSequencePoints.Count; i++)
                             {
                                 var currentInstructionAndSequencePoint = instructionsWithValidSequencePoints[i];
@@ -478,6 +500,17 @@ namespace Datadog.Trace.Coverage.Collector
                                 {
                                     // If is null is because we already wrote the line reporter for this instruction in an optimization.
                                     continue;
+                                }
+
+                                // let's check if the next sequence point is for the same line, so we can optimize the line reporter
+                                if (i + 1 < instructionsWithValidSequencePoints.Count)
+                                {
+                                    var nextSequencePoint = instructionsWithValidSequencePoints[i + 1].SequencePoint;
+                                    if (currentSequencePoint.StartLine == nextSequencePoint?.StartLine)
+                                    {
+                                        // next sequence point is for the same line, so we can skip this one.
+                                        continue;
+                                    }
                                 }
 
                                 var currentInstructionIndex = instructions.IndexOf(currentInstruction);
@@ -491,49 +524,6 @@ namespace Datadog.Trace.Coverage.Collector
 
                                 var optIdx = currentInstructionIndex;
                                 var indexValue = currentSequencePoint.StartLine - 1;
-
-                                if (_coverageMode == CoverageMode.LineExecution && i + 1 < instructionsWithValidSequencePoints.Count)
-                                {
-                                    var nextInstructionAndSequencePoint = instructionsWithValidSequencePoints[i + 1];
-                                    var nextInstruction = nextInstructionAndSequencePoint.Instruction;
-                                    var nextSequencePoint = nextInstructionAndSequencePoint.SequencePoint;
-                                    var nextInstructionIndex = instructions.IndexOf(nextInstruction);
-
-                                    if (nextInstructionIndex == currentInstructionIndex + 1 && nextSequencePoint is not null)
-                                    {
-                                        if (nextSequencePoint.StartLine == currentSequencePoint.StartLine)
-                                        {
-                                            // We skip the current counter insertion point, because the next instruction has a sequence point and is in the same line.
-                                            continue;
-                                        }
-
-                                        if (nextSequencePoint.StartLine == currentSequencePoint.StartLine + 1)
-                                        {
-                                            if (indexValue == 1)
-                                            {
-                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
-                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
-                                            }
-                                            else if (indexValue > 1)
-                                            {
-                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4, indexValue));
-                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
-                                            }
-
-                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4, 257));
-                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I2));
-                                            if (currentInstructionClone.OpCode != OpCodes.Nop)
-                                            {
-                                                instructions.Insert(++optIdx, currentInstructionClone);
-                                            }
-
-                                            // Replace the next instruction sequence point with null to avoid writing the counter again.
-                                            instructionsWithValidSequencePoints[i + 1] = (nextInstruction, null);
-
-                                            continue;
-                                        }
-                                    }
-                                }
 
                                 switch (_coverageMode)
                                 {
@@ -645,16 +635,13 @@ namespace Datadog.Trace.Coverage.Collector
                                         break;
                                 }
 
-                                if (currentInstructionClone.OpCode != OpCodes.Nop)
-                                {
-                                    instructions.Insert(++optIdx, currentInstructionClone);
-                                }
+                                instructions.Insert(++optIdx, currentInstructionClone);
                             }
 
                             var nopList = instructions.Where(i => i.OpCode == OpCodes.Nop).ToList();
                             foreach (var nopInstruction in nopList)
                             {
-                                if (instructions.All(i => i.Operand != nopInstruction))
+                                if (!lstUntouchedInstructions.Contains(nopInstruction))
                                 {
                                     instructions.Remove(nopInstruction);
                                 }

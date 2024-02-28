@@ -29,7 +29,7 @@ public abstract class ModuleCoverageMetadata
     /// <summary>
     /// Gets or sets the file metadata array
     /// </summary>
-    protected readonly FileCoverageMetadata[] Files = Array.Empty<FileCoverageMetadata>();
+    protected internal readonly FileCoverageMetadata[] Files = Array.Empty<FileCoverageMetadata>();
 #pragma warning restore SA1401
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

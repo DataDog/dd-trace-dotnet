@@ -74,6 +74,7 @@ internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<Test
                 offset += MessagePackBinary.WriteString(ref bytes, offset, file.FileName);
 
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _segmentsBytes);
+                /*
                 if (file.Segments is { Count: > 0 } segments)
                 {
                     offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)segments.Count);
@@ -97,6 +98,8 @@ internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<Test
                 {
                     offset += MessagePackBinary.WriteNil(ref bytes, offset);
                 }
+                */
+                offset += MessagePackBinary.WriteNil(ref bytes, offset);
             }
         }
         else

@@ -8,11 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
+using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Pdb;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.dnlib.DotNet;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -21,88 +19,67 @@ namespace Datadog.Trace.Ci.Coverage;
 internal class DefaultCoverageEventHandler : CoverageEventHandler
 {
     protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultCoverageEventHandler));
-    protected static readonly Dictionary<ModuleDef, List<TypeDef>> TypeDefsFromModuleDefs = new();
 
     protected override void OnSessionStart(CoverageContextContainer context)
     {
     }
 
-    protected override object? OnSessionFinished(CoverageContextContainer context)
+    protected override unsafe object? OnSessionFinished(CoverageContextContainer context)
     {
         try
         {
+            Log.Warning("Coverage File Hander: OnSessionFinished");
             var modules = context.CloseContext();
-            // const int HIDDEN = 0xFEEFEE;
 
             Dictionary<string, FileCoverage>? fileDictionary = null;
             foreach (var moduleValue in modules)
             {
-                var moduleDef = MethodSymbolResolver.Instance.GetModuleDef(moduleValue.Module);
-                if (moduleDef is null)
+                var moduleFiles = moduleValue.Metadata.Files;
+                foreach (var moduleFile in moduleFiles)
                 {
-                    continue;
-                }
-
-                List<TypeDef>? moduleTypes;
-                lock (TypeDefsFromModuleDefs)
-                {
-                    if (!TypeDefsFromModuleDefs.TryGetValue(moduleDef, out moduleTypes))
+                    using var fileBitmap = new FileBitmap(moduleFile.LastExecutableLine);
+                    if (moduleValue.Metadata.CoverageMode == 0)
                     {
-                        moduleTypes = moduleDef.GetTypes().ToList();
-                        TypeDefsFromModuleDefs[moduleDef] = moduleTypes;
-                    }
-                }
-
-                /*
-                for (var i = 0; i < moduleValue.Methods.Length; i++)
-                {
-                    var currentMethod = moduleValue.Methods[i];
-                    if (currentMethod is null)
-                    {
-                        continue;
-                    }
-
-                    moduleValue.Metadata.GetMethodsMetadata(i, out var typeIndex, out var methodIndex);
-                    var typeDef = moduleTypes[typeIndex];
-                    var methodDef = typeDef.Methods[methodIndex];
-
-                    if (methodDef.HasBody && methodDef.Body.HasInstructions && currentMethod.SequencePoints.Length > 0)
-                    {
-                        var seqPoints = new List<SequencePoint>(currentMethod.SequencePoints.Length);
-                        foreach (var instruction in methodDef.Body.Instructions)
+                        var linesInFile = new VendoredMicrosoftCode.System.Span<byte>((byte*)moduleValue.FilesLines + moduleFile.Offset, moduleFile.LastExecutableLine);
+                        for (var i = 0; i < linesInFile.Length; i++)
                         {
-                            if (instruction.SequencePoint is null ||
-                                instruction.SequencePoint.StartLine == HIDDEN ||
-                                instruction.SequencePoint.EndLine == HIDDEN)
+                            if (linesInFile[i] == 1)
                             {
-                                continue;
+                                fileBitmap.Set(i + 1);
                             }
+                        }
+                    }
+                    else if (moduleValue.Metadata.CoverageMode == 1)
+                    {
+                        var linesInFile = new VendoredMicrosoftCode.System.Span<int>((int*)moduleValue.FilesLines + moduleFile.Offset, moduleFile.LastExecutableLine);
+                        for (var i = 0; i < linesInFile.Length; i++)
+                        {
+                            if (linesInFile[i] > 0)
+                            {
+                                fileBitmap.Set(i + 1);
+                            }
+                        }
+                    }
 
-                            seqPoints.Add(instruction.SequencePoint);
+                    if (fileBitmap.CountActiveBits() > 0)
+                    {
+                        fileDictionary ??= new Dictionary<string, FileCoverage>();
+                        if (!fileDictionary.TryGetValue(moduleFile.Path, out var fileCoverage))
+                        {
+                            fileCoverage = new FileCoverage { FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false) };
+                            fileDictionary[moduleFile.Path] = fileCoverage;
                         }
 
-                        for (var x = 0; x < currentMethod.SequencePoints.Length; x++)
+                        if (fileCoverage.Bitmap is null)
                         {
-                            var repInSeqPoints = currentMethod.SequencePoints[x];
-                            if (repInSeqPoints == 0)
-                            {
-                                continue;
-                            }
-
-                            var seqPoint = seqPoints[x];
-                            fileDictionary ??= new Dictionary<string, FileCoverage>();
-                            if (!fileDictionary.TryGetValue(seqPoint.Document.Url, out var fileCoverage))
-                            {
-                                fileCoverage = new FileCoverage { FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(seqPoint.Document.Url, false) };
-
-                                fileDictionary[seqPoint.Document.Url] = fileCoverage;
-                            }
-
-                            fileCoverage.Segments.Add(new[] { (uint)seqPoint.StartLine, (uint)seqPoint.StartColumn, (uint)seqPoint.EndLine, (uint)seqPoint.EndColumn, (uint)repInSeqPoints });
+                            fileCoverage.Bitmap = fileBitmap.ToArray();
+                        }
+                        else
+                        {
+                            fileCoverage.Bitmap = (fileBitmap | new FileBitmap(fileCoverage.Bitmap))?.ToArray();
                         }
                     }
                 }
-                */
             }
 
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityCodeCoverageFiles(fileDictionary?.Count ?? 0);
@@ -117,7 +94,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("Test Coverage: {Json}", JsonConvert.SerializeObject(testCoverage));
+                Log.Information("Test Coverage: {Json}", JsonConvert.SerializeObject(testCoverage));
             }
 
             return testCoverage;

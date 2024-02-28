@@ -22,6 +22,11 @@ internal class ModuleValue : IDisposable
         FilesLines = Marshal.AllocHGlobal(fileLinesMemorySize);
     }
 
+    ~ModuleValue()
+    {
+        Dispose();
+    }
+
     public ModuleCoverageMetadata Metadata { get; }
 
     public Module Module { get; }
@@ -34,6 +39,7 @@ internal class ModuleValue : IDisposable
         {
             Marshal.FreeHGlobal(FilesLines);
             FilesLines = IntPtr.Zero;
+            GC.SuppressFinalize(this);
         }
     }
 }
