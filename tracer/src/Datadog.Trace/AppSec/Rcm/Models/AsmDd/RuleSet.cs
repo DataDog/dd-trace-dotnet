@@ -19,11 +19,25 @@ internal class RuleSet
     [JsonProperty("rules")]
     internal JToken? Rules { get; set; }
 
+    [JsonProperty("processors")]
+    internal JToken? Processors { get; set; }
+
+    [JsonProperty("scanners")]
+    internal JToken? Scanners { get; set; }
+
     public JToken? All { get; set; }
 
     public static RuleSet From(JToken result)
     {
-        var ruleset = new RuleSet { Version = result["version"]?.ToString(), Metadata = result["metadata"], Rules = result["rules"], All = result };
+        var ruleset = new RuleSet
+        {
+            Version = result["version"]?.ToString(),
+            Metadata = result["metadata"],
+            Rules = result["rules"],
+            Processors = result["processors"],
+            Scanners = result["scanners"],
+            All = result
+        };
         return ruleset;
     }
 
@@ -46,6 +60,16 @@ internal class RuleSet
         if (Version != null)
         {
             dictionary.Add("version", Version);
+        }
+
+        if (Processors != null)
+        {
+            dictionary.Add("processors", Processors);
+        }
+
+        if (Scanners != null)
+        {
+            dictionary.Add("scanners", Scanners);
         }
     }
 }
