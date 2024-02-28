@@ -190,7 +190,7 @@ internal static class HexString
             return false;
         }
 
-        return HexConverter.TryDecodeFromUtf16(chars, bytes);
+        return HexConverter.TryDecodeFromUtf16(chars, bytes, out _);
     }
 #endif
 
@@ -220,7 +220,7 @@ internal static class HexString
             return false;
         }
 
-        return HexConverter.TryDecodeFromUtf16(chars, bytes);
+        return HexConverter.TryDecodeFromUtf16(chars, bytes, out _);
     }
 
     /// <summary>

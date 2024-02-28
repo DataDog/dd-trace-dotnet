@@ -264,7 +264,6 @@ src/Datadog.Trace/Util/DbCommandCache.cs
 src/Datadog.Trace/Util/DomainMetadata.cs
 src/Datadog.Trace/Util/EnvironmentHelpers.cs
 src/Datadog.Trace/Util/FnvHash64.cs
-src/Datadog.Trace/Util/HexConverter.netfx.cs
 src/Datadog.Trace/Util/IClock.cs
 src/Datadog.Trace/Util/IRandomIdGenerator.cs
 src/Datadog.Trace/Util/RandomIdGenerator.Net6.cs

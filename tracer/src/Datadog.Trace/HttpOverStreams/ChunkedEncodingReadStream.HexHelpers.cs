@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text;
 
 namespace Datadog.Trace.HttpOverStreams;

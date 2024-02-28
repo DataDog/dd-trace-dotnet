@@ -728,7 +728,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating a timeout in milliseconds to the execution of the query string obfuscation regex
-        /// Default value is 100ms
+        /// Default value is 200ms
         /// </summary>
         internal double ObfuscationQueryStringRegexTimeout { get; }
 

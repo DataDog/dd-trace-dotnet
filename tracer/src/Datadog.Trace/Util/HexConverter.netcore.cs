@@ -1,35 +1,44 @@
-﻿// <copyright file="HexConverter.netfx.cs" company="Datadog">
+// <copyright file="HexConverter.netcore.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-// based on https://github.com/dotnet/runtime/blob/3d616586d7aa9b49226e28f353a9b20ce0b6e6b8/src/libraries/Common/src/System/HexConverter.cs
+// based on https: //github.com/dotnet/runtime/blob/c7c15f7c2c55578b4e64450e4c236f5f59360827/src/libraries/Common/src/System/HexConverter.cs
 
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-#if !NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
 
 #nullable enable
 
 using System;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Util;
 
-/// <summary>
-/// This class is a .NET Framework version of .NET Core's internal HexConverter. It provides lower-level API
-/// for converting between bytes and hex strings. For a higher-level API, use <see cref="Datadog.Trace.Util.HexString"/>.
-/// </summary>
 internal static class HexConverter
 {
+    public enum Casing : uint
+    {
+        // Output [ '0' .. '9' ] and [ 'A' .. 'F' ].
+        Upper = 0,
+
+        // Output [ '0' .. '9' ] and [ 'a' .. 'f' ].
+        // This works because values in the range [ 0x30 .. 0x39 ] ([ '0' .. '9' ])
+        // already have the 0x20 bit set, so ORing them with 0x20 is a no-op,
+        // while outputs in the range [ 0x41 .. 0x46 ] ([ 'A' .. 'F' ])
+        // don't have the 0x20 bit set, so ORing them maps to
+        // [ 0x61 .. 0x66 ] ([ 'a' .. 'f' ]), which is what we want.
+        Lower = 0x2020U,
+    }
+
     /// <summary>
     /// Gets a map from an ASCII char to its hex value, e.g. arr['b'] == 11. 0xFF means it's not a hex digit.
     /// </summary>
-    private static readonly byte[] CharToHexLookup =
-    {
+    public static ReadOnlySpan<byte> CharToHexLookup =>
+    [
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 15
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 31
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 47
@@ -46,21 +55,7 @@ internal static class HexConverter
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 223
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 239
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 255
-    };
-
-    public enum Casing : uint
-    {
-        // Output [ '0' .. '9' ] and [ 'A' .. 'F' ].
-        Upper = 0,
-
-        // Output [ '0' .. '9' ] and [ 'a' .. 'f' ].
-        // This works because values in the range [ 0x30 .. 0x39 ] ([ '0' .. '9' ])
-        // already have the 0x20 bit set, so ORing them with 0x20 is a no-op,
-        // while outputs in the range [ 0x41 .. 0x46 ] ([ 'A' .. 'F' ])
-        // don't have the 0x20 bit set, so ORing them maps to
-        // [ 0x61 .. 0x66 ] ([ 'a' .. 'f' ]), which is what we want.
-        Lower = 0x2020U,
-    }
+    ];
 
     // We want to pack the incoming byte into a single integer [ 0000 HHHH 0000 LLLL ],
     // where HHHH and LLLL are the high and low nibbles of the incoming byte. Then
@@ -101,7 +96,7 @@ internal static class HexConverter
     // writing to a span of known length (or the caller has already checked the bounds of the
     // furthest access).
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ToBytesBuffer(byte value, byte[] buffer, int startingIndex = 0, Casing casing = Casing.Upper)
+    public static void ToBytesBuffer(byte value, Span<byte> buffer, int startingIndex = 0, Casing casing = Casing.Upper)
     {
         uint difference = (((uint)value & 0xF0U) << 4) + ((uint)value & 0x0FU) - 0x8989U;
         uint packedResult = ((((uint)(-(int)difference) & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
@@ -111,7 +106,7 @@ internal static class HexConverter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ToCharsBuffer(byte value, char[] buffer, int startingIndex = 0, Casing casing = Casing.Upper)
+    public static void ToCharsBuffer(byte value, Span<char> buffer, int startingIndex = 0, Casing casing = Casing.Upper)
     {
         uint difference = (((uint)value & 0xF0U) << 4) + ((uint)value & 0x0FU) - 0x8989U;
         uint packedResult = ((((uint)(-(int)difference) & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
@@ -120,24 +115,38 @@ internal static class HexConverter
         buffer[startingIndex] = (char)(packedResult >> 8);
     }
 
-    public static void EncodeToUtf16(ArraySegment<byte> bytes, char[] chars, Casing casing = Casing.Upper)
+    public static void EncodeToUtf16(ReadOnlySpan<byte> bytes, Span<char> chars, Casing casing = Casing.Upper)
     {
-        for (int pos = 0; pos < bytes.Count; pos++)
+        Debug.Assert(chars.Length >= bytes.Length * 2, "chars.Length >= bytes.Length * 2");
+
+        for (int pos = 0; pos < bytes.Length; pos++)
         {
-            var b = bytes.Array![bytes.Offset + pos];
-            ToCharsBuffer(b, chars, pos * 2, casing);
+            ToCharsBuffer(bytes[pos], chars, pos * 2, casing);
         }
     }
 
-    [Pure]
-    public static string ToString(ArraySegment<byte> bytes, Casing casing = Casing.Upper)
+    public static unsafe string ToString(ReadOnlySpan<byte> bytes, Casing casing = Casing.Upper)
     {
-        char[] chars = new char[bytes.Count * 2];
-        EncodeToUtf16(bytes, chars, casing);
-        return new string(chars);
+#if NETFRAMEWORK || NETSTANDARD2_0
+        Span<char> result = bytes.Length > 16 ?
+            new char[bytes.Length * 2].AsSpan() :
+            stackalloc char[bytes.Length * 2];
+
+        int pos = 0;
+        foreach (byte b in bytes)
+        {
+            ToCharsBuffer(b, result, pos, casing);
+            pos += 2;
+        }
+        return result.ToString();
+#else
+#pragma warning disable CS8500 // takes address of managed type
+        return string.Create(bytes.Length * 2, (RosPtr: (IntPtr)(&bytes), casing), static (chars, args) =>
+            EncodeToUtf16(*(ReadOnlySpan<byte>*)args.RosPtr, chars, args.casing));
+#pragma warning restore CS8500
+#endif
     }
 
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static char ToCharUpper(int value)
     {
@@ -152,7 +161,6 @@ internal static class HexConverter
         return (char)value;
     }
 
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static char ToCharLower(int value)
     {
@@ -167,17 +175,21 @@ internal static class HexConverter
         return (char)value;
     }
 
-    public static bool TryDecodeFromUtf16(string chars, ArraySegment<byte> bytes, out int charsProcessed)
+    public static bool TryDecodeFromUtf16(ReadOnlySpan<char> chars, Span<byte> bytes, out int charsProcessed)
+    {
+        return TryDecodeFromUtf16_Scalar(chars, bytes, out charsProcessed);
+    }
+
+    private static bool TryDecodeFromUtf16_Scalar(ReadOnlySpan<char> chars, Span<byte> bytes, out int charsProcessed)
     {
         Debug.Assert(chars.Length % 2 == 0, "Un-even number of characters provided");
-        Debug.Assert(chars.Length / 2 == bytes.Count, "Target buffer not right-sized for provided characters");
+        Debug.Assert(chars.Length / 2 == bytes.Length, "Target buffer not right-sized for provided characters");
 
         int i = 0;
         int j = 0;
         int byteLo = 0;
         int byteHi = 0;
-
-        while (j < bytes.Count)
+        while (j < bytes.Length)
         {
             byteLo = FromChar(chars[i + 1]);
             byteHi = FromChar(chars[i]);
@@ -189,7 +201,7 @@ internal static class HexConverter
                 break;
             }
 
-            bytes.Array![bytes.Offset + j++] = (byte)((byteHi << 4) | byteLo);
+            bytes[j++] = (byte)((byteHi << 4) | byteLo);
             i += 2;
         }
 
@@ -202,21 +214,18 @@ internal static class HexConverter
         return (byteLo | byteHi) != 0xFF;
     }
 
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int FromChar(int c)
     {
         return c >= CharToHexLookup.Length ? 0xFF : CharToHexLookup[c];
     }
 
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int FromUpperChar(int c)
     {
         return c > 71 ? 0xFF : CharToHexLookup[c];
     }
 
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int FromLowerChar(int c)
     {
@@ -233,7 +242,6 @@ internal static class HexConverter
         return 0xFF;
     }
 
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsHexChar(int c)
     {
@@ -259,20 +267,18 @@ internal static class HexConverter
             ulong shift = 18428868213665201664UL << (int)i;
             ulong mask = i - 64;
 
-            return (long)(shift & mask) < 0;
+            return (long)(shift & mask) < 0 ? true : false;
         }
 
         return FromChar(c) != 0xFF;
     }
 
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsHexUpperChar(int c)
     {
         return (uint)(c - '0') <= 9 || (uint)(c - 'A') <= ('F' - 'A');
     }
 
-    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsHexLowerChar(int c)
     {
@@ -280,4 +286,4 @@ internal static class HexConverter
     }
 }
 
-#endif // !NETCOREAPP3_1_OR_GREATER
+#endif // NETCOREAPP3_1_OR_GREATER
