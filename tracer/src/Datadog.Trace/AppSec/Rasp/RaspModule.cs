@@ -13,6 +13,7 @@ using System.Web;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Rasp;
@@ -44,14 +45,21 @@ internal static class RaspModule
             return;
         }
 
-        IResult? result = null;
         SecurityCoordinator? securityCoordinator = null;
 
 #if NETFRAMEWORK
         var context = HttpContext.Current;
         securityCoordinator = new SecurityCoordinator(security, context, rootSpan);
-        result = securityCoordinator?.RunWaf(arguments);
+        var result = securityCoordinator?.RunWaf(arguments);
+        securityCoordinator?.CheckAndBlock(result);
+
+        if (result!.ShouldBlock)
+        {
+            throw new BlockException(result);
+        }
 #else
+        IResult? result = null;
+
         if (CoreHttpContextStore.Instance.Get() is { } httpContext)
         {
             var transport = new SecurityCoordinator.HttpTransport(httpContext);
@@ -60,20 +68,22 @@ internal static class RaspModule
                 securityCoordinator = new SecurityCoordinator(security, httpContext, rootSpan, transport);
                 result = securityCoordinator?.RunWaf(arguments);
             }
+
+            if (result is not null)
+            {
+                var json = JsonConvert.SerializeObject(result.Data);
+                Log.Information("RASP WAF result: {Result}", json);
+
+                if (result!.ShouldBlock)
+                {
+                    throw new BlockException(result);
+                }
+                else
+                {
+                    securityCoordinator?.TryReport(result, result.ShouldBlock);
+                }
+            }
         }
 #endif
-        if (result is not null)
-        {
-            var json = JsonConvert.SerializeObject(result.Data);
-            Log.Information("RASP WAF result: {Result}", json);
-            if (result!.ShouldBlock)
-            {
-                throw new BlockException(result);
-            }
-            else
-            {
-                securityCoordinator?.TryReport(result, result.ShouldBlock);
-            }
-        }
     }
 }

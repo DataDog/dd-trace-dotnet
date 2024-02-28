@@ -13,6 +13,7 @@ using System.DirectoryServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
+using System.IO;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -34,7 +35,8 @@ namespace Samples.Security.AspNetCore5.Controllers
     {
         public override void OnResultExecuting(ResultExecutingContext filterContext)
         {
-            if (!filterContext.HttpContext.Request.Path.Contains("XContentTypeHeaderMissing"))
+            if (!filterContext.HttpContext.Request.Path.Contains("XContentTypeHeaderMissing") &&
+                !filterContext.HttpContext.Response.HeadersWritten)
             {
                 filterContext.HttpContext.Response.AddHeader("X-Content-Type-Options", "nosniff");
             }
@@ -268,7 +270,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 }
                 else
                 {
-                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, $"No file was provided");
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "No file was provided");
                 }
             }
             catch
