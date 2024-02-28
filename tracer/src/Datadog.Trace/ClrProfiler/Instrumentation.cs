@@ -384,6 +384,16 @@ namespace Datadog.Trace.ClrProfiler
             {
                 try
                 {
+                    DynamicInstrumentationHelper.ServiceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceNameInternal ?? tracer.DefaultServiceName);
+                }
+                catch (Exception e)
+                {
+                    DynamicInstrumentationHelper.ServiceName = tracer.DefaultServiceName;
+                    Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
+                }
+
+                try
+                {
                     InitLiveDebugger(tracer);
                 }
                 catch (Exception e)
@@ -493,7 +503,7 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             // Service Name must be lowercase, otherwise the agent will not be able to find the service
-            var serviceName = TraceUtil.NormalizeTag(settings.ServiceNameInternal ?? tracer.DefaultServiceName);
+            var serviceName = DynamicInstrumentationHelper.ServiceName;
             var discoveryService = tracer.TracerManager.DiscoveryService;
 
             Task.Run(

@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
@@ -715,7 +716,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             .EndSnapshot()
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
-            .AddGeneralInfo(LiveDebugger.Instance?.ServiceName, traceId, spanId)
+            .AddGeneralInfo(DynamicInstrumentationHelper.ServiceName, traceId, spanId)
             .AddMessage()
             .Complete();
         }
