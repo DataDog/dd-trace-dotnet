@@ -74,7 +74,7 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
         DisableObfuscationQueryString();
-        var externalRulesFile = "C:\\CommonFolder\\shared\\repos\\dd-trace-5\\tracer\\test\\Datadog.Trace.Security.Unit.Tests\\rasp-rule-set.json";
+        var externalRulesFile = "RASP\\rasp-rule-set.json";
         SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, externalRulesFile);
 
         _iisFixture = iisFixture;

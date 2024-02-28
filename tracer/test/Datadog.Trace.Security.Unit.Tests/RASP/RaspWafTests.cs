@@ -18,10 +18,8 @@ namespace Datadog.Trace.Rasp.Unit.Tests;
 
 public class RaspWafTests : WafLibraryRequiredTest
 {
-    public const int TimeoutMicroSeconds = 1_000_000;
-
     [Theory]
-    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "stack_trace")]
+    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "block")]
     public void PathTraversalRule(string value, string paramValue, string rule, string ruleFile, string action)
     {
         Execute(
