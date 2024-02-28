@@ -4,23 +4,28 @@
 #pragma once
 
 #include <cstdint>
-
+#include <string>
 
 enum class SkipProfileHeuristicType
 {
-    ShortLived,
-    NoSpan
+    Unknown = 0,
+    ShortLived = 1,
+    NoSpan = 2
+};
+
+enum class DeploymentMode
+{
+    Unknown = 0,
+    Manual = 1,
+    SingleStepInstrumentation = 2
 };
 
 class IProfilerTelemetry
 {
 public:
-    virtual void OnSpanCreated() = 0;
-    virtual bool IsSpanCreated() = 0;
-
     // send metrics
-    virtual void ProcessStart() = 0;
-    virtual void ProcessEnd() = 0;
+    virtual void ProcessStart(DeploymentMode deployment) = 0;
+    virtual void ProcessEnd(uint64_t duration) = 0;
     virtual void SentProfile() = 0;
     virtual void SkippedProfile(SkipProfileHeuristicType heuristic) = 0;
 

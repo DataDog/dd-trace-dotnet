@@ -12,6 +12,7 @@
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
 #include "ISamplesProvider.h"
+#include "IProfilerTelemetry.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "TagsHelper.h"
@@ -153,6 +154,66 @@ public:
     MOCK_METHOD(std::unique_ptr<SamplesEnumerator>, GetSamples, (), (override));
     MOCK_METHOD(const char*, GetName, (), (override));
 };
+
+class ProfilerTelemetryForTest : public IProfilerTelemetry
+{
+public:
+    ProfilerTelemetryForTest()
+    {
+        _deployment = DeploymentMode::Unknown;
+        _duration = 0;
+        _heuristic = SkipProfileHeuristicType::Unknown;
+        _sentProfile = false;
+    }
+
+    void ProcessStart(DeploymentMode deployment) override
+    {
+        _deployment = deployment;
+    }
+
+    void ProcessEnd(uint64_t duration) override
+    {
+        _duration = duration;
+    }
+
+    void SentProfile() override
+    {
+        _sentProfile = true;
+    }
+
+    void SkippedProfile(SkipProfileHeuristicType heuristic) override
+    {
+        _heuristic = heuristic;
+    }
+
+public:
+    DeploymentMode GetDeployment() const
+    {
+        return _deployment;
+    }
+
+    uint64_t GetDuration() const
+    {
+        return _duration;
+    }
+
+    SkipProfileHeuristicType GetHeuristic() const
+    {
+        return _heuristic;
+    }
+
+    bool WasProfileSent() const
+    {
+        return _sentProfile;
+    }
+
+private:
+    DeploymentMode _deployment;
+    uint64_t _duration;
+    SkipProfileHeuristicType _heuristic;
+    bool _sentProfile;
+};
+
 
 template <typename T, typename U, typename... Args>
 std::pair<std::unique_ptr<T>, U&> CreateMockForUniquePtr(Args... args)

@@ -15,6 +15,7 @@
 #include "IMetricsSender.h"
 #include "IRuntimeInfo.h"
 #include "ISamplesProvider.h"
+#include "ISsiManager.h"
 #include "IUpscaleProvider.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -78,14 +79,14 @@ ProfileExporter::ProfileExporter(
     MetricsRegistry& metricsRegistry,
     IMetadataProvider* metadataProvider,
     IAllocationsRecorder* allocationsRecorder,
-    IProfilerTelemetry* profilerTelemetry) :
+    ISsiManager* ssiManager) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
     _allocationsRecorder{allocationsRecorder},
     _metadataProvider{metadataProvider},
     _configuration{configuration},
-    _profilerTelemetry{profilerTelemetry}
+    _ssiManager{ssiManager}
 {
     _exporter = CreateExporter(_configuration, CreateTags(_configuration, runtimeInfo, enabledProfilers));
     _outputPath = CreatePprofOutputPath(_configuration);
@@ -451,17 +452,6 @@ void ProfileExporter::AddProcessSamples(libdatadog::Profile* profile, std::list<
     }
 }
 
-bool ProfileExporter::IsShortLived() const
-{
-    auto lifetime = OsSpecificApi::GetProcessLifetime();
-    if (lifetime < 30) // TODO add a configuration for this value
-    {
-        return true;
-    }
-
-    return false;
-}
-
 bool ProfileExporter::Export()
 {
     bool exported = false;
@@ -546,19 +536,10 @@ bool ProfileExporter::Export()
             continue;
         }
 
-        if (!_profilerTelemetry->IsSpanCreated())
-        {
-            _profilerTelemetry->SkippedProfile(SkipProfileHeuristicType::NoSpan);
-        }
-        else if (IsShortLived())
-        {
-            _profilerTelemetry->SkippedProfile(SkipProfileHeuristicType::ShortLived);
-        }
-        else
-        {
-            _profilerTelemetry->SentProfile();
-        }
-
+        // TODO: When SSI is deployed, we should check if we should send the profile
+        //       It is currently only sending telemetry metrics
+        //       If not enabled via SSI, we should always send profiles
+        _ssiManager->ShouldSendProfile(applicationInfo.Environment, applicationInfo.ServiceName, runtimeId);
 
         if (_exporter == nullptr)
         {

@@ -26,7 +26,7 @@ class IAllocationsRecorder;
 class IProcessSamplesProvider;
 class IMetadataProvider;
 class IConfiguration;
-class IProfilerTelemetry;
+class ISsiManager;
 
 namespace libdatadog {
 class Exporter;
@@ -46,7 +46,7 @@ public:
         MetricsRegistry& metricsRegistry,
         IMetadataProvider* metadataProvider,
         IAllocationsRecorder* allocationsRecorder,
-        IProfilerTelemetry* profilerTelemetry);
+        ISsiManager* ssiManager);
     ~ProfileExporter() override;
 
     bool Export() override;
@@ -99,7 +99,6 @@ private:
     std::list<std::shared_ptr<Sample>> GetProcessSamples();
     std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
     std::string GetMetadata() const;
-    bool IsShortLived() const;
 
 private:
     static tags CommonTags;
@@ -134,7 +133,7 @@ private:
     IMetadataProvider* _metadataProvider;
     std::unique_ptr<libdatadog::Exporter> _exporter;
     IConfiguration* _configuration;
-    IProfilerTelemetry* _profilerTelemetry;
+    ISsiManager* _ssiManager;
 
 public: // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

@@ -21,6 +21,7 @@
 #include "IMetricsSender.h"
 #include "IProfilerTelemetry.h"
 #include "ISamplesProvider.h"
+#include "ISsiManager.h"
 #include "WallTimeProvider.h"
 #include "CpuTimeProvider.h"
 #include "SamplesCollector.h"
@@ -29,6 +30,7 @@
 #include "LiveObjectsProvider.h"
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
+#include "MemoryResourceManager.h"
 #include "MetricsRegistry.h"
 #include "ProxyMetric.h"
 #include "IAllocationsRecorder.h"
@@ -36,7 +38,6 @@
 #include "ThreadLifetimeProvider.h"
 #include "shared/src/native-src/string.h"
 #include "IEtwEventsManager.h"
-#include "MemoryResourceManager.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -51,7 +52,6 @@ class IManagedThreadList;
 class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
-
 
 #ifdef LINUX
 class SystemCallsShield;
@@ -205,7 +205,7 @@ public:
     IApplicationStore* GetApplicationStore() { return _pApplicationStore; }
     IExporter* GetExporter() { return _pExporter.get(); }
     SamplesCollector* GetSamplesCollector() { return _pSamplesCollector; }
-    void TraceContextHasBeenSet() { _pProfilerTelemetry->OnSpanCreated(); }
+    void TraceContextHasBeenSet() { _pSsiManager->OnSpanCreated(); }
 
 private :
     static CorProfilerCallback* _this;
@@ -265,7 +265,12 @@ private :
     bool _isETWStarted = false;
     MemoryResourceManager _memoryResourceManager;
 
+    // today, only the SSI manager is using telemetry
+    // but we could have more telemetry in the future
+    // so keep it at the CorProfilerCallback level
+    // instead of hidding it inside the SSI manager
     std::unique_ptr<IProfilerTelemetry> _pProfilerTelemetry = nullptr;
+    std::unique_ptr<ISsiManager> _pSsiManager = nullptr;
 
 private:
     static void ConfigureDebugLog();

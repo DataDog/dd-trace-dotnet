@@ -253,10 +253,12 @@
     <ClInclude Include="FrameworkThreadInfo.h" />
     <ClInclude Include="LinkedList.hpp" />
     <ClInclude Include="MemoryResourceManager.h" />
+    <ClInclude Include="ISsiManager.h" />
     <ClInclude Include="ProfilerTelemetry.h" />
     <ClInclude Include="RawSamples.hpp" />
     <ClInclude Include="SamplesEnumerator.h" />
     <ClInclude Include="ServiceBase.h" />
+    <ClInclude Include="SsiManager.h" />
     <ClInclude Include="Success.h" />
     <ClInclude Include="Exception.h" />
     <ClInclude Include="Exporter.h" />
@@ -400,6 +402,7 @@
     <ClCompile Include="ServiceBase.cpp" />
     <ClCompile Include="IProfilerTelemetry.h" />
     <ClCompile Include="ProfilerTelemetry.cpp" />
+    <ClCompile Include="SsiManager.cpp" />
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />

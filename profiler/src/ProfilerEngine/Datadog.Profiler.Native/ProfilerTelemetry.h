@@ -15,19 +15,16 @@ public:
 
 public:
     // from IProfilerTelemetry
-    void OnSpanCreated() override;
-    bool IsSpanCreated() override;
-    void ProcessStart() override;
-    void ProcessEnd() override;
+    void ProcessStart(DeploymentMode deployment) override;
+    void ProcessEnd(uint64_t duration) override;
     void SentProfile() override;
     void SkippedProfile(SkipProfileHeuristicType heuristic) override;
 
 private:
-    std::string GetDeploymentState();
+    std::string GetDeploymentModeTag();
 
 private:
     IConfiguration* m_pConfiguration;
-    bool _hasSpan = false;
     bool _isSsiDeployed = false;
 };
 

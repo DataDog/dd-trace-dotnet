@@ -7,38 +7,23 @@
 ProfilerTelemetry::ProfilerTelemetry(IConfiguration* pConfiguration)
    : m_pConfiguration(pConfiguration)
 {
-    _isSsiDeployed = pConfiguration->IsSsiDeployed();
 }
 
-
-void ProfilerTelemetry::OnSpanCreated()
+std::string ProfilerTelemetry::GetDeploymentModeTag()
 {
-    _hasSpan = true;
+    return _isSsiDeployed ? "ssi" : "manual";
 }
 
-bool ProfilerTelemetry::IsSpanCreated()
+void ProfilerTelemetry::ProcessStart(DeploymentMode deployment)
 {
-    return _hasSpan;
+    _isSsiDeployed = (deployment == DeploymentMode::SingleStepInstrumentation);
+
+    Log::Debug("ProcessStart(", GetDeploymentModeTag(), ")");
 }
 
-std::string ProfilerTelemetry::GetDeploymentState()
+void ProfilerTelemetry::ProcessEnd(uint64_t duration)
 {
-    std::string state = "manual";
-    if (_isSsiDeployed)
-    {
-        state = "ssi";
-    }
-    return state;
-}
-
-void ProfilerTelemetry::ProcessStart()
-{
-    Log::Debug("ProcessStart(", GetDeploymentState(), ")");
-}
-
-void ProfilerTelemetry::ProcessEnd()
-{
-    Log::Debug("ProcessEnd(", GetDeploymentState(), ")");
+    Log::Debug("ProcessEnd(", GetDeploymentModeTag(), ", ", duration, ")");
 }
 
 void ProfilerTelemetry::SentProfile()
