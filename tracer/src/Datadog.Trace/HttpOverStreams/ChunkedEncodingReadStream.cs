@@ -13,12 +13,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Util.Streams;
 
-#if NETCOREAPP
-using ArrayPool = System.Buffers.ArrayPool<byte>;
-#else
-using ArrayPool = Datadog.Trace.VendoredMicrosoftCode.System.Buffers.ArrayPool<byte>;
-#endif
-
 namespace Datadog.Trace.HttpOverStreams;
 
 internal sealed partial class ChunkedEncodingReadStream : DelegatingStream
@@ -45,8 +39,6 @@ internal sealed partial class ChunkedEncodingReadStream : DelegatingStream
         128;
 #endif
 
-    private static readonly ArrayPool Pool = ArrayPool.Shared;
-
     private readonly Stream _innerStream;
     private readonly byte[] _streamBuffer;
     private ulong _bytesRemainingInChunk;
@@ -63,7 +55,7 @@ internal sealed partial class ChunkedEncodingReadStream : DelegatingStream
         _innerStream = innerStream;
         // We use a buffer that is double the size of the read buffer, so that we can move
         // the bytes around if we end up hitting edge cases
-        _streamBuffer = Pool.Rent(ReadBufferSize * 2);
+        _streamBuffer = new byte[ReadBufferSize * 2];
         _currentPosition = new(offset: 0, count: 0);
     }
 
@@ -76,20 +68,6 @@ internal sealed partial class ChunkedEncodingReadStream : DelegatingStream
         // ConsumeTrailers,
         Done
     }
-
-    protected override void Dispose(bool disposing)
-    {
-        Pool.Return(_streamBuffer);
-        base.Dispose(disposing);
-    }
-
-#if NETCOREAPP
-    public override ValueTask DisposeAsync()
-    {
-        Pool.Return(_streamBuffer);
-        return base.DisposeAsync();
-    }
-#endif
 
     // This is not called by our production code, so we're yolo-ing it
     // MockTracerAgent currently _does_ use this code path
