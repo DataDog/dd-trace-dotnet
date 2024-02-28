@@ -1,4 +1,4 @@
-// <copyright file="WebUtilityAspect.cs" company="Datadog">
+// <copyright file="HttpUtilityAspect.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,17 +13,17 @@ using Datadog.Trace.Iast.Propagation;
 namespace Datadog.Trace.Iast.Aspects.System.Net;
 
 /// <summary> WebClient class aspects </summary>
-[AspectClass("System.Private.Corelib;System.Runtime", AspectType.Sink, VulnerabilityType.Ssrf)]
+[AspectClass("System.Web;System.Runtime.Extensions;System.Web.HttpUtility", AspectType.Sink, VulnerabilityType.Ssrf)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class WebUtilityAspect
+public class HttpUtilityAspect
 {
     /// <summary>
     /// Launches a SSRF vulnerability if the url is tainted
     /// </summary>
     /// <param name="parameter">the sensitive parameter of the method</param>
     /// <returns>the parameter</returns>
-    [AspectMethodReplace("System.Net.WebUtility::HtmlEncode(System.String)")]
+    [AspectMethodReplace("System.Web.HttpUtility::HtmlEncode(System.String)")]
     public static string? Review(string? parameter)
     {
         return IastModule.OnXssEscape(parameter);

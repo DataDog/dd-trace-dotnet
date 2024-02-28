@@ -6,20 +6,8 @@
 #nullable enable
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
+using System.Net;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast.Aspects.System;
-using Datadog.Trace.Iast.Propagation;
-using Datadog.Trace.Iast.SensitiveData;
-using Datadog.Trace.Iast.Settings;
-using Datadog.Trace.Iast.Telemetry;
-using Datadog.Trace.Logging;
-using static System.Net.Mime.MediaTypeNames;
-using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast;
 
@@ -27,42 +15,45 @@ internal static partial class IastModule
 {
     public static string? OnXssEscape(string? text)
     {
+        var res = WebUtility.HtmlEncode(text);
         try
         {
             if (!iastSettings.Enabled || string.IsNullOrEmpty(text))
             {
-                return text;
+                return res;
             }
 
             var tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Xss))
             {
-                return text;
+                return res;
             }
 
             var scope = tracer.ActiveScope as Scope;
-            var currentSpan = scope?.Span;
-            var traceContext = currentSpan?.Context?.TraceContext;
+            var traceContext = scope?.Span?.Context?.TraceContext;
 
             if (traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
             {
-                return text;
+                return res;
             }
 
             var tainted = traceContext?.IastRequestContext?.GetTainted(text!);
             if (tainted is null)
             {
-                return text;
+                return res;
             }
 
-            // OnExecutedSinkTelemetry(IastInstrumentedSinks.Xss);
-            // Mark as safe (by now we return a new string)
-            return new string(text!.ToCharArray());
+            if (object.ReferenceEquals(res, text))
+            {
+                // If returned reference is the same, we create a new one
+                res = new string(text!.ToCharArray());
+            }
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error while checking for Sql injection.");
-            return text;
         }
+
+        return res;
     }
 }

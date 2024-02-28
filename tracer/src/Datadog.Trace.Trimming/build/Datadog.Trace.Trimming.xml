@@ -352,9 +352,6 @@
       <type fullname="System.Net.Http.StreamContent" />
    </assembly>
    <assembly fullname="System.Net.Http.WinHttpHandler" />
-   <assembly fullname="System.Net.Mail">
-      <type fullname="System.Net.Mime.MediaTypeNames" />
-   </assembly>
    <assembly fullname="System.Net.NameResolution">
       <type fullname="System.Net.Dns" />
       <type fullname="System.Net.IPHostEntry" />
@@ -621,6 +618,7 @@
       <type fullname="System.MethodAccessException" />
       <type fullname="System.MidpointRounding" />
       <type fullname="System.MulticastDelegate" />
+      <type fullname="System.Net.WebUtility" />
       <type fullname="System.NonSerializedAttribute" />
       <type fullname="System.NotImplementedException" />
       <type fullname="System.NotSupportedException" />
@@ -865,6 +863,7 @@
       <type fullname="System.IO.TextReader" />
       <type fullname="System.IO.TextWriter" />
       <type fullname="System.Math" />
+      <type fullname="System.Net.WebUtility" />
       <type fullname="System.Numerics.BitOperations" />
       <type fullname="System.OperatingSystem" />
       <type fullname="System.PlatformID" />
@@ -994,6 +993,7 @@
       <type fullname="System.Threading.Timer" />
       <type fullname="System.Threading.TimerCallback" />
    </assembly>
+   <assembly fullname="System.Web" />
    <assembly fullname="System.Xml.ReaderWriter">
       <type fullname="System.Xml.NameTable" />
       <type fullname="System.Xml.XmlAttribute" />

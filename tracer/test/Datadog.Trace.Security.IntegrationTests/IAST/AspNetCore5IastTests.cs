@@ -742,7 +742,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     public async Task TestIastReflectedXssEscapedRequest()
     {
         var filename = "Iast.ReflectedXssEscaped.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
-        var url = "/Iast/ReflectedXssEscaped?param=<b>RawValue</b>";
+        var url = "/Iast/ReflectedXssEscaped?param=RawValue";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
