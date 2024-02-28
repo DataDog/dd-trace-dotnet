@@ -3,12 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETCOREAPP3_1_OR_GREATER
-using System.Text.RegularExpressions;
-#else
-using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
-#endif
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Iast;
