@@ -2,6 +2,28 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
+    Name: aspnet-mvc.request,
+    Resource: GET /iast/getfilecontent,
+    Service: sample,
+    Type: web,
+    ParentId: Id_3,
+    Tags: {
+      aspnet.action: getfilecontent,
+      aspnet.controller: iast,
+      aspnet.route: {controller}/{action}/{id},
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Iast/GetFileContent?file=filename,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      span.kind: server
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
     Name: aspnet.request,
     Resource: GET /iast/getfilecontent,
     Service: sample,
@@ -12,19 +34,18 @@
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: http://localhost:00000/Iast/GetFileContent?file=file.csv,
+      http.url: http://localhost:00000/Iast/GetFileContent?file=filename,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.waf.version: 1.16.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "PATH_TRAVERSAL",
-      "hash": 2114125236,
+      "hash": -1927798418,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
@@ -33,7 +54,7 @@
       "evidence": {
         "valueParts": [
           {
-            "value": "file.csv",
+            "value": "filename",
             "source": 0
           }
         ]
@@ -44,7 +65,7 @@
     {
       "origin": "http.request.parameter",
       "name": "file",
-      "value": "file.csv"
+      "value": "filename"
     }
   ]
 },
@@ -54,33 +75,9 @@
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
-      _dd.appsec.event_rules.error_count: 0.0,
-      _dd.appsec.event_rules.loaded: 130.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_3,
-    Name: aspnet-mvc.request,
-    Resource: GET /iast/getfilecontent,
-    Service: sample,
-    Type: web,
-    ParentId: Id_2,
-    Tags: {
-      aspnet.action: getfilecontent,
-      aspnet.controller: iast,
-      aspnet.route: {controller}/{action}/{id},
-      env: integration_tests,
-      http.method: GET,
-      http.request.headers.host: localhost:00000,
-      http.status_code: 200,
-      http.url: http://localhost:00000/Iast/GetFileContent?file=file.csv,
-      http.useragent: Mistake Not...,
-      language: dotnet,
-      span.kind: server
     }
   }
 ]

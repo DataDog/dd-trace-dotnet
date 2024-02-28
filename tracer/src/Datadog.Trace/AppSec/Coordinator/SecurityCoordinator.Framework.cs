@@ -266,6 +266,11 @@ internal readonly partial struct SecurityCoordinator
         }
 
         var result = RunWaf(args);
+        CheckAndBlock(result);
+    }
+
+    internal void CheckAndBlock(IResult? result)
+    {
         if (result is not null)
         {
             var reporting = MakeReportingFunction(result);

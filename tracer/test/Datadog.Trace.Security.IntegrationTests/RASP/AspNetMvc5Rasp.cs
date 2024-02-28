@@ -7,6 +7,7 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
@@ -64,6 +65,7 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
         EnableRasp();
+        SetSecurity(true);
         EnableIast(enableIast);
         EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
         EnableEvidenceRedaction(false);
@@ -72,34 +74,35 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
         DisableObfuscationQueryString();
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+        var externalRulesFile = "C:\\CommonFolder\\shared\\repos\\dd-trace-5\\tracer\\test\\Datadog.Trace.Security.Unit.Tests\\rasp-rule-set.json";
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, externalRulesFile);
 
         _iisFixture = iisFixture;
         _classicMode = classicMode;
         _enableIast = enableIast;
 
-        SetSecurity(true);
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
         SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
     }
 
+    [SkippableTheory]
+    [InlineData("/etc/password")]
+    [InlineData("filename")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
-    [Fact]
-    public async Task TestRaspIastPathTraversalRequest()
+    public async Task TestRaspIastPathTraversalRequest(string file)
     {
-        var filePath = "file.csv";
-        var filename = _enableIast ? "Rasp.PathTraversal.AspNetMvc5.IastEnabled" : "Rasp.PathTraversal.AspNetMvc5.IastDisabled";
-        var url = $"/Iast/GetFileContent?file={filePath}";
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl, null);
+        var methodName = "PathTraversal";
+        var testName = _enableIast ? "RaspIast.AspNetMvc5" : "Rasp.AspNetMvc5";
+        testName += _classicMode ? ".Classic" : ".Integrated";
+        var url = $"/Iast/GetFileContent?file={file}";
+        IncludeAllHttpSpans = true;
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.UseParameters(file);
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: methodName);
     }
 
     public async Task InitializeAsync()
