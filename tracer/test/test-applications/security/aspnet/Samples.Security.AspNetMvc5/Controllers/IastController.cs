@@ -12,6 +12,7 @@ using System.Net.Http;
 using System.DirectoryServices;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web.Script.Serialization;
 using System.Xml;
 
 namespace Samples.Security.AspNetCore5.Controllers
@@ -110,6 +111,29 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content("Error in query.", "text/html");
             }            
+        }
+        
+        [Route("JavaScriptSerializerDeserializeObject")]
+        public ActionResult JavaScriptSerializerDeserializeObject(string json)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(json))
+                {
+                    var serializer = new JavaScriptSerializer();
+                    var obj = serializer.Deserialize<Dictionary<string, object>>(json);
+                    var value = obj["key"] as string;
+
+                    // Trigger a vulnerability with the tainted string
+                    return ExecuteCommandInternal(value, "");
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return Content("No json was provided");
         }
 
         [Route("ExecuteCommand")]

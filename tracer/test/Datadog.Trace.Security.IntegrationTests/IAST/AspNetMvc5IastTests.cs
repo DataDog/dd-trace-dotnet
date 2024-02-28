@@ -527,6 +527,21 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
                             .DisableRequireUniquePrefix();
     }
 
+    [Fact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestJavaScriptSerializerDeserializeObject()
+    {
+        const string url = "/Iast/JavaScriptSerializerDeserializeObject?json%3D%7B%20%22key%22%3A%20%22value%22%20%7D";
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
+        var filename = GetFileName("JavaScriptSerializerDeserializeObject");
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
     protected async Task TestStrictTransportSecurityHeaderMissingVulnerability(string test, string url)
     {
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
