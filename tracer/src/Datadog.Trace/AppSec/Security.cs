@@ -205,6 +205,7 @@ namespace Datadog.Trace.AppSec
                         _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
                         _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
                         _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
+                        _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafProcessorsOverridesKey);
                         _configurationStatus.IncomingUpdateState.SecurityStateChange = false;
                     }
                 }
@@ -373,6 +374,7 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmTrustedIps, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmProcessorOverrides, _noLocalRules);
         }
 
         private void InitWafAndInstrumentations(bool fromRemoteConfig = false)

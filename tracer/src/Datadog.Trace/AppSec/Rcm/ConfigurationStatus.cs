@@ -24,6 +24,7 @@ internal record ConfigurationStatus
 {
     internal const string WafRulesKey = "rules";
     internal const string WafRulesOverridesKey = "rules_override";
+    internal const string WafProcessorsOverridesKey = "processors_override";
     internal const string WafExclusionsKey = "exclusions";
     internal const string WafRulesDataKey = "rules_data";
     internal const string WafCustomRulesKey = "custom_rules";
@@ -49,6 +50,8 @@ internal record ConfigurationStatus
     internal Dictionary<string, AsmFeature> AsmFeaturesByFile { get; } = new();
 
     internal Dictionary<string, JArray> CustomRulesByFile { get; } = new();
+
+    public Dictionary<string, ProcessorOverride[]> ProcessorOverrides { get; } = new();
 
     internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
 
@@ -101,6 +104,12 @@ internal record ConfigurationStatus
         {
             var overrides = RulesOverridesByFile.SelectMany(x => x.Value).ToList();
             dictionary.Add(WafRulesOverridesKey, overrides.Select(r => r.ToKeyValuePair()).ToArray());
+        }
+
+        if (IncomingUpdateState.WafKeysToApply.Contains(WafProcessorsOverridesKey))
+        {
+            var overrides = ProcessorOverrides.SelectMany(x => x.Value).ToList();
+            dictionary.Add(WafProcessorsOverridesKey, overrides.Select(r => r.ToKeyValuePair()).ToArray());
         }
 
         if (IncomingUpdateState.WafKeysToApply.Contains(WafRulesDataKey))

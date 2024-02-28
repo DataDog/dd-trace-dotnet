@@ -32,6 +32,12 @@ internal class AsmProduct : IAsmConfigUpdater
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
             }
 
+            if (asmConfig.ProcessorOverrides != null)
+            {
+                configurationStatus.ProcessorOverrides[asmConfigName] = asmConfig.ProcessorOverrides;
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafProcessorsOverridesKey);
+            }
+
             if (asmConfig.Exclusions != null)
             {
                 configurationStatus.ExclusionsByFile[asmConfigName] = asmConfig.Exclusions;
