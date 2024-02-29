@@ -64,21 +64,32 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
 
                     if (fileBitmap.CountActiveBits() > 0)
                     {
-                        fileDictionary ??= new Dictionary<string, FileCoverage>();
-                        if (!fileDictionary.TryGetValue(moduleFile.Path, out var fileCoverage))
+                        FileCoverage? fileCoverage;
+                        if (fileDictionary is null)
                         {
-                            fileCoverage = new FileCoverage { FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false) };
+                            fileCoverage = new FileCoverage
+                            {
+                                FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false)
+                            };
+
+                            fileDictionary = new Dictionary<string, FileCoverage>
+                            {
+                                [moduleFile.Path] = fileCoverage
+                            };
+                        }
+                        else if (!fileDictionary.TryGetValue(moduleFile.Path, out fileCoverage))
+                        {
+                            fileCoverage = new FileCoverage
+                            {
+                                FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false)
+                            };
+
                             fileDictionary[moduleFile.Path] = fileCoverage;
                         }
 
-                        if (fileCoverage.Bitmap is null)
-                        {
-                            fileCoverage.Bitmap = fileBitmap.ToArray();
-                        }
-                        else
-                        {
-                            fileCoverage.Bitmap = (fileBitmap | new FileBitmap(fileCoverage.Bitmap)).GetInternalArrayOrToArray();
-                        }
+                        fileCoverage.Bitmap = fileCoverage.Bitmap is null ?
+                                                  fileBitmap.ToArray() :
+                                                  (fileBitmap | new FileBitmap(fileCoverage.Bitmap)).GetInternalArrayOrToArray();
                     }
                 }
             }
@@ -93,7 +104,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
 
             var testCoverage = new TestCoverage { Files = fileDictionary.Values.ToList(), };
 
-            // if (Log.IsEnabled(LogEventLevel.Debug))
+            if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Information("Test Coverage: {Json}", JsonConvert.SerializeObject(testCoverage));
             }
