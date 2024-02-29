@@ -11,6 +11,5 @@ internal enum TelemetryProductType
 {
     AppSec,
     Profiler,
-    DynamicInstrumentation,
-    ExceptionDebugging
+    DynamicInstrumentation
 }

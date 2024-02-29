@@ -47,14 +47,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 Log.Warning("Third party modules load has failed. Disabling Exception Debugging.");
                 _isDisabled = true;
-                Tracer.Instance.TracerManager.Telemetry.ProductChanged(TelemetryProductType.ExceptionDebugging, enabled: false, error: null);
             }
             else
             {
                 InitSnapshotsSink();
                 ExceptionTrackManager.Initialize();
                 LifetimeManager.Instance.AddShutdownTask(Dispose);
-                Tracer.Instance.TracerManager.Telemetry.ProductChanged(TelemetryProductType.ExceptionDebugging, enabled: true, error: null);
             }
         }
 

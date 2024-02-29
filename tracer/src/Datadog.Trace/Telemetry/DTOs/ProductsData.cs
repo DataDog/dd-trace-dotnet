@@ -17,6 +17,4 @@ internal class ProductsData
     public ProductData? Profiler { get; set; }
 
     public ProductData? DynamicInstrumentation { get; set; }
-
-    public ProductData? ExceptionDebugging { get; set; }
 }

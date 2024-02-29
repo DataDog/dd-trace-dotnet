@@ -11,15 +11,14 @@ namespace Datadog.Trace.Telemetry;
 
 internal class ProductsTelemetryCollector
 {
-    private const int NumberOfProducts = 4;
     private readonly ProductDetail?[] _allTime;
     private readonly ProductDetail?[] _productsByType;
     private int _hasChangesFlag = 0;
 
     public ProductsTelemetryCollector()
     {
-        _productsByType = new ProductDetail?[NumberOfProducts];
-        _allTime = new ProductDetail?[NumberOfProducts];
+        _productsByType = new ProductDetail?[3];
+        _allTime = new ProductDetail?[3];
     }
 
     public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error)
@@ -53,19 +52,16 @@ internal class ProductsTelemetryCollector
             var appsec = GetLatestData(_allTime, _productsByType, TelemetryProductType.AppSec);
             var profiler = GetLatestData(_allTime, _productsByType, TelemetryProductType.Profiler);
             var dynamicInstrumentation = GetLatestData(_allTime, _productsByType, TelemetryProductType.DynamicInstrumentation);
-            var exceptionDebugging = GetLatestData(_allTime, _productsByType, TelemetryProductType.ExceptionDebugging);
 
             if (appsec is not null
              || profiler is not null
-             || dynamicInstrumentation is not null
-             || exceptionDebugging is not null)
+             || dynamicInstrumentation is not null)
             {
                 return new ProductsData
                 {
                     Appsec = appsec,
                     Profiler = profiler,
-                    DynamicInstrumentation = dynamicInstrumentation,
-                    ExceptionDebugging = exceptionDebugging
+                    DynamicInstrumentation = dynamicInstrumentation
                 };
             }
 
@@ -87,19 +83,16 @@ internal class ProductsTelemetryCollector
             var appsec = GetAndUpdateProductData(_allTime, _productsByType, TelemetryProductType.AppSec);
             var profiler = GetAndUpdateProductData(_allTime, _productsByType, TelemetryProductType.Profiler);
             var dynamicInstrumentation = GetAndUpdateProductData(_allTime, _productsByType, TelemetryProductType.DynamicInstrumentation);
-            var exceptionDebugging = GetAndUpdateProductData(_allTime, _productsByType, TelemetryProductType.ExceptionDebugging);
 
             if (appsec is not null
              || profiler is not null
-             || dynamicInstrumentation is not null
-             || exceptionDebugging is not null)
+             || dynamicInstrumentation is not null)
             {
                 return new ProductsData
                 {
                     Appsec = appsec,
                     Profiler = profiler,
-                    DynamicInstrumentation = dynamicInstrumentation,
-                    ExceptionDebugging = exceptionDebugging
+                    DynamicInstrumentation = dynamicInstrumentation
                 };
             }
 
