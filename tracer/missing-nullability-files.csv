@@ -679,7 +679,6 @@ src/Datadog.Trace/Util/Http/QueryStringObfuscation/Obfuscator.cs
 src/Datadog.Trace/Util/Http/QueryStringObfuscation/ObfuscatorBase.cs
 src/Datadog.Trace/Util/Http/QueryStringObfuscation/ObfuscatorFactory.cs
 src/Datadog.Trace/Ci/Coverage/Models/Tests/FileCoverage.cs
-src/Datadog.Trace/Ci/Coverage/Models/Tests/TestCoverage.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/MySql/MySqlDefinitions.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/Npgsql/NpgsqlDefinitions.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/Oracle/OracleDefinitions.cs
