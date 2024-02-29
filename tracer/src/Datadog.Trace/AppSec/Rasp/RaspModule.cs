@@ -55,7 +55,7 @@ internal static class RaspModule
 
         if (result!.ShouldBlock)
         {
-            throw new BlockException(result);
+            throw new BlockException(result, true);
         }
 #else
         IResult? result = null;
@@ -73,14 +73,11 @@ internal static class RaspModule
             {
                 var json = JsonConvert.SerializeObject(result.Data);
                 Log.Information("RASP WAF result: {Result}", json);
+                securityCoordinator?.TryReport(result, result.ShouldBlock);
 
                 if (result!.ShouldBlock)
                 {
-                    throw new BlockException(result);
-                }
-                else
-                {
-                    securityCoordinator?.TryReport(result, result.ShouldBlock);
+                    throw new BlockException(result, true);
                 }
             }
         }
