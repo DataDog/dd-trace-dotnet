@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Pr
     TypeName = "Datadog.Trace.SpanContextExtractor",
     MethodName = "Extract",
     ReturnTypeName = "Datadog.Trace.ISpanContext",
-    ParameterTypeNames = new[] { "!!0", "System.Func`3[!!0,System.String,System.Collections.Generic.IEnumerable`1[System.String]]" },
+    ParameterTypeNames = ["!!0", "System.Func`3[!!0,System.String,System.Collections.Generic.IEnumerable`1[System.String]]"],
     MinimumVersion = ManualInstrumentationConstants.MinVersion,
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
@@ -41,9 +41,6 @@ public class SpanContextExtractorExtractIntegration
 
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
-        var updatedReturn = state.State is SpanContext spanContext
-                                ? spanContext.DuckCast<TReturn>()
-                                : returnValue; // This is always null, so lets us satisfy the types easily
-        return new CallTargetReturn<TReturn>(updatedReturn);
+        return new CallTargetReturn<TReturn>(state.State.DuckCast<TReturn>());
     }
 }

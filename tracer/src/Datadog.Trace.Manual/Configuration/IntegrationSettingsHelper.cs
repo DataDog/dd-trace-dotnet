@@ -16,7 +16,7 @@ internal sealed class IntegrationSettingsHelper
         var settings = Populate(initialValues, CreateSettingFunc);
         return new IntegrationSettingsCollection(settings);
 
-        IntegrationSettings CreateSettingFunc(string name, bool? enabled, bool? analyticsEnabled, double analyticsSampleRate)
+        static IntegrationSettings CreateSettingFunc(string name, bool? enabled, bool? analyticsEnabled, double analyticsSampleRate)
             => new(name, enabled, analyticsEnabled, analyticsSampleRate);
     }
 
@@ -25,7 +25,7 @@ internal sealed class IntegrationSettingsHelper
         var settings = Populate(initialValues, CreateSettingFunc);
         return new ImmutableIntegrationSettingsCollection(settings);
 
-        ImmutableIntegrationSettings CreateSettingFunc(string name, bool? enabled, bool? analyticsEnabled, double analyticsSampleRate)
+        static ImmutableIntegrationSettings CreateSettingFunc(string name, bool? enabled, bool? analyticsEnabled, double analyticsSampleRate)
             => new(name, enabled, analyticsEnabled, analyticsSampleRate);
     }
 

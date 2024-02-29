@@ -37,8 +37,6 @@ public class GetActiveScopeIntegration
 
         // The manual instrumentation returns null by default, so can re-use the return value here
         // (Not ideal for clarity, but generics prevent returning null directly)
-        return scope is null
-                   ? new CallTargetReturn<TReturn>(returnValue)
-                   : new CallTargetReturn<TReturn>(state.Scope.DuckCast<TReturn>());
+        return new CallTargetReturn<TReturn>(state.Scope.DuckCast<TReturn>());
     }
 }

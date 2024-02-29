@@ -13,7 +13,7 @@ internal class NullScope : IScope
     {
     }
 
-    public ISpan Span { get; } = NullSpan.Instance;
+    public ISpan Span => NullSpan.Instance;
 
     public void Dispose()
     {

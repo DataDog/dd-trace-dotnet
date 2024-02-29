@@ -46,8 +46,6 @@ public class StartSpanIntegration
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
         // Duck cast Scope as an ISpan (DataDog.Trace.Manual) and return it
-        return state.State is Span span
-                   ? new CallTargetReturn<TReturn>(span.DuckCast<TReturn>())
-                   : new CallTargetReturn<TReturn>(returnValue);
+        return new CallTargetReturn<TReturn>(span.DuckCast<TReturn>());
     }
 }

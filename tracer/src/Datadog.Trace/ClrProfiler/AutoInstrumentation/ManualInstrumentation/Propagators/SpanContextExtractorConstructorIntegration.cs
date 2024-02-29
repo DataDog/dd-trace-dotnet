@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Pr
     TypeName = "Datadog.Trace.SpanContextExtractor",
     MethodName = ".ctor",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = new string[0],
+    ParameterTypeNames = [],
     MinimumVersion = ManualInstrumentationConstants.MinVersion,
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]

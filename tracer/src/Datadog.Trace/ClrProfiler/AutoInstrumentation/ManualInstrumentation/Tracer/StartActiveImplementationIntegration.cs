@@ -50,8 +50,6 @@ public class StartActiveImplementationIntegration
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
     {
         // Duck cast Scope as an IScope (DataDog.Trace.Manual) and return it
-        return state.Scope is { } scope
-                   ? new CallTargetReturn<TReturn>(scope.DuckCast<TReturn>())
-                   : new CallTargetReturn<TReturn>(returnValue);
+        return new CallTargetReturn<TReturn>(scope.DuckCast<TReturn>());
     }
 }
