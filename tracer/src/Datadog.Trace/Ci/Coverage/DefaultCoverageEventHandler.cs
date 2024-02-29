@@ -127,4 +127,9 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
             throw;
         }
     }
+
+    protected override void OnClearContext(CoverageContextContainer context)
+    {
+        context.Clear();
+    }
 }

@@ -44,7 +44,6 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
             }
 
             _coverages.Clear();
-            GlobalContainer.Clear();
         }
     }
 
@@ -158,5 +157,10 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
             Log.Error(ex, "Error processing the global coverage data.");
             throw;
         }
+    }
+
+    protected override void OnClearContext(CoverageContextContainer context)
+    {
+        // None we need to keep all context to calculate the global coverage later
     }
 }
