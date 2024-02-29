@@ -100,13 +100,13 @@ namespace Datadog.Trace.Configuration
             public const string ExceptionDebuggingEnabled = "DD_EXCEPTION_DEBUGGING_ENABLED";
 
             /// <summary>
-            /// Configuration key for the amount of frames in a call stack we would like to capture values for.
+            /// Configuration key for the maximum number of frames in a call stack we would like to capture values for.
             /// </summary>
             /// <seealso cref="ExceptionDebuggingSettings.MaximumFramesToCapture"/>
             public const string ExceptionDebuggingMaxFramesToCapture = "DD_EXCEPTION_DEBUGGING_MAX_FRAMES_TO_CAPTURE";
 
             /// <summary>
-            /// Configuration key for capturing the variables of all the frames in exception call stack.
+            /// Configuration key to enable capturing the variables of all the frames in exception call stack.
             /// Default value is false.
             /// </summary>
             /// <seealso cref="ExceptionDebuggingSettings.CaptureFullCallStack"/>
