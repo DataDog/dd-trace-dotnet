@@ -1,0 +1,5 @@
+rulesets:
+  - csharp-best-practices           # ensure best practices are followed
+  - csharp-code-style               # code-style enforcement for C#
+  - csharp-inclusive                # ensure that we use inclusive wording in our codebase
+  - csharp-security                 # ensure your C# code is safe and secure
