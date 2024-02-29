@@ -4,11 +4,11 @@
 // </copyright>
 
 using System;
-using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 #endif
 
@@ -32,7 +32,7 @@ internal static class InsecureAuthAnalyzer
 
             // Check for Authorization header
             const string headerName = HeaderNames.Authorization;
-            if (!headers.TryGetValue(headerName, out var authHeader) || string.IsNullOrEmpty(authHeader))
+            if (!headers.TryGetValue(headerName, out var authHeader) || StringValues.IsNullOrEmpty(authHeader))
             {
                 return;
             }
