@@ -18,13 +18,36 @@ using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServic
 
 namespace Datadog.Trace.Ci.Coverage.Util;
 
+/// <summary>
+/// Represents a memory-efficient, modifiable file bitmap, optimized for high performance using unsafe code and SIMD instructions when available.
+/// </summary>
 internal readonly unsafe ref struct FileBitmap
 {
+    /// <summary>
+    /// Size of the bitmap in bytes.
+    /// </summary>
     private readonly int _size;
+
+    /// <summary>
+    /// Indicates whether the bitmap is disposable and should clean up resources.
+    /// </summary>
     private readonly bool _disposable;
+
+    /// <summary>
+    /// Handle to the pinned array if the bitmap is created from a managed byte array.
+    /// </summary>
     private readonly PinnedArray? _handle;
+
+    /// <summary>
+    /// Pointer to the start of the bitmap data in memory.
+    /// </summary>
     private readonly byte* _bitmap;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FileBitmap"/> struct with a specified buffer pointer and size.
+    /// </summary>
+    /// <param name="buffer">Pointer to the buffer.</param>
+    /// <param name="size">Size of the buffer.</param>
     public FileBitmap(byte* buffer, int size)
     {
         _handle = null;
@@ -34,6 +57,10 @@ internal readonly unsafe ref struct FileBitmap
         _disposable = false;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FileBitmap"/> struct from a byte array.
+    /// </summary>
+    /// <param name="bitmapArray">The byte array to read or create the bitmap from.</param>
     public FileBitmap(byte[] bitmapArray)
     {
         _size = bitmapArray.Length;
@@ -42,18 +69,35 @@ internal readonly unsafe ref struct FileBitmap
         _disposable = true;
     }
 
+    /// <summary>
+    /// Gets the size of the bitmap.
+    /// </summary>
     public int Size => _size;
 
+    /// <summary>
+    /// Performs a bitwise OR operation on two <see cref="FileBitmap"/> instances.
+    /// </summary>
+    /// <param name="fileBitmapA">The first operand.</param>
+    /// <param name="fileBitmapB">The second operand.</param>
+    /// <returns>The result of the bitwise OR operation.</returns>
     public static FileBitmap operator |(FileBitmap fileBitmapA, FileBitmap fileBitmapB)
     {
+        // Determine the minimum and maximum sizes of the two bitmaps to handle bitmaps of different lengths
         var minSize = Math.Min(fileBitmapA._size, fileBitmapB._size);
         var maxSize = Math.Max(fileBitmapA._size, fileBitmapB._size);
+
+        // Create a new bitmap to store the result of the OR operation, initializing it to the size of the larger bitmap
         var resBitmap = new FileBitmap(new byte[maxSize]);
+
+        // Start index for iterating over the bitmaps
         var index = 0;
 
 #if NET8_0_OR_GREATER
+        // Use SIMD operations for efficient bitwise OR operations when the target framework supports it
+        // This section is optimized for .NET 8.0 or greater, utilizing larger vector sizes when available
         for (; minSize - index >= 64; index += 64)
         {
+            // Read 64 bytes (512 bits) at once from each bitmap and perform a bitwise OR
             var a = Unsafe.ReadUnaligned<Vector512<byte>>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<Vector512<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a | b);
@@ -61,8 +105,10 @@ internal readonly unsafe ref struct FileBitmap
 #endif
 
 #if NET7_0_OR_GREATER
+        // Continue with smaller vector sizes if .NET 7.0 or greater is being used
         for (; minSize - index >= 32; index += 32)
         {
+            // Perform bitwise OR on 32 bytes (256 bits) at a time
             var a = Unsafe.ReadUnaligned<Vector256<byte>>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<Vector256<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a | b);
@@ -70,6 +116,7 @@ internal readonly unsafe ref struct FileBitmap
 
         for (; minSize - index >= 16; index += 16)
         {
+            // Perform bitwise OR on 16 bytes (128 bits) at a time
             var a = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a | b);
@@ -78,6 +125,7 @@ internal readonly unsafe ref struct FileBitmap
 
         for (; minSize - index >= 8; index += 8)
         {
+            // Read and OR 8 bytes (64 bits) at once
             var a = Unsafe.ReadUnaligned<ulong>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<ulong>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a | b);
@@ -85,6 +133,7 @@ internal readonly unsafe ref struct FileBitmap
 
         for (; minSize - index >= 4; index += 4)
         {
+            // Process 4 bytes (32 bits) at a time
             var a = Unsafe.ReadUnaligned<uint>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<uint>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a | b);
@@ -92,36 +141,55 @@ internal readonly unsafe ref struct FileBitmap
 
         for (; minSize - index >= 2; index += 2)
         {
+            // Process 2 bytes (16 bits) at a time
             var a = Unsafe.ReadUnaligned<ushort>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<ushort>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, (ushort)(a | b));
         }
 
+        // Handle any remaining bytes one at a time
         for (; index < minSize; index++)
         {
+            // Perform bitwise OR on individual bytes
             resBitmap._bitmap[index] = (byte)(fileBitmapA._bitmap[index] | fileBitmapB._bitmap[index]);
         }
 
+        // If the sizes of the original bitmaps differ, fill in the remaining bits from the larger bitmap
         if (minSize != maxSize)
         {
             var bitmap = fileBitmapA._size == maxSize ? fileBitmapA._bitmap : fileBitmapB._bitmap;
             for (; index < maxSize; index++)
             {
+                // Copy the remaining bytes from the larger bitmap
                 resBitmap._bitmap[index] = bitmap[index];
             }
         }
 
+        // Return the resulting bitmap, which contains the bitwise OR of the two input bitmaps
         return resBitmap;
     }
 
+    /// <summary>
+    /// Performs a bitwise AND operation on two <see cref="FileBitmap"/> instances.
+    /// </summary>
+    /// <param name="fileBitmapA">The first operand.</param>
+    /// <param name="fileBitmapB">The second operand.</param>
+    /// <returns>The result of the bitwise AND operation.</returns>
     public static FileBitmap operator &(FileBitmap fileBitmapA, FileBitmap fileBitmapB)
     {
+        // Determine the minimum and maximum sizes of the two bitmaps to handle bitmaps of different lengths
         var minSize = Math.Min(fileBitmapA._size, fileBitmapB._size);
         var maxSize = Math.Max(fileBitmapA._size, fileBitmapB._size);
+
+        // Create a new bitmap to store the result of the AND operation, initializing it to the size of the larger bitmap
         var resBitmap = new FileBitmap(new byte[maxSize]);
+
+        // Start index for iterating over the bitmaps
         var index = 0;
 
 #if NET8_0_OR_GREATER
+        // Use SIMD operations for efficient bitwise AND operations when the target framework supports it
+        // This section is optimized for .NET 8.0 or greater, utilizing larger vector sizes when available
         for (; minSize - index >= 64; index += 64)
         {
             var a = Unsafe.ReadUnaligned<Vector512<byte>>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
@@ -131,8 +199,10 @@ internal readonly unsafe ref struct FileBitmap
 #endif
 
 #if NET7_0_OR_GREATER
+        // Continue with smaller vector sizes if .NET 7.0 or greater is being used
         for (; minSize - index >= 32; index += 32)
         {
+            // Perform bitwise AND on 32 bytes (256 bits) at a time
             var a = Unsafe.ReadUnaligned<Vector256<byte>>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<Vector256<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a & b);
@@ -140,6 +210,7 @@ internal readonly unsafe ref struct FileBitmap
 
         for (; minSize - index >= 16; index += 16)
         {
+            // Perform bitwise AND on 16 bytes (128 bits) at a time
             var a = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a & b);
@@ -148,6 +219,7 @@ internal readonly unsafe ref struct FileBitmap
 
         for (; minSize - index >= 8; index += 8)
         {
+            // Read and AND 8 bytes (64 bits) at once
             var a = Unsafe.ReadUnaligned<ulong>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<ulong>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a & b);
@@ -155,6 +227,7 @@ internal readonly unsafe ref struct FileBitmap
 
         for (; minSize - index >= 4; index += 4)
         {
+            // Process 4 bytes (32 bits) at a time
             var a = Unsafe.ReadUnaligned<uint>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<uint>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a & b);
@@ -162,51 +235,75 @@ internal readonly unsafe ref struct FileBitmap
 
         for (; minSize - index >= 2; index += 2)
         {
+            // Process 2 bytes (16 bits) at a time
             var a = Unsafe.ReadUnaligned<ushort>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<ushort>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, (ushort)(a & b));
         }
 
+        // Handle any remaining bytes one at a time
         for (; index < minSize; index++)
         {
+            // Perform bitwise AND on individual bytes
             resBitmap._bitmap[index] = (byte)(fileBitmapA._bitmap[index] & fileBitmapB._bitmap[index]);
         }
 
+        // If the sizes of the original bitmaps differ, fill in the extra space in the result with zeros.
         if (minSize != maxSize)
         {
+            // Since we're performing an AND operation, any bits beyond the size of the smaller bitmap should be 0.
             for (; index < maxSize; index++)
             {
                 resBitmap._bitmap[index] = 0;
             }
         }
 
+        // Return the resulting bitmap, which contains the bitwise AND of the two input bitmaps.
         return resBitmap;
     }
 
+    /// <summary>
+    /// Performs a bitwise NOT operation on a <see cref="FileBitmap"/> instance.
+    /// </summary>
+    /// <param name="fileBitmap">The operand.</param>
+    /// <returns>The result of the bitwise NOT operation.</returns>
     public static FileBitmap operator ~(FileBitmap fileBitmap)
     {
+        // Create a new bitmap to store the result of the NOT operation, with the same size as the input bitmap.
         var resBitmap = new FileBitmap(new byte[fileBitmap._size]);
+
+        // Start index for iterating over the bitmap.
         var index = 0;
+
+        // Size of the bitmap in bytes
         var size = fileBitmap._size;
+
+        // Pointer to the bitmap data
         var bitmap = fileBitmap._bitmap;
 
 #if NET8_0_OR_GREATER
+        // Use SIMD operations for efficient bitwise NOT operations when the target framework supports it.
+        // This section is optimized for .NET 8.0 or greater, utilizing larger vector sizes when available.
         for (; size - index >= 64; index += 64)
         {
+            // Read 64 bytes (512 bits) at once from the bitmap and perform a bitwise NOT.
             var a = Unsafe.ReadUnaligned<Vector512<byte>>(ref Unsafe.AsRef<byte>(bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, ~a);
         }
 #endif
 
 #if NET7_0_OR_GREATER
+        // Continue with smaller vector sizes if .NET 7.0 or greater is being used.
         for (; size - index >= 32; index += 32)
         {
+            // Perform bitwise NOT on 32 bytes (256 bits) at a time.
             var a = Unsafe.ReadUnaligned<Vector256<byte>>(ref Unsafe.AsRef<byte>(bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, ~a);
         }
 
         for (; size - index >= 16; index += 16)
         {
+            // Perform bitwise NOT on 16 bytes (128 bits) at a time.
             var a = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, ~a);
         }
@@ -214,115 +311,148 @@ internal readonly unsafe ref struct FileBitmap
 
         for (; size - index >= 8; index += 8)
         {
+            // Read and NOT 8 bytes (64 bits) at once.
             var a = Unsafe.ReadUnaligned<ulong>(ref Unsafe.AsRef<byte>(bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, ~a);
         }
 
         for (; size - index >= 4; index += 4)
         {
+            // Process 4 bytes (32 bits) at a time.
             var a = Unsafe.ReadUnaligned<uint>(ref Unsafe.AsRef<byte>(bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, ~a);
         }
 
         for (; size - index >= 2; index += 2)
         {
+            // Process 2 bytes (16 bits) at a time.
             var a = Unsafe.ReadUnaligned<ushort>(ref Unsafe.AsRef<byte>(bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, (ushort)~a);
         }
 
+        // Handle any remaining bytes one at a time.
         for (; index < size; index++)
         {
+            // Perform bitwise NOT on individual bytes.
             resBitmap._bitmap[index] = (byte)~bitmap[index];
         }
 
+        // Return the resulting bitmap, which contains the inverted bits of the input bitmap.
         return resBitmap;
     }
 
+    /// <summary>
+    /// Calculates the required storage size for a given number of lines.
+    /// </summary>
+    /// <param name="numOfLines">The number of lines.</param>
+    /// <returns>The required storage size in bytes.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetSize(int numOfLines) => (numOfLines + 7) / 8;
 
+    /// <summary>
+    /// Sets a bit at a specified line to 1.
+    /// </summary>
+    /// <param name="line">The line number of the bit to set.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Set(int line)
     {
-        /*
-            L0000: dec edx
-            L0001: mov eax, edx
-            L0003: shr eax, 3
-            L0006: add eax, [ecx+0xc]
-            L0009: mov ecx, edx
-            L000b: and ecx, 7
-            L000e: mov edx, 0x80
-            L0013: sar edx, cl
-            L0015: movzx edx, dl
-            L0018: or [eax], dl
-            L001a: ret
-         */
+        // Decrements the line number to align with zero-based index
         var idx = (uint)line - 1;
-        _bitmap[idx >> 3] |= (byte)(128 >> (int)(idx & 7));
+
+        // Determines the byte index in the bitmap array by dividing the bit index by 8 (since there are 8 bits in a byte)
+        // This effectively shifts the bit index right by 3 places, equivalent to dividing by 8 but faster.
+        var byteIndex = idx >> 3;
+
+        // Calculates the bit position within the target byte by using the modulus operation with 7 (idx & 7)
+        // This finds the remainder of idx / 8, giving the exact bit position within the byte where the bit needs to be set.
+        // 128 >> (int)(idx & 7) creates a mask by shifting the bit '1' into the correct position within the byte.
+        // For example, if idx & 7 results in 2, it shifts '10000000' right by 2, resulting in '00100000'.
+        var bitMask = (byte)(128 >> (int)(idx & 7));
+
+        // ORs the target byte with the bitmask, setting the specified bit to 1 without altering the other bits.
+        // This is done by directly accessing the byte in the bitmap at the calculated byte index and applying the bitmask.
+        // The |= operator ensures that if the bit was already set to 1, it remains as 1, effectively setting only the intended bit.
+        _bitmap[byteIndex] |= bitMask;
     }
 
+    /// <summary>
+    /// Gets the value of a bit at a specified line.
+    /// </summary>
+    /// <param name="line">The line number of the bit to get.</param>
+    /// <returns>True if the bit is set to 1, otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Get(int line)
     {
-        /*
-            L0000: dec edx
-            L0001: mov ecx, [ecx+0xc]
-            L0004: mov eax, edx
-            L0006: shr eax, 3
-            L0009: movzx eax, byte ptr [ecx+eax]
-            L000d: mov ecx, edx
-            L000f: and ecx, 7
-            L0012: mov edx, 0x80
-            L0017: sar edx, cl
-            L0019: movzx edx, dl
-            L001c: test edx, eax
-            L001e: setne al
-            L0021: movzx eax, al
-            L0024: ret
-         */
+        // Decrements the line number to align with zero-based index
         var idx = (uint)line - 1;
-        return (_bitmap[idx >> 3] & (byte)(128 >> (int)(idx & 7))) != 0;
+
+        // Determines the byte index in the bitmap array by dividing the bit index by 8 (since there are 8 bits in a byte)
+        // This effectively shifts the bit index right by 3 places, equivalent to dividing by 8 but faster.
+        var byteIndex = idx >> 3;
+
+        // Calculates the bit position within the target byte by using the modulus operation with 7 (idx & 7)
+        // This finds the remainder of idx / 8, giving the exact bit position within the byte where the bit needs to be set.
+        // 128 >> (int)(idx & 7) creates a mask by shifting the bit '1' into the correct position within the byte.
+        // For example, if idx & 7 results in 2, it shifts '10000000' right by 2, resulting in '00100000'.
+        var bitMask = (byte)(128 >> (int)(idx & 7));
+
+        // Use the bitmask to isolate the desired bit within the byte
+        // The & operation masks out all other bits but the one we're interested in.
+        // If the result is not 0, it means the bit was set; otherwise, it was clear.
+        return (_bitmap[byteIndex] & bitMask) != 0;
     }
 
+    /// <summary>
+    /// Counts the number of bits set to 1 in the bitmap.
+    /// </summary>
+    /// <returns>The number of active bits.</returns>
     public int CountActiveBits()
     {
-        int count = 0;
+        var count = 0; // Initialize a counter for the active bits
+
+        // Iterate over each byte of the bitmap
         for (var i = 0; i < _size; i++)
         {
-            // let's try to count 8 bytes at a time (reinterpret byte as ulong)
+            // Attempt to count bits 8 bytes at a time for efficiency
+            // Ensure there's at least 8 bytes left to read as ulong (64 bits)
             if (i + 7 < _size)
             {
 #if NETCOREAPP3_0_OR_GREATER
-                // SIMD algorithm (popcnt)
+                // If supported, use the BitOperations.PopCount method for fast population count of bits set to 1
+                // This method utilizes hardware acceleration (if available) to count the bits efficiently
                 count += BitOperations.PopCount(*(ulong*)(_bitmap + i));
 #else
-                // Hamming weight algorithm
+                // For platforms without BitOperations.PopCount, fall back to a manual method
+                // SlowLongPopCount is a custom method implementing the hamming weight algorithm for ulong
                 count += SlowLongPopCount(*(ulong*)(_bitmap + i));
 #endif
+                // Skip ahead by 7 bytes as we've read 8 bytes in total
                 i += 7;
                 continue;
             }
 
-            // let's try to count 4 bytes at a time (reinterpret byte as uint)
+            // Attempt to count bits 4 bytes at a time
+            // Ensure there's at least 4 bytes left to read as uint (32 bits)
             if (i + 3 < _size)
             {
 #if NETCOREAPP3_0_OR_GREATER
-                // SIMD algorithm (popcnt)
+                // Use BitOperations.PopCount for a uint, counting bits in 4 bytes
                 count += BitOperations.PopCount(*(uint*)(_bitmap + i));
 #else
-                // Hamming weight algorithm
+                // Fall back to a manual method for uint
                 count += SlowIntPopCount(*(uint*)(_bitmap + i));
 #endif
+                // Skip ahead by 3 bytes as we've read 4 bytes in total
                 i += 3;
                 continue;
             }
 
-            // let's count byte per byte
+            // Count remaining bits one byte at a time
 #if NETCOREAPP3_0_OR_GREATER
-            // SIMD algorithm (popcnt)
+            // Use BitOperations.PopCount for a single byte
             count += BitOperations.PopCount(_bitmap[i]);
 #else
-            // Hamming weight algorithm
+            // Fall back to a manual method for a single byte
             count += SlowIntPopCount(_bitmap[i]);
 #endif
         }
@@ -333,35 +463,71 @@ internal readonly unsafe ref struct FileBitmap
         // Hamming weight algorithm for ulong
         static int SlowLongPopCount(ulong value)
         {
-            const ulong c1 = 0x_55555555_55555555ul;
-            const ulong c2 = 0x_33333333_33333333ul;
-            const ulong c3 = 0x_0F0F0F0F_0F0F0F0Ful;
-            const ulong c4 = 0x_01010101_01010101ul;
+            // Constants for the Hamming weight algorithm
+            const ulong c1 = 0x_55555555_55555555ul; // Pattern: 01010101...
+            const ulong c2 = 0x_33333333_33333333ul; // Pattern: 00110011...
+            const ulong c3 = 0x_0F0F0F0F_0F0F0F0Ful; // Pattern: 00001111...
+            const ulong c4 = 0x_01010101_01010101ul; // Pattern: 00000001...
 
+            // Step 1: Pairwise reduction to count bits in each pair of bits
+            // This step turns every two bits into a single bit (1 if either of the two was 1)
+            // Subtract pairwise reduced values from original
             value -= (value >> 1) & c1;
+
+            // Step 2: Nibble-wise reduction to count bits in each nibble (4 bits)
+            // This step combines every four bits into a sum of those bits
+            // Combine nibble pairs
             value = (value & c2) + ((value >> 2) & c2);
+
+            // Step 3: Byte-wise reduction to count bits in each byte
+            // This step adds up the bits in each byte to produce a sum per byte
+            // Combine sums within each byte
+            // Step 4: Multiplication and right shift to aggregate the counts
+            // This step aggregates the counts from all bytes into the most significant byte
+            // Multiply and shift to aggregate bit counts
             value = (((value + (value >> 4)) & c3) * c4) >> 56;
 
+            // The final result is the sum of bits set to 1 in the original ulong value
             return (int)value;
         }
 
         // Hamming weight algorithm for uint
         static int SlowIntPopCount(uint value)
         {
-            const uint c1 = 0x_55555555u;
-            const uint c2 = 0x_33333333u;
-            const uint c3 = 0x_0F0F0F0Fu;
-            const uint c4 = 0x_01010101u;
+            // Constants for the Hamming weight algorithm tailored for 32-bit integers
+            const uint c1 = 0x_55555555u; // Pattern: 01010101...
+            const uint c2 = 0x_33333333u; // Pattern: 00110011...
+            const uint c3 = 0x_0F0F0F0Fu; // Pattern: 00001111...
+            const uint c4 = 0x_01010101u; // Pattern: 00000001...
 
+            // Step 1: Pairwise reduction to count bits in each pair
+            // This subtracts from each pair of bits, effectively halving the number of bits to consider
+            // Apply mask and subtract
             value -= (value >> 1) & c1;
+
+            // Step 2: Nibble-wise reduction to count bits in each 4-bit set (nibble)
+            // This combines counts from adjacent nibbles into a single nibble
+            // Combine counts within nibbles
             value = (value & c2) + ((value >> 2) & c2);
+
+            // Step 3: Byte-wise reduction to sum bits in each byte
+            // This step accumulates the bit counts from each byte into that byte's value
+            // Sum counts within each byte
+            // Step 4: Aggregation of counts
+            // This multiplies the byte-wise counts by a specific pattern and shifts the result
+            // to aggregate all counts into the least significant byte of the result
+            // Aggregate counts into a single sum
             value = (((value + (value >> 4)) & c3) * c4) >> 24;
 
+            // The final value is now the total count of bits set to 1 in the original uint value
             return (int)value;
         }
 #endif
     }
 
+    /// <summary>
+    /// Releases any resources if the bitmap is disposable.
+    /// </summary>
     public void Dispose()
     {
         if (_disposable)
@@ -370,6 +536,10 @@ internal readonly unsafe ref struct FileBitmap
         }
     }
 
+    /// <summary>
+    /// Writes the bitmap data to a byte array.
+    /// </summary>
+    /// <param name="array">The array to write to.</param>
     public void Write(byte[] array)
     {
         fixed (byte* arrayPtr = array)
@@ -378,6 +548,10 @@ internal readonly unsafe ref struct FileBitmap
         }
     }
 
+    /// <summary>
+    /// Converts the bitmap to a byte array.
+    /// </summary>
+    /// <returns>A new byte array containing the bitmap data.</returns>
     public byte[] ToArray()
     {
         var array = new byte[_size];
@@ -385,6 +559,10 @@ internal readonly unsafe ref struct FileBitmap
         return array;
     }
 
+    /// <summary>
+    /// Returns the internal array if available, otherwise creates a new array and disposes the bitmap.
+    /// </summary>
+    /// <returns>The internal array or a new array containing the bitmap data.</returns>
     internal byte[] GetInternalArrayOrToArrayAndDispose()
     {
         if (_handle is not null)
@@ -402,6 +580,10 @@ internal readonly unsafe ref struct FileBitmap
         return ToArray();
     }
 
+    /// <summary>
+    /// Returns a string representation of the bitmap.
+    /// </summary>
+    /// <returns>A string showing the bitmap in binary form.</returns>
     public override string ToString()
     {
         var sb = new StringBuilder();
@@ -413,9 +595,16 @@ internal readonly unsafe ref struct FileBitmap
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Provides enumeration over the bits of the bitmap.
+    /// </summary>
+    /// <returns>An enumerator for the bits of the bitmap.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator GetEnumerator() => new(_bitmap, _size);
 
+    /// <summary>
+    /// Enumerator for iterating over the bits of a <see cref="FileBitmap"/>.
+    /// </summary>
     public struct Enumerator(byte* bitMap, int size) : IEnumerator<byte>
     {
         private int _index = -1;
@@ -440,9 +629,20 @@ internal readonly unsafe ref struct FileBitmap
         }
     }
 
+    /// <summary>
+    /// Represents a wrapper for a byte array that is pinned in memory to prevent the garbage collector from moving it.
+    /// This allows for safe access to the underlying array's memory address in unmanaged code.
+    /// </summary>
     private sealed class PinnedArray(byte[] array) : IDisposable
     {
+        /// <summary>
+        /// The underlying byte array that is pinned in memory.
+        /// </summary>
         private readonly byte[] _array = array;
+
+        /// <summary>
+        /// The handle used to pin the array in memory, ensuring its address does not change.
+        /// </summary>
         private GCHandle _handle = GCHandle.Alloc(array, GCHandleType.Pinned);
 
         ~PinnedArray()
@@ -450,10 +650,19 @@ internal readonly unsafe ref struct FileBitmap
             Dispose();
         }
 
+        /// <summary>
+        /// Gets a pointer to the first element of the pinned array.
+        /// </summary>
         public byte* Pointer => (byte*)Unsafe.AsPointer(ref _array.FastGetReference(0));
 
+        /// <summary>
+        /// Gets the underlying array.
+        /// </summary>
         public byte[] Array => _array;
 
+        /// <summary>
+        /// Releases all resources used by the <see cref="PinnedArray"/>.
+        /// </summary>
         public void Dispose()
         {
             if (_handle.IsAllocated)
