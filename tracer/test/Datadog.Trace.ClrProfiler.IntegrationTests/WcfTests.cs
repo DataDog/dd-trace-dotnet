@@ -98,8 +98,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var expectedSpanCount = binding switch
             {
-                "Custom" => 1,
-                _ => 14,
+                "Custom" or "NetTcpBinding" => 14,
+                _ => 27,
             };
 
             using var telemetry = this.ConfigureTelemetry();
@@ -111,8 +111,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Filter out WCF spans unrelated to the actual request handling, and filter them before returning spans
                 // so we can wait on the exact number of spans we expect.
                 agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
-                // The test adds a custom span to show that propagation works with WCF headers
-                agent.SpanFilters.Add(s => s.Type == SpanTypes.Web || s.Type == SpanTypes.Custom);
                 var spans = agent.WaitForSpans(expectedSpanCount);
                 ValidateIntegrationSpans(spans.Where(s => s.Type == SpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 
