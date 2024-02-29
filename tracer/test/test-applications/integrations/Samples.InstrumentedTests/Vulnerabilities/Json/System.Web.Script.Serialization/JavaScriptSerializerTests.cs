@@ -44,6 +44,24 @@ public class JavaScriptSerializerTests : InstrumentationTestsBase
     }
     
     [Fact]
+    public void DeserializeObject_WithTaintedInputCraftedJson_ShouldBeTainted()
+    {
+        var serializer = new JavaScriptSerializer();
+        var input = "value";
+        AddTainted(input);
+        
+        var json = @"{ ""cmd"": """ + input + @""", ""arg"": ""arg1"" }";
+        var obj = (Dictionary<string, object>)serializer.DeserializeObject(json);
+        var cmd = obj["cmd"] as string;
+        var arg = obj["arg"] as string;
+        
+        Assert.Equal("value", cmd);
+        Assert.Equal("arg1", arg);
+        AssertTainted(cmd);
+        AssertTainted(arg);
+    }
+    
+    [Fact]
     public void DeserializeObject_WithTaintedJsonMultiple_ShouldBeTainted()
     {
         var serializer = new JavaScriptSerializer();

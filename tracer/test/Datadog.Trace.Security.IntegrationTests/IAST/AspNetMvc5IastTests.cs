@@ -529,11 +529,14 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
 
     [Fact]
     [Trait("RunOnWindows", "True")]
-    public async Task TestJavaScriptSerializerDeserializeObject()
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/JavaScriptSerializerDeserializeObject?input=nonexisting.exe", null)]
+    public async Task TestJavaScriptSerializerDeserializeObject(string test, string url, string body)
     {
-        const string url = "/Iast/JavaScriptSerializerDeserializeObject?json%3D%7B%20%22key%22%3A%20%22value%22%20%7D";
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var filename = GetFileName("JavaScriptSerializerDeserializeObject");
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();

@@ -114,18 +114,20 @@ namespace Samples.Security.AspNetCore5.Controllers
         }
         
         [Route("JavaScriptSerializerDeserializeObject")]
-        public ActionResult JavaScriptSerializerDeserializeObject(string json)
+        public ActionResult JavaScriptSerializerDeserializeObject(string input)
         {
             try
             {
-                if (!string.IsNullOrEmpty(json))
+                if (!string.IsNullOrEmpty(input))
                 {
                     var serializer = new JavaScriptSerializer();
-                    var obj = serializer.Deserialize<Dictionary<string, object>>(json);
-                    var value = obj["key"] as string;
+                    var json = @"{ ""cmd"": """ + input + @""", ""arg"": ""arg1"" }";
+                    var obj = (Dictionary<string, object>)serializer.DeserializeObject(json);
+                    var cmd = obj["cmd"] as string;
+                    var arg = obj["arg"] as string;
 
                     // Trigger a vulnerability with the tainted string
-                    return ExecuteCommandInternal(value, "");
+                    return ExecuteCommandInternal(cmd, arg);
                 }
             }
             catch (Exception ex)
@@ -133,7 +135,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 return Content(IastControllerHelper.ToFormattedString(ex));
             }
 
-            return Content("No json was provided");
+            return Content("No input was provided");
         }
 
         [Route("ExecuteCommand")]
