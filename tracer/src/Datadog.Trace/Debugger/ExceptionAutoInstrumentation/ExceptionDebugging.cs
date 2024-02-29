@@ -95,29 +95,27 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             ExceptionTrackManager.Report(span, exception);
         }
 
-        public static bool TryBeginRequest(out ShadowStackTree? tree)
-        {
-            if (!Enabled)
-            {
-                tree = null;
-                return false;
-            }
-
-            tree = ShadowStackHolder.EnsureShadowStackEnabled();
-            tree.Clear();
-            tree.Init();
-            tree.IsInRequestContext = true;
-            return true;
-        }
-
-        public static void EndRequest(ShadowStackTree? tree)
+        public static void BeginRequest()
         {
             if (!Enabled)
             {
                 return;
             }
 
-            tree?.Clear();
+            var tree = ShadowStackHolder.EnsureShadowStackEnabled();
+            tree.Clear();
+            tree.Init();
+            tree.IsInRequestContext = true;
+        }
+
+        public static void EndRequest()
+        {
+            if (!Enabled)
+            {
+                return;
+            }
+
+            ShadowStackHolder.ShadowStack?.Clear();
         }
 
         public static void AddSnapshot(string probeId, string snapshot)
