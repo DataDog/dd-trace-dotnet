@@ -26,6 +26,7 @@
   "vulnerabilities": [
     {
       "type": "INSECURE_AUTH_PROTOCOL",
+      "hash": 2000773446,
       "evidence": {
         "value": "Authorization: Basic"
       }
