@@ -34,14 +34,14 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
             var fileBitmapBuffer = stackalloc byte[512];
             foreach (var moduleValue in modules)
             {
-                var moduleFiles = moduleValue.Metadata.Files;
-                foreach (var moduleFile in moduleFiles)
+                foreach (var moduleFile in moduleValue.Metadata.Files)
                 {
-                    var fileBitmapSize = FileBitmap.GetSize(moduleFile.LastExecutableLine);
+                    var fileBitmapLastExecutableLine = moduleFile.LastExecutableLine;
+                    var fileBitmapSize = FileBitmap.GetSize(fileBitmapLastExecutableLine);
                     using var fileBitmap = fileBitmapSize <= 512 ? new FileBitmap(fileBitmapBuffer, fileBitmapSize) : new FileBitmap(new byte[fileBitmapSize]);
                     if (moduleValue.Metadata.CoverageMode == 0)
                     {
-                        var linesInFile = new VendoredMicrosoftCode.System.Span<byte>((byte*)moduleValue.FilesLines + moduleFile.Offset, moduleFile.LastExecutableLine);
+                        var linesInFile = new VendoredMicrosoftCode.System.Span<byte>((byte*)moduleValue.FilesLines + moduleFile.Offset, fileBitmapLastExecutableLine);
                         for (var i = 0; i < linesInFile.Length; i++)
                         {
                             if (linesInFile[i] == 1)
@@ -52,7 +52,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                     }
                     else if (moduleValue.Metadata.CoverageMode == 1)
                     {
-                        var linesInFile = new VendoredMicrosoftCode.System.Span<int>((int*)moduleValue.FilesLines + moduleFile.Offset, moduleFile.LastExecutableLine);
+                        var linesInFile = new VendoredMicrosoftCode.System.Span<int>((int*)moduleValue.FilesLines + moduleFile.Offset, fileBitmapLastExecutableLine);
                         for (var i = 0; i < linesInFile.Length; i++)
                         {
                             if (linesInFile[i] > 0)

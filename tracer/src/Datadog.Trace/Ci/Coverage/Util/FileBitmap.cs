@@ -30,11 +30,7 @@ internal readonly unsafe ref struct FileBitmap
         _handle = null;
         _size = size;
         _bitmap = buffer;
-        for (var i = 0; i < _size; i++)
-        {
-            _bitmap[i] = 0;
-        }
-
+        Unsafe.InitBlockUnaligned(buffer, 0, (uint)_size);
         _disposable = false;
     }
 
