@@ -2,16 +2,17 @@ using System;
 using FluentAssertions;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SSRF;
-public class TestClass : Random
-{
-    public TestClass()
-    {
-    }
-}
+namespace Samples.InstrumentedTests.Iast.Vulnerabilities.WeakRandomness;
 
 public class RandomTests : InstrumentationTestsBase
 {
+    public class TestClass : Random
+    {
+        public TestClass()
+        {
+        }
+    }
+
     public RandomTests()
     {
     }

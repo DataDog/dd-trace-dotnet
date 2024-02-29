@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 
 namespace Datadog.Trace.Iast;
 
@@ -28,18 +29,22 @@ internal readonly struct Location
         }
     }
 
-    public Location(string? stackFile, string? methodName, int? line, ulong? spanId, string? methodTypeName)
+    public Location(StackFrame? stackFrame, ulong? spanId)
     {
-        if (!string.IsNullOrEmpty(stackFile))
-        {
-            this.Path = System.IO.Path.GetFileName(stackFile!.Replace('/', System.IO.Path.DirectorySeparatorChar).Replace('\\', System.IO.Path.DirectorySeparatorChar));
-            this.Line = line;
-        }
-        else
-        {
-            this.Method = methodName;
-            this.Path = methodTypeName;
-        }
+        var method = stackFrame?.GetMethod();
+        Path = method?.DeclaringType?.FullName;
+        Method = method?.Name;
+        var line = stackFrame?.GetFileLineNumber();
+        Line = line > 0 ? line : null;
+
+        SpanId = spanId == 0 ? null : spanId;
+    }
+
+    public Location(string? typeName, string? methodName, int? line, ulong? spanId)
+    {
+        this.Path = typeName;
+        this.Method = methodName;
+        Line = line > 0 ? line : null;
 
         this.SpanId = spanId == 0 ? null : spanId;
     }

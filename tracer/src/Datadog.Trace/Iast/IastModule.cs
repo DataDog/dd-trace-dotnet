@@ -564,23 +564,12 @@ internal static class IastModule
         if (addLocation)
         {
             var frameInfo = StackWalker.GetFrame(externalStack);
-
             if (!frameInfo.IsValid)
             {
                 return IastModuleResponse.Empty;
             }
 
-            // Sometimes we do not have the file/line but we have the method/class.
-            var stackFrame = frameInfo.StackFrame;
-            var filename = stackFrame?.GetFileName();
-            var line = string.IsNullOrEmpty(filename) ? 0 : (stackFrame?.GetFileLineNumber() ?? 0);
-
-            location = new Location(
-                    stackFile: filename,
-                    methodName: string.IsNullOrEmpty(filename) ? stackFrame?.GetMethod()?.Name : null,
-                    line: line > 0 ? line : null,
-                    spanId: currentSpan?.SpanId,
-                    methodTypeName: string.IsNullOrEmpty(filename) ? GetMethodTypeName(stackFrame) : null);
+            location = new Location(frameInfo.StackFrame, currentSpan?.SpanId);
         }
 
         var vulnerability = (hash is null) ?
@@ -635,11 +624,6 @@ internal static class IastModule
         scope.Span.Type = SpanTypes.IastVulnerability;
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
         return new IastModuleResponse(scope);
-    }
-
-    private static string? GetMethodTypeName(StackFrame? frame)
-    {
-        return frame?.GetMethod()?.DeclaringType?.FullName;
     }
 
     private static bool InvalidHashAlgorithm(string algorithm)
