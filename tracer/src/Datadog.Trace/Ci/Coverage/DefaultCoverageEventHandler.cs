@@ -120,9 +120,10 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
 
             return testCoverage;
         }
-        catch
+        catch (Exception ex)
         {
             TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+            Log.Error(ex, "Error processing the coverage data.");
             throw;
         }
     }

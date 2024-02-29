@@ -40,7 +40,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         {
             foreach (var coverage in _coverages)
             {
-                coverage?.Clear();
+                coverage.Clear();
             }
 
             _coverages.Clear();
@@ -59,24 +59,18 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
                 IEnumerable<ModuleValue> GetModuleValues()
                 {
-                    var globalContainer = GlobalContainer?.CloseContext();
-                    if (globalContainer is not null)
+                    var globalContainer = GlobalContainer.CloseContext();
+                    foreach (var moduleValue in globalContainer)
                     {
-                        foreach (var moduleValue in globalContainer)
-                        {
-                            yield return moduleValue;
-                        }
+                        yield return moduleValue;
                     }
 
                     foreach (var coverageContextContainer in _coverages)
                     {
-                        var container = coverageContextContainer?.CloseContext();
-                        if (container is not null)
+                        var container = coverageContextContainer.CloseContext();
+                        foreach (var moduleValue in container)
                         {
-                            foreach (var moduleValue in container)
-                            {
-                                yield return moduleValue;
-                            }
+                            yield return moduleValue;
                         }
                     }
                 }
@@ -158,9 +152,10 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                 return globalCoverage;
             }
         }
-        catch
+        catch (Exception ex)
         {
             TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+            Log.Error(ex, "Error processing the global coverage data.");
             throw;
         }
     }

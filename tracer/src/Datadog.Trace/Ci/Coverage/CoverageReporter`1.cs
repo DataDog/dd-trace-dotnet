@@ -8,6 +8,7 @@ using System;
 using System.ComponentModel;
 using System.Reflection;
 using Datadog.Trace.Ci.Coverage.Metadata;
+using Datadog.Trace.Util;
 
 #pragma warning disable SA1649 // File name must match first type name
 
@@ -70,6 +71,11 @@ public static class CoverageReporter<TMeta>
         {
             // If there's no async context container then we use the module from the global shared container.
             module = _globalModuleValue;
+        }
+
+        if (module.FilesLines == IntPtr.Zero)
+        {
+            ThrowHelper.ThrowNullReferenceException("Counter memory was disposed.");
         }
 
         // Gets the file counter by using the file offset over the global module memory segment
