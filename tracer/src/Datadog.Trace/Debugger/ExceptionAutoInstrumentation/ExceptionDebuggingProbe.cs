@@ -66,7 +66,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         private bool CheckIfMethodMayBeOmittedFromCallStack()
         {
-            return RuntimeHelper.IsCoreClr() && RuntimeHelper.IsNetOnward(6) && RuntimeHelper.IsModuleDebugCompiled(Method.Method.DeclaringType.Assembly);
+            return FrameworkDescription.Instance.IsCoreClr() && RuntimeHelper.IsNetOnward(6) && RuntimeHelper.IsModuleDebugCompiled(Method.Method.DeclaringType.Assembly);
         }
 
         private void ProcessCase(ExceptionCase @case)

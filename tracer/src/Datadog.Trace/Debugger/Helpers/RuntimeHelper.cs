@@ -21,15 +21,6 @@ namespace Datadog.Trace.Debugger.Helpers
             return Environment.Version.Major >= major;
         }
 
-        internal static bool IsCoreClr()
-        {
-#if NETCOREAPP
-            return true;
-#else
-            return false;
-#endif
-        }
-
         internal static bool IsModuleDebugCompiled(Assembly assembly)
         {
             var debuggableAttribute = assembly.GetCustomAttributes(typeof(DebuggableAttribute), false).FirstOrDefault() as DebuggableAttribute;
