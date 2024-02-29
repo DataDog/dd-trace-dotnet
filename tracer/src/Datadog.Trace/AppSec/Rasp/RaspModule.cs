@@ -24,9 +24,21 @@ internal static class RaspModule
 
     internal static void OnLfi(string file)
     {
-        var arguments = new Dictionary<string, object>() { };
-        arguments[AddressesConstants.FileAccess] = file;
-        RunWaf(arguments);
+        try
+        {
+            var arguments = new Dictionary<string, object>() { };
+            arguments[AddressesConstants.FileAccess] = file;
+            RunWaf(arguments);
+        }
+        catch (Exception ex)
+        {
+            if (ex is BlockException)
+            {
+                throw;
+            }
+
+            Log.Error(ex, "Error in RASP OnLfi");
+        }
     }
 
     private static void RunWaf(Dictionary<string, object> arguments)
@@ -51,11 +63,15 @@ internal static class RaspModule
         var context = HttpContext.Current;
         securityCoordinator = new SecurityCoordinator(security, context, rootSpan);
         var result = securityCoordinator?.RunWaf(arguments);
-        securityCoordinator?.CheckAndBlock(result);
 
-        if (result!.ShouldBlock)
+        if (result is not null)
         {
-            throw new BlockException(result, true);
+            securityCoordinator?.CheckAndBlock(result);
+
+            if (result!.ShouldBlock)
+            {
+                throw new BlockException(result, true);
+            }
         }
 #else
         IResult? result = null;
