@@ -64,7 +64,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             TracerManager.Instance.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
 
-            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_tags", "['key2:value2']")));
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_tags", "[\"key2:value2\"]")));
 
             TracerManager.Instance.DirectLogSubmission.Formatter.Tags.Should().Be("key2:value2");
         }
@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             TracerManager.Instance.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
 
-            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_tags", "['key3:value3']")));
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_tags", "[\"key3:value3\"]")));
 
             TracerManager.Instance.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
         }
@@ -110,15 +110,15 @@ namespace Datadog.Trace.Tests.Configuration
             var jsonBuilder = new StringBuilder();
 
             jsonBuilder.AppendLine("{");
-            jsonBuilder.AppendLine("\"lib_config\":");
-            jsonBuilder.AppendLine("{");
+            jsonBuilder.AppendLine("    \"lib_config\":");
+            jsonBuilder.AppendLine("    {");
 
             foreach (var (key, value) in settings)
             {
-                jsonBuilder.AppendLine($"\"{key}\": \"{value}\",");
+                jsonBuilder.AppendLine($"        \"{key}\": {value},");
             }
 
-            jsonBuilder.AppendLine("}");
+            jsonBuilder.AppendLine("    }");
             jsonBuilder.AppendLine("}");
 
             var configurationSource = new DynamicConfigConfigurationSource(jsonBuilder.ToString(), ConfigurationOrigins.RemoteConfig);
