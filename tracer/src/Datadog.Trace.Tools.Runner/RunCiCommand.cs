@@ -244,25 +244,28 @@ namespace Datadog.Trace.Tools.Runner
                         arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
                     }
 
-                    // Sets the code coverage path to store the json files for each module.
-                    var outputFolders = new[] { Environment.CurrentDirectory, Path.GetTempPath(), };
-                    foreach (var folder in outputFolders)
+                    // Sets the code coverage path to store the json files for each module in case we are not skipping test (global coverage is reliable).
+                    if (!testSkippingEnabled)
                     {
-                        var outputPath = Path.Combine(folder, $"datadog-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}");
-                        if (!Directory.Exists(outputPath))
+                        var outputFolders = new[] { Environment.CurrentDirectory, Path.GetTempPath(), };
+                        foreach (var folder in outputFolders)
                         {
-                            try
+                            var outputPath = Path.Combine(folder, $"datadog-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}");
+                            if (!Directory.Exists(outputPath))
                             {
-                                Directory.CreateDirectory(outputPath);
-                                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath] = outputPath;
-                                EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, outputPath);
-                                codeCoveragePath = outputPath;
-                                break;
-                            }
-                            catch (Exception ex)
-                            {
-                                Utils.WriteError("Error creating folder for the global code coverage files:");
-                                AnsiConsole.WriteException(ex);
+                                try
+                                {
+                                    Directory.CreateDirectory(outputPath);
+                                    profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath] = outputPath;
+                                    EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, outputPath);
+                                    codeCoveragePath = outputPath;
+                                    break;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Utils.WriteError("Error creating folder for the global code coverage files:");
+                                    AnsiConsole.WriteException(ex);
+                                }
                             }
                         }
                     }
