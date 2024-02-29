@@ -17,6 +17,73 @@
 
 
 
+
+## [Release 2.48.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.48.0)
+
+## Summary
+
+* [Tracing] Swap default propagation styles from `tracecontext,Datadog` to `Datadog,tracecontext`
+- [Tracing] Fix bug where dogstatsd tries to send to the wrong hostname
+- [Tracing] Fix bug when trace-agent uses chunked responses
+- [ASM/IAST] Add detection of Reflection injection vulnerability
+- [Continuous Profiler] Enable exception profiling by default
+- [Continuous Profiler] Fix race condition in stack unwind
+- [DSM] Add DSM support for SQS
+
+## Changes
+
+### Tracer
+* Swap default propagation styles from `tracecontext,Datadog` to `Datadog,tracecontext` (#5115)
+* [Tracing] special-case the "any" pattern in sampling rules (#5142)
+* Remove non-backtracking regular expressions (#5194)
+* Fix scenario where dogstatsd tries to send to the wrong hostname (#5222)
+* Fix product data collected for tracer flare (#5228)
+* Add a `ChunkedEncodingReadStream` to use when talking to the agent (#5241)
+* Update `DatadogHttpClient` to support `chunked` encoding (#5244)
+* Remove usage of `ArrayPool<T>` from `ChunkedEncodingReadStream` (#5247)
+
+### CI Visibility
+* [CI Visibility] Sanitize git get-objects output (#5232)
+
+### ASM
+* [ASM] Rasp callsite instrumentation (#5186)
+* [ASM] increase waf timeout on flaky unit tests (#5196)
+* [IAST] Enabled hash in integration tests (#5205)
+* [IAST] Add support to AspectMethodReplace with struct arguments (#5213)
+* [ASM][IAST] Reflection Injection (#5219)
+* [ASM] Update RASP snapshots (#5233)
+* [ASM] handle array list in legacy encoder (#5239)
+* [ASM] Fix null reference exception (#5243)
+
+### Continuous Profiler
+* [Profiler] Refactor to optimize samples collection (#5174)
+* [Profiler] Optimize AppDomainStore (#5175)
+* [Profiler] Detect Single Step Instrumentation (#5184)
+* [Profiling] Reduce available symbols (#5195)
+* [Profiler] On linux we may crash if we unwind a thread that was already unwinding its own callstack (#5197)
+* [Profiler] Cleanup compilation warnings (#5201)
+* [Profiler] Enable exception profiling by default (#5202)
+
+### Miscellaneous
+* [Test Package Versions Bump] Updating package versions (#4972)
+* DSM support for SQS (#4973)
+* refactor SQS send/receive instrumentation code (#5120)
+* [Documentation] Add a sample that configures an ASP.NET Core app with OpenTelemetry (#5203)
+* Support DOTNET_EnableDiagnostics in dd-dotnet (#5208)
+* Move DSM checkpointing responsibility for Kafka from API method to integration (#5211)
+* Use vendored unsafe class instead of emitting IL (#5215)
+* IntegrationMapper.ConvertType simplification and Ducktype optimization (#5216)
+
+### Build / Test
+* Add testing for AWS Lambda on .NET 8 (#5236)
+* Don't require additional Windows SDK for Nuke desktop notification (#5192)
+* Tweak OpenTelemetry sample (#5204)
+* Add IntegrationIdExtensions.cs to codeowners common files (#5217)
+* Force update to latest Octokit version (#5249)
+* Missing generated aspects (#5225)
+
+[Changes since 2.47.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.47.0...v2.48.0)
+
 ## [Release 2.47.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.47.0)
 
 ## Summary
