@@ -35,7 +35,6 @@ namespace Datadog.Trace.Tests.ManualInstrumentation;
 [TracerRestorer]
 public class DuckTypingTests
 {
-    private const string Skip = "We can't test these as-is because we rely on automatic instrumentation for ducktyping. To test these, import the DuckTyping folder into Datadog.Trace.Manual";
     private readonly AsyncLocalScopeManager _scopeManager = new();
     private readonly TracerSettings _settings = new() { StartupDiagnosticLogEnabled = false };
     private readonly Tracer _tracer;
@@ -64,7 +63,10 @@ public class DuckTypingTests
         manualSpan.ResourceName.Should().Be(span.ResourceName);
         manualSpan.ServiceName.Should().Be(span.ServiceName);
         manualSpan.TraceId.Should().Be(span.TraceId);
-        manualSpan.SetTag("Test", "SomeValue");
+        // This won't return the _same_ object, because it's a struct duck type.
+        // Should still refer to the same underlying span though
+        var returned = manualSpan.SetTag("Test", "SomeValue");
+        returned.Should().BeAssignableTo<IDuckType>().Subject.Instance.Should().BeSameAs(span);
         manualSpan.GetTag("Test").Should().Be("SomeValue");
         span.GetTag("Test").Should().Be("SomeValue"); // check it was mirrored
 

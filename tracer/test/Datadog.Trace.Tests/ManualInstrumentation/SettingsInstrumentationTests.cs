@@ -9,11 +9,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 using Datadog.Trace.Configuration;
 using FluentAssertions;
 using Xunit;
-
+using CtorIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.CtorIntegration;
 using ImmutableManualSettings = DatadogTraceManual::Datadog.Trace.Configuration.ImmutableTracerSettings;
 using ManualSettings = DatadogTraceManual::Datadog.Trace.Configuration.TracerSettings;
 
@@ -27,7 +28,7 @@ public class SettingsInstrumentationTests
     {
         var automatic = new TracerSettings();
         Dictionary<string, object> serializedSettings = new();
-        TracerSettingsPopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
+        PopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
 
         var manual = new ManualSettings(serializedSettings, isFromDefaultSources: false);
 
@@ -65,7 +66,7 @@ public class SettingsInstrumentationTests
         automatic.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate = 0.5;
 
         Dictionary<string, object> serializedSettings = new();
-        TracerSettingsPopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
+        PopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
 
         var manual = new ManualSettings(serializedSettings, isFromDefaultSources: false);
 
@@ -76,7 +77,7 @@ public class SettingsInstrumentationTests
     public void ManualToAutomatic_CustomSettingsAreTransferredCorrectly()
     {
         Dictionary<string, object> initialValues = new();
-        TracerSettingsPopulateDictionaryIntegration.PopulateSettings(initialValues, new TracerSettings());
+        PopulateDictionaryIntegration.PopulateSettings(initialValues, new TracerSettings());
 
         var manual = new ManualSettings(initialValues, isFromDefaultSources: false)
         {

@@ -16,6 +16,7 @@ namespace Datadog.Trace
     {
         private static Tracer? _instance;
 
+        [Instrumented]
         private Tracer(object? automaticTracer, Dictionary<string, object?> initialValues)
         {
             AutomaticTracer = automaticTracer;

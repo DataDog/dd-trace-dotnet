@@ -13,6 +13,9 @@ using BenchmarkDiscreteStats = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkDis
 using BenchmarkHostInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkHostInfo;
 using BenchmarkJobInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkJobInfo;
 using BenchmarkMeasureType = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkMeasureType;
+using ManualIScope = DatadogTraceManual::Datadog.Trace.IScope;
+using ManualISpan = DatadogTraceManual::Datadog.Trace.ISpan;
+using ManualISpanContext = DatadogTraceManual::Datadog.Trace.ISpanContext;
 using ManualITest = DatadogTraceManual::Datadog.Trace.Ci.ITest;
 using ManualITestModule = DatadogTraceManual::Datadog.Trace.Ci.ITestModule;
 using ManualITestSession = DatadogTraceManual::Datadog.Trace.Ci.ITestSession;
@@ -24,6 +27,24 @@ namespace Datadog.Trace.Tests.ManualInstrumentation;
 
 public class ManualOnlyTests
 {
+    [Fact]
+    public void CreatingAManualSpanDoesNotCrash()
+    {
+        using var scope = DatadogTraceManual::Datadog.Trace.Tracer.Instance.StartActive("manual");
+        scope.Should().BeAssignableTo<ManualIScope>().And.NotBeNull();
+
+        var span = scope.Span.Should().NotBeNull().And.BeAssignableTo<ManualISpan>().Subject;
+        span.SetException(new Exception());
+        span.SetTag("James", "Bond").Should().BeSameAs(span);
+        span.GetTag("James").Should().BeNull();
+        span.OperationName.Should().BeNullOrEmpty();
+        span.ResourceName.Should().BeNullOrEmpty();
+
+        var context = span.Context.Should().NotBeNull().And.BeAssignableTo<ManualISpanContext>().Subject;
+        context.Should().NotBeNull();
+        context.ServiceName.Should().BeNullOrEmpty();
+    }
+
     [Fact]
     public void CreatingAManualOnlyCiSessionDoesNotCrash()
     {
