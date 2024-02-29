@@ -73,7 +73,6 @@ src/Datadog.Trace/AppSec/CoreHttpContextStore.cs
 src/Datadog.Trace/AppSec/EventTrackingSdk.cs
 src/Datadog.Trace/AppSec/IDatadogSecurity.cs
 src/Datadog.Trace/AppSec/IEvent.cs
-src/Datadog.Trace/AppSec/ObjectExtractor.cs
 src/Datadog.Trace/AppSec/SecurityConstants.cs
 src/Datadog.Trace/AppSec/SpanExtensions.cs
 src/Datadog.Trace/AspNet/MimeTypes.cs
@@ -265,7 +264,6 @@ src/Datadog.Trace/Util/DbCommandCache.cs
 src/Datadog.Trace/Util/DomainMetadata.cs
 src/Datadog.Trace/Util/EnvironmentHelpers.cs
 src/Datadog.Trace/Util/FnvHash64.cs
-src/Datadog.Trace/Util/HexConverter.netfx.cs
 src/Datadog.Trace/Util/IClock.cs
 src/Datadog.Trace/Util/IRandomIdGenerator.cs
 src/Datadog.Trace/Util/RandomIdGenerator.Net6.cs

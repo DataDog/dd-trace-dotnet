@@ -1,1 +1,0 @@
-https://github.com/robertpi/IndieRegex/archive/refs/tags/v0.6.zip

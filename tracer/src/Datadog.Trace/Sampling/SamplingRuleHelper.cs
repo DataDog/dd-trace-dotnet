@@ -7,13 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Logging;
-
-#if NETCOREAPP3_1_OR_GREATER
-using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
-#else
 using System.Text.RegularExpressions;
-#endif
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Sampling;
 

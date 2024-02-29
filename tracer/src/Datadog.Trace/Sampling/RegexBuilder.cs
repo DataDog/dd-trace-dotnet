@@ -6,12 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-#if NETCOREAPP3_1_OR_GREATER
-using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
-#else
 using System.Text.RegularExpressions;
-#endif
 
 #nullable enable
 
@@ -27,13 +22,8 @@ internal static class RegexBuilder
             return null;
         }
 
-#if NETCOREAPP3_1_OR_GREATER
-        const RegexOptions options = RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.NonBacktracking;
-#else
         const RegexOptions options = RegexOptions.Compiled | RegexOptions.IgnoreCase;
-#endif
-
-        var timeout = TimeSpan.FromSeconds(1);
+        var timeout = TimeSpan.FromMilliseconds(200);
 
         switch (format)
         {
@@ -52,10 +42,11 @@ internal static class RegexBuilder
 
             case SamplingRulesFormat.Glob:
                 // the "any" pattern matches any value regardless of type (e.g. string, int, floating point, etc).
-                // for tags, it means the tag must exist, but its value can be anything.
+                // for span tags, it means the tag must exist, but its value can be any value and any type.
                 if (pattern.Length > 0 && pattern.All(c => c == '*'))
                 {
-                    return null; // match all without using a regex
+                    // match all without using a regex
+                    return null;
                 }
 
                 // convert glob pattern to regex

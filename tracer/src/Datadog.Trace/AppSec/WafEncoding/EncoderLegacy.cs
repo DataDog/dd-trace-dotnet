@@ -21,7 +21,6 @@ namespace Datadog.Trace.AppSec.WafEncoding
     internal class EncoderLegacy : IEncoder
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EncoderLegacy));
-        private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
         private readonly WafLibraryInvoker _wafLibraryInvoker;
 
         public EncoderLegacy(WafLibraryInvoker wafLibraryInvoker)
@@ -106,6 +105,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     IEnumerable<KeyValuePair<string, object>> objDict => EncodeDictionary(objDict, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
                     IEnumerable<KeyValuePair<string, bool>> objDict => EncodeDictionary(objDict, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
                     IEnumerable<KeyValuePair<string, List<string>>> objDict => EncodeDictionary(objDict, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
+                    IEnumerable<KeyValuePair<string, ArrayList>> objDict => EncodeDictionary(objDict, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
                     IEnumerable<KeyValuePair<string, string[]>> objDict => EncodeDictionary(objDict, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
                     IEnumerable<KeyValuePair<string, List<double>>> objDict => EncodeDictionary(objDict, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
                     IEnumerable<KeyValuePair<string, double[]>> objDict => EncodeDictionary(objDict, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
@@ -119,7 +119,8 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     IList<ulong> objs => EncodeList(objs, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
                     IList<double> objs => EncodeList(objs, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
                     IList<decimal> objs => EncodeList(objs, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
-                    _ => EncodeUnknownType(args, wafLibraryInvoker),
+                    ArrayList objs => EncodeList(objs.ToArray(), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
+                    _ => EncodeUnknownType(args, wafLibraryInvoker)
                 };
 
             argCache?.Add(value);

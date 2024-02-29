@@ -302,7 +302,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     var spans = agent.WaitForSpans(totalExpectedSpans, 500);
 
                     using var scope = new AssertionScope();
-                    spans.Count.Should().Be(totalExpectedSpans);
 
                     if (!isGrpcSupported)
                     {

@@ -64,14 +64,14 @@ namespace Datadog.Trace.Configuration
             /// Default value is in TracerSettings
             /// </summary>
             /// <seealso cref="IastSettings.RedactionKeysRegex"/>
-            public const string RedactionKeysRegex = "DD_IAST_REDACTION_KEYS_REGEXP";
+            public const string RedactionKeysRegex = "DD_IAST_REDACTION_NAME_PATTERN";
 
             /// <summary>
             /// Configuration key for specifying a custom regex to obfuscate source values.
             /// Default value is in TracerSettings
             /// </summary>
             /// <seealso cref="IastSettings.RedactionValuesRegex"/>
-            public const string RedactionValuesRegex = "DD_IAST_REDACTION_VALUES_REGEXP";
+            public const string RedactionValuesRegex = "DD_IAST_REDACTION_VALUE_PATTERN";
 
             /// <summary>
             /// Configuration key for specifying a timeout in milliseconds to the execution of regexes in IAST

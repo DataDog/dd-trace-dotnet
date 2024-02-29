@@ -67,17 +67,23 @@ namespace Datadog.Trace.Agent.Transports
                 // send request, get response
                 var response = await _client.SendAsync(request, bidirectionalStream, bidirectionalStream).ConfigureAwait(false);
 
-                // Content-Length is required as we don't support chunked transfer
-                var contentLength = response.Content.Length;
-                if (!contentLength.HasValue)
+                MemoryStream responseContentStream;
+                if (response.ContentLength is { } contentLength)
                 {
-                    ThrowHelper.ThrowException("Content-Length is required but was not provided");
+                    // buffer the entire contents for now
+                    var buffer = new byte[contentLength];
+                    responseContentStream = new MemoryStream(buffer);
+                    await response.Content.CopyToAsync(buffer).ConfigureAwait(false);
+                }
+                else
+                {
+                    // We don't know the length, so can't use a fixed size buffer.
+                    // This happens when we receive chunked responses, so is relatively rare.
+                    // TODO: We should look at removing this buffering, but it requires a big refactor
+                    responseContentStream = new MemoryStream();
+                    await response.Content.CopyToAsync(responseContentStream).ConfigureAwait(false);
                 }
 
-                // buffer the entire contents for now
-                var buffer = new byte[contentLength.Value];
-                var responseContentStream = new MemoryStream(buffer);
-                await response.Content.CopyToAsync(buffer).ConfigureAwait(false);
                 responseContentStream.Position = 0;
 
                 return new Tuple<IApiResponse, HttpRequest>(new HttpStreamResponse(response.StatusCode, responseContentStream.Length, response.GetContentEncoding(), responseContentStream, response.Headers), request);

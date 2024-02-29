@@ -312,8 +312,8 @@ namespace Datadog.Trace.Configuration
                                     .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
                                     .GetAs(
                                          getDefaultValue: () => new DefaultResult<string[]>(
-                                             new[] { ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.Datadog },
-                                             $"{ContextPropagationHeaderStyle.W3CTraceContext},{ContextPropagationHeaderStyle.Datadog}"),
+                                             new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext },
+                                             $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}"),
                                          validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
                                          converter: style => TrimSplitString(style, commaSeparator));
 
@@ -321,8 +321,8 @@ namespace Datadog.Trace.Configuration
                                      .WithKeys(ConfigurationKeys.PropagationStyleExtract, "DD_PROPAGATION_STYLE_EXTRACT", ConfigurationKeys.PropagationStyle)
                                      .GetAs(
                                           getDefaultValue: () => new DefaultResult<string[]>(
-                                              new[] { ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.Datadog },
-                                              $"{ContextPropagationHeaderStyle.W3CTraceContext},{ContextPropagationHeaderStyle.Datadog}"),
+                                              new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext },
+                                              $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}"),
                                           validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
                                           converter: style => TrimSplitString(style, commaSeparator));
 
@@ -728,7 +728,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating a timeout in milliseconds to the execution of the query string obfuscation regex
-        /// Default value is 100ms
+        /// Default value is 200ms
         /// </summary>
         internal double ObfuscationQueryStringRegexTimeout { get; }
 
