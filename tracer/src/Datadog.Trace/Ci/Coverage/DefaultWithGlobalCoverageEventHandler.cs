@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Ci.Coverage.Models.Global;
+using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.dnlib.DotNet;
@@ -50,19 +51,18 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         }
     }
 
-    public GlobalCoverageInfo GetCodeCoveragePercentage()
+    public unsafe GlobalCoverageInfo GetCodeCoveragePercentage()
     {
         try
         {
             lock (_coverages)
             {
                 var sw = Stopwatch.StartNew();
-                // const int HIDDEN = 0xFEEFEE;
                 var globalCoverage = new GlobalCoverageInfo();
-                var moduleProcessed = new HashSet<Module>();
-                var fromGlobalContainer = GlobalContainer?.CloseContext() ?? Array.Empty<ModuleValue>();
-                var fromTestsContainers = _coverages.SelectMany(c => c?.CloseContext() ?? Array.Empty<ModuleValue>());
-                /*
+                var fromGlobalContainer = GlobalContainer?.CloseContext() ?? [];
+                var fromTestsContainers = _coverages.SelectMany(c => c?.CloseContext() ?? []);
+
+                var fileBitmapBuffer = stackalloc byte[512];
                 foreach (var moduleValue in fromGlobalContainer.Concat(fromTestsContainers))
                 {
                     if (moduleValue is null)
@@ -70,87 +70,51 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                         continue;
                     }
 
-                    var moduleDef = MethodSymbolResolver.Instance.GetModuleDef(moduleValue.Module);
-                    if (moduleDef is null)
+                    var module = moduleValue.Module;
+                    var componentCoverageInfo = new ComponentCoverageInfo(module.Name);
+                    foreach (var moduleFile in moduleValue.Metadata.Files)
                     {
-                        continue;
-                    }
-
-                    List<TypeDef>? moduleTypes;
-                    lock (TypeDefsFromModuleDefs)
-                    {
-                        if (!TypeDefsFromModuleDefs.TryGetValue(moduleDef, out moduleTypes))
+                        var fileCoverageInfo = new FileCoverageInfo(moduleFile.Path)
                         {
-                            moduleTypes = moduleDef.GetTypes().ToList();
-                            TypeDefsFromModuleDefs[moduleDef] = moduleTypes;
-                        }
-                    }
+                            ExecutableBitmap = moduleFile.Bitmap
+                        };
 
-                    var componentCoverageInfo = new ComponentCoverageInfo(moduleDef.FullName);
-                    for (var mIdx = 0; mIdx < moduleValue.Metadata.GetMethodsCount(); mIdx++)
-                    {
-                        var methodValue = moduleValue.Methods[mIdx];
-                        if (methodValue is null && moduleProcessed.Contains(moduleValue.Module))
+                        var fileBitmapLastExecutableLine = moduleFile.LastExecutableLine;
+                        var fileBitmapSize = FileBitmap.GetSize(fileBitmapLastExecutableLine);
+                        using var fileBitmap = fileBitmapSize <= 512 ? new FileBitmap(fileBitmapBuffer, fileBitmapSize) : new FileBitmap(new byte[fileBitmapSize]);
+                        if (moduleValue.Metadata.CoverageMode == 0)
                         {
-                            continue;
-                        }
-
-                        moduleValue.Metadata.GetMethodsMetadata(mIdx, out var typeIndex, out var methodIndex);
-                        var typeDef = moduleTypes[typeIndex];
-                        var methodDef = typeDef.Methods[methodIndex];
-
-                        if (methodDef.HasBody && methodDef.Body.HasInstructions)
-                        {
-                            var seqPoints = new List<SequencePoint>(methodValue?.SequencePoints?.Length ?? methodDef.Body.Instructions.Count);
-                            foreach (var instruction in methodDef.Body.Instructions)
+                            var linesInFile = new VendoredMicrosoftCode.System.Span<byte>((byte*)moduleValue.FilesLines + moduleFile.Offset, fileBitmapLastExecutableLine);
+                            for (var i = 0; i < linesInFile.Length; i++)
                             {
-                                if (instruction.SequencePoint is null ||
-                                    instruction.SequencePoint.StartLine == HIDDEN ||
-                                    instruction.SequencePoint.EndLine == HIDDEN)
+                                if (linesInFile[i] == 1)
                                 {
-                                    continue;
+                                    fileBitmap.Set(i + 1);
                                 }
-
-                                seqPoints.Add(instruction.SequencePoint);
-                            }
-
-                            FileCoverageInfo? fileCoverageInfo = null;
-                            var seqPointsCount = methodValue?.SequencePoints?.Length ?? seqPoints.Count;
-                            for (var x = 0; x < seqPointsCount; x++)
-                            {
-                                var seqPoint = seqPoints[x];
-                                fileCoverageInfo ??= new FileCoverageInfo(CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(seqPoint.Document.Url, false));
-
-                                var repInSeqPoints = 0;
-                                if (methodValue?.SequencePoints?.Length > x)
-                                {
-                                    repInSeqPoints = methodValue.SequencePoints[x];
-                                }
-                                else if (methodValue?.SequencePoints is not null)
-                                {
-                                    var location = $"{seqPoint.StartLine}:{seqPoint.StartColumn}:{seqPoint.EndLine}:{seqPoint.EndColumn}";
-                                    var method = $"{methodDef.FullName} | {x} | {methodValue.SequencePoints.Length}";
-                                    Log.Warning("Index not found: {Path} | {Location} | {Method}", fileCoverageInfo.Path, location, method);
-                                }
-
-                                fileCoverageInfo.Add(new[] { (uint)seqPoint.StartLine, (uint)seqPoint.StartColumn, (uint)seqPoint.EndLine, (uint)seqPoint.EndColumn, (uint)repInSeqPoints });
-                            }
-
-                            if (fileCoverageInfo is not null)
-                            {
-                                componentCoverageInfo.Add(fileCoverageInfo);
                             }
                         }
+                        else if (moduleValue.Metadata.CoverageMode == 1)
+                        {
+                            var linesInFile = new VendoredMicrosoftCode.System.Span<int>((int*)moduleValue.FilesLines + moduleFile.Offset, fileBitmapLastExecutableLine);
+                            for (var i = 0; i < linesInFile.Length; i++)
+                            {
+                                if (linesInFile[i] > 0)
+                                {
+                                    fileBitmap.Set(i + 1);
+                                }
+                            }
+                        }
+
+                        fileCoverageInfo.ExecutedBitmap = fileBitmap.GetInternalArrayOrToArray();
+                        componentCoverageInfo.Files.Add(fileCoverageInfo);
                     }
 
-                    moduleProcessed.Add(moduleValue.Module);
                     globalCoverage.Add(componentCoverageInfo);
                 }
-                */
 
-                if (Log.IsEnabled(LogEventLevel.Debug))
+                // if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug("Global Coverage payload: {Payload}", JsonConvert.SerializeObject(globalCoverage));
+                    Log.Information("Global Coverage payload: {Payload}", JsonConvert.SerializeObject(globalCoverage));
                 }
 
                 // Clean coverages
