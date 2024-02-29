@@ -46,16 +46,13 @@ internal readonly unsafe ref struct FileBitmap
 
     public static FileBitmap operator |(FileBitmap fileBitmapA, FileBitmap fileBitmapB)
     {
-        if (fileBitmapA._size != fileBitmapB._size)
-        {
-            return default;
-        }
-
-        var resBitmap = new FileBitmap(new byte[fileBitmapA._size]);
+        var minSize = Math.Min(fileBitmapA._size, fileBitmapB._size);
+        var maxSize = Math.Max(fileBitmapA._size, fileBitmapB._size);
+        var resBitmap = new FileBitmap(new byte[maxSize]);
         var index = 0;
 
 #if NET8_0_OR_GREATER
-        for (; fileBitmapA._size - index >= 64; index += 64)
+        for (; minSize - index >= 64; index += 64)
         {
             var a = Unsafe.ReadUnaligned<Vector512<byte>>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<Vector512<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
@@ -64,14 +61,14 @@ internal readonly unsafe ref struct FileBitmap
 #endif
 
 #if NET7_0_OR_GREATER
-        for (; fileBitmapA._size - index >= 32; index += 32)
+        for (; minSize - index >= 32; index += 32)
         {
             var a = Unsafe.ReadUnaligned<Vector256<byte>>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<Vector256<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a | b);
         }
 
-        for (; fileBitmapA._size - index >= 16; index += 16)
+        for (; minSize - index >= 16; index += 16)
         {
             var a = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
@@ -79,30 +76,39 @@ internal readonly unsafe ref struct FileBitmap
         }
 #endif
 
-        for (; fileBitmapA._size - index >= 8; index += 8)
+        for (; minSize - index >= 8; index += 8)
         {
             var a = Unsafe.ReadUnaligned<ulong>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<ulong>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a | b);
         }
 
-        for (; fileBitmapA._size - index >= 4; index += 4)
+        for (; minSize - index >= 4; index += 4)
         {
             var a = Unsafe.ReadUnaligned<uint>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<uint>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a | b);
         }
 
-        for (; fileBitmapA._size - index >= 2; index += 2)
+        for (; minSize - index >= 2; index += 2)
         {
             var a = Unsafe.ReadUnaligned<ushort>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<ushort>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, (ushort)(a | b));
         }
 
-        for (; index < fileBitmapA._size; index++)
+        for (; index < minSize; index++)
         {
             resBitmap._bitmap[index] = (byte)(fileBitmapA._bitmap[index] | fileBitmapB._bitmap[index]);
+        }
+
+        if (minSize != maxSize)
+        {
+            var bitmap = fileBitmapA._size == maxSize ? fileBitmapA._bitmap : fileBitmapB._bitmap;
+            for (; index < maxSize; index++)
+            {
+                resBitmap._bitmap[index] = bitmap[index];
+            }
         }
 
         return resBitmap;
@@ -110,16 +116,13 @@ internal readonly unsafe ref struct FileBitmap
 
     public static FileBitmap operator &(FileBitmap fileBitmapA, FileBitmap fileBitmapB)
     {
-        if (fileBitmapA._size != fileBitmapB._size)
-        {
-            return default;
-        }
-
-        var resBitmap = new FileBitmap(new byte[fileBitmapA._size]);
+        var minSize = Math.Min(fileBitmapA._size, fileBitmapB._size);
+        var maxSize = Math.Max(fileBitmapA._size, fileBitmapB._size);
+        var resBitmap = new FileBitmap(new byte[maxSize]);
         var index = 0;
 
 #if NET8_0_OR_GREATER
-        for (; fileBitmapA._size - index >= 64; index += 64)
+        for (; minSize - index >= 64; index += 64)
         {
             var a = Unsafe.ReadUnaligned<Vector512<byte>>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<Vector512<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
@@ -128,14 +131,14 @@ internal readonly unsafe ref struct FileBitmap
 #endif
 
 #if NET7_0_OR_GREATER
-        for (; fileBitmapA._size - index >= 32; index += 32)
+        for (; minSize - index >= 32; index += 32)
         {
             var a = Unsafe.ReadUnaligned<Vector256<byte>>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<Vector256<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a & b);
         }
 
-        for (; fileBitmapA._size - index >= 16; index += 16)
+        for (; minSize - index >= 16; index += 16)
         {
             var a = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
@@ -143,30 +146,38 @@ internal readonly unsafe ref struct FileBitmap
         }
 #endif
 
-        for (; fileBitmapA._size - index >= 8; index += 8)
+        for (; minSize - index >= 8; index += 8)
         {
             var a = Unsafe.ReadUnaligned<ulong>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<ulong>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a & b);
         }
 
-        for (; fileBitmapA._size - index >= 4; index += 4)
+        for (; minSize - index >= 4; index += 4)
         {
             var a = Unsafe.ReadUnaligned<uint>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<uint>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a & b);
         }
 
-        for (; fileBitmapA._size - index >= 2; index += 2)
+        for (; minSize - index >= 2; index += 2)
         {
             var a = Unsafe.ReadUnaligned<ushort>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<ushort>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, (ushort)(a & b));
         }
 
-        for (; index < fileBitmapA._size; index++)
+        for (; index < minSize; index++)
         {
             resBitmap._bitmap[index] = (byte)(fileBitmapA._bitmap[index] & fileBitmapB._bitmap[index]);
+        }
+
+        if (minSize != maxSize)
+        {
+            for (; index < maxSize; index++)
+            {
+                resBitmap._bitmap[index] = 0;
+            }
         }
 
         return resBitmap;
