@@ -22,7 +22,7 @@ internal readonly unsafe ref struct FileBitmap
 {
     private readonly int _size;
     private readonly bool _disposable;
-    private readonly StrongBox<GCHandle>? _handle;
+    private readonly PinnedArray? _handle;
     private readonly byte* _bitmap;
 
     public FileBitmap(byte* buffer, int size)
@@ -37,8 +37,8 @@ internal readonly unsafe ref struct FileBitmap
     public FileBitmap(byte[] bitmapArray)
     {
         _size = bitmapArray.Length;
-        _handle = new StrongBox<GCHandle>(GCHandle.Alloc(bitmapArray, GCHandleType.Pinned));
-        _bitmap = (byte*)Unsafe.AsPointer(ref bitmapArray.FastGetReference(0));
+        _handle = new PinnedArray(bitmapArray);
+        _bitmap = _handle.Pointer;
         _disposable = true;
     }
 
@@ -364,12 +364,9 @@ internal readonly unsafe ref struct FileBitmap
 
     public void Dispose()
     {
-        if (_disposable && _handle is not null)
+        if (_disposable)
         {
-            if (_handle.Value.IsAllocated)
-            {
-                _handle.Value.Free();
-            }
+            _handle?.Dispose();
         }
     }
 
@@ -388,11 +385,18 @@ internal readonly unsafe ref struct FileBitmap
         return array;
     }
 
-    internal byte[]? GetInternalArrayOrToArray()
+    internal byte[] GetInternalArrayOrToArrayAndDispose()
     {
-        if (_handle?.Value.IsAllocated == true)
+        if (_handle is not null)
         {
-            return _handle.Value.Target as byte[] ?? ToArray();
+            try
+            {
+                return _handle.Array;
+            }
+            finally
+            {
+                Dispose();
+            }
         }
 
         return ToArray();
@@ -433,6 +437,31 @@ internal readonly unsafe ref struct FileBitmap
             bitMap = null;
             size = 0;
             _index = 0;
+        }
+    }
+
+    private sealed class PinnedArray(byte[] array) : IDisposable
+    {
+        private readonly byte[] _array = array;
+        private GCHandle _handle = GCHandle.Alloc(array, GCHandleType.Pinned);
+
+        ~PinnedArray()
+        {
+            Dispose();
+        }
+
+        public byte* Pointer => (byte*)Unsafe.AsPointer(ref _array.FastGetReference(0));
+
+        public byte[] Array => _array;
+
+        public void Dispose()
+        {
+            if (_handle.IsAllocated)
+            {
+                _handle.Free();
+            }
+
+            GC.SuppressFinalize(this);
         }
     }
 }

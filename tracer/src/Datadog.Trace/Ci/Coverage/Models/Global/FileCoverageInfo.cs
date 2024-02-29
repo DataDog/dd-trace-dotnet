@@ -74,8 +74,10 @@ internal sealed class FileCoverageInfo(string? path) : CoverageInfo
     {
         if (ExecutableBitmap is { } currentBitmapBytes)
         {
-            var newBitmap = new FileBitmap(currentBitmapBytes) | new FileBitmap(bitmapBytes);
-            ExecutableBitmap = newBitmap.GetInternalArrayOrToArray();
+            using var currentBitmap = new FileBitmap(currentBitmapBytes);
+            using var bitmap = new FileBitmap(bitmapBytes);
+            using var newBitmap = currentBitmap | bitmap;
+            ExecutableBitmap = newBitmap.GetInternalArrayOrToArrayAndDispose();
         }
         else
         {
@@ -87,8 +89,10 @@ internal sealed class FileCoverageInfo(string? path) : CoverageInfo
     {
         if (ExecutedBitmap is { } currentBitmapBytes)
         {
-            var newBitmap = new FileBitmap(currentBitmapBytes) | new FileBitmap(bitmapBytes);
-            ExecutedBitmap = newBitmap.GetInternalArrayOrToArray();
+            using var currentBitmap = new FileBitmap(currentBitmapBytes);
+            using var bitmap = new FileBitmap(bitmapBytes);
+            using var newBitmap = currentBitmap | bitmap;
+            ExecutedBitmap = newBitmap.GetInternalArrayOrToArrayAndDispose();
         }
         else
         {

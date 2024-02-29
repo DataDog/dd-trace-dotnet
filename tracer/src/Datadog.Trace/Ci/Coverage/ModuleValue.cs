@@ -9,17 +9,19 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Ci.Coverage.Metadata;
+using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
 namespace Datadog.Trace.Ci.Coverage;
 
 internal class ModuleValue : IDisposable
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ModuleValue(ModuleCoverageMetadata metadata, Module module, int fileLinesMemorySize)
+    public unsafe ModuleValue(ModuleCoverageMetadata metadata, Module module, int fileLinesMemorySize)
     {
         Metadata = metadata;
         Module = module;
         FilesLines = Marshal.AllocHGlobal(fileLinesMemorySize);
+        Unsafe.InitBlockUnaligned((byte*)FilesLines, 0, (uint)fileLinesMemorySize);
     }
 
     ~ModuleValue()
@@ -35,11 +37,13 @@ internal class ModuleValue : IDisposable
 
     public void Dispose()
     {
-        if (FilesLines != IntPtr.Zero)
+        var filesLines = FilesLines;
+        if (filesLines != IntPtr.Zero)
         {
-            Marshal.FreeHGlobal(FilesLines);
             FilesLines = IntPtr.Zero;
-            GC.SuppressFinalize(this);
+            Marshal.FreeHGlobal(filesLines);
         }
+
+        GC.SuppressFinalize(this);
     }
 }

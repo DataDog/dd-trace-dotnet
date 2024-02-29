@@ -7,14 +7,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
+using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Coverage.Util;
-using Datadog.Trace.Pdb;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.dnlib.DotNet;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -59,25 +56,57 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
             {
                 var sw = Stopwatch.StartNew();
                 var globalCoverage = new GlobalCoverageInfo();
-                var fromGlobalContainer = GlobalContainer?.CloseContext() ?? [];
-                var fromTestsContainers = _coverages.SelectMany(c => c?.CloseContext() ?? []);
 
-                var fileBitmapBuffer = stackalloc byte[512];
-                foreach (var moduleValue in fromGlobalContainer.Concat(fromTestsContainers))
+                IEnumerable<ModuleValue> GetModuleValues()
                 {
-                    if (moduleValue is null)
+                    var globalContainer = GlobalContainer?.CloseContext();
+                    if (globalContainer is not null)
                     {
-                        continue;
+                        foreach (var moduleValue in globalContainer)
+                        {
+                            yield return moduleValue;
+                        }
                     }
 
+                    foreach (var coverageContextContainer in _coverages)
+                    {
+                        var container = coverageContextContainer?.CloseContext();
+                        if (container is not null)
+                        {
+                            foreach (var moduleValue in container)
+                            {
+                                yield return moduleValue;
+                            }
+                        }
+                    }
+                }
+
+                var componentCoverageInfos = new Dictionary<Module, ComponentCoverageInfo>();
+                var fileCoverageInfos = new Dictionary<FileCoverageMetadata, FileCoverageInfo>();
+
+                var fileBitmapBuffer = stackalloc byte[512];
+                foreach (var moduleValue in GetModuleValues())
+                {
                     var module = moduleValue.Module;
-                    var componentCoverageInfo = new ComponentCoverageInfo(module.Name);
+                    if (!componentCoverageInfos.TryGetValue(module, out var componentCoverageInfo))
+                    {
+                        componentCoverageInfo = new ComponentCoverageInfo(module.Name);
+                        globalCoverage.Components.Add(componentCoverageInfo);
+                        componentCoverageInfos[module] = componentCoverageInfo;
+                    }
+
                     foreach (var moduleFile in moduleValue.Metadata.Files)
                     {
-                        var fileCoverageInfo = new FileCoverageInfo(moduleFile.Path)
+                        if (!fileCoverageInfos.TryGetValue(moduleFile, out var fileCoverageInfo))
                         {
-                            ExecutableBitmap = moduleFile.Bitmap
-                        };
+                            fileCoverageInfo = new FileCoverageInfo(moduleFile.Path)
+                            {
+                                ExecutableBitmap = moduleFile.Bitmap
+                            };
+
+                            componentCoverageInfo.Files.Add(fileCoverageInfo);
+                            fileCoverageInfos[moduleFile] = fileCoverageInfo;
+                        }
 
                         var fileBitmapLastExecutableLine = moduleFile.LastExecutableLine;
                         var fileBitmapSize = FileBitmap.GetSize(fileBitmapLastExecutableLine);
@@ -105,25 +134,25 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                             }
                         }
 
-                        fileCoverageInfo.ExecutedBitmap = fileBitmap.GetInternalArrayOrToArray();
-                        componentCoverageInfo.Files.Add(fileCoverageInfo);
+                        if (fileCoverageInfo.ExecutedBitmap is null)
+                        {
+                            fileCoverageInfo.ExecutedBitmap = fileBitmap.GetInternalArrayOrToArrayAndDispose();
+                        }
+                        else
+                        {
+                            using var currentExecutedBitmap = new FileBitmap(fileCoverageInfo.ExecutedBitmap);
+                            fileCoverageInfo.ExecutedBitmap = (currentExecutedBitmap | fileBitmap).GetInternalArrayOrToArrayAndDispose();
+                        }
                     }
-
-                    globalCoverage.Add(componentCoverageInfo);
                 }
 
-                // if (Log.IsEnabled(LogEventLevel.Debug))
+                if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Information("Global Coverage payload: {Payload}", JsonConvert.SerializeObject(globalCoverage));
+                    Log.Debug("Global Coverage payload: {Payload}", JsonConvert.SerializeObject(globalCoverage));
                 }
 
                 // Clean coverages
-                foreach (var coverage in _coverages)
-                {
-                    coverage?.Clear();
-                }
-
-                GlobalContainer?.Clear();
+                Clear();
 
                 Log.Information("Total time to calculate global coverage: {TotalMilliseconds}ms", sw.Elapsed.TotalMilliseconds);
                 return globalCoverage;

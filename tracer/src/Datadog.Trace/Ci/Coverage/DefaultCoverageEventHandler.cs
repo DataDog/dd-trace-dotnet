@@ -87,9 +87,15 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                             fileDictionary[moduleFile.Path] = fileCoverage;
                         }
 
-                        fileCoverage.Bitmap = fileCoverage.Bitmap is null ?
-                                                  fileBitmap.ToArray() :
-                                                  (fileBitmap | new FileBitmap(fileCoverage.Bitmap)).GetInternalArrayOrToArray();
+                        if (fileCoverage.Bitmap is { } bitmap)
+                        {
+                            using var currentBitmap = new FileBitmap(bitmap);
+                            fileCoverage.Bitmap = (currentBitmap | fileBitmap).GetInternalArrayOrToArrayAndDispose();
+                        }
+                        else
+                        {
+                            fileCoverage.Bitmap = fileBitmap.GetInternalArrayOrToArrayAndDispose();
+                        }
                     }
                 }
             }

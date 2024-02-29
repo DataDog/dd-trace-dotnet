@@ -88,6 +88,11 @@ internal sealed class CoverageContextContainer
         var container = _container;
         lock (container)
         {
+            foreach (var moduleValue in container)
+            {
+                moduleValue.Dispose();
+            }
+
             container.Clear();
             _currentModuleValue = null;
         }
