@@ -14,7 +14,6 @@ using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 #endif
 using System.Text;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
 using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
 namespace Datadog.Trace.Ci.Coverage.Util;
@@ -232,8 +231,10 @@ internal readonly unsafe ref struct FileBitmap
         return resBitmap;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetSize(int numOfLines) => (numOfLines + 7) / 8;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Set(int line)
     {
         /*
@@ -253,6 +254,7 @@ internal readonly unsafe ref struct FileBitmap
         _bitmap[idx >> 3] |= (byte)(128 >> (int)(idx & 7));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Get(int line)
     {
         /*
@@ -400,7 +402,8 @@ internal readonly unsafe ref struct FileBitmap
         return sb.ToString();
     }
 
-    public IEnumerator<byte> GetEnumerator() => new Enumerator(_bitmap, _size);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Enumerator GetEnumerator() => new(_bitmap, _size);
 
     public struct Enumerator(byte* bitMap, int size) : IEnumerator<byte>
     {
@@ -410,6 +413,7 @@ internal readonly unsafe ref struct FileBitmap
 
         object IEnumerator.Current => Current;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext() => ++_index < size;
 
         public void Reset()
