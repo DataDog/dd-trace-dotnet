@@ -9,7 +9,7 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     case MethodState.EntryStart:
                     case MethodState.EntryAsync:
                         shadowStack = ShadowStackHolder.EnsureShadowStackEnabled();
-                        snapshotCreator.EnterHash = shadowStack.CurrentStackFrameNode?.EnterSequenceHash ?? 0;
+                        snapshotCreator.EnterHash = shadowStack.CurrentStackFrameNode?.EnterSequenceHash ?? Fnv1aHash.FnvOffsetBias;
 
                         var shouldProcess = false;
                         foreach (var processor in snapshotCreator.Processors)
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         }
 
                         var exception = info.Value as Exception;
-                        snapshotCreator.LeaveHash = shadowStack.CurrentStackFrameNode?.LeaveSequenceHash ?? 0;
+                        snapshotCreator.LeaveHash = shadowStack.CurrentStackFrameNode?.LeaveSequenceHash ?? Fnv1aHash.FnvOffsetBias;
 
                         var leavingExceptionType = info.Value.GetType();
 

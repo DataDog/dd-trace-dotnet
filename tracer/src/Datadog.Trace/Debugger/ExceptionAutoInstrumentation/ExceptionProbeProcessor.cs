@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
+using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
@@ -27,8 +28,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private readonly ExceptionDebuggingProbe[] _childProbes;
         private readonly ExceptionDebuggingProbe[] _parentProbes;
         private readonly object _locker = new();
-        private uint? _enterSequenceHash;
-        private uint? _leaveSequenceHash;
+        private int? _enterSequenceHash;
+        private int? _leaveSequenceHash;
 
         internal ExceptionProbeProcessor(ExceptionDebuggingProbe probe, HashSet<Type> exceptionTypes, ExceptionDebuggingProbe[] parentProbes, ExceptionDebuggingProbe[] childProbes)
         {
@@ -41,7 +42,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal ExceptionDebuggingProcessor ExceptionDebuggingProcessor { get; }
 
-        internal bool ShouldProcess(uint enterSequenceHash)
+        internal bool ShouldProcess(int enterSequenceHash)
         {
             if (!EnsureEnterHashComputed())
             {
@@ -77,15 +78,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return _leaveSequenceHash != null;
         }
 
-        private uint? ComputeSequenceHash(ExceptionDebuggingProbe[] probes, bool reverseOrder = false)
+        private int? ComputeSequenceHash(ExceptionDebuggingProbe[] probes, bool reverseOrder = false)
         {
             // Ensure we have instrumented probes to work with
             var instrumentedProbes = probes.Where(p => p.IsInstrumented).ToArray();
 
             var probeIds = instrumentedProbes
-                            .Where(p => p.ProbeStatus == Status.RECEIVED || (p.ProbeStatus == Status.INSTALLED && !p.MayBeOmittedFromCallStack))
-                            .Select(p => p.ProbeId)
-                            .ToArray();
+                          .Where(p => p.ProbeStatus == Status.RECEIVED || (p.ProbeStatus == Status.INSTALLED && !p.MayBeOmittedFromCallStack))
+                          .Select(p => p.ProbeId)
+                          .ToArray();
 
             var statuses = DebuggerNativeMethods.GetProbesStatuses(probeIds);
 
@@ -122,14 +123,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             if (!installedProbes.Any())
             {
-                return 0;
+                return Fnv1aHash.FnvOffsetBias;
             }
 
-            uint hash = 0;
+            var hash = Fnv1aHash.FnvOffsetBias;
 
             foreach (var probe in installedProbes)
             {
-                hash = Fnv1aHash.ComputeHash(hash, probe.Method.MethodToken);
+                hash = Fnv1aHash.Combine(probe.Method.MethodToken, hash);
             }
 
             return hash;

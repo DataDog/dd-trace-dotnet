@@ -19,9 +19,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public ExceptionProbeProcessor[] Processors { get; }
 
-        public uint EnterHash { get; set; }
+        public int EnterHash { get; set; }
 
-        public uint LeaveHash { get; set; }
+        public int LeaveHash { get; set; }
 
         public TrackedStackFrameNode TrackedStackFrameNode { get; set; }
     }

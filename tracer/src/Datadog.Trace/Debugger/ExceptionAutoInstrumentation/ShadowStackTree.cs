@@ -24,7 +24,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         private readonly AsyncLocal<TrackedStackFrameNode> _trackedStackFrameActiveNode = new();
         private ReaderWriterLockSlim _lock;
-        private HashSet<uint> _uniqueSequencesLeaves;
+        private HashSet<int> _uniqueSequencesLeaves;
         private TrackedStackFrameNode _trackedStackFrameRootNode;
         private ConcurrentDictionary<TrackedStackFrameNode, Exception> _prematurelyUnwoundedFrames;
 
@@ -140,7 +140,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return rootNode.HasChildException(exceptionPath);
         }
 
-        public bool AddUniqueId(uint id)
+        public bool AddUniqueId(int id)
         {
             _lock.EnterWriteLock();
             try
@@ -153,7 +153,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        public bool ContainsUniqueId(uint id)
+        public bool ContainsUniqueId(int id)
         {
             _lock.EnterReadLock();
             try
@@ -166,7 +166,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        public bool RemoveUniqueId(uint id)
+        public bool RemoveUniqueId(int id)
         {
             _lock.EnterWriteLock();
             try
@@ -196,7 +196,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public void Init()
         {
-            _uniqueSequencesLeaves = new HashSet<uint>();
+            _uniqueSequencesLeaves = new HashSet<int>();
             _prematurelyUnwoundedFrames = new ConcurrentDictionary<TrackedStackFrameNode, Exception>();
             _lock = new ReaderWriterLockSlim();
         }

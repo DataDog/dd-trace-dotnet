@@ -10,6 +10,7 @@ using System.Reflection;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Snapshots;
+using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
@@ -18,8 +19,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private TrackedStackFrameNode _parent;
         private List<TrackedStackFrameNode> _activeChildNodes;
         private bool _disposed;
-        private uint? _enterSequenceHash;
-        private uint? _leaveSequenceHash;
+        private int? _enterSequenceHash;
+        private int? _leaveSequenceHash;
         private bool _childNodesAlreadyCleansed;
         private string _snapshot;
         private string _snapshotId;
@@ -31,7 +32,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             IsInvalidPath = isInvalidPath;
         }
 
-        public uint EnterSequenceHash
+        public int EnterSequenceHash
         {
             get
             {
@@ -40,7 +41,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        public uint LeaveSequenceHash
+        public int LeaveSequenceHash
         {
             get
             {
@@ -49,11 +50,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        public uint SequenceHash
+        public int SequenceHash
         {
             get
             {
-                return EnterSequenceHash ^ LeaveSequenceHash;
+                return Fnv1aHash.Combine(EnterSequenceHash, LeaveSequenceHash);
             }
         }
 
@@ -204,15 +205,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        private uint ComputeEnterSequenceHash()
+        private int ComputeEnterSequenceHash()
         {
-            return Fnv1aHash.ComputeHash(_parent?.EnterSequenceHash ?? 0, Method.MetadataToken);
+            return Fnv1aHash.Combine(Method.MetadataToken, _parent?.EnterSequenceHash ?? Fnv1aHash.FnvOffsetBias);
         }
 
         /// <summary>
         /// TODO take not only first child.
         /// </summary>
-        private uint ComputeLeaveSequenceHash()
+        private int ComputeLeaveSequenceHash()
         {
             lock (this)
             {
@@ -221,10 +222,10 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 if (_activeChildNodes?.Any() == true)
                 {
                     var firstChild = _activeChildNodes.First();
-                    return Fnv1aHash.ComputeHash(firstChild.LeaveSequenceHash, firstChild.Method.MetadataToken);
+                    return Fnv1aHash.Combine(firstChild.Method.MetadataToken, firstChild.LeaveSequenceHash);
                 }
 
-                return 0;
+                return Fnv1aHash.FnvOffsetBias;
             }
         }
 
