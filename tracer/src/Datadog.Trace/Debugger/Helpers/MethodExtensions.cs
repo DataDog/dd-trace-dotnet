@@ -12,6 +12,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Helpers
 {
@@ -23,10 +24,10 @@ namespace Datadog.Trace.Debugger.Helpers
         /// </summary>
         internal static string GetFullyQualifiedName(this MethodBase mb)
         {
+            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+
             try
             {
-                var sb = new StringBuilder(255);
-
                 sb.Append(mb.Name + "_");
 
                 var declaringType = mb.DeclaringType;
@@ -137,6 +138,10 @@ namespace Datadog.Trace.Debugger.Helpers
             catch
             {
                 return null;
+            }
+            finally
+            {
+                StringBuilderCache.Release(sb);
             }
         }
 
