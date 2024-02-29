@@ -26,6 +26,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             ShouldBlock = Actions.Contains("block");
+            ShouldSendStack = Actions.Contains("stack_trace");
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
             Timeout = returnStruct.Timeout;
@@ -52,6 +53,8 @@ namespace Datadog.Trace.AppSec.Waf
         public ulong AggregatedTotalRuntimeWithBindings { get; }
 
         public bool ShouldBlock { get; }
+
+        public bool ShouldSendStack { get; }
 
         public bool ShouldReportSecurityResult { get; }
 

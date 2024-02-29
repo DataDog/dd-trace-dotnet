@@ -19,6 +19,8 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         public bool ShouldBlock { get; }
 
+        public bool ShouldSendStack { get; }
+
         IReadOnlyCollection<object>? Data { get; }
 
         List<string> Actions { get; }

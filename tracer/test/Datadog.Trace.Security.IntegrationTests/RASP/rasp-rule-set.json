@@ -45,7 +45,8 @@
         }
       ],
       "on_match": [
-        "block"
+        "block",
+        "stack_trace"
       ]
     },
     {
