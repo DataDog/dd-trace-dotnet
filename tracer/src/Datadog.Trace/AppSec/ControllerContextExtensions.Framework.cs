@@ -12,6 +12,7 @@ using System.Web;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
 using Datadog.Trace.Iast;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AppSec
 {
@@ -62,7 +63,7 @@ namespace Datadog.Trace.AppSec
                 else
                 {
                     // We exclude the query string params
-                    if (!context.Request.QueryString?.AllKeys.Contains(item.Key) ?? false)
+                    if (!QueryStringHelper.GetQueryString(context.Request)?.AllKeys.Contains(item.Key) ?? false)
                     {
                         bodyDic[item.Key] = item.Value;
                     }

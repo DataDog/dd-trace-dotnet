@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Web;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
@@ -16,6 +17,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast;
@@ -203,14 +205,16 @@ internal class IastRequestContext
                 helper.AddExecutedSource(IastInstrumentedSources.RequestUri);
             }
 
-            if (request.QueryString != null)
+            var queryString = QueryStringHelper.GetQueryString(request);
+
+            if (queryString != null)
             {
-                foreach (var key in request.QueryString.AllKeys)
+                foreach (var key in queryString.AllKeys)
                 {
-                    AddRequestParameter(key, request.QueryString[key]);
+                    AddRequestParameter(key, queryString[key]);
                 }
 
-                AddQueryStringRaw(request.QueryString.ToString());
+                AddQueryStringRaw(queryString.ToString());
             }
 
             AddRequestHeaders(request.Headers);
@@ -287,7 +291,7 @@ internal class IastRequestContext
             }
 
             AddQueryPath(request.Path);
-            AddQueryStringRaw(request.QueryString.Value);
+            AddQueryStringRaw(QueryStringHelper.GetQueryString(request).Value);
             AddRequestHeaders(request.Headers);
             AddRequestCookies(request.Cookies);
             _querySourcesAdded = true;
