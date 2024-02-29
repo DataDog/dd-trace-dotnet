@@ -236,7 +236,20 @@ namespace Datadog.Trace.Configuration
 
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
-            GlobalSamplingRateInternal = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble(defaultValue: 1.0);
+            bool isSamplingSet = false;
+
+            var samplingRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble(
+                defaultValue: 1.0,
+                value =>
+                {
+                    isSamplingSet = true;
+                    return true;
+                });
+
+            if (isSamplingSet)
+            {
+                GlobalSamplingRateInternal = samplingRate;
+            }
 
             StartupDiagnosticLogEnabledInternal = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
 
