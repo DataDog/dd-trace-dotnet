@@ -434,6 +434,8 @@
     <ClInclude Include="SampleEnumerator.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="CallStack.hpp" />
+    <ClInclude Include="allocators.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -648,6 +650,9 @@
     </ClCompile>
     <ClCompile Include="FrameworkThreadInfo.cpp">
       <Filter>Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="allocators.cpp">
+      <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

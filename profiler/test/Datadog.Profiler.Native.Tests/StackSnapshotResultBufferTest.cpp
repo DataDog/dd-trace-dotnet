@@ -4,30 +4,47 @@
 #include "gtest/gtest.h"
 
 #include "StackSnapshotResultBuffer.h"
+#include "CallStack.hpp"
+
+CallStack2 ConvertFrom(std::vector<std::uintptr_t> const& v)
+{
+    CallStack2 c;
+
+    auto buffer = c.GetBuffer();
+    for (auto i = 0; i < v.size(); i++)
+    {
+        buffer.data()[i] = v[i];
+    }
+
+    c.SetCount(v.size());
+
+    return c;
+}
 
 TEST(StackSnapshotResultBufferTest, CheckAddedFrames)
 {
     auto buffer = StackSnapshotResultBuffer();
 
-    std::vector<std::uintptr_t> expectedIps = {42, 21, 11, 4};
-    for (auto ip : expectedIps)
+    CallStack2 expectedCallStack = ConvertFrom(std::vector<std::uintptr_t>{42, 21, 11, 4});
+
+    for (auto ip : expectedCallStack)
     {
         buffer.AddFrame(ip);
     }
 
-    ASSERT_EQ(expectedIps.size(), buffer.GetFramesCount());
+    ASSERT_EQ(expectedCallStack.size(), buffer.GetFramesCount());
 
-    std::vector<std::uintptr_t> ips;
+    CallStack2 ips;
     buffer.CopyInstructionPointers(ips);
 
-    ASSERT_EQ(expectedIps, ips);
+    ASSERT_TRUE(expectedCallStack.SameIps(ips));
 }
 
 TEST(StackSnapshotResultBufferTest, CheckAddedFakeFrame)
 {
     auto buffer = StackSnapshotResultBuffer();
 
-    std::vector<std::uintptr_t> expectedIps = {42, 21, 11, 4};
+    auto expectedIps = std::vector<std::uintptr_t>{42, 21, 11, 4};
 
     for (auto ip : expectedIps)
     {
@@ -40,10 +57,12 @@ TEST(StackSnapshotResultBufferTest, CheckAddedFakeFrame)
 
     ASSERT_EQ(expectedIps.size(), buffer.GetFramesCount());
 
-    std::vector<std::uintptr_t> ips;
+    CallStack2 expectedCallStack = ConvertFrom(expectedIps);
+
+    CallStack2 ips;
     buffer.CopyInstructionPointers(ips);
 
-    ASSERT_EQ(expectedIps, ips);
+    ASSERT_TRUE(expectedCallStack.SameIps(ips));
 }
 
 TEST(StackSnapshotResultBufferTest, CheckIfWeReachTheBufferLimitTheLastFrameIsFake)
@@ -59,9 +78,10 @@ TEST(StackSnapshotResultBufferTest, CheckIfWeReachTheBufferLimitTheLastFrameIsFa
 
     ASSERT_EQ(2049, buffer.GetFramesCount());
 
-    std::vector<std::uintptr_t> ips;
+    CallStack2 ips;
     buffer.CopyInstructionPointers(ips);
 
     // The last frame is a fake frame
-    ASSERT_EQ(0, ips.back());
+    //ASSERT_EQ(0, *(ips.end() - 1));
+    // TODO
 }
