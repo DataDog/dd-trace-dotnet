@@ -191,9 +191,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion(ServiceVersion);
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-#if NETCOREAPP2_1
-            // NET 2.1, sometimes times out
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "600");
+#if NETCOREAPP2_1_OR_GREATER
+            // After updating the regex implementation multiple runtimes started hitting the a timeout, updating here to prevent flakes on master
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "5_000");
 #endif
             _testName = testName;
             _metadataSchemaVersion = metadataSchemaVersion;
