@@ -36,7 +36,7 @@
     <PackageReference Include="Colorful.Console" Version="1.2.15" />
     <PackageReference Include="Octokit.GraphQL" Version="0.1.8-beta" />
 
-    <!-- Explicitly overide the version of octokit used by Nuke -->
+    <!-- Explicitly override the version of octokit used by Nuke -->
     <PackageReference Include="Octokit" Version="10.0.0" />
     <PackageReference Include="Perfolizer" Version="0.2.1" />
     <PackageReference Include="Sep" Version="0.3.0" />
