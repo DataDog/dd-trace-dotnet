@@ -127,14 +127,17 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                             }
                         }
 
-                        if (fileCoverageInfo.ExecutedBitmap is null)
+                        if (fileBitmap.HasActiveBits())
                         {
-                            fileCoverageInfo.ExecutedBitmap = fileBitmap.GetInternalArrayOrToArrayAndDispose();
-                        }
-                        else
-                        {
-                            using var currentExecutedBitmap = new FileBitmap(fileCoverageInfo.ExecutedBitmap);
-                            fileCoverageInfo.ExecutedBitmap = (currentExecutedBitmap | fileBitmap).GetInternalArrayOrToArrayAndDispose();
+                            if (fileCoverageInfo.ExecutedBitmap is null)
+                            {
+                                fileCoverageInfo.ExecutedBitmap = fileBitmap.GetInternalArrayOrToArrayAndDispose();
+                            }
+                            else
+                            {
+                                using var currentExecutedBitmap = new FileBitmap(fileCoverageInfo.ExecutedBitmap);
+                                fileCoverageInfo.ExecutedBitmap = (currentExecutedBitmap | fileBitmap).GetInternalArrayOrToArrayAndDispose();
+                            }
                         }
                     }
                 }

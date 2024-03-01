@@ -62,7 +62,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                         }
                     }
 
-                    if (fileBitmap.CountActiveBits() > 0)
+                    if (fileBitmap.HasActiveBits())
                     {
                         FileCoverage? fileCoverage;
                         if (fileDictionary is null)

@@ -110,10 +110,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                     new FileCoverage
                     {
                         FileName = "MyFile",
-                        Segments =
-                        {
-                            new uint[] { 1, 2, 3, 4 }
-                        }
+                        Bitmap = [1, 2, 3, 4]
                     }
                 }
             };
@@ -329,10 +326,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                     new FileCoverage
                     {
                         FileName = "MyFile",
-                        Segments =
-                        {
-                            new uint[] { 1, 2, 3, 4 }
-                        }
+                        Bitmap = [1, 2, 3, 4]
                     }
                 }
             };

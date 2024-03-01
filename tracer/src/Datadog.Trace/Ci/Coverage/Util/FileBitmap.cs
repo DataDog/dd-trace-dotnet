@@ -12,6 +12,10 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 #if NETCOREAPP3_0_OR_GREATER
 using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
+#endif
+#if NET6_0
+using System.Runtime.Intrinsics.Arm;
 #endif
 using System.Text;
 using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
@@ -121,6 +125,47 @@ internal readonly unsafe ref struct FileBitmap
             var b = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a | b);
         }
+#elif NET6_0
+        if (AdvSimd.IsSupported)
+        {
+            // ARM64 SIMD operations
+            for (; minSize - index >= 16; index += 16)
+            {
+                // Perform bitwise OR on 16 bytes (128 bits) at a time
+                // Load 128 bits (16 bytes) from each bitmap into SIMD registers
+                var a = AdvSimd.LoadVector128(fileBitmapA._bitmap + index);
+                var b = AdvSimd.LoadVector128(fileBitmapB._bitmap + index);
+                AdvSimd.Store(resBitmap._bitmap + index, AdvSimd.Or(a, b));
+            }
+        }
+#elif NETCOREAPP3_0_OR_GREATER
+        // Use 256-bit (32-byte) vectors if available
+        if (Avx.IsSupported)
+        {
+            // X86 SIMD operations
+            for (; minSize - index >= 32; index += 32)
+            {
+                // Perform bitwise OR on 16 bytes (128 bits) at a time
+                // Load 128 bits (16 bytes) from each bitmap into SIMD registers
+                var a = Avx.LoadVector256(fileBitmapA._bitmap + index);
+                var b = Avx.LoadVector256(fileBitmapB._bitmap + index);
+                Avx.Store(resBitmap._bitmap + index, Avx2.Or(a, b));
+            }
+        }
+
+        // Use 128-bit (16-byte) vectors if available
+        if (Sse2.IsSupported)
+        {
+            // X86 SIMD operations
+            for (; minSize - index >= 16; index += 16)
+            {
+                // Perform bitwise OR on 16 bytes (128 bits) at a time
+                // Load 128 bits (16 bytes) from each bitmap into SIMD registers
+                var a = Sse2.LoadVector128(fileBitmapA._bitmap + index);
+                var b = Sse2.LoadVector128(fileBitmapB._bitmap + index);
+                Sse2.Store(resBitmap._bitmap + index, Sse2.Or(a, b));
+            }
+        }
 #endif
 
         for (; minSize - index >= 8; index += 8)
@@ -214,6 +259,47 @@ internal readonly unsafe ref struct FileBitmap
             var a = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(fileBitmapA._bitmap + index));
             var b = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a & b);
+        }
+#elif NET6_0
+        if (AdvSimd.IsSupported)
+        {
+            // ARM64 SIMD operations
+            for (; minSize - index >= 16; index += 16)
+            {
+                // Perform bitwise OR on 16 bytes (128 bits) at a time
+                // Load 128 bits (16 bytes) from each bitmap into SIMD registers
+                var a = AdvSimd.LoadVector128(fileBitmapA._bitmap + index);
+                var b = AdvSimd.LoadVector128(fileBitmapB._bitmap + index);
+                AdvSimd.Store(resBitmap._bitmap + index, AdvSimd.And(a, b));
+            }
+        }
+#elif NETCOREAPP3_0_OR_GREATER
+        // Use 256-bit (32-byte) vectors if available
+        if (Avx.IsSupported)
+        {
+            // X86 SIMD operations
+            for (; minSize - index >= 32; index += 32)
+            {
+                // Perform bitwise OR on 16 bytes (128 bits) at a time
+                // Load 128 bits (16 bytes) from each bitmap into SIMD registers
+                var a = Avx.LoadVector256(fileBitmapA._bitmap + index);
+                var b = Avx.LoadVector256(fileBitmapB._bitmap + index);
+                Avx.Store(resBitmap._bitmap + index, Avx2.And(a, b));
+            }
+        }
+
+        // Use 128-bit (16-byte) vectors if available
+        if (Sse2.IsSupported)
+        {
+            // X86 SIMD operations
+            for (; minSize - index >= 16; index += 16)
+            {
+                // Perform bitwise OR on 16 bytes (128 bits) at a time
+                // Load 128 bits (16 bytes) from each bitmap into SIMD registers
+                var a = Sse2.LoadVector128(fileBitmapA._bitmap + index);
+                var b = Sse2.LoadVector128(fileBitmapB._bitmap + index);
+                Sse2.Store(resBitmap._bitmap + index, Sse2.And(a, b));
+            }
         }
 #endif
 
@@ -349,6 +435,77 @@ internal readonly unsafe ref struct FileBitmap
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetSize(int numOfLines) => (numOfLines + 7) / 8;
 
+#if !NETCOREAPP3_0_OR_GREATER
+    /// <summary>
+    /// Hamming weight algorithm for ulong
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int SlowLongPopCount(ulong value)
+    {
+        // Constants for the Hamming weight algorithm
+        const ulong c1 = 0x_55555555_55555555ul; // Pattern: 01010101...
+        const ulong c2 = 0x_33333333_33333333ul; // Pattern: 00110011...
+        const ulong c3 = 0x_0F0F0F0F_0F0F0F0Ful; // Pattern: 00001111...
+        const ulong c4 = 0x_01010101_01010101ul; // Pattern: 00000001...
+
+        // Step 1: Pairwise reduction to count bits in each pair of bits
+        // This step turns every two bits into a single bit (1 if either of the two was 1)
+        // Subtract pairwise reduced values from original
+        value -= (value >> 1) & c1;
+
+        // Step 2: Nibble-wise reduction to count bits in each nibble (4 bits)
+        // This step combines every four bits into a sum of those bits
+        // Combine nibble pairs
+        value = (value & c2) + ((value >> 2) & c2);
+
+        // Step 3: Byte-wise reduction to count bits in each byte
+        // This step adds up the bits in each byte to produce a sum per byte
+        // Combine sums within each byte
+        // Step 4: Multiplication and right shift to aggregate the counts
+        // This step aggregates the counts from all bytes into the most significant byte
+        // Multiply and shift to aggregate bit counts
+        value = (((value + (value >> 4)) & c3) * c4) >> 56;
+
+        // The final result is the sum of bits set to 1 in the original ulong value
+        return (int)value;
+    }
+
+    /// <summary>
+    /// Hamming weight algorithm for uint
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int SlowIntPopCount(uint value)
+    {
+        // Constants for the Hamming weight algorithm tailored for 32-bit integers
+        const uint c1 = 0x_55555555u; // Pattern: 01010101...
+        const uint c2 = 0x_33333333u; // Pattern: 00110011...
+        const uint c3 = 0x_0F0F0F0Fu; // Pattern: 00001111...
+        const uint c4 = 0x_01010101u; // Pattern: 00000001...
+
+        // Step 1: Pairwise reduction to count bits in each pair
+        // This subtracts from each pair of bits, effectively halving the number of bits to consider
+        // Apply mask and subtract
+        value -= (value >> 1) & c1;
+
+        // Step 2: Nibble-wise reduction to count bits in each 4-bit set (nibble)
+        // This combines counts from adjacent nibbles into a single nibble
+        // Combine counts within nibbles
+        value = (value & c2) + ((value >> 2) & c2);
+
+        // Step 3: Byte-wise reduction to sum bits in each byte
+        // This step accumulates the bit counts from each byte into that byte's value
+        // Sum counts within each byte
+        // Step 4: Aggregation of counts
+        // This multiplies the byte-wise counts by a specific pattern and shifts the result
+        // to aggregate all counts into the least significant byte of the result
+        // Aggregate counts into a single sum
+        value = (((value + (value >> 4)) & c3) * c4) >> 24;
+
+        // The final value is now the total count of bits set to 1 in the original uint value
+        return (int)value;
+    }
+#endif
+
     /// <summary>
     /// Sets a bit at a specified line to 1.
     /// </summary>
@@ -458,71 +615,80 @@ internal readonly unsafe ref struct FileBitmap
         }
 
         return count;
+    }
 
-#if !NETCOREAPP3_0_OR_GREATER
-        // Hamming weight algorithm for ulong
-        static int SlowLongPopCount(ulong value)
+    /// <summary>
+    /// Gets if the bitmap has at least 1 bit set to 1
+    /// </summary>
+    /// <returns>True if the bitmap has at least 1 bit set to 1; otherwise, false..</returns>
+    public bool HasActiveBits()
+    {
+        // Iterate over each byte of the bitmap
+        for (var i = 0; i < _size; i++)
         {
-            // Constants for the Hamming weight algorithm
-            const ulong c1 = 0x_55555555_55555555ul; // Pattern: 01010101...
-            const ulong c2 = 0x_33333333_33333333ul; // Pattern: 00110011...
-            const ulong c3 = 0x_0F0F0F0F_0F0F0F0Ful; // Pattern: 00001111...
-            const ulong c4 = 0x_01010101_01010101ul; // Pattern: 00000001...
-
-            // Step 1: Pairwise reduction to count bits in each pair of bits
-            // This step turns every two bits into a single bit (1 if either of the two was 1)
-            // Subtract pairwise reduced values from original
-            value -= (value >> 1) & c1;
-
-            // Step 2: Nibble-wise reduction to count bits in each nibble (4 bits)
-            // This step combines every four bits into a sum of those bits
-            // Combine nibble pairs
-            value = (value & c2) + ((value >> 2) & c2);
-
-            // Step 3: Byte-wise reduction to count bits in each byte
-            // This step adds up the bits in each byte to produce a sum per byte
-            // Combine sums within each byte
-            // Step 4: Multiplication and right shift to aggregate the counts
-            // This step aggregates the counts from all bytes into the most significant byte
-            // Multiply and shift to aggregate bit counts
-            value = (((value + (value >> 4)) & c3) * c4) >> 56;
-
-            // The final result is the sum of bits set to 1 in the original ulong value
-            return (int)value;
-        }
-
-        // Hamming weight algorithm for uint
-        static int SlowIntPopCount(uint value)
-        {
-            // Constants for the Hamming weight algorithm tailored for 32-bit integers
-            const uint c1 = 0x_55555555u; // Pattern: 01010101...
-            const uint c2 = 0x_33333333u; // Pattern: 00110011...
-            const uint c3 = 0x_0F0F0F0Fu; // Pattern: 00001111...
-            const uint c4 = 0x_01010101u; // Pattern: 00000001...
-
-            // Step 1: Pairwise reduction to count bits in each pair
-            // This subtracts from each pair of bits, effectively halving the number of bits to consider
-            // Apply mask and subtract
-            value -= (value >> 1) & c1;
-
-            // Step 2: Nibble-wise reduction to count bits in each 4-bit set (nibble)
-            // This combines counts from adjacent nibbles into a single nibble
-            // Combine counts within nibbles
-            value = (value & c2) + ((value >> 2) & c2);
-
-            // Step 3: Byte-wise reduction to sum bits in each byte
-            // This step accumulates the bit counts from each byte into that byte's value
-            // Sum counts within each byte
-            // Step 4: Aggregation of counts
-            // This multiplies the byte-wise counts by a specific pattern and shifts the result
-            // to aggregate all counts into the least significant byte of the result
-            // Aggregate counts into a single sum
-            value = (((value + (value >> 4)) & c3) * c4) >> 24;
-
-            // The final value is now the total count of bits set to 1 in the original uint value
-            return (int)value;
-        }
+            // Attempt to count bits 8 bytes at a time for efficiency
+            // Ensure there's at least 8 bytes left to read as ulong (64 bits)
+            if (i + 7 < _size)
+            {
+#if NETCOREAPP3_0_OR_GREATER
+                // If supported, use the BitOperations.PopCount method for fast population count of bits set to 1
+                // This method utilizes hardware acceleration (if available) to count the bits efficiently
+                if (BitOperations.PopCount(*(ulong*)(_bitmap + i)) > 0)
+                {
+                    return true;
+                }
+#else
+                // For platforms without BitOperations.PopCount, fall back to a manual method
+                // SlowLongPopCount is a custom method implementing the hamming weight algorithm for ulong
+                if (SlowLongPopCount(*(ulong*)(_bitmap + i)) > 0)
+                {
+                    return true;
+                }
 #endif
+                // Skip ahead by 7 bytes as we've read 8 bytes in total
+                i += 7;
+                continue;
+            }
+
+            // Attempt to count bits 4 bytes at a time
+            // Ensure there's at least 4 bytes left to read as uint (32 bits)
+            if (i + 3 < _size)
+            {
+#if NETCOREAPP3_0_OR_GREATER
+                // Use BitOperations.PopCount for a uint, counting bits in 4 bytes
+                if (BitOperations.PopCount(*(uint*)(_bitmap + i)) > 0)
+                {
+                    return true;
+                }
+#else
+                // Fall back to a manual method for uint
+                if (SlowIntPopCount(*(uint*)(_bitmap + i)) > 0)
+                {
+                    return true;
+                }
+#endif
+                // Skip ahead by 3 bytes as we've read 4 bytes in total
+                i += 3;
+                continue;
+            }
+
+            // Count remaining bits one byte at a time
+#if NETCOREAPP3_0_OR_GREATER
+            // Use BitOperations.PopCount for a single byte
+            if (BitOperations.PopCount(_bitmap[i]) > 0)
+            {
+                return true;
+            }
+#else
+            // Fall back to a manual method for a single byte
+            if (SlowIntPopCount(_bitmap[i]) > 0)
+            {
+                return true;
+            }
+#endif
+        }
+
+        return false;
     }
 
     /// <summary>
