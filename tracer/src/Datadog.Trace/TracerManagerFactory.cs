@@ -266,7 +266,7 @@ namespace Datadog.Trace
 
             if (settings.GlobalSamplingRateInternal != null)
             {
-                var globalRate = (float)settings.GlobalSamplingRateInternal;
+                var globalRate = (float)settings.GlobalSamplingRateInternal.Value;
 
                 if (globalRate < 0f || globalRate > 1f)
                 {

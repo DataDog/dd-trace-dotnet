@@ -35,13 +35,21 @@ namespace Datadog.Trace.AppSec
                                  .WithKeys(ConfigurationKeys.AppSec.JsonBlockedTemplate)
                                  .AsString(SecurityConstants.BlockedJsonTemplate);
 
+            bool isEnabledSet = true;
+
+            bool GetEnabledDefaultValue()
+            {
+                isEnabledSet = false;
+                return false;
+            }
+
             // both should default to false
             var enabledEnvVar = config
                                .WithKeys(ConfigurationKeys.AppSec.Enabled)
-                               .AsBool();
+                               .AsBool(GetEnabledDefaultValue, null);
 
-            Enabled = enabledEnvVar ?? false;
-            CanBeToggled = enabledEnvVar == null;
+            Enabled = enabledEnvVar.Value;
+            CanBeToggled = !isEnabledSet;
 
             Rules = config.WithKeys(ConfigurationKeys.AppSec.Rules).AsString();
             CustomIpHeader = config.WithKeys(ConfigurationKeys.AppSec.CustomIpHeader).AsString();

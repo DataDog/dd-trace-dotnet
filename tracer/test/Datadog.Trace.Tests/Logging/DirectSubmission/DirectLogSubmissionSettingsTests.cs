@@ -195,8 +195,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), null)]
-        public void LogsInjectionEnabled(string value, bool? expected)
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void LogsInjectionEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.LogsInjectionEnabled, value));
             var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);

@@ -24,6 +24,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             nameof(TracerSettings.DisabledIntegrationNames),
             nameof(TracerSettings.DiagnosticSourceEnabled),
+            nameof(TracerSettings.ProfilingEnabledInternal)
         };
 
         [Fact]
