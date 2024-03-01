@@ -393,6 +393,38 @@ internal readonly unsafe ref struct FileBitmap
             var a = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, ~a);
         }
+#elif NET6_0
+        if (AdvSimd.IsSupported)
+        {
+            for (; size - index >= 16; index += 16)
+            {
+                // Perform bitwise NOT on 16 bytes (128 bits) at a time.
+                var a = AdvSimd.LoadVector128(bitmap + index);
+                AdvSimd.Store(resBitmap._bitmap + index, AdvSimd.Not(a));
+            }
+        }
+#elif NETCOREAPP3_0_OR_GREATER
+        if (Avx.IsSupported)
+        {
+            var allOnesVector = Vector256.Create((byte)0xFF); // Create a vector with all bits set to 1
+            for (; size - index >= 32; index += 32)
+            {
+                // Perform bitwise NOT on 32 bytes (256 bits) at a time.
+                var a = Avx.LoadVector256(bitmap + index);
+                Avx.Store(resBitmap._bitmap + index, Avx2.Xor(a, allOnesVector));
+            }
+        }
+
+        if (Sse2.IsSupported)
+        {
+            var allOnesVector = Vector128.Create((byte)0xFF); // Create a vector with all bits set to 1
+            for (; size - index >= 16; index += 16)
+            {
+                // Perform bitwise NOT on 16 bytes (128 bits) at a time.
+                var a = Sse2.LoadVector128(bitmap + index);
+                Sse2.Store(resBitmap._bitmap + index, Sse2.Xor(a, allOnesVector));
+            }
+        }
 #endif
 
         for (; size - index >= 8; index += 8)
