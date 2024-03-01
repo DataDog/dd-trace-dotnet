@@ -402,15 +402,6 @@ namespace Datadog.Trace.Coverage.Collector
                                     fileMetadata = new FileMetadata(fileMetadataIndex++, documentUrl);
                                     fileDictionaryIndex[documentUrl] = fileMetadata;
                                 }
-
-                                fileMetadata.Lines.Add(pt.StartLine);
-                                if (pt.StartLine != pt.EndLine)
-                                {
-                                    for (var line = pt.StartLine + 1; line <= pt.EndLine; line++)
-                                    {
-                                        fileMetadata.Lines.Add(line);
-                                    }
-                                }
                             }
 
                             if (fileMetadata.FileName is not null && FiltersHelper.FilteredBySourceFile(fileMetadata.FileName, _settings.ExcludeSourceFiles))
@@ -468,29 +459,7 @@ namespace Datadog.Trace.Coverage.Collector
                                 instructions.Insert(2, Instruction.Create(OpCodes.Stloc, countersVariable));
                             }
 
-                            // Step 5 - Calculate instructions that cannot be removed
-                            var lstUntouchedInstructions = new HashSet<Instruction>();
-                            foreach (var exceptionHandler in methodBody.ExceptionHandlers)
-                            {
-                                lstUntouchedInstructions.Add(exceptionHandler.TryStart);
-                                lstUntouchedInstructions.Add(exceptionHandler.TryEnd);
-                                lstUntouchedInstructions.Add(exceptionHandler.HandlerStart);
-                                lstUntouchedInstructions.Add(exceptionHandler.HandlerEnd);
-                                if (exceptionHandler.FilterStart is not null)
-                                {
-                                    lstUntouchedInstructions.Add(exceptionHandler.FilterStart);
-                                }
-                            }
-
-                            foreach (var instruction in instructions)
-                            {
-                                if (instruction.Operand is Instruction operandInstruction)
-                                {
-                                    lstUntouchedInstructions.Add(operandInstruction);
-                                }
-                            }
-
-                            // Step 6 - Insert line reporter
+                            // Step 5 - Insert line reporter
                             for (var i = 0; i < instructionsWithValidSequencePoints.Count; i++)
                             {
                                 var currentInstructionAndSequencePoint = instructionsWithValidSequencePoints[i];
@@ -524,6 +493,7 @@ namespace Datadog.Trace.Coverage.Collector
 
                                 var optIdx = currentInstructionIndex;
                                 var indexValue = currentSequencePoint.StartLine - 1;
+                                fileMetadata.Lines.Add(currentSequencePoint.StartLine);
 
                                 switch (_coverageMode)
                                 {
