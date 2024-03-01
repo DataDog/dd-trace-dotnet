@@ -81,7 +81,7 @@ public class PopulateDictionaryIntegration
         var results = new Dictionary<string, object?[]>(settings.Settings.Length, StringComparer.OrdinalIgnoreCase);
         foreach (var setting in settings.Settings)
         {
-            results[setting.IntegrationNameInternal] = [setting.EnabledInternal, setting.AnalyticsEnabledInternal, setting.AnalyticsSampleRateInternal];
+            results[setting.IntegrationNameInternal] = IntegrationSettingsSerializationHelper.SerializeFromAutomatic(setting.EnabledInternal, setting.AnalyticsEnabledInternal, setting.AnalyticsSampleRateInternal);
         }
 
         return results;

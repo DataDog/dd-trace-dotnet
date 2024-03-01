@@ -250,24 +250,31 @@ public class ConfigureIntegration
 
                 var setting = integrations[(int)integrationId];
 
-                if (pair.Value is { Length: 6 } values)
+                if (IntegrationSettingsSerializationHelper.TryDeserializeFromManual(
+                       pair.Value,
+                       out var enabledChanged,
+                       out var enabled,
+                       out var analyticsEnabledChanged,
+                       out var analyticsEnabled,
+                       out var analyticsSampleRateChanged,
+                       out var analyticsSampleRate))
                 {
-                    if (values[0] is true)
+                    if (enabledChanged)
                     {
                         TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettings_Enabled_Set);
-                        setting.EnabledInternal = values[1] as bool?;
+                        setting.EnabledInternal = enabled;
                     }
 
-                    if (values[2] is true)
+                    if (analyticsEnabledChanged)
                     {
                         TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettings_AnalyticsEnabled_Set);
-                        setting.AnalyticsEnabledInternal = values[3] as bool?;
+                        setting.AnalyticsEnabledInternal = analyticsEnabled;
                     }
 
-                    if (values[4] is true && values[5] is double rate)
+                    if (analyticsSampleRateChanged)
                     {
                         TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettings_AnalyticsSampleRate_Set);
-                        setting.AnalyticsSampleRateInternal = rate;
+                        setting.AnalyticsSampleRateInternal = analyticsSampleRate;
                     }
                 }
             }

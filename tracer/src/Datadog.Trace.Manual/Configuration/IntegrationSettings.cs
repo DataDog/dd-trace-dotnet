@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Configuration;
@@ -70,25 +71,11 @@ public sealed class IntegrationSettings
     /// "Serializes" the values, if changed, to an array. If there are no updates, returns null
     /// </summary>
     internal object?[]? GetChangeDetails()
-    {
-        if (_enabledOverride.IsOverridden || _analyticsEnabledOverride.IsOverridden || _analyticsSampleRateOverride.IsOverridden)
-        {
-            // we have changes, record everything
-            // Yes, this is a lot of boxing :(
-            var results = new object?[6];
-            results[0] = _enabledOverride.IsOverridden;
-            results[1] = _enabledOverride.IsOverridden ? _enabledOverride.Value : null;
-
-            results[2] = _analyticsEnabledOverride.IsOverridden;
-            results[3] = _analyticsEnabledOverride.IsOverridden ? _analyticsEnabledOverride.Value : null;
-
-            results[4] = _analyticsSampleRateOverride.IsOverridden;
-            results[5] = _analyticsSampleRateOverride.IsOverridden ? _analyticsSampleRateOverride.Value : null;
-
-            return results;
-        }
-
-        // no changes
-        return null;
-    }
+        => IntegrationSettingsSerializationHelper.SerializeFromManual(
+            _enabledOverride.IsOverridden,
+            _enabledOverride.IsOverridden ? _enabledOverride.Value : null,
+            _analyticsEnabledOverride.IsOverridden,
+            _analyticsEnabledOverride.IsOverridden ? _analyticsEnabledOverride.Value : null,
+            _analyticsSampleRateOverride.IsOverridden,
+            _analyticsSampleRateOverride.IsOverridden ? _analyticsSampleRateOverride.Value : null);
 }
