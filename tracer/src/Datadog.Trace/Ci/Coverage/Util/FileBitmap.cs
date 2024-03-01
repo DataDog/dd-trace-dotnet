@@ -159,7 +159,9 @@ internal readonly unsafe ref struct FileBitmap
             var b = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a | b);
         }
-#elif NET6_0
+#else
+
+#if NET6_0
         if (AdvSimd.IsSupported)
         {
             // ARM64 SIMD operations
@@ -172,7 +174,9 @@ internal readonly unsafe ref struct FileBitmap
                 AdvSimd.Store(resBitmap._bitmap + index, AdvSimd.Or(a, b));
             }
         }
-#elif NETCOREAPP3_0_OR_GREATER
+#endif
+
+#if NETCOREAPP3_0_OR_GREATER
         // Use 256-bit (32-byte) vectors if available
         if (Avx.IsSupported)
         {
@@ -200,6 +204,8 @@ internal readonly unsafe ref struct FileBitmap
                 Sse2.Store(resBitmap._bitmap + index, Sse2.Or(a, b));
             }
         }
+#endif
+
 #endif
 
         for (; minSize - index >= 8; index += 8)
@@ -302,7 +308,9 @@ internal readonly unsafe ref struct FileBitmap
             var b = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(fileBitmapB._bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, a & b);
         }
-#elif NET6_0
+#else
+
+#if NET6_0
         if (AdvSimd.IsSupported)
         {
             // ARM64 SIMD operations
@@ -315,7 +323,9 @@ internal readonly unsafe ref struct FileBitmap
                 AdvSimd.Store(resBitmap._bitmap + index, AdvSimd.And(a, b));
             }
         }
-#elif NETCOREAPP3_0_OR_GREATER
+#endif
+
+#if NETCOREAPP3_0_OR_GREATER
         // Use 256-bit (32-byte) vectors if available
         if (Avx.IsSupported)
         {
@@ -343,6 +353,8 @@ internal readonly unsafe ref struct FileBitmap
                 Sse2.Store(resBitmap._bitmap + index, Sse2.And(a, b));
             }
         }
+#endif
+
 #endif
 
         for (; minSize - index >= 8; index += 8)
@@ -440,7 +452,9 @@ internal readonly unsafe ref struct FileBitmap
             var a = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.AsRef<byte>(bitmap + index));
             Unsafe.WriteUnaligned(resBitmap._bitmap + index, ~a);
         }
-#elif NET6_0
+#else
+
+#if NET6_0
         if (AdvSimd.IsSupported)
         {
             for (; size - index >= 16; index += 16)
@@ -450,7 +464,9 @@ internal readonly unsafe ref struct FileBitmap
                 AdvSimd.Store(resBitmap._bitmap + index, AdvSimd.Not(a));
             }
         }
-#elif NETCOREAPP3_0_OR_GREATER
+#endif
+
+#if NETCOREAPP3_0_OR_GREATER
         if (Avx.IsSupported)
         {
             var allOnesVector = Vector256.Create((byte)0xFF); // Create a vector with all bits set to 1
@@ -472,6 +488,8 @@ internal readonly unsafe ref struct FileBitmap
                 Sse2.Store(resBitmap._bitmap + index, Sse2.Xor(a, allOnesVector));
             }
         }
+#endif
+
 #endif
 
         for (; size - index >= 8; index += 8)
