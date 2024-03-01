@@ -18,9 +18,18 @@ using namespace std::experiental::pmr;
 #  endif
 #endif
 
+
 class allocators
 {
 public:
 
     static pmr::memory_resource* get_default_stack_allocator();
+
+    template <class TRawSample>
+    static pmr::memory_resource* get_default_sample_allocator()
+    {
+        static auto instance = pmr::synchronized_pool_resource(pmr::pool_options{.max_blocks_per_chunk = 1000, .largest_required_pool_block = sizeof(TRawSample)});
+
+        return &instance;
+    }
 };
