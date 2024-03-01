@@ -14,8 +14,8 @@ using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.WafEncoding
@@ -28,9 +28,9 @@ namespace Datadog.Trace.AppSec.WafEncoding
         private static int _poolSize = 500;
 
         [ThreadStatic]
-        private static UnmanagedMemoryPool? _pool;
+        private static IUnmanagedMemoryAllocator? _pool;
 
-        internal static UnmanagedMemoryPool Pool
+        internal static IUnmanagedMemoryAllocator Allocator
         {
             get
             {
@@ -39,9 +39,23 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     return _pool;
                 }
 
-                var instance = new UnmanagedMemoryPool(MaxBytesForMaxStringLength, _poolSize);
+                var instance = GetPool();
+
                 _pool = instance;
                 return instance;
+
+                static IUnmanagedMemoryAllocator GetPool()
+                {
+                    var instanceCount = UnmanagedMemoryPool.InstanceCount;
+                    if (instanceCount < WafConstants.MaxUnmanagedPools)
+                    {
+                        Log.Debug<int>("Created fast WAF unmanaged pool. Current pools -> Fast: {PoolCount}", instanceCount);
+                        return new UnmanagedMemoryPool(MaxBytesForMaxStringLength, _poolSize, MetricTags.UnmanagedMemoryPoolComponent.AsmEncoder);
+                    }
+
+                    Log.Debug<int>("Created slow WAF unmanaged allocator. Current pools -> Fast: {PoolCount} ", instanceCount);
+                    return new UnpooledUnmanagedMemoryAllocator(MaxBytesForMaxStringLength, MetricTags.UnmanagedMemoryPoolComponent.AsmEncoder);
+                }
             }
         }
 
@@ -64,13 +78,13 @@ namespace Datadog.Trace.AppSec.WafEncoding
         public IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
         {
             var lstPointers = new List<IntPtr>();
-            var pool = Pool;
+            var pool = Allocator;
             return new EncodeResult(lstPointers, pool, Encode(o, lstPointers, remainingDepth, key, applySafetyLimits, pool: pool));
         }
 
-        public unsafe DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true, UnmanagedMemoryPool? pool = null)
+        public unsafe DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true, IUnmanagedMemoryAllocator? pool = null)
         {
-            pool ??= Pool;
+            pool ??= Allocator;
 
             DdwafObjectStruct ProcessKeyValuePairs<TKey, TValue>(IEnumerable<KeyValuePair<TKey, TValue>> enumerableDic, int count, delegate*<KeyValuePair<TKey, TValue>, string?> getKey, delegate*<KeyValuePair<TKey, TValue>, object?> getValue)
                 where TKey : notnull
@@ -613,13 +627,13 @@ namespace Datadog.Trace.AppSec.WafEncoding
         public class EncodeResult : IEncodeResult
         {
             private readonly List<IntPtr> _pointers;
-            private readonly UnmanagedMemoryPool _innerPool;
+            private readonly IUnmanagedMemoryAllocator _innerAllocator;
             private readonly GCHandle _handle;
 
-            internal EncodeResult(List<IntPtr> pointers, UnmanagedMemoryPool pool, DdwafObjectStruct result)
+            internal EncodeResult(List<IntPtr> pointers, IUnmanagedMemoryAllocator pool, DdwafObjectStruct result)
             {
                 _pointers = pointers;
-                _innerPool = pool;
+                _innerAllocator = pool;
                 ResultDdwafObject = result;
                 _handle = GCHandle.Alloc(result, GCHandleType.Pinned);
             }
@@ -631,7 +645,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             public void Dispose()
             {
                 _handle.Free();
-                _innerPool.Return(_pointers);
+                _innerAllocator.Return(_pointers);
                 _pointers.Clear();
             }
         }

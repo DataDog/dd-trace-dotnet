@@ -14,4 +14,6 @@ internal partial interface IMetricsTelemetryCollector
     public void RecordGaugeInstrumentations(Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationComponent tag, int value);
 
     public void RecordGaugeDirectLogQueue(int value);
+
+    public void RecordGaugeUnmanagedMemoryPool(Datadog.Trace.Telemetry.Metrics.MetricTags.UnmanagedMemoryPoolType tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.UnmanagedMemoryPoolComponent tag2, int value);
 }

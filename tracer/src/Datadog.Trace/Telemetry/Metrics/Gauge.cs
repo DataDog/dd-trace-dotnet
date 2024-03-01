@@ -1,4 +1,4 @@
-﻿// <copyright file="Gauge.cs" company="Datadog">
+// <copyright file="Gauge.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,9 +10,12 @@ using Datadog.Trace.SourceGenerators;
 namespace Datadog.Trace.Telemetry.Metrics;
 
 [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1134:Attributes should not share line", Justification = "It's easier to read")]
+[SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "It's easier to read")]
 [TelemetryMetricType(TelemetryMetricType.Gauge)]
 internal enum Gauge
 {
+    #region General
+
     /// <summary>
     /// The number of unique buckets created for stats aggregation
     /// </summary>
@@ -27,4 +30,12 @@ internal enum Gauge
     /// The number of logs currently enqueued to the direct log submission sink
     /// </summary>
     [TelemetryMetric("direct_log_queue.length", isCommon: false)] DirectLogQueue,
+
+    /// <summary>
+    /// The number of unmanaged memory pool instances currently active
+    /// </summary>
+    [TelemetryMetric<MetricTags.UnmanagedMemoryPoolType, MetricTags.UnmanagedMemoryPoolComponent>("unmanaged_memory_pools", isCommon: false)] UnmanagedMemoryPool,
+
+    #endregion
+
 }

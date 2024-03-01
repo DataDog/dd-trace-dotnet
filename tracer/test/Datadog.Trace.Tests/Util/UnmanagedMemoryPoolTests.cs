@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Routing;
 #endif
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.WafEncoding;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Xunit;
 
@@ -32,7 +33,7 @@ public class UnmanagedMemoryPoolTests
     [Fact]
     public void TestRentReturn()
     {
-        var unmanagedPool = new UnmanagedMemoryPool(100, 10);
+        var unmanagedPool = new UnmanagedMemoryPool(100, 10, MetricTags.UnmanagedMemoryPoolComponent.AsmEncoder);
         var arg = new List<IntPtr>();
         for (var i = 0; i < 40; i++)
         {
@@ -57,7 +58,7 @@ public class UnmanagedMemoryPoolTests
     [Fact]
     public void TestRentReturnList()
     {
-        var unmanagedPool = new UnmanagedMemoryPool(100, 10);
+        var unmanagedPool = new UnmanagedMemoryPool(100, 10, MetricTags.UnmanagedMemoryPoolComponent.AsmEncoder);
         var arg = new List<IntPtr>();
         for (var i = 0; i < 30; i++)
         {
@@ -92,16 +93,19 @@ public class UnmanagedMemoryPoolTests
             Encoder.SetPoolSize(poolSize.Value);
         }
 
-        var pool = Encoder.Pool;
+        var pool = Encoder.Allocator;
 
-        try
+        for (int x = 0; x < 10; x++)
         {
-            var pwArgs = _encoder.Encode(addresses, applySafetyLimits: true, argToFree: argCache, pool: pool);
-        }
-        finally
-        {
-            pool.Return(argCache);
-            argCache.Clear();
+            try
+            {
+                var pwArgs = _encoder.Encode(addresses, applySafetyLimits: true, argToFree: argCache, pool: pool);
+            }
+            finally
+            {
+                pool.Return(argCache);
+                argCache.Clear();
+            }
         }
 
         pool.Dispose();
@@ -155,7 +159,7 @@ public class UnmanagedMemoryPoolTests
                     }
 
                     var argCache = new List<IntPtr>();
-                    var pool = Encoder.Pool;
+                    var pool = Encoder.Allocator;
                     for (var i = 0; i < 100; i++)
                     {
                         try
