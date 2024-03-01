@@ -383,7 +383,7 @@ namespace Datadog.Trace.Coverage.Collector
 
                             var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
 
-                            FileMetadata fileMetadata = default;
+                            string? filePath = null;
                             foreach (var pt in sequencePoints)
                             {
                                 if (pt.IsHidden || pt.Document is null || string.IsNullOrWhiteSpace(pt.Document.Url))
@@ -397,14 +397,19 @@ namespace Datadog.Trace.Coverage.Collector
                                     continue;
                                 }
 
-                                if (!fileDictionaryIndex.TryGetValue(documentUrl, out fileMetadata))
+                                if (filePath is null)
                                 {
-                                    fileMetadata = new FileMetadata(fileMetadataIndex++, documentUrl);
-                                    fileDictionaryIndex[documentUrl] = fileMetadata;
+                                    filePath = documentUrl;
+                                    break;
                                 }
                             }
 
-                            if (fileMetadata.FileName is not null && FiltersHelper.FilteredBySourceFile(fileMetadata.FileName, _settings.ExcludeSourceFiles))
+                            if (filePath is null)
+                            {
+                                continue;
+                            }
+
+                            if (FiltersHelper.FilteredBySourceFile(filePath, _settings.ExcludeSourceFiles))
                             {
                                 _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, ignored by settings source filter");
                                 continue;
@@ -452,6 +457,13 @@ namespace Datadog.Trace.Coverage.Collector
                             }
 
                             // Step 4 - Insert the counter retriever
+                            FileMetadata fileMetadata;
+                            if (!fileDictionaryIndex.TryGetValue(filePath, out fileMetadata))
+                            {
+                                fileMetadata = new FileMetadata(fileMetadataIndex++, filePath);
+                                fileDictionaryIndex[filePath] = fileMetadata;
+                            }
+
                             instructions.Insert(0, Instruction.Create(OpCodes.Ldc_I4, fileMetadata.Index));
                             instructions.Insert(1, Instruction.Create(OpCodes.Call, reportGetCountersMethod));
                             if (countersVariable is not null)
