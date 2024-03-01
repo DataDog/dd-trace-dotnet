@@ -479,7 +479,10 @@ public sealed class TracerSettings
 
         // Always set
         results[TracerSettingKeyConstants.IsFromDefaultSourcesKey] = _isFromDefaultSources;
-        results[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(Integrations);
+        if (BuildIntegrationSettings(Integrations) is { } integrations)
+        {
+            results[TracerSettingKeyConstants.IntegrationSettingsKey] = integrations;
+        }
 
         return results;
 
