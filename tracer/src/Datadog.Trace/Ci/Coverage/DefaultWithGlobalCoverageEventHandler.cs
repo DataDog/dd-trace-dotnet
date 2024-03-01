@@ -106,10 +106,10 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                         using var fileBitmap = fileBitmapSize <= 512 ? new FileBitmap(fileBitmapBuffer, fileBitmapSize) : new FileBitmap(new byte[fileBitmapSize]);
                         if (moduleValue.Metadata.CoverageMode == 0)
                         {
-                            var linesInFile = new VendoredMicrosoftCode.System.Span<byte>((byte*)moduleValue.FilesLines + moduleFile.Offset, fileBitmapLastExecutableLine);
-                            for (var i = 0; i < linesInFile.Length; i++)
+                            var filesLines = (byte*)moduleValue.FilesLines + moduleFile.Offset;
+                            for (var i = 0; i < fileBitmapLastExecutableLine; i++)
                             {
-                                if (linesInFile[i] == 1)
+                                if (filesLines[i] == 1)
                                 {
                                     fileBitmap.Set(i + 1);
                                 }
@@ -117,10 +117,10 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                         }
                         else if (moduleValue.Metadata.CoverageMode == 1)
                         {
-                            var linesInFile = new VendoredMicrosoftCode.System.Span<int>((int*)moduleValue.FilesLines + moduleFile.Offset, fileBitmapLastExecutableLine);
-                            for (var i = 0; i < linesInFile.Length; i++)
+                            var filesLines = (int*)moduleValue.FilesLines + moduleFile.Offset;
+                            for (var i = 0; i < fileBitmapLastExecutableLine; i++)
                             {
-                                if (linesInFile[i] > 0)
+                                if (filesLines[i] == 1)
                                 {
                                     fileBitmap.Set(i + 1);
                                 }
@@ -136,7 +136,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                             else
                             {
                                 using var currentExecutedBitmap = new FileBitmap(fileCoverageInfo.ExecutedBitmap);
-                                fileCoverageInfo.ExecutedBitmap = (currentExecutedBitmap | fileBitmap).GetInternalArrayOrToArrayAndDispose();
+                                fileCoverageInfo.ExecutedBitmap = FileBitmap.Or(fileBitmap, currentExecutedBitmap, true).GetInternalArrayOrToArrayAndDispose();
                             }
                         }
                     }

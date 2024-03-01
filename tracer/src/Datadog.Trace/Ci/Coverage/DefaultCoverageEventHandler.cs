@@ -41,10 +41,10 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                     using var fileBitmap = fileBitmapSize <= 512 ? new FileBitmap(fileBitmapBuffer, fileBitmapSize) : new FileBitmap(new byte[fileBitmapSize]);
                     if (moduleValue.Metadata.CoverageMode == 0)
                     {
-                        var linesInFile = new VendoredMicrosoftCode.System.Span<byte>((byte*)moduleValue.FilesLines + moduleFile.Offset, fileBitmapLastExecutableLine);
-                        for (var i = 0; i < linesInFile.Length; i++)
+                        var filesLines = (byte*)moduleValue.FilesLines + moduleFile.Offset;
+                        for (var i = 0; i < fileBitmapLastExecutableLine; i++)
                         {
-                            if (linesInFile[i] == 1)
+                            if (filesLines[i] == 1)
                             {
                                 fileBitmap.Set(i + 1);
                             }
@@ -52,10 +52,10 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                     }
                     else if (moduleValue.Metadata.CoverageMode == 1)
                     {
-                        var linesInFile = new VendoredMicrosoftCode.System.Span<int>((int*)moduleValue.FilesLines + moduleFile.Offset, fileBitmapLastExecutableLine);
-                        for (var i = 0; i < linesInFile.Length; i++)
+                        var filesLines = (int*)moduleValue.FilesLines + moduleFile.Offset;
+                        for (var i = 0; i < fileBitmapLastExecutableLine; i++)
                         {
-                            if (linesInFile[i] > 0)
+                            if (filesLines[i] == 1)
                             {
                                 fileBitmap.Set(i + 1);
                             }
@@ -90,7 +90,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                         if (fileCoverage.Bitmap is { } bitmap)
                         {
                             using var currentBitmap = new FileBitmap(bitmap);
-                            fileCoverage.Bitmap = (currentBitmap | fileBitmap).GetInternalArrayOrToArrayAndDispose();
+                            fileCoverage.Bitmap = FileBitmap.Or(fileBitmap, currentBitmap, true).GetInternalArrayOrToArrayAndDispose();
                         }
                         else
                         {

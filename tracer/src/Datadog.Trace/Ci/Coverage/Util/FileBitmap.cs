@@ -85,13 +85,47 @@ internal readonly unsafe ref struct FileBitmap
     /// <param name="fileBitmapB">The second operand.</param>
     /// <returns>The result of the bitwise OR operation.</returns>
     public static FileBitmap operator |(FileBitmap fileBitmapA, FileBitmap fileBitmapB)
-    {
-        // Determine the minimum and maximum sizes of the two bitmaps to handle bitmaps of different lengths
-        var minSize = Math.Min(fileBitmapA._size, fileBitmapB._size);
-        var maxSize = Math.Max(fileBitmapA._size, fileBitmapB._size);
+        => Or(fileBitmapA, fileBitmapB, false);
 
-        // Create a new bitmap to store the result of the OR operation, initializing it to the size of the larger bitmap
-        var resBitmap = new FileBitmap(new byte[maxSize]);
+    /// <summary>
+    /// Performs a bitwise AND operation on two <see cref="FileBitmap"/> instances.
+    /// </summary>
+    /// <param name="fileBitmapA">The first operand.</param>
+    /// <param name="fileBitmapB">The second operand.</param>
+    /// <returns>The result of the bitwise AND operation.</returns>
+    public static FileBitmap operator &(FileBitmap fileBitmapA, FileBitmap fileBitmapB)
+        => And(fileBitmapA, fileBitmapB, false);
+
+    /// <summary>
+    /// Performs a bitwise NOT operation on a <see cref="FileBitmap"/> instance.
+    /// </summary>
+    /// <param name="fileBitmap">The operand.</param>
+    /// <returns>The result of the bitwise NOT operation.</returns>
+    public static FileBitmap operator ~(FileBitmap fileBitmap)
+        => Not(fileBitmap, false);
+
+    /// <summary>
+    /// Performs a bitwise OR operation on two <see cref="FileBitmap"/> instances.
+    /// </summary>
+    /// <param name="fileBitmapA">The first operand.</param>
+    /// <param name="fileBitmapB">The second operand.</param>
+    /// <param name="reuseBufferFromBitmapA">True if the buffer of the bitmap 'a' should be used for the response operation</param>
+    /// <returns>The result of the bitwise OR operation.</returns>
+    public static FileBitmap Or(FileBitmap fileBitmapA, FileBitmap fileBitmapB, bool reuseBufferFromBitmapA)
+    {
+        var minSize = fileBitmapA._size;
+        var maxSize = fileBitmapB._size;
+        var resBitmap = fileBitmapA;
+
+        if (!reuseBufferFromBitmapA)
+        {
+            // Determine the minimum and maximum sizes of the two bitmaps to handle bitmaps of different lengths
+            minSize = Math.Min(fileBitmapA._size, fileBitmapB._size);
+            maxSize = Math.Max(fileBitmapA._size, fileBitmapB._size);
+
+            // Create a new bitmap to store the result of the OR operation, initializing it to the size of the larger bitmap
+            resBitmap = new FileBitmap(new byte[maxSize]);
+        }
 
         // Start index for iterating over the bitmaps
         var index = 0;
@@ -219,15 +253,23 @@ internal readonly unsafe ref struct FileBitmap
     /// </summary>
     /// <param name="fileBitmapA">The first operand.</param>
     /// <param name="fileBitmapB">The second operand.</param>
+    /// <param name="reuseBufferFromBitmapA">True if the buffer of the bitmap 'a' should be used for the response operation</param>
     /// <returns>The result of the bitwise AND operation.</returns>
-    public static FileBitmap operator &(FileBitmap fileBitmapA, FileBitmap fileBitmapB)
+    public static FileBitmap And(FileBitmap fileBitmapA, FileBitmap fileBitmapB, bool reuseBufferFromBitmapA)
     {
-        // Determine the minimum and maximum sizes of the two bitmaps to handle bitmaps of different lengths
-        var minSize = Math.Min(fileBitmapA._size, fileBitmapB._size);
-        var maxSize = Math.Max(fileBitmapA._size, fileBitmapB._size);
+        var minSize = fileBitmapA._size;
+        var maxSize = fileBitmapB._size;
+        var resBitmap = fileBitmapA;
 
-        // Create a new bitmap to store the result of the AND operation, initializing it to the size of the larger bitmap
-        var resBitmap = new FileBitmap(new byte[maxSize]);
+        if (!reuseBufferFromBitmapA)
+        {
+            // Determine the minimum and maximum sizes of the two bitmaps to handle bitmaps of different lengths
+            minSize = Math.Min(fileBitmapA._size, fileBitmapB._size);
+            maxSize = Math.Max(fileBitmapA._size, fileBitmapB._size);
+
+            // Create a new bitmap to store the result of the AND operation, initializing it to the size of the larger bitmap
+            resBitmap = new FileBitmap(new byte[maxSize]);
+        }
 
         // Start index for iterating over the bitmaps
         var index = 0;
@@ -352,11 +394,16 @@ internal readonly unsafe ref struct FileBitmap
     /// Performs a bitwise NOT operation on a <see cref="FileBitmap"/> instance.
     /// </summary>
     /// <param name="fileBitmap">The operand.</param>
+    /// <param name="reuseBufferFromBitmap">True if the buffer of the bitmap should be used for the response operation</param>
     /// <returns>The result of the bitwise NOT operation.</returns>
-    public static FileBitmap operator ~(FileBitmap fileBitmap)
+    public static FileBitmap Not(FileBitmap fileBitmap, bool reuseBufferFromBitmap)
     {
-        // Create a new bitmap to store the result of the NOT operation, with the same size as the input bitmap.
-        var resBitmap = new FileBitmap(new byte[fileBitmap._size]);
+        var resBitmap = fileBitmap;
+        if (!reuseBufferFromBitmap)
+        {
+            // Create a new bitmap to store the result of the NOT operation, with the same size as the input bitmap.
+            resBitmap = new FileBitmap(new byte[fileBitmap._size]);
+        }
 
         // Start index for iterating over the bitmap.
         var index = 0;

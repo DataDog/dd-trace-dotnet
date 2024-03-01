@@ -106,13 +106,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                 SuiteId = 56,
                 SpanId = 84,
                 Files =
-                {
+                [
                     new FileCoverage
                     {
                         FileName = "MyFile",
                         Bitmap = [1, 2, 3, 4]
                     }
-                }
+                ]
             };
 
             var expectedPayload = new Ci.Agent.Payloads.CICodeCoveragePayload(settings);
@@ -322,13 +322,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                 SuiteId = 56,
                 SpanId = 84,
                 Files =
-                {
+                [
                     new FileCoverage
                     {
                         FileName = "MyFile",
                         Bitmap = [1, 2, 3, 4]
                     }
-                }
+                ]
             };
 
             var coveragePayloadInBytes = MessagePackSerializer.Serialize<Ci.IEvent>(coveragePayload, Ci.Agent.MessagePack.CIFormatterResolver.Instance);

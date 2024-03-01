@@ -891,6 +891,16 @@
       <type fullname="System.Runtime.InteropServices.OSPlatform" />
       <type fullname="System.Runtime.InteropServices.RuntimeInformation" />
    </assembly>
+   <assembly fullname="System.Runtime.Intrinsics">
+      <type fullname="System.Runtime.Intrinsics.Arm.AdvSimd" />
+      <type fullname="System.Runtime.Intrinsics.Vector128" />
+      <type fullname="System.Runtime.Intrinsics.Vector128`1" />
+      <type fullname="System.Runtime.Intrinsics.Vector256" />
+      <type fullname="System.Runtime.Intrinsics.Vector256`1" />
+      <type fullname="System.Runtime.Intrinsics.X86.Avx" />
+      <type fullname="System.Runtime.Intrinsics.X86.Avx2" />
+      <type fullname="System.Runtime.Intrinsics.X86.Sse2" />
+   </assembly>
    <assembly fullname="System.Runtime.Loader">
       <type fullname="System.Runtime.Loader.AssemblyLoadContext" />
    </assembly>
