@@ -492,10 +492,19 @@ public sealed class TracerSettings
             var initial = updated.Initial;
             var value = updated.Value;
 
-            if (initial?.Count != value.Count
-                || !initial.SetEquals(value))
+            if (initial is null)
             {
-                results.Add(key, value);
+                if (value.Count != 0)
+                {
+                    results.Add(key, value);
+                }
+            }
+            else
+            {
+                if ((initial.Count != value.Count) || !initial.SetEquals(value))
+                {
+                    results.Add(key, value);
+                }
             }
         }
 
@@ -503,7 +512,7 @@ public sealed class TracerSettings
         {
             if (HasChanges(in updated))
             {
-                results[key] = updated;
+                results[key] = updated.Value;
             }
 
             return;
@@ -516,9 +525,14 @@ public sealed class TracerSettings
 
                 // Currently need to account for customers _replacing_ the Global Tags as well as changing it
                 // we create the updated one as a concurrent dictionary, so if it's not any more, then we know they've replaced it
-                if (value is not ConcurrentDictionary<string, string> || initial?.Count != value.Count)
+                if (value is not ConcurrentDictionary<string, string> || (initial?.Count ?? 0) != value.Count)
                 {
                     return true;
+                }
+
+                if (initial is null)
+                {
+                    return value.Count != 0;
                 }
 
                 var comparer = StringComparer.Ordinal;
