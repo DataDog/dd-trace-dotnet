@@ -26,6 +26,7 @@
   "vulnerabilities": [
     {
       "type": "INSECURE_AUTH_PROTOCOL",
+      "hash": 565446921,
       "evidence": {
         "value": "Authorization: Digest"
       }

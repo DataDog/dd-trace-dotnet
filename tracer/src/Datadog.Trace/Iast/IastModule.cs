@@ -386,7 +386,7 @@ internal static class IastModule
     {
         OnExecutedSinkTelemetry(IastInstrumentedSinks.InsecureAuthProtocol);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-        return AddWebVulnerability(authHeader, integrationId, VulnerabilityTypeName.InsecureAuthProtocol, authHeader.GetStaticHashCode());
+        return AddWebVulnerability(authHeader, integrationId, VulnerabilityTypeName.InsecureAuthProtocol, (VulnerabilityTypeName.InsecureAuthProtocol + ':' + authHeader).GetStaticHashCode());
     }
 
     public static IastModuleResponse OnCipherAlgorithm(Type type, IntegrationId integrationId)
