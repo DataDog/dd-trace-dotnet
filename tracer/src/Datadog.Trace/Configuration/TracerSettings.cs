@@ -236,19 +236,14 @@ namespace Datadog.Trace.Configuration
 
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
-            bool isSamplingSet = false;
+            GlobalSamplingRateInternal = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble();
 
-            var samplingRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble(
-                defaultValue: 1.0,
-                value =>
-                {
-                    isSamplingSet = true;
-                    return true;
-                });
-
-            if (isSamplingSet)
+            // We need to record a default value for configuration reporting
+            // However, we need to keep GlobalSamplingRateInternal null because it changes the behavior of the tracer in subtle ways
+            // (= we don't run the sampler at all if it's null, so it changes the tagging of the spans, and it's enforced by system tests)
+            if (GlobalSamplingRateInternal is null)
             {
-                GlobalSamplingRateInternal = samplingRate;
+                _telemetry.Record(ConfigurationKeys.GlobalSamplingRate, 1.0, ConfigurationOrigins.Default);
             }
 
             StartupDiagnosticLogEnabledInternal = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
