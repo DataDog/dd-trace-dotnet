@@ -638,15 +638,6 @@ namespace Datadog.Trace.Coverage.Collector
                                 instructions.Insert(++optIdx, currentInstructionClone);
                             }
 
-                            var nopList = instructions.Where(i => i.OpCode == OpCodes.Nop).ToList();
-                            foreach (var nopInstruction in nopList)
-                            {
-                                if (!lstUntouchedInstructions.Contains(nopInstruction))
-                                {
-                                    instructions.Remove(nopInstruction);
-                                }
-                            }
-
                             isDirty = true;
                         }
                     }
