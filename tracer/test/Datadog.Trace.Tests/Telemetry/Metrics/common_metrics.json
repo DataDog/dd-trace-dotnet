@@ -451,6 +451,39 @@
       "description": "Requests analyzed by ddwaf",
       "send_to_user": false,
       "user_tags":[]
+    },
+    "waf.input_truncated": {
+      "tags": [
+        "truncation_reason"
+      ],
+      "metric_type": "count",
+      "data_type": "truncations",
+      "description": "Count of times a WAF input was truncated",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "waf.truncated_value_size": {
+      "tags": [
+        "truncation_reason"
+      ],
+      "metric_type": "distribution",
+      "data_type": "bytes",
+      "description": "Un-truncated size of truncated WAF inputs",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "waf.config_errors": {
+      "tags": [
+        "waf_version",
+        "event_rules_version",
+        "config_key",
+        "scope"
+      ],
+      "metric_type": "count",
+      "data_type": "errors",
+      "description": "Count of errors reported by the WAF on about particular config item",
+      "send_to_user": false,
+      "user_tags":[]
     }
   },
   "iast": {
@@ -925,5 +958,6 @@
       "send_to_user": false,
       "user_tags":[]
     }
-  }
+  },
+  "profiler": {}
 }
