@@ -24,6 +24,7 @@ namespace Datadog.Trace.OpenTracing
         /// <returns>A Datadog compatible ITracer implementation</returns>
         [PublicApi]
         [Obsolete(DeprecationMessage)]
+        [Instrumented]
         public static global::OpenTracing.ITracer CreateTracer(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
             // Keep supporting this older public method by creating a TracerConfiguration
@@ -53,6 +54,7 @@ namespace Datadog.Trace.OpenTracing
         /// <returns>A Datadog compatible ITracer implementation</returns>
         [PublicApi]
         [Obsolete(DeprecationMessage)]
+        [Instrumented]
         public static global::OpenTracing.ITracer WrapTracer(Tracer tracer)
         {
             return new OpenTracingTracer(tracer, OpenTracingTracer.CreateDefaultScopeManager(), tracer.DefaultServiceName);
