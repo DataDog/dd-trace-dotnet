@@ -50,7 +50,7 @@ namespace Datadog.Trace.TestHelpers
              && Path.GetExtension(executable) == ".exe"
              && !ExesToExcludeFromCorflags.Contains(Path.GetFileNameWithoutExtension(executable)))
             {
-                SetCorFlags(executable, agent.Output, !EnvironmentTools.IsTestTarget64BitProcess());
+                await SetCorFlags(executable, agent.Output, !EnvironmentTools.IsTestTarget64BitProcess());
             }
 
             var startInfo = new ProcessStartInfo(executable, $"{arguments ?? string.Empty}");
@@ -87,7 +87,7 @@ namespace Datadog.Trace.TestHelpers
             return Process.Start(startInfo);
         }
 
-        public static void SetCorFlags(string executable, ITestOutputHelper output, bool require32Bit)
+        public static async Task SetCorFlags(string executable, ITestOutputHelper output, bool require32Bit)
         {
             var corFlagsExe = _corFlagsExe;
             var setBit = require32Bit ? "/32BITREQ+" : "/32BITREQ-";
@@ -131,7 +131,7 @@ namespace Datadog.Trace.TestHelpers
                 UseShellExecute = false
             };
 
-            var executedSuccessfully = Process.Start(opts).WaitForExit(20_000);
+            var executedSuccessfully = await Process.Start(opts).WaitForExitAsync(20_000);
 
             if (!executedSuccessfully)
             {

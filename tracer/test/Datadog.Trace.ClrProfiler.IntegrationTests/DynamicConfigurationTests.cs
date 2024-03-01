@@ -12,7 +12,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
@@ -207,12 +206,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             FlattenJsonArray(json["header_tags"]).Should().Be(expectedConfig.TraceHeaderTags ?? string.Empty);
             // FlattenJsonArray(json["service_mapping"]).Should().Be(expectedConfig.ServiceNameMapping ?? string.Empty);
             json["tags"]?.ToString(Formatting.None).Should().Be(expectedConfig.GlobalTags ?? "[]");
-            WaitForTelemetry(agent);
+            await WaitForTelemetry(agent);
 
-            AssertConfigurationChanged(agent.Telemetry, config);
+            await AssertConfigurationChanged(agent.Telemetry, config);
         }
 
-        private bool WaitForTelemetry(MockTracerAgent agent)
+        private async Task WaitForTelemetry(MockTracerAgent agent)
         {
             var deadline = DateTime.UtcNow.AddSeconds(20);
 
@@ -222,17 +221,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     if (ExtractConfiguration((TelemetryData)item).Any(c => c.Origin == "remote_config"))
                     {
-                        return true;
+                        return;
                     }
                 }
 
-                Thread.Sleep(500);
+                await Task.Delay(500);
             }
-
-            return false;
         }
 
-        private void AssertConfigurationChanged(ConcurrentStack<object> events, Config config)
+        private async Task AssertConfigurationChanged(ConcurrentStack<object> events, Config config)
         {
             var expectedKeys = new (string Key, object Value)[]
             {
@@ -258,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 while (events.TryPop(out var obj))
                 {
-                    var wrapper = ((TelemetryData)obj);
+                    var wrapper = (TelemetryData)obj;
 
                     if (!wrapper.IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged))
                     {
@@ -282,7 +279,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 if (latestConfig.Count < expectedCount)
                 {
-                    Thread.Sleep(500);
+                    await Task.Delay(500);
                 }
             }
 

@@ -81,7 +81,7 @@ namespace Datadog.Trace.TestHelpers
                 WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}");
                 Process = await helper.StartSample(Agent, arguments: null, packageVersion: packageVersion, aspNetCorePort: 0, enableSecurity: enableSecurity, externalRulesFile: externalRulesFile);
 
-                var mutex = new ManualResetEventSlim();
+                var mutex = new AsyncMutex();
 
                 int? port = null;
 
@@ -120,7 +120,7 @@ namespace Datadog.Trace.TestHelpers
                 Process.BeginOutputReadLine();
                 Process.BeginErrorReadLine();
 
-                if (!mutex.Wait(TimeSpan.FromSeconds(60)))
+                if (!await mutex.WaitAsync(TimeSpan.FromSeconds(60)))
                 {
                     WriteToOutput("Timeout while waiting for the proces to start");
                 }

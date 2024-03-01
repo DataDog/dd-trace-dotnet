@@ -123,7 +123,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             // tracing module and mvc actions
             await TestRateLimiter(_enableSecurity, url, _iisFixture.Agent, _traceRateLimit.GetValueOrDefault(100), totalRequests, 2);
             // have to wait a second for the rate limiter to reset (or restart iis express completely)
-            Thread.Sleep(1000);
+            await Task.Delay(1000);
         }
 
         public async Task InitializeAsync()

@@ -19,21 +19,13 @@ namespace Datadog.Trace.TestHelpers
     {
         private readonly TaskCompletionSource<bool> _errorTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<bool> _outputTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly StringBuilder _outputBuffer = new();
         private readonly StringBuilder _errorBuffer = new();
 
         public ProcessHelper(Process process, Action<string> onDataReceived = null, Action<string> onErrorReceived = null)
         {
-            Task = Task.WhenAll(_outputTask.Task, _errorTask.Task, _processExit.Task);
+            Task = Task.WhenAll(_outputTask.Task, _errorTask.Task, process.WaitForExitAsync());
 
-            Task.Factory.StartNew(
-                () =>
-                {
-                    process.WaitForExit();
-                    _processExit.TrySetResult(true);
-                },
-                TaskCreationOptions.LongRunning);
             Task.Factory.StartNew(() => DrainOutput(process.StandardOutput, _outputBuffer, _outputTask, onDataReceived), TaskCreationOptions.LongRunning);
             Task.Factory.StartNew(() => DrainOutput(process.StandardError, _errorBuffer, _errorTask, onErrorReceived ?? onDataReceived), TaskCreationOptions.LongRunning);
 
@@ -48,14 +40,12 @@ namespace Datadog.Trace.TestHelpers
 
         public Task Task { get; }
 
-        public bool Drain(int timeout = Timeout.Infinite)
+        public async Task<bool> Drain(int timeout = Timeout.Infinite)
         {
-            if (timeout != Timeout.Infinite)
-            {
-                timeout /= 2;
-            }
+            var delay = Task.Delay(timeout);
+            var completedTask = await Task.WhenAny(Task.WhenAll(_outputTask.Task, _errorTask.Task));
 
-            return _outputTask.Task.Wait(timeout) && _errorTask.Task.Wait(timeout);
+            return completedTask != delay;
         }
 
         public virtual void Dispose()

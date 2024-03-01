@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -12,12 +13,12 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests;
 public class CheckCommandTests : RunnerTests
 {
     [SkippableFact]
-    public void Help()
+    public async Task Help()
     {
         using var helper = StartProcess("check");
 
-        helper.Process.WaitForExit();
-        helper.Drain();
+        await helper.Process.WaitForExitAsync();
+        await helper.Drain();
 
         helper.Process.ExitCode.Should().Be(1);
         helper.StandardOutput.Should().Contain("dd-trace check [command] [options]");
@@ -25,15 +26,15 @@ public class CheckCommandTests : RunnerTests
     }
 
     [SkippableFact]
-    public void MultipleArguments()
+    public async Task MultipleArguments()
     {
         // Currently we can only test this one Windows.
         // The only command that accepts a space is "check iis" and it's not available on Linux.
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
         using var helper = StartProcess("check iis \"hello world\"");
 
-        helper.Process.WaitForExit();
-        helper.Drain();
+        await helper.Process.WaitForExitAsync();
+        await helper.Drain();
 
         helper.Process.ExitCode.Should().Be(1);
         helper.StandardOutput.Should().Contain("Could not find IIS application \"hello world/\".");

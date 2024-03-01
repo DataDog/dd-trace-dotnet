@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS
                     break;
                 }
 
-                Thread.Sleep(intervalMilliseconds);
+                await Task.Delay(intervalMilliseconds);
             }
 
             // Server is ready to receive requests

@@ -459,15 +459,15 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 // This gives time for the Stop event to run and to be flushed to the writer
                 const int timeoutInMilliseconds = 30_000;
 
-                var deadline = DateTime.Now.AddMilliseconds(timeoutInMilliseconds);
-                while (DateTime.Now < deadline)
+                var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+                while (DateTime.UtcNow < deadline)
                 {
                     if (writer.Traces.Count > 0)
                     {
                         break;
                     }
 
-                    Thread.Sleep(200);
+                    await Task.Delay(200);
                 }
             }
 
