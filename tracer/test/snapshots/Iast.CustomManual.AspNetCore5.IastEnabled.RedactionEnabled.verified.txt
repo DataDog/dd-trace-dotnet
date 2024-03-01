@@ -25,8 +25,8 @@
 {
   "vulnerabilities": [
     {
-      "type": "SQL_INJECTION",
-      "hash": 1758613865,
+      "type": "PATH_TRAVERSAL",
+      "hash": -1039170461,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
@@ -35,15 +35,8 @@
       "evidence": {
         "valueParts": [
           {
-            "value": "SELECT Surname from Persons where name = '"
-          },
-          {
-            "redacted": true,
-            "pattern": "abcdef",
+            "value": "Vicent",
             "source": 0
-          },
-          {
-            "value": "'"
           }
         ]
       }
@@ -53,8 +46,7 @@
     {
       "origin": "http.request.parameter",
       "name": "userName",
-      "redacted": true,
-      "pattern": "abcdef"
+      "value": "Vicent"
     }
   ]
 }
@@ -100,33 +92,13 @@
   {
     TraceId: Id_1,
     SpanId: Id_5,
-    Name: SQLiteCommand.ExecutScalar,
+    Name: new.FileInfo,
     Resource: <CUSTOM MANUAL CHILD RESOURCE NAME>,
     Service: Samples.Security.AspNetCore5,
     ParentId: Id_4,
     Tags: {
       env: integration_tests,
       language: dotnet
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_6,
-    Name: sqlite.query,
-    Resource: SELECT Surname from Persons where name = 'Vicent',
-    Service: Samples.Security.AspNetCore5-sqlite,
-    Type: sql,
-    ParentId: Id_5,
-    Tags: {
-      component: Sqlite,
-      db.type: sqlite,
-      env: integration_tests,
-      out.host: :memory:,
-      runtime-id: Guid_1,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   }
 ]

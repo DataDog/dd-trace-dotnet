@@ -14,6 +14,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -781,17 +782,8 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Datadog.Trace.Annotations.Trace(OperationName = "span.custom.attribute", ResourceName = "IastController.GetCustomString")]
         private string GetCustomString(string userName)
         {
-            string result = string.Empty;
-            try
-            {
-                var taintedQuery = "SELECT Surname from Persons where name = '" + userName + "'";
-                result = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar()?.ToString();
-            }
-            catch
-            {
-                result = "Error in query.";
-            }
-            return result;
+            var fileInfo = new System.IO.FileInfo(userName);
+            return fileInfo.FullName;
         }
 
         [HttpGet("CustomManual")]
@@ -804,12 +796,11 @@ namespace Samples.Security.AspNetCore5.Controllers
                 using (var parentScope = SampleHelpers.CreateScope("span.custom.manual"))
                 {
                     SampleHelpers.TrySetResourceName(parentScope, "<CUSTOM MANUAL PARENT RESOURCE NAME>");
-                    using (var childScope = SampleHelpers.CreateScope("SQLiteCommand.ExecutScalar"))
+                    using (var childScope = SampleHelpers.CreateScope("new.FileInfo"))
                     {
                         // Nest using statements around the code to trace
                         SampleHelpers.TrySetResourceName(childScope, "<CUSTOM MANUAL CHILD RESOURCE NAME>");
-                        var taintedQuery = "SELECT Surname from Persons where name = '" + userName + "'";
-                        result = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar()?.ToString();
+                        _ = new System.IO.FileInfo(userName);
                     }
                 }
             }
