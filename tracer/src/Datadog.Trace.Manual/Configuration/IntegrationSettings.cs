@@ -13,19 +13,16 @@ namespace Datadog.Trace.Configuration;
 /// </summary>
 public sealed class IntegrationSettings
 {
-    private readonly bool? _enabledInitial;
-    private readonly bool? _analyticsEnabledInitial;
-    private readonly double _analyticsSampleRateInitial;
-    private OverrideValue<bool?> _enabledOverride = new();
-    private OverrideValue<bool?> _analyticsEnabledOverride = new();
-    private OverrideValue<double> _analyticsSampleRateOverride = new();
+    private OverrideValue<bool?> _enabled;
+    private OverrideValue<bool?> _analyticsEnabled;
+    private OverrideValue<double> _analyticsSampleRate;
 
     internal IntegrationSettings(string integrationName, bool? enabled, bool? analyticsEnabled, double analyticsSampleRate)
     {
         IntegrationName = integrationName;
-        _enabledInitial = enabled;
-        _analyticsEnabledInitial = analyticsEnabled;
-        _analyticsSampleRateInitial = analyticsSampleRate;
+        _enabled = new(enabled);
+        _analyticsEnabled = new(analyticsEnabled);
+        _analyticsSampleRate = new(analyticsSampleRate);
     }
 
     /// <summary>
@@ -41,8 +38,8 @@ public sealed class IntegrationSettings
     public bool? Enabled
     {
         [Instrumented]
-        get => _enabledOverride.IsOverridden ? _enabledOverride.Value : _enabledInitial;
-        set => _enabledOverride = new(value);
+        get => _enabled.Value;
+        set => _enabled = _enabled.Override(value);
     }
 
     /// <summary>
@@ -52,8 +49,8 @@ public sealed class IntegrationSettings
     public bool? AnalyticsEnabled
     {
         [Instrumented]
-        get => _analyticsEnabledOverride.IsOverridden ? _analyticsEnabledOverride.Value : _analyticsEnabledInitial;
-        set => _analyticsEnabledOverride = new(value);
+        get => _analyticsEnabled.Value;
+        set => _analyticsEnabled = _analyticsEnabled.Override(value);
     }
 
     /// <summary>
@@ -63,8 +60,8 @@ public sealed class IntegrationSettings
     public double AnalyticsSampleRate
     {
         [Instrumented]
-        get => _analyticsSampleRateOverride.IsOverridden ? _analyticsSampleRateOverride.Value : _analyticsSampleRateInitial;
-        set => _analyticsSampleRateOverride = new(value);
+        get => _analyticsSampleRate.Value;
+        set => _analyticsSampleRate = _analyticsSampleRate.Override(value);
     }
 
     /// <summary>
@@ -72,10 +69,10 @@ public sealed class IntegrationSettings
     /// </summary>
     internal object?[]? GetChangeDetails()
         => IntegrationSettingsSerializationHelper.SerializeFromManual(
-            _enabledOverride.IsOverridden,
-            _enabledOverride.IsOverridden ? _enabledOverride.Value : null,
-            _analyticsEnabledOverride.IsOverridden,
-            _analyticsEnabledOverride.IsOverridden ? _analyticsEnabledOverride.Value : null,
-            _analyticsSampleRateOverride.IsOverridden,
-            _analyticsSampleRateOverride.IsOverridden ? _analyticsSampleRateOverride.Value : null);
+            _enabled.IsOverridden,
+            _enabled.IsOverridden ? _enabled.Value : null,
+            _analyticsEnabled.IsOverridden,
+            _analyticsEnabled.IsOverridden ? _analyticsEnabled.Value : null,
+            _analyticsSampleRate.IsOverridden,
+            _analyticsSampleRate.IsOverridden ? _analyticsSampleRate.Value : null);
 }
