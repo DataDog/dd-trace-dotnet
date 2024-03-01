@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
 #nullable enable
 
@@ -49,20 +50,28 @@ internal static class StackReporter
         return assembly.Equals("Datadog.Trace", StringComparison.OrdinalIgnoreCase);
     }
 
-    internal static void AddStackToSpan(SecuritySettings settings, Span span, string eventCategoryText = "exploit")
+    internal static void AddStackToSpan(SecuritySettings settings, Span span, string eventCategoryText, string? stackId = null)
     {
         var jsonSettings = new JsonSerializerSettings
         {
-            NullValueHandling = NullValueHandling.Ignore
+            NullValueHandling = NullValueHandling.Ignore,
+            ContractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new CamelCaseNamingStrategy()
+                {
+                    ProcessDictionaryKeys = true,
+                    OverrideSpecifiedNames = true
+                }
+            }
         };
 
         var frames = GetFrames(settings);
 
         if (frames is not null)
         {
-            var eventCategory = new EventCategory(null, "dotnet", Guid.NewGuid().ToString(), null, frames);
+            var eventCategory = new EventCategory(null, "dotnet", stackId, null, frames);
             var json = JsonConvert.SerializeObject(new List<EventCategory> { eventCategory }, jsonSettings);
-            span.SetTag($"_dd.stack.{eventCategoryText}.frames", json);
+            span.SetTag($"_dd.stack.{eventCategoryText}", json);
         }
     }
 }
