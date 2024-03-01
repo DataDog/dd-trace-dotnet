@@ -15,7 +15,7 @@ internal class NullTestModule : ITestModule
 
     public string Name => "Undefined";
 
-    public DateTimeOffset StartTime { get; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset StartTime => default;
 
     public string? Framework => null;
 

@@ -19,7 +19,7 @@ internal class NullTest : ITest
 
     public string? Name => "Undefined";
 
-    public DateTimeOffset StartTime { get; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset StartTime => default;
 
     public ITestSuite Suite => NullTestSuite.Instance;
 

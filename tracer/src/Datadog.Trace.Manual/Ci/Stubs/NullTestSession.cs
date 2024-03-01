@@ -13,7 +13,7 @@ internal class NullTestSession : ITestSession
 
     public string? WorkingDirectory => null;
 
-    public DateTimeOffset StartTime { get; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset StartTime => default;
 
     public string? Framework => null;
 
