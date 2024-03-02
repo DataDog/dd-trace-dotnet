@@ -1,4 +1,4 @@
-﻿// <copyright file="ConfigurationTelemetryCollectorTests.cs" company="Datadog">
+// <copyright file="ConfigurationTelemetryCollectorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -214,6 +214,27 @@ public class ConfigurationTelemetryCollectorTests
         GetLatestValueFromConfig(data, injectKey).Should().Be(injectValue);
     }
 
+    [Fact]
+    public void ConfigurationDataShouldReportDefaultValues()
+    {
+        var collector = new ConfigurationTelemetry();
+        var source = new NameValueConfigurationSource(new NameValueCollection());
+
+        _ = new ImmutableTracerSettings(new TracerSettings(source, collector));
+        _ = new SecuritySettings(source, collector);
+
+        var data = collector.GetData();
+
+        GetLatestValueFromConfig(data, "DD_TRACE_ENABLED", ConfigurationOrigins.Default).Should().Be(true);
+        GetLatestValueFromConfig(data, "DD_PROFILING_ENABLED", ConfigurationOrigins.Default).Should().Be(false);
+        GetLatestValueFromConfig(data, "DD_APPSEC_ENABLED", ConfigurationOrigins.Default).Should().Be(false);
+        GetLatestValueFromConfig(data, "DD_DATA_STREAMS_ENABLED", ConfigurationOrigins.Default).Should().Be(false);
+        GetLatestValueFromConfig(data, "DD_TAGS", ConfigurationOrigins.Default).Should().Be(string.Empty);
+        GetLatestValueFromConfig(data, "DD_TRACE_HEADER_TAGS", ConfigurationOrigins.Default).Should().Be(string.Empty);
+        GetLatestValueFromConfig(data, "DD_LOGS_INJECTION", ConfigurationOrigins.Default).Should().Be(false);
+        GetLatestValueFromConfig(data, "DD_TRACE_SAMPLE_RATE", ConfigurationOrigins.Default).Should().Be(1.0);
+    }
+
 #if NETFRAMEWORK
     [Fact]
     public void ConfigurationDataShouldIncludeExpectedFullTrustValues()
@@ -224,10 +245,10 @@ public class ConfigurationTelemetryCollectorTests
     }
 #endif
 
-    private static object GetLatestValueFromConfig(ICollection<ConfigurationKeyValue> data, string key)
+    private static object GetLatestValueFromConfig(ICollection<ConfigurationKeyValue> data, string key, ConfigurationOrigins? origin = null)
     {
         return data
-              .Where(x => x.Name == key)
+              .Where(x => x.Name == key && (origin == null || x.Origin == origin.ToString().ToLowerInvariant()))
               .OrderByDescending(x => x.SeqId)
               .FirstOrDefault()
               .Value;

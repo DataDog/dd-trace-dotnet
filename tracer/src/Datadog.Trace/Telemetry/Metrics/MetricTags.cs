@@ -243,6 +243,13 @@ internal static class MetricTags
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
     }
 
+    public enum TruncationReason
+    {
+        [Description("truncation_reason:string_too_long")]StringTooLong = 1,
+        [Description("truncation_reason:list_or_map_too_large")]ListOrMapTooLarge = 2,
+        [Description("truncation_reason:object_too_deep")]ObjectTooDeep = 4,
+    }
+
     [EnumExtensions]
     public enum IastInstrumentedSources
     {

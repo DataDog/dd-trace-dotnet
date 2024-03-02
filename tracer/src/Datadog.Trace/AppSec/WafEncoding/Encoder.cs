@@ -14,9 +14,12 @@ using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.WafEncoding
 {
@@ -103,13 +106,22 @@ namespace Datadog.Trace.AppSec.WafEncoding
                             return StringBuilderCache.GetStringAndRelease(sb);
                         }
 
-                        Log.Warning("EncodeDictionary: object graph too deep, truncating nesting {Items}", GetItemsAsString());
+                        TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
+                        if (Log.IsEnabled(LogEventLevel.Debug))
+                        {
+                            Log.Debug("EncodeDictionary: object graph too deep, truncating nesting {Items}", GetItemsAsString());
+                        }
+
                         return ddWafObjectMap;
                     }
 
                     if (count > WafConstants.MaxContainerSize)
                     {
-                        Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
+                        TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                        if (Log.IsEnabled(LogEventLevel.Debug))
+                        {
+                            Log.Debug<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
+                        }
                     }
                 }
 
@@ -160,7 +172,11 @@ namespace Datadog.Trace.AppSec.WafEncoding
                             if (string.IsNullOrEmpty(key))
                             {
                                 childrenCount--;
-                                Log.Warning("EncodeDictionary: ignoring dictionary member with null name");
+                                if (Log.IsEnabled(LogEventLevel.Debug))
+                                {
+                                    Log.Debug("EncodeDictionary: ignoring dictionary member with null name");
+                                }
+
                                 continue;
                             }
 
@@ -181,7 +197,11 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         if (string.IsNullOrEmpty(key))
                         {
                             childrenCount--;
-                            Log.Warning("EncodeDictionary: ignoring dictionary member with null name");
+                            if (Log.IsEnabled(LogEventLevel.Debug))
+                            {
+                                Log.Debug("EncodeDictionary: ignoring dictionary member with null name");
+                            }
+
                             continue;
                         }
 
@@ -368,7 +388,12 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
                     if (applySafetyLimits && remainingDepth-- <= 0)
                     {
-                        Log.Warning("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", enumerable));
+                        TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
+                        if (Log.IsEnabled(LogEventLevel.Debug))
+                        {
+                            Log.Debug("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", enumerable));
+                        }
+
                         break;
                     }
 
@@ -376,7 +401,11 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     {
                         if (applySafetyLimits && count > WafConstants.MaxContainerSize)
                         {
-                            Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
+                            TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                            if (Log.IsEnabled(LogEventLevel.Debug))
+                            {
+                                Log.Debug<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
+                            }
                         }
 
                         var childrenCount = !applySafetyLimits || count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
@@ -450,7 +479,12 @@ namespace Datadog.Trace.AppSec.WafEncoding
                             childrenCount++;
                             if (applySafetyLimits && childrenCount == WafConstants.MaxContainerSize)
                             {
-                                Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
+                                TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                                if (Log.IsEnabled(LogEventLevel.Debug))
+                                {
+                                    Log.Debug<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
+                                }
+
                                 break;
                             }
                         }
@@ -483,9 +517,9 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 }
 
                 default:
-                    if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                    if (Log.IsEnabled(LogEventLevel.Debug))
                     {
-                        Log.Debug("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
+                        Log.Warning("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
                     }
 
                     ddwafObjectStruct = GetStringObject(string.Empty);

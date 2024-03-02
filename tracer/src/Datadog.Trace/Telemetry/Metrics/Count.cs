@@ -177,6 +177,11 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<MetricTags.WafAnalysis>("waf.requests", isCommon: true, NS.ASM)] WafRequests,
 
+    /// <summary>
+    /// Waf inputs that have been truncated
+    /// </summary>
+    [TelemetryMetric<MetricTags.TruncationReason>("waf.input_truncated", isCommon: true, NS.ASM)] InputTruncated,
+
 #endregion
 #region Iast Namespace
 

@@ -42,7 +42,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
                                        .WithKeys(ConfigurationKeys.DirectLogSubmission.Source)
                                        .AsString(DefaultSource);
 
-            DirectLogSubmissionUrl = config
+            var directLogSubmissionUrl = config
                                     .WithKeys(ConfigurationKeys.DirectLogSubmission.Url)
                                     .AsString(
                                          getDefaultValue: () =>
@@ -97,8 +97,53 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
 
-            LogsInjectionEnabled = config.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool();
+            var isEnabled = DirectLogSubmissionEnabledIntegrations.Count > 0;
+            var validationErrors = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(DirectLogSubmissionHost))
+            {
+                isEnabled = false;
+                validationErrors.Add($"Missing required setting '{ConfigurationKeys.DirectLogSubmission.Host}'.");
+            }
+
+            if (string.IsNullOrWhiteSpace(DirectLogSubmissionSource))
+            {
+                isEnabled = false;
+                validationErrors.Add($"Missing required setting '{ConfigurationKeys.DirectLogSubmission.Source}'.");
+            }
+
+            if (!Uri.TryCreate(directLogSubmissionUrl, UriKind.Absolute, out var uri))
+            {
+                isEnabled = false;
+                validationErrors.Add($"The intake url '{directLogSubmissionUrl}' was not a valid URL.");
+            }
+            else
+            {
+                DirectLogSubmissionUrl = uri;
+            }
+
+            if (string.IsNullOrWhiteSpace(ApiKey))
+            {
+                isEnabled = false;
+                validationErrors.Add($"Missing required settings '{ConfigurationKeys.ApiKey}'.");
+            }
+
+            ValidationErrors = validationErrors;
+            IsEnabled = isEnabled;
+
+            // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
+            LogsInjectionEnabled = config.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(defaultValue: isEnabled);
         }
+
+        /// <summary>
+        /// Gets a value indicating whether direct log submission is enabled
+        /// </summary>
+        internal bool IsEnabled { get; }
+
+        /// <summary>
+        /// Gets the validation errors, if any
+        /// </summary>
+        internal IReadOnlyList<string> ValidationErrors { get; }
 
         /// <summary>
         /// Gets the integrations enabled for direct log submission
@@ -129,7 +174,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
         /// Gets the url to send logs to
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Url" />
-        internal string? DirectLogSubmissionUrl { get; }
+        internal Uri? DirectLogSubmissionUrl { get; }
 
         /// <summary>
         /// Gets the minimum level logs should have to be sent to the intake.
@@ -161,8 +206,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
         internal string? ApiKey { get; }
 
         /// <summary>
-        /// Gets or sets whether logs injection has been explicitly enabled or disabled
+        /// Gets or sets a value indicating whether logs injection is enabled or disabled
         /// </summary>
-        internal bool? LogsInjectionEnabled { get; set; }
+        internal bool LogsInjectionEnabled { get; set; }
     }
 }

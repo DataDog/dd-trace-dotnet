@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 
@@ -34,7 +33,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             string host,
             string source,
             IReadOnlyDictionary<string, string> globalTags,
-            Uri intakeUrl,
+            Uri? intakeUrl,
             string apiKey,
             bool isEnabled,
             DirectSubmissionLogLevel minimumLevel,
@@ -66,7 +65,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
         public IReadOnlyDictionary<string, string> GlobalTags { get; }
 
-        public Uri IntakeUrl { get; }
+        public Uri? IntakeUrl { get; }
 
         public string ApiKey { get; }
 
@@ -80,66 +79,21 @@ namespace Datadog.Trace.Logging.DirectSubmission
             => Create(settings.LogSubmissionSettings);
 
         public static ImmutableDirectLogSubmissionSettings Create(DirectLogSubmissionSettings settings)
-            => Create(
-                host: settings.DirectLogSubmissionHost,
-                source: settings.DirectLogSubmissionSource,
-                intakeUrl: settings.DirectLogSubmissionUrl,
-                apiKey: settings.ApiKey,
-                minimumLevel: settings.DirectLogSubmissionMinimumLevel,
-                globalTags: settings.DirectLogSubmissionGlobalTags,
-                enabledLogShippingIntegrations: settings.DirectLogSubmissionEnabledIntegrations,
-                batchingOptions: new BatchingSinkOptions(
-                    batchSizeLimit: settings.DirectLogSubmissionBatchSizeLimit,
-                    queueLimit: settings.DirectLogSubmissionQueueSizeLimit,
-                    period: settings.DirectLogSubmissionBatchPeriod));
-
-        public static ImmutableDirectLogSubmissionSettings Create(
-            string? host,
-            string? source,
-            string? intakeUrl,
-            string? apiKey,
-            DirectSubmissionLogLevel minimumLevel,
-            IDictionary<string, string> globalTags,
-            ICollection<string> enabledLogShippingIntegrations,
-            BatchingSinkOptions batchingOptions)
         {
-            if (enabledLogShippingIntegrations.Count == 0)
+            if (settings.DirectLogSubmissionEnabledIntegrations.Count == 0)
             {
                 // not trying to enable log submission, so don't log any errors and create a _null_ implementation
                 return CreateNullSettings();
             }
 
-            var isEnabled = true;
-            var validationErrors = new List<string>();
-
-            if (string.IsNullOrWhiteSpace(host))
-            {
-                isEnabled = false;
-                validationErrors.Add($"Missing required setting '{ConfigurationKeys.DirectLogSubmission.Host}'.");
-            }
-
-            if (string.IsNullOrWhiteSpace(source))
-            {
-                isEnabled = false;
-                validationErrors.Add($"Missing required setting '{ConfigurationKeys.DirectLogSubmission.Source}'.");
-            }
-
-            if (!Uri.TryCreate(intakeUrl, UriKind.Absolute, out var intakeUri))
-            {
-                isEnabled = false;
-                validationErrors.Add($"The intake url '{intakeUrl}' was not a valid URL.");
-            }
-
-            if (string.IsNullOrWhiteSpace(apiKey))
-            {
-                isEnabled = false;
-                validationErrors.Add($"Missing required settings '{ConfigurationKeys.ApiKey}'.");
-            }
+            var isEnabled = settings.IsEnabled;
 
             var enabledIntegrations = new bool[IntegrationRegistry.Ids.Count];
             var enabledIntegrationNames = new List<string>(SupportedIntegrations.Length);
 
-            foreach (var integrationName in enabledLogShippingIntegrations)
+            var validationErrors = settings.ValidationErrors.ToList();
+
+            foreach (var integrationName in settings.DirectLogSubmissionEnabledIntegrations)
             {
                 if (!IntegrationRegistry.TryGetIntegrationId(integrationName, out var integrationId))
                 {
@@ -165,14 +119,19 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 }
             }
 
+            var batchingOptions = new BatchingSinkOptions(
+                    batchSizeLimit: settings.DirectLogSubmissionBatchSizeLimit,
+                    queueLimit: settings.DirectLogSubmissionQueueSizeLimit,
+                    period: settings.DirectLogSubmissionBatchPeriod);
+
             return new ImmutableDirectLogSubmissionSettings(
-                host: host ?? string.Empty,
-                source: source ?? string.Empty,
-                globalTags: new ReadOnlyDictionary<string, string>(globalTags),
-                intakeUrl: intakeUri!,
-                apiKey: apiKey ?? string.Empty,
+                host: settings.DirectLogSubmissionHost,
+                source: settings.DirectLogSubmissionSource,
+                globalTags: new ReadOnlyDictionary<string, string>(settings.DirectLogSubmissionGlobalTags),
+                intakeUrl: settings.DirectLogSubmissionUrl,
+                apiKey: settings.ApiKey ?? string.Empty,
                 isEnabled: isEnabled,
-                minimumLevel: minimumLevel,
+                minimumLevel: settings.DirectLogSubmissionMinimumLevel,
                 enabledIntegrations: enabledIntegrations,
                 validationErrors,
                 enabledIntegrationNames,

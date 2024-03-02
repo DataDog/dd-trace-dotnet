@@ -1,4 +1,4 @@
-﻿// <copyright file="ConfigurationBuilder.cs" company="Datadog">
+// <copyright file="ConfigurationBuilder.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -243,9 +243,11 @@ internal readonly struct ConfigurationBuilder
         // ****************
         // Dictionary accessors
         // ****************
-        public IDictionary<string, string>? AsDictionary() => AsDictionary(allowOptionalMappings: false);
+        [return: NotNullIfNotNull(nameof(getDefaultValue))]
+        public IDictionary<string, string>? AsDictionary(Func<IDictionary<string, string>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
 
-        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings)
+        [return: NotNullIfNotNull(nameof(getDefaultValue))]
+        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, Func<IDictionary<string, string>>? getDefaultValue = null)
         {
             // TODO: Handle/allow default values + validation?
             var result = Source.GetDictionary(Key, Telemetry, validator: null, allowOptionalMappings)
@@ -259,9 +261,16 @@ internal readonly struct ConfigurationBuilder
                 return value;
             }
 
-            // Horrible that we have to stringify the dictionary, but that's all that's available in the telemetry api
-            // _keys.Telemetry.Record(_keys.Key, string.Join(", ", defaultValue.Select(kvp => $"{kvp.Key}:{kvp.Value}")), ConfigurationOrigins.Default);
-            // return defaultValue;
+            if (getDefaultValue != null)
+            {
+                // Horrible that we have to stringify the dictionary, but that's all that's available in the telemetry api
+                var defaultValue = getDefaultValue();
+                var defaultValueAsString = defaultValue.Count == 0 ? string.Empty : string.Join(", ", defaultValue!.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
+
+                Telemetry.Record(Key, defaultValueAsString, true, ConfigurationOrigins.Default);
+                return defaultValue;
+            }
+
             return null;
         }
     }
