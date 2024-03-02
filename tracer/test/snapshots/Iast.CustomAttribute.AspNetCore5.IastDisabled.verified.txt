@@ -59,25 +59,5 @@
       env: integration_tests,
       language: dotnet
     }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_5,
-    Name: sqlite.query,
-    Resource: SELECT Surname from Persons where name = 'Vicent',
-    Service: Samples.Security.AspNetCore5-sqlite,
-    Type: sql,
-    ParentId: Id_4,
-    Tags: {
-      component: Sqlite,
-      db.type: sqlite,
-      env: integration_tests,
-      out.host: :memory:,
-      runtime-id: Guid_1,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
   }
 ]
