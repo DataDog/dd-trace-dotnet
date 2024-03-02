@@ -767,7 +767,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 4, new string[] { url });
+        var spans = await SendRequestsAsync(agent, 3, new string[] { url });
         var spansFiltered = spans.Where(s => !s.Resource.StartsWith("CREATE TABLE") && !s.Resource.StartsWith("INSERT INTO")).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
@@ -787,7 +787,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 4, new string[] { url });
+        var spans = await SendRequestsAsync(agent, 3, new string[] { url });
         var spansFiltered = spans.Where(s => !s.Resource.StartsWith("CREATE TABLE") && !s.Resource.StartsWith("INSERT INTO")).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
