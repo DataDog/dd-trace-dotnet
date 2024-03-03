@@ -57,7 +57,7 @@ public class PopulateDictionaryIntegration
         values[TracerSettingKeyConstants.HeaderTags] = settings.HeaderTagsInternal;
         values[TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey] = settings.KafkaCreateConsumerScopeEnabledInternal;
 #pragma warning disable DD0002 // This API is only for public usage and should not be called internally (there's no internal version currently)
-        values[TracerSettingKeyConstants.LogsInjectionEnabledKey] = settings.LogSubmissionSettings.LogsInjectionEnabled ?? false;
+        values[TracerSettingKeyConstants.LogsInjectionEnabledKey] = settings.LogSubmissionSettings.LogsInjectionEnabled;
 #pragma warning restore DD0002
         values[TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey] = settings.MaxTracesSubmittedPerSecondInternal;
         values[TracerSettingKeyConstants.ServiceNameKey] = settings.ServiceNameInternal;
