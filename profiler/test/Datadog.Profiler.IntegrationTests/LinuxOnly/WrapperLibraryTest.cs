@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.IO;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
@@ -85,8 +86,23 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 7");
 
+            var crashHandler = EnvironmentHelper.IsAlpine ? "/bin/echo" : "/usr/bin/echo";
+
+            if (!File.Exists(crashHandler))
+            {
+                _output.WriteLine($"Crash handler {crashHandler} does not exist.");
+                throw new FileNotFoundException($"Crash handler {crashHandler} does not exist.");
+            }
+
             runner.Environment.SetVariable("DD_TRACE_CRASH_HANDLER", EnvironmentHelper.IsAlpine ? "/bin/echo" : "/usr/bin/echo");
             runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
+
+            var env = Environment.GetEnvironmentVariables();
+
+            foreach (string key in env.Keys)
+            {
+                _output.WriteLine($"{key}={env[key]}");
+            }
 
             using var processHelper = runner.LaunchProcess();
 
