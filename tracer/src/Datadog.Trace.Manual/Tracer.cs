@@ -16,6 +16,7 @@ namespace Datadog.Trace
     {
         private static Tracer? _instance;
 
+        [Instrumented]
         private Tracer(object? automaticTracer, Dictionary<string, object?> initialValues)
         {
             AutomaticTracer = automaticTracer;
@@ -115,7 +116,7 @@ namespace Datadog.Trace
         private static object? GetAutomaticTracerInstance() => null;
 
         /// <summary>
-        /// Automatic instrumentation intercepts this method and updates the ManualScope.
+        /// Automatic instrumentation intercepts this method and returns a duck-typed Scope from Datadog.Trace.
         /// </summary>
         [Instrumented]
         private IScope StartActive(string operationName, ISpanContext? parent, string? serviceName, DateTimeOffset? startTime, bool? finishOnClose)
