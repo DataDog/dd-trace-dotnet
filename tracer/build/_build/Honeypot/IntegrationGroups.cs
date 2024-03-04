@@ -110,6 +110,9 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Session", new [] { "Microsoft.AspNetCore.Session" });
             NugetPackages.Add("Microsoft.TestPlatform.PlatformAbstractions", Array.Empty<string>());
             NugetPackages.Add("Microsoft.VisualStudio.TraceDataCollector", Array.Empty<string>());
+
+            // Manual instrumentation
+            NugetPackages.Add("Datadog.Trace.Manual", new string[] { });
         }
 
         private IntegrationMap()
