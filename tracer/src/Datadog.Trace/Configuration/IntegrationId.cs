@@ -76,5 +76,6 @@ namespace Datadog.Trace.Configuration
         XpathInjection,
         ReflectionInjection,
         Xss,
+        DatadogTraceManual,
     }
 }
