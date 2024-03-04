@@ -96,6 +96,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             runner.Environment.SetVariable("DD_TRACE_CRASH_HANDLER", EnvironmentHelper.IsAlpine ? "/bin/echo" : "/usr/bin/echo");
             runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
+            runner.Environment.SetVariable("COMPlus_DbgMiniDumpType", "4");
 
             var env = Environment.GetEnvironmentVariables();
 
@@ -108,8 +109,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             processHelper.Process.WaitForExit(milliseconds: 30_000).Should().BeTrue();
             processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
-            processHelper.StandardOutput.Should().MatchRegex(@"createdump \d+")
-                .And.NotContain("Writing minidump with heap");
+            processHelper.StandardOutput.Should().Match(@$"createdump --full {processHelper.Process.Id}")
+                .And.NotContain("Writing full dump");
         }
 
         [TestAppFact("Samples.ExceptionGenerator")]
@@ -120,13 +121,14 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             // Don't set DD_TRACE_CRASH_HANDLER. In that case, the call to createdump shouldn't be redirected
             runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpName ", "/dev/null");
+            runner.Environment.SetVariable("COMPlus_DbgMiniDumpType", "4");
 
             using var processHelper = runner.LaunchProcess();
 
             processHelper.Process.WaitForExit(milliseconds: 30_000).Should().BeTrue();
             processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
-            processHelper.StandardOutput.Should().NotMatchRegex(@"createdump \d+")
-                .And.Contain("Writing minidump with heap");
+            processHelper.StandardOutput.Should().NotMatch(@$"createdump --full {processHelper.Process.Id}")
+                .And.Contain("Writing full dump");
         }
     }
 }
