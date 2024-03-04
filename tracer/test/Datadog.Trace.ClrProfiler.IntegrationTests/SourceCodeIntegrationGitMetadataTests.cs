@@ -51,25 +51,13 @@ public class SourceCodeIntegrationGitMetadataTests : TestHelper
     public async Task ManualOnly()
     {
         EnvironmentHelper.SetAutomaticInstrumentation(false);
-        const int expectedSpans = 29;
+        // with automatic instrumentation disabled, we don't expect _any_ spans
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
         using var assert = new AssertionScope();
         using var process = await RunSampleAndWaitForExit(agent);
 
-        var spans = agent.WaitForSpans(expectedSpans);
-        spans.Should().HaveCount(expectedSpans);
-
-        // Let's separate the traces
-        foreach (var trace in spans.GroupBy(s => s.TraceId))
-        {
-            // Only a single tagging per trace
-            trace.Should().ContainSingle(s => s.Tags.ContainsKey(Trace.Tags.GitCommitSha));
-            trace.Should().ContainSingle(s => s.Tags.ContainsKey(Trace.Tags.GitRepositoryUrl));
-
-            // Must be the first span of the trace
-            trace.First().Tags.Should().ContainKey(Trace.Tags.GitCommitSha);
-            trace.First().Tags.Should().ContainKey(Trace.Tags.GitRepositoryUrl);
-        }
+        var spans = agent.WaitForSpans(0, timeoutInMilliseconds: 500);
+        spans.Should().BeEmpty();
     }
 }

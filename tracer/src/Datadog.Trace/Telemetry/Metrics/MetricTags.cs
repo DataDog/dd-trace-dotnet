@@ -223,6 +223,7 @@ internal static class MetricTags
         [Description("integration_name:reflectioninjection")] ReflectionInjection,
         [Description("integration_name:xss")] Xss,
         [Description("integration_name:nhibernate")] NHibernate,
+        [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
     }
 
     public enum InstrumentationError
