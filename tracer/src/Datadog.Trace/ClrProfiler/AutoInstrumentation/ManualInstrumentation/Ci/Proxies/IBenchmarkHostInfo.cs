@@ -4,28 +4,39 @@
 // </copyright>
 
 #nullable enable
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
 
 /// <summary>
-/// Reverse duck type for Datadog.Trace.Ci.BenchmarkHostInfo in Datadog.Trace.Manual
+/// Duck type for Datadog.Trace.Ci.BenchmarkHostInfo in Datadog.Trace.Manual
 /// </summary>
 internal interface IBenchmarkHostInfo
 {
+    [DuckField]
     string? ProcessorName { get; }
 
+    [DuckField]
     int? ProcessorCount { get; }
 
+    [DuckField]
     int? PhysicalCoreCount { get; }
 
+    [DuckField]
     int? LogicalCoreCount { get; }
 
+    [DuckField]
     double? ProcessorMaxFrequencyHertz { get; }
 
+    [DuckField]
     string? OsVersion { get; }
 
+    [DuckField]
     string? RuntimeVersion { get; }
 
+    [DuckField]
     double? ChronometerFrequencyHertz { get; }
 
+    [DuckField]
     double? ChronometerResolution { get; }
 }
