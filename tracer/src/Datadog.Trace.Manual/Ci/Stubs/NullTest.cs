@@ -9,13 +9,19 @@ using System.Reflection;
 
 namespace Datadog.Trace.Ci.Stubs;
 
-internal class NullTest(ITestSuite testSuite, string name, DateTimeOffset? startDate) : ITest
+internal class NullTest : ITest
 {
-    public string? Name { get; } = name;
+    public static readonly NullTest Instance = new();
 
-    public DateTimeOffset StartTime { get; } = startDate ?? DateTimeOffset.UtcNow;
+    private NullTest()
+    {
+    }
 
-    public ITestSuite Suite { get; } = testSuite;
+    public string? Name => "Undefined";
+
+    public DateTimeOffset StartTime => default;
+
+    public ITestSuite Suite => NullTestSuite.Instance;
 
     public void SetTag(string key, string? value)
     {
@@ -38,18 +44,6 @@ internal class NullTest(ITestSuite testSuite, string name, DateTimeOffset? start
     }
 
     public void SetTraits(Dictionary<string, List<string>> traits)
-    {
-    }
-
-    public void SetParameters(TestParameters parameters)
-    {
-    }
-
-    public void SetBenchmarkMetadata(BenchmarkHostInfo hostInfo, BenchmarkJobInfo jobInfo)
-    {
-    }
-
-    public void AddBenchmarkData(BenchmarkMeasureType measureType, string info, BenchmarkDiscreteStats statistics)
     {
     }
 
