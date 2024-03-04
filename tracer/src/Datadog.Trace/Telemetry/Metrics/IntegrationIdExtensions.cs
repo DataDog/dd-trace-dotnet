@@ -79,6 +79,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.Xss => MetricTags.IntegrationName.Xss,
             IntegrationId.NHibernate => MetricTags.IntegrationName.NHibernate,
             IntegrationId.DotnetTest => MetricTags.IntegrationName.DotnetTest,
+            IntegrationId.DatadogTraceManual => MetricTags.IntegrationName.DatadogTraceManual,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }
