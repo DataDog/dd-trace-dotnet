@@ -86,7 +86,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 7");
 
-            var crashHandler = EnvironmentHelper.IsAlpine ? "/bin/echo" : "/usr/bin/echo";
+            var crashHandler = "/bin/echo";
 
             if (!File.Exists(crashHandler))
             {
@@ -94,7 +94,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 throw new FileNotFoundException($"Crash handler {crashHandler} does not exist.");
             }
 
-            runner.Environment.SetVariable("DD_TRACE_CRASH_HANDLER", EnvironmentHelper.IsAlpine ? "/bin/echo" : "/usr/bin/echo");
+            runner.Environment.SetVariable("DD_TRACE_CRASH_HANDLER", "/bin/echo");
             runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpType", "4");
 
