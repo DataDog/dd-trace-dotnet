@@ -45,5 +45,5 @@ public static class TestModule
 
     [Instrumented]
     internal static ITestModule InternalCreate(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
-        => new NullTestModule(name, framework, startDate);
+        => NullTestModule.Instance;
 }
