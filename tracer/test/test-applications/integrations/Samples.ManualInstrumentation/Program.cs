@@ -162,25 +162,34 @@ async Task SendHttpRequest(string name)
 
 void HandleHttpRequests(HttpListenerContext context)
 {
-    var query = context.Request.QueryString["q"];
-    using var scope = Tracer.Instance.StartActive($"Manual-{query}.HttpListener");
-    Console.WriteLine("[HttpListener] received request");
-
-    // read request content and headers
-    using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
+    try
     {
-        string requestContent = reader.ReadToEnd();
-        Console.WriteLine($"[HttpListener] request content: {requestContent}");
-    }
+        var query = context.Request.QueryString["q"];
+        using var scope = Tracer.Instance.StartActive($"Manual-{query}.HttpListener");
+        Console.WriteLine("[HttpListener] received request");
 
-    // write response content
-    scope.Span.SetTag("content", "PONG");
-    var responseBytes = Encoding.UTF8.GetBytes("PONG");
-    context.Response.ContentEncoding = Encoding.UTF8;
-    context.Response.ContentLength64 = responseBytes.Length;
-    context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
-    // we must close the response
-    context.Response.Close();
+        // read request content and headers
+        using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
+        {
+            string requestContent = reader.ReadToEnd();
+            Console.WriteLine($"[HttpListener] request content: {requestContent}");
+        }
+
+        // write response content
+        scope.Span.SetTag("content", "PONG");
+        var responseBytes = Encoding.UTF8.GetBytes("PONG");
+        context.Response.ContentEncoding = Encoding.UTF8;
+        context.Response.ContentLength64 = responseBytes.Length;
+        context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
+        // we must close the response
+        context.Response.Close();
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine(e);
+        context.Response.Close();
+        throw;
+    }
 }
 
 static void LogCurrentSettings(Tracer tracer, string step)
