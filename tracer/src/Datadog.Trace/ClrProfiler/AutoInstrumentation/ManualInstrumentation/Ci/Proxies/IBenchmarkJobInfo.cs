@@ -4,6 +4,8 @@
 // </copyright>
 
 #nullable enable
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
 
 /// <summary>
@@ -11,11 +13,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci
 /// </summary>
 internal interface IBenchmarkJobInfo
 {
+    [DuckField]
     string? Description { get; }
 
+    [DuckField]
     string? Platform { get; }
 
+    [DuckField]
     string? RuntimeName { get; }
 
+    [DuckField]
     string? RuntimeMoniker { get; }
 }
