@@ -8,12 +8,13 @@ extern alias DatadogTraceManual;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 using Datadog.Trace.Configuration;
 using FluentAssertions;
 using Xunit;
-
+using CtorIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.CtorIntegration;
 using ImmutableManualSettings = DatadogTraceManual::Datadog.Trace.Configuration.ImmutableTracerSettings;
 using ManualSettings = DatadogTraceManual::Datadog.Trace.Configuration.TracerSettings;
 
@@ -27,11 +28,23 @@ public class SettingsInstrumentationTests
     {
         var automatic = new TracerSettings();
         Dictionary<string, object> serializedSettings = new();
-        TracerSettingsPopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
+        PopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
 
         var manual = new ManualSettings(serializedSettings, isFromDefaultSources: false);
 
         AssertEquivalent(manual, automatic);
+    }
+
+    [Fact]
+    public void AutomaticToManual_IncludesAllExpectedKeys()
+    {
+        var automatic = new TracerSettings();
+        Dictionary<string, object> serializedSettings = new();
+        PopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
+
+        // ensure that we have all the expected keys
+        var keys = GetAutomaticTracerSettingKeys();
+        serializedSettings.Should().ContainKeys(keys).And.HaveSameCount(keys);
     }
 
     [Fact]
@@ -65,7 +78,7 @@ public class SettingsInstrumentationTests
         automatic.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate = 0.5;
 
         Dictionary<string, object> serializedSettings = new();
-        TracerSettingsPopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
+        PopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
 
         var manual = new ManualSettings(serializedSettings, isFromDefaultSources: false);
 
@@ -73,10 +86,62 @@ public class SettingsInstrumentationTests
     }
 
     [Fact]
+    public void ManualToAutomatic_IncludesNoKeysWhenNotChanged()
+    {
+        var manual = new ManualSettings(new(), isFromDefaultSources: false);
+        var settings = manual.ToDictionary();
+
+        settings.Should()
+                .ContainSingle()
+                .And.Contain(TracerSettingKeyConstants.IsFromDefaultSourcesKey, value: false);
+    }
+
+    [Fact]
+    public void ManualToAutomatic_IncludesAllExpectedKeys()
+    {
+        // change all the defaults to make sure we add the keys to the dictionary
+        Dictionary<string, object> originalSettings = new();
+        PopulateDictionaryIntegration.PopulateSettings(originalSettings, new TracerSettings());
+        var manual = new ManualSettings(originalSettings, isFromDefaultSources: false)
+        {
+            AgentUri = new Uri("http://localhost:1234"),
+            AnalyticsEnabled = true,
+            CustomSamplingRules = """[{"sample_rate":0.3, "service":"shopping-cart.*"}]""",
+            DiagnosticSourceEnabled = true,
+            DisabledIntegrationNames = ["something"],
+            Environment = "my-test-env",
+            GlobalSamplingRate = 0.5,
+            GlobalTags = new Dictionary<string, string> { { "tag1", "value" } },
+            GrpcTags = new Dictionary<string, string> { { "grpc1", "grpc-value" } },
+            HeaderTags = new Dictionary<string, string> { { "header1", "header-value" } },
+            KafkaCreateConsumerScopeEnabled = false,
+            LogsInjectionEnabled = true,
+            MaxTracesSubmittedPerSecond = 50,
+            ServiceName = "my-test-service",
+            ServiceVersion = "1.2.3",
+            StartupDiagnosticLogEnabled = false,
+            StatsComputationEnabled = true,
+            TraceEnabled = false,
+            TracerMetricsEnabled = true,
+        };
+
+        manual.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate = 0.5;
+
+        manual.SetServiceNameMappings(new Dictionary<string, string> { { "some-service", "some-mapping" } });
+        manual.SetHttpClientErrorStatusCodes([400, 401, 402]);
+        manual.SetHttpServerErrorStatusCodes([500, 501, 502]);
+
+        var settings = manual.ToDictionary();
+
+        var keys = GetManualTracerSettingKeys();
+        settings.Should().ContainKeys(keys).And.HaveSameCount(keys);
+    }
+
+    [Fact]
     public void ManualToAutomatic_CustomSettingsAreTransferredCorrectly()
     {
         Dictionary<string, object> initialValues = new();
-        TracerSettingsPopulateDictionaryIntegration.PopulateSettings(initialValues, new TracerSettings());
+        PopulateDictionaryIntegration.PopulateSettings(initialValues, new TracerSettings());
 
         var manual = new ManualSettings(initialValues, isFromDefaultSources: false)
         {
@@ -211,4 +276,30 @@ public class SettingsInstrumentationTests
             return e.AgentUri;
         }
     }
+
+    private static string[] GetAllTracerSettingKeys()
+    {
+        var keyFields = typeof(TracerSettingKeyConstants).GetFields();
+        // should only have consts in this class
+        keyFields.Should().OnlyContain(fi => fi.IsLiteral && !fi.IsInitOnly && fi.FieldType == typeof(string), "TracerSettingKeyConstants should only contain string constants");
+
+        var keys = keyFields.Select(x => (string)x.GetRawConstantValue()).ToArray();
+        keys.Should().NotBeEmpty().And.OnlyContain(x => !string.IsNullOrEmpty(x), "TracerSettingKeyConstants keys should not be null or empty");
+
+        return keys;
+    }
+
+    private static string[] GetAutomaticTracerSettingKeys()
+        => GetAllTracerSettingKeys()
+          .Where(
+               x => x is not "IsFromDefaultSources"
+                        and not "DD_HTTP_CLIENT_ERROR_STATUSES"
+                        and not "DD_HTTP_SERVER_ERROR_STATUSES"
+                        and not "DD_TRACE_SERVICE_MAPPING")
+          .ToArray();
+
+    private static string[] GetManualTracerSettingKeys()
+        => GetAllTracerSettingKeys()
+          .Where(x => x is not "DD_DIAGNOSTIC_SOURCE_ENABLED")
+          .ToArray();
 }
