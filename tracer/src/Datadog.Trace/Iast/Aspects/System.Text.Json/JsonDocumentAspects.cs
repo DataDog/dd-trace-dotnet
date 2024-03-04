@@ -56,11 +56,18 @@ public class JsonDocumentAspects
     [AspectMethodReplace("System.Text.Json.JsonElement::GetRawText()", [0], [true])]
     public static string? GetString(object target)
     {
-        var str = target.TryDuckCast<IJsonElement>(out var element) ? element.GetString() : null;
-        if (element is null || str is null)
+        IJsonElement? element;
+        try
         {
+            element = target.DuckCast<IJsonElement>();
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error casting to IJsonElement");
             return null;
         }
+
+        var str = element.GetString();
 
         try
         {
