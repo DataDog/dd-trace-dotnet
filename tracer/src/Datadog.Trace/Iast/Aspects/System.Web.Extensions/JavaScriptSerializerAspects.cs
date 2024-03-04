@@ -54,7 +54,7 @@ public class JavaScriptSerializerAspects
                 return result;
             }
 
-            TaintObject(result);
+            TaintObject(result, taintedObjects);
         }
         catch (Exception ex)
         {
@@ -64,19 +64,18 @@ public class JavaScriptSerializerAspects
         return result;
     }
 
-    private static void TaintObject(object obj)
+    private static void TaintObject(object obj, TaintedObjects taintedObjects)
     {
         switch (obj)
         {
             case string str:
-                var taintedObjects = IastModule.GetIastContext()?.GetTaintedObjects();
-                taintedObjects?.Taint(obj, [new Range(0, str.Length)]);
+                taintedObjects.Taint(obj, [new Range(0, str.Length)]);
                 break;
 
             case Dictionary<string, object> objects:
                 foreach (var item in objects)
                 {
-                    TaintObject(item.Value);
+                    TaintObject(item.Value, taintedObjects);
                 }
 
                 break;
@@ -84,7 +83,7 @@ public class JavaScriptSerializerAspects
             case object[] objects:
                 foreach (var item in objects)
                 {
-                    TaintObject(item);
+                    TaintObject(item, taintedObjects);
                 }
 
                 break;
