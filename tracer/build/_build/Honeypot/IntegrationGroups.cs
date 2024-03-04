@@ -109,6 +109,9 @@ namespace Honeypot
             NugetPackages.Add("coverlet.core", Array.Empty<string>());
             NugetPackages.Add("Microsoft.AspNetCore.Session", new [] { "Microsoft.AspNetCore.Session" });
             NugetPackages.Add("Microsoft.TestPlatform.PlatformAbstractions", Array.Empty<string>());
+
+            // Manual instrumentation
+            NugetPackages.Add("Datadog.Trace.Manual", new string[] { });
         }
 
         private IntegrationMap()
