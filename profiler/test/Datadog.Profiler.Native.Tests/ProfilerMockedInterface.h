@@ -74,6 +74,8 @@ public:
     MOCK_METHOD(EnablementStatus, GetEnablementStatus, (), (const override));
     MOCK_METHOD(DeploymentMode, GetDeploymentMode, (), (const override));
     MOCK_METHOD(bool, IsEtwLoggingEnabled, (), (const override));
+    MOCK_METHOD(bool, IsProfilerEnabled, (), (const override));
+    MOCK_METHOD(int32_t, SsiShortLivedThreshold, (), (const override));
 };
 
 class MockExporter : public IExporter

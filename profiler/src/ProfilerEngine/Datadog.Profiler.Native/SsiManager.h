@@ -28,6 +28,7 @@ public:
     void OnSpanCreated() override;
     bool IsSpanCreated() override;
     bool IsShortLived() override;
+    bool IsProfilerActivated() override;
 
     // send metrics
     void ProcessStart() override;

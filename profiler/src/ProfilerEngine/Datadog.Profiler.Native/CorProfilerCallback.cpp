@@ -108,7 +108,7 @@ CorProfilerCallback::~CorProfilerCallback()
 #endif
 }
 
-bool CorProfilerCallback::InitializeServices()
+void CorProfilerCallback::InitializeServices()
 {
     _metricsSender = IMetricsSenderFactory::Create();
 
@@ -138,7 +138,7 @@ bool CorProfilerCallback::InitializeServices()
         return _pManagedThreadList->GetHighCountAndReset();
     });
 
-    _managedThreadsMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_managed_threads_low", [this]() {
+    _managedThreadsMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_managed_thre..UIniads_low", [this]() {
         return _pManagedThreadList->GetLowCountAndReset();
     });
 
@@ -552,17 +552,6 @@ bool CorProfilerCallback::InitializeServices()
             _pSamplesCollector->Register(_pGarbageCollectionProvider);
         }
     }
-
-    Log::Info("{{{{ starting services");
-    auto started = StartServices();
-    Log::Info("{{{{ services started ");
-    if (!started)
-    {
-        Log::Error("One or multiple services failed to start. Stopping all services.");
-        StopServices();
-    }
-
-    return started;
 }
 
 bool CorProfilerCallback::StartServices()
@@ -1120,9 +1109,19 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Init global state:
     OpSysTools::InitHighPrecisionTimer();
 
-    // Init global services:
-    if (!InitializeServices())
+    // create services without starting them
+    InitializeServices();
+
+    // Start services only if the profiler is enabled
+    // For SSI deployment, the services will be started later based on heuristics
+    if (_pConfiguration->IsProfilerEnabled())
     {
+        auto started = StartServices();
+        if (!started)
+        {
+            Log::Error("One or multiple services failed to start. Stopping all services.");
+            StopServices();
+        }
         Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
         return E_FAIL;
     }
@@ -1426,7 +1425,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
         return S_OK;
     }
 
-    if (!_isETWStarted && (_pEtwEventsManager != nullptr))
+    // ETW listening is not started in SSI deployment mode
+    if (_pConfiguration->IsProfilerEnabled() && !_isETWStarted && (_pEtwEventsManager != nullptr))
     {
         _isETWStarted = true;
         auto success = _pEtwEventsManager->Start();
@@ -1705,7 +1705,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownOb
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
-        _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
+        if (_pSsiManager->IsProfilerActivated())
+        {
+            _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
+        }
     }
 
     return S_OK;
@@ -1920,19 +1923,22 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
 {
     if (_pEventPipeEventsManager != nullptr)
     {
-        _pEventPipeEventsManager->ParseEvent(
-            provider,
-            eventId,
-            eventVersion,
-            cbMetadataBlob,
-            metadataBlob,
-            cbEventData,
-            eventData,
-            pActivityId,
-            pRelatedActivityId,
-            eventThread,
-            numStackFrames,
-            stackFrames);
+        if (_pSsiManager->IsProfilerActivated())
+        {
+            _pEventPipeEventsManager->ParseEvent(
+                provider,
+                eventId,
+                eventVersion,
+                cbMetadataBlob,
+                metadataBlob,
+                cbEventData,
+                eventData,
+                pActivityId,
+                pRelatedActivityId,
+                eventThread,
+                numStackFrames,
+                stackFrames);
+        }
     }
 
     return S_OK;

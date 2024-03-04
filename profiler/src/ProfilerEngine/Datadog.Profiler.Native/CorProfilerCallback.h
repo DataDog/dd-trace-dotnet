@@ -259,9 +259,9 @@ private :
     std::shared_ptr<ProxyMetric> _managedThreadsMetric;
     std::shared_ptr<ProxyMetric> _managedThreadsWithContextMetric;
 
-    std::unique_ptr<ISamplesProvider> _gcThreadsCpuProvider;
-    std::unique_ptr<IMetadataProvider> _pMetadataProvider;
-    std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
+    std::unique_ptr<ISamplesProvider> _gcThreadsCpuProvider = nullptr;
+    std::unique_ptr<IMetadataProvider> _pMetadataProvider = nullptr;
+    std::unique_ptr<IEtwEventsManager> _pEtwEventsManager = nullptr;
     bool _isETWStarted = false;
     MemoryResourceManager _memoryResourceManager;
 
@@ -281,7 +281,7 @@ private:
 
     void InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType);
     void DisposeInternal();
-    bool InitializeServices();
+    void InitializeServices();
     bool DisposeServices();
     bool StartServices();
     bool StopServices();

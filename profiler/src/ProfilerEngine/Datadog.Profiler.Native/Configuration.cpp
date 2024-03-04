@@ -92,6 +92,7 @@ Configuration::Configuration()
     _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
     _enablementStatus = ExtractEnablementStatus();
+    _ssiShortLivedThreshold = GetEnvironmentValue(EnvironmentVariables::SsiShortLivedThreshold, 30);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -551,6 +552,7 @@ bool Configuration::IsEtwLoggingEnabled() const
 #endif
 }
 
+<<<<<<< HEAD
 EnablementStatus Configuration::GetEnablementStatus() const
 {
     return _enablementStatus;
@@ -559,6 +561,11 @@ EnablementStatus Configuration::GetEnablementStatus() const
 DeploymentMode Configuration::GetDeploymentMode() const
 {
     return _deploymentMode;
+}
+
+int32_t Configuration::SsiShortLivedThreshold() const
+{
+    return _ssiShortLivedThreshold;
 }
 
 static bool convert_to(shared::WSTRING const& s, bool& result)

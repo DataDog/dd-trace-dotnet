@@ -72,6 +72,7 @@ public:
     bool IsEtwLoggingEnabled() const override;
     EnablementStatus GetEnablementStatus() const override;
     DeploymentMode GetDeploymentMode() const override;
+    int32_t SsiShortLivedThreshold() const override;
 
 private:
     static tags ExtractUserTags();
@@ -159,4 +160,5 @@ private:
     DeploymentMode _deploymentMode;
     bool _isEtwLoggingEnabled;
     EnablementStatus _enablementStatus;
+    int32_t _ssiShortLivedThreshold;
 };

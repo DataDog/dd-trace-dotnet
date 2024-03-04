@@ -12,7 +12,7 @@
 
 using ::testing::Return;
 
-TEST(SsiManagerTest, ShouldNotSendProfileWhenShortLived)
+TEST(SsiManagerTest, Should_NotSendProfile_When_ShortLived)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
@@ -27,7 +27,7 @@ TEST(SsiManagerTest, ShouldNotSendProfileWhenShortLived)
     ASSERT_EQ(telemetry.GetHeuristic(), SkipProfileHeuristicType::ShortLived);
 }
 
-TEST(SsiManagerTest, ShouldNotSendProfileWhenNoSpan)
+TEST(SsiManagerTest, Should_NotSendProfile_When_NoSpan)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
@@ -42,7 +42,7 @@ TEST(SsiManagerTest, ShouldNotSendProfileWhenNoSpan)
     ASSERT_EQ(telemetry.GetHeuristic(), SkipProfileHeuristicType::NoSpan);
 }
 
-TEST(SsiManagerTest, ShouldStartAsSSIWhenDeployedAsSSI)
+TEST(SsiManagerTest, Should_StartAsSSI_When_DeployedAsSSI)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
@@ -55,7 +55,7 @@ TEST(SsiManagerTest, ShouldStartAsSSIWhenDeployedAsSSI)
     ASSERT_EQ(telemetry.GetDeployment(), DeploymentMode::SingleStepInstrumentation);
 }
 
-TEST(SsiManagerTest, ShouldStartAsManualWhenNotDeployedAsSSI)
+TEST(SsiManagerTest, Should_StartAsManual_When_NotDeployedAsSSI)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(false));
@@ -66,4 +66,107 @@ TEST(SsiManagerTest, ShouldStartAsManualWhenNotDeployedAsSSI)
     manager.ProcessStart();
 
     ASSERT_EQ(telemetry.GetDeployment(), DeploymentMode::Manual);
+}
+
+TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_NotDeployedAsSSI)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(false));
+
+    ProfilerTelemetryForTest telemetry;
+
+    SsiManager manager(configuration.get(), &telemetry);
+
+    ASSERT_EQ(manager.IsProfilerActivated(), false);
+}
+
+TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSI)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
+
+    ProfilerTelemetryForTest telemetry;
+
+    SsiManager manager(configuration.get(), &telemetry);
+
+    ASSERT_EQ(manager.IsProfilerActivated(), false);
+}
+
+TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndDisabled)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockConfiguration, IsProfilerEnabled()).WillRepeatedly(Return(false));
+
+    ProfilerTelemetryForTest telemetry;
+
+    SsiManager manager(configuration.get(), &telemetry);
+
+    ASSERT_EQ(manager.IsProfilerActivated(), false);
+}
+
+TEST(SsiManagerTest, Should_ProfilerBeActivated_When_DeployedAsSSIAndEnabled)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockConfiguration, IsProfilerEnabled()).WillRepeatedly(Return(true));
+
+    ProfilerTelemetryForTest telemetry;
+
+    SsiManager manager(configuration.get(), &telemetry);
+
+    ASSERT_EQ(manager.IsProfilerActivated(), true);
+}
+
+TEST(SsiManagerTest, Should_ProfilerBeActivated_When_NotDeployedAsSSIAndEnabled)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mockConfiguration, IsProfilerEnabled()).WillRepeatedly(Return(true));
+
+    ProfilerTelemetryForTest telemetry;
+
+    SsiManager manager(configuration.get(), &telemetry);
+
+    ASSERT_EQ(manager.IsProfilerActivated(), true);
+}
+
+TEST(SsiManagerTest, Should_ProfilerBeActivated_When_DeployedAsSSIAndSpanAndLongLived)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
+
+    ProfilerTelemetryForTest telemetry;
+
+    SsiManager manager(configuration.get(), &telemetry);
+    manager.OnSpanCreated();
+    manager.SetLifetimeDuration(1);  // long lived
+
+    ASSERT_EQ(manager.IsProfilerActivated(), true);
+}
+
+TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndSpanOnly)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
+
+    ProfilerTelemetryForTest telemetry;
+
+    SsiManager manager(configuration.get(), &telemetry);
+    manager.OnSpanCreated();
+
+    ASSERT_EQ(manager.IsProfilerActivated(), false);
+}
+
+TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndLongLivedOnly)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
+
+    ProfilerTelemetryForTest telemetry;
+
+    SsiManager manager(configuration.get(), &telemetry);
+    manager.SetLifetimeDuration(1);  // long lived
+
+    ASSERT_EQ(manager.IsProfilerActivated(), false);
 }

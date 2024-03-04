@@ -13,6 +13,7 @@ public:
     virtual void OnSpanCreated() = 0;
     virtual bool IsSpanCreated() = 0;
     virtual bool IsShortLived() = 0;
+    virtual bool IsProfilerActivated() = 0;
 
     // send metrics
     virtual void ProcessStart() = 0;

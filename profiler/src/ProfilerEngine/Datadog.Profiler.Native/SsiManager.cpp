@@ -54,6 +54,27 @@ bool SsiManager::IsShortLived()
     return false;
 }
 
+// the profiler is activated either if:
+//     - the profiler is enabled in the configuration
+//  or - is deployed via SSI + runs for more than 30 seconds + has at least one span
+//
+// In the future, we might also be activated by SSI based on user's choice
+bool SsiManager::IsProfilerActivated()
+{
+    if (_pConfiguration->IsProfilerEnabled())
+    {
+        return true;
+    }
+
+    // TODO: need to start a timer at the beginning of the process and use it if IsShortLived() is too expensive
+    if (_isSsiDeployed && !IsShortLived() && IsSpanCreated())
+    {
+        return true;
+    }
+
+    return false;
+}
+
 void SsiManager::ProcessStart()
 {
     _pTelemetry->ProcessStart(_isSsiDeployed ? DeploymentMode::SingleStepInstrumentation : DeploymentMode::Manual);
