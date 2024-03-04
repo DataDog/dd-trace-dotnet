@@ -121,7 +121,7 @@ namespace Samples
         {
             try
             {
-                return (string)TracerThreePartVersionField.GetValue(null);
+                return (string)TracerThreePartVersionField?.GetValue(null) ?? "None";
             }
             catch (Exception e)
             {
