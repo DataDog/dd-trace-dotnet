@@ -72,16 +72,17 @@ scenarios:
       job: server
       buildArguments: 
       - "/p:MANUAL_INSTRUMENTATION=true"
+      - "/p:MANUAL_ONLY_INSTRUMENTATION=true"
       environmentVariables:
         COR_ENABLE_PROFILING: 0
         CORECLR_ENABLE_PROFILING: 0
       options:
         buildFiles:
         # Copy the dll to the project directory
-        - "../../bin/netcoreapp3.1/Datadog.Trace.dll"
+        - "../../bin/netcoreapp3.1/Datadog.Trace.Manual.dll"
         outputFiles:
         # Copy the dll to the publish directory
-        - "../../bin/netcoreapp3.1/Datadog.Trace.dll"
+        - "../../bin/netcoreapp3.1/Datadog.Trace.Manual.dll"
     load:
       job: bombardier
       variables:
@@ -101,27 +102,10 @@ scenarios:
       options:
         buildFiles:
         # Copy the dll to the project directory
-        - "../../bin/netcoreapp3.1/Datadog.Trace.dll"
+        - "../../bin/netcoreapp3.1/Datadog.Trace.Manual.dll"
         outputFiles:
         # Copy the dll to the publish directory
-        - "../../bin/netcoreapp3.1/Datadog.Trace.dll"
-    load:
-      job: bombardier
-      variables:
-        warmup: 30
-        duration: 240
-        serverPort: 5000
-        path: /hello
-
-  version_conflict:
-    application:
-      job: server
-      buildArguments: 
-      - "/p:MANUAL_INSTRUMENTATION=true"
-      - "/p:VERSION_MISMATCH=true"
-      environmentVariables:
-        COR_ENABLE_PROFILING: 1
-        CORECLR_ENABLE_PROFILING: 1
+        - "../../bin/netcoreapp3.1/Datadog.Trace.Manual.dll"
     load:
       job: bombardier
       variables:
