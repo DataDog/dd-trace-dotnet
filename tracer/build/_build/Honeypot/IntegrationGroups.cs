@@ -104,6 +104,9 @@ namespace Honeypot
             NugetPackages.Add("vstest.console", Array.Empty<string>());
             NugetPackages.Add("vstest.console.arm64", Array.Empty<string>());
             NugetPackages.Add("WebDriver", new[] { "Selenium.WebDriver" });
+
+            // Manual instrumentation
+            NugetPackages.Add("Datadog.Trace.Manual", new string[] { });
         }
 
         private IntegrationMap()

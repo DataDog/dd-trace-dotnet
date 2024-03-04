@@ -96,7 +96,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:xss" }),
             new(new[] { "integration_name:nhibernate" }),
             new(new[] { "integration_name:dotnettest" }),
-            new(new[] { "integration_name:selenium" }),
+            new(new[] { "integration_name:datadogtracemanual" }),
             // spans_finished, index = 76
             new(null),
             // spans_enqueued_for_serialization, index = 77
@@ -323,7 +323,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:xss" }),
             new(new[] { "integration_name:nhibernate" }),
             new(new[] { "integration_name:dotnettest" }),
-            new(new[] { "integration_name:selenium" }),
+            new(new[] { "integration_name:datadogtracemanual" }),
             // direct_log_api.requests, index = 281
             new(null),
             // direct_log_api.responses, index = 282

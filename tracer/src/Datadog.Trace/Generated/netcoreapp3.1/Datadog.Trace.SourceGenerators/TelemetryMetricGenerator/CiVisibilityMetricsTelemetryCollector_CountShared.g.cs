@@ -233,9 +233,9 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "integration_name:dotnettest", "error_type:duck_typing" }),
             new(new[] { "integration_name:dotnettest", "error_type:invoker" }),
             new(new[] { "integration_name:dotnettest", "error_type:execution" }),
-            new(new[] { "integration_name:selenium", "error_type:duck_typing" }),
-            new(new[] { "integration_name:selenium", "error_type:invoker" }),
-            new(new[] { "integration_name:selenium", "error_type:execution" }),
+            new(new[] { "integration_name:datadogtracemanual", "error_type:duck_typing" }),
+            new(new[] { "integration_name:datadogtracemanual", "error_type:invoker" }),
+            new(new[] { "integration_name:datadogtracemanual", "error_type:execution" }),
         };
 
     /// <summary>

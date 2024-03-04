@@ -79,5 +79,6 @@ namespace Datadog.Trace.Configuration
         NHibernate,
         DotnetTest,
         Selenium,
+        DatadogTraceManual,
     }
 }
