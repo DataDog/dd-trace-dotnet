@@ -26,6 +26,10 @@
             body: data
         });
     }
+    
+    window.getWithHeaders = function (url, headers) {
+        return fetch(url, { method: 'GET', headers: headers, credentials: 'same-origin' });
+    }
 
     window.GetCookieData = function (cookie1, cookie2, url) {
         document.cookie = cookie1;
@@ -120,6 +124,8 @@
 
     <div><a href="/Iast/TypeReflectionInjection/?type=System.String">GET /Iast/ReflectionInjection [Type: System.String]</a></div>
 
+    <div><a href="javascript:getWithHeaders('/Iast/InsecureAuthProtocol', {'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='})">GET /Iast/InsecureAuthProtocol [Basic Scheme]</a></div>
+    
     <div>
         @Html.Raw(Context.Request.Query["q"])
     </div>

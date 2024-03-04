@@ -41,6 +41,7 @@ internal static class IastModule
     private const string OperationNameHeaderInjection = "header_injection";
     private const string OperationNameXPathInjection = "xpath_injection";
     private const string OperationNameReflectionInjection = "reflection_injection";
+    private const string OperationInsecureAuthProtocol = "insecure_auth_protocol";
     private const string ReferrerHeaderName = "Referrer";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
@@ -379,6 +380,13 @@ internal static class IastModule
             // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
             AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerabilities).SingleSpan?.Dispose();
         }
+    }
+
+    public static IastModuleResponse OnInsecureAuthProtocol(string authHeader, IntegrationId integrationId)
+    {
+        OnExecutedSinkTelemetry(IastInstrumentedSinks.InsecureAuthProtocol);
+        // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
+        return AddWebVulnerability(authHeader, integrationId, VulnerabilityTypeName.InsecureAuthProtocol, (VulnerabilityTypeName.InsecureAuthProtocol + ':' + authHeader).GetStaticHashCode());
     }
 
     public static IastModuleResponse OnCipherAlgorithm(Type type, IntegrationId integrationId)
