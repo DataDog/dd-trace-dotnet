@@ -34,6 +34,7 @@ public class SpanContextInjectorInjectIntegration
         // Therefore, there's no point calling inject unless we can remap it to a SpanContext
         TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_Inject);
         var inject = (Action<TCarrier, string, string>)(object)setter!;
+
         if (SpanContextHelper.GetContext(context) is { } spanContext)
         {
             SpanContextInjector.InjectInternal(carrier, inject, spanContext);

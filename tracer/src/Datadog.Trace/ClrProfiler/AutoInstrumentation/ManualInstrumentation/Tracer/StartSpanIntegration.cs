@@ -8,6 +8,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 
@@ -44,8 +45,7 @@ public class StartSpanIntegration
 
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
-        // The return value is a "manual span" proxy that we reverse duck type as an IScope and set on the return value
-        var proxy = (TReturn)ScopeHelper<TReturn>.CreateManualSpan((Span)state.State!).Proxy;
-        return new CallTargetReturn<TReturn>(proxy);
+        // Duck cast Span as an ISpan (DataDog.Trace.Manual) and return it
+        return new CallTargetReturn<TReturn>(state.State.DuckCast<TReturn>());
     }
 }

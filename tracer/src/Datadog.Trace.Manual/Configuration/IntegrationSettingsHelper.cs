@@ -16,7 +16,7 @@ internal sealed class IntegrationSettingsHelper
         var settings = Populate(initialValues, CreateSettingFunc);
         return new IntegrationSettingsCollection(settings);
 
-        IntegrationSettings CreateSettingFunc(string name, bool? enabled, bool? analyticsEnabled, double analyticsSampleRate)
+        static IntegrationSettings CreateSettingFunc(string name, bool? enabled, bool? analyticsEnabled, double analyticsSampleRate)
             => new(name, enabled, analyticsEnabled, analyticsSampleRate);
     }
 
@@ -25,7 +25,7 @@ internal sealed class IntegrationSettingsHelper
         var settings = Populate(initialValues, CreateSettingFunc);
         return new ImmutableIntegrationSettingsCollection(settings);
 
-        ImmutableIntegrationSettings CreateSettingFunc(string name, bool? enabled, bool? analyticsEnabled, double analyticsSampleRate)
+        static ImmutableIntegrationSettings CreateSettingFunc(string name, bool? enabled, bool? analyticsEnabled, double analyticsSampleRate)
             => new(name, enabled, analyticsEnabled, analyticsSampleRate);
     }
 
@@ -43,8 +43,11 @@ internal sealed class IntegrationSettingsHelper
         var settings = new Dictionary<string, T>(fromAutomatic.Count, StringComparer.OrdinalIgnoreCase);
         foreach (var setting in fromAutomatic)
         {
-            var values = setting.Value;
-            if (values.Length < 3)
+            if (!IntegrationSettingsSerializationHelper.TryDeserializeFromAutomatic(
+                    setting.Value,
+                    out var enabled,
+                    out var analyticsEnabled,
+                    out var analyticsSampleRate))
             {
                 // this will never happen unless there's a bad version mismatch issue, so just bail out
                 return new();
@@ -54,9 +57,9 @@ internal sealed class IntegrationSettingsHelper
                 setting.Key,
                 createSettingFunc(
                     setting.Key,
-                    values[0] as bool?,
-                    values[1] as bool?,
-                    values[2] as double? ?? 1.0));
+                    enabled,
+                    analyticsEnabled,
+                    analyticsSampleRate));
         }
 
         return settings;
