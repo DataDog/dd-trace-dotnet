@@ -18,13 +18,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\Datadog.Trace\Ci\BenchmarkMeasureType.cs" Link="Ci\%(Filename)%(Extension)" />
+    <!-- If you want to run the manual span benchmark or ducktyping unit tests  />-->
+    <!-- <Compile Include="..\Datadog.Trace\DuckTyping\*.cs" Link="DuckTyping\%(Filename)%(Extension)" />-->
+    <Compile Include="..\Datadog.Trace\Ci\Benchmark*.cs" Link="Ci\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Attributes\*.cs" Link="Ci\Coverage\Attributes\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Exceptions\*.cs" Link="Ci\Coverage\Exceptions\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Metadata\*.cs" Link="Ci\Coverage\Metadata\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Util\*.cs" Link="Ci\Coverage\Util\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\TestStatus.cs" Link="Ci\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\TracerSettingKeyConstants.cs"  Link="Configuration\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\IntegrationSettingsSerializationHelper.cs"  Link="Configuration\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" Link="Configuration\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\HttpHeaderNames.cs" />
     <Compile Include="..\Datadog.Trace\IDatadogOpenTracingTracer.cs" />
