@@ -351,6 +351,7 @@ namespace Datadog.Trace
         /// <returns>The newly created span</returns>
         ISpan IDatadogOpenTracingTracer.StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope)
         {
+            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.OpenTracing);
             if (ignoreActiveScope && parent == null)
             {
                 // don't set the span's parent,
