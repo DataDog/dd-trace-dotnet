@@ -3,10 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Globalization;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Propagators;
 using OpenTracing.Propagation;
 
 namespace Datadog.Trace.OpenTracing
@@ -14,6 +11,8 @@ namespace Datadog.Trace.OpenTracing
     internal class HttpHeadersCodec : ICodec
     {
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
+        private static readonly SpanContextExtractor Extractor = new();
+        private static readonly SpanContextInjector Injector = new();
 
         public global::OpenTracing.ISpanContext Extract(object carrier)
         {
@@ -24,9 +23,19 @@ namespace Datadog.Trace.OpenTracing
                 throw new ArgumentException("Carrier should have type ITextMap", nameof(carrier));
             }
 
-            IHeadersCollection headers = new TextMapHeadersCollection(map);
-            var propagationContext = SpanContextPropagator.Instance.Extract(headers);
+            var propagationContext = Extractor.Extract(map, GetValues);
             return new OpenTracingSpanContext(propagationContext);
+
+            static IEnumerable<string> GetValues(ITextMap textMap, string name)
+            {
+                foreach (var pair in textMap)
+                {
+                    if (string.Equals(pair.Key, name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        yield return pair.Value;
+                    }
+                }
+            }
         }
 
         public void Inject(global::OpenTracing.ISpanContext context, object carrier)
@@ -38,18 +47,16 @@ namespace Datadog.Trace.OpenTracing
                 throw new ArgumentException("Carrier should have type ITextMap", nameof(carrier));
             }
 
-            IHeadersCollection headers = new TextMapHeadersCollection(map);
-
             if (context is OpenTracingSpanContext otSpanContext && otSpanContext.Context is SpanContext ddSpanContext)
             {
                 // this is a Datadog context
-                SpanContextPropagator.Instance.Inject(ddSpanContext, headers);
+                Injector.Inject(map, (carrier, name, value) => carrier.Set(name, value), ddSpanContext);
             }
             else
             {
                 // any other OpenTracing.ISpanContext
-                headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
-                headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
+                map.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
+                map.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
             }
         }
     }
