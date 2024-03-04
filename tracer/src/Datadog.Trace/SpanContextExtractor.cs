@@ -45,7 +45,7 @@ namespace Datadog.Trace
             return ExtractInternal(carrier, getter);
         }
 
-        internal static ISpanContext? ExtractInternal<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
+        internal static SpanContext? ExtractInternal<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
             var spanContext = SpanContextPropagator.Instance.Extract(carrier, getter);
 
