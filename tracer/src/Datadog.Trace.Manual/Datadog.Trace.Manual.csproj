@@ -18,8 +18,50 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\Datadog.Trace\Ci\BenchmarkMeasureType.cs" Link="Ci\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\Ci\Coverage\Attributes\*.cs" Link="Ci\Coverage\Attributes\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\Ci\Coverage\Exceptions\*.cs" Link="Ci\Coverage\Exceptions\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\Ci\Coverage\Metadata\*.cs" Link="Ci\Coverage\Metadata\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\Ci\Coverage\Util\*.cs" Link="Ci\Coverage\Util\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\Ci\TestStatus.cs" Link="Ci\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\TracerSettingKeyConstants.cs"  Link="Configuration\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" Link="Configuration\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\HttpHeaderNames.cs" />
+    <Compile Include="..\Datadog.Trace\IScope.cs" />
+    <Compile Include="..\Datadog.Trace\ISpan.cs" />
+    <Compile Include="..\Datadog.Trace\ISpanContext.cs" />
+    <Compile Include="..\Datadog.Trace\ISpanContextExtractor.cs" />
+    <Compile Include="..\Datadog.Trace\ITracer.cs" />
+    <Compile Include="..\Datadog.Trace\SamplingPriority.cs" />
+    <Compile Include="..\Datadog.Trace\SamplingPriorityValues.cs" />
+    <Compile Include="..\Datadog.Trace\SpanCreationSettings.cs" />
+    <Compile Include="..\Datadog.Trace\SpanKinds.cs" />
+    <Compile Include="..\Datadog.Trace\SpanTypes.cs" />
+    <Compile Include="..\Datadog.Trace\UserDetails.cs" />
+    <Compile Include="..\Datadog.Trace\Util\System.Diagnostics.CodeAnalysis.Attributes.cs" Link="Util\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\Util\System.Runtime.CompilerServices.Attributes.cs" Link="Util\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\Util\ThrowHelper.cs" Link="Util\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\..\..\docs\Datadog.Trace\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
+  <!--To match the Datadog.Trace requirements-->
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.IO.Compression" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
+    <!--DuckTyping-->
+    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+  </ItemGroup>
 </Project>
   
