@@ -166,7 +166,6 @@ partial class Build
     Project[] ParallelIntegrationTests => new[]
     {
         Solution.GetProject(Projects.TraceIntegrationTests),
-        Solution.GetProject(Projects.OpenTracingIntegrationTests),
     };
 
     Project[] ClrProfilerIntegrationTests
