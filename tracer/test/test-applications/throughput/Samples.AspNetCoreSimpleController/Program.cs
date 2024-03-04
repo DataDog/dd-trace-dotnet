@@ -50,7 +50,7 @@ namespace Samples.AspNetCoreSimpleController
                 Console.WriteLine(" * Running without profiler.");
             }
 
-#if MANUAL_INSTRUMENTATION
+#if MANUAL_INSTRUMENTATION && !MANUAL_ONLY_INSTRUMENTATION
             managedTracerVersion = SampleHelpers.GetManagedTracerVersion();
             if(managedTracerVersion == "None")
             {
