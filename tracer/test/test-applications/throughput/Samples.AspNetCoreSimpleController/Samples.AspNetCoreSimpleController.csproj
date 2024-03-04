@@ -4,18 +4,16 @@
     <TargetFramework>net5.0</TargetFramework>
     <Platforms>x64;x86;AnyCPU</Platforms>
     <DefineConstants Condition="'$(MANUAL_INSTRUMENTATION)' == 'true'">$(DefineConstants);MANUAL_INSTRUMENTATION</DefineConstants>
-    <DefineConstants Condition="'$(VERSION_MISMATCH)' == 'true'">$(DefineConstants);VERSION_MISMATCH</DefineConstants>
+    <DefineConstants Condition="'$(MANUAL_ONLY_INSTRUMENTATION)' == 'true'">$(DefineConstants);MANUAL_ONLY_INSTRUMENTATION</DefineConstants>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(MANUAL_INSTRUMENTATION)' == 'true' AND '$(VERSION_MISMATCH)' != 'true'">
+  <ItemGroup Condition="'$(MANUAL_INSTRUMENTATION)' == 'true'">
+    <!-- TODO: We can't throughput test version mismatch with Datadog.Trace.Manual until we have published a version -->
+    <!-- but there's probably no point anyway, as it has no expected impact -->
     <!--    If you want to run the app locally, switch the reference out for this-->
-    <!--    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />-->
-    <Reference Include="Datadog.Trace">
-      <HintPath>Datadog.Trace.dll</HintPath>
+    <!--    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />-->
+    <Reference Include="Datadog.Trace.Manual">
+      <HintPath>Datadog.Trace.Manual.dll</HintPath>
     </Reference>
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(MANUAL_INSTRUMENTATION)' == 'true' AND '$(VERSION_MISMATCH)' == 'true'">
-    <PackageReference Include="Datadog.Trace" Version="2.22.0" />
   </ItemGroup>
 </Project>

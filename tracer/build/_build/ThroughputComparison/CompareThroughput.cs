@@ -78,7 +78,7 @@ public class CompareThroughput
     private static string GetCommentMarkdown(List<CrankResultSource> sources, IEnumerable<string> charts)
     {
         return $"""
-            ## Throughput/Crank Report:zap:
+            ## Throughput/Crank Report :zap:
 
             Throughput results for AspNetCoreSimpleController comparing the following branches/commits:
             {string.Join('\n', GetSourceMarkdown(sources))}
@@ -109,7 +109,6 @@ public class CompareThroughput
         CrankScenario.AutomaticInstrumentation => "Automatic",
         CrankScenario.ManualInstrumentation => "Manual",
         CrankScenario.ManualAndAutomaticInstrumentation => "Manual + Automatic",
-        CrankScenario.VersionConflict => "Version Conflict",
         CrankScenario.TraceStats => "Trace stats",
         CrankScenario.NoAttack => "No attack",
         CrankScenario.AttackNoBlocking => "Attack",
@@ -130,7 +129,6 @@ public class CompareThroughput
                 ("trace_stats_linux.json", CrankScenario.TraceStats),
                 ("manual_only_linux.json", CrankScenario.ManualInstrumentation),
                 ("manual_and_automatic_linux.json", CrankScenario.ManualAndAutomaticInstrumentation),
-                ("version_conflict_linux.json", CrankScenario.VersionConflict),
             }
         ),
         ("crank_linux_arm64_1", CrankTestSuite.LinuxArm64, new[]
@@ -140,7 +138,6 @@ public class CompareThroughput
                 ("trace_stats_linux_arm64.json", CrankScenario.TraceStats),
                 ("manual_only_linux_arm64.json", CrankScenario.ManualInstrumentation),
                 ("manual_and_automatic_linux_arm64.json", CrankScenario.ManualAndAutomaticInstrumentation),
-                ("version_conflict_linux_arm64.json", CrankScenario.VersionConflict),
             }
         ),
         ("crank_windows_x64_1", CrankTestSuite.WindowsX64, new[]
@@ -150,7 +147,6 @@ public class CompareThroughput
                 ("trace_stats_windows.json", CrankScenario.TraceStats),
                 ("manual_only_windows.json", CrankScenario.ManualInstrumentation),
                 ("manual_and_automatic_windows.json", CrankScenario.ManualAndAutomaticInstrumentation),
-                ("version_conflict_windows.json", CrankScenario.VersionConflict),
             }
         ),
         ("crank_linux_x64_asm_1", CrankTestSuite.ASMLinuxX64, new[]
@@ -207,7 +203,6 @@ public class CompareThroughput
         TraceStats,
         ManualInstrumentation,
         ManualAndAutomaticInstrumentation,
-        VersionConflict,
         NoAttack,
         AttackNoBlocking,
         AttackBlocking,
