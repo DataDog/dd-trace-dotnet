@@ -3,12 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using Datadog.Trace.Logging;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using OpenTracing;
 using OpenTracing.Propagation;
 
@@ -16,23 +10,7 @@ namespace Datadog.Trace.OpenTracing
 {
     internal class OpenTracingTracer : global::OpenTracing.ITracer
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<OpenTracingTracer>();
-
         private readonly Dictionary<string, ICodec> _codecs;
-
-        [PublicApi]
-        public OpenTracingTracer(IDatadogOpenTracingTracer datadogTracer)
-            : this(datadogTracer, CreateDefaultScopeManager(), datadogTracer.DefaultServiceName)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.OpenTracingTracer_Ctor_DatadogTracer);
-        }
-
-        [PublicApi]
-        public OpenTracingTracer(IDatadogOpenTracingTracer datadogTracer, global::OpenTracing.IScopeManager scopeManager)
-            : this(datadogTracer, scopeManager, datadogTracer.DefaultServiceName)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.OpenTracingTracer_Ctor_DatadogTracer_ScopeManager);
-        }
 
         internal OpenTracingTracer(
             IDatadogOpenTracingTracer datadogTracer,
