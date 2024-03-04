@@ -124,13 +124,15 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="operationName">The integration we're testing</param>
         /// <param name="minDateTime">Minimum time to check for spans from</param>
         /// <param name="returnAllOperations">When true, returns every span regardless of operation name</param>
+        /// <param name="assertExpectedCount">When true, asserts that the number of spans to return matches the count</param>
         /// <returns>The list of spans.</returns>
         public IImmutableList<MockSpan> WaitForSpans(
             int count,
             int timeoutInMilliseconds = 20000,
             string operationName = null,
             DateTimeOffset? minDateTime = null,
-            bool returnAllOperations = false)
+            bool returnAllOperations = false,
+            bool assertExpectedCount = true)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
             var minimumOffset = (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds();
@@ -171,7 +173,10 @@ namespace Datadog.Trace.TestHelpers
                 Thread.Sleep(500);
             }
 
-            relevantSpans.Should().HaveCountGreaterThanOrEqualTo(count, "because we want to ensure that we don't timeout while waiting for spans from the mock tracer agent");
+            if (assertExpectedCount)
+            {
+                relevantSpans.Should().HaveCountGreaterThanOrEqualTo(count, "because we want to ensure that we don't timeout while waiting for spans from the mock tracer agent");
+            }
 
             foreach (var headers in TraceRequestHeaders)
             {

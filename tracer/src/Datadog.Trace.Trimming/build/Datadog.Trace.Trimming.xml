@@ -325,6 +325,7 @@
       <type fullname="System.Buffers.Binary.BinaryPrimitives" />
       <type fullname="System.Buffers.StandardFormat" />
       <type fullname="System.Buffers.Text.Utf8Formatter" />
+      <type fullname="System.Buffers.Text.Utf8Parser" />
       <type fullname="System.MemoryExtensions" />
       <type fullname="System.Runtime.InteropServices.MemoryMarshal" />
    </assembly>
@@ -448,7 +449,6 @@
       <type fullname="System.Action`3" />
       <type fullname="System.Action`4" />
       <type fullname="System.Action`5" />
-      <type fullname="System.Action`6" />
       <type fullname="System.Activator" />
       <type fullname="System.AggregateException" />
       <type fullname="System.AppContext" />
@@ -470,7 +470,6 @@
       <type fullname="System.BitConverter" />
       <type fullname="System.Boolean" />
       <type fullname="System.Buffer" />
-      <type fullname="System.Buffers.ArrayPool`1" />
       <type fullname="System.Buffers.SpanAction`2" />
       <type fullname="System.Byte" />
       <type fullname="System.Char" />
@@ -508,7 +507,6 @@
       <type fullname="System.ComponentModel.EditorBrowsableState" />
       <type fullname="System.Configuration.Assemblies.AssemblyHashAlgorithm" />
       <type fullname="System.Convert" />
-      <type fullname="System.Converter`2" />
       <type fullname="System.DateOnly" />
       <type fullname="System.DateTime" />
       <type fullname="System.DateTimeKind" />
@@ -517,7 +515,6 @@
       <type fullname="System.Decimal" />
       <type fullname="System.Delegate" />
       <type fullname="System.Diagnostics.CodeAnalysis.AllowNullAttribute" />
-      <type fullname="System.Diagnostics.CodeAnalysis.DisallowNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.DoesNotReturnAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.DoesNotReturnIfAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute" />
@@ -528,7 +525,6 @@
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullWhenAttribute" />
-      <type fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute" />
       <type fullname="System.Diagnostics.ConditionalAttribute" />
       <type fullname="System.Diagnostics.DebuggableAttribute" />
       <type fullname="System.Diagnostics.DebuggableAttribute/DebuggingModes" />
@@ -560,13 +556,10 @@
       <type fullname="System.Func`5" />
       <type fullname="System.Func`6" />
       <type fullname="System.GC" />
-      <type fullname="System.Globalization.CharUnicodeInfo" />
       <type fullname="System.Globalization.CultureInfo" />
       <type fullname="System.Globalization.DateTimeStyles" />
       <type fullname="System.Globalization.NumberFormatInfo" />
       <type fullname="System.Globalization.NumberStyles" />
-      <type fullname="System.Globalization.TextInfo" />
-      <type fullname="System.Globalization.UnicodeCategory" />
       <type fullname="System.Guid" />
       <type fullname="System.HashCode" />
       <type fullname="System.IAsyncDisposable" />
@@ -642,7 +635,6 @@
       <type fullname="System.PlatformNotSupportedException" />
       <type fullname="System.Predicate`1" />
       <type fullname="System.Random" />
-      <type fullname="System.ReadOnlyMemory`1" />
       <type fullname="System.ReadOnlySpan`1" />
       <type fullname="System.Reflection.AmbiguousMatchException" />
       <type fullname="System.Reflection.Assembly" />
@@ -737,7 +729,6 @@
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter`1" />
       <type fullname="System.Runtime.CompilerServices.TupleElementNamesAttribute" />
-      <type fullname="System.Runtime.CompilerServices.TypeForwardedFromAttribute" />
       <type fullname="System.Runtime.CompilerServices.YieldAwaitable" />
       <type fullname="System.Runtime.CompilerServices.YieldAwaitable/YieldAwaiter" />
       <type fullname="System.Runtime.ConstrainedExecution.CriticalFinalizerObject" />
@@ -782,7 +773,6 @@
       <type fullname="System.Text.Encoding" />
       <type fullname="System.Text.StringBuilder" />
       <type fullname="System.Text.StringBuilder/AppendInterpolatedStringHandler" />
-      <type fullname="System.Text.StringBuilder/ChunkEnumerator" />
       <type fullname="System.Threading.CancellationToken" />
       <type fullname="System.Threading.CancellationTokenRegistration" />
       <type fullname="System.Threading.CancellationTokenSource" />
@@ -827,6 +817,7 @@
       <type fullname="System.UriComponents" />
       <type fullname="System.UriCreationOptions" />
       <type fullname="System.UriFormat" />
+      <type fullname="System.UriHostNameType" />
       <type fullname="System.UriKind" />
       <type fullname="System.ValueTuple`1" />
       <type fullname="System.ValueTuple`2" />
@@ -840,7 +831,6 @@
       <type fullname="System.Version" />
       <type fullname="System.Void" />
       <type fullname="System.WeakReference" />
-      <type fullname="System.WeakReference`1" />
    </assembly>
    <assembly fullname="System.Runtime.CompilerServices.Unsafe">
       <type fullname="System.Runtime.CompilerServices.Unsafe" />
@@ -883,7 +873,6 @@
       <type fullname="System.IO.UnmanagedMemoryAccessor" />
       <type fullname="System.IO.UnmanagedMemoryStream" />
       <type fullname="System.Runtime.InteropServices.CallingConvention" />
-      <type fullname="System.Runtime.InteropServices.CollectionsMarshal" />
       <type fullname="System.Runtime.InteropServices.COMException" />
       <type fullname="System.Runtime.InteropServices.ComInterfaceType" />
       <type fullname="System.Runtime.InteropServices.ComTypes.IStream" />

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.SourceGenerators;
@@ -47,15 +48,16 @@ namespace Datadog.Trace
         internal static ISpanContext? ExtractInternal<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
             var spanContext = SpanContextPropagator.Instance.Extract(carrier, getter);
+
             if (spanContext is not null
              && Tracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm
-             && getter(carrier, DataStreamsPropagationHeaders.TemporaryEdgeTags).FirstOrDefault() is { Length: > 0 } edgeTagString)
+             && getter(carrier, DataStreamsPropagationHeaders.TemporaryBase64PathwayContext).FirstOrDefault() is { Length: > 0 } base64PathwayContext)
             {
-                var base64PathwayContext = getter(carrier, DataStreamsPropagationHeaders.TemporaryBase64PathwayContext).FirstOrDefault();
-                var pathwayContext = TryGetPathwayContext(base64PathwayContext);
-
-                var edgeTags = edgeTagString.Split(',');
-                spanContext.SetCheckpoint(dsm, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0, pathwayContext);
+                // Kafka special: check if there is a pathway context to recover from the message. If so, just set the pathway on the span context so that it'll be picked by child spans.
+                // This allows users who consume in batch to recover the correct pathway by calling this method before producing a new message downstream from this one.
+                // (otherwise, only the pathway of the last consumed message would be used)
+                var currentPathwayContext = TryGetPathwayContext(base64PathwayContext);
+                spanContext.ManuallySetPathwayContextToPairMessages(currentPathwayContext);
             }
 
             return spanContext;

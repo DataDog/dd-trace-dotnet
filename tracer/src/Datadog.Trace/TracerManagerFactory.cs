@@ -266,7 +266,7 @@ namespace Datadog.Trace
 
             if (settings.GlobalSamplingRateInternal != null)
             {
-                var globalRate = (float)settings.GlobalSamplingRateInternal;
+                var globalRate = (float)settings.GlobalSamplingRateInternal.Value;
 
                 if (globalRate < 0f || globalRate > 1f)
                 {
@@ -323,25 +323,20 @@ namespace Datadog.Trace
                 switch (settings.ExporterInternal.MetricsTransport)
                 {
                     case MetricsTransportType.NamedPipe:
-                        Log.Information("Using windows named pipes for metrics transport.");
                         config.PipeName = settings.ExporterInternal.MetricsPipeNameInternal;
+                        Log.Information("Using windows named pipes for metrics transport: {PipeName}.", config.PipeName);
                         break;
 #if NETCOREAPP3_1_OR_GREATER
                     case MetricsTransportType.UDS:
-                        Log.Information("Using unix domain sockets for metrics transport.");
                         config.StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}{settings.ExporterInternal.MetricsUnixDomainSocketPathInternal}";
+                        Log.Information("Using unix domain sockets for metrics transport: {Socket}.", config.StatsdServerName);
                         break;
 #endif
                     case MetricsTransportType.UDP:
                     default:
-                        // If the customer has enabled UDS traces but _not_ UDS metrics, then the AgentUri will have
-                        // the UDS path set for it, and the DnsSafeHost returns "". Ideally, we would expose
-                        // a TracesAgentUri and MetricsAgentUri or something like that instead. This workaround
-                        // is a horrible hack, but I can't bear to touch ExporterSettings until it's had an
-                        // extensive tidy up, so this should do for now
-                        var traceHostname = settings.ExporterInternal.AgentUriInternal.DnsSafeHost;
-                        config.StatsdServerName = string.IsNullOrEmpty(traceHostname) ? "127.0.0.1" : traceHostname;
+                        config.StatsdServerName = settings.ExporterInternal.MetricsHostname;
                         config.StatsdPort = settings.ExporterInternal.DogStatsdPortInternal;
+                        Log.Information<string, int>("Using UDP for metrics transport: {Hostname}:{Port}.", config.StatsdServerName, config.StatsdPort);
                         break;
                 }
 

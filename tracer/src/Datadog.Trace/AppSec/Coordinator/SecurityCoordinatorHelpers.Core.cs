@@ -134,10 +134,14 @@ internal static class SecurityCoordinatorHelpers
         {
             var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
             var keysAndValues = ObjectExtractor.Extract(body);
-            var args = new Dictionary<string, object> { { response ? AddressesConstants.ResponseBody : AddressesConstants.RequestBody, keysAndValues } };
-            var result = securityCoordinator.RunWaf(args);
-            securityCoordinator.CheckAndBlock(result);
-            return keysAndValues;
+
+            if (keysAndValues is not null)
+            {
+                var args = new Dictionary<string, object> { { response ? AddressesConstants.ResponseBody : AddressesConstants.RequestBody, keysAndValues } };
+                var result = securityCoordinator.RunWaf(args);
+                securityCoordinator.CheckAndBlock(result);
+                return keysAndValues;
+            }
         }
 
         return null;

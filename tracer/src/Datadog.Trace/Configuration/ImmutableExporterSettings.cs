@@ -54,6 +54,7 @@ namespace Datadog.Trace.Configuration
             TracesPipeTimeoutMsInternal = settings.TracesPipeTimeoutMsInternal;
 
             MetricsTransport = settings.MetricsTransport;
+            MetricsHostname = settings.MetricsHostname;
             MetricsPipeNameInternal = settings.MetricsPipeNameInternal;
             DogStatsdPortInternal = settings.DogStatsdPortInternal;
 
@@ -142,6 +143,11 @@ namespace Datadog.Trace.Configuration
         /// Gets the transport used to connect to the DogStatsD.
         /// </summary>
         internal Vendors.StatsdClient.Transport.TransportType MetricsTransport { get; }
+
+        /// <summary>
+        /// Gets the agent host to use when <see cref="MetricsTransport"/> is <see cref="Vendors.StatsdClient.Transport.TransportType.UDP"/>
+        /// </summary>
+        internal string MetricsHostname { get; }
 
         internal List<string> ValidationWarnings { get; }
     }

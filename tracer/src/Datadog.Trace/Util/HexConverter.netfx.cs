@@ -10,12 +10,14 @@
 
 #if !NETCOREAPP3_1_OR_GREATER
 
+#nullable enable
+
+using System;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
-// ReSharper disable once CheckNamespace
-namespace System;
+namespace Datadog.Trace.Util;
 
 /// <summary>
 /// This class is a .NET Framework version of .NET Core's internal HexConverter. It provides lower-level API
@@ -165,11 +167,6 @@ internal static class HexConverter
         return (char)value;
     }
 
-    public static bool TryDecodeFromUtf16(string chars, ArraySegment<byte> bytes)
-    {
-        return TryDecodeFromUtf16(chars, bytes, out _);
-    }
-
     public static bool TryDecodeFromUtf16(string chars, ArraySegment<byte> bytes, out int charsProcessed)
     {
         Debug.Assert(chars.Length % 2 == 0, "Un-even number of characters provided");
@@ -283,5 +280,4 @@ internal static class HexConverter
     }
 }
 
-
-#endif // !NETCOREAPP
+#endif // !NETCOREAPP3_1_OR_GREATER

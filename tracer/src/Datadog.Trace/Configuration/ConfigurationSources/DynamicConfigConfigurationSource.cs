@@ -32,6 +32,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
         internal DynamicConfigConfigurationSource(string json, ConfigurationOrigins origin)
             : base(json, origin, j => Deserialize(j))
         {
+            TreatNullDictionaryAsEmpty = false;
         }
 
         private static JToken? Deserialize(string config)

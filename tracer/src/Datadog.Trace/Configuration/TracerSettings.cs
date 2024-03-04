@@ -97,6 +97,10 @@ namespace Datadog.Trace.Configuration
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
             }
 
+            ProfilingEnabledInternal = config
+                .WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)
+                .AsBool(defaultValue: false);
+
             EnvironmentInternal = config
                          .WithKeys(ConfigurationKeys.Environment)
                          .AsString();
@@ -155,7 +159,7 @@ namespace Datadog.Trace.Configuration
             GlobalTagsInternal = config
                         // backwards compatibility for names used in the past
                         .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
-                        .AsDictionary()
+                        .AsDictionary(() => new Dictionary<string, string>())
                        // Filter out tags with empty keys or empty values, and trim whitespace
                        ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                         .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())
@@ -233,6 +237,14 @@ namespace Datadog.Trace.Configuration
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
             GlobalSamplingRateInternal = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble();
+
+            // We need to record a default value for configuration reporting
+            // However, we need to keep GlobalSamplingRateInternal null because it changes the behavior of the tracer in subtle ways
+            // (= we don't run the sampler at all if it's null, so it changes the tagging of the spans, and it's enforced by system tests)
+            if (GlobalSamplingRateInternal is null)
+            {
+                _telemetry.Record(ConfigurationKeys.GlobalSamplingRate, 1.0, ConfigurationOrigins.Default);
+            }
 
             StartupDiagnosticLogEnabledInternal = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
 
@@ -312,8 +324,8 @@ namespace Datadog.Trace.Configuration
                                     .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
                                     .GetAs(
                                          getDefaultValue: () => new DefaultResult<string[]>(
-                                             new[] { ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.Datadog },
-                                             $"{ContextPropagationHeaderStyle.W3CTraceContext},{ContextPropagationHeaderStyle.Datadog}"),
+                                             new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext },
+                                             $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}"),
                                          validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
                                          converter: style => TrimSplitString(style, commaSeparator));
 
@@ -321,8 +333,8 @@ namespace Datadog.Trace.Configuration
                                      .WithKeys(ConfigurationKeys.PropagationStyleExtract, "DD_PROPAGATION_STYLE_EXTRACT", ConfigurationKeys.PropagationStyle)
                                      .GetAs(
                                           getDefaultValue: () => new DefaultResult<string[]>(
-                                              new[] { ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.Datadog },
-                                              $"{ContextPropagationHeaderStyle.W3CTraceContext},{ContextPropagationHeaderStyle.Datadog}"),
+                                              new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext },
+                                              $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}"),
                                           validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
                                           converter: style => TrimSplitString(style, commaSeparator));
 
@@ -481,6 +493,13 @@ namespace Datadog.Trace.Configuration
         internal bool TraceEnabledInternal { get; private set; }
 
         /// <summary>
+        /// Gets a value indicating whether profiling is enabled.
+        /// Default is <c>false</c>.
+        /// </summary>
+        /// <seealso cref="ContinuousProfiler.ConfigurationKeys.ProfilingEnabled"/>
+        internal bool ProfilingEnabledInternal { get; }
+
+        /// <summary>
         /// Gets or sets the names of disabled integrations.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
@@ -528,7 +547,7 @@ namespace Datadog.Trace.Configuration
             get
             {
                 TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_LogsInjectionEnabled_Get);
-                return LogSubmissionSettings.LogsInjectionEnabled ?? false;
+                return LogSubmissionSettings.LogsInjectionEnabled;
             }
 
             set
@@ -728,7 +747,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating a timeout in milliseconds to the execution of the query string obfuscation regex
-        /// Default value is 100ms
+        /// Default value is 200ms
         /// </summary>
         internal double ObfuscationQueryStringRegexTimeout { get; }
 
@@ -1032,7 +1051,7 @@ namespace Datadog.Trace.Configuration
         {
             var configurationDictionary = config
                    .WithKeys(key)
-                   .AsDictionary(allowOptionalMappings: true);
+                   .AsDictionary(allowOptionalMappings: true, () => new Dictionary<string, string>());
 
             if (configurationDictionary == null)
             {

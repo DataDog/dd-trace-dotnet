@@ -443,7 +443,7 @@ namespace Datadog.Trace
                     writer.WritePropertyName("querystring_reporting_enabled");
                     writer.WriteValue(instanceSettings.QueryStringReportingEnabled);
 
-                    writer.WritePropertyName("obfuscation_querystring_regex_timout");
+                    writer.WritePropertyName("obfuscation_querystring_regex_timeout");
                     writer.WriteValue(instanceSettings.ObfuscationQueryStringRegexTimeout);
 
                     writer.WritePropertyName("obfuscation_querystring_size");

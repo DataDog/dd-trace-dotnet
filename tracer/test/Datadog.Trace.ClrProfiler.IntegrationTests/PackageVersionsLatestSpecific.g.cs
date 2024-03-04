@@ -118,6 +118,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET7_0
                 new object[] { "1.10.0" },
 #endif
+#if NET8_0
+                new object[] { "1.10.0" },
+#endif
 #endif
             };
 

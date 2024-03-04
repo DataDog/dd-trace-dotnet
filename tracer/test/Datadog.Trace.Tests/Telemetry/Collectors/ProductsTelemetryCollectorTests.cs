@@ -94,6 +94,60 @@ public class ProductsTelemetryCollectorTests
         data.Appsec.Error.Value.Message.Should().Be(errorMessage);
     }
 
+    [Fact]
+    public void GetFullData_AlwaysIncludesLatestData()
+    {
+        // This behaviour isn't _necessary_ but it documents the current existing behaviour
+        var collector = new ProductsTelemetryCollector();
+
+        // initial state, no data
+        var data = collector.GetFullData();
+        data.Should().BeNull();
+
+        collector.ProductChanged(TelemetryProductType.AppSec, enabled: true, error: new ErrorData(TelemetryErrorCode.FailedValidation));
+        data = collector.GetFullData();
+        data.Should().NotBeNull();
+        HasExpectedValues(data!.Appsec, enabled: true, TelemetryErrorCode.FailedValidation);
+        data.Profiler.Should().BeNull();
+        data.DynamicInstrumentation.Should().BeNull();
+
+        // do some "normal" telemetry collections, but ignore it
+        _ = collector.GetData();
+        _ = collector.GetData();
+
+        // make sure we still have all the data we expect
+        data = collector.GetFullData();
+        data.Should().NotBeNull();
+        HasExpectedValues(data!.Appsec, enabled: true, TelemetryErrorCode.FailedValidation);
+        data.Profiler.Should().BeNull();
+        data.DynamicInstrumentation.Should().BeNull();
+
+        // another change, make sure we still have everything
+        collector.ProductChanged(TelemetryProductType.Profiler, enabled: false, error: null);
+        data = collector.GetFullData();
+        data.Should().NotBeNull();
+        HasExpectedValues(data!.Appsec, enabled: true, TelemetryErrorCode.FailedValidation);
+        HasExpectedValues(data!.Profiler, enabled: false);
+        data.Profiler.Should().NotBeNull();
+        data.Profiler.Enabled.Should().BeFalse();
+        data.DynamicInstrumentation.Should().BeNull();
+
+        static void HasExpectedValues(ProductData productData, bool enabled, TelemetryErrorCode? errorCode = null)
+        {
+            productData.Should().NotBeNull();
+            productData.Enabled.Should().Be(enabled);
+            if (errorCode is null)
+            {
+                productData.Error.Should().BeNull();
+            }
+            else
+            {
+                productData.Error.Should().NotBeNull();
+                productData.Error!.Value.Code.Should().Be((int)errorCode);
+            }
+        }
+    }
+
     public class Data
     {
         public static TheoryData<bool?, bool?, bool?> AllEnabledPermutations()

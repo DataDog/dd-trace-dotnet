@@ -9,6 +9,10 @@ internal static class DataStreamsPropagationHeaders
 {
     public const string PropagationKey = "dd-pathway-ctx";
     public const string PropagationKeyBase64 = "dd-pathway-ctx-base64";
-    public const string TemporaryEdgeTags = "x-datadog-temp-edge-tags";
+
+    /// <summary>
+    /// This header is meant to be written and read on the consume side, as a way to communicate between an auto-instrumentation and a manual API call.
+    /// It should never be sent with a message.
+    /// </summary>
     public const string TemporaryBase64PathwayContext = "x-datadog-temp-base64-context";
 }

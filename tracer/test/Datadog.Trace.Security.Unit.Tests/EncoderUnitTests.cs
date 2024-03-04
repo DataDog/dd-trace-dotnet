@@ -9,6 +9,7 @@ using System.Linq;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Security.Unit.Tests.Utils;
+using FluentAssertions;
 using Xunit;
 using Encoder = Datadog.Trace.AppSec.WafEncoding.Encoder;
 
@@ -26,6 +27,47 @@ public class EncoderUnitTests : WafLibraryRequiredTest
     internal EncoderUnitTests(IEncoder encoder)
     {
         _encoder = encoder;
+    }
+
+    [SkippableFact]
+    public void TestObject()
+    {
+        var arrayListStrings = new[] { "test", "test2", "test3" };
+        var listStrings = new List<string> { "dog1", "dog2", "dog3" };
+        var listDecimals = new List<decimal> { 1.1M, 2.2M, 3.4M };
+        var listUlongs = new List<ulong> { 9_223_372_036_854, 9_223_372_036_852 };
+        var listFloats = new List<float> { 1.1F, 2.2F, 3.4F };
+        var dictionaryStrings = new Dictionary<string, string> { { "key1", "dog1" }, { "key2", "dog2" } };
+        var target = new Dictionary<string, object>
+        {
+            { "ArrayList", new ArrayList(arrayListStrings) },
+            { "ListStrings", listStrings },
+            { "ListDecimals", listDecimals },
+            { "ListUlongs", listUlongs },
+            { "ListFloats", listFloats },
+            { "Dictionary", dictionaryStrings },
+        };
+        using var intermediate = _encoder.Encode(
+            target,
+            applySafetyLimits: true);
+        var result = intermediate.ResultDdwafObject.Decode();
+        result.Should().NotBeNull();
+        result.Should().BeOfType<Dictionary<string, object>>();
+        var resultDic = (Dictionary<string, object>)result;
+        resultDic.Should().NotBeNull().And.HaveCount(6);
+        resultDic.Should().ContainKeys("ArrayList", "ListStrings", "ListDecimals", "ListUlongs", "ListFloats", "Dictionary");
+        resultDic!["ArrayList"].Should().BeOfType<List<object>>();
+        resultDic["ArrayList"].Should().BeEquivalentTo(arrayListStrings);
+        resultDic["ListStrings"].Should().BeOfType<List<object>>();
+        resultDic["ListStrings"].Should().BeEquivalentTo(listStrings);
+        resultDic["ListDecimals"].Should().BeOfType<List<object>>();
+        resultDic["ListDecimals"].Should().BeEquivalentTo(listDecimals);
+        resultDic["ListUlongs"].Should().BeOfType<List<object>>();
+        resultDic["ListUlongs"].Should().BeEquivalentTo(listUlongs);
+        resultDic["ListFloats"].Should().BeOfType<List<object>>();
+        resultDic["ListFloats"].Should().BeEquivalentTo(listFloats);
+        resultDic["Dictionary"].Should().BeOfType<Dictionary<string, object>>();
+        resultDic["Dictionary"].Should().BeEquivalentTo(dictionaryStrings);
     }
 
     [SkippableTheory]
@@ -142,7 +184,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         var root = new List<object>();
         var list = root;
 
-        for (int i = 0; i < nestingDepth; i++)
+        for (var i = 0; i < nestingDepth; i++)
         {
             var nextList = new List<object>();
             list.Add(nextList);
