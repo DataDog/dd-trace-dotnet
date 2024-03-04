@@ -8,6 +8,10 @@
 class IConfiguration;
 class IProfilerTelemetry;
 
+
+// TODO: try to find a way to enable SetLifetimeDuration only for tests (works for Windows but not for Linux)
+#define DD_TEST
+
 class SsiManager : public ISsiManager
 {
 public:

@@ -55,7 +55,6 @@ FILE(GLOB PROFILER_NATIVE_TEST_SRC CONFIGURE_DEPENDS "*.cpp")
 add_executable(${TEST_EXECUTABLE_NAME}
     ${PROFILER_NATIVE_TEST_SRC}
     ../../src/ProfilerEngine/Datadog.Profiler.Native.Linux/OsSpecificApi.cpp
-    ../../src/ProfilerEngine/Datadog.Profiler.Native/SsiManager.cpp
 )
 
 # Define directories includes
