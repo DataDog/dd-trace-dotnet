@@ -119,12 +119,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void CleanUri_HttpUrlTag(string uri, string expected, bool includeQuerystring)
         {
             // Set up Tracer
-            var dictionary = new Dictionary<string, object> { { ConfigurationKeys.QueryStringReportingEnabled, includeQuerystring } };
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            var dictionary = new Dictionary<string, object>
             {
-                dictionary.Add(ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "5000");
-            }
+                { ConfigurationKeys.QueryStringReportingEnabled, includeQuerystring },
+                { ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "5000" }
+            };
 
 #if NETCOREAPP2_1
             // Add old one otherwise NullReferenceException on arm64/netcoreapp2.1
