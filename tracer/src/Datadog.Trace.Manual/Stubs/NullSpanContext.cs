@@ -9,6 +9,10 @@ internal class NullSpanContext : ISpanContext
 {
     public static readonly NullSpanContext Instance = new();
 
+    private NullSpanContext()
+    {
+    }
+
     public ulong TraceId => 0;
 
     public ulong SpanId => 0;

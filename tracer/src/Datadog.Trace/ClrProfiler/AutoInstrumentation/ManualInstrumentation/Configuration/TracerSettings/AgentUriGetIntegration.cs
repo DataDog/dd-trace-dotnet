@@ -30,6 +30,8 @@ public class AgentUriGetIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
     {
+        // Ok, this public API is a _bit_ weird now, because it's not what we're actually
+        // instrumenting, but for now this is the easiest, and avoids "duplicate" telemetry
         TelemetryFactory.Metrics.Record(PublicApiUsage.ExporterSettings_AgentUri_Get);
         return CallTargetState.GetDefault();
     }

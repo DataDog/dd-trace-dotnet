@@ -11,9 +11,9 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
 
 /// <summary>
-/// Reverse duck type for Datadog.Trace.Ci.TestParameters in Datadog.Trace.Manual
+/// Duck type for Datadog.Trace.Ci.TestParameters in Datadog.Trace.Manual
 /// </summary>
-internal interface ITestParameters
+internal interface ITestParameters : IDuckType
 {
     public Dictionary<string, object>? Metadata { get; }
 

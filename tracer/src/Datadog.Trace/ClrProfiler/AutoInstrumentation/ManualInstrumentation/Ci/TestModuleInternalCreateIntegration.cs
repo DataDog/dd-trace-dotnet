@@ -9,6 +9,7 @@ using System.ComponentModel;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -39,13 +40,7 @@ public class TestModuleInternalCreateIntegration
 
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, in CallTargetState state)
     {
-        // reverse ducktype the TestModule as an ITestModule
-        if (state.State is TestModule testModule)
-        {
-            var proxy = (TReturn)TestObjectsHelper<TReturn>.CreateTestModule(testModule);
-            return new CallTargetReturn<TReturn>(proxy);
-        }
-
-        return new CallTargetReturn<TReturn>(returnValue);
+        // Duck cast TestModule as an ITestModule
+        return new CallTargetReturn<TReturn>(state.State.DuckCast<TReturn>());
     }
 }

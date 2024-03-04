@@ -1,20 +1,17 @@
-﻿// <copyright file="TracerSettingsPopulateDictionaryIntegration.cs" company="Datadog">
+﻿// <copyright file="PopulateDictionaryIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
 
 /// <summary>
 /// System.Boolean Datadog.Trace.Configuration.TracerSettings::PopulateDictionary() calltarget instrumentation
@@ -30,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Co
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class TracerSettingsPopulateDictionaryIntegration
+public class PopulateDictionaryIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(Dictionary<string, object?> values, bool useDefaultSources)
     {
@@ -60,7 +57,7 @@ public class TracerSettingsPopulateDictionaryIntegration
         values[TracerSettingKeyConstants.HeaderTags] = settings.HeaderTagsInternal;
         values[TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey] = settings.KafkaCreateConsumerScopeEnabledInternal;
 #pragma warning disable DD0002 // This API is only for public usage and should not be called internally (there's no internal version currently)
-        values[TracerSettingKeyConstants.LogsInjectionEnabledKey] = settings.LogSubmissionSettings.LogsInjectionEnabled ?? false;
+        values[TracerSettingKeyConstants.LogsInjectionEnabledKey] = settings.LogSubmissionSettings.LogsInjectionEnabled;
 #pragma warning restore DD0002
         values[TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey] = settings.MaxTracesSubmittedPerSecondInternal;
         values[TracerSettingKeyConstants.ServiceNameKey] = settings.ServiceNameInternal;
@@ -84,7 +81,7 @@ public class TracerSettingsPopulateDictionaryIntegration
         var results = new Dictionary<string, object?[]>(settings.Settings.Length, StringComparer.OrdinalIgnoreCase);
         foreach (var setting in settings.Settings)
         {
-            results[setting.IntegrationNameInternal] = [setting.EnabledInternal, setting.AnalyticsEnabledInternal, setting.AnalyticsSampleRateInternal];
+            results[setting.IntegrationNameInternal] = IntegrationSettingsSerializationHelper.SerializeFromAutomatic(setting.EnabledInternal, setting.AnalyticsEnabledInternal, setting.AnalyticsSampleRateInternal);
         }
 
         return results;

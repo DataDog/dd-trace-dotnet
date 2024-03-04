@@ -35,22 +35,19 @@ public class SpanExtensionsSetTraceSamplingPriorityIntegration
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetTraceSamplingPriority);
 
-        if (span is IDuckType { Instance: ManualSpan { AutomaticSpan: { } duckTyped } })
+        // Annoyingly, this takes an ISpan, so we have to do some duckTyping to make it work
+        // it's most likely to be a duck-typed Span, so try that first
+        if (span is IDuckType { Instance: Span s })
         {
-            // this is the "typical" scenario
-            duckTyped.SetTraceSamplingPriorityInternal(samplingPriority);
+            s.SetTraceSamplingPriorityInternal(samplingPriority);
         }
         else if (span is Span autoSpan)
         {
-            // Not likely, but technically possible for this to happen
             autoSpan.SetTraceSamplingPriorityInternal(samplingPriority);
         }
-        else
-        {
-            // If this isn't an automatic span, then this almost certainly won't work,
-            // because SetTraceSamplingPriorityInternal tries to extract the "real" SpanContext from it
-        }
 
+        // If this isn't an automatic span, or the span is null, then this almost certainly won't work,
+        // because SetTraceSamplingPriorityInternal tries to extract the "real" SpanContext from it
         return CallTargetState.GetDefault();
     }
 }
