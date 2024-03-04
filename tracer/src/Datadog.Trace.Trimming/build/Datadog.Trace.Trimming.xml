@@ -12,6 +12,7 @@
    <assembly fullname="Couchbase.NetClient" />
    <assembly fullname="Datadog.Trace" />
    <assembly fullname="Datadog.Trace.Manual" />
+   <assembly fullname="Datadog.Trace.OpenTracing" />
    <assembly fullname="Elasticsearch.Net" />
    <assembly fullname="GraphQL" />
    <assembly fullname="GraphQL.SystemReactive" />
