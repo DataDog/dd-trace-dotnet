@@ -221,6 +221,7 @@ internal static class MetricTags
         [Description("integration_name:stacktraceleak")] StackTraceLeak,
         [Description("integration_name:xpathinjection")] XpathInjection,
         [Description("integration_name:reflectioninjection")] ReflectionInjection,
+        [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
     }
 
     public enum InstrumentationError
