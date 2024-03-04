@@ -81,5 +81,6 @@ namespace Datadog.Trace.Configuration
         Selenium,
         DirectoryListingLeak,
         SessionTimeout,
+        DatadogTraceManual,
     }
 }
