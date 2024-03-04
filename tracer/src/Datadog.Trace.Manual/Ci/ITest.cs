@@ -70,27 +70,6 @@ public interface ITest
     void SetTraits(Dictionary<string, List<string>> traits);
 
     /// <summary>
-    /// Set Test parameters
-    /// </summary>
-    /// <param name="parameters">TestParameters instance</param>
-    void SetParameters(TestParameters parameters);
-
-    /// <summary>
-    /// Set benchmark metadata
-    /// </summary>
-    /// <param name="hostInfo">Host info</param>
-    /// <param name="jobInfo">Job info</param>
-    void SetBenchmarkMetadata(BenchmarkHostInfo hostInfo, BenchmarkJobInfo jobInfo);
-
-    /// <summary>
-    /// Add benchmark data
-    /// </summary>
-    /// <param name="measureType">Measure type</param>
-    /// <param name="info">Measure info</param>
-    /// <param name="statistics">Statistics values</param>
-    void AddBenchmarkData(BenchmarkMeasureType measureType, string info, BenchmarkDiscreteStats statistics);
-
-    /// <summary>
     /// Close test
     /// </summary>
     /// <param name="status">Test status</param>

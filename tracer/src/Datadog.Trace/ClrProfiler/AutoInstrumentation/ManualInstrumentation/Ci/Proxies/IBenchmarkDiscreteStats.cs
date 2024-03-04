@@ -5,34 +5,48 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
 
 /// <summary>
-/// Reverse duck type for Datadog.Trace.Ci.BenchmarkDiscreteStats in Datadog.Trace.Manual
+/// Duck type for Datadog.Trace.Ci.BenchmarkDiscreteStats in Datadog.Trace.Manual
 /// </summary>
 internal interface IBenchmarkDiscreteStats
 {
+    [DuckField]
     int N { get; }
 
+    [DuckField]
     double Max { get; }
 
+    [DuckField]
     double Min { get; }
 
+    [DuckField]
     double Mean { get; }
 
+    [DuckField]
     double Median { get; }
 
+    [DuckField]
     double StandardDeviation { get; }
 
+    [DuckField]
     double StandardError { get; }
 
+    [DuckField]
     double Kurtosis { get; }
 
+    [DuckField]
     double Skewness { get; }
 
+    [DuckField]
     double P99 { get; }
 
+    [DuckField]
     double P95 { get; }
 
+    [DuckField]
     double P90 { get; }
 }

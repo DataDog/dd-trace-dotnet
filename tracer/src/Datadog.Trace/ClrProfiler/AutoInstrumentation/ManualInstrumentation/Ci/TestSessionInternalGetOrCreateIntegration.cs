@@ -9,6 +9,7 @@ using System.ComponentModel;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -48,13 +49,7 @@ public class TestSessionInternalGetOrCreateIntegration
     /// <returns>A return value, in an async scenario will be T of Task of T</returns>
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, in CallTargetState state)
     {
-        // reverse ducktype the TestSession as an ITestSession
-        if (state.State is TestSession testSession)
-        {
-            var proxy = (TReturn)TestObjectsHelper<TReturn>.CreateTestSession(testSession);
-            return new CallTargetReturn<TReturn>(proxy);
-        }
-
-        return new CallTargetReturn<TReturn>(returnValue);
+        // Duck cast TestSession as an ITestSession
+        return new CallTargetReturn<TReturn>(state.State.DuckCast<TReturn>());
     }
 }

@@ -14,43 +14,41 @@ namespace Datadog.Trace.AppSec
 }
 namespace Datadog.Trace.Ci
 {
-    public class BenchmarkDiscreteStats
+    public readonly struct BenchmarkDiscreteStats
     {
+        public readonly double Kurtosis;
+        public readonly double Max;
+        public readonly double Mean;
+        public readonly double Median;
+        public readonly double Min;
+        public readonly int N;
+        public readonly double P90;
+        public readonly double P95;
+        public readonly double P99;
+        public readonly double Skewness;
+        public readonly double StandardDeviation;
+        public readonly double StandardError;
         public BenchmarkDiscreteStats(int n, double max, double min, double mean, double median, double standardDeviation, double standardError, double kurtosis, double skewness, double p99, double p95, double p90) { }
-        public double Kurtosis { get; }
-        public double Max { get; }
-        public double Mean { get; }
-        public double Median { get; }
-        public double Min { get; }
-        public int N { get; }
-        public double P90 { get; }
-        public double P95 { get; }
-        public double P99 { get; }
-        public double Skewness { get; }
-        public double StandardDeviation { get; }
-        public double StandardError { get; }
         public static Datadog.Trace.Ci.BenchmarkDiscreteStats GetFrom(double[] values) { }
     }
-    public class BenchmarkHostInfo
+    public struct BenchmarkHostInfo
     {
-        public BenchmarkHostInfo() { }
-        public double? ChronometerFrequencyHertz { get; set; }
-        public double? ChronometerResolution { get; set; }
-        public int? LogicalCoreCount { get; set; }
-        public string? OsVersion { get; set; }
-        public int? PhysicalCoreCount { get; set; }
-        public int? ProcessorCount { get; set; }
-        public double? ProcessorMaxFrequencyHertz { get; set; }
-        public string? ProcessorName { get; set; }
-        public string? RuntimeVersion { get; set; }
+        public double? ChronometerFrequencyHertz;
+        public double? ChronometerResolution;
+        public int? LogicalCoreCount;
+        public string? OsVersion;
+        public int? PhysicalCoreCount;
+        public int? ProcessorCount;
+        public double? ProcessorMaxFrequencyHertz;
+        public string? ProcessorName;
+        public string? RuntimeVersion;
     }
-    public class BenchmarkJobInfo
+    public struct BenchmarkJobInfo
     {
-        public BenchmarkJobInfo() { }
-        public string? Description { get; set; }
-        public string? Platform { get; set; }
-        public string? RuntimeMoniker { get; set; }
-        public string? RuntimeName { get; set; }
+        public string? Description;
+        public string? Platform;
+        public string? RuntimeMoniker;
+        public string? RuntimeName;
     }
     public enum BenchmarkMeasureType
     {
@@ -69,14 +67,11 @@ namespace Datadog.Trace.Ci
         string? Name { get; }
         System.DateTimeOffset StartTime { get; }
         Datadog.Trace.Ci.ITestSuite Suite { get; }
-        void AddBenchmarkData(Datadog.Trace.Ci.BenchmarkMeasureType measureType, string info, Datadog.Trace.Ci.BenchmarkDiscreteStats statistics);
         void Close(Datadog.Trace.Ci.TestStatus status);
         void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration);
         void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration, string? skipReason);
-        void SetBenchmarkMetadata(Datadog.Trace.Ci.BenchmarkHostInfo hostInfo, Datadog.Trace.Ci.BenchmarkJobInfo jobInfo);
         void SetErrorInfo(System.Exception exception);
         void SetErrorInfo(string type, string message, string? callStack);
-        void SetParameters(Datadog.Trace.Ci.TestParameters parameters);
         void SetTag(string key, double? value);
         void SetTag(string key, string? value);
         void SetTestMethodInfo(System.Reflection.MethodInfo methodInfo);
@@ -129,6 +124,12 @@ namespace Datadog.Trace.Ci
         void SetErrorInfo(string type, string message, string? callStack);
         void SetTag(string key, double? value);
         void SetTag(string key, string? value);
+    }
+    public static class TestExtensions
+    {
+        public static void AddBenchmarkData(this Datadog.Trace.Ci.ITest test, Datadog.Trace.Ci.BenchmarkMeasureType measureType, string info, in Datadog.Trace.Ci.BenchmarkDiscreteStats statistics) { }
+        public static void SetBenchmarkMetadata(this Datadog.Trace.Ci.ITest test, in Datadog.Trace.Ci.BenchmarkHostInfo hostInfo, in Datadog.Trace.Ci.BenchmarkJobInfo jobInfo) { }
+        public static void SetParameters(this Datadog.Trace.Ci.ITest test, Datadog.Trace.Ci.TestParameters parameters) { }
     }
     public static class TestModule
     {
