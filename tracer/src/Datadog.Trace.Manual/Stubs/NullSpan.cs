@@ -9,6 +9,10 @@ internal class NullSpan : ISpan
 {
     public static readonly NullSpan Instance = new();
 
+    private NullSpan()
+    {
+    }
+
     public string OperationName
     {
         get => string.Empty;
@@ -43,7 +47,7 @@ internal class NullSpan : ISpan
 
     public ulong SpanId => Context.SpanId;
 
-    public ISpanContext Context { get; } = NullSpanContext.Instance;
+    public ISpanContext Context => NullSpanContext.Instance;
 
     public void Dispose()
     {
