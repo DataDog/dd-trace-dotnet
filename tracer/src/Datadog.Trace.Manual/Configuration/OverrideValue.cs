@@ -9,18 +9,27 @@ namespace Datadog.Trace.Configuration;
 
 internal readonly struct OverrideValue<T>
 {
-    public readonly T Value;
+    public readonly T Initial;
     public readonly bool IsOverridden;
 
-    public OverrideValue(T value)
+    private readonly T _override;
+
+    public OverrideValue(T initial)
     {
-        Value = value;
+        Initial = initial;
+        _override = default!;
+        IsOverridden = false;
+    }
+
+    public OverrideValue(T initial, T @override)
+    {
+        Initial = initial;
+        _override = @override;
         IsOverridden = true;
     }
 
-    public OverrideValue()
-    {
-        Value = default!;
-        IsOverridden = false;
-    }
+    public T Value => IsOverridden ? _override : Initial;
+
+    public OverrideValue<T> Override(T value)
+        => new(Initial, value);
 }
