@@ -1237,7 +1237,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     TraceId: Id_53,
     SpanId: Id_54,
     Name: internal,
-    Resource: SendVerySlowRequest,
+    Resource: SendVerySlowRequestAsync,
     Service: Samples.GrpcLegacy,
     Type: custom,
     Tags: {
@@ -1300,99 +1300,6 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     Service: Samples.GrpcLegacy,
     Type: grpc,
     ParentId: Id_55,
-    Error: 1,
-    Tags: {
-      clientmeta: other-client-value,
-      component: Grpc,
-      env: integration_tests,
-      error.msg: Deadline Exceeded,
-      grpc.method.kind: unary,
-      grpc.method.name: VerySlow,
-      grpc.method.package: greet.tester,
-      grpc.method.path: /greet.tester.Greeter/VerySlow,
-      grpc.method.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      grpc.status.code: 4,
-      language: dotnet,
-      runtime-id: Guid_2,
-      servermeta: other-server-value,
-      span.kind: server
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_57,
-    SpanId: Id_58,
-    Name: internal,
-    Resource: SendVerySlowRequestAsync,
-    Service: Samples.GrpcLegacy,
-    Type: custom,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      otel.library.name: Samples.Grpc,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_16,
-      runtime-id: Guid_2,
-      span.kind: internal
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_57,
-    SpanId: Id_59,
-    Name: grpc.request,
-    Resource: /greet.tester.Greeter/VerySlow,
-    Service: Samples.GrpcLegacy-grpc-client,
-    Type: grpc,
-    ParentId: Id_58,
-    Error: 1,
-    Tags: {
-      clientmeta: other-client-value,
-      component: Grpc,
-      env: integration_tests,
-      error.msg: Deadline Exceeded,
-      error.type: Grpc.Core.Internal.CoreErrorDetailException,
-      grpc.method.kind: unary,
-      grpc.method.name: VerySlow,
-      grpc.method.package: greet.tester,
-      grpc.method.path: /greet.tester.Greeter/VerySlow,
-      grpc.method.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.status.code: 4,
-      out.host: 127.0.0.1,
-      peer.hostname: 127.0.0.1,
-      runtime-id: Guid_2,
-      span.kind: client
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_57,
-    SpanId: Id_60,
-    Name: grpc.request,
-    Resource: /greet.tester.Greeter/VerySlow,
-    Service: Samples.GrpcLegacy,
-    Type: grpc,
-    ParentId: Id_59,
     Error: 1,
     Tags: {
       clientmeta: other-client-value,

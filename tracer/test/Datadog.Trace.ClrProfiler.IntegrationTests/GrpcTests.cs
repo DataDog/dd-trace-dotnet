@@ -248,7 +248,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                     + 1 // 1 server streaming
                                     + 1 // 1 client streaming
                                     + 1 // 1 both streaming
-                                    + 2 // Deadline exceeded (sync + async)
+                                    + 1 // Deadline exceeded (async)
                                     + (4 * 2); // 4 Error types (sync + async)
 
             // Get between 3 and 5 spans per request:
