@@ -3877,12 +3877,20 @@ stages:
         artifact: linux-monitoring-home-linux-x64
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download Datadog.Trace.Manual
+      inputs:
+        artifact: build-windows-working-directory
+        itemPattern: tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll
+        path: $(Agent.TempDirectory)
+
     - script: |
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp $(Agent.TempDirectory)/tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll tracer/bin/netcoreapp3.1/
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
-        mkdir -p tracer/bin/netcoreapp3.1
-        cp tracer/tracer-home-linux/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
+        test ! -s "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll" && echo "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll does not exist" && exit 1
         mkdir -p $(CrankDir)/results/logs
         cd $(CrankDir)
         chmod +x ./run.sh
@@ -3922,12 +3930,20 @@ stages:
         artifact: windows-tracer-home
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-win
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download Datadog.Trace.Manual
+      inputs:
+        artifact: build-windows-working-directory
+        itemPattern: tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll
+        path: $(Agent.TempDirectory)
+
     - script: |
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp $(Agent.TempDirectory)/tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll tracer/bin/netcoreapp3.1/
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
-        mkdir -p tracer/bin/netcoreapp3.1
-        cp tracer/tracer-home-win/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll
+        test ! -s "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll" && echo "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll does not exist" && exit 1
         mkdir -p $(CrankDir)/results/logs
         cd $(CrankDir)
         chmod +x ./run.sh
@@ -3966,12 +3982,20 @@ stages:
         artifact: linux-monitoring-home-linux-arm64
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux-arm64
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download Datadog.Trace.Manual
+      inputs:
+        artifact: build-windows-working-directory
+        itemPattern: tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll
+        path: $(Agent.TempDirectory)
+
     - script: |
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp $(Agent.TempDirectory)/tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll tracer/bin/netcoreapp3.1/
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so does not exist" && exit 1
-        mkdir -p tracer/bin/netcoreapp3.1
-        cp tracer/tracer-home-linux-arm64/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll
+        test ! -s "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll" && echo "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll does not exist" && exit 1
         mkdir -p $(CrankDir)/results
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
