@@ -28,7 +28,6 @@
       "tracer\\test\\Datadog.Trace.Debugger.IntegrationTests\\Datadog.Trace.Debugger.IntegrationTests.csproj",
       "tracer\\test\\Datadog.Trace.DuckTyping.Tests\\Datadog.Trace.DuckTyping.Tests.csproj",
       "tracer\\test\\Datadog.Trace.IntegrationTests\\Datadog.Trace.IntegrationTests.csproj",
-      "tracer\\test\\Datadog.Trace.OpenTracing.IntegrationTests\\Datadog.Trace.OpenTracing.IntegrationTests.csproj",
       "tracer\\test\\Datadog.Trace.OpenTracing.Tests\\Datadog.Trace.OpenTracing.Tests.csproj",
       "tracer\\test\\Datadog.Trace.Security.IntegrationTests\\Datadog.Trace.Security.IntegrationTests.csproj",
       "tracer\\test\\Datadog.Trace.Security.Unit.Tests\\Datadog.Trace.Security.Unit.Tests.csproj",

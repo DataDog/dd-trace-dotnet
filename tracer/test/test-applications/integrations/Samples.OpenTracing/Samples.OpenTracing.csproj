@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.OpenTracing\Datadog.Trace.OpenTracing.csproj" />
+    <PackageReference Include="FluentAssertions" Version="6.4.0" />
+  </ItemGroup>
+</Project>

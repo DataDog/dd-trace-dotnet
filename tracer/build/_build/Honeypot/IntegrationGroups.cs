@@ -113,6 +113,7 @@ namespace Honeypot
 
             // Manual instrumentation
             NugetPackages.Add("Datadog.Trace.Manual", new string[] { });
+            NugetPackages.Add("Datadog.Trace.OpenTracing", new string[] { });
         }
 
         private IntegrationMap()

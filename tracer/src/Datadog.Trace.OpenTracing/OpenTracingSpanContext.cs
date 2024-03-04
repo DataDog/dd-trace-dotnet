@@ -3,17 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.OpenTracing
 {
     internal class OpenTracingSpanContext : global::OpenTracing.ISpanContext
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<OpenTracingSpanContext>();
-
         public OpenTracingSpanContext(ISpanContext context)
         {
             Context = context;
