@@ -77,5 +77,6 @@ namespace Datadog.Trace.Configuration
         ReflectionInjection,
         Xss,
         NHibernate,
+        DatadogTraceManual,
     }
 }
