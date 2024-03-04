@@ -80,8 +80,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.NHibernate => MetricTags.IntegrationName.NHibernate,
             IntegrationId.DotnetTest => MetricTags.IntegrationName.DotnetTest,
             IntegrationId.Selenium => MetricTags.IntegrationName.Selenium,
-            IntegrationId.DirectoryListingLeak => MetricTags.IntegrationName.DirectoryListingLeak,
-            IntegrationId.SessionTimeout => MetricTags.IntegrationName.SessionTimeout,
+            IntegrationId.DatadogTraceManual => MetricTags.IntegrationName.DatadogTraceManual,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }
