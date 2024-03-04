@@ -12,6 +12,7 @@
    <assembly fullname="Couchbase.NetClient" />
    <assembly fullname="coverlet.core" />
    <assembly fullname="Datadog.Trace" />
+   <assembly fullname="Datadog.Trace.Manual" />
    <assembly fullname="dotnet" />
    <assembly fullname="Elasticsearch.Net" />
    <assembly fullname="Google.Protobuf" />
