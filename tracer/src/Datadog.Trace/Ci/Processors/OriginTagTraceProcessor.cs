@@ -17,7 +17,7 @@ namespace Datadog.Trace.Ci.Processors
 
         private readonly bool _isPartialFlushEnabled = false;
         private readonly bool _isCiVisibilityProtocol = false;
-        private DateTimeOffset _warningLastTime = TraceClock.Instance.UtcNow;
+        private DateTimeOffset _warningLastTime = DateTimeOffset.MinValue;
         private int _count = 0;
 
         public OriginTagTraceProcessor(bool isPartialFlushEnabled, bool isCiVisibilityProtocol)
