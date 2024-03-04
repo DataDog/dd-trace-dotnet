@@ -18,7 +18,11 @@ namespace Datadog.Trace.OpenTracing
     }
     public static class OpenTracingTracerFactory
     {
+        [System.Obsolete("OpenTracing support has been deprecated and will be removed in a future release. " +
+            "We recommend using OpenTelemetry instead.")]
         public static OpenTracing.ITracer CreateTracer(System.Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false) { }
+        [System.Obsolete("OpenTracing support has been deprecated and will be removed in a future release. " +
+            "We recommend using OpenTelemetry instead.")]
         public static OpenTracing.ITracer WrapTracer(Datadog.Trace.Tracer tracer) { }
     }
 }
