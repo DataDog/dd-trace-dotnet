@@ -5,7 +5,7 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.Json.Newtonsoft.Json;
 
 public class ParseTests : InstrumentationTestsBase
 {
-    private readonly string _taintedJson = """{ key: value }""";
+    private readonly string _taintedJson = """{ "key": "value" }""";
     private readonly string _taintedJsonObjectWithArray = """{"key": ["value1", "value2", {"key2": "value"}]}""";
     private readonly string _taintedJsonArray = """["value1", "value2"]""";
     private readonly string _taintedJsonDifferentTypes = """{ "name": "Chris", "age": 23, "address": { "city": "New York", "country": "America" }, "friends": [ { "name": "Emily", "hobbies": [ "biking", "music", "gaming" ] }, { "name": "John", "hobbies": [ "soccer", "gaming" ] }, [ "aString", { "obj": "val" } ] ] }""";
