@@ -12,11 +12,13 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [UsesVerify]
     public class MsTestV2Tests : TestHelper
     {
         private const string TestSuiteName = "Samples.MSTestTests.TestSuite";
@@ -55,6 +57,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // Check the span count
                         Assert.Equal(expectedSpanCount, spans.Count);
+
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(packageVersion);
+                        await Verifier.Verify(spans.OrderBy(s => s.Resource), settings);
 
                         foreach (var targetSpan in spans)
                         {
