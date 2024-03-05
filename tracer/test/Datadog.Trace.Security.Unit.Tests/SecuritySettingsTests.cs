@@ -47,23 +47,23 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases), SecurityConstants.BlockedHtmlTemplate, Strings.AllowEmpty)]
+        [MemberData(nameof(StringTestCases))]
         public void BlockedHtmlTemplate(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.HtmlBlockedTemplate, value));
             var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.BlockedHtmlTemplate.Should().Be(expected);
+            settings.BlockedHtmlTemplatePath.Should().Be(expected);
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases), SecurityConstants.BlockedJsonTemplate, Strings.AllowEmpty)]
+        [MemberData(nameof(StringTestCases))]
         public void BlockedJsonTemplate(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.JsonBlockedTemplate, value));
             var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.BlockedJsonTemplate.Should().Be(expected);
+            settings.BlockedJsonTemplatePath.Should().Be(expected);
         }
 
         [Theory]
