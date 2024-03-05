@@ -299,7 +299,7 @@ namespace Datadog.Trace
 
             if (rootSpan != null)
             {
-                rootSpan.MetaStruct.Add("_dd.stack.exploit.type", "testType");
+                rootSpan.MetaStruct.Add("_dd.stack.exploit.type", "lfi");
                 rootSpan.MetaStruct.Add("_dd.stack.exploit.language", "dotnet");
                 rootSpan.MetaStruct.Add("_dd.stack.exploit.id", "dotnet");
             }
