@@ -263,13 +263,18 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
 
-        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent = null)
+        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent = null, string accept = null)
         {
             var values = _httpClient.DefaultRequestHeaders.GetValues("user-agent");
 
             if (!string.IsNullOrEmpty(userAgent) && values.All(c => string.Compare(c, userAgent, StringComparison.Ordinal) != 0))
             {
                 _httpClient.DefaultRequestHeaders.Add("user-agent", userAgent);
+            }
+
+            if (accept != null)
+            {
+                _httpClient.DefaultRequestHeaders.Add("accept", accept);
             }
 
             try
@@ -312,15 +317,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             return spans.ToImmutableList();
         }
 
-        private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null, string userAgent = null)
-        {
-            for (var x = 0; x < numberOfAttacks; x++)
-            {
-                await SubmitRequest(url, body, contentType, userAgent);
-            }
-        }
-
-        private IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
+        protected IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
         {
             agent.SpanFilters.Clear();
 
@@ -336,6 +333,14 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
 
             return spans;
+        }
+
+        private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null, string userAgent = null)
+        {
+            for (var x = 0; x < numberOfAttacks; x++)
+            {
+                await SubmitRequest(url, body, contentType, userAgent);
+            }
         }
 
         private void SortJToken(JToken result)
