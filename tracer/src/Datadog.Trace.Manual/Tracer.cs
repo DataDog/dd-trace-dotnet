@@ -16,8 +16,7 @@ namespace Datadog.Trace
     {
         private static Tracer? _instance;
 
-        [Instrumented]
-        private Tracer(object? automaticTracer, Dictionary<string, object?> initialValues)
+        private Tracer(object? automaticTracer, ITracerSettings initialValues)
         {
             AutomaticTracer = automaticTracer;
             Settings = new ImmutableTracerSettings(initialValues);
@@ -48,7 +47,7 @@ namespace Datadog.Trace
 
                 // need a new tracer instance, because either the automatic tracer has changed
                 // or this is the first time fetching it
-                var instance = new Tracer(automaticTracer, new());
+                var instance = new Tracer(automaticTracer, GetAutomaticSettings(automaticTracer));
                 _instance = instance;
                 return instance;
             }
@@ -107,6 +106,17 @@ namespace Datadog.Trace
         private static void Configure(Dictionary<string, object?> settings)
         {
             _ = settings;
+        }
+
+        /// <summary>
+        /// Automatic instrumentation intercepts this method and returns the current immutable tracer settings
+        /// for the provided tracer instance
+        /// </summary>
+        [Instrumented]
+        private static ITracerSettings GetAutomaticSettings(object? automaticTracer)
+        {
+            _ = automaticTracer;
+            return NullTracerSettings.Instance;
         }
 
         /// <summary>

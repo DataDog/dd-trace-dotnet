@@ -11,7 +11,7 @@ namespace Datadog.Trace.Configuration;
 
 internal sealed class IntegrationSettingsHelper
 {
-    public static IntegrationSettingsCollection ParseFromAutomatic(Dictionary<string, object?> initialValues)
+    public static IntegrationSettingsCollection ParseFromAutomatic(ITracerSettings initialValues)
     {
         var settings = Populate(initialValues, CreateSettingFunc);
         return new IntegrationSettingsCollection(settings);
@@ -20,7 +20,7 @@ internal sealed class IntegrationSettingsHelper
             => new(name, enabled, analyticsEnabled, analyticsSampleRate);
     }
 
-    public static ImmutableIntegrationSettingsCollection ParseImmutableFromAutomatic(Dictionary<string, object?> initialValues)
+    public static ImmutableIntegrationSettingsCollection ParseImmutableFromAutomatic(ITracerSettings initialValues)
     {
         var settings = Populate(initialValues, CreateSettingFunc);
         return new ImmutableIntegrationSettingsCollection(settings);
@@ -30,10 +30,10 @@ internal sealed class IntegrationSettingsHelper
     }
 
     private static Dictionary<string, T> Populate<T>(
-        Dictionary<string, object?> initialValues,
+        ITracerSettings initialValues,
         Func<string, bool?, bool?, double, T> createSettingFunc)
     {
-        if (!initialValues.TryGetValue(TracerSettingKeyConstants.IntegrationSettingsKey, out var raw)
+        if (!initialValues.TryGetObject(TracerSettingKeyConstants.ObjectKeys.IntegrationSettingsKey, out var raw)
          || raw is not Dictionary<string, object?[]> fromAutomatic)
         {
             // happens when we're in manual-only instrumentation so won't have any configuration

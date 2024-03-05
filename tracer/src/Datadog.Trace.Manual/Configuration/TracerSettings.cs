@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.TracerSettingKeyConstants;
 
 namespace Datadog.Trace.Configuration;
 
@@ -45,7 +46,7 @@ public sealed class TracerSettings
     /// </summary>
     [Instrumented]
     public TracerSettings()
-        : this(PopulateDictionary(new(), useDefaultSources: false), isFromDefaultSources: false)
+        : this(GetAutomaticSettings(useDefaultSources: false), isFromDefaultSources: false)
     {
         // TODO: _Currently_ this doesn't load _any_ configuration, so it feels like an error for customers to use it?
         // I'm wondering if we should _always_ populate from the default sources instead, as otherwise seems
@@ -61,34 +62,34 @@ public sealed class TracerSettings
     /// the default sources such as environment variables etc. If <c>false</c>, uses the default values.</param>
     [Instrumented]
     public TracerSettings(bool useDefaultSources)
-        : this(PopulateDictionary(new(), useDefaultSources), useDefaultSources)
+        : this(GetAutomaticSettings(useDefaultSources), useDefaultSources)
     {
     }
 
     // Internal for testing
-    internal TracerSettings(Dictionary<string, object?> initialValues, bool isFromDefaultSources)
+    internal TracerSettings(ITracerSettings initialValues, bool isFromDefaultSources)
     {
         // The values set here represent the defaults when there's no auto-instrumentation
         // We don't care too much if they get out of sync because that's not supported anyway
-        _agentUri = TryGetValue<Uri>(initialValues, TracerSettingKeyConstants.AgentUriKey) ?? new OverrideValue<Uri>(new Uri("http://127.0.0.1:8126"));
-        _analyticsEnabled = GetValue(initialValues, TracerSettingKeyConstants.AnalyticsEnabledKey, false);
-        _customSamplingRules = GetValue<string?>(initialValues, TracerSettingKeyConstants.CustomSamplingRules, null);
-        _disabledIntegrationNames = GetAsHashSet(initialValues, TracerSettingKeyConstants.DisabledIntegrationNamesKey);
-        _diagnosticSourceEnabled = GetValue(initialValues, TracerSettingKeyConstants.DiagnosticSourceEnabledKey, false).Value;
-        _environment = GetValue<string?>(initialValues, TracerSettingKeyConstants.EnvironmentKey, null);
-        _globalSamplingRate = GetValue<double?>(initialValues, TracerSettingKeyConstants.GlobalSamplingRateKey, null);
-        _globalTags = GetAsDictionary(initialValues, TracerSettingKeyConstants.GlobalTagsKey);
-        _grpcTags = GetAsDictionary(initialValues, TracerSettingKeyConstants.GrpcTags);
-        _headerTags = GetAsDictionary(initialValues, TracerSettingKeyConstants.HeaderTags);
-        _kafkaCreateConsumerScopeEnabled = GetValue(initialValues, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, true);
-        _logsInjectionEnabled = GetValue(initialValues, TracerSettingKeyConstants.LogsInjectionEnabledKey, false);
-        _maxTracesSubmittedPerSecond = GetValue(initialValues, TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey, 100);
-        _serviceName = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceNameKey, null);
-        _serviceVersion = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceVersionKey, null);
-        _startupDiagnosticLogEnabled = GetValue(initialValues, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, true);
-        _statsComputationEnabled = GetValue(initialValues, TracerSettingKeyConstants.StatsComputationEnabledKey, true);
-        _traceEnabled = GetValue(initialValues, TracerSettingKeyConstants.TraceEnabledKey, true);
-        _tracerMetricsEnabled = GetValue(initialValues, TracerSettingKeyConstants.TracerMetricsEnabledKey, false);
+        _agentUri = Helper.TryGetObject<Uri>(initialValues, ObjectKeys.AgentUriKey) ?? new OverrideValue<Uri>(new Uri("http://127.0.0.1:8126"));
+        _analyticsEnabled = Helper.GetBool(initialValues, BoolKeys.AnalyticsEnabledKey, false);
+        _customSamplingRules = Helper.Get<string?>(initialValues, ObjectKeys.CustomSamplingRules, null);
+        _disabledIntegrationNames = Helper.GetAsHashSet(initialValues, ObjectKeys.DisabledIntegrationNamesKey);
+        _diagnosticSourceEnabled = Helper.GetBool(initialValues, BoolKeys.DiagnosticSourceEnabledKey, false).Value;
+        _environment = Helper.Get<string?>(initialValues, ObjectKeys.EnvironmentKey, null);
+        _globalSamplingRate = Helper.GetNullableDouble(initialValues, NullableDoubleKeys.GlobalSamplingRateKey, null);
+        _globalTags = Helper.GetAsDictionary(initialValues, ObjectKeys.GlobalTagsKey);
+        _grpcTags = Helper.GetAsDictionary(initialValues, ObjectKeys.GrpcTags);
+        _headerTags = Helper.GetAsDictionary(initialValues, ObjectKeys.HeaderTags);
+        _kafkaCreateConsumerScopeEnabled = Helper.GetBool(initialValues, BoolKeys.KafkaCreateConsumerScopeEnabledKey, true);
+        _logsInjectionEnabled = Helper.GetBool(initialValues, BoolKeys.LogsInjectionEnabledKey, false);
+        _maxTracesSubmittedPerSecond = Helper.GetInt(initialValues, IntKeys.MaxTracesSubmittedPerSecondKey, 100);
+        _serviceName = Helper.Get<string?>(initialValues, ObjectKeys.ServiceNameKey, null);
+        _serviceVersion = Helper.Get<string?>(initialValues, ObjectKeys.ServiceVersionKey, null);
+        _startupDiagnosticLogEnabled = Helper.GetBool(initialValues, BoolKeys.StartupDiagnosticLogEnabledKey, true);
+        _statsComputationEnabled = Helper.GetBool(initialValues, BoolKeys.StatsComputationEnabledKey, true);
+        _traceEnabled = Helper.GetBool(initialValues, BoolKeys.TraceEnabledKey, true);
+        _tracerMetricsEnabled = Helper.GetBool(initialValues, BoolKeys.TracerMetricsEnabledKey, false);
         _isFromDefaultSources = isFromDefaultSources;
 
         // This is just a bunch of indirection to not change the public API for now
@@ -97,38 +98,6 @@ public sealed class TracerSettings
 #pragma warning restore CS0618 // Type or member is obsolete
 
         Integrations = IntegrationSettingsHelper.ParseFromAutomatic(initialValues);
-
-        static OverrideValue<HashSet<string>> GetAsHashSet(Dictionary<string, object?> results, string key)
-        {
-            var initial = TryGetValue<HashSet<string>?>(results, key);
-            // we copy these so we can detect changes later (including replacement)
-            return initial?.Value is { } value
-                       ? new OverrideValue<HashSet<string>>(value, @override: new HashSet<string>(value))
-                       : new OverrideValue<HashSet<string>>(initial: null!, new HashSet<string>());
-        }
-
-        static OverrideValue<IDictionary<string, string>> GetAsDictionary(Dictionary<string, object?> results, string key)
-        {
-            var initial = TryGetValue<IDictionary<string, string>?>(results, key);
-            // we copy these so we can detect changes later (including replacement)
-            return initial?.Value is { } value
-                       ? new OverrideValue<IDictionary<string, string>>(value, @override: new ConcurrentDictionary<string, string>(value))
-                       : new OverrideValue<IDictionary<string, string>>(initial: null!, new ConcurrentDictionary<string, string>());
-        }
-
-        static OverrideValue<T> GetValue<T>(Dictionary<string, object?> results, string key, T defaultValue)
-            => TryGetValue<T>(results, key) ?? new OverrideValue<T>(defaultValue);
-
-        static OverrideValue<T>? TryGetValue<T>(Dictionary<string, object?> results, string key)
-        {
-            if (results.TryGetValue(key, out var value)
-                && value is T t)
-            {
-                return new OverrideValue<T>(t);
-            }
-
-            return null;
-        }
     }
 
     /// <summary>
@@ -367,7 +336,7 @@ public sealed class TracerSettings
     /// </summary>
     /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
     [Instrumented]
-    public static TracerSettings FromDefaultSources() => new(PopulateDictionary(new(), useDefaultSources: true), isFromDefaultSources: true);
+    public static TracerSettings FromDefaultSources() => new(GetAutomaticSettings(useDefaultSources: true), isFromDefaultSources: true);
 
     /// <summary>
     /// Sets the HTTP status code that should be marked as errors for client integrations.
@@ -420,11 +389,11 @@ public sealed class TracerSettings
     }
 
     [Instrumented]
-    private static Dictionary<string, object?> PopulateDictionary(Dictionary<string, object?> values, bool useDefaultSources)
+    private static ITracerSettings GetAutomaticSettings(bool useDefaultSources)
     {
-        // The automatic tracer populates the dictionary with values which are then used to create the tracer
+        // The automatic tracer returns a duck type that implements ITracerSettings
         _ = useDefaultSources;
-        return values;
+        return NullTracerSettings.Instance;
     }
 
     internal Dictionary<string, object?> ToDictionary()
@@ -432,48 +401,48 @@ public sealed class TracerSettings
         // Could probably source gen this if we can be bothered
         var results = new Dictionary<string, object?>();
 
-        AddIfChanged(results, TracerSettingKeyConstants.AgentUriKey, _agentUri);
-        AddIfChanged(results, TracerSettingKeyConstants.AnalyticsEnabledKey, _analyticsEnabled);
-        AddIfChanged(results, TracerSettingKeyConstants.EnvironmentKey, _environment);
-        AddIfChanged(results, TracerSettingKeyConstants.CustomSamplingRules, _customSamplingRules);
-        AddIfChanged(results, TracerSettingKeyConstants.GlobalSamplingRateKey, _globalSamplingRate);
-        AddIfChanged(results, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, _kafkaCreateConsumerScopeEnabled);
-        AddIfChanged(results, TracerSettingKeyConstants.LogsInjectionEnabledKey, _logsInjectionEnabled);
-        AddIfChanged(results, TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey, _maxTracesSubmittedPerSecond);
-        AddIfChanged(results, TracerSettingKeyConstants.ServiceNameKey, _serviceName);
-        AddIfChanged(results, TracerSettingKeyConstants.ServiceVersionKey, _serviceVersion);
-        AddIfChanged(results, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, _startupDiagnosticLogEnabled);
-        AddIfChanged(results, TracerSettingKeyConstants.StatsComputationEnabledKey, _statsComputationEnabled);
-        AddIfChanged(results, TracerSettingKeyConstants.TraceEnabledKey, _traceEnabled);
-        AddIfChanged(results, TracerSettingKeyConstants.TracerMetricsEnabledKey, _tracerMetricsEnabled);
+        AddIfChanged(results, ObjectKeys.AgentUriKey, _agentUri);
+        AddIfChanged(results, BoolKeys.AnalyticsEnabledKey, _analyticsEnabled);
+        AddIfChanged(results, ObjectKeys.EnvironmentKey, _environment);
+        AddIfChanged(results, ObjectKeys.CustomSamplingRules, _customSamplingRules);
+        AddIfChanged(results, NullableDoubleKeys.GlobalSamplingRateKey, _globalSamplingRate);
+        AddIfChanged(results, BoolKeys.KafkaCreateConsumerScopeEnabledKey, _kafkaCreateConsumerScopeEnabled);
+        AddIfChanged(results, BoolKeys.LogsInjectionEnabledKey, _logsInjectionEnabled);
+        AddIfChanged(results, IntKeys.MaxTracesSubmittedPerSecondKey, _maxTracesSubmittedPerSecond);
+        AddIfChanged(results, ObjectKeys.ServiceNameKey, _serviceName);
+        AddIfChanged(results, ObjectKeys.ServiceVersionKey, _serviceVersion);
+        AddIfChanged(results, BoolKeys.StartupDiagnosticLogEnabledKey, _startupDiagnosticLogEnabled);
+        AddIfChanged(results, BoolKeys.StatsComputationEnabledKey, _statsComputationEnabled);
+        AddIfChanged(results, BoolKeys.TraceEnabledKey, _traceEnabled);
+        AddIfChanged(results, BoolKeys.TracerMetricsEnabledKey, _tracerMetricsEnabled);
 
         // We have to check if any of the tags have changed
-        AddIfChangedDictionary(results, TracerSettingKeyConstants.GlobalTagsKey, _globalTags);
-        AddIfChangedDictionary(results, TracerSettingKeyConstants.GrpcTags, _grpcTags);
-        AddIfChangedDictionary(results, TracerSettingKeyConstants.HeaderTags, _headerTags);
-        AddIfChangedHashSet(results, TracerSettingKeyConstants.DisabledIntegrationNamesKey, _disabledIntegrationNames);
+        AddIfChangedDictionary(results, ObjectKeys.GlobalTagsKey, _globalTags);
+        AddIfChangedDictionary(results, ObjectKeys.GrpcTags, _grpcTags);
+        AddIfChangedDictionary(results, ObjectKeys.HeaderTags, _headerTags);
+        AddIfChangedHashSet(results, ObjectKeys.DisabledIntegrationNamesKey, _disabledIntegrationNames);
 
         // These are write-only, so only send them if we have them
         if (_serviceNameMappings is not null)
         {
-            results.Add(TracerSettingKeyConstants.ServiceNameMappingsKey, _serviceNameMappings);
+            results.Add(ObjectKeys.ServiceNameMappingsKey, _serviceNameMappings);
         }
 
         if (_httpClientErrorCodes is not null)
         {
-            results.Add(TracerSettingKeyConstants.HttpClientErrorCodesKey, _httpClientErrorCodes);
+            results.Add(ObjectKeys.HttpClientErrorCodesKey, _httpClientErrorCodes);
         }
 
         if (_httpServerErrorCodes is not null)
         {
-            results.Add(TracerSettingKeyConstants.HttpServerErrorCodesKey, _httpServerErrorCodes);
+            results.Add(ObjectKeys.HttpServerErrorCodesKey, _httpServerErrorCodes);
         }
 
         // Always set
-        results[TracerSettingKeyConstants.IsFromDefaultSourcesKey] = _isFromDefaultSources;
+        results[BoolKeys.IsFromDefaultSourcesKey] = _isFromDefaultSources;
         if (BuildIntegrationSettings(Integrations) is { } integrations)
         {
-            results[TracerSettingKeyConstants.IntegrationSettingsKey] = integrations;
+            results[ObjectKeys.IntegrationSettingsKey] = integrations;
         }
 
         return results;
@@ -568,5 +537,66 @@ public sealed class TracerSettings
 
             return results;
         }
+    }
+
+    private static class Helper
+    {
+        public static OverrideValue<HashSet<string>> GetAsHashSet(ITracerSettings results, string key)
+        {
+            var initial = TryGetObject<HashSet<string>?>(results, key);
+            // we copy these so we can detect changes later (including replacement)
+            return initial?.Value is { } value
+                       ? new OverrideValue<HashSet<string>>(value, @override: new HashSet<string>(value))
+                       : new OverrideValue<HashSet<string>>(initial: null!, new HashSet<string>());
+        }
+
+        public static OverrideValue<IDictionary<string, string>> GetAsDictionary(ITracerSettings results, string key)
+        {
+            var initial = TryGetObject<IDictionary<string, string>?>(results, key);
+            // we copy these so we can detect changes later (including replacement)
+            return initial?.Value is { } value
+                       ? new OverrideValue<IDictionary<string, string>>(value, @override: new ConcurrentDictionary<string, string>(value))
+                       : new OverrideValue<IDictionary<string, string>>(initial: null!, new ConcurrentDictionary<string, string>());
+        }
+
+        public static OverrideValue<T> Get<T>(ITracerSettings results, string key, T defaultValue)
+            where T : class?
+            => TryGetObject<T>(results, key) ?? new OverrideValue<T>(defaultValue);
+
+        public static OverrideValue<int> GetInt(ITracerSettings results, string key, int defaultValue)
+            => TryGetInt(results, key) ?? new OverrideValue<int>(defaultValue);
+
+        public static OverrideValue<double?> GetNullableDouble(ITracerSettings results, string key, double? defaultValue)
+            => TryGetNullableDouble(results, key) ?? new OverrideValue<double?>(defaultValue);
+
+        public static OverrideValue<bool> GetBool(ITracerSettings results, string key, bool defaultValue)
+            => TryGetBool(results, key) ?? new OverrideValue<bool>(defaultValue);
+
+        public static OverrideValue<T>? TryGetObject<T>(ITracerSettings results, string key)
+            where T : class?
+        {
+            if (results.TryGetObject(key, out var value)
+             && value is T t)
+            {
+                return new OverrideValue<T>(t);
+            }
+
+            return null;
+        }
+
+        private static OverrideValue<int>? TryGetInt(ITracerSettings results, string key)
+            => results.TryGetInt(key, out var value)
+                   ? new OverrideValue<int>(value)
+                   : null;
+
+        private static OverrideValue<bool>? TryGetBool(ITracerSettings results, string key)
+            => results.TryGetBool(key, out var value)
+                   ? new OverrideValue<bool>(value)
+                   : null;
+
+        private static OverrideValue<double?>? TryGetNullableDouble(ITracerSettings results, string key)
+            => results.TryGetNullableDouble(key, out var value)
+                   ? new OverrideValue<double?>(value)
+                   : null;
     }
 }

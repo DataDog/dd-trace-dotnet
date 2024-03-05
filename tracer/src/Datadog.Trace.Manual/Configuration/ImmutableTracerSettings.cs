@@ -6,8 +6,8 @@
 #nullable enable
 
 using System.Collections.Concurrent;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.SourceGenerators;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.TracerSettingKeyConstants;
 
 namespace Datadog.Trace.Configuration;
 
@@ -19,42 +19,31 @@ public sealed class ImmutableTracerSettings
     /// <summary>
     /// Initializes a new instance of the <see cref="ImmutableTracerSettings"/> class.
     /// </summary>
-    internal ImmutableTracerSettings(Dictionary<string, object?> initialValues)
+    internal ImmutableTracerSettings(ITracerSettings initialValues)
     {
-        AgentUri = GetValue<Uri?>(initialValues, TracerSettingKeyConstants.AgentUriKey, null) ?? new Uri("http://127.0.0.1:8126");
-        CustomSamplingRules = GetValue<string?>(initialValues, TracerSettingKeyConstants.CustomSamplingRules, null);
-        Environment = GetValue<string?>(initialValues, TracerSettingKeyConstants.EnvironmentKey, null);
-        GlobalSamplingRate = GetValue<double?>(initialValues, TracerSettingKeyConstants.GlobalSamplingRateKey, null);
-        GlobalTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GlobalTagsKey, null) ?? new ConcurrentDictionary<string, string>();
-        GrpcTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GrpcTags, null) ?? new ConcurrentDictionary<string, string>();
-        HeaderTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.HeaderTags, null) ?? new ConcurrentDictionary<string, string>();
-        KafkaCreateConsumerScopeEnabled = GetValue(initialValues, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, true);
-        LogsInjectionEnabled = GetValue(initialValues, TracerSettingKeyConstants.LogsInjectionEnabledKey, false);
-        MaxTracesSubmittedPerSecond = GetValue(initialValues, TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey, 100);
-        ServiceName = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceNameKey, null);
-        ServiceVersion = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceVersionKey, null);
-        StartupDiagnosticLogEnabled = GetValue(initialValues, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, true);
-        StatsComputationEnabled = GetValue(initialValues, TracerSettingKeyConstants.StatsComputationEnabledKey, false);
-        TraceEnabled = GetValue(initialValues, TracerSettingKeyConstants.TraceEnabledKey, true);
-        TracerMetricsEnabled = GetValue(initialValues, TracerSettingKeyConstants.TracerMetricsEnabledKey, false);
+        AgentUri = Helper.Get<Uri?>(initialValues, ObjectKeys.AgentUriKey) ?? new Uri("http://127.0.0.1:8126");
+        CustomSamplingRules = Helper.Get<string?>(initialValues, ObjectKeys.CustomSamplingRules);
+        Environment = Helper.Get<string?>(initialValues, ObjectKeys.EnvironmentKey);
+        GlobalSamplingRate = Helper.GetNullableDouble(initialValues, NullableDoubleKeys.GlobalSamplingRateKey);
+        GlobalTags = Helper.Get<IReadOnlyDictionary<string, string>?>(initialValues, ObjectKeys.GlobalTagsKey) ?? new ConcurrentDictionary<string, string>();
+        GrpcTags = Helper.Get<IReadOnlyDictionary<string, string>?>(initialValues, ObjectKeys.GrpcTags) ?? new ConcurrentDictionary<string, string>();
+        HeaderTags = Helper.Get<IReadOnlyDictionary<string, string>?>(initialValues, ObjectKeys.HeaderTags) ?? new ConcurrentDictionary<string, string>();
+        KafkaCreateConsumerScopeEnabled = Helper.GetBool(initialValues, BoolKeys.KafkaCreateConsumerScopeEnabledKey) ?? true;
+        LogsInjectionEnabled = Helper.GetBool(initialValues, BoolKeys.LogsInjectionEnabledKey) ?? false;
+        MaxTracesSubmittedPerSecond = Helper.GetInt(initialValues, IntKeys.MaxTracesSubmittedPerSecondKey) ?? 100;
+        ServiceName = Helper.Get<string?>(initialValues, ObjectKeys.ServiceNameKey);
+        ServiceVersion = Helper.Get<string?>(initialValues, ObjectKeys.ServiceVersionKey);
+        StartupDiagnosticLogEnabled = Helper.GetBool(initialValues, BoolKeys.StartupDiagnosticLogEnabledKey) ?? true;
+        StatsComputationEnabled = Helper.GetBool(initialValues, BoolKeys.StatsComputationEnabledKey) ?? false;
+        TraceEnabled = Helper.GetBool(initialValues, BoolKeys.TraceEnabledKey) ?? true;
+        TracerMetricsEnabled = Helper.GetBool(initialValues, BoolKeys.TracerMetricsEnabledKey) ?? false;
 
 #pragma warning disable CS0618 // Type or member is obsolete
         Exporter = new ImmutableExporterSettings(this);
-        AnalyticsEnabled = GetValue(initialValues, TracerSettingKeyConstants.AnalyticsEnabledKey, false);
+        AnalyticsEnabled = Helper.GetBool(initialValues, BoolKeys.AnalyticsEnabledKey) ?? false;
 #pragma warning restore CS0618 // Type or member is obsolete
 
         Integrations = IntegrationSettingsHelper.ParseImmutableFromAutomatic(initialValues);
-
-        static T GetValue<T>(Dictionary<string, object?> results, string key, T defaultValue)
-        {
-            if (results.TryGetValue(key, out var value)
-             && value is T t)
-            {
-                return t;
-            }
-
-            return defaultValue;
-        }
     }
 
     /// <summary>
@@ -188,4 +177,20 @@ public sealed class ImmutableTracerSettings
     /// </summary>
     [Instrumented]
     public bool StartupDiagnosticLogEnabled { get; }
+
+    private static class Helper
+    {
+        public static T? Get<T>(ITracerSettings results, string key)
+            where T : class?
+            => results.TryGetObject(key, out var value) && value is T t ? t : null;
+
+        public static int? GetInt(ITracerSettings results, string key)
+            => results.TryGetInt(key, out var value) ? value : null;
+
+        public static bool? GetBool(ITracerSettings results, string key)
+            => results.TryGetBool(key, out var value) ? value : null;
+
+        public static double? GetNullableDouble(ITracerSettings results, string key)
+            => results.TryGetNullableDouble(key, out var value) ? value : null;
+    }
 }
