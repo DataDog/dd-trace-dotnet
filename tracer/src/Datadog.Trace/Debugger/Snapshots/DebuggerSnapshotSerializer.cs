@@ -86,8 +86,6 @@ namespace Datadog.Trace.Debugger.Snapshots
                     jsonWriter.WriteStartObject();
                     jsonWriter.WritePropertyName("type");
                     jsonWriter.WriteValue(type.Name);
-                    jsonWriter.WritePropertyName("value");
-                    jsonWriter.WriteValue(unreachable.Value);
                     WriteNotCapturedReason(jsonWriter, unreachable.Reason);
                     jsonWriter.WriteEndObject();
                     return true;

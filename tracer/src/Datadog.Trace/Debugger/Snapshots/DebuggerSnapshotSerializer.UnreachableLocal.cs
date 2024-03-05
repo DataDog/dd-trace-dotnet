@@ -11,27 +11,23 @@ namespace Datadog.Trace.Debugger.Snapshots
     {
         /// <summary>
         /// This class hold a local variable inside an async method that was not hoisted by
-        /// the state machine object but kept as regular local. Hence we can not get his value
-        /// at method end and the value will be always default.
-        /// We want to display in the snapshot that for this value we could not achieve the real value
+        /// the state machine object but kept as regular local. Hence we can not obtain its value
+        /// at method end and the value will be always the default value.
+        /// We want to display in the snapshot that for this value we could not obtain the real value
         /// </summary>
         internal struct UnreachableLocal
         {
-            // we are boxing it anyway in the serialization phase
-            internal object Value;
-
             public readonly string Reason;
 
-            public UnreachableLocal(object value, string reason)
+            public UnreachableLocal(string reason)
             {
-                Value = value;
                 Reason = reason;
             }
         }
 
         internal static class UnreachableLocalReason
         {
-            internal const string NotHoistedLocalInAsyncMethod = "The value of the variable in an asynchronous method may not be available at this point in time. You can put a line probe after the variable has been assigned to get its value.";
+            internal const string NotHoistedLocalInAsyncMethod = "The value of this variable in not available in the specified probe location. Place a line probe closer to where the variable was assigned or used to obtain its value.";
         }
     }
 }

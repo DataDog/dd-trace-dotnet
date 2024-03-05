@@ -36,14 +36,12 @@
                 "value": "8"
               },
               "otherValue": {
-                "notCapturedReason": "valueIsUnreachable",
-                "type": "String",
-                "value": null
+                "notCapturedReason": "The value of this variable in not available in the specified probe location. Place a line probe closer to where the variable was assigned or used to obtain its value.",
+                "type": "String"
               },
               "result": {
-                "notCapturedReason": "valueIsUnreachable",
-                "type": "String",
-                "value": null
+                "notCapturedReason": "The value of this variable in not available in the specified probe location. Place a line probe closer to where the variable was assigned or used to obtain its value.",
+                "type": "String"
               }
             }
           }
