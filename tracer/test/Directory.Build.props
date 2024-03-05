@@ -15,6 +15,8 @@
     <!-- WebClient is obsolete -->
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
     <NoWarn>SYSLIB0014;NU1901;NU1902;NU1903;NU1904</NoWarn>
+
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
   </PropertyGroup>
 
   <ItemGroup>

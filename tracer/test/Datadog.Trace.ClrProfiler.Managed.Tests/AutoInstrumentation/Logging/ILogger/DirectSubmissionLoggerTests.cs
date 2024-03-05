@@ -16,7 +16,6 @@ using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions.Internal;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.ILogger
@@ -130,14 +129,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
             }
         }
 
-        internal class NullScopeProvider : IExternalScopeProvider
+        internal class NullScopeProvider : IExternalScopeProvider, IDisposable
         {
             public IDisposable Push(object state)
             {
-                return NullScope.Instance;
+                return this;
             }
 
             public void ForEachScope<TState>(Action<object, TState> callback, TState state)
+            {
+            }
+
+            public void Dispose()
             {
             }
         }

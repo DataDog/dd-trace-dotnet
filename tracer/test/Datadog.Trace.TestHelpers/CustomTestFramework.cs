@@ -77,32 +77,41 @@ namespace Datadog.Trace.TestHelpers
             return null;
         }
 
+        protected virtual Task RunTestCollectionsCallback(IMessageSink diagnosticsMessageSink, IEnumerable<IXunitTestCase> testCases)
+        {
+            return Task.CompletedTask;
+        }
+
         protected override ITestFrameworkExecutor CreateExecutor(AssemblyName assemblyName)
         {
-            return new CustomExecutor(assemblyName, SourceInformationProvider, DiagnosticMessageSink);
+            return new CustomExecutor(assemblyName, SourceInformationProvider, DiagnosticMessageSink, RunTestCollectionsCallback);
         }
 
         private class CustomExecutor : XunitTestFrameworkExecutor
         {
-            public CustomExecutor(AssemblyName assemblyName, ISourceInformationProvider sourceInformationProvider, IMessageSink diagnosticMessageSink)
+            private readonly Func<IMessageSink, IEnumerable<IXunitTestCase>, Task> _runTestCollectionsCallback;
+
+            public CustomExecutor(AssemblyName assemblyName, ISourceInformationProvider sourceInformationProvider, IMessageSink diagnosticMessageSink, Func<IMessageSink, IEnumerable<IXunitTestCase>, Task> runTestCollectionsCallback)
                 : base(assemblyName, sourceInformationProvider, diagnosticMessageSink)
             {
+                _runTestCollectionsCallback = runTestCollectionsCallback;
             }
 
             protected override async void RunTestCases(IEnumerable<IXunitTestCase> testCases, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions)
             {
-                using (var assemblyRunner = new CustomAssemblyRunner(TestAssembly, testCases, DiagnosticMessageSink, executionMessageSink, executionOptions))
-                {
-                    await assemblyRunner.RunAsync();
-                }
+                using var assemblyRunner = new CustomAssemblyRunner(TestAssembly, testCases, DiagnosticMessageSink, executionMessageSink, executionOptions, _runTestCollectionsCallback);
+                await assemblyRunner.RunAsync();
             }
         }
 
         private class CustomAssemblyRunner : XunitTestAssemblyRunner
         {
-            public CustomAssemblyRunner(ITestAssembly testAssembly, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions)
+            private readonly Func<IMessageSink, IEnumerable<IXunitTestCase>, Task> _runTestCollectionsCallback;
+
+            public CustomAssemblyRunner(ITestAssembly testAssembly, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions, Func<IMessageSink, IEnumerable<IXunitTestCase>, Task> runTestCollectionsCallback)
                 : base(testAssembly, testCases, diagnosticMessageSink, executionMessageSink, executionOptions)
             {
+                _runTestCollectionsCallback = runTestCollectionsCallback;
             }
 
             protected override async Task<RunSummary> RunTestCollectionsAsync(IMessageBus messageBus, CancellationTokenSource cancellationTokenSource)
@@ -116,6 +125,8 @@ namespace Datadog.Trace.TestHelpers
                         DisableParallelization = IsParallelizationDisabled(pair.Item1)
                     })
                     .ToList();
+
+                _runTestCollectionsCallback?.Invoke(DiagnosticMessageSink, collections.SelectMany(c => c.TestCases));
 
                 var summary = new RunSummary();
 
