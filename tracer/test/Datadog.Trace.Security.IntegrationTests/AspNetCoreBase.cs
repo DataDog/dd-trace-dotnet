@@ -55,6 +55,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                              null,
                              null,
                              null,
+                             accept: null,
                              new List<KeyValuePair<string, string>>
                              {
                                  new("X-SigSci-Tags", "SQLI"),
