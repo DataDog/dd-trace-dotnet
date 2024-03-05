@@ -53,12 +53,6 @@ public static class TestClassInfoRunClassInitializeIntegration
             return CallTargetState.GetDefault();
         }
 
-        if (!testContext.TryDuckCast<TestContextStruct>(out var context))
-        {
-            Common.Log.Error("Context cannot be duck-casted to TestContextStruct, a new suite cannot be created.");
-            return CallTargetState.GetDefault();
-        }
-
         instance.ClassCleanupMethod ??= EmptyCleanUpMethodInfo;
         return new CallTargetState(null, MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(instance));
     }

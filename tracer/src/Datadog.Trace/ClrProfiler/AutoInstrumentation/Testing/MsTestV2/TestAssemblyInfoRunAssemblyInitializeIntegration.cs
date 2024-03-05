@@ -54,12 +54,6 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
             return CallTargetState.GetDefault();
         }
 
-        if (!testContext.TryDuckCast<TestContextStruct>(out var context))
-        {
-            Common.Log.Error("Context cannot be duck-casted to TestContextStruct, a new module cannot be created.");
-            return CallTargetState.GetDefault();
-        }
-
         instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
         return new CallTargetState(null, MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance));
     }

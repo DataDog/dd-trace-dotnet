@@ -204,14 +204,14 @@ internal static class MsTestIntegration
 
         if (TestModuleByTestAssemblyInfos.TryGetValue(objTestAssemblyInfo, out var module))
         {
-            Common.Log.Information("Using existing Module: {Module}", module.Name);
+            Common.Log.Debug("Using existing Module: {Module}", module.Name);
             return module;
         }
 
         CIVisibility.WaitForSkippableTaskToFinish();
         var assemblyName = testAssemblyInfo.Assembly.GetName().Name ?? string.Empty;
         var frameworkVersion = testAssemblyInfo.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
-        Common.Log.Information("Creating Module: {Module}, Framework version: {Version}", assemblyName, frameworkVersion);
+        Common.Log.Debug("Creating Module: {Module}, Framework version: {Version}", assemblyName, frameworkVersion);
         module = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
         TestModuleByTestAssemblyInfos.Add(objTestAssemblyInfo, module);
         return module;
@@ -227,7 +227,7 @@ internal static class MsTestIntegration
 
         if (TestSuiteByTestClassInfos.TryGetValue(objTestClassInfo, out var testSuite))
         {
-            Common.Log.Information("Using existing Suite: {Suite}", testSuite.Name);
+            Common.Log.Debug("Using existing Suite: {Suite}", testSuite.Name);
             return testSuite;
         }
 
