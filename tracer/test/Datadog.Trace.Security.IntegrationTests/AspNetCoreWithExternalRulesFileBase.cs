@@ -92,13 +92,28 @@ namespace Datadog.Trace.Security.IntegrationTests
 
     public abstract class AspNetCoreWithExternalRulesFileBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCoreWithExternalRulesFileBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, bool enableSecurity = true, string ruleFile = null, string testName = null)
-            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName)
+        public AspNetCoreWithExternalRulesFileBase(
+            string sampleName,
+            AspNetCoreTestFixture fixture,
+            ITestOutputHelper outputHelper,
+            string shutdownPath,
+            bool enableSecurity = true,
+            string ruleFile = null,
+            string blockingJsonTemplate = null,
+            string blockingHtmlTemplate = null,
+            string testName = null)
+            : base(
+                sampleName,
+                outputHelper,
+                shutdownPath ?? "/shutdown",
+                testName: testName)
         {
             EnableSecurity = enableSecurity;
             Fixture = fixture;
             Fixture.SetOutput(outputHelper);
             RuleFile = ruleFile;
+            SetEnvironmentVariable(ConfigurationKeys.AppSec.HtmlBlockedTemplate, blockingHtmlTemplate);
+            SetEnvironmentVariable(ConfigurationKeys.AppSec.JsonBlockedTemplate, blockingJsonTemplate);
         }
 
         protected AspNetCoreTestFixture Fixture { get; }
