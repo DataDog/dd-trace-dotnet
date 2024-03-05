@@ -265,13 +265,18 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
 
-        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent = null)
+        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent = null, string accept = null)
         {
             var values = _httpClient.DefaultRequestHeaders.GetValues("user-agent");
 
             if (!string.IsNullOrEmpty(userAgent) && values.All(c => string.Compare(c, userAgent, StringComparison.Ordinal) != 0))
             {
                 _httpClient.DefaultRequestHeaders.Add("user-agent", userAgent);
+            }
+
+            if (accept != null)
+            {
+                _httpClient.DefaultRequestHeaders.Add("accept", accept);
             }
 
             try
