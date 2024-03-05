@@ -21,9 +21,53 @@ public class NewtonsoftJsonAspects
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NewtonsoftJsonAspects>();
 
-    private static readonly Type JObjectType = Type.GetType("Newtonsoft.Json.Linq.JObject, Newtonsoft.Json")!;
-    private static readonly Type JArrayType = Type.GetType("Newtonsoft.Json.Linq.JArray, Newtonsoft.Json")!;
-    private static readonly Type JTokenType = Type.GetType("Newtonsoft.Json.Linq.JToken, Newtonsoft.Json")!;
+    private static readonly ICanParse? JObjectProxy;
+    private static readonly ICanParse? JArrayProxy;
+    private static readonly ICanParse? JTokenProxy;
+
+    static NewtonsoftJsonAspects()
+    {
+        try
+        {
+            var jObjectType = Type.GetType("Newtonsoft.Json.Linq.JObject, Newtonsoft.Json")!;
+            var jArrayType = Type.GetType("Newtonsoft.Json.Linq.JArray, Newtonsoft.Json")!;
+            var jTokenType = Type.GetType("Newtonsoft.Json.Linq.JToken, Newtonsoft.Json")!;
+
+            var jObjectProxyResult = DuckType.GetOrCreateProxyType(typeof(ICanParse), jObjectType);
+            if (jObjectProxyResult.Success)
+            {
+                JObjectProxy = (ICanParse)jObjectProxyResult.CreateInstance(null!);
+            }
+            else
+            {
+                Log.Warning("Failed to create JObject proxy");
+            }
+
+            var jArrayProxyResult = DuckType.GetOrCreateProxyType(typeof(ICanParse), jArrayType);
+            if (jArrayProxyResult.Success)
+            {
+                JArrayProxy = (ICanParse)jArrayProxyResult.CreateInstance(null!);
+            }
+            else
+            {
+                Log.Warning("Failed to create JArray proxy");
+            }
+
+            var jTokenProxyResult = DuckType.GetOrCreateProxyType(typeof(ICanParse), jTokenType);
+            if (jTokenProxyResult.Success)
+            {
+                JTokenProxy = (ICanParse)jTokenProxyResult.CreateInstance(null!);
+            }
+            else
+            {
+                Log.Warning("Failed to create JToken proxy");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error while initializing NewtonsoftJsonAspects");
+        }
+    }
 
     /// <summary>
     /// JObject Parse aspect.
@@ -33,18 +77,7 @@ public class NewtonsoftJsonAspects
     [AspectMethodReplace("Newtonsoft.Json.Linq.JObject::Parse(System.String)")]
     public static object? ParseObject(string json)
     {
-        var proxyResult = DuckType.GetOrCreateProxyType(typeof(ICanParse), JObjectType);
-        object? result;
-        if (proxyResult.Success)
-        {
-            var proxy = (ICanParse)proxyResult.CreateInstance(null!);
-            result = proxy.Parse(json);
-        }
-        else
-        {
-            Log.Warning("Failed to create JObject proxy");
-            return null;
-        }
+        var result = JObjectProxy?.Parse(json);
 
         try
         {
@@ -68,18 +101,7 @@ public class NewtonsoftJsonAspects
     [AspectMethodReplace("Newtonsoft.Json.Linq.JArray::Parse(System.String)")]
     public static object? ParseArray(string json)
     {
-        var proxyResult = DuckType.GetOrCreateProxyType(typeof(ICanParse), JArrayType);
-        object? result;
-        if (proxyResult.Success)
-        {
-            var proxy = (ICanParse)proxyResult.CreateInstance(null!);
-            result = proxy.Parse(json);
-        }
-        else
-        {
-            Log.Warning("Failed to create JArray proxy");
-            return null;
-        }
+        var result = JArrayProxy?.Parse(json);
 
         try
         {
@@ -107,18 +129,7 @@ public class NewtonsoftJsonAspects
     [AspectMethodReplace("Newtonsoft.Json.Linq.JToken::Parse(System.String)")]
     public static object? ParseToken(string json)
     {
-        var proxyResult = DuckType.GetOrCreateProxyType(typeof(ICanParse), JTokenType);
-        object? result;
-        if (proxyResult.Success)
-        {
-            var proxy = (ICanParse)proxyResult.CreateInstance(null!);
-            result = proxy.Parse(json);
-        }
-        else
-        {
-            Log.Warning("Failed to create JToken proxy");
-            return null;
-        }
+        var result = JTokenProxy?.Parse(json);
 
         try
         {
