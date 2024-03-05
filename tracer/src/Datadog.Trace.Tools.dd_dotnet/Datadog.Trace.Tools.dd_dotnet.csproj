@@ -10,6 +10,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <RootNamespace>Datadog.Trace.Tools.dd_dotnet</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     <Nullable>enable</Nullable>
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
     <NoWarn>SA1300;NU5100;NU1901;NU1902;NU1903;NU1904</NoWarn>

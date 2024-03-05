@@ -5,7 +5,9 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+using System.Text;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util;
 
@@ -13,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 
 internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
 {
-    private static readonly string[] EmptyValue = { };
+    private static readonly string[] EmptyValue = [];
     private readonly IMqMessage _message;
 
     public IbmMqHeadersAdapter(IMqMessage message)
@@ -43,7 +45,8 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
         {
             // there's no way to check if the value exists,
             // and reading non-existent value causes an exception
-            return new[] { _message.GetStringProperty(NormalizeName(name)) };
+            var buf = _message.GetBytesProperty(NormalizeName(name));
+            return new[] { StringFromSignedBytes(buf) };
         }
         catch
         {
@@ -55,14 +58,13 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
     {
         var normalizedName = NormalizeName(name);
         RemoveNormalized(normalizedName);
-        _message.SetStringProperty(normalizedName, value);
+        var val = StringToUnsignedBytes(value);
+        _message.SetBytesProperty(normalizedName, val);
     }
 
     public void Add(string name, string value)
     {
-        var normalizedName = NormalizeName(name);
-        RemoveNormalized(normalizedName);
-        _message.SetStringProperty(normalizedName, value);
+        Set(name, value);
     }
 
     private void RemoveNormalized(string normalizedName)
@@ -75,6 +77,26 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
         {
             // ignored
         }
+    }
+
+    private string StringFromSignedBytes(sbyte[] buf)
+    {
+        // since the text is ASCII signed and unsigned bytes are the same (0-127)
+        var unsigned = new byte[buf.Length];
+        Buffer.BlockCopy(buf, 0, unsigned, 0, buf.Length);
+
+        return Encoding.ASCII.GetString(unsigned);
+    }
+
+    private sbyte[] StringToUnsignedBytes(string str)
+    {
+        var buf = Encoding.ASCII.GetBytes(str);
+
+        // since the text is ASCII signed and unsigned bytes are the same.
+        var signed = new sbyte[buf.Length];
+        Buffer.BlockCopy(buf, 0, signed, 0, buf.Length);
+
+        return signed;
     }
 
     public void Remove(string name)
