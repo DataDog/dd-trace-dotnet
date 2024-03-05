@@ -10,9 +10,11 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.TracerSettingKeyConstants;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 
@@ -24,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     TypeName = "Datadog.Trace.Tracer",
     MethodName = "Configure",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = new[] { "System.Collections.Generic.Dictionary`2[System.String,System.Object]" },
+    ParameterTypeNames = ["Datadog.Trace.Configuration.TracerSettings"],
     MinimumVersion = ManualInstrumentationConstants.MinVersion,
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
@@ -34,211 +36,217 @@ public class ConfigureIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigureIntegration>();
 
-    internal static CallTargetState OnMethodBegin<TTarget>(Dictionary<string, object?> values)
+    internal static CallTargetState OnMethodBegin<TTarget, TSettings>(TSettings settings)
+        where TSettings : ITracerSettings, IDuckType
     {
+        // public method, so customer could pass in null technically
+        if (settings.Instance is null)
+        {
+            return CallTargetState.GetDefault();
+        }
+
         // Is this from calling new TracerSettings() or TracerSettings.Global?
-        var isFromDefaults = values.TryGetValue(TracerSettingKeyConstants.IsFromDefaultSourcesKey, out var value) && value is true;
+        var isFromDefaults = settings.TryGetBool(BoolKeys.IsFromDefaultSourcesKey, out var value) && value is true;
 
         // Get the starting point
-        var settings = isFromDefaults
+        var automatic = isFromDefaults
                            ? TracerSettings.FromDefaultSourcesInternal()
                            : new TracerSettings(null, new ConfigurationTelemetry());
 
-        // Update the settings based on the values they set
-        UpdateSettings(values, settings);
+        // Update the settings based on the values they have changed
+        UpdateSettings(in settings, automatic);
 
         // Update the global instance
-        Trace.Tracer.ConfigureInternal(new ImmutableTracerSettings(settings, true));
+        Trace.Tracer.ConfigureInternal(new ImmutableTracerSettings(automatic, true));
 
         return CallTargetState.GetDefault();
     }
 
     // Internal for testing
-    internal static void UpdateSettings(Dictionary<string, object?> dictionary, TracerSettings tracerSettings)
+    internal static void UpdateSettings<T>(in T manualSettings, TracerSettings tracerSettings)
+        where T : ITracerSettings
     {
-        foreach (var setting in dictionary)
+        // Bool keys
+        bool extracted;
+        if (manualSettings.TryGetBool(BoolKeys.AnalyticsEnabledKey, out extracted))
         {
-            switch (setting.Key)
-            {
-                case TracerSettingKeyConstants.AgentUriKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.ExporterSettings_AgentUri_Set);
-                    tracerSettings.ExporterInternal.AgentUriInternal = (setting.Value as Uri)!;
-                    break;
-
-                case TracerSettingKeyConstants.AnalyticsEnabledKey:
+            TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettings_AnalyticsEnabled_Set);
 #pragma warning disable CS0618 // Type or member is obsolete
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettings_AnalyticsEnabled_Set);
-                    tracerSettings.AnalyticsEnabledInternal = (bool)setting.Value!;
+            tracerSettings.AnalyticsEnabledInternal = extracted;
 #pragma warning restore CS0618 // Type or member is obsolete
-                    break;
+        }
 
-                case TracerSettingKeyConstants.CustomSamplingRules:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_CustomSamplingRules_Get);
-                    tracerSettings.CustomSamplingRulesInternal = setting.Value as string;
-                    break;
+        if (manualSettings.TryGetBool(BoolKeys.DiagnosticSourceEnabledKey, out extracted))
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_DiagnosticSourceEnabled_Set);
+            // there is no setter, it doesn't do anything
+        }
 
-                case TracerSettingKeyConstants.DiagnosticSourceEnabledKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_DiagnosticSourceEnabled_Set);
-                    // there is no setter, it doesn't do anything
-                    break;
+        if (manualSettings.TryGetBool(BoolKeys.KafkaCreateConsumerScopeEnabledKey, out extracted))
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_KafkaCreateConsumerScopeEnabled_Set);
+            tracerSettings.KafkaCreateConsumerScopeEnabledInternal = extracted;
+        }
 
-                case TracerSettingKeyConstants.DisabledIntegrationNamesKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_DisabledIntegrationNames_Set);
-                    tracerSettings.DisabledIntegrationNamesInternal = setting.Value as HashSet<string> ?? [];
-                    break;
-
-                case TracerSettingKeyConstants.EnvironmentKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Environment_Set);
-                    tracerSettings.EnvironmentInternal = setting.Value as string;
-                    break;
-
-                case TracerSettingKeyConstants.GlobalSamplingRateKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_GlobalSamplingRate_Set);
-                    tracerSettings.GlobalSamplingRateInternal = setting.Value as double?;
-                    break;
-
-                case TracerSettingKeyConstants.GrpcTags:
-                    if (setting.Value is IDictionary<string, string> { } grpcTags)
-                    {
-                        TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_GrpcTags_Set);
-                        var currentTags = tracerSettings.GrpcTagsInternal;
-                        // This is a replacement, so make sure to clear
-                        // Could also use a setter
-                        currentTags.Clear();
-                        foreach (var tag in grpcTags)
-                        {
-                            currentTags[tag.Key] = tag.Value;
-                        }
-                    }
-
-                    break;
-
-                case TracerSettingKeyConstants.HeaderTags:
-                    if (setting.Value is IDictionary<string, string> { } headerTags)
-                    {
-                        TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_HeaderTags_Set);
-                        var currentTags = tracerSettings.HeaderTagsInternal;
-                        // This is a replacement, so make sure to clear
-                        // Could also use a setter
-                        currentTags.Clear();
-                        foreach (var tag in headerTags)
-                        {
-                            currentTags[tag.Key] = tag.Value;
-                        }
-                    }
-
-                    break;
-
-                case TracerSettingKeyConstants.GlobalTagsKey:
-                    if (setting.Value is IDictionary<string, string> { } tags)
-                    {
-                        TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_GlobalTags_Set);
-                        var globalTags = tracerSettings.GlobalTagsInternal;
-                        // This is a replacement, so make sure to clear
-                        // Could also use a setter
-                        globalTags.Clear();
-                        foreach (var tag in tags)
-                        {
-                            globalTags[tag.Key] = tag.Value;
-                        }
-                    }
-
-                    break;
-
-                case TracerSettingKeyConstants.HttpClientErrorCodesKey:
-                    if (setting.Value is IEnumerable<int> clientErrorCodes)
-                    {
-                        TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetHttpClientErrorStatusCodes);
-                        tracerSettings.SetHttpClientErrorStatusCodesInternal(clientErrorCodes);
-                    }
-
-                    break;
-
-                case TracerSettingKeyConstants.HttpServerErrorCodesKey:
-                    if (setting.Value is IEnumerable<int> serverErrorCodes)
-                    {
-                        TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetHttpServerErrorStatusCodes);
-                        tracerSettings.SetHttpServerErrorStatusCodesInternal(serverErrorCodes);
-                    }
-
-                    break;
-
-                case TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_KafkaCreateConsumerScopeEnabled_Set);
-                    tracerSettings.KafkaCreateConsumerScopeEnabledInternal = (bool)setting.Value!;
-                    break;
-
-                case TracerSettingKeyConstants.LogsInjectionEnabledKey:
+        if (manualSettings.TryGetBool(BoolKeys.LogsInjectionEnabledKey, out extracted))
+        {
 #pragma warning disable DD0002 // This API is only for public usage and should not be called internally (there's no internal version currently)
-                    tracerSettings.LogsInjectionEnabled = (bool)setting.Value!;
-#pragma warning restore DD0002
-                    break;
-
-                case TracerSettingKeyConstants.ServiceNameKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_ServiceName_Set);
-                    tracerSettings.ServiceNameInternal = setting.Value as string;
-                    break;
-
-                case TracerSettingKeyConstants.ServiceNameMappingsKey:
-                    if (setting.Value is Dictionary<string, string> mappings)
-                    {
-                        TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetServiceNameMappings);
-                        tracerSettings.SetServiceNameMappingsInternal(mappings);
-                    }
-
-                    break;
-
-                case TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_MaxTracesSubmittedPerSecond_Set);
-                    tracerSettings.MaxTracesSubmittedPerSecondInternal = (int)setting.Value!;
-                    break;
-
-                case TracerSettingKeyConstants.ServiceVersionKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_ServiceVersion_Set);
-                    tracerSettings.ServiceVersionInternal = setting.Value as string;
-                    break;
-
-                case TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_StartupDiagnosticLogEnabled_Set);
-                    tracerSettings.StartupDiagnosticLogEnabledInternal = (bool)setting.Value!;
-                    break;
-
-                case TracerSettingKeyConstants.StatsComputationEnabledKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_StatsComputationEnabled_Set);
-                    tracerSettings.StatsComputationEnabledInternal = (bool)setting.Value!;
-                    break;
-
-                case TracerSettingKeyConstants.TraceEnabledKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_TraceEnabled_Set);
-                    tracerSettings.TraceEnabledInternal = (bool)setting.Value!;
-                    break;
-
-                case TracerSettingKeyConstants.TracerMetricsEnabledKey:
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_TracerMetricsEnabled_Set);
-                    tracerSettings.TracerMetricsEnabledInternal = (bool)setting.Value!;
-                    break;
-
-                case TracerSettingKeyConstants.IntegrationSettingsKey:
-                    UpdateIntegrations(tracerSettings, setting.Value as Dictionary<string, object?[]>);
-                    break;
-
-                default:
-                    Log.Warning("Unknown manual instrumentation key '{Key}' provided. Ignoring value '{Value}'", setting.Key, setting.Value);
-                    break;
-            }
+            tracerSettings.LogsInjectionEnabled = extracted;
 #pragma warning restore DD0002
         }
 
-        static void UpdateIntegrations(TracerSettings settings, Dictionary<string, object?[]>? updated)
+        if (manualSettings.TryGetBool(BoolKeys.KafkaCreateConsumerScopeEnabledKey, out extracted))
         {
-            if (updated is null || updated.Count == 0)
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_KafkaCreateConsumerScopeEnabled_Set);
+            tracerSettings.KafkaCreateConsumerScopeEnabledInternal = extracted;
+        }
+
+        if (manualSettings.TryGetBool(BoolKeys.StartupDiagnosticLogEnabledKey, out extracted))
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_StartupDiagnosticLogEnabled_Set);
+            tracerSettings.StartupDiagnosticLogEnabledInternal = extracted;
+        }
+
+        if (manualSettings.TryGetBool(BoolKeys.StatsComputationEnabledKey, out extracted))
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_StatsComputationEnabled_Set);
+            tracerSettings.StatsComputationEnabledInternal = extracted;
+        }
+
+        if (manualSettings.TryGetBool(BoolKeys.TraceEnabledKey, out extracted))
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_TraceEnabled_Set);
+            tracerSettings.TraceEnabledInternal = extracted;
+        }
+
+        if (manualSettings.TryGetBool(BoolKeys.TracerMetricsEnabledKey, out extracted))
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_TracerMetricsEnabled_Set);
+            tracerSettings.TracerMetricsEnabledInternal = extracted;
+        }
+
+        // Int keys
+        if (manualSettings.TryGetInt(IntKeys.MaxTracesSubmittedPerSecondKey, out var count))
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_MaxTracesSubmittedPerSecond_Set);
+            tracerSettings.MaxTracesSubmittedPerSecondInternal = count;
+        }
+
+        // Double keys
+        if (manualSettings.TryGetNullableDouble(NullableDoubleKeys.GlobalSamplingRateKey, out var rate))
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_GlobalSamplingRate_Set);
+            tracerSettings.GlobalSamplingRateInternal = rate;
+        }
+
+        // Object keys
+        object? obj;
+        if (manualSettings.TryGetObject(ObjectKeys.AgentUriKey, out obj))
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.ExporterSettings_AgentUri_Set);
+            tracerSettings.ExporterInternal.AgentUriInternal = (obj as Uri)!;
+        }
+
+        if (manualSettings.TryGetObject(ObjectKeys.CustomSamplingRules, out obj))
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_CustomSamplingRules_Get);
+            tracerSettings.CustomSamplingRulesInternal = obj as string;
+        }
+
+        if (manualSettings.TryGetObject(ObjectKeys.DisabledIntegrationNamesKey, out obj))
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_DisabledIntegrationNames_Set);
+            tracerSettings.DisabledIntegrationNamesInternal = obj as HashSet<string> ?? [];
+        }
+
+        if (manualSettings.TryGetObject(ObjectKeys.EnvironmentKey, out obj))
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Environment_Set);
+            tracerSettings.EnvironmentInternal = obj as string;
+        }
+
+        if (manualSettings.TryGetObject(ObjectKeys.ServiceNameKey, out obj))
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_ServiceName_Set);
+            tracerSettings.ServiceNameInternal = obj as string;
+        }
+
+        if (manualSettings.TryGetObject(ObjectKeys.ServiceVersionKey, out obj))
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_ServiceVersion_Set);
+            tracerSettings.ServiceVersionInternal = obj as string;
+        }
+
+        if (manualSettings.TryGetObject(ObjectKeys.GrpcTags, out obj)
+         && obj is IDictionary<string, string> grpcTags)
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_GrpcTags_Set);
+            var currentTags = tracerSettings.GrpcTagsInternal;
+            // This is a replacement, so make sure to clear
+            // Could also use a setter
+            currentTags.Clear();
+            foreach (var tag in grpcTags)
             {
-                return;
+                currentTags[tag.Key] = tag.Value;
             }
+        }
 
-            var integrations = settings.IntegrationsInternal.Settings;
+        if (manualSettings.TryGetObject(ObjectKeys.HeaderTags, out obj)
+         && obj is IDictionary<string, string> headerTags)
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_HeaderTags_Set);
+            var currentTags = tracerSettings.HeaderTagsInternal;
+            // This is a replacement, so make sure to clear
+            // Could also use a setter
+            currentTags.Clear();
+            foreach (var tag in headerTags)
+            {
+                currentTags[tag.Key] = tag.Value;
+            }
+        }
 
-            foreach (var pair in updated)
+        if (manualSettings.TryGetObject(ObjectKeys.GlobalTagsKey, out obj)
+         && obj is IDictionary<string, string> tags)
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_GlobalTags_Set);
+            var globalTags = tracerSettings.GlobalTagsInternal;
+            // This is a replacement, so make sure to clear
+            // Could also use a setter
+            globalTags.Clear();
+            foreach (var tag in tags)
+            {
+                globalTags[tag.Key] = tag.Value;
+            }
+        }
+
+        if (manualSettings.TryGetObject(ObjectKeys.HttpClientErrorCodesKey, out obj)
+         && obj is IEnumerable<int> clientErrorCodes)
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetHttpClientErrorStatusCodes);
+            tracerSettings.SetHttpClientErrorStatusCodesInternal(clientErrorCodes);
+        }
+
+        if (manualSettings.TryGetObject(ObjectKeys.HttpServerErrorCodesKey, out obj)
+         && obj is IEnumerable<int> serverErrorCodes)
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetHttpServerErrorStatusCodes);
+            tracerSettings.SetHttpServerErrorStatusCodesInternal(serverErrorCodes);
+        }
+
+        if (manualSettings.TryGetObject(ObjectKeys.ServiceNameMappingsKey, out obj)
+         && obj is Dictionary<string, string> mappings)
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetServiceNameMappings);
+            tracerSettings.SetServiceNameMappingsInternal(mappings);
+        }
+
+        if (manualSettings.TryGetObject(ObjectKeys.IntegrationSettingsKey, out obj)
+         && obj is Dictionary<string, object?[]> integrations
+            && integrations.Count != 0)
+        {
+            var integrations1 = tracerSettings.IntegrationsInternal.Settings;
+
+            foreach (var pair in integrations)
             {
                 if (!IntegrationRegistry.TryGetIntegrationId(pair.Key, out var integrationId))
                 {
@@ -246,16 +254,16 @@ public class ConfigureIntegration
                     continue;
                 }
 
-                var setting = integrations[(int)integrationId];
+                var setting = integrations1[(int)integrationId];
 
                 if (IntegrationSettingsSerializationHelper.TryDeserializeFromManual(
-                       pair.Value,
-                       out var enabledChanged,
-                       out var enabled,
-                       out var analyticsEnabledChanged,
-                       out var analyticsEnabled,
-                       out var analyticsSampleRateChanged,
-                       out var analyticsSampleRate))
+                        pair.Value,
+                        out var enabledChanged,
+                        out var enabled,
+                        out var analyticsEnabledChanged,
+                        out var analyticsEnabled,
+                        out var analyticsSampleRateChanged,
+                        out var analyticsSampleRate))
                 {
                     if (enabledChanged)
                     {
