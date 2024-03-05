@@ -96,7 +96,7 @@ namespace Datadog.Trace.Configuration
         public const string MetricsUnixDomainSocketPath = "DD_DOGSTATSD_SOCKET";
 
         /// <summary>
-        /// Configuration key for the Metrics location where the Tracer can send traces.
+        /// Configuration key for the location where the Tracer can send DogStatsD metrics.
         /// Default value is "udp://127.0.0.1:8125".
         /// </summary>
         /// <seealso cref="ExporterSettings.AgentUri"/>
