@@ -11,8 +11,20 @@
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
 
+  <Choose>
+    <When Condition="'$(TargetFramework)' == 'netcoreapp2.1' OR '$(TargetFramework)' == 'netcoreapp3.0'">
+      <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+  
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="$(ApiVersion)" />
     <PackageReference Include="MSTest.TestFramework" Version="$(ApiVersion)" />
   </ItemGroup>
