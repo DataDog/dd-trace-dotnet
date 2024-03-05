@@ -30,7 +30,8 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
     /// <returns>Normalized name</returns>
     private static string NormalizeName(string name)
     {
-        var sb = StringBuilderCache.Acquire(name.Length);
+        var sb = StringBuilderCache.Acquire(name.Length + 3);
+        sb.Append("XYZ");
         foreach (var c in name)
         {
             sb.Append(c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') ? c : '_');
@@ -56,9 +57,12 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
 
     public void Set(string name, string value)
     {
+        Console.WriteLine($"### Setting {name}={value}");
         var normalizedName = NormalizeName(name);
         RemoveNormalized(normalizedName);
         var val = StringToUnsignedBytes(value);
+        
+        Console.WriteLine($"### Encoded to {normalizedName}={val.GetType().Name}({val.Length})");
         _message.SetBytesProperty(normalizedName, val);
     }
 
@@ -90,6 +94,7 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
 
     private sbyte[] StringToUnsignedBytes(string str)
     {
+        Console.WriteLine(" ### Encoding val " + str);
         var buf = Encoding.ASCII.GetBytes(str);
 
         // since the text is ASCII signed and unsigned bytes are the same.
