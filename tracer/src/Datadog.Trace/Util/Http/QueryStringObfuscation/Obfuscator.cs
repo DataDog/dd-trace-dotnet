@@ -33,10 +33,9 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
                 // Can't use empty string, space, or dot, as they are optimized and don't actually trigger the compilation
                 _ = _regex.Match("o");
             }
-            catch (Exception exception)
+            catch
             {
-                // We're in the constructor, we can't let exceptions escape
-                _logger.Warning(exception, "Timeout during the query string obfuscation regex warmup, with a timeout value of {TotalMilliseconds} ms and regex pattern {Pattern}", _timeout.TotalMilliseconds, _regex.ToString());
+                // Nothing to log here
             }
         }
 
