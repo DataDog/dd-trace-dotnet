@@ -81,6 +81,7 @@ static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("Oracle.ManagedDataAccess"),
     WStr("DelegateDecompiler*"),
     WStr("FluentValidation*"),
+    WStr("NHibernate*"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedMethodIncludeFilters[] = {
