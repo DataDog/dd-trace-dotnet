@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
@@ -27,6 +28,7 @@ namespace Datadog.Trace.Agent.MessagePack
         // this class so that's fine.
 
         // top-level span fields
+        private static readonly byte[] _metaStructBytes = StringEncoding.UTF8.GetBytes("meta_struct");
         private readonly byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
         private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
         private readonly byte[] _nameBytes = StringEncoding.UTF8.GetBytes("name");
@@ -137,6 +139,11 @@ namespace Datadog.Trace.Agent.MessagePack
                 len++;
             }
 
+            if (span.MetaStruct != null && span.MetaStruct.Count > 0)
+            {
+                len++;
+            }
+
             len += 2; // Tags and metrics
 
             int originalOffset = offset;
@@ -189,7 +196,25 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += WriteTags(ref bytes, offset, in spanModel, tagProcessors);
             offset += WriteMetrics(ref bytes, offset, in spanModel, tagProcessors);
 
+            EncodeMetaStruct(ref bytes, ref offset, span.MetaStruct);
+
             return offset - originalOffset;
+        }
+
+        internal static void EncodeMetaStruct(ref byte[] bytes, ref int offset, Dictionary<string, object> metaStruct)
+        {
+            if (metaStruct != null && metaStruct.Count > 0)
+            {
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaStructBytes);
+                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 1);
+
+                for (int i = 0; i < 1; i++)
+                {
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringEncoding.UTF8.GetBytes("test"));
+                    offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, 1);
+                    offset += MessagePackBinary.WriteBytes(ref bytes, offset, new byte[] { 160 });
+                }
+            }
         }
 
         // TAGS

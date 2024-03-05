@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -118,6 +119,8 @@ namespace Datadog.Trace
         internal ulong RootSpanId => Context.TraceContext?.RootSpan?.SpanId ?? SpanId;
 
         internal ITags Tags { get; set; }
+
+        internal Dictionary<string, object> MetaStruct { get; set; } = new();
 
         internal SpanContext Context { get; }
 

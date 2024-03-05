@@ -293,6 +293,19 @@ namespace Datadog.Trace
         }
 
         /// <inheritdoc cref="ITracer" />
+        public static void AddMetaStructData()
+        {
+            var rootSpan = Instance.InternalActiveScope?.Root?.Span;
+
+            if (rootSpan != null)
+            {
+                rootSpan.MetaStruct.Add("_dd.stack.exploit.type", "testType");
+                rootSpan.MetaStruct.Add("_dd.stack.exploit.language", "dotnet");
+                rootSpan.MetaStruct.Add("_dd.stack.exploit.id", "dotnet");
+            }
+        }
+
+        /// <inheritdoc cref="ITracer" />
         [PublicApi]
         IScope ITracer.StartActive(string operationName)
         {
