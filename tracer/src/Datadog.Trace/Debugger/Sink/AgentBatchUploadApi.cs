@@ -12,6 +12,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
@@ -23,18 +24,23 @@ namespace Datadog.Trace.Debugger.Sink
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentBatchUploadApi>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
+        private readonly IGitMetadataTagsProvider? _gitMetadataTagsProvider;
         private string? _endpoint = null;
         private string? _tags = null;
 
-        private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+        private AgentBatchUploadApi(
+            IApiRequestFactory apiRequestFactory,
+            IDiscoveryService discoveryService,
+            IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
             _apiRequestFactory = apiRequestFactory;
+            _gitMetadataTagsProvider = gitMetadataTagsProvider;
             discoveryService.SubscribeToChanges(c => _endpoint = c.DebuggerEndpoint);
         }
 
-        public static AgentBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+        public static AgentBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
-            return new AgentBatchUploadApi(apiRequestFactory, discoveryService);
+            return new AgentBatchUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
         }
 
         public async Task<bool> SendBatchAsync(ArraySegment<byte> data)
@@ -100,21 +106,22 @@ namespace Datadog.Trace.Debugger.Sink
                     sb.Append($"{Tags.RuntimeId}:{runtimeId},");
                 }
 
-                var gitRepoUrl = Tracer.Instance.Settings.GitRepositoryUrl;
-                if (!string.IsNullOrEmpty(gitRepoUrl))
+                if (_gitMetadataTagsProvider != null &&
+                    _gitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata) &&
+                    gitMetadata != GitMetadata.Empty)
                 {
-                    sb.Append($"{Tags.GitRepositoryUrl}:{gitRepoUrl},");
-                }
-
-                var gitCommitSha = Tracer.Instance.Settings.GitCommitSha;
-                if (!string.IsNullOrEmpty(gitCommitSha))
-                {
-                    sb.Append($"{Tags.GitCommitSha}:{gitCommitSha},");
+                    sb.Append($"{Tags.GitRepositoryUrl}:{gitMetadata.RepositoryUrl},");
+                    sb.Append($"{Tags.GitCommitSha}:{gitMetadata.CommitSha},");
                 }
 
                 foreach (var kvp in Tracer.Instance.Settings.GlobalTagsInternal)
                 {
-                    sb.Append($",{kvp.Key}:{kvp.Value}");
+                    sb.Append($"{kvp.Key}:{kvp.Value},");
+                }
+
+                if (sb[sb.Length - 1] == ',')
+                {
+                    sb.Length--;
                 }
 
                 return sb.ToString();
