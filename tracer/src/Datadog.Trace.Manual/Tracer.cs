@@ -6,6 +6,7 @@
 using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Stubs;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace
 {
@@ -76,9 +77,16 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="settings"> A <see cref="TracerSettings"/> instance with the desired settings,
         /// or null to use the default configuration sources. This is used to configure global settings</param>
+        [Instrumented]
         public static void Configure(TracerSettings settings)
         {
-            Configure(settings.ToDictionary());
+            if (settings is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(settings));
+            }
+
+            // Automatic instrumentation intercepts this method and reconfigures the automatic tracer
+            _ = settings;
         }
 
         /// <inheritdoc cref="ITracer" />
@@ -98,15 +106,6 @@ namespace Datadog.Trace
         /// <returns>Task used to track the async flush operation</returns>
         [Instrumented]
         public Task ForceFlushAsync() => Task.CompletedTask;
-
-        /// <summary>
-        /// Automatic instrumentation intercepts this method and reconfigures the automatic tracer
-        /// </summary>
-        [Instrumented]
-        private static void Configure(Dictionary<string, object?> settings)
-        {
-            _ = settings;
-        }
 
         /// <summary>
         /// Automatic instrumentation intercepts this method and returns the current immutable tracer settings
