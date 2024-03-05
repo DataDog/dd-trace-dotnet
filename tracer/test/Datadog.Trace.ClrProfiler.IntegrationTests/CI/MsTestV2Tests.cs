@@ -14,19 +14,45 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
+#pragma warning disable SA1402
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
-    public class MsTestV2Tests : TestHelper
+    public class MsTestV2Tests(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests", output)
     {
-        private const string TestSuiteName = "Samples.MSTestTests.TestSuite";
-        private const string TestBundleName = "Samples.MSTestTests";
+        protected override string TestSuiteName => "Samples.MSTestTests.TestSuite";
 
-        public MsTestV2Tests(ITestOutputHelper output)
-            : base("MSTestTests", output)
+        protected override string TestBundleName => "Samples.MSTestTests";
+    }
+
+    public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output)
+    {
+        protected override string TestSuiteName => "Samples.MSTestTests2.TestSuite";
+
+        protected override string TestBundleName => "Samples.MSTestTests2";
+    }
+
+    [Collection("MsTestV2Tests")]
+    public abstract class MsTestV2TestsBase : TestHelper
+    {
+        private readonly GacFixture _gacFixture;
+
+        public MsTestV2TestsBase(string sampleAppName, ITestOutputHelper output)
+            : base(sampleAppName, output)
         {
             SetServiceName("mstest-tests");
             SetServiceVersion("1.0.0");
+            _gacFixture = new GacFixture();
+            _gacFixture.AddAssembliesToGac();
+        }
+
+        protected abstract string TestSuiteName { get; }
+
+        protected abstract string TestBundleName { get; }
+
+        public override void Dispose()
+        {
+            _gacFixture.RemoveAssembliesFromGac();
         }
 
         [SkippableTheory]
@@ -363,5 +389,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             // Check the error message
             AssertTargetSpanEqual(targetSpan, Tags.ErrorMsg, new DivideByZeroException().Message);
         }
+    }
+
+    [CollectionDefinition("MsTestV2Tests", DisableParallelization = true)]
+    public class MsTestV2TestCollection
+    {
     }
 }

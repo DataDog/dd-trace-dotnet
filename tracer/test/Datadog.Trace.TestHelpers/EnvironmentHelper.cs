@@ -362,7 +362,8 @@ namespace Datadog.Trace.TestHelpers
         {
             if (EnvironmentTools.IsWindows() && !IsCoreClr())
             {
-                string filePattern = @"C:\Program Files (x86)\Microsoft Visual Studio\{0}\{1}\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe";
+                string filePattern32 = @"C:\Program Files (x86)\Microsoft Visual Studio\{0}\{1}\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe";
+                string filePattern64 = @"C:\Program Files\Microsoft Visual Studio\{0}\{1}\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe";
                 List<Tuple<string, string>> lstTuple = new List<Tuple<string, string>>
                 {
                     Tuple.Create("2022", "Enterprise"),
@@ -378,7 +379,13 @@ namespace Datadog.Trace.TestHelpers
 
                 foreach (Tuple<string, string> tuple in lstTuple)
                 {
-                    var tryPath = string.Format(filePattern, tuple.Item1, tuple.Item2);
+                    var tryPath = string.Format(filePattern32, tuple.Item1, tuple.Item2);
+                    if (File.Exists(tryPath))
+                    {
+                        return tryPath;
+                    }
+
+                    tryPath = string.Format(filePattern64, tuple.Item1, tuple.Item2);
                     if (File.Exists(tryPath))
                     {
                         return tryPath;
