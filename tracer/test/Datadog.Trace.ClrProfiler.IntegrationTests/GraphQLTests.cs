@@ -192,6 +192,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion(ServiceVersion);
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
+            // After updating the regex implementation multiple runtimes started hitting the timeout.
+            // Increasing timeout here to prevent flaky tests.
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "5000");
+
             _testName = testName;
             _metadataSchemaVersion = metadataSchemaVersion;
         }
