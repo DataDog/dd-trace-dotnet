@@ -65,6 +65,7 @@ public static class FireOnStartCommon
         if (security.Enabled || iastEnabled)
         {
             var responseHeaders = instance.DuckCast<HttpProtocolStruct>().ResponseHeaders;
+            var requestHeaders = instance.DuckCast<HttpProtocolStruct>().RequestHeaders;
             var span = Tracer.Instance.InternalActiveScope?.Root?.Span;
 
             if (responseHeaders is not null)
@@ -83,7 +84,9 @@ public static class FireOnStartCommon
                     {
                         var statusCode = instance.DuckCast<HttpProtocolStruct>().StatusCode;
                         var scheme = instance.DuckCast<HttpProtocolStruct>().Scheme;
+
                         ReturnedHeadersAnalyzer.Analyze(responseHeaders, IntegrationId.AspNetCore, span.ServiceName, statusCode, scheme);
+                        InsecureAuthAnalyzer.AnalyzeInsecureAuth(requestHeaders, IntegrationId.AspNetCore, statusCode);
                     }
 
                     CookieAnalyzer.AnalyzeCookies(responseHeaders, IntegrationId.AspNetCore);
@@ -97,6 +100,8 @@ public static class FireOnStartCommon
     [DuckCopy]
     internal struct HttpProtocolStruct
     {
+        [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+        public IHeaderDictionary RequestHeaders;
         [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
         public IHeaderDictionary ResponseHeaders;
         [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]

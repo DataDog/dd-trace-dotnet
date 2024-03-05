@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Threading;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
@@ -16,6 +17,8 @@ namespace Datadog.Trace.Ci.Processors
 
         private readonly bool _isPartialFlushEnabled = false;
         private readonly bool _isCiVisibilityProtocol = false;
+        private DateTimeOffset _warningLastTime = DateTimeOffset.MinValue;
+        private int _count = 0;
 
         public OriginTagTraceProcessor(bool isPartialFlushEnabled, bool isCiVisibilityProtocol)
         {
@@ -51,7 +54,16 @@ namespace Datadog.Trace.Ci.Processors
                         span.Type != SpanTypes.Benchmark &&
                         span.Type != SpanTypes.Build)
                     {
-                        Log.Warning<int>("Spans dropped because not having a test or benchmark root span: {Count}", trace.Count);
+                        if (TraceClock.Instance.UtcNow - _warningLastTime > TimeSpan.FromSeconds(1))
+                        {
+                            _warningLastTime = TraceClock.Instance.UtcNow;
+                            Log.Warning<int>("Spans dropped because not having a test or benchmark root span: {Count}", trace.Count + Interlocked.Exchange(ref _count, 0));
+                        }
+                        else
+                        {
+                            Interlocked.Increment(ref _count);
+                        }
+
                         return default;
                     }
                 }
