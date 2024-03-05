@@ -8,15 +8,17 @@ extern alias DatadogTraceManual;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Xunit;
-using CtorIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.CtorIntegration;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.TracerSettingKeyConstants;
 using ImmutableManualSettings = DatadogTraceManual::Datadog.Trace.Configuration.ImmutableTracerSettings;
+using ManualITracerSettings = DatadogTraceManual::Datadog.Trace.Configuration.ITracerSettings;
 using ManualSettings = DatadogTraceManual::Datadog.Trace.Configuration.TracerSettings;
+using NullTracerSettings = DatadogTraceManual::Datadog.Trace.Configuration.NullTracerSettings;
 
 namespace Datadog.Trace.Tests.ManualInstrumentation;
 
@@ -27,10 +29,9 @@ public class SettingsInstrumentationTests
     public void AutomaticToManual_AllDefaultSettingsAreTransferredCorrectly()
     {
         var automatic = new TracerSettings();
-        Dictionary<string, object> serializedSettings = new();
-        PopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
+        var proxy = automatic.DuckCast<ManualITracerSettings>();
 
-        var manual = new ManualSettings(serializedSettings, isFromDefaultSources: false);
+        var manual = new ManualSettings(proxy, isFromDefaultSources: false);
 
         AssertEquivalent(manual, automatic);
     }
@@ -39,12 +40,15 @@ public class SettingsInstrumentationTests
     public void AutomaticToManual_IncludesAllExpectedKeys()
     {
         var automatic = new TracerSettings();
-        Dictionary<string, object> serializedSettings = new();
-        PopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
+        var proxy = automatic.DuckCast<ManualITracerSettings>();
 
-        // ensure that we have all the expected keys
+        // ensure that we return a value for all the expected keys
         var keys = GetAutomaticTracerSettingKeys();
-        serializedSettings.Should().ContainKeys(keys).And.HaveSameCount(keys);
+        using var scope = new AssertionScope();
+        foreach (var key in keys)
+        {
+            AssertHasExpectedKey(key, proxy);
+        }
     }
 
     [Fact]
@@ -77,31 +81,45 @@ public class SettingsInstrumentationTests
         automatic.Integrations[nameof(IntegrationId.Grpc)].AnalyticsEnabled = true;
         automatic.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate = 0.5;
 
-        Dictionary<string, object> serializedSettings = new();
-        PopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
-
-        var manual = new ManualSettings(serializedSettings, isFromDefaultSources: false);
+        var manual = new ManualSettings(automatic.DuckCast<ManualITracerSettings>(), isFromDefaultSources: false);
 
         AssertEquivalent(manual, automatic);
     }
 
-    [Fact]
-    public void ManualToAutomatic_IncludesNoKeysWhenNotChanged()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ManualToAutomatic_IncludesNoKeysWhenNotChanged(bool isFromDefaultsExpected)
     {
-        var manual = new ManualSettings(new(), isFromDefaultSources: false);
-        var settings = manual.ToDictionary();
+        var manual = new ManualSettings(NullTracerSettings.Instance, isFromDefaultSources: isFromDefaultsExpected);
+        var proxy = manual.DuckCast<ManualITracerSettings>();
 
-        settings.Should()
-                .ContainSingle()
-                .And.Contain(TracerSettingKeyConstants.IsFromDefaultSourcesKey, value: false);
+        // should always have this key
+        proxy.TryGetBool(BoolKeys.IsFromDefaultSourcesKey, out var isFromDefaults).Should().BeTrue();
+        isFromDefaults.Should().Be(isFromDefaultsExpected);
+
+        var allKeys = GetAllTracerSettingKeys()
+                     .Where(x => x.Key != BoolKeys.IsFromDefaultSourcesKey);
+
+        using var s = new AssertionScope();
+        foreach (var (name, key) in allKeys)
+        {
+            // these are only applicable in one slot, but test them all to be certain
+            proxy.TryGetObject(key, out _).Should().BeFalse();
+            proxy.TryGetBool(key, out _).Should().BeFalse();
+            proxy.TryGetInt(key, out _).Should().BeFalse();
+            proxy.TryGetDouble(key, out _).Should().BeFalse();
+            proxy.TryGetNullableBool(key, out _).Should().BeFalse();
+            proxy.TryGetNullableInt(key, out _).Should().BeFalse();
+            proxy.TryGetNullableDouble(key, out _).Should().BeFalse();
+        }
     }
 
     [Fact]
     public void ManualToAutomatic_IncludesAllExpectedKeys()
     {
         // change all the defaults to make sure we add the keys to the dictionary
-        Dictionary<string, object> originalSettings = new();
-        PopulateDictionaryIntegration.PopulateSettings(originalSettings, new TracerSettings());
+        var originalSettings = new TracerSettings().DuckCast<ManualITracerSettings>();
         var manual = new ManualSettings(originalSettings, isFromDefaultSources: false)
         {
             AgentUri = new Uri("http://localhost:1234"),
@@ -131,18 +149,18 @@ public class SettingsInstrumentationTests
         manual.SetHttpClientErrorStatusCodes([400, 401, 402]);
         manual.SetHttpServerErrorStatusCodes([500, 501, 502]);
 
-        var settings = manual.ToDictionary();
+        var proxy = manual.DuckCast<ManualITracerSettings>();
 
-        var keys = GetManualTracerSettingKeys();
-        settings.Should().ContainKeys(keys).And.HaveSameCount(keys);
+        foreach (var key in GetManualTracerSettingKeys())
+        {
+            AssertHasExpectedKey(key, proxy);
+        }
     }
 
     [Fact]
     public void ManualToAutomatic_CustomSettingsAreTransferredCorrectly()
     {
-        Dictionary<string, object> initialValues = new();
-        PopulateDictionaryIntegration.PopulateSettings(initialValues, new TracerSettings());
-
+        var initialValues = new TracerSettings().DuckCast<ManualITracerSettings>();
         var manual = new ManualSettings(initialValues, isFromDefaultSources: false)
         {
             AgentUri = new Uri("http://localhost:1234"),
@@ -178,10 +196,10 @@ public class SettingsInstrumentationTests
         manual.SetHttpClientErrorStatusCodes(clientErrors);
         manual.SetHttpServerErrorStatusCodes(serverErrors);
 
-        var changedValues = manual.ToDictionary();
+        var proxy = manual.DuckCast<ITracerSettings>();
 
         var automatic = new TracerSettings();
-        ConfigureIntegration.UpdateSettings(changedValues, automatic);
+        ConfigureIntegration.UpdateSettings(in proxy, automatic);
 
         AssertEquivalent(manual, automatic);
         automatic.ServiceNameMappings.Should().Equal(mappings);
@@ -221,8 +239,7 @@ public class SettingsInstrumentationTests
 
         var immutable = automatic.Build();
 
-        Dictionary<string, object> serializedSettings = new();
-        CtorIntegration.PopulateSettings(serializedSettings, immutable);
+        var serializedSettings = immutable.DuckCast<ManualITracerSettings>();
 
         var manual = new ImmutableManualSettings(serializedSettings);
 
@@ -277,29 +294,55 @@ public class SettingsInstrumentationTests
         }
     }
 
-    private static string[] GetAllTracerSettingKeys()
+    private static List<(string Name, string Key)> GetAllTracerSettingKeys()
     {
-        var keyFields = typeof(TracerSettingKeyConstants).GetFields();
-        // should only have consts in this class
-        keyFields.Should().OnlyContain(fi => fi.IsLiteral && !fi.IsInitOnly && fi.FieldType == typeof(string), "TracerSettingKeyConstants should only contain string constants");
+        var objectKeyFields = GetKeyFields(typeof(ObjectKeys), nameof(ObjectKeys));
+        var boolKeyFields = GetKeyFields(typeof(BoolKeys), nameof(BoolKeys));
+        var intKeyFields = GetKeyFields(typeof(IntKeys), nameof(IntKeys));
+        var doubleKeyFields = GetKeyFields(typeof(NullableDoubleKeys), nameof(NullableDoubleKeys));
 
-        var keys = keyFields.Select(x => (string)x.GetRawConstantValue()).ToArray();
-        keys.Should().NotBeEmpty().And.OnlyContain(x => !string.IsNullOrEmpty(x), "TracerSettingKeyConstants keys should not be null or empty");
+        return objectKeyFields
+              .Concat(boolKeyFields)
+              .Concat(intKeyFields)
+              .Concat(doubleKeyFields)
+              .ToList();
 
-        return keys;
+        static IEnumerable<(string Name, string Key)> GetKeyFields(Type type, string name)
+        {
+            var keyFields = type.GetFields();
+            // should only have consts in this class
+            keyFields.Should().OnlyContain(fi => fi.IsLiteral && !fi.IsInitOnly && fi.FieldType == typeof(string), $"{name} should only contain string constants");
+
+            var keys = keyFields.Select(x => (string)x.GetRawConstantValue()).ToArray();
+            keys.Should().NotBeEmpty().And.OnlyContain(x => !string.IsNullOrEmpty(x), $"{name} keys should not be null or empty");
+
+            return keys.Select(x => (name, x));
+        }
     }
 
-    private static string[] GetAutomaticTracerSettingKeys()
+    private static IEnumerable<(string Name, string Key)> GetAutomaticTracerSettingKeys()
         => GetAllTracerSettingKeys()
-          .Where(
-               x => x is not "IsFromDefaultSources"
-                        and not "DD_HTTP_CLIENT_ERROR_STATUSES"
-                        and not "DD_HTTP_SERVER_ERROR_STATUSES"
-                        and not "DD_TRACE_SERVICE_MAPPING")
-          .ToArray();
+           .Where(
+                x => x.Key is not "IsFromDefaultSources"
+                         and not "DD_HTTP_CLIENT_ERROR_STATUSES"
+                         and not "DD_HTTP_SERVER_ERROR_STATUSES"
+                         and not "DD_TRACE_SERVICE_MAPPING");
 
-    private static string[] GetManualTracerSettingKeys()
+    private static IEnumerable<(string Name, string Key)> GetManualTracerSettingKeys()
         => GetAllTracerSettingKeys()
-          .Where(x => x is not "DD_DIAGNOSTIC_SOURCE_ENABLED")
-          .ToArray();
+           .Where(x => x.Key is not "DD_DIAGNOSTIC_SOURCE_ENABLED");
+
+    private static void AssertHasExpectedKey<T>((string Name, string Key) key, T proxy)
+        where T : ManualITracerSettings
+    {
+        (key.Name switch
+                {
+                    nameof(ObjectKeys) => proxy.TryGetObject(key.Key, out _),
+                    nameof(BoolKeys) => proxy.TryGetBool(key.Key, out _),
+                    nameof(IntKeys) => proxy.TryGetInt(key.Key, out _),
+                    nameof(NullableDoubleKeys) => proxy.TryGetNullableDouble(key.Key, out _),
+                    _ => throw new InvalidOperationException("Unexpected key type:" + key.Name),
+                }).Should()
+                  .BeTrue($"TracerSettings should expect the key {key.Key} ({key.Name}");
+    }
 }

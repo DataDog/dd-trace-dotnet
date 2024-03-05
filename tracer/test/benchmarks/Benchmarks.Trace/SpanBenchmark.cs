@@ -15,6 +15,7 @@ using Tracer = Datadog.Trace.Tracer;
 using ManualTracer = DatadogTraceManual::Datadog.Trace.Tracer;
 using ManualSpanContext = DatadogTraceManual::Datadog.Trace.SpanContext;
 using ManualISpan = DatadogTraceManual::Datadog.Trace.ISpan;
+using ManualITracerSettings = DatadogTraceManual::Datadog.Trace.Configuration.ITracerSettings;
 
 namespace Benchmarks.Trace
 {
@@ -39,8 +40,7 @@ namespace Benchmarks.Trace
             Tracer = new Tracer(settings, new DummyAgentWriter(), null, null, null);
 
             // Create the manual integration
-            Dictionary<string, object> manualSettings = new();
-            CtorIntegration.PopulateSettings(manualSettings, Tracer.Settings);
+            var manualSettings = Tracer.Settings.DuckCast<ManualITracerSettings>();
 
             // Constructor is private, so create using reflection
             ManualTracer = (ManualTracer)typeof(ManualTracer)
