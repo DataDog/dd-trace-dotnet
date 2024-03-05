@@ -234,6 +234,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [Trait("Category", "EndToEnd")]
+        public async Task TracingDisabled()
+        {
+            await RunSampleWithAllTracingDisabled();
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [Trait("Category", "EndToEnd")]
+        public async Task IntegrationDisabled()
+        {
+            using var telemetry = this.ConfigureTelemetry();
+
+            await RunSampleWithIntegrationDisabled(
+                IntegrationId.HttpMessageHandler,
+                spanFilter: s => s.Type == SpanTypes.Http);
+
+            telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
+        }
+
         private static int CalculateExpectedAsyncSpans(InstrumentationOptions instrumentation)
         {
             // net4x doesn't have patch
