@@ -47,6 +47,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\..\..\src\Datadog.Trace.Annotations\TraceAttribute.cs" Link="TraceAttribute.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Data\database.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

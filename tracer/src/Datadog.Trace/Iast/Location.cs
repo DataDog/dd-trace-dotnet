@@ -59,7 +59,7 @@ internal readonly struct Location
 
     public override int GetHashCode()
     {
-        // We do not calculate the hash including the spanId
-        return IastUtils.GetHashCode(Path, Line, Method);
+        // We do not calculate the hash including the spanId nor the line
+        return IastUtils.GetHashCode(Path, Method);
     }
 }

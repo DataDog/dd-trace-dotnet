@@ -60,6 +60,6 @@ public class HashTests
     {
         var vulnerability = new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("AspNetCoreRateLimit.RateLimitProcessor", "BuildCounterKey", null, 849303611103961300), new Evidence("SHA1"));
         var hashCode = vulnerability.GetHashCode();
-        Assert.Equal(-1164742008, hashCode);
+        Assert.Equal(890383720, hashCode);
     }
 }

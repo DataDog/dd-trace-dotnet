@@ -139,16 +139,16 @@ public class HashBasedDeduplicationTests
     {
         var instance = new HashBasedDeduplication();
         var vulnerability1 = new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("Namespace.TypeName", "Method", 0, 0), new Evidence("MD5"));
-        Assert.True(instance.Add(vulnerability1));
-        Assert.False(instance.Add(vulnerability1));
+        Assert.True(instance.Add(vulnerability1), "Original vuln was not added on start");
+        Assert.False(instance.Add(vulnerability1), "Original vuln was not duplicated");
 
         for (int i = 1; i <= HashBasedDeduplication.MaximumSize; i++)
         {
-            var vuln = new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("Namespace.TypeName", "Method", i, 0), new Evidence("MD5"));
-            Assert.True(instance.Add(vuln));
+            var vuln = new Vulnerability(VulnerabilityTypeName.WeakHash, new Location($"Namespace.TypeName", $"Method-{new string('.', i)}", i, 0), new Evidence("MD5"));
+            Assert.True(instance.Add(vuln), $"Failed on i={i}");
         }
 
-        Assert.True(instance.Add(vulnerability1));
+        Assert.True(instance.Add(vulnerability1), "Original vuln was not added in the end");
     }
 
     [Theory]

@@ -23,7 +23,7 @@
   "vulnerabilities": [
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
-      "hash": -1443319821,
+      "hash": -1696363463,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
@@ -40,7 +40,7 @@
     },
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
-      "hash": -1443319821,
+      "hash": -1696363463,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
@@ -57,7 +57,7 @@
     },
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
-      "hash": -1443319821,
+      "hash": -1696363463,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
@@ -74,7 +74,7 @@
     },
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
-      "hash": -1443319821,
+      "hash": -1696363463,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
