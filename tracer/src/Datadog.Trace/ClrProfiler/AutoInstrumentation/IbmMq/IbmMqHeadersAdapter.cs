@@ -61,7 +61,6 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
         var normalizedName = NormalizeName(name);
         RemoveNormalized(normalizedName);
         var val = StringToUnsignedBytes(value);
-        
         Console.WriteLine($"### Encoded to {normalizedName}={val.GetType().Name}({val.Length})");
         _message.SetBytesProperty(normalizedName, val);
     }
