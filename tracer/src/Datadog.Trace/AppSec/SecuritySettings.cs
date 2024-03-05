@@ -27,13 +27,13 @@ namespace Datadog.Trace.AppSec
         {
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
-            BlockedHtmlTemplate = config
+            BlockedHtmlTemplatePath = config
                                  .WithKeys(ConfigurationKeys.AppSec.HtmlBlockedTemplate)
-                                 .AsRedactedString(SecurityConstants.BlockedHtmlTemplate); // Redacted because it's huge
+                                 .AsRedactedString(); // Redacted because it's huge
 
-            BlockedJsonTemplate = config
+            BlockedJsonTemplatePath = config
                                  .WithKeys(ConfigurationKeys.AppSec.JsonBlockedTemplate)
-                                 .AsString(SecurityConstants.BlockedJsonTemplate);
+                                 .AsString();
 
             bool isEnabledSet = true;
 
@@ -187,7 +187,7 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// Gets the blocking response template for Html content. This template is used in combination with the status code to craft and send a response upon blocking the request.
         /// </summary>
-        public string BlockedHtmlTemplate { get; }
+        public string? BlockedHtmlTemplatePath { get; }
 
         /// <summary>
         /// Gets the automatic tracking of user events mode. Values can be disabled, safe or extended.
@@ -197,7 +197,7 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// Gets the response template for Json content. This template is used in combination with the status code to craft and send a response upon blocking the request.
         /// </summary>
-        public string BlockedJsonTemplate { get; }
+        public string? BlockedJsonTemplatePath { get; }
 
         /// <summary>
         /// Gets a value indicating whether or not api security is enabled, defaults to false.
