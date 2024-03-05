@@ -25,6 +25,11 @@
               Source="$(var.MonitoringHomeDirectory)\netcoreapp2.1\Datadog.Trace.pdb"
               KeyPath="yes" Checksum="yes"/>
       </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="netcoreapp21_System.Runtime.CompilerServices.Unsafe.dll"
+              Source="$(var.MonitoringHomeDirectory)\netcoreapp2.1\System.Runtime.CompilerServices.Unsafe.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
     </ComponentGroup>
   </Fragment>
 </Wix>

@@ -59,6 +59,11 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>
 
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1'">
+    <!--CallTarget integration continuation-->
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.4.0" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Remove="AppSec\Waf\ConfigFiles\rule-set.json" />
     <None Remove="Debugger\ExceptionAutoInstrumentation\ConfigFiles\third-party-module-names.json" />
