@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -182,16 +183,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
+        public async Task TracingDisabled()
+        {
+            await RunSampleWithAllTracingDisabled();
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "ArmUnsupported")]
         public async Task IntegrationDisabled()
         {
+            var packageVersion = PackageVersions.ElasticSearch7.First()[0] as string;
             using var telemetry = this.ConfigureTelemetry();
-            string packageVersion = PackageVersions.ElasticSearch7.First()[0] as string;
-            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.ElasticsearchNet)}_ENABLED", "false");
-            using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = agent.WaitForSpans(1).Where(s => s.Type == "elasticsearch").ToList();
 
-            Assert.Empty(spans);
+            await RunSampleWithIntegrationDisabled(
+                IntegrationId.ElasticsearchNet,
+                packageVersion: packageVersion,
+                spanFilter: s => s.Type == "elasticsearch");
+
             telemetry.AssertIntegrationDisabled(IntegrationId.ElasticsearchNet);
         }
     }
