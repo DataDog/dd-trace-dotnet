@@ -30,8 +30,7 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
     /// <returns>Normalized name</returns>
     private static string NormalizeName(string name)
     {
-        var sb = StringBuilderCache.Acquire(name.Length + 3);
-        sb.Append("XYZ");
+        var sb = StringBuilderCache.Acquire(name.Length);
         foreach (var c in name)
         {
             sb.Append(c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') ? c : '_');
@@ -44,10 +43,15 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
     {
         try
         {
+            Console.WriteLine($"### Trying to get {name}");
             // there's no way to check if the value exists,
             // and reading non-existent value causes an exception
-            var buf = _message.GetBytesProperty(NormalizeName(name));
-            return new[] { StringFromSignedBytes(buf) };
+            var normName = NormalizeName(name);
+            var buf = _message.GetBytesProperty(normName);
+            var val = StringFromSignedBytes(buf);
+
+            Console.WriteLine($"### Got {normName}={val}");
+            return new[] { val };
         }
         catch
         {
