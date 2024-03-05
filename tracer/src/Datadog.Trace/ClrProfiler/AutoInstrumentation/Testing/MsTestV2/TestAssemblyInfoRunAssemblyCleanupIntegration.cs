@@ -34,7 +34,7 @@ public static class TestAssemblyInfoRunAssemblyCleanupIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         where TTarget : ITestAssemblyInfo
     {
-        if (MsTestIntegration.IsEnabled && MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance) is { } module)
+        if (MsTestIntegration.IsEnabled && MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance, null) is { } module)
         {
             return new CallTargetState(null, module);
         }

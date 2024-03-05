@@ -194,7 +194,7 @@ internal static class MsTestIntegration
         return itrShouldSkip && !isUnskippable;
     }
 
-    internal static TestModule GetOrCreateTestModuleFromTestAssemblyInfo<TAsmInfo>(TAsmInfo testAssemblyInfo)
+    internal static TestModule GetOrCreateTestModuleFromTestAssemblyInfo<TAsmInfo>(TAsmInfo testAssemblyInfo, string assemblyName = null)
         where TAsmInfo : ITestAssemblyInfo
     {
         if (testAssemblyInfo.Instance is not { } objTestAssemblyInfo)
@@ -209,7 +209,15 @@ internal static class MsTestIntegration
         }
 
         CIVisibility.WaitForSkippableTaskToFinish();
-        var assemblyName = testAssemblyInfo.Assembly.GetName().Name ?? string.Empty;
+        if (assemblyName is not null)
+        {
+            assemblyName = AssemblyName.GetAssemblyName(assemblyName).Name ?? string.Empty;
+        }
+        else
+        {
+            assemblyName = string.Empty;
+        }
+
         var frameworkVersion = testAssemblyInfo.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
         Common.Log.Debug("Creating Module: {Module}, Framework version: {Version}", assemblyName, frameworkVersion);
         module = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
@@ -231,7 +239,7 @@ internal static class MsTestIntegration
             return testSuite;
         }
 
-        var module = TestModule.Current ?? GetOrCreateTestModuleFromTestAssemblyInfo(testClassInfo.Parent);
+        var module = TestModule.Current ?? GetOrCreateTestModuleFromTestAssemblyInfo(testClassInfo.Parent, testClassInfo.ClassType.Assembly.FullName);
         if (module is null)
         {
             Common.Log.Error("There is not current module, a new suite cannot be created.");

@@ -47,12 +47,6 @@ public static class TestClassInfoRunClassInitializeIntegration
             return CallTargetState.GetDefault();
         }
 
-        if (instance.Instance is not { } objInstance)
-        {
-            Common.Log.Error("TestClassInfo is null, a new suite cannot be created.");
-            return CallTargetState.GetDefault();
-        }
-
         instance.ClassCleanupMethod ??= EmptyCleanUpMethodInfo;
         return new CallTargetState(null, MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(instance));
     }

@@ -14,9 +14,4 @@ internal interface ITestAssemblyInfo : IDuckType
     /// Gets or sets <c>AssemblyCleanup</c> method for the assembly.
     /// </summary>
     MethodInfo AssemblyCleanupMethod { get; set; }
-
-    /// <summary>
-    /// Gets the <see cref="Assembly"/> this class represents.
-    /// </summary>
-    Assembly Assembly { get; }
 }
