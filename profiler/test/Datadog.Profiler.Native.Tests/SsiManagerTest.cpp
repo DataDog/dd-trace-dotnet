@@ -50,6 +50,7 @@ TEST(SsiManagerTest, Should_StartAsSSI_When_DeployedAsSSI)
     ProfilerTelemetryForTest telemetry;
 
     SsiManager manager(configuration.get(), &telemetry);
+    manager.SetLifetimeDuration(1);  // long lived
     manager.ProcessStart();
 
     ASSERT_EQ(telemetry.GetDeployment(), DeploymentMode::SingleStepInstrumentation);
@@ -63,6 +64,7 @@ TEST(SsiManagerTest, Should_StartAsManual_When_NotDeployedAsSSI)
     ProfilerTelemetryForTest telemetry;
 
     SsiManager manager(configuration.get(), &telemetry);
+    manager.SetLifetimeDuration(1);  // long lived
     manager.ProcessStart();
 
     ASSERT_EQ(telemetry.GetDeployment(), DeploymentMode::Manual);

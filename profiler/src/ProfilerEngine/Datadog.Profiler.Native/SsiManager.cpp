@@ -5,6 +5,8 @@
 #include "IConfiguration.h"
 #include "IProfilerTelemetry.h"
 #include "OsSpecificApi.h"
+#include "OpSysTools.h"
+
 
 SsiManager::SsiManager(IConfiguration* pConfiguration, IProfilerTelemetry* pTelemetry)
     :
@@ -45,13 +47,7 @@ bool SsiManager::IsShortLived()
     }
 #endif
 
-    auto lifetime = OsSpecificApi::GetProcessLifetime();
-    if (lifetime < 30) // TODO add a configuration for this value
-    {
-        return true;
-    }
-
-    return false;
+    return _isShortLived;
 }
 
 // the profiler is activated either if:
@@ -75,9 +71,33 @@ bool SsiManager::IsProfilerActivated()
     return false;
 }
 
+
+void SsiManager::LifetimeCallback()
+{
+    std::chrono::nanoseconds shortLifetime = std::chrono::nanoseconds(_pConfiguration->SsiShortLivedThreshold() * 1000000000);
+    OpSysTools::Sleep(shortLifetime);
+    _isShortLived = false;
+}
+
 void SsiManager::ProcessStart()
 {
-    _pTelemetry->ProcessStart(_isSsiDeployed ? DeploymentMode::SingleStepInstrumentation : DeploymentMode::Manual);
+#ifdef DD_TEST
+    if (_lifetimeDuration != 0)
+    {
+        _pTelemetry->ProcessStart(_isSsiDeployed ? DeploymentMode::SingleStepInstrumentation : DeploymentMode::Manual);
+        return;
+    }
+#endif
+
+    // start the timer for short lived detection (only once)
+    if (_isShortLived && (_lifetimeThread == nullptr))
+    {
+        _lifetimeThread = std::make_unique<std::thread>(&SsiManager::LifetimeCallback, this);
+        _pTelemetry->ProcessStart(_isSsiDeployed ? DeploymentMode::SingleStepInstrumentation : DeploymentMode::Manual);
+        return;
+    }
+
+    assert(false);
 }
 
 void SsiManager::ProcessEnd()

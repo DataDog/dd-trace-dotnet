@@ -5,6 +5,9 @@
 
 #include "ISsiManager.h"
 
+#include <memory>
+#include <thread>
+
 class IConfiguration;
 class IProfilerTelemetry;
 
@@ -15,6 +18,8 @@ class IProfilerTelemetry;
 class SsiManager : public ISsiManager
 {
 public:
+// TODO: We need to pass another interface to notify when the profiler should start profiling
+//       Is it enough to pass CorProfilerCallback*?
     SsiManager(IConfiguration* pConfiguration, IProfilerTelemetry* pTelemetry);
     ~SsiManager() = default;
 
@@ -36,10 +41,15 @@ public:
     bool ShouldSendProfile(const std::string& env, const std::string& serviceName, const std::string_view& runtimeId) override;
 
 private:
+    void LifetimeCallback();
+
+private:
     IConfiguration* _pConfiguration;
     IProfilerTelemetry* _pTelemetry;
     bool _hasSpan = false;
     bool _isSsiDeployed = false;
+    std::unique_ptr<std::thread> _lifetimeThread;
+    bool _isShortLived = true;
 
 #ifdef DD_TEST
 private:
