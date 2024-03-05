@@ -32,8 +32,9 @@ public static class TestAssemblyInfoExecuteAssemblyCleanupIntegration
     /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
+        where TTarget : ITestAssemblyInfo
     {
-        if (MsTestIntegration.IsEnabled && TestAssemblyInfoRunAssemblyInitializeIntegration.TestAssemblyInfos.TryGetValue(instance, out var moduleObject) && moduleObject is TestModule module)
+        if (MsTestIntegration.IsEnabled && MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance) is { } module)
         {
             return new CallTargetState(null, module);
         }

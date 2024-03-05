@@ -31,7 +31,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 public static class TestAssemblyInfoRunAssemblyInitializeIntegration
 {
     private static readonly MethodInfo EmptyCleanUpMethodInfo = typeof(TestAssemblyInfoRunAssemblyInitializeIntegration).GetMethod("EmptyCleanUpMethod", BindingFlags.NonPublic | BindingFlags.Static);
-    internal static readonly ConditionalWeakTable<object, object> TestAssemblyInfos = new();
 
     /// <summary>
     /// OnMethodBegin callback
@@ -44,24 +43,25 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext testContext)
         where TTarget : ITestAssemblyInfo
     {
-        if (!MsTestIntegration.IsEnabled || !testContext.TryDuckCast<TestContextStruct>(out var context))
+        if (!MsTestIntegration.IsEnabled)
         {
             return CallTargetState.GetDefault();
         }
 
-        if (!TestAssemblyInfos.TryGetValue(instance.Instance, out var moduleObject))
+        if (instance.Instance is not { } objInstance)
         {
-            var assemblyName = AssemblyName.GetAssemblyName(context.TestMethod.AssemblyName).Name ?? string.Empty;
-            var frameworkVersion = instance.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
-            instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
-
-            CIVisibility.WaitForSkippableTaskToFinish();
-            var module = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
-            TestAssemblyInfos.Add(instance.Instance, module);
-            return new CallTargetState(null, module);
+            Common.Log.Error("TestAssemblyInfo is null, a new module cannot be created.");
+            return CallTargetState.GetDefault();
         }
 
-        return new CallTargetState(null, moduleObject);
+        if (!testContext.TryDuckCast<TestContextStruct>(out var context))
+        {
+            Common.Log.Error("Context cannot be duck-casted to TestContextStruct, a new module cannot be created.");
+            return CallTargetState.GetDefault();
+        }
+
+        instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
+        return new CallTargetState(null, MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance));
     }
 
     /// <summary>
