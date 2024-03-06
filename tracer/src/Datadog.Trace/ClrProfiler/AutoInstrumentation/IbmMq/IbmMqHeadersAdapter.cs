@@ -88,9 +88,11 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
 
     private string StringFromSignedBytes(sbyte[] buf)
     {
-        // since the text is ASCII signed and unsigned bytes are the same (0-127)
         var unsigned = new byte[buf.Length];
-        Buffer.BlockCopy(buf, 0, unsigned, 0, buf.Length);
+        for (var i = 0; i < unsigned.Length; i++)
+        {
+            unsigned[i] = Convert.ToByte(buf[i]);
+        }
 
         return Encoding.ASCII.GetString(unsigned);
     }
@@ -100,9 +102,11 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
         Console.WriteLine(" ### Encoding val " + str);
         var buf = Encoding.ASCII.GetBytes(str);
 
-        // since the text is ASCII signed and unsigned bytes are the same.
         var signed = new sbyte[buf.Length];
-        Buffer.BlockCopy(buf, 0, signed, 0, buf.Length);
+        for (var i = 0; i < signed.Length; i++)
+        {
+            signed[i] = Convert.ToSByte(buf[i]);
+        }
 
         return signed;
     }
