@@ -174,6 +174,7 @@ namespace Datadog.Trace
             sb.AppendLine($"Duration: {Duration}");
             sb.AppendLine($"End: {StartTime.Add(Duration).ToString("O")}");
             sb.AppendLine($"Error: {Error}");
+            sb.AppendLine($"TraceSamplingPriority: {Context.TraceContext.SamplingPriority}");
             sb.AppendLine($"Meta: {Tags}");
 
             return StringBuilderCache.GetStringAndRelease(sb);
