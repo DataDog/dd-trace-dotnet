@@ -96,21 +96,14 @@ namespace Datadog.Trace.Configuration
             internal const string UserEventsAutomatedTracking = "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING";
 
             /// <summary>
-            /// Percentage of requests for which the schema should be extracted. Between 0 and 1, defaults to 0.1 (10%)
-            /// A value of 0 means no schemas are extracted, effectively disabling schema extraction altogether
-            /// </summary>
-            internal const string ApiSecurityRequestSampleRate = "DD_API_SECURITY_REQUEST_SAMPLE_RATE";
-
-            /// <summary>
-            /// Configuration key for the maximum number of requests
-            /// to be analyzed by api security concurrently. Defaults to 1.
-            /// </summary>
-            internal const string ApiSecurityMaxConcurrentRequests = "DD_API_SECURITY_MAX_CONCURRENT_REQUESTS";
-
-            /// <summary>
             /// Unless set to true or 1, tracers don’t collect schemas. After the experiment, the environment variable will be removed and schema collection will be enabled only when ASM is enabled
             /// </summary>
             internal const string ApiExperimentalSecurityEnabled = "DD_EXPERIMENTAL_API_SECURITY_ENABLED";
+
+            /// <summary>
+            /// Api security sample delay in seconds , should be a float. Set to 0 for testing purposes. default value of 30.
+            /// </summary>
+            internal const string ApiSecuritySampleDelay = "DD_API_SECURITY_SAMPLE_DELAY";
 
             /// <summary>
             /// Use legacy encoder for the waf
