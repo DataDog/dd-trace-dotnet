@@ -297,11 +297,39 @@ namespace Datadog.Trace
         {
             var rootSpan = Instance.InternalActiveScope?.Root?.Span;
 
+            var stack =
+                new List<object>()
+                {
+                                    new Dictionary<string, object>()
+                                    {
+                                        { "type", "type" },
+                                        { "language", "dotnet" },
+                                        { "id", "test22" },
+                                        {
+                                            "frames", new List<object>()
+                                            {
+                                                new Dictionary<string, object>()
+                                                {
+                                                    { "id", "frameid" },
+                                                    { "text", "text" },
+                                                    { "file", "file.cs" },
+                                                    { "line", 33U },
+                                                },
+                                                new Dictionary<string, object>()
+                                                {
+                                                    { "id", "frameid2" },
+                                                    { "text", "text2" },
+                                                    { "file", "file2.cs" },
+                                                    { "line", 55U },
+                                                }
+                                            }
+                                        }
+                                    }
+                };
+
             if (rootSpan != null)
             {
-                rootSpan.MetaStruct.Add("_dd.stack.exploit.type", "lfi");
-                rootSpan.MetaStruct.Add("_dd.stack.exploit.language", "dotnet");
-                rootSpan.MetaStruct.Add("_dd.stack.exploit.id", "dotnet");
+                rootSpan.MetaStruct.Add("_dd.stack.exploit", stack);
             }
         }
 

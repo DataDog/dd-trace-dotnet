@@ -220,37 +220,17 @@ namespace Datadog.Trace.Agent.MessagePack
         {
             if (metaStruct != null && metaStruct.Count > 0)
             {
-                Dictionary<string, byte[]> data = new();
-                var buffer = new byte[] { };
-                var bytesWritten = MessagePackBinary.WriteArrayHeader(ref buffer, 0, 1);
-                bytesWritten += MessagePackBinary.WriteMapHeader(ref buffer, bytesWritten, 4);
-                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("id"));
-                bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("testid"));
-                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("type"));
-                bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("lFi"));
-                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("language"));
-                bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("dotnet"));
-                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("frames"));
-                bytesWritten += MessagePackBinary.WriteArrayHeader(ref buffer, bytesWritten, 2);
-                bytesWritten += MessagePackBinary.WriteMapHeader(ref buffer, bytesWritten, 3);
-                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("id"));
-                bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("frameid"));
-                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("file"));
-                bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("file.cs"));
-                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("line"));
-                bytesWritten += MessagePackBinary.WriteUInt32(ref buffer, bytesWritten, 33);
-                bytesWritten += MessagePackBinary.WriteMapHeader(ref buffer, bytesWritten, 3);
-                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("id"));
-                bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("frameid2"));
-                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("file"));
-                bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("file2.cs"));
-                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("line"));
-                bytesWritten += MessagePackBinary.WriteUInt32(ref buffer, bytesWritten, 55);
-                var newArray = new byte[bytesWritten];
-                Array.Copy(buffer, 0, newArray, 0, bytesWritten);
-                data["_dd.stack.exploit"] = newArray;
-
-                WriteMetaStruct(ref bytes, ref offset, data);
+                foreach (var item in metaStruct)
+                {
+                    Dictionary<string, byte[]> data = new();
+                    var buffersss = new byte[] { };
+                    var result = PrimitiveObjectFormatter.Instance.Serialize(ref buffersss, 0, item.Value, null);
+                    var newArray2 = new byte[result];
+                    Array.Copy(buffersss, 0, newArray2, 0, result);
+                    data.Clear();
+                    data[item.Key] = buffersss;
+                    WriteMetaStruct(ref bytes, ref offset, data);
+                }
             }
         }
 
