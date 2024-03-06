@@ -110,8 +110,8 @@ namespace Datadog.Trace.Debugger.Sink
                     _gitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata) &&
                     gitMetadata != GitMetadata.Empty)
                 {
-                    sb.Append($"{Tags.GitRepositoryUrl}:{gitMetadata.RepositoryUrl},");
-                    sb.Append($"{Tags.GitCommitSha}:{gitMetadata.CommitSha},");
+                    sb.Append($"{CommonTags.GitRepository}:{gitMetadata.RepositoryUrl},");
+                    sb.Append($"{CommonTags.GitCommit}:{gitMetadata.CommitSha},");
                 }
 
                 foreach (var kvp in Tracer.Instance.Settings.GlobalTagsInternal)
