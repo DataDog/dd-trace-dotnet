@@ -18,6 +18,7 @@ using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
 #endif
 using System.Text;
+using Datadog.Trace.Util;
 using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
 namespace Datadog.Trace.Ci.Coverage.Util;
@@ -25,7 +26,7 @@ namespace Datadog.Trace.Ci.Coverage.Util;
 /// <summary>
 /// Represents a memory-efficient, modifiable file bitmap, optimized for high performance using unsafe code and SIMD instructions when available.
 /// </summary>
-internal readonly unsafe ref struct FileBitmap
+internal unsafe ref struct FileBitmap
 {
     /// <summary>
     /// Size of the bitmap in bytes.
@@ -33,14 +34,9 @@ internal readonly unsafe ref struct FileBitmap
     private readonly int _size;
 
     /// <summary>
-    /// Indicates whether the bitmap is disposable and should clean up resources.
-    /// </summary>
-    private readonly bool _disposable;
-
-    /// <summary>
     /// Handle to the pinned array if the bitmap is created from a managed byte array.
     /// </summary>
-    private readonly PinnedArray? _handle;
+    private readonly GCHandle? _handle;
 
     /// <summary>
     /// Pointer to the start of the bitmap data in memory.
@@ -55,10 +51,16 @@ internal readonly unsafe ref struct FileBitmap
     public FileBitmap(byte* buffer, int size)
     {
         _handle = null;
-        _size = size;
         _bitmap = buffer;
-        Unsafe.InitBlockUnaligned(buffer, 0, (uint)_size);
-        _disposable = false;
+        if (buffer is null)
+        {
+            _size = 0;
+        }
+        else
+        {
+            _size = size;
+            Unsafe.InitBlockUnaligned(buffer, 0, (uint)_size);
+        }
     }
 
     /// <summary>
@@ -67,10 +69,22 @@ internal readonly unsafe ref struct FileBitmap
     /// <param name="bitmapArray">The byte array to read or create the bitmap from.</param>
     public FileBitmap(byte[] bitmapArray)
     {
+        if (bitmapArray is null)
+        {
+            ThrowHelper.ThrowArgumentException("Bitmap array source is null", nameof(bitmapArray));
+        }
+
         _size = bitmapArray.Length;
-        _handle = new PinnedArray(bitmapArray);
-        _bitmap = _handle.Pointer;
-        _disposable = true;
+        if (_size == 0)
+        {
+            _handle = null;
+            _bitmap = null;
+        }
+        else
+        {
+            _handle = GCHandle.Alloc(bitmapArray, GCHandleType.Pinned);
+            _bitmap = (byte*)Unsafe.AsPointer(ref bitmapArray.FastGetReference(0));
+        }
     }
 
     /// <summary>
@@ -610,6 +624,12 @@ internal readonly unsafe ref struct FileBitmap
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Set(int line)
     {
+        // Check if the pointer is valid
+        if (_bitmap == null)
+        {
+            return;
+        }
+
         // Decrements the line number to align with zero-based index
         var idx = (uint)line - 1;
 
@@ -637,6 +657,12 @@ internal readonly unsafe ref struct FileBitmap
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Get(int line)
     {
+        // Check if the pointer is valid
+        if (_bitmap == null)
+        {
+            return false;
+        }
+
         // Decrements the line number to align with zero-based index
         var idx = (uint)line - 1;
 
@@ -793,9 +819,9 @@ internal readonly unsafe ref struct FileBitmap
     /// </summary>
     public void Dispose()
     {
-        if (_disposable)
+        if (_handle is { IsAllocated: true } handle)
         {
-            _handle?.Dispose();
+            handle.Free();
         }
     }
 
@@ -828,11 +854,11 @@ internal readonly unsafe ref struct FileBitmap
     /// <returns>The internal array or a new array containing the bitmap data.</returns>
     internal byte[] GetInternalArrayOrToArrayAndDispose()
     {
-        if (_handle is not null)
+        if (_handle is { } handle)
         {
             try
             {
-                return _handle.Array;
+                return handle.IsAllocated ? (byte[])(handle.Target ?? Array.Empty<byte>()) : [];
             }
             finally
             {
@@ -889,51 +915,6 @@ internal readonly unsafe ref struct FileBitmap
             bitMap = null;
             size = 0;
             _index = 0;
-        }
-    }
-
-    /// <summary>
-    /// Represents a wrapper for a byte array that is pinned in memory to prevent the garbage collector from moving it.
-    /// This allows for safe access to the underlying array's memory address in unmanaged code.
-    /// </summary>
-    private sealed class PinnedArray(byte[] array) : IDisposable
-    {
-        /// <summary>
-        /// The underlying byte array that is pinned in memory.
-        /// </summary>
-        private readonly byte[] _array = array;
-
-        /// <summary>
-        /// The handle used to pin the array in memory, ensuring its address does not change.
-        /// </summary>
-        private GCHandle _handle = GCHandle.Alloc(array, GCHandleType.Pinned);
-
-        ~PinnedArray()
-        {
-            Dispose();
-        }
-
-        /// <summary>
-        /// Gets a pointer to the first element of the pinned array.
-        /// </summary>
-        public byte* Pointer => (byte*)Unsafe.AsPointer(ref _array.FastGetReference(0));
-
-        /// <summary>
-        /// Gets the underlying array.
-        /// </summary>
-        public byte[] Array => _array;
-
-        /// <summary>
-        /// Releases all resources used by the <see cref="PinnedArray"/>.
-        /// </summary>
-        public void Dispose()
-        {
-            if (_handle.IsAllocated)
-            {
-                _handle.Free();
-            }
-
-            GC.SuppressFinalize(this);
         }
     }
 }
