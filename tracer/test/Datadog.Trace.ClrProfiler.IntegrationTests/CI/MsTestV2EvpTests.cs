@@ -122,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                     };
 
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
+                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, copyCIEnvironmentValues: true))
                     {
                         // Check the tests, suites and modules count
                         Assert.Equal(expectedTestCount, tests.Count);
