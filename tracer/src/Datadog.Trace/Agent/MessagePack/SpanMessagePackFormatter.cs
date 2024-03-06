@@ -201,14 +201,26 @@ namespace Datadog.Trace.Agent.MessagePack
             return offset - originalOffset;
         }
 
-        internal static void WriteMetaStruct(ref byte[] bytes, ref int offset, Dictionary<string, object> metaStruct)
+        internal static void WriteMetaStruct(ref byte[] bytes, ref int offset, Dictionary<string, byte[]> metaStruct)
         {
             if (metaStruct != null && metaStruct.Count > 0)
             {
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaStructBytes);
-                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 1);
+                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, metaStruct.Count);
 
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringEncoding.UTF8.GetBytes("_dd.stack.exploit"));
+                foreach (var item in metaStruct)
+                {
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringEncoding.UTF8.GetBytes(item.Key));
+                    offset += MessagePackBinary.WriteBytes(ref bytes, offset, item.Value);
+                }
+            }
+        }
+
+        internal static void WriteMetaStruct(ref byte[] bytes, ref int offset, Dictionary<string, object> metaStruct)
+        {
+            if (metaStruct != null && metaStruct.Count > 0)
+            {
+                Dictionary<string, byte[]> data = new();
                 var buffer = new byte[] { };
                 var bytesWritten = MessagePackBinary.WriteArrayHeader(ref buffer, 0, 1);
                 bytesWritten += MessagePackBinary.WriteMapHeader(ref buffer, bytesWritten, 4);
@@ -234,10 +246,11 @@ namespace Datadog.Trace.Agent.MessagePack
                 bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("file2.cs"));
                 bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("line"));
                 bytesWritten += MessagePackBinary.WriteUInt32(ref buffer, bytesWritten, 55);
-
                 var newArray = new byte[bytesWritten];
                 Array.Copy(buffer, 0, newArray, 0, bytesWritten);
-                offset += MessagePackBinary.WriteBytes(ref bytes, offset, newArray);
+                data["_dd.stack.exploit"] = newArray;
+
+                WriteMetaStruct(ref bytes, ref offset, data);
             }
         }
 
