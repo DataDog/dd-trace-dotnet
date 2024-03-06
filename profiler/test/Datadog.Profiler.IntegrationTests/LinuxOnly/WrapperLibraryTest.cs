@@ -108,6 +108,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             using var processHelper = runner.LaunchProcess();
 
             processHelper.Process.WaitForExit(milliseconds: 30_000).Should().BeTrue();
+            processHelper.Drain();
             processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
             processHelper.StandardOutput.Should().MatchRegex(@"createdump --full \d+")
                 .And.NotContain("Writing full dump");
@@ -126,6 +127,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             using var processHelper = runner.LaunchProcess();
 
             processHelper.Process.WaitForExit(milliseconds: 30_000).Should().BeTrue();
+            processHelper.Drain();
             processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
             processHelper.StandardOutput.Should().NotMatchRegex(@"createdump --full \d+")
                 .And.Contain("Writing full dump");
