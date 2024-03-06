@@ -15,6 +15,7 @@ namespace Datadog.Trace.Util
 {
     internal static class ProcessHelpers
     {
+        public const string DoNotTraceEnvVariable = "__DD_INTERNAL_DO_NOT_TRACE";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessHelpers));
 
         /// <summary>
@@ -187,6 +188,13 @@ namespace Datadog.Trace.Util
                 processStartInfo.WorkingDirectory = command.WorkingDirectory;
             }
 
+            if (command.DoNotTrace && !processStartInfo.UseShellExecute)
+            {
+                // can't change environment process if UseShellExecute is true
+                // because Start will throw InvalidOperationException
+                processStartInfo.Environment[DoNotTraceEnvVariable] = "1";
+            }
+
             return processStartInfo;
         }
 
@@ -199,8 +207,9 @@ namespace Datadog.Trace.Util
             public readonly Encoding? OutputEncoding;
             public readonly Encoding? ErrorEncoding;
             public readonly Encoding? InputEncoding;
+            public readonly bool DoNotTrace;
 
-            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null, Encoding? outputEncoding = null, Encoding? errorEncoding = null, Encoding? inputEncoding = null)
+            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null, Encoding? outputEncoding = null, Encoding? errorEncoding = null, Encoding? inputEncoding = null, bool doNotTrace = true)
             {
                 Cmd = cmd;
                 Arguments = arguments;
@@ -209,6 +218,7 @@ namespace Datadog.Trace.Util
                 OutputEncoding = outputEncoding;
                 ErrorEncoding = errorEncoding;
                 InputEncoding = inputEncoding;
+                DoNotTrace = true;
             }
         }
 
