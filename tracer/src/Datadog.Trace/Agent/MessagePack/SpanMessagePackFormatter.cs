@@ -196,146 +196,12 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += WriteTags(ref bytes, offset, in spanModel, tagProcessors);
             offset += WriteMetrics(ref bytes, offset, in spanModel, tagProcessors);
 
-            EncodeMetaStruct(ref bytes, ref offset, span.MetaStruct);
+            WriteMetaStruct(ref bytes, ref offset, span.MetaStruct);
 
             return offset - originalOffset;
         }
 
-        /*
-
-         meta_struct[0x80|1][0xa0|3(key)]key[0xc4 | 5 2BYTES]value
-
-            if has_meta_struct:
-                ret = pack_bytes(&self.pk, <char *> b"meta_struct", 11)
-                if ret != 0:
-                    return ret
-
-                ret = msgpack_pack_map(&self.pk, len(span._meta_struct))
-                if ret != 0:
-                    return ret
-                for k, v in span._meta_struct.items():
-                    ret = pack_text(&self.pk, k)
-                    if ret != 0:
-                        return ret
-                    value_packed = packb(v)
-                    ret = msgpack_pack_bin(&self.pk, len(value_packed))
-                    if ret == 0:
-                        ret = msgpack_pack_raw_body(&self.pk, <char *> value_packed, len(value_packed))
-                    if ret != 0:
-                        return ret
-
-
-cdef inline int pack_text(msgpack_packer *pk, object text) except? -1:
-    cdef Py_ssize_t L
-    cdef int ret
-
-    if text is None:
-        return msgpack_pack_nil(pk)
-
-    if PyBytesLike_Check(text):
-        L = len(text)
-        if L > ITEM_LIMIT:
-            PyErr_Format(ValueError, b"%.200s object is too large", Py_TYPE(text).tp_name)
-        ret = msgpack_pack_raw(pk, L)
-        if ret == 0:
-            ret = msgpack_pack_raw_body(pk, <char *> text, L)
-        return ret
-
-    if PyUnicode_Check(text):
-        IF PY_MAJOR_VERSION >= 3:
-            ret = msgpack_pack_unicode(pk, text, ITEM_LIMIT)
-            if ret == -2:
-                raise ValueError("unicode string is too large")
-        ELSE:
-            text = PyUnicode_AsEncodedString(text, "utf-8", NULL)
-            L = len(text)
-            if L > ITEM_LIMIT:
-                raise ValueError("unicode string is too large")
-            ret = msgpack_pack_raw(pk, L)
-            if ret == 0:
-                ret = msgpack_pack_raw_body(pk, <char *> text, L)
-        return ret
-
-    raise TypeError("Unhandled text type: %r" % type(text))
-
-
-msgpack_pack_map(msgpack_packer* x, unsigned int n)
-{
-    if (n < 16) {
-        unsigned char d = 0x80 | n;
-        msgpack_pack_append_buffer(x, &TAKE8_8(d), 1);
-    } else if (n < 65536) {
-        unsigned char buf[3];
-        buf[0] = 0xde;
-        _msgpack_store16(&buf[1], (uint16_t)n);
-        msgpack_pack_append_buffer(x, buf, 3);
-    } else {
-        unsigned char buf[5];
-        buf[0] = 0xdf;
-        _msgpack_store32(&buf[1], (uint32_t)n);
-        msgpack_pack_append_buffer(x, buf, 5);
-    }
-}
-
-cdef inline int pack_bytes(msgpack_packer *pk, char *bs, Py_ssize_t l):
-    cdef int ret
-
-    ret = msgpack_pack_raw(pk, l)
-    if ret == 0:
-        ret = msgpack_pack_raw_body(pk, bs, l)
-    return ret
-
-
-static inline int
-msgpack_pack_raw(msgpack_packer* x, size_t l)
-{
-    if (l < 32) {
-        unsigned char d = 0xa0 | (uint8_t)l;
-        msgpack_pack_append_buffer(x, &TAKE8_8(d), 1);
-    } else if (l < 256) {
-        unsigned char buf[2] = { 0xd9, (uint8_t)l };
-        msgpack_pack_append_buffer(x, buf, 2);
-    } else if (l < 65536) {
-        unsigned char buf[3];
-        buf[0] = 0xda;
-        _msgpack_store16(&buf[1], (uint16_t)l);
-        msgpack_pack_append_buffer(x, buf, 3);
-    } else {
-        unsigned char buf[5];
-        buf[0] = 0xdb;
-        _msgpack_store32(&buf[1], (uint32_t)l);
-        msgpack_pack_append_buffer(x, buf, 5);
-    }
-}
-
-static inline int
-msgpack_pack_bin(msgpack_packer* x, size_t l)
-{
-    if (l < 256) {
-        unsigned char buf[2] = { 0xc4, (unsigned char)l };
-        msgpack_pack_append_buffer(x, buf, 2);
-    } else if (l < 65536) {
-        unsigned char buf[3] = { 0xc5 };
-        _msgpack_store16(&buf[1], (uint16_t)l);
-        msgpack_pack_append_buffer(x, buf, 3);
-    } else {
-        unsigned char buf[5] = { 0xc6 };
-        _msgpack_store32(&buf[1], (uint32_t)l);
-        msgpack_pack_append_buffer(x, buf, 5);
-    }
-}
-
-static inline int
-msgpack_pack_raw_body(msgpack_packer* x, const void* b, size_t l)
-{
-    if (l > 0)
-        msgpack_pack_append_buffer(x, (const unsigned char*)b, l);
-    return 0;
-}
-
-        */
-
-        internal static void EncodeMetaStruct(ref byte[] bytes, ref int offset, Dictionary<string, object> metaStruct)
+        internal static void WriteMetaStruct(ref byte[] bytes, ref int offset, Dictionary<string, object> metaStruct)
         {
             if (metaStruct != null && metaStruct.Count > 0)
             {
@@ -343,23 +209,34 @@ msgpack_pack_raw_body(msgpack_packer* x, const void* b, size_t l)
                 offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 1);
 
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringEncoding.UTF8.GetBytes("_dd.stack.exploit"));
-                // var value = StringEncoding.UTF8.GetBytes(keyValue.Value.ToString());
-                // offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, 0);
-
                 var buffer = new byte[] { };
                 var bytesWritten = MessagePackBinary.WriteArrayHeader(ref buffer, 0, 1);
-                bytesWritten += MessagePackBinary.WriteMapHeader(ref buffer, bytesWritten, 3);
+                bytesWritten += MessagePackBinary.WriteMapHeader(ref buffer, bytesWritten, 4);
                 bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("id"));
                 bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("testid"));
                 bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("type"));
                 bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("lFi"));
                 bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("language"));
                 bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("dotnet"));
-                // bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("frames"));
-                // bytesWritten += MessagePackBinary.WriteArrayHeader(ref buffer, bytesWritten, 0);
+                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("frames"));
+                bytesWritten += MessagePackBinary.WriteArrayHeader(ref buffer, bytesWritten, 2);
+                bytesWritten += MessagePackBinary.WriteMapHeader(ref buffer, bytesWritten, 3);
+                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("id"));
+                bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("frameid"));
+                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("file"));
+                bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("file.cs"));
+                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("line"));
+                bytesWritten += MessagePackBinary.WriteUInt32(ref buffer, bytesWritten, 33);
+                bytesWritten += MessagePackBinary.WriteMapHeader(ref buffer, bytesWritten, 3);
+                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("id"));
+                bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("frameid2"));
+                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("file"));
+                bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("file2.cs"));
+                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("line"));
+                bytesWritten += MessagePackBinary.WriteUInt32(ref buffer, bytesWritten, 55);
+
                 var newArray = new byte[bytesWritten];
                 Array.Copy(buffer, 0, newArray, 0, bytesWritten);
-
                 offset += MessagePackBinary.WriteBytes(ref bytes, offset, newArray);
             }
         }
