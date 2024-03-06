@@ -19,10 +19,8 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
-    [UsesVerify]
     public class MsTestV2Tests(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests", output);
 
-    [UsesVerify]
     public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output);
 
     [Collection("MsTestV2Tests")]
@@ -63,7 +61,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             try
             {
-                CIEnvironmentValues.Instance.ReloadEnvironmentData();
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
@@ -301,7 +298,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             var context = new SpanContext(parent: null, traceContext: null, serviceName: null);
             var span = new Span(context, DateTimeOffset.UtcNow);
-            CIEnvironmentValues.Instance.DecorateSpan(span);
+            CIEnvironmentValues.Create().DecorateSpan(span);
 
             AssertEqual(CommonTags.CIProvider);
             AssertEqual(CommonTags.CIPipelineId);

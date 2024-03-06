@@ -22,7 +22,7 @@ namespace Datadog.Trace.Ci
     {
         internal const string RepositoryUrlPattern = @"((http|git|ssh|http(s)|file|\/?)|(git@[\w\.\-]+))(:(\/\/)?)([\w\.@\:/\-~]+)(\.git)?(\/)?";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
-        private static readonly Lazy<CIEnvironmentValues> _instance = new(() => new CIEnvironmentValues());
+        private static readonly Lazy<CIEnvironmentValues> _instance = new(Create);
 
         private string _gitSearchFolder = null;
 
@@ -95,6 +95,8 @@ namespace Datadog.Trace.Ci
 
         public Dictionary<string, string> VariablesToBypass { get; private set; }
 
+        public static CIEnvironmentValues Create() => new();
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void SetTagIfNotNullOrEmpty(Span span, string key, string value)
         {
@@ -111,8 +113,8 @@ namespace Datadog.Trace.Ci
             {
                 var homePath = (Environment.OSVersion.Platform == PlatformID.Unix ||
                                 Environment.OSVersion.Platform == PlatformID.MacOSX)
-                    ? Environment.GetEnvironmentVariable(Constants.Home)
-                    : Environment.GetEnvironmentVariable(Constants.UserProfile);
+                                   ? Environment.GetEnvironmentVariable(Constants.Home)
+                                   : Environment.GetEnvironmentVariable(Constants.UserProfile);
                 path = homePath + path.Substring(1);
             }
 
@@ -411,10 +413,12 @@ namespace Datadog.Trace.Ci
                 VariablesToBypass = new Dictionary<string, string>();
                 SetEnvironmentVariablesIfNotEmpty(
                     VariablesToBypass,
-                    [Constants.GitHubServerUrl,
-                    Constants.GitHubRepository,
-                    Constants.GitHubRunId,
-                    Constants.GitHubRunAttempt],
+                    [
+                        Constants.GitHubServerUrl,
+                        Constants.GitHubRepository,
+                        Constants.GitHubRunId,
+                        Constants.GitHubRunAttempt
+                    ],
                     kvp =>
                     {
                         if (kvp.Key == Constants.GitHubServerUrl)
@@ -523,7 +527,7 @@ namespace Datadog.Trace.Ci
                     // If we have the original commit message we use that.
                     if (string.IsNullOrWhiteSpace(Message) ||
                         (Message.StartsWith("Merge", StringComparison.Ordinal) &&
-                        !gitInfo.Message.StartsWith("Merge", StringComparison.Ordinal)))
+                         !gitInfo.Message.StartsWith("Merge", StringComparison.Ordinal)))
                     {
                         Message = gitInfo.Message;
                     }
@@ -1175,7 +1179,7 @@ namespace Datadog.Trace.Ci
                             !string.IsNullOrWhiteSpace(match.Groups[3].Value) ? match.Groups[3].Value :
                             !string.IsNullOrWhiteSpace(match.Groups[5].Value) ? match.Groups[5].Value :
                             !string.IsNullOrWhiteSpace(match.Groups[2].Value) ? match.Groups[2].Value :
-                            match.Groups[4].Value;
+                                                                                match.Groups[4].Value;
                     }
                 }
             }
@@ -1195,14 +1199,14 @@ namespace Datadog.Trace.Ci
                         Branch =
                             !string.IsNullOrWhiteSpace(match.Groups[2].Value) ? match.Groups[2].Value :
                             !string.IsNullOrWhiteSpace(match.Groups[4].Value) ? match.Groups[4].Value :
-                            match.Groups[6].Value;
+                                                                                match.Groups[6].Value;
 
                         if (string.IsNullOrEmpty(Tag))
                         {
                             Tag =
                                 !string.IsNullOrWhiteSpace(match.Groups[1].Value) ? match.Groups[1].Value :
                                 !string.IsNullOrWhiteSpace(match.Groups[3].Value) ? match.Groups[3].Value :
-                                match.Groups[5].Value;
+                                                                                    match.Groups[5].Value;
                         }
                     }
                 }
