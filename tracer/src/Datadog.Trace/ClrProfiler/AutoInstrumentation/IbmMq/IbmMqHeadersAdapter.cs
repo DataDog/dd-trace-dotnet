@@ -37,14 +37,12 @@ internal readonly struct IbmMqHeadersAdapter(IMqMessage message) : IHeadersColle
     {
         try
         {
-            Console.WriteLine($"### Trying to get {name}");
             // there's no way to check if the value exists,
             // and reading non-existent value causes an exception
             var normName = NormalizeName(name);
             var buf = message.GetBytesProperty(normName);
             var val = StringFromSignedBytes(buf);
 
-            Console.WriteLine($"### Got {normName}={val}");
             return new[] { val };
         }
         catch
@@ -55,11 +53,9 @@ internal readonly struct IbmMqHeadersAdapter(IMqMessage message) : IHeadersColle
 
     public void Set(string name, string value)
     {
-        Console.WriteLine($"### Setting {name}={value}");
         var normalizedName = NormalizeName(name);
         RemoveNormalized(normalizedName);
         var val = StringToUnsignedBytes(value);
-        Console.WriteLine($"### Encoded to {normalizedName}={val.GetType().Name}({val.Length})");
         message.SetBytesProperty(normalizedName, val);
     }
 

@@ -22,7 +22,6 @@ internal static class IbmMqHelper
     {
         if (Tracer.Instance.Settings.IbmMqContextPropagationDisabled)
         {
-            Console.WriteLine("### Using noop headers adapter");
             return NoopAdapter;
         }
 
