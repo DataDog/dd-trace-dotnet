@@ -13,15 +13,9 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 
-internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
+internal readonly struct IbmMqHeadersAdapter(IMqMessage message) : IHeadersCollection
 {
     private static readonly string[] EmptyValue = [];
-    private readonly IMqMessage _message;
-
-    public IbmMqHeadersAdapter(IMqMessage message)
-    {
-        _message = message;
-    }
 
     /// <summary>
     /// Used to normalize the property name, since IBM MQ only allows names which are valid Java identifiers
@@ -47,7 +41,7 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
             // there's no way to check if the value exists,
             // and reading non-existent value causes an exception
             var normName = NormalizeName(name);
-            var buf = _message.GetBytesProperty(normName);
+            var buf = message.GetBytesProperty(normName);
             var val = StringFromSignedBytes(buf);
 
             Console.WriteLine($"### Got {normName}={val}");
@@ -66,7 +60,7 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
         RemoveNormalized(normalizedName);
         var val = StringToUnsignedBytes(value);
         Console.WriteLine($"### Encoded to {normalizedName}={val.GetType().Name}({val.Length})");
-        _message.SetBytesProperty(normalizedName, val);
+        message.SetBytesProperty(normalizedName, val);
     }
 
     public void Add(string name, string value)
@@ -78,7 +72,7 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
     {
         try
         {
-            _message.DeleteProperty(normalizedName);
+            message.DeleteProperty(normalizedName);
         }
         catch
         {
@@ -88,11 +82,9 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
 
     private string StringFromSignedBytes(sbyte[] buf)
     {
+        // since the text is ASCII signed and unsigned bytes are the same (0-127)
         var unsigned = new byte[buf.Length];
-        for (var i = 0; i < unsigned.Length; i++)
-        {
-            unsigned[i] = Convert.ToByte(buf[i]);
-        }
+        Buffer.BlockCopy(buf, 0, unsigned, 0, buf.Length);
 
         return Encoding.ASCII.GetString(unsigned);
     }
@@ -102,11 +94,9 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
         Console.WriteLine(" ### Encoding val " + str);
         var buf = Encoding.ASCII.GetBytes(str);
 
+        // since the text is ASCII signed and unsigned bytes are the same.
         var signed = new sbyte[buf.Length];
-        for (var i = 0; i < signed.Length; i++)
-        {
-            signed[i] = Convert.ToSByte(buf[i]);
-        }
+        Buffer.BlockCopy(buf, 0, signed, 0, buf.Length);
 
         return signed;
     }

@@ -6,11 +6,9 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
@@ -18,6 +16,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 internal static class IbmMqHelper
 {
     private const string MessagingType = "ibmmq";
+    private static readonly IbmMqHeadersAdapterNoop NoopAdapter = new();
+
+    internal static IHeadersCollection GetHeadersAdapter(IMqMessage message)
+    {
+        if (Tracer.Instance.Settings.IbmMqContextPropagationDisabled)
+        {
+            return NoopAdapter;
+        }
+
+        return new IbmMqHeadersAdapter(message);
+    }
 
     internal static Scope? CreateProducerScope(Tracer tracer, IMqQueue queue, IMqMessage message)
     {
@@ -49,8 +58,7 @@ internal static class IbmMqHelper
             span.ResourceName = resourceName;
             span.SetTag(Tags.SpanKind, SpanKinds.Producer);
 
-            var adapter = new IbmMqHeadersAdapter(message);
-            SpanContextPropagator.Instance.Inject(span.Context, adapter);
+            SpanContextPropagator.Instance.Inject(span.Context, GetHeadersAdapter(message));
         }
         catch (Exception ex)
         {
@@ -87,10 +95,9 @@ internal static class IbmMqHelper
 
             SpanContext? propagatedContext = null;
 
-            var adapter = new IbmMqHeadersAdapter(message);
             try
             {
-                propagatedContext = SpanContextPropagator.Instance.Extract(adapter);
+                propagatedContext = SpanContextPropagator.Instance.Extract(GetHeadersAdapter(message));
             }
             catch (Exception ex)
             {
