@@ -64,11 +64,11 @@ internal static class MsTestIntegration
             {
                 if (testMethodArguments != null && i < testMethodArguments.Length)
                 {
-                    testParameters.Arguments[methodParameters[i].Name ?? string.Empty] = Common.GetParametersValueData(testMethodArguments[i]);
+                    testParameters.Arguments[methodParameters[i].Name ?? $"{i}"] = Common.GetParametersValueData(testMethodArguments[i]);
                 }
                 else
                 {
-                    testParameters.Arguments[methodParameters[i].Name ?? string.Empty] = "(default)";
+                    testParameters.Arguments[methodParameters[i].Name ?? $"{i}"] = "(default)";
                 }
             }
 
@@ -244,7 +244,7 @@ internal static class MsTestIntegration
         var module = TestModule.Current ?? GetOrCreateTestModuleFromTestAssemblyInfo(testClassInfo.Parent, testClassInfo.ClassType.Assembly.FullName);
         if (module is null)
         {
-            Common.Log.Error("There is not current module, a new suite cannot be created.");
+            Common.Log.Error("There is no current module, a new suite cannot be created.");
             return default;
         }
 

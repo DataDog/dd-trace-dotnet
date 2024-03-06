@@ -1438,15 +1438,6 @@ namespace Datadog.Trace.Ci
             public const string DDGitCommitCommiterName = "DD_GIT_COMMIT_COMMITTER_NAME";
             public const string DDGitCommitCommiterEmail = "DD_GIT_COMMIT_COMMITTER_EMAIL";
             public const string DDGitCommitCommiterDate = "DD_GIT_COMMIT_COMMITTER_DATE";
-
-            public static IEnumerable<string> GetConstants()
-            {
-                return typeof(Constants)
-                   .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
-                   .Where(fi => fi.IsLiteral && !fi.IsInitOnly)
-                   .Select(fi => fi.GetValue(null)?.ToString())
-                   .Where(value => value != null);
-            }
         }
     }
 }

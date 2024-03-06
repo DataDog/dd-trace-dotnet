@@ -28,6 +28,12 @@
     <PackageReference Include="MSTest.TestAdapter" Version="$(ApiVersion)" />
     <PackageReference Include="MSTest.TestFramework" Version="$(ApiVersion)" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="..\Samples.MSTestTests\TestSuite.cs">
+      <Link>TestSuite.cs</Link>
+    </Compile>
+  </ItemGroup>
 
 </Project>
  

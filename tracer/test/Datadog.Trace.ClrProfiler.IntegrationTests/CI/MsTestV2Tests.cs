@@ -18,19 +18,9 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
-    public class MsTestV2Tests(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests", output)
-    {
-        protected override string TestSuiteName => "Samples.MSTestTests.TestSuite";
+    public class MsTestV2Tests(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests", output);
 
-        protected override string TestBundleName => "Samples.MSTestTests";
-    }
-
-    public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output)
-    {
-        protected override string TestSuiteName => "Samples.MSTestTests2.TestSuite";
-
-        protected override string TestBundleName => "Samples.MSTestTests2";
-    }
+    public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output);
 
     [Collection("MsTestV2Tests")]
     public abstract class MsTestV2TestsBase : TestHelper
@@ -40,15 +30,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public MsTestV2TestsBase(string sampleAppName, ITestOutputHelper output)
             : base(sampleAppName, output)
         {
+            TestBundleName = $"Samples.{sampleAppName}";
+            TestSuiteName = "Samples.MSTestTests.TestSuite";
             SetServiceName("mstest-tests");
             SetServiceVersion("1.0.0");
             _gacFixture = new GacFixture();
             _gacFixture.AddAssembliesToGac();
         }
 
-        protected abstract string TestSuiteName { get; }
+        protected virtual string TestSuiteName { get; }
 
-        protected abstract string TestBundleName { get; }
+        protected virtual string TestBundleName { get; }
 
         public override void Dispose()
         {
@@ -74,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 {
                     // We remove the evp_proxy endpoint to force the APM protocol compatibility
                     agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2") && !e.Contains("evp_proxy/v4")).ToArray();
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
+                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, copyCIEnvironmentValues: true))
                     {
                         spans = agent.WaitForSpans(expectedSpanCount)
                                      .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
