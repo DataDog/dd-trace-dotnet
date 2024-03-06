@@ -342,12 +342,25 @@ msgpack_pack_raw_body(msgpack_packer* x, const void* b, size_t l)
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaStructBytes);
                 offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 1);
 
-                foreach (var keyValue in metaStruct)
-                {
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringEncoding.UTF8.GetBytes(keyValue.Key));
-                    var value = StringEncoding.UTF8.GetBytes(keyValue.Value.ToString());
-                    offset += MessagePackBinary.WriteBytes(ref bytes, offset, value);
-                }
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringEncoding.UTF8.GetBytes("_dd.stack.exploit"));
+                // var value = StringEncoding.UTF8.GetBytes(keyValue.Value.ToString());
+                // offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, 0);
+
+                var buffer = new byte[] { };
+                var bytesWritten = MessagePackBinary.WriteArrayHeader(ref buffer, 0, 1);
+                bytesWritten += MessagePackBinary.WriteMapHeader(ref buffer, bytesWritten, 3);
+                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("id"));
+                bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("testid"));
+                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("type"));
+                bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("lFi"));
+                bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("language"));
+                bytesWritten += MessagePackBinary.WriteBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("dotnet"));
+                // bytesWritten += MessagePackBinary.WriteStringBytes(ref buffer, bytesWritten, StringEncoding.UTF8.GetBytes("frames"));
+                // bytesWritten += MessagePackBinary.WriteArrayHeader(ref buffer, bytesWritten, 0);
+                var newArray = new byte[bytesWritten];
+                Array.Copy(buffer, 0, newArray, 0, bytesWritten);
+
+                offset += MessagePackBinary.WriteBytes(ref bytes, offset, newArray);
             }
         }
 
