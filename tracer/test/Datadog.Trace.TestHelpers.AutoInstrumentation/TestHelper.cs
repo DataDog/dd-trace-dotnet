@@ -112,7 +112,7 @@ namespace Datadog.Trace.TestHelpers
             }
 
             Output.WriteLine($"Starting Application: {sampleAppPath}");
-            string testCli = EnvironmentHelper.GetDotNetTest();
+            string testCli = forceVsTestParam ? EnvironmentHelper.GetDotnetExe() : EnvironmentHelper.GetDotNetTest();
             string exec = testCli;
             string appPath = testCli.StartsWith("dotnet") || forceVsTestParam ? $"vstest {sampleAppPath}" : sampleAppPath;
             Output.WriteLine("Executable: " + exec);
