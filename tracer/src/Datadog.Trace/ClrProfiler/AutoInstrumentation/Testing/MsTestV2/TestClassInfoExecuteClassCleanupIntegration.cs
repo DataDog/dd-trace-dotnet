@@ -32,8 +32,9 @@ public static class TestClassInfoExecuteClassCleanupIntegration
     /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
+        where TTarget : ITestClassInfo
     {
-        if (MsTestIntegration.IsEnabled && TestClassInfoRunClassInitializeIntegration.TestClassInfos.TryGetValue(instance, out var suiteObject) && suiteObject is TestSuite suite)
+        if (MsTestIntegration.IsEnabled && MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(instance) is { } suite)
         {
             return new CallTargetState(null, suite);
         }

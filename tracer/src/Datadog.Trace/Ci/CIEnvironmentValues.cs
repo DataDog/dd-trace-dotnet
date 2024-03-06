@@ -8,6 +8,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Tags;
@@ -320,6 +322,7 @@ namespace Datadog.Trace.Ci
             // **********
             // Setup variables
             // **********
+            Log.Information("CIEnvironmentValues: Loading environment variables.");
 
             Provider = null;
             PipelineId = null;
@@ -347,10 +350,12 @@ namespace Datadog.Trace.Ci
 
             if (EnvironmentHelpers.GetEnvironmentVariable(Constants.Travis) != null)
             {
+                Log.Information("CIEnvironmentValues: Travis CI detected");
                 SetupTravisEnvironment();
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.CircleCI) != null)
             {
+                Log.Information("CIEnvironmentValues: CircleCI detected");
                 SetupCircleCiEnvironment();
                 VariablesToBypass = new Dictionary<string, string>();
                 SetEnvironmentVariablesIfNotEmpty(
@@ -360,6 +365,7 @@ namespace Datadog.Trace.Ci
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.JenkinsUrl) != null)
             {
+                Log.Information("CIEnvironmentValues: Jenkins detected");
                 SetupJenkinsEnvironment();
                 VariablesToBypass = new Dictionary<string, string>();
                 SetEnvironmentVariablesIfNotEmpty(
@@ -368,6 +374,7 @@ namespace Datadog.Trace.Ci
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.GitlabCI) != null)
             {
+                Log.Information("CIEnvironmentValues: Gitlab CI detected");
                 SetupGitlabEnvironment();
                 VariablesToBypass = new Dictionary<string, string>();
                 SetEnvironmentVariablesIfNotEmpty(
@@ -378,10 +385,12 @@ namespace Datadog.Trace.Ci
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.Appveyor) != null)
             {
+                Log.Information("CIEnvironmentValues: Appveyor detected");
                 SetupAppveyorEnvironment();
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.AzureTFBuild) != null)
             {
+                Log.Information("CIEnvironmentValues: Azure Pipelines detected");
                 SetupAzurePipelinesEnvironment();
                 VariablesToBypass = new Dictionary<string, string>();
                 SetEnvironmentVariablesIfNotEmpty(
@@ -392,10 +401,12 @@ namespace Datadog.Trace.Ci
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.BitBucketCommit) != null)
             {
+                Log.Information("CIEnvironmentValues: Bitbucket detected");
                 SetupBitbucketEnvironment();
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.GitHubSha) != null)
             {
+                Log.Information("CIEnvironmentValues: GitHub Actions detected");
                 SetupGithubActionsEnvironment();
                 VariablesToBypass = new Dictionary<string, string>();
                 SetEnvironmentVariablesIfNotEmpty(
@@ -416,10 +427,12 @@ namespace Datadog.Trace.Ci
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.TeamCityVersion) != null)
             {
+                Log.Information("CIEnvironmentValues: TeamCity detected");
                 SetupTeamcityEnvironment();
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.BuildKite) != null)
             {
+                Log.Information("CIEnvironmentValues: Buildkite detected");
                 SetupBuildkiteEnvironment();
                 VariablesToBypass = new Dictionary<string, string>();
                 SetEnvironmentVariablesIfNotEmpty(
@@ -429,14 +442,17 @@ namespace Datadog.Trace.Ci
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.BitriseBuildSlug) != null)
             {
+                Log.Information("CIEnvironmentValues: Bitrise detected");
                 SetupBitriseEnvironment();
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.Buddy) != null)
             {
+                Log.Information("CIEnvironmentValues: Buddy detected");
                 SetupBuddyEnvironment(gitInfo);
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.CodefreshBuildId) != null)
             {
+                Log.Information("CIEnvironmentValues: Codefresh detected");
                 SetupCodefreshEnvironment(gitInfo);
                 VariablesToBypass = new Dictionary<string, string>();
                 SetEnvironmentVariablesIfNotEmpty(
@@ -446,6 +462,7 @@ namespace Datadog.Trace.Ci
             else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.AWSCodePipelineBuildInitiator) is { Length: > 0 } initiator &&
                      initiator.StartsWith("codepipeline"))
             {
+                Log.Information("CIEnvironmentValues: AWS CodePipeline detected");
                 SetupAWSCodePipeline();
                 VariablesToBypass = new Dictionary<string, string>();
                 SetEnvironmentVariablesIfNotEmpty(
@@ -456,6 +473,7 @@ namespace Datadog.Trace.Ci
             }
             else
             {
+                Log.Information("CIEnvironmentValues: CI could not be detected, using the git folder: {GitFolder}", gitInfo.SourceRoot);
                 Branch = gitInfo.Branch;
                 Commit = gitInfo.Commit;
                 Repository = gitInfo.Repository;
@@ -650,7 +668,7 @@ namespace Datadog.Trace.Ci
                     Log.Debug("Looking for CODEOWNERS file in: {Path}", codeOwnersPath);
                     if (File.Exists(codeOwnersPath))
                     {
-                        Log.Debug("CODEOWNERS file found: {Path}", codeOwnersPath);
+                        Log.Information("CODEOWNERS file found: {Path}", codeOwnersPath);
                         CodeOwners = new CodeOwners(codeOwnersPath);
                         break;
                     }

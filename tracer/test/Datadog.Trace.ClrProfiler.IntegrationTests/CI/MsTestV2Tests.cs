@@ -14,19 +14,37 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
+#pragma warning disable SA1402
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
-    public class MsTestV2Tests : TestHelper
-    {
-        private const string TestSuiteName = "Samples.MSTestTests.TestSuite";
-        private const string TestBundleName = "Samples.MSTestTests";
+    public class MsTestV2Tests(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests", output);
 
-        public MsTestV2Tests(ITestOutputHelper output)
-            : base("MSTestTests", output)
+    public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output);
+
+    [Collection("MsTestV2Tests")]
+    public abstract class MsTestV2TestsBase : TestHelper
+    {
+        private readonly GacFixture _gacFixture;
+
+        public MsTestV2TestsBase(string sampleAppName, ITestOutputHelper output)
+            : base(sampleAppName, output)
         {
+            TestBundleName = $"Samples.{sampleAppName}";
+            TestSuiteName = "Samples.MSTestTests.TestSuite";
             SetServiceName("mstest-tests");
             SetServiceVersion("1.0.0");
+            _gacFixture = new GacFixture();
+            _gacFixture.AddAssembliesToGac();
+        }
+
+        protected virtual string TestSuiteName { get; }
+
+        protected virtual string TestBundleName { get; }
+
+        public override void Dispose()
+        {
+            _gacFixture.RemoveAssembliesFromGac();
         }
 
         [SkippableTheory]
@@ -41,13 +59,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             try
             {
+                CIEnvironmentValues.Instance.ReloadEnvironmentData();
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 {
                     // We remove the evp_proxy endpoint to force the APM protocol compatibility
                     agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2") && !e.Contains("evp_proxy/v4")).ToArray();
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
+                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, copyCIEnvironmentValues: true))
                     {
                         spans = agent.WaitForSpans(expectedSpanCount)
                                      .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
@@ -363,5 +382,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             // Check the error message
             AssertTargetSpanEqual(targetSpan, Tags.ErrorMsg, new DivideByZeroException().Message);
         }
+    }
+
+    [CollectionDefinition("MsTestV2Tests", DisableParallelization = true)]
+    public class MsTestV2TestCollection
+    {
     }
 }
