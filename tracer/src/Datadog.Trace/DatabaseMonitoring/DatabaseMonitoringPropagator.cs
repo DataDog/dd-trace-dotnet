@@ -18,11 +18,12 @@ namespace Datadog.Trace.DatabaseMonitoring
         private const string SqlCommentSpanService = "dddbs";
         private const string SqlCommentRootService = "ddps";
         private const string SqlCommentDbName = "dddb";
+        private const string SqlCommentOuthost = "ddh";
         private const string SqlCommentVersion = "ddpv";
         private const string SqlCommentEnv = "dde";
         internal const string DbmPrefix = $"/*{SqlCommentSpanService}='";
 
-        internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, string? dbName, Span span, IntegrationId integrationId, out bool traceParentInjected)
+        internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, string? dbName, string? outhost, Span span, IntegrationId integrationId, out bool traceParentInjected)
         {
             traceParentInjected = false;
 
@@ -43,6 +44,11 @@ namespace Datadog.Trace.DatabaseMonitoring
                 if (!string.IsNullOrEmpty(dbName))
                 {
                     propagatorStringBuilder.Append(value: ',').Append(SqlCommentDbName).Append("='").Append(Uri.EscapeDataString(dbName)).Append(value: '\'');
+                }
+
+                if (!string.IsNullOrEmpty(outhost))
+                {
+                    propagatorStringBuilder.Append(value: ',').Append(SqlCommentOuthost).Append("='").Append(Uri.EscapeDataString(outhost)).Append(value: '\'');
                 }
 
                 if (span.Context.TraceContext?.ServiceVersion is { } versionTag)
