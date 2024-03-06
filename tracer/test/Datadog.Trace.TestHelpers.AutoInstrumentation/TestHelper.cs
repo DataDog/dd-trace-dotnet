@@ -16,6 +16,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.Helpers;
@@ -24,6 +25,7 @@ using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -88,6 +90,15 @@ namespace Datadog.Trace.TestHelpers
                 throw new Exception($"application not found: {sampleAppPath}");
             }
 
+            // Ensure we have the CI Environment variables in the target process
+            foreach (var key in CIEnvironmentValues.Constants.GetConstants())
+            {
+                if (EnvironmentHelpers.GetEnvironmentVariable(key) is { Length: >0 } value)
+                {
+                    EnvironmentHelper.CustomEnvironmentVariables[key] = value;
+                }
+            }
+
             Output.WriteLine($"Starting Application: {sampleAppPath}");
             string testCli = EnvironmentHelper.GetDotNetTest();
             string exec = testCli;
@@ -118,6 +129,17 @@ namespace Datadog.Trace.TestHelpers
             var exitCode = process.ExitCode;
 
             Output.WriteLine($"Exit Code: " + exitCode);
+
+            if (helper.EnvironmentVariables is { } environmentVariables)
+            {
+                var strEnvironmentVariables = new StringBuilder();
+                foreach (var envVar in environmentVariables)
+                {
+                    strEnvironmentVariables.AppendLine($"\t{envVar.Key}={envVar.Value}");
+                }
+
+                Output.WriteLine($"Environment Variables:{Environment.NewLine}{strEnvironmentVariables}");
+            }
 
             var standardOutput = helper.StandardOutput;
 
