@@ -192,6 +192,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(IntegrationConfig))]
         public async Task TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
+            // NOTE: this tests that we don't instrument http requests
+            // with the "x-datadog-tracing-enabled" header,
+            // which we use when sending traces to the agent.
+            // This is different than testing DD_TRACE_ENABLED=false and
+            // DD_TRACE_HttpMessageHandler_ENABLED=false below.
             try
             {
                 SetInstrumentationVerification();
