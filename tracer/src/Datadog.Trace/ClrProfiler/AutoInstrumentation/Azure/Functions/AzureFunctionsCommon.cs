@@ -112,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
 
                 // Ignoring null because guaranteed running in AAS
-                if (tracer.Settings.AzureAppServiceMetadata!.IsIsolatedFunctionsApp
+                if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
                  && tracer.InternalActiveScope is { } activeScope)
                 {
                     // We don't want to create a new scope here when running isolated functions,
