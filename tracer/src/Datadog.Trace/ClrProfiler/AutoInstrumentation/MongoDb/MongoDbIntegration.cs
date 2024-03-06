@@ -54,19 +54,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             string? resourceName = null;
             string? databaseName = null;
 
-            if (wireProtocol.TryDuckCast<IWireProtocolWithDatabaseNamespaceStruct>(out var protocolWithDatabaseNamespace))
+            if (wireProtocol.TryDuckCast<IWireProtocolWithDatabaseNamespaceStruct>(out var protocolWithDatabaseNamespace)
+                && protocolWithDatabaseNamespace.DatabaseNamespace is not null
+                && protocolWithDatabaseNamespace.DatabaseNamespace.TryDuckCast<DatabaseNamespaceStruct>(out var databaseNamespace))
             {
-                databaseName = protocolWithDatabaseNamespace.DatabaseNamespace?.DatabaseName;
+                databaseName = databaseNamespace.DatabaseName;
             }
 
             if (wireProtocol.TryDuckCast<IWireProtocolWithCommandStruct>(out var protocolWithCommand)
-                && protocolWithCommand.Command != null)
+                && protocolWithCommand.Command != null
+                && protocolWithCommand.Command.TryDuckCast<IBsonDocumentProxy>(out var bsonDocument))
             {
                 try
                 {
                     // the name of the first element in the command BsonDocument will be the operation type (insert, delete, find, etc)
                     // and its value is the collection name
-                    var firstElement = protocolWithCommand.Command.GetElement(0);
+                    var firstElement = bsonDocument.GetElement(0);
                     var mongoOperationName = firstElement.Name;
 
                     if (mongoOperationName is "isMaster" or "hello")
@@ -76,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
                     resourceName = $"{mongoOperationName ?? "operation"} {databaseName ?? "database"}";
                     collectionName = firstElement.Value?.ToString();
-                    query = BsonSerializationHelper.ToShortString(protocolWithCommand.Command.Instance);
+                    query = BsonSerializationHelper.ToShortString(protocolWithCommand.Command);
                 }
                 catch (Exception ex)
                 {
