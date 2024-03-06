@@ -300,31 +300,56 @@ namespace Datadog.Trace
             var stack =
                 new List<object>()
                 {
-                                    new Dictionary<string, object>()
-                                    {
-                                        { "type", "type" },
-                                        { "language", "dotnet" },
-                                        { "id", "test22" },
-                                        {
-                                            "frames", new List<object>()
-                                            {
-                                                new Dictionary<string, object>()
-                                                {
-                                                    { "id", "frameid" },
-                                                    { "text", "text" },
-                                                    { "file", "file.cs" },
-                                                    { "line", 33U },
-                                                },
-                                                new Dictionary<string, object>()
-                                                {
-                                                    { "id", "frameid2" },
-                                                    { "text", "text2" },
-                                                    { "file", "file2.cs" },
-                                                    { "line", 55U },
-                                                }
-                                            }
-                                        }
-                                    }
+                    new Dictionary<string, object>()
+                    {
+                        { "type", "type" },
+                        { "language", "dotnet" },
+                        { "id", "test22" },
+                        {
+                            "frames", new List<object>()
+                            {
+                                new Dictionary<string, object>()
+                                {
+                                    { "id", "frameid" },
+                                    { "text", "text" },
+                                    { "file", "file.cs" },
+                                    { "line", 33U },
+                                },
+                                new Dictionary<string, object>()
+                                {
+                                    { "id", "frameid2" },
+                                    { "text", "text2" },
+                                    { "file", "file2.cs" },
+                                    { "line", 55U },
+                                }
+                            }
+                        }
+                    },
+                    new Dictionary<string, object>()
+                    {
+                        { "type", "type2222" },
+                        { "language", "dotnet" },
+                        { "id", "test55555" },
+                        {
+                            "frames", new List<object>()
+                            {
+                                new Dictionary<string, object>()
+                                {
+                                    { "id", "frameid" },
+                                    { "text", "text" },
+                                    { "file", "file.cs" },
+                                    { "line", 33U },
+                                },
+                                new Dictionary<string, object>()
+                                {
+                                    { "id", "frameid2" },
+                                    { "text", "text2" },
+                                    { "file", "file2.cs" },
+                                    { "line", 55U },
+                                }
+                            }
+                        }
+                    }
                 };
 
             if (rootSpan != null)

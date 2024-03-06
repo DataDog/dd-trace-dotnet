@@ -220,17 +220,18 @@ namespace Datadog.Trace.Agent.MessagePack
         {
             if (metaStruct != null && metaStruct.Count > 0)
             {
+                Dictionary<string, byte[]> data = new();
+
                 foreach (var item in metaStruct)
                 {
-                    Dictionary<string, byte[]> data = new();
-                    var buffersss = new byte[] { };
-                    var result = PrimitiveObjectFormatter.Instance.Serialize(ref buffersss, 0, item.Value, null);
-                    var newArray2 = new byte[result];
-                    Array.Copy(buffersss, 0, newArray2, 0, result);
-                    data.Clear();
-                    data[item.Key] = buffersss;
-                    WriteMetaStruct(ref bytes, ref offset, data);
+                    var buffer = new byte[] { };
+                    var bytesCopied = PrimitiveObjectFormatter.Instance.Serialize(ref buffer, 0, item.Value, null);
+                    var newBuffer = new byte[bytesCopied];
+                    Array.Copy(buffer, 0, newBuffer, 0, bytesCopied);
+                    data[item.Key] = newBuffer;
                 }
+
+                WriteMetaStruct(ref bytes, ref offset, data);
             }
         }
 
