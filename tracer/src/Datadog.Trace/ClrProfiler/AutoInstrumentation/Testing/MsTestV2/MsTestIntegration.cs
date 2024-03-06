@@ -54,19 +54,21 @@ internal static class MsTestIntegration
         var methodParameters = testMethod.GetParameters();
         if (methodParameters?.Length > 0)
         {
-            var testParameters = new TestParameters();
-            testParameters.Metadata = new Dictionary<string, object>();
-            testParameters.Arguments = new Dictionary<string, object>();
+            var testParameters = new TestParameters
+            {
+                Metadata = new Dictionary<string, object>(),
+                Arguments = new Dictionary<string, object>()
+            };
 
             for (var i = 0; i < methodParameters.Length; i++)
             {
                 if (testMethodArguments != null && i < testMethodArguments.Length)
                 {
-                    testParameters.Arguments[methodParameters[i].Name] = Common.GetParametersValueData(testMethodArguments[i]);
+                    testParameters.Arguments[methodParameters[i].Name ?? string.Empty] = Common.GetParametersValueData(testMethodArguments[i]);
                 }
                 else
                 {
-                    testParameters.Arguments[methodParameters[i].Name] = "(default)";
+                    testParameters.Arguments[methodParameters[i].Name ?? string.Empty] = "(default)";
                 }
             }
 
