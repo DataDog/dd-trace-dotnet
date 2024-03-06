@@ -51,7 +51,7 @@ internal static partial class IastModule
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error while checking for Sql injection.");
+            Log.Error(ex, "Error while escaping string for XSS.");
         }
 
         return res;
