@@ -47,6 +47,12 @@ namespace Datadog.Trace.Configuration
             public const string MaxConcurrentRequests = "DD_IAST_MAX_CONCURRENT_REQUESTS";
 
             /// <summary>
+            /// Configuration key for the maximum number of ranges
+            /// a tainted object can hold. Defaults to 10.
+            /// </summary>
+            public const string MaxRangeCount = "DD_IAST_MAX_RANGE_COUNT";
+
+            /// <summary>
             /// Configuration key for the maximum number of IAST vulnerabilities to
             /// detect in a request. Defaults to 2.
             /// </summary>

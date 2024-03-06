@@ -19,6 +19,7 @@ internal class IastSettings
     public const string WeakHashAlgorithmsDefault = "HMACMD5,MD5,HMACSHA1,SHA1";
     public const int VulnerabilitiesPerRequestDefault = 2;
     public const int MaxConcurrentRequestDefault = 2;
+    public const int MaxRangeCountDefault = 10;
     public const int RequestSamplingDefault = 30;
     public const int TruncationMaxValueLengthDefault = 250;
 
@@ -49,6 +50,10 @@ internal class IastSettings
                                .WithKeys(ConfigurationKeys.Iast.MaxConcurrentRequests)
                                .AsInt32(MaxConcurrentRequestDefault, x => x > 0)
                                .Value;
+        MaxRangeCount = config
+                        .WithKeys(ConfigurationKeys.Iast.MaxRangeCount)
+                        .AsInt32(MaxRangeCountDefault, x => x > 0)
+                        .Value;
         VulnerabilitiesPerRequest = config
                                    .WithKeys(ConfigurationKeys.Iast.VulnerabilitiesPerRequest)
                                    .AsInt32(VulnerabilitiesPerRequestDefault, x => x > 0)
@@ -101,6 +106,8 @@ internal class IastSettings
     public int RequestSampling { get; }
 
     public int MaxConcurrentRequests { get; }
+
+    public int MaxRangeCount { get; }
 
     public int VulnerabilitiesPerRequest { get; }
 
