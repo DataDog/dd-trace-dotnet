@@ -3080,7 +3080,9 @@ stages:
       displayName: RunBenchmarks
       env:
         DD_CIVISIBILITY_AGENTLESS_ENABLED: true
-        DD_PROFILING_ENABLED: true
+        # Currently, enabling profiling enables the CI Visibility tracer to enable code hotspots.
+        # We may be able to mitigate that in the future, but disabling it for now.
+        DD_PROFILING_ENABLED: false
         DD_API_KEY: $(ddApiKey)
         DD_DOTNET_TRACER_HOME: $(monitoringHome)
 
