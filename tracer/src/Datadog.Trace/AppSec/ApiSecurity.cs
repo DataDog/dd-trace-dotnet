@@ -6,62 +6,77 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Specialized;
+using System.Runtime.CompilerServices;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec;
 
 internal class ApiSecurity
 {
-    private const int MinTimeBetweenReprocess = 30;
-    private const int MaxRoutesSize = 4096;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiSecurity>();
+    private readonly int _maxRoutesSize;
     private readonly bool _enabled;
-    private readonly TimeSpan _minTimeBetweenReprocessTimeSpan = TimeSpan.FromSeconds(MinTimeBetweenReprocess);
-    private readonly IDictionary<int, DateTime> _processedRoutes = new Dictionary<int, DateTime>();
+    private readonly TimeSpan _minTimeBetweenReprocessTimeSpan;
+    private readonly OrderedDictionary _processedRoutes = new();
     private readonly Dictionary<string, bool> _apiSecurityAddress = new() { { "extract-schema", true } };
 
-    public ApiSecurity(SecuritySettings securitySettings)
+    public ApiSecurity(SecuritySettings securitySettings, int maxRouteSize = 4096)
     {
         // todo: later, will be enabled by default, depending on if Security is enabled
         _enabled = securitySettings.ApiSecurityEnabled;
+        _minTimeBetweenReprocessTimeSpan = TimeSpan.FromSeconds(securitySettings.ApiSecuritySampleDelay);
+        _maxRoutesSize = maxRouteSize;
     }
 
-    public bool ShouldAnalyzeSchema(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args)
+    public bool ShouldAnalyzeSchema(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args, string? statusCode, IDictionary<string, object>? routeValues)
     {
-        if (_enabled && lastWafCall && localRootSpan.Context.SamplingPriority > (int?)SamplingPriority.AutoReject)
+        if (_enabled && lastWafCall && (localRootSpan.Context.TraceContext?.SamplingPriority > (int?)SamplingPriority.AutoReject || localRootSpan.Context.SamplingPriority > (int?)SamplingPriority.AutoReject))
         {
-            var httpRouteTag = localRootSpan.GetTag(Tags.HttpRoute);
+            var httpRouteTag = localRootSpan.GetTag(Tags.AspNetCoreEndpoint) ?? localRootSpan.GetTag(Tags.HttpRoute);
             var httpMethod = localRootSpan.GetTag(Tags.HttpMethod);
-            var statusCode = localRootSpan.GetTag(Tags.HttpStatusCode);
+            statusCode ??= localRootSpan.GetTag(Tags.HttpStatusCode);
             if (httpRouteTag == null || httpMethod == null || statusCode == null)
             {
                 Log.Debug("Unsupported groupkey for api security {Route}, {Method}, {Status}", httpRouteTag, httpMethod, statusCode);
                 return false;
             }
 
-            var hash = HashCode.Combine(httpRouteTag.GetHashCode(), httpMethod.GetHashCode(), statusCode.GetHashCode());
-            var now = DateTime.UtcNow;
-            if (_processedRoutes.TryGetValue(hash, out var lastProcessed))
+            if (routeValues != null)
             {
-                if (lastProcessed - now > _minTimeBetweenReprocessTimeSpan)
+                foreach (var routeValue in routeValues)
                 {
-                    args.Add(AddressesConstants.WafContextProcessor, _apiSecurityAddress);
-                    _processedRoutes[hash] = now;
+                    var routeKey = $"{{{routeValue.Key}}}";
+                    if (routeValue.Value is string && httpRouteTag.Contains(routeKey))
+                    {
+                        httpRouteTag = httpRouteTag.Replace(routeKey, routeValue.Value.ToString());
+                    }
+                }
+            }
+
+            var hash = CombineHashes(httpRouteTag!, httpMethod, statusCode);
+            var now = DateTime.UtcNow;
+            if (_processedRoutes.TryGetValue<DateTime>(hash, out var lastProcessed))
+            {
+                if (now - lastProcessed > _minTimeBetweenReprocessTimeSpan)
+                {
+                    _processedRoutes.Remove(hash);
+                    _processedRoutes.Add(hash, now);
+                    args[AddressesConstants.WafContextProcessor] = _apiSecurityAddress;
                     return true;
                 }
             }
             else
             {
-                // shouldn't happen so often (that's a lot of routes)
-                if (_processedRoutes.Count == MaxRoutesSize)
+                // it's full, remove the oldest, as it's an ordered dic, insertion order is preserved
+                if (_processedRoutes.Count == _maxRoutesSize)
                 {
-                    var oldest = _processedRoutes.OrderBy(x => x.Value).First();
-                    _processedRoutes.Remove(oldest);
+                    _processedRoutes.RemoveAt(0);
                 }
 
-                args.Add(AddressesConstants.WafContextProcessor, _apiSecurityAddress);
                 _processedRoutes.Add(hash, now);
+                args[AddressesConstants.WafContextProcessor] = _apiSecurityAddress;
 
                 return true;
             }
@@ -69,4 +84,7 @@ internal class ApiSecurity
 
         return false;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int CombineHashes(string httpRouteTag, string httpMethod, string statusCode) => HashCode.Combine(httpRouteTag.GetHashCode(), httpMethod.GetHashCode(), statusCode.GetHashCode());
 }
