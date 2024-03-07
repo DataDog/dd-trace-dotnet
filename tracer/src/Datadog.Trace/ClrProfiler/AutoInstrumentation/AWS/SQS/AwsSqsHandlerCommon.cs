@@ -117,8 +117,8 @@ internal static class AwsSqsHandlerCommon
         }
 
         // request the message attributes that a datadog instrumentation might have set when sending
-        request.MessageAttributeNames.AddDistinct(ContextPropagation.SqsKey);
-        request.AttributeNames.AddDistinct("SentTimestamp");
+        request.MessageAttributeNames?.AddDistinct(ContextPropagation.SqsKey);
+        request.AttributeNames?.AddDistinct("SentTimestamp");
 
         return new CallTargetState(scope, queueName);
     }
