@@ -23,10 +23,11 @@
   "vulnerabilities": [
     {
       "type": "XSS",
-      "hash": 2077741773,
+      "hash": -2097573301,
       "location": {
         "spanId": XXX,
-        "path": "ReflectedXss.cshtml",
+        "path": "ASP._Page_Views_Iast_ReflectedXss_cshtml",
+        "method": "Execute",
         "line": XXX
       },
       "evidence": {

@@ -717,7 +717,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     public async Task TestIastReflectedXssRequest()
     {
         (Regex RegexPattern, string Replacement) pathScrubber = (new Regex("\"path\": \"AspNetCore[^\\.]+\\."), "\"path\": \"AspNetCore.");
-        (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": -953468592,"), "\"hash\": -623616875,");
+        (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": -1018721842,"), "\"hash\": -1004380463,");
 
         var filename = "Iast.ReflectedXss.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }

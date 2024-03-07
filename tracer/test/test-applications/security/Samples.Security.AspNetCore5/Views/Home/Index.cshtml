@@ -128,7 +128,10 @@
     
 	<div><a href="/Iast/ReflectedXss/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXss </a></div>
 
-	<div><a href="/Iast/ReflectedXssEscaped/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXssEscaped </a></div>
+	<div><a href="/Iast/ReflectedXssEscaped/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXssEscaped with INJECTION</a></div>
+
+	<div><a href="/Iast/ReflectedXssEscaped/?param=Normal Texxt">GET /Iast/ReflectedXssEscaped with normal text</a></div>
+
 
     <div>
         @Html.Raw(Context.Request.Query["q"])
