@@ -17,7 +17,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "hash": 1629607464,
+      "hash": -788071420,
       "location": {
         "path": "Samples.Deduplication.Program",
         "method": "ComputeHashNTimes"
@@ -55,7 +55,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "hash": 1629607464,
+      "hash": -788071420,
       "location": {
         "path": "Samples.Deduplication.Program",
         "method": "ComputeHashNTimes"
@@ -93,7 +93,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "hash": 1629607464,
+      "hash": -788071420,
       "location": {
         "path": "Samples.Deduplication.Program",
         "method": "ComputeHashNTimes"
@@ -131,7 +131,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "hash": 1629607464,
+      "hash": -788071420,
       "location": {
         "path": "Samples.Deduplication.Program",
         "method": "ComputeHashNTimes"
@@ -169,7 +169,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "hash": 1629607464,
+      "hash": -788071420,
       "location": {
         "path": "Samples.Deduplication.Program",
         "method": "ComputeHashNTimes"

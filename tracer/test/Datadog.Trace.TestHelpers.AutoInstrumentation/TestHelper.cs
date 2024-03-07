@@ -17,7 +17,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Environment;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.Helpers;
@@ -82,13 +81,34 @@ namespace Datadog.Trace.TestHelpers
         {
         }
 
-        public async Task<Process> StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false)
+        public async Task<Process> StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false, bool copyCIEnvironmentValues = false)
         {
             // get path to sample app that the profiler will attach to
             string sampleAppPath = EnvironmentHelper.GetTestCommandForSampleApplicationPath(packageVersion, framework);
             if (!File.Exists(sampleAppPath))
             {
                 throw new Exception($"application not found: {sampleAppPath}");
+            }
+
+            if (copyCIEnvironmentValues)
+            {
+                // Ensure we have the CI Environment variables in the target process
+                static IEnumerable<string> GetConstants()
+                {
+                    return typeof(CIEnvironmentValues.Constants)
+                          .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+                          .Where(fi => fi.IsLiteral && !fi.IsInitOnly)
+                          .Select(fi => fi.GetValue(null)?.ToString())
+                          .Where(value => value != null);
+                }
+
+                foreach (var key in GetConstants())
+                {
+                    if (EnvironmentHelpers.GetEnvironmentVariable(key) is { Length: > 0 } value)
+                    {
+                        EnvironmentHelper.CustomEnvironmentVariables[key] = value;
+                    }
+                }
             }
 
             Output.WriteLine($"Starting Application: {sampleAppPath}");
@@ -110,9 +130,9 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false)
+        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, bool copyCIEnvironmentValues = false)
         {
-            var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam);
+            var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam, copyCIEnvironmentValues: copyCIEnvironmentValues);
 
             using var helper = new ProcessHelper(process);
 
