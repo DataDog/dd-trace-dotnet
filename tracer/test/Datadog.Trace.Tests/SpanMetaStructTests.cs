@@ -19,11 +19,11 @@ namespace Datadog.Trace.Tests;
 public class SpanMetaStructTests
 {
     private const string MetaStructStr = "meta_struct";
-    private const string FirstItemKey = "_dd.stack.exploit";
-    private const string SecondItemKey = "secondValue";
-    private const string SecondItemValue = "value";
+    private const string DdStackKey = "_dd.stack.exploit";
+    private const string StringKey = "StringKey";
+    private const string StringValue = "value";
     private static readonly IFormatterResolver FormatterResolver = SpanFormatterResolver.Instance;
-    private static List<object> firstItemValue =
+    private static List<object> stackData =
                 new List<object>()
                 {
                     new Dictionary<string, object>()
@@ -89,18 +89,18 @@ public class SpanMetaStructTests
        {
             new()
             {
-                   new(FirstItemKey, firstItemValue),
-                   new(SecondItemKey, SecondItemValue)
+                   new(StringKey, StringValue),
+                   new(DdStackKey, stackData)
             },
             new()
             {
-                   new(FirstItemKey, true),
-                   new(SecondItemKey, 4545),
-                   new("thirdKey", new List<object> { "test", 44, new List<string> { "test" } })
+                   new(StringKey, 4545),
+                   new("thirdKey", new List<object> { "test", 44, new List<string> { "test" } }),
+                   new(DdStackKey, true),
             },
             new()
             {
-                   new(FirstItemKey, null)
+                   new(DdStackKey, null)
             }
        };
 
@@ -113,7 +113,7 @@ public class SpanMetaStructTests
         // We add the elements to the meta struct
         foreach (var item in dataToEncode)
         {
-            span.MetaStruct.Add(item.Item1, item.Item2);
+            span.MetaStruct.TryAdd(item.Item1, item.Item2);
         }
 
         var spanBytes = new byte[] { };

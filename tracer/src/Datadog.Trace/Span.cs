@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -120,7 +121,7 @@ namespace Datadog.Trace
 
         internal ITags Tags { get; set; }
 
-        internal Dictionary<string, object> MetaStruct { get; set; } = new();
+        internal ConcurrentDictionary<string, object> MetaStruct { get; set; } = new();
 
         internal SpanContext Context { get; }
 
