@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Environment;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -23,7 +24,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
-    public class NUnitEvpTests : TestHelper
+    public class NUnitEvpTests : TestingFrameworkEvpTest
     {
         private const int ExpectedTestCount = 33;
         private const int ExpectedTestSuiteCount = 10;
@@ -152,7 +153,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                     };
 
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, copyCIEnvironmentValues: true))
+                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                     {
                         // Check the tests, suites and modules count
                         Assert.Equal(ExpectedTestCount, tests.Count);
@@ -380,104 +381,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
-        private static string AssertTargetSpanAnyOf(MockCIVisibilityTest targetTest, string key, params string[] values)
+        protected override void CheckSimpleTestSpan(MockCIVisibilityTest targetTest)
         {
-            string actualValue = targetTest.Meta[key];
-            Assert.Contains(actualValue, values);
-            targetTest.Meta.Remove(key);
-            return actualValue;
-        }
+            // Check the Test Status
+            base.CheckSimpleTestSpan(targetTest);
 
-        private static void AssertTargetSpanEqual(MockCIVisibilityTest targetTest, string key, string value)
-        {
-            Assert.Equal(value, targetTest.Meta[key]);
-            targetTest.Meta.Remove(key);
-        }
-
-        private static void AssertTargetSpanExists(MockCIVisibilityTest targetTest, string key)
-        {
-            Assert.True(targetTest.Meta.ContainsKey(key));
-            targetTest.Meta.Remove(key);
-        }
-
-        private static void AssertTargetSpanContains(MockCIVisibilityTest targetTest, string key, string value)
-        {
-            Assert.Contains(value, targetTest.Meta[key]);
-            targetTest.Meta.Remove(key);
-        }
-
-        private static void CheckCIEnvironmentValuesDecoration(MockCIVisibilityTest targetTest, string repository, string branch, string commitSha)
-        {
-            var context = new SpanContext(parent: null, traceContext: null, serviceName: null);
-            var span = new Span(context, DateTimeOffset.UtcNow);
-            CIEnvironmentValues.Create().DecorateSpan(span);
-
-            AssertEqual(CommonTags.CIProvider);
-            AssertEqual(CommonTags.CIPipelineId);
-            AssertEqual(CommonTags.CIPipelineName);
-            AssertEqual(CommonTags.CIPipelineNumber);
-            AssertEqual(CommonTags.CIPipelineUrl);
-            AssertEqual(CommonTags.CIJobUrl);
-            AssertEqual(CommonTags.CIJobName);
-            AssertEqual(CommonTags.StageName);
-            AssertEqual(CommonTags.CIWorkspacePath);
-            AssertEqual(CommonTags.GitRepository, repository);
-            AssertEqual(CommonTags.GitCommit, commitSha);
-            AssertEqual(CommonTags.GitBranch, branch);
-            AssertEqual(CommonTags.GitTag);
-            AssertEqual(CommonTags.GitCommitAuthorName);
-            AssertEqual(CommonTags.GitCommitAuthorEmail);
-            AssertEqualDate(CommonTags.GitCommitAuthorDate);
-            AssertEqual(CommonTags.GitCommitCommitterName);
-            AssertEqual(CommonTags.GitCommitCommitterEmail);
-            AssertEqualDate(CommonTags.GitCommitCommitterDate);
-            AssertEqual(CommonTags.GitCommitMessage);
-            AssertEqual(CommonTags.BuildSourceRoot);
-
-            void AssertEqual(string key, string value = null)
+            // Check the `test.message` tag. We check if contains the default or the custom message.
+            if (targetTest.Meta.ContainsKey(TestTags.Message))
             {
-                if (value is null)
-                {
-                    if (span.GetTag(key) is { } keyValue)
-                    {
-                        Assert.Equal(keyValue, targetTest.Meta[key]);
-                        targetTest.Meta.Remove(key);
-                    }
-                }
-                else
-                {
-                    Assert.Equal(value, targetTest.Meta[key]);
-                    targetTest.Meta.Remove(key);
-                }
-            }
-
-            void AssertEqualDate(string key)
-            {
-                if (span.GetTag(key) is { } keyValue)
-                {
-                    Assert.Equal(DateTimeOffset.Parse(keyValue), DateTimeOffset.Parse(targetTest.Meta[key]));
-                    targetTest.Meta.Remove(key);
-                }
+                AssertTargetSpanAnyOf(targetTest, TestTags.Message, new string[] { "Test is ok", "The test passed." });
             }
         }
 
-        private static void CheckRuntimeValues(MockCIVisibilityTest targetTest)
-        {
-            AssertTargetSpanExists(targetTest, CommonTags.RuntimeName);
-            AssertTargetSpanExists(targetTest, CommonTags.RuntimeVersion);
-            AssertTargetSpanExists(targetTest, CommonTags.RuntimeArchitecture);
-            AssertTargetSpanExists(targetTest, CommonTags.OSArchitecture);
-            AssertTargetSpanExists(targetTest, CommonTags.OSPlatform);
-            AssertTargetSpanEqual(targetTest, CommonTags.OSVersion, CIVisibility.GetOperatingSystemVersion());
-        }
-
-        private static void CheckTraitsValues(MockCIVisibilityTest targetTest)
-        {
-            // Check the traits tag value
-            AssertTargetSpanEqual(targetTest, TestTags.Traits, "{\"Category\":[\"Category01\"],\"Compatibility\":[\"Windows\",\"Linux\"]}");
-        }
-
-        private static void CheckParametrizedTraitsValues(MockCIVisibilityTest targetTest)
+        private void CheckParametrizedTraitsValues(MockCIVisibilityTest targetTest)
         {
             // Check the traits tag value
             AssertTargetSpanAnyOf(
@@ -488,52 +404,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 "{\"Category\":[\"ParemeterizedTest\",\"ThirdCase\"]}");
         }
 
-        private static void CheckOriginTag(MockCIVisibilityTest targetTest)
-        {
-            // Check the test origin tag
-            AssertTargetSpanEqual(targetTest, Tags.Origin, TestTags.CIAppTestOriginName);
-        }
-
-        private static void CheckSimpleTestSpan(MockCIVisibilityTest targetTest)
-        {
-            // Check the Test Status
-            AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusPass);
-
-            // Check the `test.message` tag. We check if contains the default or the custom message.
-            if (targetTest.Meta.ContainsKey(TestTags.Message))
-            {
-                AssertTargetSpanAnyOf(targetTest, TestTags.Message, new string[] { "Test is ok", "The test passed." });
-            }
-        }
-
-        private static void CheckSimpleSkipFromAttributeTest(MockCIVisibilityTest targetTest, string skipReason = "Simple skip reason")
-        {
-            // Check the Test Status
-            AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusSkip);
-
-            // Check the Test skip reason
-            AssertTargetSpanEqual(targetTest, TestTags.SkipReason, skipReason);
-        }
-
-        private static void CheckSimpleErrorTest(MockCIVisibilityTest targetTest)
-        {
-            // Check the Test Status
-            AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusFail);
-
-            // Check the span error flag
-            Assert.Equal(1, targetTest.Error);
-
-            // Check the error type
-            AssertTargetSpanEqual(targetTest, Tags.ErrorType, typeof(DivideByZeroException).FullName);
-
-            // Check the error stack
-            AssertTargetSpanContains(targetTest, Tags.ErrorStack, typeof(DivideByZeroException).FullName);
-
-            // Check the error message
-            AssertTargetSpanEqual(targetTest, Tags.ErrorMsg, new DivideByZeroException().Message);
-        }
-
-        private static void CheckSetupErrorTest(MockCIVisibilityTest targetTest)
+        private void CheckSetupErrorTest(MockCIVisibilityTest targetTest)
         {
             // Check the Test Status
             AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusFail);
@@ -549,75 +420,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             // Remove the stacktrace
             targetTest.Meta.Remove(Tags.ErrorStack);
-        }
-
-        private void WriteSpans(List<MockCIVisibilityTestSuite> suites)
-        {
-            if (suites is null || suites.Count == 0)
-            {
-                return;
-            }
-
-            var sb = StringBuilderCache.Acquire(250);
-            sb.AppendLine("***********************************");
-
-            int i = 0;
-            foreach (var suite in suites)
-            {
-                sb.Append($" {i++}) ");
-                sb.Append($"TestSuiteId={suite.TestSuiteId}, ");
-                sb.Append($"Service={suite.Service}, ");
-                sb.Append($"Name={suite.Name}, ");
-                sb.Append($"Resource={suite.Resource}, ");
-                sb.Append($"Type={suite.Type}, ");
-                sb.Append($"Error={suite.Error}");
-                sb.AppendLine();
-                sb.AppendLine("   Tags=");
-                foreach (var kv in suite.Meta)
-                {
-                    sb.AppendLine($"       => {kv.Key} = {kv.Value}");
-                }
-
-                sb.AppendLine();
-            }
-
-            sb.AppendLine("***********************************");
-            Output.WriteLine(StringBuilderCache.GetStringAndRelease(sb));
-        }
-
-        private void WriteSpans(List<MockCIVisibilityTest> tests)
-        {
-            if (tests is null || tests.Count == 0)
-            {
-                return;
-            }
-
-            var sb = StringBuilderCache.Acquire(250);
-            sb.AppendLine("***********************************");
-
-            int i = 0;
-            foreach (var test in tests)
-            {
-                sb.Append($" {i++}) ");
-                sb.Append($"TraceId={test.TraceId}, ");
-                sb.Append($"SpanId={test.SpanId}, ");
-                sb.Append($"Service={test.Service}, ");
-                sb.Append($"Name={test.Name}, ");
-                sb.Append($"Resource={test.Resource}, ");
-                sb.Append($"Type={test.Type}, ");
-                sb.Append($"Error={test.Error}");
-                sb.AppendLine();
-                sb.AppendLine("   Tags=");
-                foreach (var kv in test.Meta)
-                {
-                    sb.AppendLine($"       => {kv.Key} = {kv.Value}");
-                }
-
-                sb.AppendLine();
-            }
-
-            sb.AppendLine("***********************************");
-            Output.WriteLine(StringBuilderCache.GetStringAndRelease(sb));
         }
     }
 }

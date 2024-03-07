@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Environment;
 using Datadog.Trace.Ci.Tags;
 using FluentAssertions;
 using Newtonsoft.Json;
@@ -86,10 +87,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 var spanData = testItem[1];
 
                 var span = new Span(context, time);
-
-                SetEnvironmentFromDictionary(envData);
-                CIEnvironmentValues.Create().DecorateSpan(span);
-                ResetEnvironmentFromDictionary(envData);
+                CIEnvironmentValues.Create(envData).DecorateSpan(span);
 
                 foreach (var spanDataItem in spanData)
                 {
@@ -133,32 +131,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     Assert.Equal(spanDataItem.Value, value);
                 }
-            }
-        }
-
-        internal void SetEnvironmentFromDictionary(IDictionary values)
-        {
-            foreach (DictionaryEntry item in _originalEnvVars)
-            {
-                Environment.SetEnvironmentVariable(item.Key.ToString(), null);
-            }
-
-            foreach (DictionaryEntry item in values)
-            {
-                Environment.SetEnvironmentVariable(item.Key.ToString(), item.Value.ToString());
-            }
-        }
-
-        internal void ResetEnvironmentFromDictionary(IDictionary values)
-        {
-            foreach (DictionaryEntry item in values)
-            {
-                Environment.SetEnvironmentVariable(item.Key.ToString(), null);
-            }
-
-            foreach (DictionaryEntry item in _originalEnvVars)
-            {
-                Environment.SetEnvironmentVariable(item.Key.ToString(), item.Value.ToString());
             }
         }
 

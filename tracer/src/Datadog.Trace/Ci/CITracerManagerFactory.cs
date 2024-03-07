@@ -92,7 +92,7 @@ namespace Datadog.Trace.Ci
                     return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(CIVisibility.GetRequestFactory(settings)));
                 }
 
-                Environment.FailFast("An API key is required in Agentless mode.");
+                System.Environment.FailFast("An API key is required in Agentless mode.");
                 return null;
             }
 
