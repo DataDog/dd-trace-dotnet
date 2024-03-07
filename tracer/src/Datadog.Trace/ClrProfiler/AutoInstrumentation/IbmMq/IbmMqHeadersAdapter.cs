@@ -79,10 +79,7 @@ internal readonly struct IbmMqHeadersAdapter(IMqMessage message) : IHeadersColle
     private string StringFromSignedBytes(sbyte[] buf)
     {
         // since the text is ASCII signed and unsigned bytes are the same (0-127)
-        var unsigned = new byte[buf.Length];
-        Buffer.BlockCopy(buf, 0, unsigned, 0, buf.Length);
-
-        return Encoding.ASCII.GetString(unsigned);
+        return Encoding.ASCII.GetString(Unsafe.As<byte[]>(unsigned));
     }
 
     private sbyte[] StringToUnsignedBytes(string str)
