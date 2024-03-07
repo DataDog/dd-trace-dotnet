@@ -222,12 +222,23 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 Dictionary<string, byte[]> data = new();
 
+                // We need to know the size of the byte array before actually writing it. Depending on the size,
+                // the serializer will use a different amount of bytes in the header to encode the length of the byte array.
+                // That means that we need to know the size of the array, then write the header and then, the array itself.
+
                 foreach (var item in metaStruct)
                 {
-                    var buffer = new byte[] { };
+                    // 256 is the size that the serializer would reserve initially for empty arrays, so we create
+                    // the buffer with that size to avoid this first resize. If a bigger size is required later, the serializer
+                    // will resize it.
+
+                    var buffer = new byte[256];
                     var bytesCopied = PrimitiveObjectFormatter.Instance.Serialize(ref buffer, 0, item.Value, null);
+
+                    // The size of buffer is not always the same as bytesCopied, so we need to create a new buffer
+
                     var newBuffer = new byte[bytesCopied];
-                    Array.Copy(buffer, 0, newBuffer, 0, bytesCopied);
+                    Array.Copy(buffer, newBuffer, bytesCopied);
                     data[item.Key] = newBuffer;
                 }
 

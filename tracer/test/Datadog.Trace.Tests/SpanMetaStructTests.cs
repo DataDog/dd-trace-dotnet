@@ -3,9 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Vendors.MessagePack.Formatters;
 using FluentAssertions;
 using Xunit;
 
@@ -13,173 +17,142 @@ using Xunit;
 
 namespace Datadog.Trace.Tests;
 
-#pragma warning disable SA1649 // File name should match first type name
-internal readonly struct StackFrame
-#pragma warning restore SA1649 // File name should match first type name
-{
-    // "id": <unsigned integer: index of the stack frame(0 = top of stack)>,
-    // "text": <string: raw stack frame> (optional),
-    // "file": <string> (optional),
-    // "line": <unsigned integer> (optional),
-    // "column": <unsigned integer> (optional),
-    // "namespace": <string> (optional),
-    // "class_name": <string> (optional),
-    // "function": <string> (optional),
-
-    private readonly uint _id;
-    private readonly string? _text;
-    private readonly string? _file;
-    private readonly uint? _line;
-    private readonly uint? _column;
-    private readonly string? _namespace;
-    private readonly string? _className;
-    private readonly string? _function;
-
-    public StackFrame(uint id, string? text, string? file, uint? line, uint? column, string? ns, string? className, string? function)
-    {
-        _id = id;
-        _text = text;
-        _file = file;
-        _line = line;
-        _column = column;
-        _namespace = ns;
-        _className = className;
-        _function = function;
-    }
-
-    public uint Id => _id;
-
-    public string? Text => _text;
-
-    public string? File => _file;
-
-    public uint? Line => _line;
-
-    public uint? Column => _column;
-
-    public string? Namespace => _namespace;
-
-    public string? ClassName => _className;
-
-    public string? Function => _function;
-}
-
-internal readonly struct EventCategory
-{
-    // "type": EVENT_TYPE(optional),
-    // "language": (php|nodejs|java|dotnet|go|python|ruby|cpp|...) (optional),
-    // "id": <string: UUID of the stack trace> (optional),
-    // "message": <string: generic message> (optional),
-    // "frames": [STACK_FRAME]
-
-    private readonly string? _type;
-    private readonly string? _language;
-    private readonly string? _id;
-    private readonly string? _message;
-    private readonly List<StackFrame> _frames;
-
-    public EventCategory(string? type, string? language, string? id, string? message, List<StackFrame> frames)
-    {
-        _type = type;
-        _language = language;
-        _id = id;
-        _message = message;
-        _frames = frames;
-    }
-
-    public string? Type => _type;
-
-    public string? Language => _language;
-
-    public string? Id => _id;
-
-    public string? Message => _message;
-
-    public List<StackFrame> Frames => _frames;
-}
-
 public class SpanMetaStructTests
 {
-    [Fact]
-    public void GivenAMetaStruct_WhenEncode_ThenDecodeIsOk0()
-    {
-        // var STACK_TRACES = "_dd.stack"
-        var bytes = new byte[1];
-        int offset = 0;
-
-        Dictionary<string, object> metaStruct = new();
-        metaStruct["_dd.stack.exploit.type"] = "type";
-        metaStruct["_dd.stack.exploit.language"] = "dotnet";
-
-        SpanMessagePackFormatter.EncodeMetaStruct(ref bytes, ref offset, metaStruct);
-        offset.Should().BeGreaterThan(1);
-
-        var readOffset = 0;
-        var readOffsetTemp = 0;
-        var headerBytes = MessagePackBinary.ReadString(bytes, readOffset, out readOffsetTemp);
-        readOffset += readOffsetTemp;
-        var header = MessagePackBinary.ReadMapHeader(bytes, readOffset, out readOffsetTemp);
-        readOffset += readOffsetTemp;
-
-        for (int i = 0; i < header; i++)
-        {
-            var key = MessagePackBinary.ReadString(bytes, readOffset, out readOffsetTemp);
-            readOffset += readOffsetTemp;
-            var value = MessagePackBinary.ReadString(bytes, readOffset, out readOffsetTemp);
-            readOffset += readOffsetTemp;
-            key.Should().BeOneOf("_dd.stack.exploit.type", "_dd.stack.exploit.language");
-            value.Should().BeOneOf("type", "dotnet");
-        }
-    }
+    private const string MetaStructStr = "meta_struct";
+    private const string StackStr = "_dd.stack.exploit";
+    private string stack2 = "value";
+    private List<object> stack =
+                new List<object>()
+                {
+                    new Dictionary<string, object>()
+                    {
+                        { "type", "typevalue" },
+                        { "language", "dotnet" },
+                        { "id", "213123213123213" },
+                        {
+                            "frames", new List<object>()
+                            {
+                                new Dictionary<string, object>()
+                                {
+                                    { "id", "1" },
+                                    { "text", "text" },
+                                    { "file", "file.cs" },
+                                    { "line", 33U },
+                                    { "namespace", "testnamespace" },
+                                    { "class_name", "class1" },
+                                    { "function", "method1" },
+                                },
+                                new Dictionary<string, object>()
+                                {
+                                    { "id", "2" },
+                                    { "text", "text2" },
+                                    { "file", "file2.cs" },
+                                    { "line", 55U },
+                                    { "namespace", "testnamespace" },
+                                    { "class_name", "class2" },
+                                    { "function", "method2" },
+                                }
+                            }
+                        }
+                    },
+                    new Dictionary<string, object>()
+                    {
+                    { "type", "type2222" },
+                    { "language", "dotnet" },
+                    { "id", "test55555" },
+                    {
+                        "frames", new List<object>()
+                        {
+                            new Dictionary<string, object>()
+                            {
+                                { "id", "frameid" },
+                                { "text", "text" },
+                                { "file", "file.cs" },
+                                { "line", 33U },
+                            },
+                            new Dictionary<string, object>()
+                            {
+                                { "id", "frameid2" },
+                                { "text", "text2" },
+                                { "file", "file2.cs" },
+                                { "line", 55U },
+                            }
+                        }
+                    }
+                    }
+                };
 
     [Fact]
     public void GivenAMetaStruct_WhenEncode_ThenDecodeIsOk()
     {
-        // var STACK_TRACES = "_dd.stack"
-        var bytes = new byte[1];
-        int offset = 0;
+        var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
+        span.MetaStruct.Add(StackStr, stack);
+        span.MetaStruct.Add("secondValue", stack2);
 
-        List<Dictionary<string, object>> frames = new List<Dictionary<string, object>>()
+        var bytes = new byte[] { };
+        // SpanMessagePackFormatter.Instance.Serialize(bytes, 0, );
+
+        var formatterResolver = SpanFormatterResolver.Instance;
+        var spanBuffer = new SpanBuffer(10000, formatterResolver);
+        spanBuffer.TryWrite(new ArraySegment<Span>(new[] { span }), ref bytes).Should().Be(SpanBuffer.WriteStatus.Success);
+
+        // Decode the bytes
+        // Find the offset of the header "meta_struct" in the buffer
+        int offset = FindMetaStructSection(bytes);
+        offset.Should().NotBe(0);
+        offset += MetaStructStr.Length;
+        var headerLength = MessagePackBinary.ReadMapHeader(bytes, offset, out var size);
+        headerLength.Should().Be(2);
+        offset += size;
+        var result = MessagePackBinary.ReadString(bytes, offset, out size);
+        result.Should().Be(StackStr);
+        offset += size;
+        var newArray = MessagePackBinary.ReadBytes(bytes, offset, out size);
+        var newResult = PrimitiveObjectFormatter.Instance.Deserialize(newArray, 0, formatterResolver, out var readSize);
+        // We should read the whole array
+        readSize.Should().Be(newArray.Length);
+        newResult.Should().BeOfType<object[]>();
+        (newResult as object[])![0].Should().BeEquivalentTo(stack[0]);
+        (newResult as object[])![1].Should().BeEquivalentTo(stack[1]);
+
+        // We read the second object of the dictionary
+        offset += size;
+        result = MessagePackBinary.ReadString(bytes, offset, out size);
+        result.Should().Be("secondValue");
+        offset += size;
+        newArray = MessagePackBinary.ReadBytes(bytes, offset, out size);
+        newResult = PrimitiveObjectFormatter.Instance.Deserialize(newArray, 0, formatterResolver, out readSize);
+        // We should read the whole array
+        readSize.Should().Be(newArray.Length);
+        newResult.Should().BeOfType<string>();
+        (newResult as string)!.Should().Be(stack2);
+    }
+
+    private static int FindMetaStructSection(byte[] bytes)
+    {
+        var offset = 0;
+        int maxIndex = bytes.Length - MetaStructStr.Length;
+
+        for (var i = 0; i <= maxIndex; i++)
         {
-            new Dictionary<string, object>
+            bool matchFound = true;
+            for (int j = 0; j < MetaStructStr.Length; j++)
             {
-                { "id", 0 },
-                { "text", "text" },
-                { "file", "file" },
-                { "line", 1 },
-                { "column", 2 },
-                { "namespace", "namespace" },
-            },
-            new Dictionary<string, object>
-            {
-                { "id", 1 },
-                { "text", "text2" },
-                { "file", "file2" },
-                { "line", 1 },
-                { "column", 2 },
-                { "namespace", "namespace" },
+                if (bytes[i + j] != MetaStructStr[j])
+                {
+                    matchFound = false;
+                    break;
+                }
             }
-        };
 
-        Dictionary<string, object> vuln = new Dictionary<string, object>
-        {
-            { "type", "type" },
-            { "language", "dotnet" },
-            { "id", 1 },
-            { "message", "message" },
-            { "frames", frames }
-        };
+            if (matchFound)
+            {
+                offset = i;
+                break;
+            }
+        }
 
-        List<object> exploit = new List<object>()
-        {
-            vuln
-        };
-
-        Dictionary<string, object> metaStruct = new();
-        metaStruct["exploit"] = exploit;
-
-        SpanMessagePackFormatter.EncodeMetaStruct(ref bytes, ref offset, metaStruct);
-
-        offset.Should().BeGreaterThan(1);
+        return offset;
     }
 }
