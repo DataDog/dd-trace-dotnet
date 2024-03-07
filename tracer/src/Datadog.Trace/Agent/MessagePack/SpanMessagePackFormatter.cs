@@ -201,7 +201,7 @@ namespace Datadog.Trace.Agent.MessagePack
             return offset - originalOffset;
         }
 
-        internal static void WriteMetaStruct(ref byte[] bytes, ref int offset, Dictionary<string, byte[]> metaStruct)
+        private void WriteMetaStruct(ref byte[] bytes, ref int offset, Dictionary<string, byte[]> metaStruct)
         {
             if (metaStruct != null && metaStruct.Count > 0)
             {
@@ -216,7 +216,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
         }
 
-        internal static void WriteMetaStruct(ref byte[] bytes, ref int offset, Dictionary<string, object> metaStruct)
+        private void WriteMetaStruct(ref byte[] bytes, ref int offset, Dictionary<string, object> metaStruct)
         {
             if (metaStruct != null && metaStruct.Count > 0)
             {
@@ -233,6 +233,8 @@ namespace Datadog.Trace.Agent.MessagePack
                     // will resize it.
 
                     var buffer = new byte[256];
+
+                    // PrimitiveObjectFormatter relies on MessagePackBinary
                     var bytesCopied = PrimitiveObjectFormatter.Instance.Serialize(ref buffer, 0, item.Value, null);
 
                     // The size of buffer is not always the same as bytesCopied, so we need to create a new buffer

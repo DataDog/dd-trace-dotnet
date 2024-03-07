@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
@@ -20,9 +19,11 @@ namespace Datadog.Trace.Tests;
 public class SpanMetaStructTests
 {
     private const string MetaStructStr = "meta_struct";
-    private const string StackStr = "_dd.stack.exploit";
-    private string stack2 = "value";
-    private List<object> stack =
+    private const string FirstItemKey = "_dd.stack.exploit";
+    private const string SecondItemKey = "secondValue";
+    private const string SecondItemValue = "value";
+    private static readonly IFormatterResolver FormatterResolver = SpanFormatterResolver.Instance;
+    private static List<object> firstItemValue =
                 new List<object>()
                 {
                     new Dictionary<string, object>()
@@ -84,54 +85,55 @@ public class SpanMetaStructTests
                 };
 
     [Fact]
-    public void GivenAMetaStruct_WhenEncode_ThenDecodeIsOk()
+    public void GivenAEncodedSpanWithMetaStruct_WhenDecoding_ThenMetaStructIsCorrectlyDecoded()
     {
         var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
-        span.MetaStruct.Add(StackStr, stack);
-        span.MetaStruct.Add("secondValue", stack2);
 
-        var bytes = new byte[] { };
-        // SpanMessagePackFormatter.Instance.Serialize(bytes, 0, );
+        // We add two elements to the meta struct
+        span.MetaStruct.Add(FirstItemKey, firstItemValue);
+        span.MetaStruct.Add(SecondItemKey, SecondItemValue);
+        var spanBytes = new byte[] { };
+        var spanBuffer = new SpanBuffer(10000, FormatterResolver);
+        // We serialize the span
+        var serializationResult = spanBuffer.TryWrite(new ArraySegment<Span>(new[] { span }), ref spanBytes);
+        serializationResult.Should().Be(SpanBuffer.WriteStatus.Success);
 
-        var formatterResolver = SpanFormatterResolver.Instance;
-        var spanBuffer = new SpanBuffer(10000, formatterResolver);
-        spanBuffer.TryWrite(new ArraySegment<Span>(new[] { span }), ref bytes).Should().Be(SpanBuffer.WriteStatus.Success);
-
-        // Decode the bytes
-        // Find the offset of the header "meta_struct" in the buffer
-        int offset = FindMetaStructSection(bytes);
-        offset.Should().NotBe(0);
+        // Find the offset of the header "meta_struct" in the byte array
+        int offset = FindMetaStructSection(spanBytes);
+        offset.Should().BeGreaterThan(0);
         offset += MetaStructStr.Length;
-        var headerLength = MessagePackBinary.ReadMapHeader(bytes, offset, out var size);
-        headerLength.Should().Be(2);
-        offset += size;
-        var result = MessagePackBinary.ReadString(bytes, offset, out size);
-        result.Should().Be(StackStr);
-        offset += size;
-        var newArray = MessagePackBinary.ReadBytes(bytes, offset, out size);
-        var newResult = PrimitiveObjectFormatter.Instance.Deserialize(newArray, 0, formatterResolver, out var readSize);
-        // We should read the whole array
-        readSize.Should().Be(newArray.Length);
-        newResult.Should().BeOfType<object[]>();
-        (newResult as object[])![0].Should().BeEquivalentTo(stack[0]);
-        (newResult as object[])![1].Should().BeEquivalentTo(stack[1]);
 
-        // We read the second object of the dictionary
+        // Read the map header with 2 items
+        var headerLength = MessagePackBinary.ReadMapHeader(spanBytes, offset, out var bytesRead);
+        headerLength.Should().Be(2);
+        offset += bytesRead;
+
+        // We check every item in the map
+        offset = CheckDictionaryItem(spanBytes, offset, FirstItemKey, firstItemValue);
+        _ = CheckDictionaryItem(spanBytes, offset, SecondItemKey, SecondItemValue);
+    }
+
+    private static int CheckDictionaryItem(byte[] bytes, int offset, string expectedKey, object expectedValue)
+    {
+        // Read the key
+        string result = MessagePackBinary.ReadString(bytes, offset, out var size);
+        result.Should().Be(expectedKey);
         offset += size;
-        result = MessagePackBinary.ReadString(bytes, offset, out size);
-        result.Should().Be("secondValue");
-        offset += size;
-        newArray = MessagePackBinary.ReadBytes(bytes, offset, out size);
-        newResult = PrimitiveObjectFormatter.Instance.Deserialize(newArray, 0, formatterResolver, out readSize);
+
+        // Read the value of this key
+        var newArray = MessagePackBinary.ReadBytes(bytes, offset, out size);
+        var newResult = PrimitiveObjectFormatter.Instance.Deserialize(newArray, 0, FormatterResolver, out var readSize);
+
         // We should read the whole array
         readSize.Should().Be(newArray.Length);
-        newResult.Should().BeOfType<string>();
-        (newResult as string)!.Should().Be(stack2);
+        newResult.Should().BeEquivalentTo(expectedValue);
+        offset += size;
+        return offset;
     }
 
     private static int FindMetaStructSection(byte[] bytes)
     {
-        var offset = 0;
+        var offset = -1;
         int maxIndex = bytes.Length - MetaStructStr.Length;
 
         for (var i = 0; i <= maxIndex; i++)
