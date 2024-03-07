@@ -5,43 +5,15 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
-#if NETFRAMEWORK
-using System.Web;
-#endif
 using Datadog.Trace.AppSec.Coordinator;
-using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Rasp;
 
 internal static class RaspModule
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RaspModule));
-
     internal static void OnLfi(string file)
-    {
-        try
-        {
-            var arguments = new Dictionary<string, object>() { };
-            arguments[AddressesConstants.FileAccess] = file;
-            RunWaf(arguments);
-        }
-        catch (Exception ex)
-        {
-            if (ex is BlockException)
-            {
-                throw;
-            }
-
-            Log.Error(ex, "Error in RASP OnLfi");
-        }
-    }
-
-    private static void RunWaf(Dictionary<string, object> arguments)
     {
         var security = Security.Instance;
 
@@ -57,46 +29,17 @@ internal static class RaspModule
             return;
         }
 
-        SecurityCoordinator? securityCoordinator = null;
+        var arguments = new Dictionary<string, object> { [AddressesConstants.FileAccess] = file };
+        RunWaf(arguments);
+    }
 
-#if NETFRAMEWORK
-        var context = HttpContext.Current;
-        securityCoordinator = new SecurityCoordinator(security, context, rootSpan);
-        var result = securityCoordinator?.RunWaf(arguments);
-
-        if (result is not null)
+    private static void RunWaf(Dictionary<string, object> arguments)
+    {
+        if (Tracer.Instance.InternalActiveScope?.Root?.Span != null)
         {
-            securityCoordinator?.CheckAndBlock(result);
-
-            if (result!.ShouldBlock)
-            {
-                throw new BlockException(result, true);
-            }
+            var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, Tracer.Instance.InternalActiveScope.Root.Span);
+            var result = securityCoordinator.RunWaf(arguments, (log, ex) => log.Error(ex, "Error in RASP OnLfi"));
+            securityCoordinator.CheckAndBlock(result);
         }
-#else
-        IResult? result = null;
-
-        if (CoreHttpContextStore.Instance.Get() is { } httpContext)
-        {
-            var transport = new SecurityCoordinator.HttpTransport(httpContext);
-            if (!transport.IsBlocked)
-            {
-                securityCoordinator = new SecurityCoordinator(security, httpContext, rootSpan, transport);
-                result = securityCoordinator?.RunWaf(arguments);
-            }
-
-            if (result is not null)
-            {
-                var json = JsonConvert.SerializeObject(result.Data);
-                Log.Information("RASP WAF result: {Result}", json);
-                securityCoordinator?.TryReport(result, result.ShouldBlock);
-
-                if (result!.ShouldBlock)
-                {
-                    throw new BlockException(result, true);
-                }
-            }
-        }
-#endif
     }
 }

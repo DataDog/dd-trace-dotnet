@@ -75,7 +75,7 @@ internal readonly partial struct SecurityCoordinator
         return RunWaf(args);
     }
 
-    public IResult? RunWaf(Dictionary<string, object> args)
+    public IResult? RunWaf(Dictionary<string, object> args, Action<IDatadogLogger, Exception>? logException = null)
     {
         LogAddressIfDebugEnabled(args);
         IResult? result = null;
@@ -106,7 +106,14 @@ internal readonly partial struct SecurityCoordinator
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            Log.Error(ex, "Call into the security module failed");
+            if (logException is not null)
+            {
+                logException(Log, ex);
+            }
+            else
+            {
+                Log.Error(ex, "Call into the security module failed");
+            }
         }
         finally
         {
