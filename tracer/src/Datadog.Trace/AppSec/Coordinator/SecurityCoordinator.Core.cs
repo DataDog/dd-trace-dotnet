@@ -30,6 +30,8 @@ internal readonly partial struct SecurityCoordinator
 
     private static bool CanAccessHeaders => true;
 
+    public static HttpContext Context => CoreHttpContextStore.Instance.Get();
+
     public static Dictionary<string, string[]> ExtractHeadersFromRequest(IHeaderDictionary headers)
     {
         var headersDic = new Dictionary<string, string[]>(headers.Keys.Count);
