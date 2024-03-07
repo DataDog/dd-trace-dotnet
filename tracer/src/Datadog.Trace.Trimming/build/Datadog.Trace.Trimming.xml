@@ -993,7 +993,6 @@
       <type fullname="System.Threading.Timer" />
       <type fullname="System.Threading.TimerCallback" />
    </assembly>
-   <assembly fullname="System.Web" />
    <assembly fullname="System.Xml.ReaderWriter">
       <type fullname="System.Xml.NameTable" />
       <type fullname="System.Xml.XmlAttribute" />

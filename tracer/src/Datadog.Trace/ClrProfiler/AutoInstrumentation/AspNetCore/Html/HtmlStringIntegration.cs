@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Html
     /// <summary>
     /// System.Diagnostics.Process calltarget instrumentation
     /// </summary>
+#if !NETFRAMEWORK
     [InstrumentMethod(
        AssemblyName = "Microsoft.AspNetCore.Html.Abstractions",
        TypeName = "Microsoft.AspNetCore.Html.HtmlString",
@@ -25,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Html
        MaximumVersion = "8.*.*",
        IntegrationName = nameof(Configuration.IntegrationId.Xss),
        InstrumentationCategory = InstrumentationCategory.Iast)]
+#else
     [InstrumentMethod(
        AssemblyName = "System.Web",
        TypeName = "System.Web.HtmlString",
@@ -35,6 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Html
        MaximumVersion = "4.*.*",
        IntegrationName = nameof(Configuration.IntegrationId.Xss),
        InstrumentationCategory = InstrumentationCategory.Iast)]
+#endif
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class HtmlStringIntegration
