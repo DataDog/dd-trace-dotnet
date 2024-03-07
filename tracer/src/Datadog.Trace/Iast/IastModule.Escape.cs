@@ -8,6 +8,7 @@
 using System;
 using System.Net;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast.Helpers;
 
 namespace Datadog.Trace.Iast;
 
@@ -46,7 +47,7 @@ internal static partial class IastModule
             if (object.ReferenceEquals(res, text))
             {
                 // If returned reference is the same, we create a new one
-                res = new string(text!.ToCharArray());
+                res = text!.CreateNewReference();
             }
         }
         catch (Exception ex)
