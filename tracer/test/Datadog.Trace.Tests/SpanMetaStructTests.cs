@@ -59,39 +59,63 @@ public class SpanMetaStructTests
                     },
                     new Dictionary<string, object>()
                     {
-                    { "type", "type2222" },
-                    { "language", "dotnet" },
-                    { "id", "test55555" },
-                    {
-                        "frames", new List<object>()
+                        { "type", "type2222" },
+                        { "language", "dotnet" },
+                        { "id", "test55555" },
                         {
-                            new Dictionary<string, object>()
+                            "frames", new List<object>()
                             {
-                                { "id", "frameid" },
-                                { "text", "text" },
-                                { "file", "file.cs" },
-                                { "line", 33U },
-                            },
-                            new Dictionary<string, object>()
-                            {
-                                { "id", "frameid2" },
-                                { "text", "text2" },
-                                { "file", "file2.cs" },
-                                { "line", 55U },
+                                new Dictionary<string, object>()
+                                {
+                                    { "id", "frameid" },
+                                    { "text", "text" },
+                                    { "file", "file.cs" },
+                                    { "line", 33U },
+                                },
+                                new Dictionary<string, object>()
+                                {
+                                    { "id", "frameid2" },
+                                    { "text", "text2" },
+                                    { "file", "file2.cs" },
+                                    { "line", 55U },
+                                }
                             }
                         }
                     }
-                    }
                 };
 
-    [Fact]
-    public void GivenAEncodedSpanWithMetaStruct_WhenDecoding_ThenMetaStructIsCorrectlyDecoded()
+    public static TheoryData<List<Tuple<string, object?>>> Data
+    => new()
+       {
+            new()
+            {
+                   new(FirstItemKey, firstItemValue),
+                   new(SecondItemKey, SecondItemValue)
+            },
+            new()
+            {
+                   new(FirstItemKey, true),
+                   new(SecondItemKey, 4545),
+                   new("thirdKey", new List<object> { "test", 44, new List<string> { "test" } })
+            },
+            new()
+            {
+                   new(FirstItemKey, null)
+            }
+       };
+
+    [MemberData(nameof(Data))]
+    [Theory]
+    public static void GivenAEncodedSpanWithMetaStruct_WhenDecoding_ThenMetaStructIsCorrectlyDecoded(List<Tuple<string, object?>> dataToEncode)
     {
         var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
-        // We add two elements to the meta struct
-        span.MetaStruct.Add(FirstItemKey, firstItemValue);
-        span.MetaStruct.Add(SecondItemKey, SecondItemValue);
+        // We add the elements to the meta struct
+        foreach (var item in dataToEncode)
+        {
+            span.MetaStruct.Add(item.Item1, item.Item2);
+        }
+
         var spanBytes = new byte[] { };
         var spanBuffer = new SpanBuffer(10000, FormatterResolver);
         // We serialize the span
@@ -103,17 +127,19 @@ public class SpanMetaStructTests
         offset.Should().BeGreaterThan(0);
         offset += MetaStructStr.Length;
 
-        // Read the map header with 2 items
+        // Read the map header
         var headerLength = MessagePackBinary.ReadMapHeader(spanBytes, offset, out var bytesRead);
-        headerLength.Should().Be(2);
+        headerLength.Should().Be(span.MetaStruct.Count);
         offset += bytesRead;
 
         // We check every item in the map
-        offset = CheckDictionaryItem(spanBytes, offset, FirstItemKey, firstItemValue);
-        _ = CheckDictionaryItem(spanBytes, offset, SecondItemKey, SecondItemValue);
+        for (var i = 0; i < headerLength; i++)
+        {
+            offset = CheckDictionaryItem(spanBytes, offset, dataToEncode[i].Item1, dataToEncode[i]?.Item2);
+        }
     }
 
-    private static int CheckDictionaryItem(byte[] bytes, int offset, string expectedKey, object expectedValue)
+    private static int CheckDictionaryItem(byte[] bytes, int offset, string expectedKey, object? expectedValue)
     {
         // Read the key
         string result = MessagePackBinary.ReadString(bytes, offset, out var size);
