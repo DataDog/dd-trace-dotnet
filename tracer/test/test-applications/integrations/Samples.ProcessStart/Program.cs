@@ -16,6 +16,23 @@ namespace Samples.ProcessStart
             {
                 ProcessStartCollectionTests();
             }
+            else if(Environment.GetEnvironmentVariable("DO_NOT_TRACE_PROCESS") == "1")
+            {
+                // don't trace this one
+                SampleHelpers.SetDoNotTrace(doNotTrace: true);
+                try
+                {
+                    Process.Start(new ProcessStartInfo("nonexisting1.exe"));
+                }
+                catch (Win32Exception) { }
+
+                // should be reset afterwards, so do not trace this one
+                try
+                {
+                    Process.Start(new ProcessStartInfo("nonexisting2.exe", "arg1"));
+                }
+                catch (Win32Exception) { }
+            }
             else
             {
                 ProcessStartTests();
