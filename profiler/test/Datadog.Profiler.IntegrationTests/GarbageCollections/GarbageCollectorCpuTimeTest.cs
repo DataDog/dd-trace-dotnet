@@ -14,7 +14,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
     // And this feature only work in case of GC server setting (not workstation)
     public class GarbageCollectorCpuTimeTest
     {
-        private const string ScenarioGenerics = "--scenario 12";
+        private const string ScenarioGenerics = "--scenario 12 --param 2";
         private static readonly StackFrame GcFrame = new("|lm:[native] GC |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:");
         private static readonly StackFrame ClrFrame = new("|lm:[native] CLR |ns: |ct: |cg: |fn:.NET |fg: |sg:");
 
@@ -38,7 +38,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             // enable cputime profiler to ensure we get cpu time for GC threads
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             // Enable GC Server
-            runner.Environment.SetVariable("COMPlus_gcServer", "1");
+            runner.Environment.SetVariable("DOTNET_gcServer", "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);
@@ -61,7 +61,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             // - The app does not crash
             // - The GC sample is not present
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable("COMPlus_gcServer", "1");
+            runner.Environment.SetVariable("DOTNET_gcServer", "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);
@@ -80,7 +80,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             // disable gc server
-            runner.Environment.SetVariable("COMPlus_gcServer", "0");
+            runner.Environment.SetVariable("DOTNET_gcServer", "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);
@@ -99,7 +99,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             // disable gc server
-            runner.Environment.SetVariable("COMPlus_gcServer", "0");
+            runner.Environment.SetVariable("DOTNET_gcServer", "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);
@@ -118,7 +118,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             // disable gc server
-            runner.Environment.SetVariable("COMPlus_gcServer", "0");
+            runner.Environment.SetVariable("DOTNET_gcServer", "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);

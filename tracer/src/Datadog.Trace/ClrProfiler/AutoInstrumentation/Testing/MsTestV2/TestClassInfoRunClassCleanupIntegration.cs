@@ -35,8 +35,9 @@ public static class TestClassInfoRunClassCleanupIntegration
     /// <param name="arg">Instance of the argument</param>
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget, TArg>(TTarget instance, TArg arg)
+        where TTarget : ITestClassInfo
     {
-        if (MsTestIntegration.IsEnabled && TestClassInfoRunClassInitializeIntegration.TestClassInfos.TryGetValue(instance, out var suiteObject) && suiteObject is TestSuite suite)
+        if (MsTestIntegration.IsEnabled && MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(instance) is { } suite)
         {
             return new CallTargetState(null, suite);
         }

@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Ci.Coverage.Models.Global;
+using Datadog.Trace.Ci.Environment;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.dnlib.DotNet;

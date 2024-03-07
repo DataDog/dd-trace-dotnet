@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.Environment;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
@@ -38,7 +39,7 @@ public sealed class TestSession
         var environment = CIEnvironmentValues.Instance;
 
         Command = command;
-        WorkingDirectory = workingDirectory ?? Environment.CurrentDirectory;
+        WorkingDirectory = workingDirectory ?? System.Environment.CurrentDirectory;
         Framework = framework;
 
         WorkingDirectory = environment.MakeRelativePathFromSourceRoot(WorkingDirectory, false);

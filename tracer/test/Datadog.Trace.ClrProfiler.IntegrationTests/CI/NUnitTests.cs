@@ -21,7 +21,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     [UsesVerify]
-    public class NUnitTests : TestHelper
+    public class NUnitTests : TestingFrameworkTest
     {
         private const int ExpectedSpanCount = 33;
 
@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         spans.Should().HaveCount(ExpectedSpanCount);
 
                         var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(packageVersion);
-                        await Verifier.Verify(spans.OrderBy(s => s.Resource), settings);
+                        await Verifier.Verify(spans.OrderBy(s => s.Resource).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Parameters)), settings);
 
                         foreach (var targetSpan in spans.ToArray())
                         {
@@ -270,176 +270,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
-        private static void WriteSpans(List<MockSpan> spans)
+        protected override void CheckSimpleTestSpan(MockSpan targetSpan)
         {
-            if (spans is null || spans.Count == 0)
-            {
-                return;
-            }
-
-            Console.WriteLine("***********************************");
-
-            int i = 0;
-            foreach (var span in spans)
-            {
-                Console.Write($" {i++}) ");
-                Console.Write($"TraceId={span.TraceId}, ");
-                Console.Write($"SpanId={span.SpanId}, ");
-                Console.Write($"Service={span.Service}, ");
-                Console.Write($"Name={span.Name}, ");
-                Console.Write($"Resource={span.Resource}, ");
-                Console.Write($"Type={span.Type}, ");
-                Console.Write($"Error={span.Error}");
-                Console.WriteLine();
-                Console.WriteLine($"   Tags=");
-                foreach (var kv in span.Tags)
-                {
-                    Console.WriteLine($"       => {kv.Key} = {kv.Value}");
-                }
-
-                Console.WriteLine();
-            }
-
-            Console.WriteLine("***********************************");
-        }
-
-        private static string AssertTargetSpanAnyOf(MockSpan targetSpan, string key, params string[] values)
-        {
-            string actualValue = targetSpan.Tags[key];
-            values.Should().Contain(actualValue);
-            targetSpan.Tags.Remove(key);
-            return actualValue;
-        }
-
-        private static void AssertTargetSpanEqual(MockSpan targetSpan, string key, string value)
-        {
-            targetSpan.Tags[key].Should().Be(value);
-            targetSpan.Tags.Remove(key);
-        }
-
-        private static void AssertTargetSpanExists(MockSpan targetSpan, string key)
-        {
-            targetSpan.Tags.Should().ContainKey(key);
-            targetSpan.Tags.Remove(key);
-        }
-
-        private static void AssertTargetSpanContains(MockSpan targetSpan, string key, string value)
-        {
-            targetSpan.Tags[key].Should().Contain(value);
-            targetSpan.Tags.Remove(key);
-        }
-
-        private static void CheckCIEnvironmentValuesDecoration(MockSpan targetSpan)
-        {
-            var context = new SpanContext(parent: null, traceContext: null, serviceName: null);
-            var span = new Span(context, DateTimeOffset.UtcNow);
-            CIEnvironmentValues.Instance.DecorateSpan(span);
-
-            AssertEqual(CommonTags.CIProvider);
-            AssertEqual(CommonTags.CIPipelineId);
-            AssertEqual(CommonTags.CIPipelineName);
-            AssertEqual(CommonTags.CIPipelineNumber);
-            AssertEqual(CommonTags.CIPipelineUrl);
-            AssertEqual(CommonTags.CIJobUrl);
-            AssertEqual(CommonTags.CIJobName);
-            AssertEqual(CommonTags.StageName);
-            AssertEqual(CommonTags.CIWorkspacePath);
-            AssertEqual(CommonTags.GitRepository);
-            AssertEqual(CommonTags.GitCommit);
-            AssertEqual(CommonTags.GitBranch);
-            AssertEqual(CommonTags.GitTag);
-            AssertEqual(CommonTags.GitCommitAuthorName);
-            AssertEqual(CommonTags.GitCommitAuthorEmail);
-            AssertEqual(CommonTags.GitCommitAuthorDate);
-            AssertEqual(CommonTags.GitCommitCommitterName);
-            AssertEqual(CommonTags.GitCommitCommitterEmail);
-            AssertEqual(CommonTags.GitCommitCommitterDate);
-            AssertEqual(CommonTags.GitCommitMessage);
-            AssertEqual(CommonTags.BuildSourceRoot);
-
-            void AssertEqual(string key)
-            {
-                if (span.GetTag(key) is { } tagValue)
-                {
-                    targetSpan.Tags[key].Should().Be(tagValue);
-                    targetSpan.Tags.Remove(key);
-                }
-            }
-        }
-
-        private static void CheckRuntimeValues(MockSpan targetSpan)
-        {
-            AssertTargetSpanExists(targetSpan, CommonTags.RuntimeName);
-            AssertTargetSpanExists(targetSpan, CommonTags.RuntimeVersion);
-            AssertTargetSpanExists(targetSpan, CommonTags.RuntimeArchitecture);
-            AssertTargetSpanExists(targetSpan, CommonTags.OSArchitecture);
-            AssertTargetSpanExists(targetSpan, CommonTags.OSPlatform);
-            AssertTargetSpanEqual(targetSpan, CommonTags.OSVersion, CIVisibility.GetOperatingSystemVersion());
-        }
-
-        private static void CheckTraitsValues(MockSpan targetSpan)
-        {
-            // Check the traits tag value
-            AssertTargetSpanEqual(targetSpan, TestTags.Traits, "{\"Category\":[\"Category01\"],\"Compatibility\":[\"Windows\",\"Linux\"]}");
-        }
-
-        private static void CheckParametrizedTraitsValues(MockSpan targetTest)
-        {
-            // Check the traits tag value
-            AssertTargetSpanAnyOf(
-                targetTest,
-                TestTags.Traits,
-                "{\"Category\":[\"ParemeterizedTest\",\"FirstCase\"]}",
-                "{\"Category\":[\"ParemeterizedTest\",\"SecondCase\"]}",
-                "{\"Category\":[\"ParemeterizedTest\",\"ThirdCase\"]}");
-        }
-
-        private static void CheckOriginTag(MockSpan targetSpan)
-        {
-            // Check the test origin tag
-            AssertTargetSpanEqual(targetSpan, Tags.Origin, TestTags.CIAppTestOriginName);
-        }
-
-        private static void CheckSimpleTestSpan(MockSpan targetSpan)
-        {
-            // Check the Test Status
-            AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusPass);
+            base.CheckSimpleTestSpan(targetSpan);
 
             // Check the `test.message` tag. We check if contains the default or the custom message.
             if (targetSpan.Tags.ContainsKey(TestTags.Message))
             {
-                AssertTargetSpanAnyOf(targetSpan, TestTags.Message, new string[] { "Test is ok", "The test passed." });
+                AssertTargetSpanAnyOf(targetSpan, TestTags.Message, ["Test is ok", "The test passed."]);
             }
         }
 
-        private static void CheckSimpleSkipFromAttributeTest(MockSpan targetSpan, string skipReason = "Simple skip reason")
-        {
-            // Check the Test Status
-            AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusSkip);
-
-            // Check the Test skip reason
-            AssertTargetSpanEqual(targetSpan, TestTags.SkipReason, skipReason);
-        }
-
-        private static void CheckSimpleErrorTest(MockSpan targetSpan)
-        {
-            // Check the Test Status
-            AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusFail);
-
-            // Check the span error flag
-            targetSpan.Error.Should().Be(1);
-
-            // Check the error type
-            AssertTargetSpanEqual(targetSpan, Tags.ErrorType, typeof(DivideByZeroException).FullName);
-
-            // Check the error stack
-            AssertTargetSpanContains(targetSpan, Tags.ErrorStack, typeof(DivideByZeroException).FullName);
-
-            // Check the error message
-            AssertTargetSpanEqual(targetSpan, Tags.ErrorMsg, new DivideByZeroException().Message);
-        }
-
-        private static void CheckSetupErrorTest(MockSpan targetTest)
+        private void CheckSetupErrorTest(MockSpan targetTest)
         {
             // Check the Test Status
             AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusFail);
@@ -455,6 +297,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             // Remove the stacktrace
             targetTest.Tags.Remove(Tags.ErrorStack);
+        }
+
+        private void CheckParametrizedTraitsValues(MockSpan targetTest)
+        {
+            // Check the traits tag value
+            AssertTargetSpanAnyOf(
+                targetTest,
+                TestTags.Traits,
+                "{\"Category\":[\"ParemeterizedTest\",\"FirstCase\"]}",
+                "{\"Category\":[\"ParemeterizedTest\",\"SecondCase\"]}",
+                "{\"Category\":[\"ParemeterizedTest\",\"ThirdCase\"]}");
         }
     }
 }

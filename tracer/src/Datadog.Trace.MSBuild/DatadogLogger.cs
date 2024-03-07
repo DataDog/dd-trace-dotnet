@@ -10,6 +10,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Environment;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
