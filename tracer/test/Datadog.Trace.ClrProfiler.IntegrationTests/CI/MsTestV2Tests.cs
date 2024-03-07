@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
