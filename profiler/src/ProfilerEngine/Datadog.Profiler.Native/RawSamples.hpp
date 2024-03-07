@@ -3,13 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include <list>
+
+#include "LinkedList.hpp"
 
 template <class TRawSample>
 class RawSamples
 {
 public:
-    using const_iterator = typename std::list<TRawSample>::const_iterator;
+    using iterator = typename LinkedList<TRawSample>::iterator;
 
     RawSamples() = default;
 
@@ -31,7 +32,7 @@ public:
     {
         std::lock_guard<std::mutex> lock(_lock);
 
-        std::list<TRawSample> result;
+        LinkedList<TRawSample> result;
         _samples.swap(result);
 
         return RawSamples(std::move(result));
@@ -40,17 +41,17 @@ public:
     void Add(TRawSample&& sample)
     {
         std::lock_guard<std::mutex> lock(_lock);
-        _samples.push_back(std::forward<TRawSample>(sample));
+        _samples.append(std::forward<TRawSample>(sample));
     }
 
-    auto cbegin() const
+    auto begin()
     {
-        return _samples.cbegin();
+        return _samples.begin();
     }
 
-    auto cend() const
+    auto end()
     {
-        return _samples.cend();
+        return _samples.end();
     }
 
     std::size_t size() const
@@ -59,11 +60,11 @@ public:
     }
 
 private:
-    RawSamples(std::list<TRawSample> samples) :
+    RawSamples(LinkedList<TRawSample> samples) :
         _samples{std::move(samples)}
     {
     }
 
     std::mutex _lock;
-    std::list<TRawSample> _samples;
+    LinkedList<TRawSample> _samples;
 };

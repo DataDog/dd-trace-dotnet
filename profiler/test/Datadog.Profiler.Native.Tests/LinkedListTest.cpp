@@ -1,0 +1,320 @@
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+
+// Our linked list implementation allows the allocator to return nullptr. This is ok in our case
+// because, we would use a ringbuffer-based allocator which might return nullptr.
+// To avoid UBSAN from failing our test, we deactivate the attribute nonnull-returns found
+// in memory_resource file (linux only)
+#pragma clang attribute push(__attribute__((no_sanitize("returns-nonnull-attribute"))), apply_to = function)
+#include "LinkedList.hpp"
+#pragma clang attribute pop
+
+#include "gtest/gtest.h"
+
+TEST(LinkedListTest, Append)
+{
+    LinkedList<int> x;
+
+    ASSERT_EQ(x.size(), 0);
+
+    ASSERT_TRUE(x.append(42));
+
+    ASSERT_EQ(x.size(), 1);
+
+    ASSERT_EQ(*(x.begin()), 42);
+}
+
+TEST(LinkedListTest, ForEach)
+{
+    LinkedList<std::string> x;
+
+    ASSERT_TRUE(x.append("1"));
+    ASSERT_TRUE(x.append("2"));
+    ASSERT_TRUE(x.append("3"));
+
+    int i = 1;
+
+    for (auto const& s : x)
+    {
+        ASSERT_EQ(std::to_string(i++), s);
+    }
+
+    ASSERT_EQ(x.size(), 3);
+}
+
+struct Person
+{
+    std::string Name;
+    std::uint8_t Age;
+};
+
+TEST(LinkedListTest, Move)
+{
+    LinkedList<Person> l;
+
+    l.append({.Name = "Georges", .Age = 42});
+    l.append({.Name = "Ralph", .Age = 101});
+    l.append({.Name = "jordy", .Age = 21});
+    l.append({.Name = "Bob", .Age = 1});
+
+    ASSERT_EQ(l.size(), 4);
+
+    LinkedList<Person> other = std::move(l);
+
+    ASSERT_EQ(0, l.size());
+
+    ASSERT_EQ(other.size(), 4);
+
+    auto it = other.begin();
+
+    ASSERT_EQ((*it).Name, "Georges");
+    ASSERT_EQ((*it).Age, 42);
+
+    ++it;
+
+    ASSERT_EQ((*it).Name, "Ralph");
+    ASSERT_EQ((*it).Age, 101);
+
+    ++it;
+
+    ASSERT_EQ((*it).Name, "jordy");
+    ASSERT_EQ((*it).Age, 21);
+
+    ++it;
+
+    ASSERT_EQ((*it).Name, "Bob");
+    ASSERT_EQ((*it).Age, 1);
+}
+
+TEST(LinkedListTest, Assign)
+{
+    LinkedList<Person> l;
+
+    l.append({.Name = "Georges", .Age = 42});
+    l.append({.Name = "Ralph", .Age = 101});
+    l.append({.Name = "jordy", .Age = 21});
+    l.append({.Name = "Bob", .Age = 1});
+
+    ASSERT_EQ(l.size(), 4);
+
+    LinkedList<Person> other;
+
+    other = std::move(l);
+
+    ASSERT_EQ(l.size(), 0);
+
+    auto begin_it = l.begin();
+    auto end_it = l.end();
+    ASSERT_EQ(begin_it, end_it);
+
+    // check other now
+    ASSERT_EQ(other.size(), 4);
+
+    auto it = other.begin();
+
+    ASSERT_EQ((*it).Name, "Georges");
+    ASSERT_EQ((*it).Age, 42);
+
+    ++it;
+
+    ASSERT_EQ((*it).Name, "Ralph");
+    ASSERT_EQ((*it).Age, 101);
+
+    ++it;
+
+    ASSERT_EQ((*it).Name, "jordy");
+    ASSERT_EQ((*it).Age, 21);
+
+    ++it;
+
+    ASSERT_EQ((*it).Name, "Bob");
+    ASSERT_EQ((*it).Age, 1);
+}
+
+TEST(LinkedListTest, ObjectDtorCalled)
+{
+    // Dummy class is moveable-only.
+    // We make sure that we do not set _dtorCalled field to true when destroying temporary instances
+    // but only only one instance.
+    class Dummy
+    {
+    public:
+        Dummy(bool* dtorCalled) :
+            _dtorCalled{dtorCalled}
+        {
+        }
+
+        ~Dummy()
+        {
+            if (_dtorCalled != nullptr)
+                (*_dtorCalled) = true;
+        }
+
+        Dummy(Dummy const&) = delete;
+        Dummy& operator=(Dummy const&) = delete;
+
+        // We have to write the move ctor and assignement operator to make sure
+        // that we set the field on the single instance and not on temporary instances
+        Dummy(Dummy&& other) noexcept
+        {
+            *this = std::move(other);
+        }
+
+        Dummy& operator=(Dummy&& other) noexcept
+        {
+            if (this == &other)
+            {
+                return *this;
+            }
+
+            // temporary instance has _dtorCalled field set to nullptr
+            _dtorCalled = std::exchange(other._dtorCalled, nullptr);
+
+            return *this;
+        }
+
+    private:
+        bool* _dtorCalled;
+    };
+
+    bool dtorCalled = false;
+    {
+        LinkedList<Dummy> l;
+
+        l.append({&dtorCalled});
+
+        ASSERT_EQ(l.size(), 1);
+    }
+
+    ASSERT_TRUE(dtorCalled);
+}
+
+TEST(LinkedListTest, CannotAllocate)
+{
+    class null_memory_resource : public pmr::memory_resource
+    {
+    private:
+        void* do_allocate(size_t _Bytes, size_t _Align) override
+        {
+            return nullptr;
+        }
+
+        void do_deallocate(void* _Ptr, size_t _Bytes, size_t _Align) override
+        {
+        }
+
+        bool do_is_equal(const memory_resource& _That) const noexcept override
+        {
+            return false;
+        }
+    };
+
+    null_memory_resource mr;
+    LinkedList<int> l(&mr);
+
+    ASSERT_FALSE(l.append(42));
+
+    ASSERT_EQ(l.size(), 0);
+}
+
+TEST(LinkedListTest, EnsureMoveAssignementOperatorDoesNotLeakOrLeavesTheCollectionInInconsitentState)
+{
+    {
+        LinkedList<int> l2;
+        l2.append(21);
+
+        LinkedList<int> ll;
+        EXPECT_NO_THROW(ll = std::move(l2));
+
+        ASSERT_EQ(l2.size(), 0);
+        ASSERT_EQ(ll.size(), 1);
+        ASSERT_EQ(21, *ll.begin());
+    }
+
+    {
+        LinkedList<int> l2;
+
+        LinkedList<int> ll;
+        ll.append(21);
+
+        EXPECT_NO_THROW(ll = std::move(l2));
+
+        ASSERT_EQ(l2.size(), 1);
+        ASSERT_EQ(ll.size(), 0);
+        ASSERT_EQ(21, *l2.begin());
+    }
+
+    {
+        LinkedList<int> l2;
+        LinkedList<int> ll;
+
+        EXPECT_NO_THROW(ll = std::move(l2));
+
+        ASSERT_EQ(l2.size(), 0);
+        ASSERT_EQ(ll.size(), 0);
+    }
+}
+
+__declspec(noinline) void SwapWithContent(LinkedList<int>& ll)
+{
+    LinkedList<int> l;
+    l.append(41);
+    l.append(43);
+    l.swap(ll);
+}
+
+TEST(LinkedListTest, SwapAll)
+{
+    {
+        LinkedList<int> l;
+
+        LinkedList<int> ll;
+        ll.append(21);
+
+        ll.swap(l);
+
+        ASSERT_EQ(l.size(), 1);
+        ASSERT_EQ(ll.size(), 0);
+    }
+    {
+        LinkedList<int> l;
+
+        LinkedList<int> ll;
+        ll.append(21);
+
+        l.swap(ll);
+
+        ASSERT_EQ(l.size(), 1);
+        ASSERT_EQ(ll.size(), 0);
+    }
+    {
+        LinkedList<int> l;
+        l.append(1);
+        l.append(2);
+        l.append(3);
+
+        LinkedList<int> ll;
+        ll.append(21);
+
+        ll.swap(l);
+        ll.swap(l);
+        ASSERT_EQ(ll.size(), 1);
+        ASSERT_EQ(l.size(), 3);
+    }
+
+    {
+        LinkedList<int> l;
+        SwapWithContent(l);
+
+        ASSERT_EQ(l.size(), 2);
+
+        l.append(21);
+        ASSERT_EQ(l.size(), 3);
+    }
+    {
+        LinkedList<double> l;
+        LinkedList<double> ll;
+
+        EXPECT_NO_THROW(l.swap(ll));
+    }
+}
