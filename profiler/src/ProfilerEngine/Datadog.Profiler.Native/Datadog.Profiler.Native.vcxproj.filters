@@ -431,8 +431,10 @@
     <ClInclude Include="FrameworkThreadInfo.h">
       <Filter>Threads</Filter>
     </ClInclude>
-    <ClInclude Include="SampleEnumerator.h">
-      <Filter>Utils</Filter>
+    <ClInclude Include="RawSamples.hpp" />
+    <ClInclude Include="SamplesEnumerator.h" />
+    <ClInclude Include="CrashReporting.h">
+      <Filter>libdatadog</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -648,6 +650,9 @@
     </ClCompile>
     <ClCompile Include="FrameworkThreadInfo.cpp">
       <Filter>Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="CrashReporting.cpp">
+      <Filter>libdatadog</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

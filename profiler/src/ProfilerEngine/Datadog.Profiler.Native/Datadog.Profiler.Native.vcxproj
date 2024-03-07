@@ -236,6 +236,7 @@
     <ClInclude Include="AdaptiveSampler.h" />
     <ClInclude Include="AllocationsRecorder.h" />
     <ClInclude Include="CounterMetric.h" />
+    <ClInclude Include="CrashReporting.h" />
     <ClInclude Include="DebugInfoStore.h" />
     <ClInclude Include="EnabledProfilers.h" />
     <ClInclude Include="EncodedProfile.hpp" />
@@ -377,6 +378,7 @@
     <ClCompile Include="CorProfilerCallbackFactory.cpp" />
     <ClCompile Include="CounterMetric.cpp" />
     <ClCompile Include="CpuTimeProvider.cpp" />
+    <ClCompile Include="CrashReporting.cpp" />
     <ClCompile Include="DebugInfoStore.cpp" />
     <ClCompile Include="DogstatsdService.cpp" />
     <ClCompile Include="EnabledProfilers.cpp" />

@@ -143,7 +143,7 @@ private:
         }
 
         auto* endpoints_stats = encodedProfile->endpoints_stats;
-        auto requestResult = ddog_prof_Exporter_Request_build(_exporter.get(), start, end, to_compress_files_view, uncompressed_files_view, static_cast<ddog_Vec_Tag const*>(*tags._impl), endpoints_stats, pMetadata, 10000);
+        auto requestResult = ddog_prof_Exporter_Request_build(_exporter.get(), start, end, to_compress_files_view, uncompressed_files_view, static_cast<ddog_Vec_Tag const*>(*tags._impl), endpoints_stats, pMetadata, nullptr, 10000);
 
         if (requestResult.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)
         {
