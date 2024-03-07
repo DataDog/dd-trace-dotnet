@@ -7,7 +7,6 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Iast;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 {
@@ -34,9 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            // Make sure we don't have the DoNotTraceEnvVariable set, if we do, then skip
-            if (instance is System.Diagnostics.Process { StartInfo: var startInfo }
-                && !startInfo.Environment.Remove(ProcessHelpers.DoNotTraceEnvVariable))
+            if (instance is System.Diagnostics.Process process && process.StartInfo is var startInfo)
             {
                 if (Iast.Iast.Instance.Settings.Enabled)
                 {
