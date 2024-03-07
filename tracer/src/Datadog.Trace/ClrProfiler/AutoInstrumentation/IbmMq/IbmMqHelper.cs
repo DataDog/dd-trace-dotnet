@@ -20,12 +20,11 @@ internal static class IbmMqHelper
 
     internal static IHeadersCollection GetHeadersAdapter(IMqMessage message)
     {
-        if (Tracer.Instance.Settings.IbmMqContextPropagationDisabled)
-        {
-            return NoopAdapter;
-        }
-
-        return new IbmMqHeadersAdapter(message);
+        // we temporary switch to noop adapter, since
+        // multiple customers reported issues with context propagation.
+        // The goal is to allow context injection only when we have a way of configuring
+        // this on per-instrumentation basis.
+        return NoopAdapter;
     }
 
     internal static Scope? CreateProducerScope(Tracer tracer, IMqQueue queue, IMqMessage message)

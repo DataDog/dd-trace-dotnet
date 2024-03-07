@@ -325,12 +325,6 @@ namespace Datadog.Trace.Configuration
         public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
 
         /// <summary>
-        /// Used to disable context propagation via message properties for IbmMq
-        /// </summary>
-        /// /// <seealso cref="TracerSettings.IbmMqContextPropagationDisabled"/>
-        public const string IbmMqContextPropagationDisabled = "DD_IBM_MQ_CTX_PROPAGATION_DISABLED";
-
-        /// <summary>
         /// Configuration key for controlling whether route parameters in ASP.NET and ASP.NET Core resource names
         /// should be expanded with their values. Only applies when
         /// <see cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/> is enabled.

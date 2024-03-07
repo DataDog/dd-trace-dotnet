@@ -106,7 +106,6 @@ namespace Datadog.Trace.Configuration
             GrpcTagsInternal = new ReadOnlyDictionary<string, string>(settings.GrpcTagsInternal);
             IpHeader = settings.IpHeader;
             IpHeaderEnabled = settings.IpHeaderEnabled;
-            IbmMqContextPropagationDisabled = settings.IbmMqContextPropagationDisabled;
             TracerMetricsEnabledInternal = settings.TracerMetricsEnabledInternal;
             StatsComputationEnabledInternal = settings.StatsComputationEnabledInternal;
             StatsComputationInterval = settings.StatsComputationInterval;
@@ -355,12 +354,6 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the ip header should be collected. The default is false.
         /// </summary>
         internal bool IpHeaderEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether the context propagation configuration for IbmMq disabled.
-        /// The default is false.
-        /// </summary>
-        internal bool IbmMqContextPropagationDisabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether internal metrics

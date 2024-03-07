@@ -373,10 +373,6 @@ namespace Datadog.Trace.Configuration
                              .WithKeys(ConfigurationKeys.IpHeaderEnabled)
                              .AsBool(false);
 
-            IbmMqContextPropagationDisabled = config
-                                             .WithKeys(ConfigurationKeys.IbmMqContextPropagationDisabled)
-                                             .AsBool(false);
-
             IsDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                             .AsBool(false);
@@ -645,12 +641,6 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the ip header should not be collected. The default is false.
         /// </summary>
         internal bool IpHeaderEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether the context propagation configuration for IbmMq disabled.
-        /// The default is false.
-        /// </summary>
-        internal bool IbmMqContextPropagationDisabled { get; }
 
 #pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
         /// <summary>

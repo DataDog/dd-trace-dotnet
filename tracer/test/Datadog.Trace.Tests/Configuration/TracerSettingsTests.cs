@@ -809,16 +809,6 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [MemberData(nameof(BooleanTestCases), false)]
-        public void IbmMqContextPropagationDisabled(string value, bool expected)
-        {
-            var source = CreateConfigurationSource((ConfigurationKeys.IbmMqContextPropagationDisabled, value));
-            var settings = new TracerSettings(source);
-
-            settings.IpHeaderEnabled.Should().Be(expected);
-        }
-
-        [Theory]
-        [MemberData(nameof(BooleanTestCases), false)]
         public void IsDataStreamsMonitoringEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DataStreamsMonitoring.Enabled, value));
