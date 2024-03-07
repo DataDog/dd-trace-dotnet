@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -16,6 +17,9 @@ namespace Datadog.Trace.Util
     internal static class ProcessHelpers
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessHelpers));
+
+        [ThreadStatic]
+        private static bool _doNotTrace;
 
         /// <summary>
         /// Wrapper around <see cref="Process.GetCurrentProcess"/> and <see cref="Process.ProcessName"/>
@@ -54,6 +58,29 @@ namespace Datadog.Trace.Util
         }
 
         /// <summary>
+        /// Gets (and clears) the "do not trace" state for the current thread's call to <see cref="Process.Start()"/>
+        /// </summary>
+        /// <returns>True if the <see cref="Process.Start()"/> call should be traced, False if "do not trace" is set</returns>
+        public static bool ShouldTraceProcessStart()
+        {
+            var isSet = _doNotTrace;
+            if (isSet)
+            {
+                _doNotTrace = false;
+            }
+
+            return !isSet;
+        }
+
+        /// <summary>
+        /// Internal for testing
+        /// </summary>
+        internal static void SetDoNotTrace(bool doNotTrace)
+        {
+            _doNotTrace = doNotTrace;
+        }
+
+        /// <summary>
         /// Run a command and get the standard output content as a string
         /// </summary>
         /// <param name="command">Command to run</param>
@@ -71,6 +98,7 @@ namespace Datadog.Trace.Util
 #endif
             }
 
+            SetDoNotTrace(command.DoNotTrace);
             using var processInfo = Process.Start(processStartInfo);
             if (processInfo is null)
             {
@@ -125,6 +153,7 @@ namespace Datadog.Trace.Util
 #endif
             }
 
+            SetDoNotTrace(command.DoNotTrace);
             using var processInfo = Process.Start(processStartInfo);
             if (processInfo is null)
             {
@@ -199,8 +228,9 @@ namespace Datadog.Trace.Util
             public readonly Encoding? OutputEncoding;
             public readonly Encoding? ErrorEncoding;
             public readonly Encoding? InputEncoding;
+            public readonly bool DoNotTrace;
 
-            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null, Encoding? outputEncoding = null, Encoding? errorEncoding = null, Encoding? inputEncoding = null)
+            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null, Encoding? outputEncoding = null, Encoding? errorEncoding = null, Encoding? inputEncoding = null, bool doNotTrace = true)
             {
                 Cmd = cmd;
                 Arguments = arguments;
@@ -209,6 +239,7 @@ namespace Datadog.Trace.Util
                 OutputEncoding = outputEncoding;
                 ErrorEncoding = errorEncoding;
                 InputEncoding = inputEncoding;
+                DoNotTrace = doNotTrace;
             }
         }
 
