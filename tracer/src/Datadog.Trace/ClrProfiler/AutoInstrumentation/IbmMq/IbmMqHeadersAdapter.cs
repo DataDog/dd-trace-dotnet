@@ -87,7 +87,6 @@ internal readonly struct IbmMqHeadersAdapter(IMqMessage message) : IHeadersColle
 
     private sbyte[] StringToUnsignedBytes(string str)
     {
-        Console.WriteLine(" ### Encoding val " + str);
         var buf = Encoding.ASCII.GetBytes(str);
 
         // since the text is ASCII signed and unsigned bytes are the same.
