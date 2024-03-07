@@ -21,7 +21,7 @@ namespace Datadog.Trace.Ci.Environment;
 internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues
     where TValueProvider : struct, IValueProvider
 {
-    protected TValueProvider ValueProvider => valueProvider;
+    protected TValueProvider ValueProvider { get; } = valueProvider;
 
     internal static CIEnvironmentValues Create(TValueProvider valueProvider)
     {

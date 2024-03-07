@@ -19,11 +19,13 @@ using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [UsesVerify]
     public class NUnitEvpTests : TestingFrameworkEvpTest
     {
         private const int ExpectedTestCount = 33;
@@ -159,6 +161,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         Assert.Equal(ExpectedTestCount, tests.Count);
                         Assert.Equal(ExpectedTestSuiteCount, testSuites.Count);
                         Assert.Single(testModules);
+
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(packageVersion, evpVersionToRemove, expectedGzip);
+                        await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
+
                         var testModule = testModules[0];
 
                         // Check suites

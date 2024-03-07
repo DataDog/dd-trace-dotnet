@@ -18,11 +18,13 @@ using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [UsesVerify]
     public class XUnitEvpTests : TestingFrameworkEvpTest
     {
         private const string TestBundleName = "Samples.XUnitTests";
@@ -135,6 +137,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         Assert.Equal(ExpectedTestCount, tests.Count);
                         Assert.Equal(2, testSuites.Count);
                         Assert.Single(testModules);
+
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(packageVersion, evpVersionToRemove, expectedGzip);
+                        await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
+
                         var testSuite = testSuites.First(suite => suite.Resource == TestSuiteName);
                         var unskippableTestSuite = testSuites.First(suite => suite.Resource == UnSkippableSuiteName);
                         var testModule = testModules[0];

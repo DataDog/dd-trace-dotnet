@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         Assert.Equal(ExpectedSpanCount, spans.Count);
 
                         var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(packageVersion);
-                        await Verifier.Verify(spans.OrderBy(s => s.Resource), settings);
+                        await Verifier.Verify(spans.OrderBy(s => s.Resource).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Parameters)), settings);
 
                         // ***************************************************************************
 

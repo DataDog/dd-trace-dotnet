@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using VerifyTests;
 using VerifyXunit;
@@ -64,12 +65,12 @@ namespace Datadog.Trace.TestHelpers
         public static VerifySettings GetCIVisibilitySpanVerifierSettings(params object[] parameters) => GetCIVisibilitySpanVerifierSettings(null, parameters);
 
         public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
-            => GetSpanVerifierSettings(scrubbers, parameters, ScrubTags);
+            => GetSpanVerifierSettings(scrubbers, parameters, ScrubTags, null);
 
         public static VerifySettings GetCIVisibilitySpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
-            => GetSpanVerifierSettings(scrubbers, parameters, ScrubCIVisibilityTags);
+            => GetSpanVerifierSettings(scrubbers, parameters, ScrubCIVisibilityTags, ScrubCIVisibilityTags);
 
-        public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters, ConvertMember<MockSpan, Dictionary<string, string>> tagsScrubber)
+        public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters, ConvertMember<MockSpan, Dictionary<string, string>> tagsScrubber, ConvertMember<MockCIVisibilityTest, Dictionary<string, string>> metaScrubber)
         {
             var settings = new VerifySettings();
 
@@ -85,6 +86,13 @@ namespace Datadog.Trace.TestHelpers
                 _.IgnoreMember<MockSpan>(s => s.Duration);
                 _.IgnoreMember<MockSpan>(s => s.Start);
                 _.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, tagsScrubber);
+
+                _.IgnoreMember<MockCIVisibilityTest>(s => s.Duration);
+                _.IgnoreMember<MockCIVisibilityTest>(s => s.Start);
+                if (metaScrubber is not null)
+                {
+                    _.MemberConverter<MockCIVisibilityTest, Dictionary<string, string>>(x => x.Meta, metaScrubber);
+                }
             });
 
             foreach (var (regexPattern, replacement) in scrubbers ?? SpanScrubbers)
@@ -184,7 +192,11 @@ namespace Datadog.Trace.TestHelpers
                   .ToDictionary(x => x.Key, x => x.Value);
         }
 
-        public static Dictionary<string, string> ScrubCIVisibilityTags(MockSpan span, Dictionary<string, string> tags)
+        public static Dictionary<string, string> ScrubCIVisibilityTags(MockSpan span, Dictionary<string, string> tags) => ScrubCIVisibilityTags(tags);
+
+        public static Dictionary<string, string> ScrubCIVisibilityTags(MockCIVisibilityTest span, Dictionary<string, string> tags) => ScrubCIVisibilityTags(tags);
+
+        public static Dictionary<string, string> ScrubCIVisibilityTags(Dictionary<string, string> tags)
         {
             return tags
                   // remove propagated tags because their positions in the snapshots are not stable
