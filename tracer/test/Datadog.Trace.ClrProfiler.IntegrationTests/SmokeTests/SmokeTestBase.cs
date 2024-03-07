@@ -89,6 +89,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                     var standardOutput = helper.StandardOutput;
                     standardError = helper.ErrorOutput;
 
+                    Output.WriteLine($"Pid: {process.Id}");
+
                     if (!ranToCompletion)
                     {
                         if (!process.HasExited)

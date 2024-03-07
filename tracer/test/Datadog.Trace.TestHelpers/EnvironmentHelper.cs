@@ -146,6 +146,29 @@ namespace Datadog.Trace.TestHelpers
             return path;
         }
 
+        public static string GetLdPreloadPath()
+        {
+            var monitoringHome = GetMonitoringHomePath();
+
+            var dir = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), EnvironmentTools.GetTestTargetPlatform(), IsAlpine()) switch
+            {
+                ("linux", "Arm64", _, _) => "linux-arm64",
+                ("linux", "X64", _, false) => "linux-x64",
+                ("linux", "X64", _, true) => "linux-musl-x64",
+                var unsupportedTarget => throw new PlatformNotSupportedException(unsupportedTarget.ToString())
+            };
+
+            var fileName = "Datadog.Linux.ApiWrapper.x64.so";
+            var path = Path.Combine(monitoringHome, dir, fileName);
+
+            if (!File.Exists(path))
+            {
+                throw new Exception($"Unable to find wrapper at {path}");
+            }
+
+            return path;
+        }
+
         public static void ClearProfilerEnvironmentVariables()
         {
             var environmentVariables = new[]
@@ -212,6 +235,28 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["COR_ENABLE_PROFILING"] = profilerEnabled;
                 environmentVariables["COR_PROFILER"] = EnvironmentTools.ProfilerClsId;
                 environmentVariables["COR_PROFILER_PATH"] = nativeLoaderPath;
+            }
+
+            if (!environmentVariables.ContainsKey("DD_PROFILING_ENABLED") && !EnvironmentTools.IsOsx())
+            {
+                environmentVariables["DD_PROFILING_ENABLED"] = "1";
+                environmentVariables["DD_PROFILING_EXCEPTION_ENABLED"] = "1";
+                environmentVariables["DD_PROFILING_ALLOCATION_ENABLED"] = "1";
+                environmentVariables["DD_PROFILING_LOCK_ENABLED"] = "1";
+                environmentVariables["DD_PROFILING_HEAP_ENABLED"] = "1";
+                environmentVariables["DD_PROFILING_GC_ENABLED"] = "1";
+                environmentVariables["DD_PROFILING_AGENTLESS"] = "1";
+                environmentVariables["DD_SITE"] = "datadoghq.com";
+
+                if (!environmentVariables.ContainsKey("DD_API_KEY"))
+                {
+                    environmentVariables["DD_API_KEY"] = Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY");
+                }
+
+                if (EnvironmentTools.IsLinux())
+                {
+                    environmentVariables["LD_PRELOAD"] = GetLdPreloadPath();
+                }
             }
 
             if (DebugModeEnabled)

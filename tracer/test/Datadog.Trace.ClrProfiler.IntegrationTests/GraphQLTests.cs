@@ -194,7 +194,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // After updating the regex implementation multiple runtimes started hitting the timeout.
             // Increasing timeout here to prevent flaky tests.
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "5000");
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "100");
 
             _testName = testName;
             _metadataSchemaVersion = metadataSchemaVersion;
