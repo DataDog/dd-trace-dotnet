@@ -149,6 +149,7 @@ public abstract class TestingFrameworkTest : TestHelper
         AssertEqual(CommonTags.GitCommitCommitterDate);
         AssertEqual(CommonTags.GitCommitMessage);
         AssertEqual(CommonTags.BuildSourceRoot);
+        AssertEqual(CommonTags.CiEnvVars);
 
         void AssertEqual(string key)
         {
@@ -201,22 +202,23 @@ public abstract class TestingFrameworkTest : TestHelper
 
     protected void SetCIEnvironmentValues()
     {
+        var current = GitInfo.GetCurrent();
         var ciDictionaryValues = new Dictionary<string, string>
         {
             [CIEnvironmentValues.Constants.AzureTFBuild] = "1",
             [CIEnvironmentValues.Constants.AzureSystemTeamProjectId] = "TeamProjectId",
             [CIEnvironmentValues.Constants.AzureBuildBuildId] = "BuildId",
             [CIEnvironmentValues.Constants.AzureSystemJobId] = "JobId",
-            [CIEnvironmentValues.Constants.AzureBuildSourcesDirectory] = "SourceDirectory",
+            [CIEnvironmentValues.Constants.AzureBuildSourcesDirectory] = current.SourceRoot,
             [CIEnvironmentValues.Constants.AzureBuildDefinitionName] = "DefinitionName",
-            [CIEnvironmentValues.Constants.AzureSystemTeamFoundationServerUri] = "http://foundation.server.url/",
+            [CIEnvironmentValues.Constants.AzureSystemTeamFoundationServerUri] = "https://foundation.server.url/",
             [CIEnvironmentValues.Constants.AzureSystemStageDisplayName] = "StageDisplayName",
             [CIEnvironmentValues.Constants.AzureSystemJobDisplayName] = "JobDisplayName",
             [CIEnvironmentValues.Constants.AzureSystemTaskInstanceId] = "TaskInstanceId",
-            [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceRepositoryUri] = "https://github.com/DataDog/dd-trace-dotnet.git",
-            [CIEnvironmentValues.Constants.AzureBuildRepositoryUri] = "https://github.com/DataDog/dd-trace-dotnet.git",
-            [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceCommitId] = "c400bda63c9512ec05e6a0a2551dbe6c8e92c123",
-            [CIEnvironmentValues.Constants.AzureBuildSourceVersion] = "c400bda63c9512ec05e6a0a2551dbe6c8e92c123",
+            [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceRepositoryUri] = "git@github.com:DataDog/dd-trace-dotnet.git",
+            [CIEnvironmentValues.Constants.AzureBuildRepositoryUri] = "git@github.com:DataDog/dd-trace-dotnet.git",
+            [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceCommitId] = "3245605c3d1edc67226d725799ee969c71f7632b",
+            [CIEnvironmentValues.Constants.AzureBuildSourceVersion] = "3245605c3d1edc67226d725799ee969c71f7632b",
             [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceBranch] = "main",
             [CIEnvironmentValues.Constants.AzureBuildSourceBranch] = "main",
             [CIEnvironmentValues.Constants.AzureBuildSourceBranchName] = "main",
