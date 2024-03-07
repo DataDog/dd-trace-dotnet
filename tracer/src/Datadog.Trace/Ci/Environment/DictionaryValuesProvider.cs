@@ -9,17 +9,24 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Ci.Environment;
 
-internal readonly struct DictionaryValuesProvider(Dictionary<string, string>? environmentVariables) : IValueProvider
+internal readonly struct DictionaryValuesProvider : IValueProvider
 {
+    private readonly Dictionary<string, string>? _environmentVariables;
+
+    public DictionaryValuesProvider(Dictionary<string, string>? environmentVariables)
+    {
+        _environmentVariables = environmentVariables;
+    }
+
     public string? GetValue(string key, string? defaultValue = null)
     {
-        if (environmentVariables is null)
+        if (_environmentVariables is null)
         {
             return defaultValue;
         }
 
-        return environmentVariables.TryGetValue(key, out var value) ? value : null;
+        return _environmentVariables.TryGetValue(key, out var value) ? value : null;
     }
 
-    public IDictionary GetValues() => environmentVariables ?? new Dictionary<string, string>();
+    public IDictionary GetValues() => _environmentVariables ?? new Dictionary<string, string>();
 }

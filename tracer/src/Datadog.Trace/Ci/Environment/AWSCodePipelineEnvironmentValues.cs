@@ -19,7 +19,7 @@ internal sealed class AWSCodePipelineEnvironmentValues<TValueProvider>(TValuePro
         Provider = "awscodepipeline";
         PipelineId = ValueProvider.GetValue(Constants.AWSCodePipelineId);
 
-        VariablesToBypass = new Dictionary<string, string>();
+        VariablesToBypass = new Dictionary<string, string?>();
         SetVariablesIfNotEmpty(
             VariablesToBypass,
             Constants.AWSCodePipelineBuildArn,

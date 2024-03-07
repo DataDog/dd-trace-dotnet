@@ -15,7 +15,7 @@ internal class GitMetadata
     public GitMetadata(string commitSha, string repositoryUrl)
     {
         CommitSha = commitSha;
-        RepositoryUrl = CIEnvironmentValues.RemoveSensitiveInformationFromUrl(repositoryUrl);
+        RepositoryUrl = CIEnvironmentValues.RemoveSensitiveInformationFromUrl(repositoryUrl) ?? string.Empty;
     }
 
     public string CommitSha { get; }

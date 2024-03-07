@@ -328,11 +328,11 @@ namespace Datadog.Trace.Ci
 
         internal static string? GetSkippableTestsCorrelationId() => _skippableTestsCorrelationId;
 
-        internal static string GetServiceNameFromRepository(string repository)
+        internal static string GetServiceNameFromRepository(string? repository)
         {
             if (!string.IsNullOrEmpty(repository))
             {
-                if (repository.EndsWith("/") || repository.EndsWith("\\"))
+                if (repository!.EndsWith("/") || repository.EndsWith("\\"))
                 {
                     repository = repository.Substring(0, repository.Length - 1);
                 }

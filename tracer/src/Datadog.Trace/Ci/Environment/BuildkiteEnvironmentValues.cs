@@ -55,7 +55,7 @@ internal sealed class BuildkiteEnvironmentValues<TValueProvider>(TValueProvider 
             NodeLabels = lstNodeLabels.ToArray();
         }
 
-        VariablesToBypass = new Dictionary<string, string>();
+        VariablesToBypass = new Dictionary<string, string?>();
         SetVariablesIfNotEmpty(
             VariablesToBypass,
             Constants.BuildKiteBuildId,

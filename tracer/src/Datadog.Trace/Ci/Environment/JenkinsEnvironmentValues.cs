@@ -85,7 +85,7 @@ internal sealed class JenkinsEnvironmentValues<TValueProvider>(TValueProvider va
         NodeName = ValueProvider.GetValue(Constants.JenkinsNodeName);
         NodeLabels = ValueProvider.GetValue(Constants.JenkinsNodeLabels)?.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-        VariablesToBypass = new Dictionary<string, string>();
+        VariablesToBypass = new Dictionary<string, string?>();
         SetVariablesIfNotEmpty(
             VariablesToBypass,
             Constants.JenkinsCustomTraceId);

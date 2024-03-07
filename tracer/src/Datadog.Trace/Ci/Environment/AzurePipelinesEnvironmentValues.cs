@@ -57,7 +57,7 @@ internal sealed class AzurePipelinesEnvironmentValues<TValueProvider>(TValueProv
         AuthorName = ValueProvider.GetValue(Constants.AzureBuildRequestedForId);
         AuthorEmail = ValueProvider.GetValue(Constants.AzureBuildRequestedForEmail);
 
-        VariablesToBypass = new Dictionary<string, string>();
+        VariablesToBypass = new Dictionary<string, string?>();
         SetVariablesIfNotEmpty(
             VariablesToBypass,
             Constants.AzureSystemTeamProjectId,

@@ -33,7 +33,7 @@ internal sealed class CircleCiEnvironmentValues<TValueProvider>(TValueProvider v
         JobName = ValueProvider.GetValue(Constants.CircleCIJob);
         JobUrl = ValueProvider.GetValue(Constants.CircleCIBuildUrl);
 
-        VariablesToBypass = new Dictionary<string, string>();
+        VariablesToBypass = new Dictionary<string, string?>();
         SetVariablesIfNotEmpty(
             VariablesToBypass,
             Constants.CircleCIWorkflowId,

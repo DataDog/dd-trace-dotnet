@@ -35,7 +35,7 @@ internal sealed class CodefreshEnvironmentValues<TValueProvider>(TValueProvider 
         SourceRoot = gitInfo.SourceRoot;
         WorkspacePath = gitInfo.SourceRoot;
 
-        VariablesToBypass = new Dictionary<string, string>();
+        VariablesToBypass = new Dictionary<string, string?>();
         SetVariablesIfNotEmpty(
             VariablesToBypass,
             Constants.CodefreshBuildId);

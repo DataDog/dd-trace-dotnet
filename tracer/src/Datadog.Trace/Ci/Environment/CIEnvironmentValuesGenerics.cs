@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections;
@@ -144,7 +145,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 // Some CI's (eg Azure) adds the `Merge X into Y` message to the Pull Request
                 // If we have the original commit message we use that.
                 if (string.IsNullOrWhiteSpace(Message) ||
-                    (Message.StartsWith("Merge", StringComparison.Ordinal) &&
+                    (Message!.StartsWith("Merge", StringComparison.Ordinal) &&
                      !gitInfo.Message.StartsWith("Merge", StringComparison.Ordinal)))
                 {
                     Message = gitInfo.Message;
@@ -259,7 +260,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         CommitterDate = GetDateTimeOffsetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterDate, CommitterDate);
     }
 
-    protected string GetVariableIfIsNotEmpty(string key, string defaultValue, Func<string, string, bool> validator = null)
+    protected string? GetVariableIfIsNotEmpty(string key, string? defaultValue, Func<string?, string?, bool>? validator = null)
     {
         var value = ValueProvider.GetValue(key, defaultValue);
         if (validator is not null)
@@ -296,10 +297,10 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         return defaultValue;
     }
 
-    protected void SetVariablesIfNotEmpty(Dictionary<string, string> dictionary, params string[] keys)
+    protected void SetVariablesIfNotEmpty(Dictionary<string, string?> dictionary, params string[] keys)
         => SetVariablesIfNotEmpty(dictionary, keys, null);
 
-    protected void SetVariablesIfNotEmpty(Dictionary<string, string> dictionary, string[] keys, Func<KeyValuePair<string, string>, string> filter)
+    protected void SetVariablesIfNotEmpty(Dictionary<string, string?>? dictionary, string[]? keys, Func<KeyValuePair<string, string?>, string?>? filter)
     {
         if (dictionary is null || keys is null)
         {
@@ -318,7 +319,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
             {
                 if (filter is not null)
                 {
-                    value = filter(new KeyValuePair<string, string>(key, value));
+                    value = filter(new KeyValuePair<string, string?>(key, value));
                 }
 
                 dictionary[key] = value;
@@ -327,7 +328,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected string ExpandPath(string path)
+    protected string? ExpandPath(string? path)
     {
         if (path == "~" || path?.StartsWith("~/") == true)
         {

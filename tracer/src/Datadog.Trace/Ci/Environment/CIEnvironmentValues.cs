@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -22,11 +23,11 @@ internal abstract class CIEnvironmentValues
     protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
     private static readonly Lazy<CIEnvironmentValues> LazyInstance = new(Create);
 
-    private string _gitSearchFolder = null;
+    private string? _gitSearchFolder = null;
 
     public static CIEnvironmentValues Instance => LazyInstance.Value;
 
-    public string GitSearchFolder
+    public string? GitSearchFolder
     {
         get => _gitSearchFolder;
         set
@@ -38,55 +39,55 @@ internal abstract class CIEnvironmentValues
 
     public bool IsCI { get; protected set; }
 
-    public string Provider { get; protected set; }
+    public string? Provider { get; protected set; }
 
-    public string Repository { get; protected set; }
+    public string? Repository { get; protected set; }
 
-    public string Commit { get; protected set; }
+    public string? Commit { get; protected set; }
 
-    public string Branch { get; protected set; }
+    public string? Branch { get; protected set; }
 
-    public string Tag { get; protected set; }
+    public string? Tag { get; protected set; }
 
-    public string AuthorName { get; protected set; }
+    public string? AuthorName { get; protected set; }
 
-    public string AuthorEmail { get; protected set; }
+    public string? AuthorEmail { get; protected set; }
 
     public DateTimeOffset? AuthorDate { get; protected set; }
 
-    public string CommitterName { get; protected set; }
+    public string? CommitterName { get; protected set; }
 
-    public string CommitterEmail { get; protected set; }
+    public string? CommitterEmail { get; protected set; }
 
     public DateTimeOffset? CommitterDate { get; protected set; }
 
-    public string Message { get; protected set; }
+    public string? Message { get; protected set; }
 
-    public string SourceRoot { get; protected set; }
+    public string? SourceRoot { get; protected set; }
 
-    public string PipelineId { get; protected set; }
+    public string? PipelineId { get; protected set; }
 
-    public string PipelineName { get; protected set; }
+    public string? PipelineName { get; protected set; }
 
-    public string PipelineNumber { get; protected set; }
+    public string? PipelineNumber { get; protected set; }
 
-    public string PipelineUrl { get; protected set; }
+    public string? PipelineUrl { get; protected set; }
 
-    public string JobUrl { get; protected set; }
+    public string? JobUrl { get; protected set; }
 
-    public string JobName { get; protected set; }
+    public string? JobName { get; protected set; }
 
-    public string StageName { get; protected set; }
+    public string? StageName { get; protected set; }
 
-    public string WorkspacePath { get; protected set; }
+    public string? WorkspacePath { get; protected set; }
 
-    public string NodeName { get; protected set; }
+    public string? NodeName { get; protected set; }
 
-    public string[] NodeLabels { get; protected set; }
+    public string[]? NodeLabels { get; protected set; }
 
-    public CodeOwners CodeOwners { get; protected set; }
+    public CodeOwners? CodeOwners { get; protected set; }
 
-    public Dictionary<string, string> VariablesToBypass { get; protected set; }
+    public Dictionary<string, string?>? VariablesToBypass { get; protected set; }
 
     public static CIEnvironmentValues Create()
     {
@@ -102,7 +103,7 @@ internal abstract class CIEnvironmentValues
         return values;
     }
 
-    public static string RemoveSensitiveInformationFromUrl(string url)
+    public static string? RemoveSensitiveInformationFromUrl(string? url)
     {
         if (string.IsNullOrEmpty(url))
         {
@@ -115,7 +116,7 @@ internal abstract class CIEnvironmentValues
             {
                 var value = uri.GetComponents(UriComponents.Fragment | UriComponents.Query | UriComponents.Path | UriComponents.Port | UriComponents.Host | UriComponents.Scheme, UriFormat.SafeUnescaped);
                 // In some cases `GetComponents` introduces a slash at the end of the url
-                if (!url.EndsWith("/") && value.EndsWith("/"))
+                if (!url!.EndsWith("/") && value.EndsWith("/"))
                 {
                     value = value.Substring(0, value.Length - 1);
                 }
@@ -137,7 +138,7 @@ internal abstract class CIEnvironmentValues
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void SetTagIfNotNullOrEmpty(Span span, string key, string value)
+    private static void SetTagIfNotNullOrEmpty(Span span, string key, string? value)
     {
         if (!string.IsNullOrEmpty(value))
         {
@@ -251,7 +252,7 @@ internal abstract class CIEnvironmentValues
             Uri.TryCreate(Repository, UriKind.Absolute, out var uriRepository) &&
             !string.IsNullOrEmpty(uriRepository.UserInfo))
         {
-            Repository = Repository.Replace(uriRepository.UserInfo + "@", string.Empty);
+            Repository = Repository!.Replace(uriRepository.UserInfo + "@", string.Empty);
             Repository = Repository.Replace(uriRepository.UserInfo, string.Empty);
         }
 
@@ -260,7 +261,7 @@ internal abstract class CIEnvironmentValues
         // **********
         if (!string.IsNullOrEmpty(SourceRoot))
         {
-            foreach (var codeOwnersPath in GetCodeOwnersPaths(SourceRoot))
+            foreach (var codeOwnersPath in GetCodeOwnersPaths(SourceRoot!))
             {
                 Log.Debug("Looking for CODEOWNERS file in: {Path}", codeOwnersPath);
                 if (File.Exists(codeOwnersPath))
@@ -359,13 +360,13 @@ internal abstract class CIEnvironmentValues
 
         if (string.IsNullOrEmpty(absolutePath))
         {
-            return pivotFolder;
+            return pivotFolder!;
         }
 
         try
         {
             var folderSeparator = Path.DirectorySeparatorChar;
-            if (pivotFolder[pivotFolder.Length - 1] != folderSeparator)
+            if (pivotFolder![pivotFolder.Length - 1] != folderSeparator)
             {
                 pivotFolder += folderSeparator;
             }

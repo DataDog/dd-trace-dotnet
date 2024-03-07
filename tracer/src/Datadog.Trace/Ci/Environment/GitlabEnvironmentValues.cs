@@ -66,7 +66,7 @@ internal sealed class GitlabEnvironmentValues<TValueProvider>(TValueProvider val
             }
         }
 
-        VariablesToBypass = new Dictionary<string, string>();
+        VariablesToBypass = new Dictionary<string, string?>();
         SetVariablesIfNotEmpty(
             VariablesToBypass,
             Constants.GitlabProjectUrl,

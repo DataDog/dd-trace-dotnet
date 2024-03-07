@@ -53,7 +53,7 @@ internal class IntelligentTestRunnerClient
 
     private readonly string _id;
     private readonly CIVisibilitySettings _settings;
-    private readonly string _workingDirectory;
+    private readonly string? _workingDirectory;
     private readonly string _environment;
     private readonly string _serviceName;
     private readonly Dictionary<string, string>? _customConfigurations;
@@ -67,7 +67,7 @@ internal class IntelligentTestRunnerClient
     private readonly Task<string> _getBranchNameTask;
     private readonly Task<string> _getShaTask;
 
-    public IntelligentTestRunnerClient(string workingDirectory, CIVisibilitySettings? settings = null)
+    public IntelligentTestRunnerClient(string? workingDirectory, CIVisibilitySettings? settings = null)
     {
         _id = RandomIdGenerator.Shared.NextSpanId().ToString(CultureInfo.InvariantCulture);
         _settings = settings ?? CIVisibility.Settings;
