@@ -249,7 +249,9 @@ namespace Samples.AWS.SQS
             var receiveMessageRequest = new ReceiveMessageRequest();
             receiveMessageRequest.QueueUrl = _singleQueueUrl;
             receiveMessageRequest.MaxNumberOfMessages = 1;
-            receiveMessageRequest.MessageAttributeNames = new List<string> { ".*" };
+            // setting those to null is "legal" and should be handled by the instrumentation
+            receiveMessageRequest.MessageAttributeNames = null;
+            receiveMessageRequest.AttributeNames = null;
 
             var receiveMessageResponse1 = await sqsClient.ReceiveMessageAsync(receiveMessageRequest);
             Console.WriteLine($"ReceiveMessageAsync(ReceiveMessageRequest) HTTP status code: {receiveMessageResponse1.HttpStatusCode}");
