@@ -873,7 +873,7 @@ partial class Build
          .Requires(() => AzureDevopsToken)
          .Requires(() => GitHubRepositoryName)
          .Requires(() => GitHubToken)
-         .Requires(()=>BenchmarkCategory)
+         .Requires(() => BenchmarkCategory)
          .Executes(async () =>
          {
              if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
@@ -893,8 +893,14 @@ partial class Build
                  new VssBasicCredential(string.Empty, AzureDevopsToken));
 
              using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+             var artifactName = string.Empty;
+             switch (BenchmarkCategory)
+             {
+                 case  "tracer": artifactName = "benchmarks_results"; break;
+                 case  "appsec": artifactName = "benchmarks_appsec_results"; break;
+             }
 
-             var (oldBuild, _) = await FindAndDownloadAzureArtifacts(buildHttpClient, "refs/heads/master", build => { return new [] { "benchmarks_results", "benchmarks_appsec_results" }; }, masterDir, buildReason: null);
+             var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => artifactName, masterDir, buildReason: null);
 
              if (oldBuild is null)
              {
@@ -1192,19 +1198,7 @@ partial class Build
     async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, BuildArtifact)> FindAndDownloadAzureArtifact(
         BuildHttpClient buildHttpClient,
         string branch,
-        Func<Microsoft.TeamFoundation.Build.WebApi.Build, string> getArtifactsName,
-        AbsolutePath outputDirectory,
-        BuildReason? buildReason = BuildReason.IndividualCI,
-        bool completedBuildsOnly = true)
-    {
-        var result = await FindAndDownloadAzureArtifacts(buildHttpClient, branch, a => new[] { getArtifactsName(a) }, outputDirectory, buildReason, completedBuildsOnly);
-        return (result.Item1, result.Item2.FirstOrDefault());
-    }
-
-    async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, BuildArtifact[])> FindAndDownloadAzureArtifacts(
-        BuildHttpClient buildHttpClient,
-        string branch,
-        Func<Microsoft.TeamFoundation.Build.WebApi.Build, string[]> getArtifactsName,
+        Func<Microsoft.TeamFoundation.Build.WebApi.Build, string> getArtifactName,
         AbsolutePath outputDirectory,
         BuildReason? buildReason = BuildReason.IndividualCI,
         bool completedBuildsOnly = true)
@@ -1242,43 +1236,33 @@ partial class Build
 
         Console.WriteLine($"Found {completedBuilds.Count} completed builds for {branch}. Looking for artifacts...");
 
-        var artifacts = new List<BuildArtifact>();
+        BuildArtifact artifact = null;
         Microsoft.TeamFoundation.Build.WebApi.Build artifactBuild = null;
         foreach (var build in completedBuilds.OrderByDescending(x => x.Id).ThenByDescending(x=>x.FinishTime))
         {
-            var artifactsName = getArtifactsName(build);
-
-            foreach (var artifactName in artifactsName)
+            var artifactName = getArtifactName(build);
+            try
             {
-                try
-                {
-                    var artifact = await buildHttpClient.GetArtifactAsync(
-                                       project: AzureDevopsProjectId,
-                                       buildId: build.Id,
-                                       artifactName: artifactName);
-                    artifacts.Add(artifact);
-                }
-                catch (ArtifactNotFoundException)
-                {
-                    Console.WriteLine($"Could not find {artifactName} artifact for build {build.Id}. Skipping");
-                }
-            }   
-
-            artifactBuild = build;
-            break;
-        
+                artifact = await buildHttpClient.GetArtifactAsync(
+                               project: AzureDevopsProjectId,
+                               buildId: build.Id,
+                               artifactName: artifactName);
+                artifactBuild = build;
+                break;
+            }
+            catch (ArtifactNotFoundException)
+            {
+                Console.WriteLine($"Could not find {artifactName} artifact for build {build.Id}. Skipping");
+            }
         }
 
-        if (artifacts.Count == 0)
+        if (artifact is null)
         {
             throw new Exception($"Error: no artifacts available for {branch}");
         }
 
-        foreach (var artifact in artifacts)
-        {
-            await DownloadAzureArtifact(outputDirectory, artifact, AzureDevopsToken);
-        }
-        return (artifactBuild, artifacts.ToArray());
+        await DownloadAzureArtifact(outputDirectory, artifact, AzureDevopsToken);
+        return (artifactBuild, artifact);
     }
 
     static async Task DownloadAzureArtifact(AbsolutePath outputDirectory, BuildArtifact artifact, string token)
