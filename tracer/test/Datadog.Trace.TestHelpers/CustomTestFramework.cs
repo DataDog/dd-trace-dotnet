@@ -154,7 +154,7 @@ namespace Datadog.Trace.TestHelpers
                 var attr = collection.CollectionDefinition?.GetCustomAttributes(typeof(CollectionDefinitionAttribute)).SingleOrDefault();
                 var isIntegrationTest = collection.DisplayName.Contains("Datadog.Trace.ClrProfiler.IntegrationTests");
 
-                if (isIntegrationTest && collection.DisplayName.Contains("ClrProfiler.IntegrationTests.CI") is false)
+                if (isIntegrationTest)
                 {
                     return true;
                 }
