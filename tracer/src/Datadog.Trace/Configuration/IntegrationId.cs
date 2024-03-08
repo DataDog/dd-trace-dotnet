@@ -75,5 +75,6 @@ namespace Datadog.Trace.Configuration
         StackTraceLeak,
         XpathInjection,
         ReflectionInjection,
+        Xss,
     }
 }

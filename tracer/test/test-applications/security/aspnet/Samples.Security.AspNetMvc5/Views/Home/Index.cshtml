@@ -87,15 +87,19 @@
 
     <div><a href="/Iast/TBV?name=name&value=value">GET /Iast/TrustBoundaryViolation</a></div>
 
-
     <div><a href="/Iast/UnvalidatedRedirect?param=value">GET /Iast/UnvalidatedRedirect</a></div>
 
     <div><a href="/Iast/StackTraceLeak">GET /Iast/StackTraceLeak</a></div>
 
+    <div><a href="/Iast/ReflectedXss/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXss </a></div>
 
     <div><a href="javascript:GetCookieData('file=value1','argumentLine=value2','/Iast/ExecuteCommandFromCookie')">GET /ExecuteCommandFromCookie</a></div>
 
     <div><a href="javascript:GetCookieHeaderData('file=value1', 'name', 'myName', 'value', 'myValue', '/Iast/HeaderInjection')">GET /HeaderInjection</a></div>
+
+    <div><a href="/Iast/ReflectedXssEscaped/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXssEscaped with INJECTION</a></div>
+
+    <div><a href="/Iast/ReflectedXssEscaped/?param=Normal Texxt">GET /Iast/ReflectedXssEscaped with normal text</a></div>
 
     <div>
         <p>
