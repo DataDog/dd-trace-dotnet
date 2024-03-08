@@ -139,7 +139,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 len++;
             }
 
-            if (span.IsMetaStructCreated && span.MetaStruct.Count > 0)
+            if (span.GetMetaStructValues()?.Count > 0)
             {
                 len++;
             }
@@ -196,15 +196,16 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += WriteTags(ref bytes, offset, in spanModel, tagProcessors);
             offset += WriteMetrics(ref bytes, offset, in spanModel, tagProcessors);
 
-            if (span.IsMetaStructCreated && span.MetaStruct.Count > 0)
+            var metaStructValues = span.GetMetaStructValues();
+            if (metaStructValues?.Count > 0)
             {
-                WriteMetaStruct(ref bytes, ref offset, span.MetaStruct);
+                WriteMetaStruct(ref bytes, ref offset, metaStructValues);
             }
 
             return offset - originalOffset;
         }
 
-        private void WriteMetaStruct(ref byte[] bytes, ref int offset, IDictionary<string, object> metaStruct)
+        private void WriteMetaStruct(ref byte[] bytes, ref int offset, IReadOnlyDictionary<string, object> metaStruct)
         {
             if (metaStruct?.Count > 0)
             {

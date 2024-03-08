@@ -113,7 +113,7 @@ public class SpanMetaStructTests
         // We add the elements to the meta struct
         foreach (var item in dataToEncode)
         {
-            span.MetaStruct.TryAdd(item.Item1, item.Item2);
+            span.AddMetaStructValue(item.Item1, item.Item2);
         }
 
         var spanBytes = new byte[] { };
@@ -129,7 +129,7 @@ public class SpanMetaStructTests
 
         // Read the map header
         var headerLength = MessagePackBinary.ReadMapHeader(spanBytes, offset, out var bytesRead);
-        headerLength.Should().Be(span.MetaStruct.Count);
+        headerLength.Should().Be(span.GetMetaStructValues()?.Count);
         offset += bytesRead;
 
         // We check every item in the map

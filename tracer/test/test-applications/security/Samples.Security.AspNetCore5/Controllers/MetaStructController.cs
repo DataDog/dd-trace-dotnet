@@ -15,7 +15,7 @@ namespace Samples.Security.AspNetCore5
         private static readonly Type _scopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
         private static MethodInfo _spanProperty = _scopeType.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
         private static readonly Type _spanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
-        private static MethodInfo _metaStructProperty = _spanType.GetProperty("MetaStruct", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
+        private static MethodInfo _AddMetaStructMethod = _spanType.GetMethod("AddMetaStructValue", BindingFlags.NonPublic | BindingFlags.Instance);
         private static MethodInfo _internalActiveScopeProperty = _tracerType.GetProperty("InternalActiveScope", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
         private static MethodInfo _rootProperty = _scopeType.GetProperty("Root", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
         private static MethodInfo _setTagMethod = _spanType.GetMethod("SetTag", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -30,7 +30,7 @@ namespace Samples.Security.AspNetCore5
             var root = _rootProperty.Invoke(internalActiveScope, null);
             var rootSpan = _spanProperty.Invoke(root, null);
 
-            var stackId = Guid.NewGuid().ToString();
+            var stackId = "1212121"; // Guid.NewGuid().ToString();
 
             var stack =
                 new List<object>()
@@ -95,9 +95,8 @@ namespace Samples.Security.AspNetCore5
 
             if (rootSpan != null)
             {
-                var metaStruct = _metaStructProperty.Invoke(rootSpan, null) as ConcurrentDictionary<string, object>;
-                metaStruct.TryAdd("_dd.stack.exploit", stack);
-                _setTagMethod.Invoke(rootSpan, ["_dd.appsec.json", "{\"triggers\":[{\"stack_id\": \""+ stackId + "\",\"rule\":{\"id\":\"rasp-001-001\",\"name\":\"Path traversal attack\",\"tags\":{\"category\":\"vulnerability_trigger\",\"type\":\"lfi\"}},\"rule_matches\":[{\"operator\":\"lfi_detector\",\"operator_value\":null,\"parameters\":[{\"address\":null,\"highlight\":[\"/etc/password\"],\"key_path\":null,\"value\":null}]}]}]}"]);
+                _AddMetaStructMethod.Invoke(rootSpan, ["_dd.stack.exploit", stack]);
+                _setTagMethod.Invoke(rootSpan, ["_dd.appsec.json", "{\"triggers\":[{\"stack_id\": \"" + stackId + "\",\"rule\":{\"id\":\"rasp-001-001\",\"name\":\"Path traversal attack\",\"tags\":{\"category\":\"vulnerability_trigger\",\"type\":\"lfi\"}},\"rule_matches\":[{\"operator\":\"lfi_detector\",\"operator_value\":null,\"parameters\":[{\"address\":null,\"highlight\":[\"/etc/password\"],\"key_path\":null,\"value\":null}]}]}]}"]);
                 _setTagMethod.Invoke(rootSpan, ["_dd.origin", "appsec"]);
                 _setTagMethod.Invoke(rootSpan, ["appsec.blocked", "true"]);
                 _setTagMethod.Invoke(rootSpan, ["appsec.event", "true"]);

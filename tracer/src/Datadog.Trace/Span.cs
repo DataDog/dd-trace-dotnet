@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -121,10 +122,6 @@ namespace Datadog.Trace
 
         internal ITags Tags { get; set; }
 
-        internal ConcurrentDictionary<string, object> MetaStruct => _metaStruct.Value;
-
-        internal bool IsMetaStructCreated => _metaStruct.IsValueCreated;
-
         internal SpanContext Context { get; }
 
         internal DateTimeOffset StartTime { get; private set; }
@@ -142,10 +139,10 @@ namespace Datadog.Trace
         internal bool IsTopLevel => Context.ParentInternal == null
                                  || Context.ParentInternal.SpanId == 0
                                  || Context.ParentInternal switch
-                                    {
-                                        SpanContext s => s.ServiceNameInternal != ServiceName,
-                                        { } s => s.ServiceName != ServiceName,
-                                    };
+                                 {
+                                     SpanContext s => s.ServiceNameInternal != ServiceName,
+                                     { } s => s.ServiceName != ServiceName,
+                                 };
 
         /// <summary>
         /// Record the end time of the span and flushes it to the backend.
@@ -498,6 +495,21 @@ namespace Datadog.Trace
         internal void SetDuration(TimeSpan duration)
         {
             Duration = duration;
+        }
+
+        internal IReadOnlyDictionary<string, object> GetMetaStructValues()
+        {
+            return _metaStruct.IsValueCreated ? _metaStruct.Value : null;
+        }
+
+        internal bool AddMetaStructValue(string key, object value)
+        {
+            if (!string.IsNullOrEmpty(key))
+            {
+                return _metaStruct.Value.TryAdd(key, value);
+            }
+
+            return false;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
