@@ -527,8 +527,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/OwinContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/OwinRequestStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ReflectedHttpActionDescriptor_ExecuteAsync_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/RequestContextStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ThreadContext_AssociateWithCurrentThread_Integration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ThreadContext_DisassociateFromCurrentThread_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ViewContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/AspNetCoreBlockMiddlewareIntegrationEnd.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/BindingSource.cs
