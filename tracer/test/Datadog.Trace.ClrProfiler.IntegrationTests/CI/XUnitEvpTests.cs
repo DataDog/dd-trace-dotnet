@@ -133,13 +133,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                     {
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings("all", null, null);
+                        settings.DisableRequireUniquePrefix();
+                        await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
+
                         // Check the tests, suites and modules count
                         Assert.Equal(ExpectedTestCount, tests.Count);
                         Assert.Equal(2, testSuites.Count);
                         Assert.Single(testModules);
-
-                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(packageVersion, evpVersionToRemove, expectedGzip);
-                        await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
 
                         var testSuite = testSuites.First(suite => suite.Resource == TestSuiteName);
                         var unskippableTestSuite = testSuites.First(suite => suite.Resource == UnSkippableSuiteName);
