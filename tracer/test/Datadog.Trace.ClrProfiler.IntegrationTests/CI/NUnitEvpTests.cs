@@ -157,6 +157,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                     {
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings("all", null, null);
+                        settings.DisableRequireUniquePrefix();
+                        await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
+
                         // Check the tests, suites and modules count
                         Assert.Equal(ExpectedTestCount, tests.Count);
                         Assert.Equal(ExpectedTestSuiteCount, testSuites.Count);

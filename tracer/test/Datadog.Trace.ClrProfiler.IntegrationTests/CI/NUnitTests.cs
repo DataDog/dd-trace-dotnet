@@ -77,6 +77,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                      .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
                                      .ToList();
 
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings("all");
+                        settings.DisableRequireUniquePrefix();
+                        await Verifier.Verify(spans.OrderBy(s => s.Resource).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Parameters)), settings);
+
                         // Check the span count
                         spans.Should().HaveCount(ExpectedSpanCount);
 
