@@ -323,7 +323,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 var adapter = new KafkaHeadersCollectionAdapter(message.Headers);
 
-                SpanContextPropagator.Instance.Inject(span.Context, adapter);
+                SpanContextPropagator.Instance.Inject(span.GetContext(), adapter);
 
                 if (dataStreamsManager.IsEnabled)
                 {
@@ -332,7 +332,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
                     // produce is always the start of the edge, so defaultEdgeStartMs is always 0
                     span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, GetMessageSize(message), 0);
-                    dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
+                    dataStreamsManager.InjectPathwayContext(span.PathwayContext, adapter);
                 }
             }
             catch (Exception ex)

@@ -44,7 +44,7 @@ public class StringAspectsBenchmark
             IastModule.OnWeakRandomness("fake"); // Add fake span
             var tracer = Tracer.Instance;
             var currentSpan = (tracer.ActiveScope as Scope)?.Span;
-            var traceContext = currentSpan?.Context?.TraceContext;
+            var traceContext = currentSpan?.TraceContext;
             traceContext.EnableIastInRequest();
             var context = traceContext?.IastRequestContext;
             taintedObjects = context.GetTaintedObjects();

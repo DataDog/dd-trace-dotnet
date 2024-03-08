@@ -73,11 +73,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                     {
                         if (setSamplingPriority)
                         {
-                            scope.Span.Context.TraceContext.SetSamplingPriority(spanContext.SamplingPriority.Value);
+                            scope.Span.TraceContext.SetSamplingPriority(spanContext.SamplingPriority.Value);
                         }
 
                         // add distributed tracing headers to the HTTP request
-                        SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
+                        SpanContextPropagator.Instance.Inject(scope.Span.GetContext(), request.Headers.Wrap());
 
                         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 

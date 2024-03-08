@@ -50,7 +50,7 @@ internal static class IbmMqHelper
             span.SetTag(Tags.SpanKind, SpanKinds.Producer);
 
             var adapter = new IbmMqHeadersAdapter(message);
-            SpanContextPropagator.Instance.Inject(span.Context, adapter);
+            SpanContextPropagator.Instance.Inject(span.GetContext(), adapter);
         }
         catch (Exception ex)
         {

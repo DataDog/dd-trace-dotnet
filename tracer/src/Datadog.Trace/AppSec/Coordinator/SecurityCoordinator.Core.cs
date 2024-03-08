@@ -111,7 +111,7 @@ internal readonly partial struct SecurityCoordinator
 
         var addressesDictionary = new Dictionary<string, object> { { AddressesConstants.RequestMethod, request.Method }, { AddressesConstants.ResponseStatus, request.HttpContext.Response.StatusCode.ToString() }, { AddressesConstants.RequestUriRaw, request.GetUrlForWaf() }, { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) } };
 
-        var userId = _localRootSpan.Context?.TraceContext?.Tags.GetTag(Tags.User.Id);
+        var userId = _localRootSpan.TraceContext?.Tags.GetTag(Tags.User.Id);
         if (!string.IsNullOrEmpty(userId))
         {
             addressesDictionary.Add(AddressesConstants.UserId, userId!);

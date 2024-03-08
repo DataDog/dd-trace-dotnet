@@ -60,7 +60,7 @@ namespace Datadog.Trace.Activity
 
             // Fixup "version" tag
             // Fallback to static instance if no tracer associated with the trace
-            var tracer = span.Context.TraceContext?.Tracer ?? Tracer.Instance;
+            var tracer = span.TraceContext?.Tracer ?? Tracer.Instance;
             if (tracer.Settings.ServiceVersionInternal is null
              && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
             {
@@ -112,7 +112,7 @@ namespace Datadog.Trace.Activity
             // TODO: Add container tags from attributes if the tag isn't already in the span
 
             // Fixup "env" tag
-            if (span.Context.TraceContext?.Environment is null
+            if (span.TraceContext?.Environment is null
                 && span.GetTag("deployment.environment") is { Length: > 0 } otelServiceEnv)
             {
                 span.SetTag(Tags.Env, otelServiceEnv);

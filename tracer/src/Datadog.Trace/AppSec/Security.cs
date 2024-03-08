@@ -467,11 +467,11 @@ namespace Datadog.Trace.AppSec
             {
                 // NOTE: setting DD_APPSEC_KEEP_TRACES=false means "drop all traces by setting AutoReject".
                 // It does _not_ mean "stop setting UserKeep (do nothing)". It should only be used for testing.
-                span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.Asm);
+                span.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.Asm);
             }
             else if (_rateLimiter?.Allowed(span) ?? false)
             {
-                span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+                span.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             }
         }
 

@@ -447,7 +447,7 @@ namespace Datadog.Trace.Agent
             }
 
             // Add the current keep rate to the root span
-            var rootSpan = spans.Array![spans.Offset].Context.TraceContext?.RootSpan;
+            var rootSpan = spans.Array![spans.Offset].TraceContext?.RootSpan;
 
             if (rootSpan is not null)
             {

@@ -61,8 +61,8 @@ namespace Datadog.Trace.OpenTracing.Tests
                                                 .AsChildOf(root)
                                                 .Start();
 
-            var rootParentId = ((Span)root.Span).Context.ParentId;
-            var childParentId = ((Span)child.Span).Context.ParentId;
+            var rootParentId = ((Span)root.Span).ParentId;
+            var childParentId = ((Span)child.Span).ParentId;
 
             Assert.Null(rootParentId);
             Assert.NotEqual<ulong>(0, root.DDSpan.Context.SpanId);
@@ -80,8 +80,8 @@ namespace Datadog.Trace.OpenTracing.Tests
                                                 .AsChildOf(root.Context)
                                                 .Start();
 
-            var rootParentId = ((Span)root.Span).Context.ParentId;
-            var childParentId = ((Span)child.Span).Context.ParentId;
+            var rootParentId = ((Span)root.Span).ParentId;
+            var childParentId = ((Span)child.Span).ParentId;
 
             Assert.Null(rootParentId);
             Assert.NotEqual<ulong>(0, root.DDSpan.Context.SpanId);
@@ -99,8 +99,8 @@ namespace Datadog.Trace.OpenTracing.Tests
                                                 .AddReference(References.ChildOf, root.Context)
                                                 .Start();
 
-            var rootParentId = ((Span)root.Span).Context.ParentId;
-            var childParentId = ((Span)child.Span).Context.ParentId;
+            var rootParentId = ((Span)root.Span).ParentId;
+            var childParentId = ((Span)child.Span).ParentId;
 
             Assert.Null(rootParentId);
             Assert.NotEqual<ulong>(0, root.DDSpan.Context.SpanId);

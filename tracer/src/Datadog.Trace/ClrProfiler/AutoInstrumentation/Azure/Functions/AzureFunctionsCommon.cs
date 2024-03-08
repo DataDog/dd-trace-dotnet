@@ -296,7 +296,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // in the GRPC http request representation, which is what we're doing here by overwriting all
                 // the existing datadog headers
                 var useNullableHeaders = !string.IsNullOrEmpty(useNullableHeadersCapability);
-                SpanContextPropagator.Instance.Inject(span.Context, new RpcHttpHeadersCollection<TTarget>(typedData.Http, useNullableHeaders));
+                SpanContextPropagator.Instance.Inject(span.GetContext(), new RpcHttpHeadersCollection<TTarget>(typedData.Http, useNullableHeaders));
             }
         }
 

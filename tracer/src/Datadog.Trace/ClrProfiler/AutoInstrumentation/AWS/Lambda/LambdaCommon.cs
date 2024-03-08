@@ -42,12 +42,12 @@ internal abstract class LambdaCommon
             Log("samplingPriority not found");
 
             var samplingDecision = tracer.CurrentTraceSettings.TraceSampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
-            span.Context.TraceContext?.SetSamplingPriority(samplingDecision);
+            span.TraceContext?.SetSamplingPriority(samplingDecision);
         }
         else
         {
             Log($"setting the placeholder sampling priority to = {samplingPriority}");
-            span.Context.TraceContext?.SetSamplingPriority(Convert.ToInt32(samplingPriority), notifyDistributedTracer: false);
+            span.TraceContext?.SetSamplingPriority(Convert.ToInt32(samplingPriority), notifyDistributedTracer: false);
         }
 
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);

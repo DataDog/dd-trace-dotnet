@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tests
                 scopeFromActivity = Tracer.Instance.ActiveScope;
                 scopeFromActivity.Span.TraceId.Should().Be(traceIdInULong);
                 scopeFromActivity.Span.SpanId.Should().Be(spanIdInULong);
-                ((Span)scopeFromActivity.Span).Context.RawTraceId.Should().Be(traceId);
+                ((Span)scopeFromActivity.Span).RawTraceId.Should().Be(traceId);
                 scopeFromActivity.Span.OperationName.Should().Be("Custom activity");
 
                 // Create datadog span as a child
@@ -76,8 +76,8 @@ namespace Datadog.Trace.Tests
                 {
                     // Assert TraceId and parent span id
                     scope.Span.TraceId.Should().Be(traceIdInULong);
-                    ((Span)scope.Span).Context.ParentId.Should().Be(spanIdInULong);
-                    ((Span)scope.Span).Context.RawTraceId.Should().Be(traceId);
+                    ((Span)scope.Span).ParentId.Should().Be(spanIdInULong);
+                    ((Span)scope.Span).RawTraceId.Should().Be(traceId);
 
                     // Create a new child activity as child of span
                     SD.Activity childActivity = null;
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Tests
                         scopeFromChildActivity.Span.TraceId.Should().Be(traceIdInULong);
                         HexString.TryParseUInt64(childActivity.SpanId.ToString(), out var childActivitySpanId);
                         scopeFromChildActivity.Span.SpanId.Should().Be(childActivitySpanId);
-                        ((Span)scopeFromChildActivity.Span).Context.RawTraceId.Should().Be(traceId);
+                        ((Span)scopeFromChildActivity.Span).RawTraceId.Should().Be(traceId);
                         scopeFromChildActivity.Span.OperationName.Should().Be("Child activity");
 
                         Tracer.Instance.ActiveScope.Should().NotBe(scope);
@@ -171,7 +171,7 @@ namespace Datadog.Trace.Tests
                     var scopeFromChildActivity = Tracer.Instance.ActiveScope;
                     scopeFromChildActivity.Span.TraceId.Should().Be(traceId);
                     scopeFromChildActivity.Span.SpanId.Should().Be(spanIdInULong);
-                    ((Span)scopeFromChildActivity.Span).Context.RawTraceId.Should().Be(traceId128);
+                    ((Span)scopeFromChildActivity.Span).RawTraceId.Should().Be(traceId128);
                     scopeFromChildActivity.Span.OperationName.Should().Be("Child activity");
 
                     // Create datadog span as a child
@@ -179,8 +179,8 @@ namespace Datadog.Trace.Tests
                     {
                         // Assert TraceId and parent span id
                         childScope.Span.TraceId.Should().Be(traceId);
-                        ((Span)childScope.Span).Context.ParentId.Should().Be(spanIdInULong);
-                        ((Span)childScope.Span).Context.RawTraceId.Should().Be(traceId128);
+                        ((Span)childScope.Span).ParentId.Should().Be(spanIdInULong);
+                        ((Span)childScope.Span).RawTraceId.Should().Be(traceId128);
                     }
                 }
                 finally

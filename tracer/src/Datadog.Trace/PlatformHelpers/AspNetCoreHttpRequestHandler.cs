@@ -129,7 +129,7 @@ namespace Datadog.Trace.PlatformHelpers
             if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
             {
                 // If the overheadController disables the vulnerability detection for this request, we do not initialize the iast context of TraceContext
-                scope.Span.Context?.TraceContext?.EnableIastInRequest();
+                scope.Span.TraceContext?.EnableIastInRequest();
             }
 
             tags.SetAnalyticsSampleRate(_integrationId, tracer.Settings, enabledWithGlobalSetting: true);

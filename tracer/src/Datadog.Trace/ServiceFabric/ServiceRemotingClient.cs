@@ -68,7 +68,7 @@ namespace Datadog.Trace.ServiceFabric
                     if (messageHeaders != null)
                     {
                         SpanContextPropagator.Instance.Inject(
-                            span.Context,
+                            span.GetContext(),
                             messageHeaders,
                             default(ServiceRemotingRequestMessageHeaderSetter));
                     }

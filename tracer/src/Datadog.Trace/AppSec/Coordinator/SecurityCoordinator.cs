@@ -68,7 +68,7 @@ internal readonly partial struct SecurityCoordinator
             var isApiSecurityProcessed = _security.ApiSecurity.TryTellWafToAnalyzeSchema(args);
             if (isApiSecurityProcessed)
             {
-                _localRootSpan.Context.TraceContext.MarkApiSecurity();
+                _localRootSpan.TraceContext.MarkApiSecurity();
             }
         }
 
@@ -149,5 +149,5 @@ internal readonly partial struct SecurityCoordinator
         _httpTransport.DisposeAdditiveContext();
     }
 
-    private static Span TryGetRoot(Span span) => span.Context.TraceContext?.RootSpan ?? span;
+    private static Span TryGetRoot(Span span) => span.TraceContext?.RootSpan ?? span;
 }

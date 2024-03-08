@@ -252,8 +252,8 @@ namespace Datadog.Trace.Tests
             SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
 
             using (Span span1 = _tracer.StartSpan(operationName: "Operation Root", parent: remoteParentSpanCtx))
-            using (Span span2 = _tracer.StartSpan(operationName: "Operation Middle", parent: span1.Context))
-            using (Span span3 = _tracer.StartSpan(operationName: "Operation Leaf", parent: span2.Context))
+            using (Span span2 = _tracer.StartSpan(operationName: "Operation Middle", parent: span1.GetContext()))
+            using (Span span3 = _tracer.StartSpan(operationName: "Operation Leaf", parent: span2.GetContext()))
             {
                 span1.SpanId.Should().NotBe(0);
                 span2.SpanId.Should().NotBe(0);
@@ -310,15 +310,15 @@ namespace Datadog.Trace.Tests
                 span3.SpanId.Should().NotBe(0);
                 span4.SpanId.Should().NotBe(0);
 
-                span1.SpanId.Should().NotBe(remoteParentSpanId);          // There is an expected 1 in 2^64 chance of this line failing
-                span2.SpanId.Should().NotBe(remoteParentSpanId);                // There is an expected 1 in 2^64 chance of this line failing
-                span3.SpanId.Should().NotBe(remoteParentSpanId);          // There is an expected 1 in 2^64 chance of this line failing
-                span4.SpanId.Should().NotBe(remoteParentSpanId);                // There is an expected 1 in 2^64 chance of this line failing
+                span1.SpanId.Should().NotBe(remoteParentSpanId); // There is an expected 1 in 2^64 chance of this line failing
+                span2.SpanId.Should().NotBe(remoteParentSpanId); // There is an expected 1 in 2^64 chance of this line failing
+                span3.SpanId.Should().NotBe(remoteParentSpanId); // There is an expected 1 in 2^64 chance of this line failing
+                span4.SpanId.Should().NotBe(remoteParentSpanId); // There is an expected 1 in 2^64 chance of this line failing
 
-                span1.Context.ParentId.Should().Be(remoteParentSpanId);   // Parent (not root) of S1 is remote
-                span2.Context.ParentId.Should().Be(scope1.Span.SpanId);         // Parent of S2 is S1: it was created in an active S1-scope
-                span3.Context.ParentId.Should().Be(scope1.Span.SpanId);   // Parent of S3 is also S1: it was created in an active S1 scope, S2 is not a scope
-                span4.Context.ParentId.Should().Be(scope3.Span.SpanId);         // Parent of S4 is S3: it was created in an active S3-scope
+                span1.ParentId.Should().Be(remoteParentSpanId); // Parent (not root) of S1 is remote
+                span2.ParentId.Should().Be(scope1.Span.SpanId); // Parent of S2 is S1: it was created in an active S1-scope
+                span3.ParentId.Should().Be(scope1.Span.SpanId); // Parent of S3 is also S1: it was created in an active S1 scope, S2 is not a scope
+                span4.ParentId.Should().Be(scope3.Span.SpanId); // Parent of S4 is S3: it was created in an active S3-scope
 
                 span1.RootSpanId.Should().Be(scope1.Span.SpanId);
                 span2.RootSpanId.Should().Be(scope1.Span.SpanId);

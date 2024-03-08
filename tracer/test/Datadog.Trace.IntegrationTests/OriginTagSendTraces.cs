@@ -50,7 +50,7 @@ namespace Datadog.Trace.IntegrationTests
 
             using (var scope = (Scope)_tracer.StartActive("root"))
             {
-                scope.Span.Context.TraceContext.Origin = originValue;
+                scope.Span.TraceContext.Origin = originValue;
 
                 using (_ = _tracer.StartActive("child"))
                 {

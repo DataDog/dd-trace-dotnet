@@ -22,13 +22,13 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new RareSampler(new ImmutableTracerSettings(settings));
 
             var trace1 = new[] { tracer.StartSpan("1"), tracer.StartSpan("1") };
-            trace1[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
+            trace1[0].TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
 
             var trace2 = new[] { tracer.StartSpan("2"), tracer.StartSpan("1") };
-            trace2[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
+            trace2[0].TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
 
             var trace3 = new[] { tracer.StartSpan("1"), tracer.StartSpan("1") };
-            trace3[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
+            trace3[0].TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
 
             sampler.Sample(new(trace1)).Should().BeTrue();
             sampler.Sample(new(trace2)).Should().BeTrue();
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new RareSampler(new ImmutableTracerSettings(settings));
 
             var trace = new[] { tracer.StartSpan("1") };
-            trace[0].Context.TraceContext.SetSamplingPriority(priority);
+            trace[0].TraceContext.SetSamplingPriority(priority);
 
             sampler.Sample(new(trace)).Should().Be(expected);
 
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new RareSampler(new ImmutableTracerSettings(settings));
 
             var trace = new[] { Tracer.Instance.StartSpan("1") };
-            trace[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
+            trace[0].TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
 
             sampler.Sample(new(trace)).Should().BeFalse();
             trace.Single().GetMetric(Metrics.RareSpan).Should().Be(null);
@@ -105,13 +105,13 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new RareSampler(new ImmutableTracerSettings(settings));
 
             var knownTrace = new[] { tracer.StartSpan("1") };
-            knownTrace[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
+            knownTrace[0].TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
 
             // Show span "1" to the RareSampler
             sampler.Sample(new(knownTrace)).Should().BeTrue();
 
             using var scope1 = tracer.StartActiveInternal("1");
-            scope1.Span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
+            scope1.Span.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
 
             using var scope2 = tracer.StartActiveInternal("2");
 
@@ -131,7 +131,7 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new RareSampler(new ImmutableTracerSettings(settings));
 
             var knownTrace = new[] { tracer.StartSpan("1") };
-            knownTrace[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
+            knownTrace[0].TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
 
             // Show span "1" to the RareSampler
             sampler.Sample(new(knownTrace)).Should().BeTrue();
@@ -142,7 +142,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             // Create a trace with the interesting span ("2") as a child
             var trace = new[] { scope1.Span, scope2.Span };
-            trace[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
+            trace[0].TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
 
             sampler.Sample(new(trace)).Should().BeTrue();
         }
