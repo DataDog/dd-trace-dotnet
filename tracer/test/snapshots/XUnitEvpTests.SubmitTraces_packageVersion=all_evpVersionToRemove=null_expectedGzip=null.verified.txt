@@ -63,8 +63,8 @@ at Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(Int32 xValue, Int32
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 105.0,
-      test.source.start: 101.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -132,8 +132,8 @@ at Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(Int32 xValue, Int32
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 105.0,
-      test.source.start: 101.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -201,8 +201,8 @@ at Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(Int32 xValue, Int32
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 105.0,
-      test.source.start: 101.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -269,8 +269,8 @@ at Samples.XUnitTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 43.0,
-      test.source.start: 38.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -332,8 +332,8 @@ at Samples.XUnitTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 85.0,
-      test.source.start: 81.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -395,8 +395,8 @@ at Samples.XUnitTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 85.0,
-      test.source.start: 81.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -458,8 +458,8 @@ at Samples.XUnitTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 85.0,
-      test.source.start: 81.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -520,8 +520,8 @@ at Samples.XUnitTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 30.0,
-      test.source.start: 27.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -584,8 +584,8 @@ at Samples.XUnitTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 35.0,
-      test.source.start: 33.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -648,8 +648,8 @@ at Samples.XUnitTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 95.0,
-      test.source.start: 92.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -712,8 +712,8 @@ at Samples.XUnitTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 110.0,
-      test.source.start: 108.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -781,8 +781,8 @@ at Samples.XUnitTests.TestSuite.TraitErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 73.0,
-      test.source.start: 68.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -844,8 +844,8 @@ at Samples.XUnitTests.TestSuite.TraitErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 54.0,
-      test.source.start: 51.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -909,8 +909,8 @@ at Samples.XUnitTests.TestSuite.TraitErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 62.0,
-      test.source.start: 60.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -971,8 +971,8 @@ at Samples.XUnitTests.TestSuite.TraitErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 116.0,
-      test.source.start: 114.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1033,8 +1033,8 @@ at Samples.XUnitTests.TestSuite.TraitErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 125.0,
-      test.source.start: 123.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   }

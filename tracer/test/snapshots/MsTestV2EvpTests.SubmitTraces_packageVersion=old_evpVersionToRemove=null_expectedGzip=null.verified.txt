@@ -63,8 +63,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorParameterizedTest(Int32 xValue, Int3
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 107.0,
-      test.source.start: 104.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -132,8 +132,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorParameterizedTest(Int32 xValue, Int3
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 107.0,
-      test.source.start: 104.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -201,8 +201,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorParameterizedTest(Int32 xValue, Int3
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 107.0,
-      test.source.start: 104.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -269,8 +269,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 47.0,
-      test.source.start: 43.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -332,8 +332,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 87.0,
-      test.source.start: 84.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -395,8 +395,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 87.0,
-      test.source.start: 84.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -458,8 +458,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 87.0,
-      test.source.start: 84.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -520,8 +520,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 28.0,
-      test.source.start: 26.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -584,8 +584,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 40.0,
-      test.source.start: 38.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -649,8 +649,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 98.0,
-      test.source.start: 95.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -713,8 +713,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 34.0,
-      test.source.start: 32.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -782,8 +782,8 @@ at Samples.MSTestTests.TestSuite.TraitErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 76.0,
-      test.source.start: 72.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -845,8 +845,8 @@ at Samples.MSTestTests.TestSuite.TraitErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 57.0,
-      test.source.start: 55.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -910,8 +910,8 @@ at Samples.MSTestTests.TestSuite.TraitErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 66.0,
-      test.source.start: 64.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -972,8 +972,8 @@ at Samples.MSTestTests.TestSuite.TraitErrorTest(),
     },
     Metrics: {
       process_id: 0,
-      test.source.end: 113.0,
-      test.source.start: 111.0,
+      test.source.end: 84.0,
+      test.source.start: 42.0,
       _sampling_priority_v1: 1.0
     }
   }
