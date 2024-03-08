@@ -1,10 +1,7 @@
-﻿// <copyright file="Obfuscator.cs" company="Datadog">
+// <copyright file="Obfuscator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
-// turns out strict formatting and optional compilation don't like each other
-#pragma warning disable SA1001, SA1116, SA1118
 
 using System;
 using System.Text.RegularExpressions;
@@ -29,6 +26,17 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
                                          RegexOptions.IgnorePatternWhitespace;
 
             _regex = new Regex(pattern, options, _timeout);
+
+            try
+            {
+                // Warmup the regex
+                // Can't use empty string, space, or dot, as they are optimized and don't actually trigger the compilation
+                _ = _regex.Match("o");
+            }
+            catch
+            {
+                // Nothing to log here
+            }
         }
 
         /// <summary>
