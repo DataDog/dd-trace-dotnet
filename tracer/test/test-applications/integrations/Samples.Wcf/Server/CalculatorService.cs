@@ -10,6 +10,9 @@ namespace Samples.Wcf.Server
         public double ServerSyncAdd(double n1, double n2)
         {
             LoggingHelper.WriteLineWithDate($"[Server] Received ServerSyncAdd({n1},{n2})");
+
+            Thread.Sleep(1);
+
             double result = n1 + n2;
 
             LoggingHelper.WriteLineWithDate($"[Server] Return: {result}");
@@ -27,6 +30,8 @@ namespace Samples.Wcf.Server
         public IAsyncResult BeginServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes, AsyncCallback callback, object state)
         {
             LoggingHelper.WriteLineWithDate($"[Server] Received BeginServerAsyncAdd({n1},{n2},{throwsException},{synchronouslyCompletes})");
+
+            Thread.Sleep(1);
 
             var asyncResult = new SimpleAsyncResult<Tuple<double, bool>>(state);
 
@@ -59,6 +64,8 @@ namespace Samples.Wcf.Server
             LoggingHelper.WriteLineWithDate("[Server] Received EndServerAsyncAdd(asyncResult)");
             LoggingHelper.WriteLineWithDate($"[Server] Return: {asyncResult}");
 
+            Thread.Sleep(1);
+
             var result = (SimpleAsyncResult<Tuple<double, bool>>)asyncResult;
 
             if (result.Result.Item2)
@@ -71,7 +78,7 @@ namespace Samples.Wcf.Server
 
         private async Task<double> PerformAddWithDelay(double n1, double n2)
         {
-            await Task.Delay(50);
+            await Task.Delay(1);
             return n1 + n2;
         }
 
@@ -79,6 +86,8 @@ namespace Samples.Wcf.Server
         {
             LoggingHelper.WriteLineWithDate($"[Server] Received ServerEmptyActionAdd({n1}, {n2})");
             double result = n1 + n2;
+
+            Thread.Sleep(1);
 
             LoggingHelper.WriteLineWithDate($"[Server] Return: {result}");
             return result;
