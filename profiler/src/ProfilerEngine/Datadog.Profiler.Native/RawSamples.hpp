@@ -33,7 +33,7 @@ public:
         std::lock_guard<std::mutex> lock(_lock);
 
         LinkedList<TRawSample> result;
-        _samples.swap(result);
+        _samples.Swap(result);
 
         return RawSamples(std::move(result));
     }
@@ -41,7 +41,7 @@ public:
     void Add(TRawSample&& sample)
     {
         std::lock_guard<std::mutex> lock(_lock);
-        _samples.append(std::forward<TRawSample>(sample));
+        _samples.Append(std::forward<TRawSample>(sample));
     }
 
     auto begin()
@@ -56,7 +56,7 @@ public:
 
     std::size_t size() const
     {
-        return _samples.size();
+        return _samples.Size();
     }
 
 private:

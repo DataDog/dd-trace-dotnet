@@ -22,8 +22,8 @@ using namespace std::experimental::pmr;
 #include <cassert>
 #include <cstdlib>
 #include <memory>
-#include <utility>
 #include <stdexcept>
+#include <utility>
 
 #ifdef DD_TEST
 #define NOEXCEPT noexcept(false)
@@ -34,10 +34,6 @@ using namespace std::experimental::pmr;
 template <class T>
 class LinkedList
 {
-private:
-    struct Node;
-    using node_type = Node;
-
 public:
     LinkedList(pmr::memory_resource* allocator = pmr::get_default_resource()) noexcept :
         _head{nullptr}, _tail{&_head}, _nbElements{0}, _allocator{allocator}
@@ -60,8 +56,7 @@ public:
     LinkedList(LinkedList const&) = delete;
     LinkedList& operator=(LinkedList const&) = delete;
 
-    LinkedList(LinkedList&& other) NOEXCEPT :
-        LinkedList() // should we use the default allocator ? or allow an allocator to the move ctor ?
+    LinkedList(LinkedList&& other) NOEXCEPT : LinkedList()
     {
         *this = std::move(other);
     }
@@ -73,12 +68,12 @@ public:
             return *this;
         }
 
-        swap(other);
+        Swap(other);
 
         return *this;
     }
 
-    void swap(LinkedList& other)
+    void Swap(LinkedList& other)
     {
         if (this == &other)
         {
@@ -110,16 +105,19 @@ public:
         std::swap(_allocator, other._allocator);
     }
 
-    bool append(T&& v)
+    bool Append(T&& v)
     {
-        auto* ptr = _allocator->allocate(sizeof(Node));
+        NodeGuard guard(_allocator);
+        guard.Allocate();
 
-        if (ptr == nullptr)
+        if (guard._Node == nullptr)
         {
             return false;
         }
 
-        *_tail = new (ptr) Node(std::move(v), nullptr);
+        ConstructNode(guard._Node, std::move(v));
+
+        *_tail = guard.Release();
         _tail = &((*_tail)->Next);
 
         _nbElements++;
@@ -127,7 +125,7 @@ public:
         return true;
     }
 
-    std::size_t size() const
+    std::size_t Size() const
     {
         return _nbElements;
     }
@@ -144,6 +142,10 @@ public:
         return iterator(nullptr);
     }
 
+private:
+    struct Node;
+
+public:
     class iterator
     {
     public:
@@ -185,6 +187,7 @@ public:
     };
 
 private:
+    // Actual LinkedList node
     struct Node
     {
     public:
@@ -200,6 +203,56 @@ private:
         Node(Node const&) = delete;
         Node& operator=(Node const&) = delete;
     };
+
+    // Used to make sure the code is exception-safe when we Append an element.
+    // In case, construction throws, we won't leak memory.
+    struct NodeGuard
+    {
+    public:
+        constexpr explicit NodeGuard(pmr::memory_resource* mr) :
+            _mr{mr}, _Node{nullptr}
+        {
+        }
+
+        constexpr ~NodeGuard()
+        {
+            if (_Node != nullptr)
+            {
+                _mr->deallocate(_Node, sizeof(Node));
+            }
+        }
+
+        NodeGuard(NodeGuard const&) = delete;
+        NodeGuard& operator=(NodeGuard const&) = delete;
+
+        constexpr void Allocate()
+        {
+            _Node = reinterpret_cast<Node*>(_mr->allocate(sizeof(Node)));
+        }
+
+        [[nodiscard]] constexpr Node* Release()
+        {
+            return std::exchange(_Node, nullptr);
+        }
+
+        pmr::memory_resource* _mr;
+        Node* _Node;
+    };
+
+    constexpr void ConstructNode(void* ptr, T&& value)
+    {
+        new (ptr) Node(std::move(value), nullptr);
+    }
+
+    // On linux allocate has std::pmr::memory_resource::allocate function has the returns_nonnull attribute.
+    // This allows the compiler to optimize the code, by removing the null-check.
+    // We observed a segmentation fault in our CI with ASAN and UBSAN in the unit tests.
+    // We still want to keep the null-check, because when we will use (for some profilers) the
+    // ringbuffer-based memory_resource, it could return nullptr (when there is no more room)
+    inline void* allocateNode()
+    {
+        return _allocator->allocate(sizeof(Node));
+    }
 
     Node* _head;
     Node** _tail;

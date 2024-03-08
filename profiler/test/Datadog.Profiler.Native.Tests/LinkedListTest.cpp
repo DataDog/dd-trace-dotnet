@@ -11,15 +11,15 @@
 
 #include "gtest/gtest.h"
 
-TEST(LinkedListTest, Append)
+TEST(LinkedListTest, PushBack)
 {
     LinkedList<int> x;
 
-    ASSERT_EQ(x.size(), 0);
+    ASSERT_EQ(x.Size(), 0);
 
-    ASSERT_TRUE(x.append(42));
+    ASSERT_TRUE(x.Append(42));
 
-    ASSERT_EQ(x.size(), 1);
+    ASSERT_EQ(x.Size(), 1);
 
     ASSERT_EQ(*(x.begin()), 42);
 }
@@ -28,9 +28,9 @@ TEST(LinkedListTest, ForEach)
 {
     LinkedList<std::string> x;
 
-    ASSERT_TRUE(x.append("1"));
-    ASSERT_TRUE(x.append("2"));
-    ASSERT_TRUE(x.append("3"));
+    ASSERT_TRUE(x.Append("1"));
+    ASSERT_TRUE(x.Append("2"));
+    ASSERT_TRUE(x.Append("3"));
 
     int i = 1;
 
@@ -39,7 +39,7 @@ TEST(LinkedListTest, ForEach)
         ASSERT_EQ(std::to_string(i++), s);
     }
 
-    ASSERT_EQ(x.size(), 3);
+    ASSERT_EQ(x.Size(), 3);
 }
 
 struct Person
@@ -52,18 +52,18 @@ TEST(LinkedListTest, Move)
 {
     LinkedList<Person> l;
 
-    l.append({.Name = "Georges", .Age = 42});
-    l.append({.Name = "Ralph", .Age = 101});
-    l.append({.Name = "jordy", .Age = 21});
-    l.append({.Name = "Bob", .Age = 1});
+    l.Append({.Name = "Georges", .Age = 42});
+    l.Append({.Name = "Ralph", .Age = 101});
+    l.Append({.Name = "jordy", .Age = 21});
+    l.Append({.Name = "Bob", .Age = 1});
 
-    ASSERT_EQ(l.size(), 4);
+    ASSERT_EQ(l.Size(), 4);
 
     LinkedList<Person> other = std::move(l);
 
-    ASSERT_EQ(0, l.size());
+    ASSERT_EQ(0, l.Size());
 
-    ASSERT_EQ(other.size(), 4);
+    ASSERT_EQ(other.Size(), 4);
 
     auto it = other.begin();
 
@@ -90,25 +90,25 @@ TEST(LinkedListTest, Assign)
 {
     LinkedList<Person> l;
 
-    l.append({.Name = "Georges", .Age = 42});
-    l.append({.Name = "Ralph", .Age = 101});
-    l.append({.Name = "jordy", .Age = 21});
-    l.append({.Name = "Bob", .Age = 1});
+    l.Append({.Name = "Georges", .Age = 42});
+    l.Append({.Name = "Ralph", .Age = 101});
+    l.Append({.Name = "jordy", .Age = 21});
+    l.Append({.Name = "Bob", .Age = 1});
 
-    ASSERT_EQ(l.size(), 4);
+    ASSERT_EQ(l.Size(), 4);
 
     LinkedList<Person> other;
 
     other = std::move(l);
 
-    ASSERT_EQ(l.size(), 0);
+    ASSERT_EQ(l.Size(), 0);
 
     auto begin_it = l.begin();
     auto end_it = l.end();
     ASSERT_EQ(begin_it, end_it);
 
     // check other now
-    ASSERT_EQ(other.size(), 4);
+    ASSERT_EQ(other.Size(), 4);
 
     auto it = other.begin();
 
@@ -181,9 +181,9 @@ TEST(LinkedListTest, ObjectDtorCalled)
     {
         LinkedList<Dummy> l;
 
-        l.append({&dtorCalled});
+        l.Append({&dtorCalled});
 
-        ASSERT_EQ(l.size(), 1);
+        ASSERT_EQ(l.Size(), 1);
     }
 
     ASSERT_TRUE(dtorCalled);
@@ -212,22 +212,22 @@ TEST(LinkedListTest, CannotAllocate)
     null_memory_resource mr;
     LinkedList<int> l(&mr);
 
-    ASSERT_FALSE(l.append(42));
+    ASSERT_FALSE(l.Append(42));
 
-    ASSERT_EQ(l.size(), 0);
+    ASSERT_EQ(l.Size(), 0);
 }
 
 TEST(LinkedListTest, EnsureMoveAssignementOperatorDoesNotLeakOrLeavesTheCollectionInInconsitentState)
 {
     {
         LinkedList<int> l2;
-        l2.append(21);
+        l2.Append(21);
 
         LinkedList<int> ll;
         EXPECT_NO_THROW(ll = std::move(l2));
 
-        ASSERT_EQ(l2.size(), 0);
-        ASSERT_EQ(ll.size(), 1);
+        ASSERT_EQ(l2.Size(), 0);
+        ASSERT_EQ(ll.Size(), 1);
         ASSERT_EQ(21, *ll.begin());
     }
 
@@ -235,12 +235,12 @@ TEST(LinkedListTest, EnsureMoveAssignementOperatorDoesNotLeakOrLeavesTheCollecti
         LinkedList<int> l2;
 
         LinkedList<int> ll;
-        ll.append(21);
+        ll.Append(21);
 
         EXPECT_NO_THROW(ll = std::move(l2));
 
-        ASSERT_EQ(l2.size(), 1);
-        ASSERT_EQ(ll.size(), 0);
+        ASSERT_EQ(l2.Size(), 1);
+        ASSERT_EQ(ll.Size(), 0);
         ASSERT_EQ(21, *l2.begin());
     }
 
@@ -250,17 +250,17 @@ TEST(LinkedListTest, EnsureMoveAssignementOperatorDoesNotLeakOrLeavesTheCollecti
 
         EXPECT_NO_THROW(ll = std::move(l2));
 
-        ASSERT_EQ(l2.size(), 0);
-        ASSERT_EQ(ll.size(), 0);
+        ASSERT_EQ(l2.Size(), 0);
+        ASSERT_EQ(ll.Size(), 0);
     }
 }
 
 __declspec(noinline) void SwapWithContent(LinkedList<int>& ll)
 {
     LinkedList<int> l;
-    l.append(41);
-    l.append(43);
-    l.swap(ll);
+    l.Append(41);
+    l.Append(43);
+    l.Swap(ll);
 }
 
 TEST(LinkedListTest, SwapAll)
@@ -269,52 +269,52 @@ TEST(LinkedListTest, SwapAll)
         LinkedList<int> l;
 
         LinkedList<int> ll;
-        ll.append(21);
+        ll.Append(21);
 
-        ll.swap(l);
+        ll.Swap(l);
 
-        ASSERT_EQ(l.size(), 1);
-        ASSERT_EQ(ll.size(), 0);
+        ASSERT_EQ(l.Size(), 1);
+        ASSERT_EQ(ll.Size(), 0);
     }
     {
         LinkedList<int> l;
 
         LinkedList<int> ll;
-        ll.append(21);
+        ll.Append(21);
 
-        l.swap(ll);
+        l.Swap(ll);
 
-        ASSERT_EQ(l.size(), 1);
-        ASSERT_EQ(ll.size(), 0);
+        ASSERT_EQ(l.Size(), 1);
+        ASSERT_EQ(ll.Size(), 0);
     }
     {
         LinkedList<int> l;
-        l.append(1);
-        l.append(2);
-        l.append(3);
+        l.Append(1);
+        l.Append(2);
+        l.Append(3);
 
         LinkedList<int> ll;
-        ll.append(21);
+        ll.Append(21);
 
-        ll.swap(l);
-        ll.swap(l);
-        ASSERT_EQ(ll.size(), 1);
-        ASSERT_EQ(l.size(), 3);
+        ll.Swap(l);
+        ll.Swap(l);
+        ASSERT_EQ(ll.Size(), 1);
+        ASSERT_EQ(l.Size(), 3);
     }
 
     {
         LinkedList<int> l;
         SwapWithContent(l);
 
-        ASSERT_EQ(l.size(), 2);
+        ASSERT_EQ(l.Size(), 2);
 
-        l.append(21);
-        ASSERT_EQ(l.size(), 3);
+        l.Append(21);
+        ASSERT_EQ(l.Size(), 3);
     }
     {
         LinkedList<double> l;
         LinkedList<double> ll;
 
-        EXPECT_NO_THROW(l.swap(ll));
+        EXPECT_NO_THROW(l.Swap(ll));
     }
 }
