@@ -34,6 +34,7 @@ namespace Datadog.Trace
 
         private int _isFinished;
         private bool _baseServiceTagSet;
+        private Lazy<ConcurrentDictionary<string, object>> _metaStruct = new Lazy<ConcurrentDictionary<string, object>>(() => new ConcurrentDictionary<string, object>());
 
         internal Span(SpanContext context, DateTimeOffset? start)
             : this(context, start, null)
@@ -121,7 +122,7 @@ namespace Datadog.Trace
 
         internal ITags Tags { get; set; }
 
-        internal ConcurrentDictionary<string, object> MetaStruct { get; set; } = new();
+        internal ConcurrentDictionary<string, object> MetaStruct => _metaStruct.Value;
 
         internal SpanContext Context { get; }
 

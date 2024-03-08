@@ -201,26 +201,11 @@ namespace Datadog.Trace.Agent.MessagePack
             return offset - originalOffset;
         }
 
-        private void WriteMetaStruct(ref byte[] bytes, ref int offset, Dictionary<string, byte[]> metaStruct)
-        {
-            if (metaStruct != null && metaStruct.Count > 0)
-            {
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaStructBytes);
-                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, metaStruct.Count);
-
-                foreach (var item in metaStruct)
-                {
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringEncoding.UTF8.GetBytes(item.Key));
-                    offset += MessagePackBinary.WriteBytes(ref bytes, offset, item.Value);
-                }
-            }
-        }
-
         private void WriteMetaStruct(ref byte[] bytes, ref int offset, IDictionary<string, object> metaStruct)
         {
-            if (metaStruct != null && metaStruct.Count > 0)
+            if (metaStruct?.Count > 0)
             {
-                Dictionary<string, byte[]> data = new();
+                var data = new Dictionary<string, byte[]>();
 
                 // Since ConcurrentDictionary does not guarantee the order of the keys, we need to order them
                 // to make serialization deterministic.
@@ -249,7 +234,19 @@ namespace Datadog.Trace.Agent.MessagePack
                     data[key] = newBuffer;
                 }
 
-                WriteMetaStruct(ref bytes, ref offset, data);
+                WriteMetaStructAux(ref bytes, ref offset, data);
+            }
+        }
+
+        private void WriteMetaStructAux(ref byte[] bytes, ref int offset, Dictionary<string, byte[]> metaStruct)
+        {
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaStructBytes);
+            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, metaStruct.Count);
+
+            foreach (var item in metaStruct)
+            {
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringEncoding.UTF8.GetBytes(item.Key));
+                offset += MessagePackBinary.WriteBytes(ref bytes, offset, item.Value);
             }
         }
 
