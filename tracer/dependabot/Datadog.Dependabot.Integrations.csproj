@@ -258,13 +258,13 @@
 
     <!-- Integration: xunit.execution.desktop -->
     <!-- Assembly: xunit.execution.desktop -->
-    <!-- Latest package https://www.nuget.org/packages/xunit/2.7.0 -->
-    <PackageReference Include="xunit" Version="2.7.0" />
+    <!-- Latest package https://www.nuget.org/packages/xunit/2.6.6 -->
+    <PackageReference Include="xunit" Version="2.6.6" />
 
     <!-- Integration: xunit.execution.dotnet -->
     <!-- Assembly: xunit.execution.dotnet -->
-    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.7.0 -->
-    <PackageReference Include="xunit.extensibility.execution" Version="2.7.0" />
+    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.6.6 -->
+    <PackageReference Include="xunit.extensibility.execution" Version="2.6.6" />
 
     <!-- Integration: Microsoft.AspNetCore.Authentication.Abstractions -->
     <!-- Assembly: Microsoft.AspNetCore.Authentication.Abstractions -->
