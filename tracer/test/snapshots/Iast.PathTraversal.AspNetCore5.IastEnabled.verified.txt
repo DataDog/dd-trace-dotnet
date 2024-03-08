@@ -26,7 +26,7 @@
   "vulnerabilities": [
     {
       "type": "PATH_TRAVERSAL",
-      "hash": -1927798418,
+      "hash": 2114125236,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",

@@ -219,7 +219,7 @@ static thread_local std::unordered_map<void *, bool> locked;
     VersionInfo GetVersionInfo(const std::string& version)
     {
         auto v = version;
-        if (StartsWith(v, "V"))
+        if (StartsWith(v, "V") || StartsWith(v, "v"))
         {
             v = v.substr(1);
         }
