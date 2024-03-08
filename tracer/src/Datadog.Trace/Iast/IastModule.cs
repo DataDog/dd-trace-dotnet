@@ -22,7 +22,7 @@ using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast;
 
-internal static class IastModule
+internal static partial class IastModule
 {
     public const string HeaderInjectionEvidenceSeparator = ": ";
     private const string OperationNameStackTraceLeak = "stacktrace_leak";
@@ -42,6 +42,7 @@ internal static class IastModule
     private const string OperationNameXPathInjection = "xpath_injection";
     private const string OperationNameReflectionInjection = "reflection_injection";
     private const string OperationInsecureAuthProtocol = "insecure_auth_protocol";
+    private const string OperationNameXss = "xss";
     private const string ReferrerHeaderName = "Referrer";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
@@ -435,6 +436,25 @@ internal static class IastModule
         }
 
         return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakHash, OperationNameWeakHash);
+    }
+
+    public static IastModuleResponse OnXss(string? text)
+    {
+        try
+        {
+            if (!Iast.Instance.Settings.Enabled || string.IsNullOrEmpty(text))
+            {
+                return IastModuleResponse.Empty;
+            }
+
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.Xss);
+            return GetScope(text!, IntegrationId.Xss, VulnerabilityTypeName.Xss, OperationNameXss, Always);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for XSS.");
+            return IastModuleResponse.Empty;
+        }
     }
 
     internal static void OnExecutedPropagationTelemetry()
