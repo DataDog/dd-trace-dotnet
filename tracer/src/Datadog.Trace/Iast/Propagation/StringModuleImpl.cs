@@ -61,28 +61,20 @@ internal static class StringModuleImpl
             }
 
             var newRanges1 = taintedTarget != null ? Ranges.ForRemove(index, target.Length, taintedTarget.Ranges) : null;
+            var newRanges1Length = newRanges1?.Length ?? 0;
+
             var newRanges2 = taintedValue?.Ranges;
+            var newRanges2Length = newRanges2?.Length ?? 0;
+
             var newRanges3 = taintedTarget != null ? Ranges.ForRemove(0, index, taintedTarget.Ranges) : null;
+            var newRanges3Length = newRanges3?.Length ?? 0;
 
-            var rangesTotal = (newRanges1?.Length ?? 0) + (newRanges2?.Length ?? 0) + (newRanges3?.Length ?? 0);
-            var rangesResult = new Range[rangesTotal];
+            var ranges = new RangeList(newRanges1Length + newRanges2Length + newRanges3Length);
+            ranges.Add(newRanges1, newRanges1Length);
+            ranges.Add(newRanges2, newRanges2Length);
+            ranges.Add(newRanges3, newRanges3Length);
 
-            if (newRanges1 != null)
-            {
-                Ranges.CopyShift(newRanges1, rangesResult, 0, 0);
-            }
-
-            if (newRanges2 != null)
-            {
-                Ranges.CopyShift(newRanges2, rangesResult, (newRanges1?.Length ?? 0), index);
-            }
-
-            if (newRanges3 != null)
-            {
-                Ranges.CopyShift(newRanges3, rangesResult, (newRanges1?.Length ?? 0) + (newRanges2?.Length ?? 0), index + value.Length);
-            }
-
-            taintedObjects.Taint(result, rangesResult);
+            taintedObjects.Taint(result, ranges.ToArray());
         }
         catch (Exception err)
         {
@@ -450,11 +442,11 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
+            var taintedObjects = iastContext.GetTaintedObjects();
 
-            Range[]? ranges = null;
-            int length = 0;
-            for (int parameterIndex = 0; parameterIndex < parameters.ParamCount; parameterIndex++)
+            RangeList? ranges = null;
+
+            for (var parameterIndex = 0; parameterIndex < parameters.ParamCount; parameterIndex++)
             {
                 var currentParameter = parameters[parameterIndex];
                 if (string.IsNullOrEmpty(currentParameter))
@@ -463,33 +455,24 @@ internal static class StringModuleImpl
                 }
 
                 var parameterTainted = PropagationModuleImpl.GetTainted(taintedObjects, currentParameter);
-                if (parameterTainted != null)
+                if (parameterTainted == null)
                 {
-                    if (ranges == null)
-                    {
-                        if (length == 0)
-                        {
-                            ranges = parameterTainted.Ranges;
-                        }
-                        else
-                        {
-                            ranges = new Range[parameterTainted!.Ranges!.Length];
-                            Ranges.CopyShift(parameterTainted!.Ranges, ranges, 0, length);
-                        }
-
-                        length += currentParameter!.Length;
-                        continue;
-                    }
-
-                    ranges = Ranges.MergeRanges(length, ranges, parameterTainted.Ranges);
+                    continue;
                 }
 
-                length += currentParameter!.Length;
+                ranges ??= new RangeList(parameterTainted.Ranges.Length);
+                ranges.Add(parameterTainted.Ranges);
+
+                // Check if the ranges array is maxed out
+                if (ranges.IsFull())
+                {
+                    break;
+                }
             }
 
             if (ranges != null)
             {
-                taintedObjects.Taint(result, ranges);
+                taintedObjects.Taint(result, ranges.ToArray());
             }
         }
         catch (Exception err)
@@ -520,10 +503,9 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
+            var taintedObjects = iastContext.GetTaintedObjects();
 
-            Range[]? ranges = null;
-            int length = 0;
+            RangeList? ranges = null;
             foreach (var parameterAsObject in parameters)
             {
                 var currentParameter = parameterAsObject?.ToString();
@@ -532,34 +514,25 @@ internal static class StringModuleImpl
                     continue;
                 }
 
-                var taintedParameter = PropagationModuleImpl.GetTainted(taintedObjects, currentParameter);
-                if (taintedParameter != null)
+                var parameterTainted = PropagationModuleImpl.GetTainted(taintedObjects, currentParameter);
+                if (parameterTainted == null)
                 {
-                    if (ranges == null)
-                    {
-                        if (length == 0)
-                        {
-                            ranges = taintedParameter.Ranges;
-                        }
-                        else
-                        {
-                            ranges = new Range[taintedParameter!.Ranges!.Length];
-                            Ranges.CopyShift(taintedParameter!.Ranges, ranges, 0, length);
-                        }
-
-                        length += currentParameter!.Length;
-                        continue;
-                    }
-
-                    ranges = Ranges.MergeRanges(length, ranges, taintedParameter.Ranges);
+                    continue;
                 }
 
-                length += currentParameter!.Length;
+                ranges ??= new RangeList(parameterTainted.Ranges.Length);
+                ranges.Add(parameterTainted.Ranges);
+
+                // Check if the ranges array is maxed out
+                if (ranges.IsFull())
+                {
+                    break;
+                }
             }
 
             if (ranges != null)
             {
-                taintedObjects.Taint(result, ranges);
+                taintedObjects.Taint(result, ranges.ToArray());
             }
         }
         catch (Exception err)

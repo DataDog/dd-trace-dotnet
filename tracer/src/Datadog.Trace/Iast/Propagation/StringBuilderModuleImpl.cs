@@ -151,32 +151,24 @@ internal static class StringBuilderModuleImpl
             }
 
             var newRangesLeft = taintedTarget != null ? Ranges.ForRemove(index, target.Length, taintedTarget.Ranges) : null;
+            var newRangesLeftLength = newRangesLeft?.Length ?? 0;
+
             var newRangesRight = taintedTarget != null ? Ranges.ForRemove(0, index, taintedTarget.Ranges) : null;
-            var rangesTotal = (newRangesLeft?.Length ?? 0) + (valueToInsertRanges?.Length ?? 0) + (newRangesRight?.Length ?? 0);
-            var rangesResult = new Range[rangesTotal];
+            var newRangesRightLength = newRangesRight?.Length ?? 0;
 
-            if (newRangesLeft != null)
-            {
-                Ranges.CopyShift(newRangesLeft, rangesResult, 0, 0);
-            }
-
-            if (valueToInsertRanges != null)
-            {
-                Ranges.CopyShift(valueToInsertRanges, rangesResult, (newRangesLeft?.Length ?? 0), index);
-            }
-
-            if (newRangesRight != null)
-            {
-                Ranges.CopyShift(newRangesRight, rangesResult, (newRangesLeft?.Length ?? 0) + (valueToInsertRanges?.Length ?? 0), index + valueLenght);
-            }
+            var valueToInsertRangesLength = valueToInsertRanges?.Length ?? 0;
+            var rangesResult = new RangeList(newRangesLeftLength + newRangesRightLength + valueToInsertRangesLength);
+            rangesResult.Add(newRangesLeft);
+            rangesResult.Add(valueToInsertRanges);
+            rangesResult.Add(newRangesRight);
 
             if (taintedTarget is null)
             {
-                taintedObjects.Taint(target, rangesResult);
+                taintedObjects.Taint(target, rangesResult.ToArray());
             }
             else
             {
-                taintedTarget.Ranges = rangesResult;
+                taintedTarget.Ranges = rangesResult.ToArray();
             }
         }
         catch (Exception error)
