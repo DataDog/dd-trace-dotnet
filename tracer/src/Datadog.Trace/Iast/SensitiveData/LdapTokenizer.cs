@@ -27,8 +27,11 @@ internal class LdapTokenizer : ITokenizer
         _ldapRegex = new Regex(_ldapPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline, timeout);
     }
 
-    public List<Range> GetTokens(string value, IntegrationId? integrationId = null)
+    public List<Range> GetTokens(Evidence evidence, IntegrationId? integrationId = null)
     {
+        var value = evidence.Value;
+        if (value is null) { return []; }
+
         var res = new List<Range>(5);
         foreach (Match? match in _ldapRegex.Matches(value))
         {

@@ -55,11 +55,13 @@ public class HashTests
         Assert.Equal(hash, IastUtils.GetHashCode(value));
     }
 
-    [Fact]
-    public void GivenAKownVulnerability_WhenCalculatedHash_ValueIsEspected()
+    [Theory]
+    [InlineData(VulnerabilityTypeName.WeakHash, "AspNetCoreRateLimit.RateLimitProcessor", "BuildCounterKey", 890383720)]
+    [InlineData(VulnerabilityTypeName.Xss, "AspNetCore.Views_Iast_ReflectedXss+<<ExecuteAsync>b__8_1>d", "MoveNext", -1004380463)]
+    public void GivenAKownVulnerability_WhenCalculatedHash_ValueIsExpected(string vulnName, string path, string method, int expectedHash)
     {
-        var vulnerability = new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("AspNetCoreRateLimit.RateLimitProcessor", "BuildCounterKey", null, 849303611103961300), new Evidence("SHA1"));
+        var vulnerability = new Vulnerability(vulnName, new Location(path, method, null, 849303611103961300), new Evidence("Evidence"));
         var hashCode = vulnerability.GetHashCode();
-        Assert.Equal(890383720, hashCode);
+        Assert.Equal(expectedHash, hashCode);
     }
 }

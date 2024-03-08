@@ -231,6 +231,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}"
 	ProjectSection(SolutionItems) = preProject
 		tracer\build\PackageVersionsGeneratorDefinitions.json = tracer\build\PackageVersionsGeneratorDefinitions.json
+		tracer\build\supported_versions.json = tracer\build\supported_versions.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "artifacts", "artifacts", "{CC53E5C5-9D3E-4AD9-A9CA-D2190463EB5B}"
@@ -563,7 +564,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.ILogger.Exten
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Yarp.DistributedTracing", "tracer\test\test-applications\integrations\Samples.Yarp.DistributedTracing\Samples.Yarp.DistributedTracing.csproj", "{E10243AE-34FC-47B5-B898-B5203C36920C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.MSTestTests2", "tracer\test\test-applications\integrations\Samples.MSTestTests2\Samples.MSTestTests2.csproj", "{0F1D9FB5-4415-40F1-B7B0-6DD5A3BAB0C4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MSTestTests2", "tracer\test\test-applications\integrations\Samples.MSTestTests2\Samples.MSTestTests2.csproj", "{0F1D9FB5-4415-40F1-B7B0-6DD5A3BAB0C4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

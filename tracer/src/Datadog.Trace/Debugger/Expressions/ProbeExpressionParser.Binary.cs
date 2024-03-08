@@ -14,7 +14,7 @@ internal partial class ProbeExpressionParser<T>
 {
     private Expression NotEqual(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
-        return BinaryOperation(reader, parameters, itParameter, "==");
+        return BinaryOperation(reader, parameters, itParameter, "!=");
     }
 
     private Expression Equal(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)

@@ -159,7 +159,7 @@ internal partial class ProbeExpressionParser<T>
                                     }
 
                                 case "!=":
-                                case "neq":
+                                case "ne":
                                     {
                                         return NotEqual(reader, parameters, itParameter);
                                     }

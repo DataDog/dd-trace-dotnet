@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Policy;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast.Telemetry;
@@ -479,6 +480,51 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastReflectedXssRequest()
+    {
+        (Regex RegexPattern, string Replacement) pathScrubber = (new Regex("\"path\": \"AspNetCore[^\\.]+\\."), "\"path\": \"AspNetCore.");
+        (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": -953468592,"), "\"hash\": -623616875,");
+
+        var filename = GetFileName("ReflectedXss");
+        var url = "/Iast/ReflectedXss?param=<b>RawValue</b>";
+        IncludeAllHttpSpans = true;
+        var spans = await SendRequestsAsync(_iisFixture.Agent, 2, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        settings.AddRegexScrubber(pathScrubber);
+        settings.AddRegexScrubber(hashScrubber);
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastReflectedXssEscapedRequest()
+    {
+        var filename = GetFileName("ReflectedXssEscaped");
+        var url = "/Iast/ReflectedXssEscaped?param=<b>RawValue</b>";
+        IncludeAllHttpSpans = true;
+        var spans = await SendRequestsAsync(_iisFixture.Agent, 2, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
     }
 
     protected async Task TestStrictTransportSecurityHeaderMissingVulnerability(string test, string url)
