@@ -196,7 +196,10 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += WriteTags(ref bytes, offset, in spanModel, tagProcessors);
             offset += WriteMetrics(ref bytes, offset, in spanModel, tagProcessors);
 
-            WriteMetaStruct(ref bytes, ref offset, span.MetaStruct);
+            if (span.IsMetaStructCreated)
+            {
+                WriteMetaStruct(ref bytes, ref offset, span.MetaStruct);
+            }
 
             return offset - originalOffset;
         }

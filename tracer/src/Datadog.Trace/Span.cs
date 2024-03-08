@@ -123,6 +123,8 @@ namespace Datadog.Trace
 
         internal ConcurrentDictionary<string, object> MetaStruct => _metaStruct.Value;
 
+        internal bool IsMetaStructCreated => _metaStruct.IsValueCreated;
+
         internal SpanContext Context { get; }
 
         internal DateTimeOffset StartTime { get; private set; }
