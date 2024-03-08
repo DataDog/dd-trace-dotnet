@@ -124,7 +124,6 @@ src/Datadog.Trace/ContinuousProfiler/IProfilerStatus.cs
 src/Datadog.Trace/ContinuousProfiler/NativeInterop.cs
 src/Datadog.Trace/ContinuousProfiler/Profiler.cs
 src/Datadog.Trace/ContinuousProfiler/ProfilerStatus.cs
-src/Datadog.Trace/DatabaseMonitoring/DatabaseMonitoringPropagator.cs
 src/Datadog.Trace/DataStreamsMonitoring/CheckpointKind.cs
 src/Datadog.Trace/Debugger/ILineProbeResolver.cs
 src/Datadog.Trace/Debugger/LiveDebugger.cs
