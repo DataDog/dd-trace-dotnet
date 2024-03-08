@@ -28,7 +28,7 @@ namespace Datadog.Trace.Agent.MessagePack
         // this class so that's fine.
 
         // top-level span fields
-        private static readonly byte[] _metaStructBytes = StringEncoding.UTF8.GetBytes("meta_struct");
+        private readonly byte[] _metaStructBytes = StringEncoding.UTF8.GetBytes("meta_struct");
         private readonly byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
         private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
         private readonly byte[] _nameBytes = StringEncoding.UTF8.GetBytes("name");
