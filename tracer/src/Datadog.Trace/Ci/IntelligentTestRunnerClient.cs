@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Environment;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -52,7 +53,7 @@ internal class IntelligentTestRunnerClient
 
     private readonly string _id;
     private readonly CIVisibilitySettings _settings;
-    private readonly string _workingDirectory;
+    private readonly string? _workingDirectory;
     private readonly string _environment;
     private readonly string _serviceName;
     private readonly Dictionary<string, string>? _customConfigurations;
@@ -66,7 +67,7 @@ internal class IntelligentTestRunnerClient
     private readonly Task<string> _getBranchNameTask;
     private readonly Task<string> _getShaTask;
 
-    public IntelligentTestRunnerClient(string workingDirectory, CIVisibilitySettings? settings = null)
+    public IntelligentTestRunnerClient(string? workingDirectory, CIVisibilitySettings? settings = null)
     {
         _id = RandomIdGenerator.Shared.NextSpanId().ToString(CultureInfo.InvariantCulture);
         _settings = settings ?? CIVisibility.Settings;
@@ -817,7 +818,7 @@ internal class IntelligentTestRunnerClient
                 // to handle this edge case, we create a temporal folder inside the current folder.
 
                 Log.Warning("ITR: 'git pack-objects...' returned a cross-device error, retrying using a local temporal folder.");
-                temporaryFolder = Path.Combine(Environment.CurrentDirectory, ".git_tmp");
+                temporaryFolder = Path.Combine(System.Environment.CurrentDirectory, ".git_tmp");
                 if (!Directory.Exists(temporaryFolder))
                 {
                     Directory.CreateDirectory(temporaryFolder);

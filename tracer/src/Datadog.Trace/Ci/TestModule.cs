@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Environment;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
@@ -145,7 +146,7 @@ public sealed class TestModule
             else
             {
                 Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
-                _fakeSession = TestSession.InternalGetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, null, startDate, false);
+                _fakeSession = TestSession.InternalGetOrCreate(System.Environment.CommandLine, System.Environment.CurrentDirectory, null, startDate, false);
                 if (_fakeSession.Tags is { } fakeSessionTags)
                 {
                     tags.SessionId = fakeSessionTags.SessionId;

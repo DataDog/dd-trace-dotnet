@@ -107,7 +107,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
                         span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
                         span.Type = SpanTypes.Test;
                         span.ResourceName = $"{fileName}/{jobItem.Key}";
-                        CIEnvironmentValues.Instance.DecorateSpan(span);
+                        Ci.Environment.CIEnvironmentValues.Instance.DecorateSpan(span);
 
                         span.SetTag(TestTags.Name, jobItem.Key);
                         span.SetTag(TestTags.Type, TestTags.TypeBenchmark);

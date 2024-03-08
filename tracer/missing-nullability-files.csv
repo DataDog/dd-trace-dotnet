@@ -78,7 +78,6 @@ src/Datadog.Trace/AppSec/SpanExtensions.cs
 src/Datadog.Trace/AspNet/MimeTypes.cs
 src/Datadog.Trace/AspNet/SharedItems.cs
 src/Datadog.Trace/AspNet/TracingHttpModule.cs
-src/Datadog.Trace/Ci/CIEnvironmentValues.cs
 src/Datadog.Trace/Ci/CITracerManager.cs
 src/Datadog.Trace/Ci/CITracerManagerFactory.cs
 src/Datadog.Trace/Ci/CodeOwners.cs

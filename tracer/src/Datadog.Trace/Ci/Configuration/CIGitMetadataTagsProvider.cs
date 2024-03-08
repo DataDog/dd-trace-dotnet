@@ -5,6 +5,7 @@
 
 #nullable enable
 using System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Ci.Environment;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Ci.Configuration;

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Environment;
 using Datadog.Trace.Ci.Tags;
 using FluentAssertions;
 using Newtonsoft.Json;
@@ -31,13 +32,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public static IEnumerable<object[]> GetJsonItems()
         {
             // Check if the CI\Data folder exists.
-            string jsonFolder = DataHelpers.GetCiDataDirectory();
+            var jsonFolder = DataHelpers.GetCiDataDirectory();
 
             // JSON file path
-            foreach (string filePath in Directory.EnumerateFiles(jsonFolder, "*.json", SearchOption.TopDirectoryOnly))
+            foreach (var filePath in Directory.EnumerateFiles(jsonFolder, "*.json", SearchOption.TopDirectoryOnly))
             {
-                string name = Path.GetFileNameWithoutExtension(filePath);
-                string content = File.ReadAllText(filePath);
+                var name = Path.GetFileNameWithoutExtension(filePath);
+                var content = File.ReadAllText(filePath);
                 var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, string>[][]>(content);
                 yield return new object[] { new JsonDataItem(name, jsonObject) };
             }
@@ -78,23 +79,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [MemberData(nameof(GetJsonItems))]
         public void CheckEnvironmentVariables(JsonDataItem jsonData)
         {
-            SpanContext context = new SpanContext(null, null, null);
-            DateTimeOffset time = DateTimeOffset.UtcNow;
-            foreach (Dictionary<string, string>[] testItem in jsonData.Data)
+            var context = new SpanContext(null, null, null);
+            var time = DateTimeOffset.UtcNow;
+            foreach (var testItem in jsonData.Data)
             {
-                Dictionary<string, string> envData = testItem[0];
-                Dictionary<string, string> spanData = testItem[1];
+                var envData = testItem[0];
+                var spanData = testItem[1];
 
-                Span span = new Span(context, time);
+                var span = new Span(context, time);
+                CIEnvironmentValues.Create(envData).DecorateSpan(span);
 
-                SetEnvironmentFromDictionary(envData);
-                CIEnvironmentValues.Instance.ReloadEnvironmentData();
-                CIEnvironmentValues.Instance.DecorateSpan(span);
-                ResetEnvironmentFromDictionary(envData);
-
-                foreach (KeyValuePair<string, string> spanDataItem in spanData)
+                foreach (var spanDataItem in spanData)
                 {
-                    string value = span.Tags.GetTag(spanDataItem.Key);
+                    var value = span.Tags.GetTag(spanDataItem.Key);
 
                     /* Due date parsing and DateTimeOffset.ToString() we need to remove
                      * The fraction of a second part from the actual value.
@@ -134,32 +131,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     Assert.Equal(spanDataItem.Value, value);
                 }
-            }
-        }
-
-        internal void SetEnvironmentFromDictionary(IDictionary values)
-        {
-            foreach (DictionaryEntry item in _originalEnvVars)
-            {
-                Environment.SetEnvironmentVariable(item.Key.ToString(), null);
-            }
-
-            foreach (DictionaryEntry item in values)
-            {
-                Environment.SetEnvironmentVariable(item.Key.ToString(), item.Value.ToString());
-            }
-        }
-
-        internal void ResetEnvironmentFromDictionary(IDictionary values)
-        {
-            foreach (DictionaryEntry item in values)
-            {
-                Environment.SetEnvironmentVariable(item.Key.ToString(), null);
-            }
-
-            foreach (DictionaryEntry item in _originalEnvVars)
-            {
-                Environment.SetEnvironmentVariable(item.Key.ToString(), item.Value.ToString());
             }
         }
 

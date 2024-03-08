@@ -132,14 +132,15 @@ namespace Datadog.Trace.Tools.Runner
                 Log.Debug("RunCiCommand: Uploading repository changes.");
 
                 // Change the .git search folder to the CurrentDirectory or WorkingFolder
-                CIEnvironmentValues.Instance.GitSearchFolder = Environment.CurrentDirectory;
-                if (string.IsNullOrEmpty(CIEnvironmentValues.Instance.WorkspacePath))
+                var ciValues = Ci.Environment.CIEnvironmentValues.Instance;
+                ciValues.GitSearchFolder = Environment.CurrentDirectory;
+                if (string.IsNullOrEmpty(ciValues.WorkspacePath))
                 {
                     // In case we cannot get the WorkspacePath we fallback to the default configuration.
-                    CIEnvironmentValues.Instance.GitSearchFolder = null;
+                    ciValues.GitSearchFolder = null;
                 }
 
-                var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings));
+                var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(ciValues.WorkspacePath, ciVisibilitySettings));
                 if (ciVisibilitySettings.GitUploadEnabled != false || ciVisibilitySettings.IntelligentTestRunnerEnabled)
                 {
                     // If we are in git upload only then we can defer the await until the child command exits.
