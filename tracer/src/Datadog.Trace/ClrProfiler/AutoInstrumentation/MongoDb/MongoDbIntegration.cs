@@ -49,57 +49,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 return null;
             }
 
-            string? collectionName = null;
-            string? query = null;
-            string? resourceName = null;
-            string? databaseName = null;
+            var databaseName = GetDatabaseName(wireProtocol);
 
-            if (wireProtocol.TryDuckCast<IWireProtocolWithDatabaseNamespaceStruct>(out var protocolWithDatabaseNamespace))
+            if (!TryGetQueryDetails(wireProtocol, databaseName, out string? resourceName, out string? collectionName, out string? query))
             {
-                databaseName = protocolWithDatabaseNamespace.DatabaseNamespace?.DatabaseName;
+                // not a query we want to trace
+                return null;
             }
 
-            if (wireProtocol.TryDuckCast<IWireProtocolWithCommandStruct>(out var protocolWithCommand)
-                && protocolWithCommand.Command != null)
-            {
-                try
-                {
-                    // the name of the first element in the command BsonDocument will be the operation type (insert, delete, find, etc)
-                    // and its value is the collection name
-                    var firstElement = protocolWithCommand.Command.GetElement(0);
-                    var mongoOperationName = firstElement.Name;
-
-                    if (mongoOperationName is "isMaster" or "hello")
-                    {
-                        return null;
-                    }
-
-                    resourceName = $"{mongoOperationName ?? "operation"} {databaseName ?? "database"}";
-                    collectionName = firstElement.Value?.ToString();
-                    query = BsonSerializationHelper.ToShortString(protocolWithCommand.Command.Instance);
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Unable to access IWireProtocol.Command properties.");
-                }
-            }
-
-            string? host = null;
-            string? port = null;
-
-            if (connection.Instance is not null)
-            {
-                if (connection.EndPoint is IPEndPoint ipEndPoint)
-                {
-                    host = ipEndPoint.Address.ToString();
-                    port = ipEndPoint.Port.ToString();
-                }
-                else if (connection.EndPoint is DnsEndPoint dnsEndPoint)
-                {
-                    host = dnsEndPoint.Host;
-                    port = dnsEndPoint.Port.ToString();
-                }
-            }
+            TryGetHostAndPort(connection, out var host, out var port);
 
             var operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
             var serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
@@ -129,6 +87,73 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             }
 
             return scope;
+
+            static string? GetDatabaseName(object wireProtocol)
+            {
+                if (wireProtocol.TryDuckCast<IWireProtocolWithDatabaseNamespaceStruct>(out var protocolWithDatabaseNamespace)
+                 && protocolWithDatabaseNamespace.DatabaseNamespace is not null
+                 && protocolWithDatabaseNamespace.DatabaseNamespace.TryDuckCast<DatabaseNamespaceStruct>(out var databaseNamespace))
+                {
+                    return databaseNamespace.DatabaseName;
+                }
+
+                return null;
+            }
+
+            static void TryGetHostAndPort(TConnection connection, out string? host, out string? port)
+            {
+                host = null;
+                port = null;
+
+                if (connection.Instance is not null)
+                {
+                    if (connection.EndPoint is IPEndPoint ipEndPoint)
+                    {
+                        host = ipEndPoint.Address.ToString();
+                        port = ipEndPoint.Port.ToString();
+                    }
+                    else if (connection.EndPoint is DnsEndPoint dnsEndPoint)
+                    {
+                        host = dnsEndPoint.Host;
+                        port = dnsEndPoint.Port.ToString();
+                    }
+                }
+            }
+        }
+
+        private static bool TryGetQueryDetails(object wireProtocol, string? databaseName, out string? resourceName, out string? collectionName, out string? query)
+        {
+            collectionName = null;
+            query = null;
+            resourceName = null;
+
+            if (wireProtocol.TryDuckCast<IWireProtocolWithCommandStruct>(out var protocolWithCommand)
+             && protocolWithCommand.Command != null
+             && protocolWithCommand.Command.TryDuckCast<IBsonDocumentProxy>(out var bsonDocument))
+            {
+                try
+                {
+                    // the name of the first element in the command BsonDocument will be the operation type (insert, delete, find, etc)
+                    // and its value is the collection name
+                    var firstElement = bsonDocument.GetElement(0);
+                    var mongoOperationName = firstElement.Name;
+
+                    if (mongoOperationName is "isMaster" or "hello")
+                    {
+                        return false;
+                    }
+
+                    resourceName = $"{mongoOperationName ?? "operation"} {databaseName ?? "database"}";
+                    collectionName = firstElement.Value?.ToString();
+                    query = BsonSerializationHelper.ToShortString(protocolWithCommand.Command);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Unable to access IWireProtocol.Command properties.");
+                }
+            }
+
+            return true;
         }
 
         private static Scope? GetActiveMongoDbScope(Tracer tracer)
