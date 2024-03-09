@@ -40,17 +40,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TMessageRpc>(TTarget instance, ref TMessageRpc rpc)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !Tracer.Instance.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
+            var tracer = Tracer.Instance;
+            if (!tracer.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !tracer.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
             {
                 return CallTargetState.GetDefault();
             }
 
             // First, capture the active scope
-            var activeScope = Tracer.Instance.InternalActiveScope;
+            var activeScope = tracer.InternalActiveScope;
             var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span?.Context;
 
             var rpcProxy = rpc.DuckCast<MessageRpcStruct>();
-            var useWcfWebHttpResourceNames = Tracer.Instance.Settings.WcfWebHttpResourceNamesEnabled;
+            var useWcfWebHttpResourceNames = tracer.Settings.WcfWebHttpResourceNamesEnabled;
             var scope = WcfCommon.CreateScope(rpcProxy.Request, useWcfWebHttpResourceNames);
             if (scope is not null
                 && ((IDuckType?)rpcProxy.OperationContext.RequestContext)?.Instance is object requestContextInstance)
