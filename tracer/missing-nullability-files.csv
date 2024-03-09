@@ -609,16 +609,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartIntegratio
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartTags.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RabbitMQ/RabbitMQConstants.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/Common.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/AsyncMethodInvoker_InvokeBegin_Integration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/AsyncMethodInvoker_InvokeEnd_Integration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/ChannelHandlerIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/HttpRequestMessagePropertyStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/IMessage.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/IMessageHeaders.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/IOperationContextStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/IRequestContext.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/SyncMethodInvokerIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/TaskMethodInvokerIntegration.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/BeginMethodHandler.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/BeginMethodHandler`1.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/BeginMethodHandler`2.cs
