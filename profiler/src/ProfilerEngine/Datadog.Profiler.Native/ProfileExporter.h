@@ -26,7 +26,6 @@ class IAllocationsRecorder;
 class IProcessSamplesProvider;
 class IMetadataProvider;
 class IConfiguration;
-class ISsiManager;
 
 namespace libdatadog {
 class Exporter;
@@ -45,8 +44,7 @@ public:
         IEnabledProfilers* enabledProfilers,
         MetricsRegistry& metricsRegistry,
         IMetadataProvider* metadataProvider,
-        IAllocationsRecorder* allocationsRecorder,
-        ISsiManager* ssiManager);
+        IAllocationsRecorder* allocationsRecorder);
     ~ProfileExporter() override;
 
     bool Export() override;
@@ -133,7 +131,6 @@ private:
     IMetadataProvider* _metadataProvider;
     std::unique_ptr<libdatadog::Exporter> _exporter;
     IConfiguration* _configuration;
-    ISsiManager* _ssiManager;
 
 public: // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

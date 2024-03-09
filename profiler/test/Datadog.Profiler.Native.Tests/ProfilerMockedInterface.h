@@ -74,6 +74,7 @@ public:
     MOCK_METHOD(EnablementStatus, GetEnablementStatus, (), (const override));
     MOCK_METHOD(DeploymentMode, GetDeploymentMode, (), (const override));
     MOCK_METHOD(bool, IsEtwLoggingEnabled, (), (const override));
+    MOCK_METHOD(bool, IsSsiEnabled, (), (const override));
     MOCK_METHOD(bool, IsProfilerEnabled, (), (const override));
     MOCK_METHOD(int32_t, SsiShortLivedThreshold, (), (const override));
 };
@@ -164,8 +165,7 @@ public:
     {
         _deployment = DeploymentMode::Unknown;
         _duration = 0;
-        _heuristic = SkipProfileHeuristicType::Unknown;
-        _sentProfile = false;
+        _heuristic = SkipProfileHeuristicType::AllTriggered;
     }
 
     void ProcessStart(DeploymentMode deployment) override
@@ -173,19 +173,11 @@ public:
         _deployment = deployment;
     }
 
-    void ProcessEnd(uint64_t duration) override
+    void ProcessEnd(uint64_t duration, uint64_t sentProfiles, SkipProfileHeuristicType heuristics) override
     {
         _duration = duration;
-    }
-
-    void SentProfile() override
-    {
-        _sentProfile = true;
-    }
-
-    void SkippedProfile(SkipProfileHeuristicType heuristic) override
-    {
-        _heuristic = heuristic;
+        _sentProfiles = sentProfiles;
+        _heuristic = heuristics;
     }
 
 public:
@@ -204,16 +196,11 @@ public:
         return _heuristic;
     }
 
-    bool WasProfileSent() const
-    {
-        return _sentProfile;
-    }
-
 private:
     DeploymentMode _deployment;
     uint64_t _duration;
+    uint64_t _sentProfiles;
     SkipProfileHeuristicType _heuristic;
-    bool _sentProfile;
 };
 
 

@@ -32,24 +32,19 @@ public:
     // Inherited via ISsiManager
     void OnSpanCreated() override;
     bool IsSpanCreated() override;
-    bool IsShortLived() override;
+    bool IsLongLived() override;
+    bool IsProfilerEnabled() override;
     bool IsProfilerActivated() override;
 
     // send metrics
     void ProcessStart() override;
     void ProcessEnd() override;
-    bool ShouldSendProfile(const std::string& env, const std::string& serviceName, const std::string_view& runtimeId) override;
-
-private:
-    void LifetimeCallback();
 
 private:
     IConfiguration* _pConfiguration;
     IProfilerTelemetry* _pTelemetry;
     bool _hasSpan = false;
     bool _isSsiDeployed = false;
-    std::unique_ptr<std::thread> _lifetimeThread;
-    bool _isShortLived = true;
 
 #ifdef DD_TEST
 private:

@@ -6,11 +6,34 @@
 #include <cstdint>
 #include <string>
 
-enum class SkipProfileHeuristicType
+// This is a bits flag that represents the heuristics that were not triggered
+// For example:
+//   if
+//      - the process ends before the short lived threshold is reached AND
+//      - a span was created
+//   --> ShortLived
+//
+//   if
+//      - the process ends after the short lived threshold AND
+//      - no span was created
+//   --> NoSpan
+//
+//   if
+//      - the process ends before the short lived threshold is reached AND
+//      - no span was created
+//   --> NoSpan | ShortLived
+//
+//   if
+//      - the process ends after the short lived threshold AND
+//      - a span was created
+//   --> AllTriggered
+//
+enum SkipProfileHeuristicType
 {
-    Unknown = 0,
-    ShortLived = 1,
-    NoSpan = 2
+    AllTriggered = 0,
+    ShortLived   = 0x1,
+    NoSpan       = 0x2,
+    // TODO: add new heuristics here
 };
 
 enum class DeploymentMode
@@ -25,9 +48,7 @@ class IProfilerTelemetry
 public:
     // send metrics
     virtual void ProcessStart(DeploymentMode deployment) = 0;
-    virtual void ProcessEnd(uint64_t duration) = 0;
-    virtual void SentProfile() = 0;
-    virtual void SkippedProfile(SkipProfileHeuristicType heuristic) = 0;
+    virtual void ProcessEnd(uint64_t duration, uint64_t sentProfiles, SkipProfileHeuristicType heuristics) = 0;
 
     virtual ~IProfilerTelemetry() = default;
 };

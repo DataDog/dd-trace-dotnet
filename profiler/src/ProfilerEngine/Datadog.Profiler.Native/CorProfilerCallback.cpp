@@ -454,8 +454,7 @@ void CorProfilerCallback::InitializeServices()
         _pEnabledProfilers.get(),
         _metricsRegistry,
         _pMetadataProvider.get(),
-        _pAllocationsRecorder.get(),
-        _pSsiManager.get()
+        _pAllocationsRecorder.get()
         );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
@@ -1109,10 +1108,17 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Init global state:
     OpSysTools::InitHighPrecisionTimer();
 
+    // if the profiler is not enabled (either manually or via SSI), nothing is profiled
+    if (!_pSsiManager->IsProfilerEnabled())
+    {
+        Log::Info("Profiler is not enabled: nothing will be profiled.");
+        return S_OK;
+    }
+
     // create services without starting them
     InitializeServices();
 
-    // Start services only if the profiler is enabled
+    // Start services only if the profiler is activated
     // For SSI deployment, the services will be started later based on heuristics
     if (_pConfiguration->IsProfilerEnabled())
     {
@@ -1121,9 +1127,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         {
             Log::Error("One or multiple services failed to start. Stopping all services.");
             StopServices();
+
+            Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
+            return E_FAIL;
         }
-        Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
-        return E_FAIL;
     }
 
     // Configure which profiler callbacks we want to receive by setting the event mask:

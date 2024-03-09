@@ -20,10 +20,11 @@ TEST(SsiManagerTest, Should_NotSendProfile_When_ShortLived)
     ProfilerTelemetryForTest telemetry;
 
     SsiManager manager(configuration.get(), &telemetry);
-    manager.OnSpanCreated();
+    manager.ProcessStart();
     manager.SetLifetimeDuration(-1);  // short lived
+    manager.OnSpanCreated();
+    manager.ProcessEnd();
 
-    ASSERT_FALSE(manager.ShouldSendProfile("env", "service", "runtimeId"));
     ASSERT_EQ(telemetry.GetHeuristic(), SkipProfileHeuristicType::ShortLived);
 }
 
@@ -37,8 +38,9 @@ TEST(SsiManagerTest, Should_NotSendProfile_When_NoSpan)
     SsiManager manager(configuration.get(), &telemetry);
     manager.SetLifetimeDuration(1);  // long lived
     // but no span created
+    manager.ProcessStart();
+    manager.ProcessEnd();
 
-    ASSERT_FALSE(manager.ShouldSendProfile("env", "service", "runtimeId"));
     ASSERT_EQ(telemetry.GetHeuristic(), SkipProfileHeuristicType::NoSpan);
 }
 
@@ -155,6 +157,8 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndSpanOnly
     ProfilerTelemetryForTest telemetry;
 
     SsiManager manager(configuration.get(), &telemetry);
+    manager.SetLifetimeDuration(-1);  // short lived
+    manager.ProcessStart();
     manager.OnSpanCreated();
 
     ASSERT_EQ(manager.IsProfilerActivated(), false);

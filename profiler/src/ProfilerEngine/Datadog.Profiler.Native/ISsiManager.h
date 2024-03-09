@@ -12,13 +12,17 @@ class ISsiManager
 public:
     virtual void OnSpanCreated() = 0;
     virtual bool IsSpanCreated() = 0;
-    virtual bool IsShortLived() = 0;
+    virtual bool IsLongLived() = 0;
+
+    // enabled by configuration (DD_PROFILING_ENABLED=true) / SSI (DD_INJECTION_ENABLED contains "profiler")
+    virtual bool IsProfilerEnabled() = 0;
+
+    // activated manually (DD_PROFILING_ENABLED=true) or by heuristics (long lived + spans)
     virtual bool IsProfilerActivated() = 0;
 
     // send metrics
     virtual void ProcessStart() = 0;
     virtual void ProcessEnd() = 0;
-    virtual bool ShouldSendProfile(const std::string& env, const std::string& serviceName, const std::string_view& runtimeId) = 0;
 
     virtual ~ISsiManager() = default;
 };

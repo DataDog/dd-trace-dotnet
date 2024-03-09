@@ -34,6 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             var lines = File.ReadAllLines(logFile);
 
             lines.Should().ContainMatch("*ProcessStart(ssi)*");
+            lines.Should().ContainMatch("*ProcessEnd(ssi,*");
         }
 
         [TestAppFact("Samples.Computer01")]
@@ -53,12 +54,16 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             var lines = File.ReadAllLines(logFile);
 
             lines.Should().ContainMatch("*ProcessStart(manual)*");
+            lines.Should().ContainMatch("*ProcessEnd(manual,*");
         }
 
         [TestAppFact("Samples.Computer01")]
         public void CheckSkipWhenNoSpan(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
+
+            // deployed with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
 
             // no span are created and should be short lived too
 
@@ -71,7 +76,8 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             var lines = File.ReadAllLines(logFile);
 
-            lines.Should().ContainMatch("*SkippedProfile(*");
+            lines.Should().ContainMatch("*ProcessStart(ssi)*");
+            lines.Should().ContainMatch("*ProcessEnd(ssi,*ShortLived | NoSpan*");
         }
     }
 }

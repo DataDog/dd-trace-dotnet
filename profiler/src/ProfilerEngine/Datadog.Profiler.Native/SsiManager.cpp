@@ -34,36 +34,35 @@ bool SsiManager::IsSpanCreated()
     return _hasSpan;
 }
 
-bool SsiManager::IsShortLived()
+bool SsiManager::IsLongLived()
 {
 #ifdef DD_TEST
     if (_lifetimeDuration > 0)
     {
-        return false;
+        return true;
     }
     if (_lifetimeDuration == -1)
     {
-        return true;
+        return false;
     }
 #endif
 
-    return _isShortLived;
+    auto lifetime = OsSpecificApi::GetProcessLifetime();
+    return lifetime > _pConfiguration->SsiShortLivedThreshold();
 }
 
-// the profiler is activated either if:
+// the profiler is enabled if either:
 //     - the profiler is enabled in the configuration
-//  or - is deployed via SSI + runs for more than 30 seconds + has at least one span
-//
-// In the future, we might also be activated by SSI based on user's choice
-bool SsiManager::IsProfilerActivated()
+//  or - the profiler is deployed via SSI and DD_INJECTION_ENABLED contains "profiler"
+bool SsiManager::IsProfilerEnabled()
 {
     if (_pConfiguration->IsProfilerEnabled())
     {
         return true;
     }
 
-    // TODO: need to start a timer at the beginning of the process and use it if IsShortLived() is too expensive
-    if (_isSsiDeployed && !IsShortLived() && IsSpanCreated())
+    // in the future, users will be able to enable the profiler via SSI at agent installation time
+    if (_pConfiguration->IsSsiEnabled())
     {
         return true;
     }
@@ -72,63 +71,73 @@ bool SsiManager::IsProfilerActivated()
 }
 
 
-void SsiManager::LifetimeCallback()
+// the profiler is activated either if:
+//     - the profiler is enabled in the configuration
+//  or - is enabled via SSI + runs for more than 30 seconds + has at least one span
+bool SsiManager::IsProfilerActivated()
 {
-    std::chrono::nanoseconds shortLifetime = std::chrono::nanoseconds(_pConfiguration->SsiShortLivedThreshold() * 1000000000);
-    OpSysTools::Sleep(shortLifetime);
-    _isShortLived = false;
+    if (_pConfiguration->IsProfilerEnabled())
+    {
+        return true;
+    }
+
+    // TODO: need to start a timer at the beginning of the process and use it if IsShortLived() is too expensive
+    if (_isSsiDeployed && IsLongLived() && IsSpanCreated())
+    {
+        return true;
+    }
+
+    return false;
 }
 
 void SsiManager::ProcessStart()
 {
-#ifdef DD_TEST
-    if (_lifetimeDuration != 0)
-    {
-        _pTelemetry->ProcessStart(_isSsiDeployed ? DeploymentMode::SingleStepInstrumentation : DeploymentMode::Manual);
-        return;
-    }
-#endif
-
-    // start the timer for short lived detection (only once)
-    if (_isShortLived && (_lifetimeThread == nullptr))
-    {
-        _lifetimeThread = std::make_unique<std::thread>(&SsiManager::LifetimeCallback, this);
-        _pTelemetry->ProcessStart(_isSsiDeployed ? DeploymentMode::SingleStepInstrumentation : DeploymentMode::Manual);
-        return;
-    }
-
-    assert(false);
+    _pTelemetry->ProcessStart(_isSsiDeployed ? DeploymentMode::SingleStepInstrumentation : DeploymentMode::Manual);
 }
 
 void SsiManager::ProcessEnd()
 {
+    SkipProfileHeuristicType heuristics = SkipProfileHeuristicType::AllTriggered;
+
 #ifdef DD_TEST
     if (_lifetimeDuration > 0)
     {
-        _pTelemetry->ProcessEnd(_lifetimeDuration);
+        if (!IsSpanCreated())
+        {
+            heuristics = (SkipProfileHeuristicType)(heuristics | SkipProfileHeuristicType::NoSpan);
+        }
+        _pTelemetry->ProcessEnd(_lifetimeDuration, 1, heuristics);
+        return;
+    }
+
+    if (_lifetimeDuration == -1)
+    {
+        heuristics = (SkipProfileHeuristicType)(heuristics | SkipProfileHeuristicType::ShortLived);
+        if (!IsSpanCreated())
+        {
+            heuristics = (SkipProfileHeuristicType)(heuristics | SkipProfileHeuristicType::NoSpan);
+        }
+
+        _pTelemetry->ProcessEnd(0, 1, heuristics);
         return;
     }
 #endif
 
+    // how to get the number of sent profiles?  process lifetime / exporter period (= Configuration::GetUploadInterval()) + 1
+    // TODO: for IIS on Windows, it might be required to let the exporter count the number of sent profiles
     auto lifetime = OsSpecificApi::GetProcessLifetime();
-    _pTelemetry->ProcessEnd((uint64_t)lifetime);
-}
+    uint64_t sentProfiles = lifetime / _pConfiguration->GetUploadInterval().count() + 1;
 
-bool SsiManager::ShouldSendProfile(const std::string& env, const std::string& serviceName, const std::string_view& runtimeId)
-{
+    // compute the non triggered heuristics
+    if (!IsLongLived())
+    {
+        heuristics = (SkipProfileHeuristicType)(heuristics | SkipProfileHeuristicType::ShortLived);
+    }
     if (!IsSpanCreated())
     {
-        _pTelemetry->SkippedProfile(SkipProfileHeuristicType::NoSpan);
-        return false;
+        heuristics = (SkipProfileHeuristicType)(heuristics | SkipProfileHeuristicType::NoSpan);
     }
 
-    if (IsShortLived())
-    {
-        _pTelemetry->SkippedProfile(SkipProfileHeuristicType::ShortLived);
-        return false;
-    }
-
-    _pTelemetry->SentProfile();
-    return true;
+    _pTelemetry->ProcessEnd((uint64_t)lifetime, sentProfiles, heuristics);
 }
 

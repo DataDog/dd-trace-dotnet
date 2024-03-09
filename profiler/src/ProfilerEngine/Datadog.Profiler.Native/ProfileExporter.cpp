@@ -15,7 +15,6 @@
 #include "IMetricsSender.h"
 #include "IRuntimeInfo.h"
 #include "ISamplesProvider.h"
-#include "ISsiManager.h"
 #include "IUpscaleProvider.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -78,15 +77,13 @@ ProfileExporter::ProfileExporter(
     IEnabledProfilers* enabledProfilers,
     MetricsRegistry& metricsRegistry,
     IMetadataProvider* metadataProvider,
-    IAllocationsRecorder* allocationsRecorder,
-    ISsiManager* ssiManager) :
+    IAllocationsRecorder* allocationsRecorder) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
     _allocationsRecorder{allocationsRecorder},
     _metadataProvider{metadataProvider},
-    _configuration{configuration},
-    _ssiManager{ssiManager}
+    _configuration{configuration}
 {
     _exporter = CreateExporter(_configuration, CreateTags(_configuration, runtimeInfo, enabledProfilers));
     _outputPath = CreatePprofOutputPath(_configuration);
@@ -535,11 +532,6 @@ bool ProfileExporter::Export()
             // TODO: send telemetry about empty profiles
             continue;
         }
-
-        // TODO: When SSI is deployed, we should check if we should send the profile
-        //       It is currently only sending telemetry metrics
-        //       If not enabled via SSI, we should always send profiles
-        _ssiManager->ShouldSendProfile(applicationInfo.Environment, applicationInfo.ServiceName, runtimeId);
 
         if (_exporter == nullptr)
         {

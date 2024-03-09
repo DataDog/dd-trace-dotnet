@@ -5,13 +5,39 @@
 #include "Log.h"
 
 ProfilerTelemetry::ProfilerTelemetry(IConfiguration* pConfiguration)
-   : m_pConfiguration(pConfiguration)
+   : _pConfiguration(pConfiguration)
 {
 }
 
 std::string ProfilerTelemetry::GetDeploymentModeTag()
 {
     return _isSsiDeployed ? "ssi" : "manual";
+}
+
+std::string ProfilerTelemetry::GetHeuristicTag(SkipProfileHeuristicType heuristics)
+{
+    std::string tags;
+    if (heuristics == SkipProfileHeuristicType::AllTriggered)
+    {
+        return "AllTriggered";
+    }
+
+    if ((heuristics & SkipProfileHeuristicType::ShortLived) == SkipProfileHeuristicType::ShortLived)
+    {
+        tags = "ShortLived";
+    }
+
+    if ((heuristics & SkipProfileHeuristicType::NoSpan) == SkipProfileHeuristicType::NoSpan)
+    {
+        if (!tags.empty())
+        {
+            tags += " | ";
+        }
+
+        tags += "NoSpan";
+    }
+
+    return tags;
 }
 
 void ProfilerTelemetry::ProcessStart(DeploymentMode deployment)
@@ -21,30 +47,14 @@ void ProfilerTelemetry::ProcessStart(DeploymentMode deployment)
     Log::Debug("ProcessStart(", GetDeploymentModeTag(), ")");
 }
 
-void ProfilerTelemetry::ProcessEnd(uint64_t duration)
+void ProfilerTelemetry::ProcessEnd(uint64_t duration, uint64_t sentProfiles, SkipProfileHeuristicType heuristics)
 {
-    Log::Debug("ProcessEnd(", GetDeploymentModeTag(), ", ", duration, ")");
-}
-
-void ProfilerTelemetry::SentProfile()
-{
-    Log::Debug("SentProfile");
-}
-
-void ProfilerTelemetry::SkippedProfile(SkipProfileHeuristicType heuristic)
-{
-    if (heuristic == SkipProfileHeuristicType::ShortLived)
-    {
-        Log::Debug("SkippedProfile(ShortLived)");
-    }
-    else if (heuristic == SkipProfileHeuristicType::NoSpan)
-    {
-        Log::Debug("SkippedProfile(NoSpan)");
-    }
-    else
-    {
-        // detect invalid heuristic
-        Log::Debug("SkippedProfile(Unknown)");
-    }
-
+    // provides:
+    // - enablement choice (manual or SSI)
+    auto enablementChoice = GetDeploymentModeTag();
+    // - duration of the process
+    // - number of profiles sent
+    // - heuristics that were not triggered
+    auto skippedHeuristics = GetHeuristicTag(heuristics);
+    Log::Debug("ProcessEnd(", enablementChoice, ", ", duration, ", ", sentProfiles, ", ", skippedHeuristics, ")");
 }

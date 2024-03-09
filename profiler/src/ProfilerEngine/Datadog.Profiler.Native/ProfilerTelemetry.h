@@ -16,15 +16,14 @@ public:
 public:
     // from IProfilerTelemetry
     void ProcessStart(DeploymentMode deployment) override;
-    void ProcessEnd(uint64_t duration) override;
-    void SentProfile() override;
-    void SkippedProfile(SkipProfileHeuristicType heuristic) override;
+    void ProcessEnd(uint64_t duration, uint64_t sentProfiles, SkipProfileHeuristicType heuristics) override;
 
 private:
     std::string GetDeploymentModeTag();
+    std::string GetHeuristicTag(SkipProfileHeuristicType heuristics);
 
 private:
-    IConfiguration* m_pConfiguration;
+    IConfiguration* _pConfiguration;
     bool _isSsiDeployed = false;
 };
 
