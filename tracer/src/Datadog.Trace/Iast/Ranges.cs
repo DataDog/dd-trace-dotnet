@@ -17,7 +17,7 @@ internal static class Ranges
         CopyShift(src, dst, dstPos, shift, src.Length);
     }
 
-    private static void CopyShift(Range[] src, Range[] dst, int dstPos, int shift, int max)
+    public static void CopyShift(Range[] src, Range[] dst, int dstPos, int shift, int max)
     {
         var srcLength = Math.Min(src.Length, max);
 
@@ -37,13 +37,23 @@ internal static class Ranges
     public static Range[] MergeRanges(int offset, Range[] rangesLeft, Range[] rangesRight)
     {
         var nRanges = rangesLeft.Length + rangesRight.Length;
-        var ranges = new Range[nRanges > Iast.Instance.Settings.MaxRangeCount ? Iast.Instance.Settings.MaxRangeCount : nRanges];
+        var finalRangesCount = nRanges > Iast.Instance.Settings.MaxRangeCount ? Iast.Instance.Settings.MaxRangeCount : nRanges;
+
+        // Don't allocate a new array if the left ranges count is the same as the maximum number of ranges allowed
+        // No more ranges can be added to that array
+        if (rangesLeft.Length == Iast.Instance.Settings.MaxRangeCount)
+        {
+            return rangesLeft;
+        }
+
+        var ranges = new Range[finalRangesCount];
         var remainingRanges = ranges.Length;
 
         if (rangesLeft.Length > 0)
         {
             var count = Math.Min(rangesLeft.Length, remainingRanges);
             Array.Copy(rangesLeft, 0, ranges, 0, count);
+            remainingRanges -= count;
         }
 
         if (rangesRight.Length > 0 && remainingRanges > 0)

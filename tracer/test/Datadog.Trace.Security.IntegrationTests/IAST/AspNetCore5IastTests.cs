@@ -13,6 +13,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
@@ -323,6 +324,35 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, [url]);
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [SkippableTheory]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [InlineData(-1, 10)]
+    [InlineData(-1, 15)]
+    [InlineData(15, 15)]
+    [InlineData(5, 15)]
+    public async Task TestMaxRanges(int maxRanges, int nbrRangesCreated)
+    {
+        // Set the configuration (use default configuration if -1 is passed)
+        var maxRangesConfiguration = maxRanges == -1 ? IastSettings.MaxRangeCountDefault : maxRanges;
+        SetEnvironmentVariable(ConfigurationKeys.Iast.MaxRangeCount, maxRangesConfiguration.ToString());
+
+        var filename = "Iast.MaxRanges.AspNetCore5.IastEnabled." + maxRangesConfiguration + "." + nbrRangesCreated;
+        var url = "/Iast/MaxRanges?count=" + nbrRangesCreated + "&tainted=taintedString|";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)

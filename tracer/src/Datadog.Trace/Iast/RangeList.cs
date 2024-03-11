@@ -33,7 +33,7 @@ internal class RangeList
         // Calculate the number of ranges to add that is possible to add
         var count = Math.Min(length, _remaining);
 
-        Ranges.CopyShift(ranges, _ranges, _ranges.Length - _remaining, shift);
+        Ranges.CopyShift(ranges, _ranges, _ranges.Length - _remaining, shift, count);
         _remaining -= count;
     }
 
