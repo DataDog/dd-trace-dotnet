@@ -167,8 +167,17 @@ namespace Datadog.Trace.Propagators
                 }
 
                 // last parent ("p:<value>")
-                var lastParent = HexString.ToHexString(context.SpanId, lowerCase: true);
-                sb.Append("p:").Append(lastParent).Append(TraceStateDatadogPairsSeparator);
+                if (context.IsRemote && context.LastParentId != ZeroLastParent)
+                {
+                    // for remote contexts only add p: if we had a value (that was not 0s) and if so use that old value
+                    sb.Append("p:").Append(context.LastParentId).Append(TraceStateDatadogPairsSeparator);
+                }
+                else if (!context.IsRemote)
+                {
+                    // for local contexts inject the span ID as the p: value
+                    var lastParent = HexString.ToHexString(context.SpanId, lowerCase: true);
+                    sb.Append("p:").Append(lastParent).Append(TraceStateDatadogPairsSeparator);
+                }
 
                 // propagated tags ("t.<key>:<value>")
                 var propagatedTags = context.PrepareTagsForPropagation();
@@ -465,10 +474,8 @@ namespace Datadog.Trace.Propagators
                     propagatedTags = null;
                 }
 
-                if (lastParent is null)
-                {
-                    lastParent = ZeroLastParent;
-                }
+                // indicates that there was no `p` key within the tracestate
+                lastParent ??= ZeroLastParent;
 
                 return new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues);
             }

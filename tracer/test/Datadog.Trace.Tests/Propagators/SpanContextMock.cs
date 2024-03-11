@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanContextMock.cs" company="Datadog">
+// <copyright file="SpanContextMock.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,6 +28,8 @@ internal class SpanContextMock
     public string AdditionalW3CTraceState { get; set; }
 
     public string LastParentId { get; set; }
+
+    public bool IsRemote { get; set; }
 
     public ISpanContext Parent { get; set; }
 

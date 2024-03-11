@@ -295,6 +295,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            Origin = null,
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
+                           IsRemote = true,
                        });
         }
 
@@ -320,6 +321,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            Origin = null,
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
+                           IsRemote = true,
                        });
         }
 
@@ -351,6 +353,7 @@ namespace Datadog.Trace.Tests.Propagators
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
                            PropagatedTags = EmptyPropagatedTags,
                            LastParentId = ZeroLastParentId,
+                           IsRemote = true,
                        });
         }
 
@@ -388,6 +391,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = ZeroLastParentId,
+                           IsRemote = true,
                        });
         }
 
@@ -427,6 +431,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Origin = "rum",
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
                            PropagatedTags = PropagatedTagsCollection,
+                           IsRemote = true,
                        });
         }
 
@@ -575,6 +580,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
+                           IsRemote = true,
                        });
         }
 
@@ -627,6 +633,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
+                           IsRemote = true,
                        });
         }
 
@@ -679,6 +686,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = w3CHeaderFirst ? ZeroLastParentId : null,
+                           IsRemote = true,
                        });
         }
 
@@ -731,6 +739,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
+                           IsRemote = true,
                        });
         }
 
@@ -785,6 +794,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = w3CHeaderFirst ? ZeroLastParentId : null,
+                           IsRemote = true,
                        });
         }
 

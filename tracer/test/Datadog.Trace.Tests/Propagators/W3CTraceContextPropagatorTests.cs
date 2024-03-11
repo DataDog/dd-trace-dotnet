@@ -202,6 +202,60 @@ namespace Datadog.Trace.Tests.Propagators
             headers.VerifyNoOtherCalls();
         }
 
+        [Fact]
+        public void Inject_RemoteContext_WithoutLastParent()
+        {
+            var extractedHeaders = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
+            extractedHeaders.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
+
+            extractedHeaders.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "dd=s:2;o:rum;t.dm:-4;t.usr.id:12345" }); // Note the lack of p: in here
+
+            var extractedContext = W3CPropagator.Extract(extractedHeaders.Object, (carrier, name) => carrier.GetValues(name));
+
+            extractedContext.IsRemote.Should().BeTrue();
+
+            var injectedHeaders = new Mock<IHeadersCollection>();
+
+            W3CPropagator.Inject(extractedContext, injectedHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
+
+            injectedHeaders.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
+            injectedHeaders.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;t.dm:-4;t.usr.id:12345"), Times.Once()); // Nnote the lack of p: in here
+            injectedHeaders.VerifyNoOtherCalls();
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void Inject_LastParentId_IsRemote(bool isRemote)
+        {
+            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>(), tags: null)
+            {
+                Origin = "origin",
+                AdditionalW3CTraceState = "key1=value1"
+            };
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism: null, notifyDistributedTracer: false);
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)123456789, spanId: 987654321, rawTraceId: null, rawSpanId: null);
+
+            var expectedLastParent = "0123456789abcdef";
+            if (isRemote)
+            {
+                // expect that the injected last parent is the same as the extracted
+                expectedLastParent = "fedcba9876543210";
+            }
+
+            var headers = new Mock<IHeadersCollection>();
+
+            W3CPropagator.Inject(spanContext, headers.Object, (carrier, name, value) => carrier.Set(name, value));
+
+            headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", $"dd=s:2;o:origin;p:{expectedLastParent},key1=value1"), Times.Once());
+            headers.VerifyNoOtherCalls();
+        }
+
         [Theory]
         [InlineData("00-000000000000000000000000075bcd15-000000003ade68b1-00", 0, 123456789, 987654321, false, "000000000000000000000000075bcd15", "000000003ade68b1")]
         [InlineData("00-0000000000000000000000003ade68b1-00000000075bcd15-01", 0, 987654321, 123456789, true, "0000000000000000000000003ade68b1", "00000000075bcd15")]
@@ -357,6 +411,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = ZeroLastParentId,
+                           IsRemote = true,
                        });
         }
 
@@ -402,6 +457,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = ZeroLastParentId,
+                           IsRemote = true,
                        });
         }
 
@@ -438,7 +494,8 @@ namespace Datadog.Trace.Tests.Propagators
                            PropagatedTags = PropagatedTagsCollection,
                            Parent = null,
                            ParentId = null,
-                           LastParentId = ZeroLastParentId
+                           LastParentId = ZeroLastParentId,
+                           IsRemote = true,
                        });
         }
 
@@ -510,6 +567,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = "0123456789abcdef",
+                           IsRemote = true,
                        });
         }
 
@@ -547,6 +605,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = ZeroLastParentId,
+                           IsRemote = true,
                        });
         }
 
@@ -682,6 +741,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = ZeroLastParentId,
+                           IsRemote = true,
                        });
         }
 
@@ -722,6 +782,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = ZeroLastParentId,
+                           IsRemote = true,
                        });
         }
 
@@ -764,6 +825,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = ZeroLastParentId,
+                           IsRemote = true,
                        });
         }
 
@@ -806,6 +868,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = ZeroLastParentId,
+                           IsRemote = true,
                        });
         }
 
@@ -843,6 +906,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = ZeroLastParentId,
+                           IsRemote = true,
                        });
         }
 
@@ -880,6 +944,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = ZeroLastParentId,
+                           IsRemote = true,
                        });
         }
 
@@ -917,6 +982,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = ZeroLastParentId,
+                           IsRemote = true,
                        });
         }
 
@@ -954,6 +1020,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = ZeroLastParentId,
+                           IsRemote = true,
                        });
         }
     }

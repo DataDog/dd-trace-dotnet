@@ -71,6 +71,7 @@ namespace Datadog.Trace
             // - samplingPriority: SamplingPriority? => int?
             SpanId = spanId;
             SamplingPriority = (int?)samplingPriority;
+            IsRemote = true;
         }
 
         /// <summary>
@@ -89,6 +90,7 @@ namespace Datadog.Trace
             SpanId = spanId;
             SamplingPriority = samplingPriority;
             Origin = origin;
+            IsRemote = true;
         }
 
         /// <summary>
@@ -111,6 +113,7 @@ namespace Datadog.Trace
             Origin = origin;
             _rawTraceId = rawTraceId;
             _rawSpanId = rawSpanId;
+            IsRemote = true;
         }
 
         /// <summary>
@@ -262,6 +265,11 @@ namespace Datadog.Trace
         /// </summary>
         internal string LastParentId { get; set; }
 
+        /// <summary>
+        ///  Gets a value indicating whether this <see cref="SpanContext"/> was propagated from a remote parent.
+        /// </summary>
+        internal bool IsRemote { get; private set; }
+
         internal PathwayContext? PathwayContext { get; private set; }
 
         /// <inheritdoc/>
@@ -392,17 +400,17 @@ namespace Datadog.Trace
         private static TraceId GetTraceId(ISpanContext context, TraceId fallback)
         {
             return context switch
-                   {
-                       // if there is no context or it has a zero trace id,
-                       // use the specified fallback value
-                       null or { TraceId: 0 } => fallback,
+            {
+                // if there is no context or it has a zero trace id,
+                // use the specified fallback value
+                null or { TraceId: 0 } => fallback,
 
-                       // use the 128-bit trace id from SpanContext if possible
-                       SpanContext sc => sc.TraceId128,
+                // use the 128-bit trace id from SpanContext if possible
+                SpanContext sc => sc.TraceId128,
 
-                       // otherwise use the 64-bit trace id from ISpanContext
-                       _ => (TraceId)context.TraceId
-                   };
+                // otherwise use the 64-bit trace id from ISpanContext
+                _ => (TraceId)context.TraceId
+            };
         }
 
         [return: MaybeNull]

@@ -93,7 +93,8 @@ public class DistributedPropagatorTests
                        SamplingPriority = SamplingPriority,
                        PropagatedTags = PropagatedTagsCollection,
                        AdditionalW3CTraceState = AdditionalW3CTraceState,
-                       LastParentId = LastParentId
+                       LastParentId = LastParentId,
+                       IsRemote = true,
                    });
     }
 
@@ -129,6 +130,7 @@ public class DistributedPropagatorTests
                 RawTraceId = RawTraceId,
                 RawSpanId = "0000000000000000",
                 PropagatedTags = EmptyPropagatedTags,
+                IsRemote = true,
             });
     }
 
@@ -209,7 +211,8 @@ public class DistributedPropagatorTests
                        SamplingPriority = SamplingPriority,
                        PropagatedTags = PropagatedTagsCollection,
                        AdditionalW3CTraceState = AdditionalW3CTraceState,
-                       LastParentId = LastParentId
+                       LastParentId = LastParentId,
+                       IsRemote = true,
                    });
     }
 
@@ -249,6 +252,7 @@ public class DistributedPropagatorTests
                        PropagatedTags = PropagatedTagsCollection,
                        AdditionalW3CTraceState = AdditionalW3CTraceState,
                        LastParentId = LastParentId,
+                       IsRemote = true,
                    });
     }
 
