@@ -66,6 +66,11 @@ internal class Source
 
     public override bool Equals(object? obj) => GetHashCode() == obj?.GetHashCode();
 
+    internal static string RedactString(string value)
+    {
+        return NewString(ComputeLength(value), RedactedSensitiveBuffer);
+    }
+
     internal void MarkAsSensitive()
     {
         _sensitive = true;
@@ -80,11 +85,6 @@ internal class Source
         {
             _redactedValue = NewString(ComputeLength(_value), RedactedSourceBuffer);
         }
-    }
-
-    internal string RedactString(string value)
-    {
-        return NewString(ComputeLength(value), RedactedSensitiveBuffer);
     }
 
     private static int ComputeLength(string value)

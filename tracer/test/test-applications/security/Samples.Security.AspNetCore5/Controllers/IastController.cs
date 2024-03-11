@@ -57,7 +57,7 @@ namespace Samples.Security.AspNetCore5.Controllers
     [XContentTypeOptionsAttribute]
     [Route("[controller]")]
     [ApiController]
-    public class IastController : ControllerBase
+    public class IastController : Controller
     {
         static SQLiteConnection dbConnection = null;
         static IMongoDatabase mongoDb = null;
@@ -824,6 +824,24 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content(result, "text/html");
         }
 
+
+        [HttpGet("ReflectedXss")]
+        [Route("ReflectedXss")]
+        public IActionResult ReflectedXss(string param)
+        {
+            ViewData["XSS"] = param + "<b>More Text</b>";
+            return View("ReflectedXss");
+        }
+
+        [HttpGet("ReflectedXssEscaped")]
+        [Route("ReflectedXssEscaped")]
+        public IActionResult ReflectedXssEscaped(string param)
+        {
+            var escapedText = System.Net.WebUtility.HtmlEncode($"System.Net.WebUtility.HtmlEncode({param})") + Environment.NewLine
+                            + System.Web.HttpUtility.HtmlEncode($"System.Web.HttpUtility.HtmlEncode({param})") + Environment.NewLine;
+            ViewData["XSS"] = escapedText;
+            return View("ReflectedXss");
+        }
 
         static string CopyStringAvoidTainting(string original)
         {
