@@ -33,7 +33,7 @@ public class StreamReaderAspect
     public static string ReviewPath(string path)
     {
         IastModule.OnPathTraversal(path);
-        RaspModule.CheckVulnerability(path);
+        RaspModule.OnLfi(path);
         return path;
     }
 }
