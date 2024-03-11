@@ -910,7 +910,7 @@ partial class Build
 
              var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName);
 
-             await ReplaceCommentInPullRequest(prNumber, $"## Benchmarks Report for {BenchmarkCategory}", markdown);
+             await ReplaceCommentInPullRequest(prNumber, $"## Benchmarks Report", markdown);
          });
 
     Target CompareThroughputResults => _ => _
