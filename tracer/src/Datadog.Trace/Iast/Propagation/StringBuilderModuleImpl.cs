@@ -158,9 +158,9 @@ internal static class StringBuilderModuleImpl
 
             var valueToInsertRangesLength = valueToInsertRanges?.Length ?? 0;
             var rangesResult = new RangeList(newRangesLeftLength + newRangesRightLength + valueToInsertRangesLength);
-            rangesResult.Add(newRangesLeft);
-            rangesResult.Add(valueToInsertRanges);
-            rangesResult.Add(newRangesRight);
+            rangesResult.Add(newRangesLeft, 0);
+            rangesResult.Add(valueToInsertRanges, index);
+            rangesResult.Add(newRangesRight, index + valueLenght);
 
             if (taintedTarget is null)
             {

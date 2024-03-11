@@ -70,9 +70,9 @@ internal static class StringModuleImpl
             var newRanges3Length = newRanges3?.Length ?? 0;
 
             var ranges = new RangeList(newRanges1Length + newRanges2Length + newRanges3Length);
-            ranges.Add(newRanges1, newRanges1Length);
-            ranges.Add(newRanges2, newRanges2Length);
-            ranges.Add(newRanges3, newRanges3Length);
+            ranges.Add(newRanges1, newRanges1Length, 0);
+            ranges.Add(newRanges2, newRanges2Length, index);
+            ranges.Add(newRanges3, newRanges3Length, index + value.Length);
 
             taintedObjects.Taint(result, ranges.ToArray());
         }
@@ -444,9 +444,9 @@ internal static class StringModuleImpl
 
             var taintedObjects = iastContext.GetTaintedObjects();
 
-            RangeList? ranges = null;
-
-            for (var parameterIndex = 0; parameterIndex < parameters.ParamCount; parameterIndex++)
+            Range[]? ranges = null;
+            int length = 0;
+            for (int parameterIndex = 0; parameterIndex < parameters.ParamCount; parameterIndex++)
             {
                 var currentParameter = parameters[parameterIndex];
                 if (string.IsNullOrEmpty(currentParameter))
@@ -455,24 +455,33 @@ internal static class StringModuleImpl
                 }
 
                 var parameterTainted = PropagationModuleImpl.GetTainted(taintedObjects, currentParameter);
-                if (parameterTainted == null)
+                if (parameterTainted != null)
                 {
-                    continue;
+                    if (ranges == null)
+                    {
+                        if (length == 0)
+                        {
+                            ranges = parameterTainted.Ranges;
+                        }
+                        else
+                        {
+                            ranges = new Range[parameterTainted!.Ranges!.Length];
+                            Ranges.CopyShift(parameterTainted!.Ranges, ranges, 0, length);
+                        }
+
+                        length += currentParameter!.Length;
+                        continue;
+                    }
+
+                    ranges = Ranges.MergeRanges(length, ranges, parameterTainted.Ranges);
                 }
 
-                ranges ??= new RangeList(parameterTainted.Ranges.Length);
-                ranges.Add(parameterTainted.Ranges);
-
-                // Check if the ranges array is maxed out
-                if (ranges.IsFull())
-                {
-                    break;
-                }
+                length += currentParameter!.Length;
             }
 
             if (ranges != null)
             {
-                taintedObjects.Taint(result, ranges.ToArray());
+                taintedObjects.Taint(result, ranges);
             }
         }
         catch (Exception err)
@@ -505,7 +514,8 @@ internal static class StringModuleImpl
 
             var taintedObjects = iastContext.GetTaintedObjects();
 
-            RangeList? ranges = null;
+            Range[]? ranges = null;
+            int length = 0;
             foreach (var parameterAsObject in parameters)
             {
                 var currentParameter = parameterAsObject?.ToString();
@@ -514,25 +524,34 @@ internal static class StringModuleImpl
                     continue;
                 }
 
-                var parameterTainted = PropagationModuleImpl.GetTainted(taintedObjects, currentParameter);
-                if (parameterTainted == null)
+                var taintedParameter = PropagationModuleImpl.GetTainted(taintedObjects, currentParameter);
+                if (taintedParameter != null)
                 {
-                    continue;
+                    if (ranges == null)
+                    {
+                        if (length == 0)
+                        {
+                            ranges = taintedParameter.Ranges;
+                        }
+                        else
+                        {
+                            ranges = new Range[taintedParameter!.Ranges!.Length];
+                            Ranges.CopyShift(taintedParameter!.Ranges, ranges, 0, length);
+                        }
+
+                        length += currentParameter!.Length;
+                        continue;
+                    }
+
+                    ranges = Ranges.MergeRanges(length, ranges, taintedParameter.Ranges);
                 }
 
-                ranges ??= new RangeList(parameterTainted.Ranges.Length);
-                ranges.Add(parameterTainted.Ranges);
-
-                // Check if the ranges array is maxed out
-                if (ranges.IsFull())
-                {
-                    break;
-                }
+                length += currentParameter!.Length;
             }
 
             if (ranges != null)
             {
-                taintedObjects.Taint(result, ranges.ToArray());
+                taintedObjects.Taint(result, ranges);
             }
         }
         catch (Exception err)

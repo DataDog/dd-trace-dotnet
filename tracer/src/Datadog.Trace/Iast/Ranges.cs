@@ -43,7 +43,7 @@ internal static class Ranges
         if (rangesLeft.Length > 0)
         {
             var count = Math.Min(rangesLeft.Length, remainingRanges);
-            Array.Copy(rangesLeft, 0, ranges, 0, remainingRanges);
+            Array.Copy(rangesLeft, 0, ranges, 0, count);
         }
 
         if (rangesRight.Length > 0 && remainingRanges > 0)
