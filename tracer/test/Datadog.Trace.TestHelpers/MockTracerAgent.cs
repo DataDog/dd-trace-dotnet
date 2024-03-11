@@ -88,7 +88,9 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<string> ProbesStatuses { get; private set; } = ImmutableList<string>.Empty;
 
-        public ConcurrentQueue<string> StatsdRequests { get; } = new();
+        public abstract ConcurrentQueue<string> StatsdRequests { get; }
+
+        public abstract ConcurrentQueue<Exception> StatsdExceptions { get; }
 
         /// <summary>
         /// Gets the wrapped <see cref="TelemetryData"/> requests received by the telemetry endpoint
@@ -690,9 +692,8 @@ namespace Datadog.Trace.TestHelpers
         public class TcpUdpAgent : MockTracerAgent
         {
             private readonly HttpListener _listener;
-            private readonly UdpClient _udpClient;
+            private readonly StatsdUdpAgent _statsd;
             private readonly Task _tracesListenerTask;
-            private readonly Task _statsdTask;
 
             public TcpUdpAgent(int? port, int retries, bool useStatsd, bool doNotBindPorts, int? requestedStatsDPort, bool useTelemetry)
                 : base(useTelemetry, TestTransports.Tcp)
@@ -709,38 +710,8 @@ namespace Datadog.Trace.TestHelpers
 
                 if (useStatsd)
                 {
-                    if (requestedStatsDPort != null)
-                    {
-                        // This port is explicit, allow failure if not available
-                        StatsdPort = requestedStatsDPort.Value;
-                        _udpClient = new UdpClient(requestedStatsDPort.Value);
-                    }
-                    else
-                    {
-                        const int basePort = 11555;
-
-                        var retriesLeft = retries;
-
-                        while (true)
-                        {
-                            try
-                            {
-                                _udpClient = new UdpClient(basePort + retriesLeft);
-                            }
-                            catch (Exception) when (retriesLeft > 0)
-                            {
-                                retriesLeft--;
-                                continue;
-                            }
-
-                            StatsdPort = basePort + retriesLeft;
-                            break;
-                        }
-                    }
-
-                    _statsdTask = Task.Factory.StartNew(HandleStatsdRequests, TaskCreationOptions.LongRunning);
-
-                    listeners.Add($"Stats at port {StatsdPort}");
+                    _statsd = new(retries, requestedStatsDPort, _cancellationTokenSource);
+                    listeners.Add($"Stats at port {_statsd.StatsdPort}");
                 }
 
                 // try up to 5 consecutive ports before giving up
@@ -797,13 +768,17 @@ namespace Datadog.Trace.TestHelpers
             /// <summary>
             /// Gets the UDP port for statsd
             /// </summary>
-            public int StatsdPort { get; }
+            public int StatsdPort => _statsd.StatsdPort;
+
+            public override ConcurrentQueue<string> StatsdRequests => _statsd?.StatsdRequests ?? [];
+
+            public override ConcurrentQueue<Exception> StatsdExceptions => _statsd?.StatsdExceptions ?? [];
 
             public override void Dispose()
             {
                 base.Dispose();
                 _listener?.Close();
-                _udpClient?.Close();
+                _statsd?.Dispose();
             }
 
             private void HandleHttpRequests()
@@ -871,35 +846,11 @@ namespace Datadog.Trace.TestHelpers
                     }
                 }
             }
-
-            private void HandleStatsdRequests()
-            {
-                var endPoint = new IPEndPoint(IPAddress.Loopback, 0);
-
-                while (!_cancellationTokenSource.IsCancellationRequested)
-                {
-                    try
-                    {
-                        var buffer = _udpClient.Receive(ref endPoint);
-                        var stats = Encoding.UTF8.GetString(buffer);
-                        OnMetricsReceived(stats);
-                        StatsdRequests.Enqueue(stats);
-                    }
-                    catch (Exception) when (_cancellationTokenSource.IsCancellationRequested)
-                    {
-                        return;
-                    }
-                    catch (Exception ex)
-                    {
-                        Exceptions.Add(ex);
-                    }
-                }
-            }
         }
 
         public class NamedPipeAgent : MockTracerAgent
         {
-            private readonly PipeServer _statsPipeServer;
+            private readonly StatsdNamedPipeAgent _statsd;
             private readonly PipeServer _tracesPipeServer;
 
             public NamedPipeAgent(WindowsPipesConfig config)
@@ -909,23 +860,7 @@ namespace Datadog.Trace.TestHelpers
 
                 if (config.Metrics != null && config.UseDogstatsD)
                 {
-                    if (File.Exists(config.Metrics))
-                    {
-                        File.Delete(config.Metrics);
-                    }
-
-                    StatsWindowsPipeName = config.Metrics;
-                    ListenerInfo += $", Stats at {config.Metrics}";
-
-                    _statsPipeServer = new PipeServer(
-                        config.Metrics,
-                        PipeDirection.In, // we don't send responses to stats requests
-                        _cancellationTokenSource,
-                        (stream, ct) => HandleNamedPipeStats(stream, ct),
-                        ex => Exceptions.Add(ex),
-                        x => Output?.WriteLine(x));
-
-                    _statsPipeServer.Start();
+                    _statsd = new(config.Metrics, _cancellationTokenSource);
                 }
 
                 if (File.Exists(config.Traces))
@@ -948,24 +883,17 @@ namespace Datadog.Trace.TestHelpers
 
             public string TracesWindowsPipeName { get; }
 
-            public string StatsWindowsPipeName { get; }
+            public string StatsWindowsPipeName => _statsd?.StatsWindowsPipeName;
+
+            public override ConcurrentQueue<string> StatsdRequests => _statsd?.StatsdRequests ?? [];
+
+            public override ConcurrentQueue<Exception> StatsdExceptions => _statsd?.StatsdExceptions ?? [];
 
             public override void Dispose()
             {
                 base.Dispose();
-                _statsPipeServer?.Dispose();
+                _statsd?.Dispose();
                 _tracesPipeServer?.Dispose();
-            }
-
-            private async Task HandleNamedPipeStats(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
-            {
-                using var reader = new StreamReader(namedPipeServerStream);
-
-                while (await reader.ReadLineAsync() is { } request)
-                {
-                    OnMetricsReceived(request);
-                    StatsdRequests.Enqueue(request);
-                }
             }
 
             private async Task HandleNamedPipeTraces(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
@@ -1088,10 +1016,8 @@ namespace Datadog.Trace.TestHelpers
         {
             private readonly UnixDomainSocketEndPoint _tracesEndpoint;
             private readonly Socket _udsTracesSocket;
-            private readonly UnixDomainSocketEndPoint _statsEndpoint;
-            private readonly Socket _udsStatsSocket;
             private readonly Task _tracesListenerTask;
-            private readonly Task _statsdTask;
+            private readonly StatsdUdsAgent _statsd;
 
             public UdsAgent(UnixDomainSocketConfig config)
                 : base(config.UseTelemetry, TestTransports.Uds)
@@ -1100,20 +1026,7 @@ namespace Datadog.Trace.TestHelpers
 
                 if (config.Metrics != null && config.UseDogstatsD)
                 {
-                    if (File.Exists(config.Metrics))
-                    {
-                        File.Delete(config.Metrics);
-                    }
-
-                    StatsUdsPath = config.Metrics;
-                    ListenerInfo += $", Stats at {config.Metrics}";
-                    _statsEndpoint = new UnixDomainSocketEndPoint(config.Metrics);
-
-                    _udsStatsSocket = new Socket(AddressFamily.Unix, SocketType.Dgram, ProtocolType.Unspecified);
-
-                    _udsStatsSocket.Bind(_statsEndpoint);
-                    // NOTE: Connectionless protocols don't use Listen()
-                    _statsdTask = Task.Factory.StartNew(HandleUdsStats, TaskCreationOptions.LongRunning);
+                    _statsd = new(config.Metrics, _cancellationTokenSource);
                 }
 
                 _tracesEndpoint = new UnixDomainSocketEndPoint(config.Traces);
@@ -1132,7 +1045,11 @@ namespace Datadog.Trace.TestHelpers
 
             public string TracesUdsPath { get; }
 
-            public string StatsUdsPath { get; }
+            public string StatsUdsPath => _statsd?.StatsUdsPath;
+
+            public override ConcurrentQueue<string> StatsdRequests => _statsd?.StatsdRequests ?? [];
+
+            public override ConcurrentQueue<Exception> StatsdExceptions => _statsd?.StatsdExceptions ?? [];
 
             public override void Dispose()
             {
@@ -1145,57 +1062,7 @@ namespace Datadog.Trace.TestHelpers
                     IgnoreException(() => File.Delete(TracesUdsPath));
                 }
 
-                if (_udsStatsSocket != null)
-                {
-                    // In versions before net6, dispose doesn't shutdown this socket type for some reason
-                    IgnoreException(() => _udsStatsSocket.Shutdown(SocketShutdown.Both));
-                    IgnoreException(() => _udsStatsSocket.Close());
-                    IgnoreException(() => _udsStatsSocket.Dispose());
-                    IgnoreException(() => File.Delete(StatsUdsPath));
-                }
-            }
-
-            private void HandleUdsStats()
-            {
-                while (!_cancellationTokenSource.IsCancellationRequested)
-                {
-                    try
-                    {
-                        var bytesReceived = new byte[0x1000];
-                        // Connectionless protocol doesn't need Accept, Receive will block until we get something
-                        var byteCount = _udsStatsSocket.Receive(bytesReceived);
-                        var stats = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);
-                        OnMetricsReceived(stats);
-                        StatsdRequests.Enqueue(stats);
-                    }
-                    catch (Exception) when (_cancellationTokenSource.IsCancellationRequested)
-                    {
-                        return;
-                    }
-                    catch (SocketException ex)
-                    {
-                        var message = ex.Message.ToLowerInvariant();
-                        if (message.Contains("interrupted"))
-                        {
-                            // Accept call is likely interrupted by a dispose
-                            // Swallow the exception and let the test finish
-                            return;
-                        }
-
-                        if (message.Contains("broken") || message.Contains("forcibly closed") || message.Contains("invalid argument"))
-                        {
-                            // The application was likely shut down
-                            // Swallow the exception and let the test finish
-                            return;
-                        }
-
-                        throw;
-                    }
-                    catch (Exception ex)
-                    {
-                        Exceptions.Add(ex);
-                    }
-                }
+                _statsd?.Dispose();
             }
 
             private async Task HandleUdsTraces()

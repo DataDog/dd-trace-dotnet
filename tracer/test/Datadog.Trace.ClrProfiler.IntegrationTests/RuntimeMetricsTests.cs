@@ -183,6 +183,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             Assert.Empty(agent.Exceptions);
+            Assert.Empty(agent.StatsdExceptions);
             VerifyInstrumentation(processResult.Process);
         }
     }
