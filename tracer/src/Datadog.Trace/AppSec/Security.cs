@@ -37,8 +37,6 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
         private readonly SecuritySettings _settings;
-        private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater> { { RcmProducts.AsmFeatures, new AsmFeaturesProduct() }, { RcmProducts.Asm, new AsmProduct() }, { RcmProducts.AsmDd, new AsmDdProduct() }, { RcmProducts.AsmData, new AsmDataProduct() } };
-
         private readonly ConfigurationStatus _configurationStatus;
         private readonly bool _noLocalRules;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
@@ -166,26 +164,14 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal ApplyDetails[] UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
+        private ApplyDetails[] UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
         {
             string? rcmUpdateError = null;
             UpdateResult? updateResult = null;
 
             try
             {
-                foreach (var product in _productConfigUpdaters)
-                {
-                    if (configsByProduct.TryGetValue(product.Key, out var configurations))
-                    {
-                        product.Value.ProcessUpdates(_configurationStatus, configurations);
-                    }
-
-                    if (removedConfigs?.TryGetValue(product.Key, out var configsForThisProductToRemove) is true)
-                    {
-                        product.Value.ProcessRemovals(_configurationStatus, configsForThisProductToRemove);
-                    }
-                }
-
+                _configurationStatus.StoreConfigs(configsByProduct, removedConfigs);
                 _configurationStatus.EnableAsm = !_configurationStatus.AsmFeaturesByFile.IsEmpty() && _configurationStatus.AsmFeaturesByFile.All(a => a.Value.Enabled == true);
 
                 // normally CanBeToggled should not need a check as asm_features capacity is only sent if AppSec env var is null, but still guards it in case
@@ -198,20 +184,15 @@ namespace Datadog.Trace.AppSec
                     }
                     else if (!Enabled && _configurationStatus.EnableAsm == true)
                     {
+                        _configurationStatus.ApplyStoredFiles();
                         InitWafAndInstrumentations(true);
                         rcmUpdateError = _wafInitResult?.ErrorMessage;
-                        // no point in updating the waf with potentially new rules as it's initialized here with new rules
-                        _configurationStatus.IncomingUpdateState.WafKeysToApply.Remove(ConfigurationStatus.WafRulesKey);
-                        // reapply others
-                        _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
-                        _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
-                        _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
                         _configurationStatus.IncomingUpdateState.SecurityStateChange = false;
                     }
                 }
-
-                if (Enabled && _configurationStatus.IncomingUpdateState.WafKeysToApply.Any())
+                else if (Enabled && _configurationStatus.IncomingUpdateState.WafKeysToApply.Any())
                 {
+                    _configurationStatus.ApplyStoredFiles();
                     updateResult = _waf?.UpdateWafFromConfigurationStatus(_configurationStatus);
                     if (updateResult?.Success ?? false)
                     {
@@ -388,13 +369,7 @@ namespace Datadog.Trace.AppSec
                 _wafLibraryInvoker = _libraryInitializationResult.WafLibraryInvoker;
             }
 
-            _wafInitResult = Waf.Waf.Create(
-                _wafLibraryInvoker!,
-                _settings.ObfuscationParameterKeyRegex,
-                _settings.ObfuscationParameterValueRegex,
-                _settings.Rules,
-                _configurationStatus.RulesByFile.Values.FirstOrDefault()?.All,
-                setupWafSchemaExtraction: _settings.ApiSecurityEnabled,
+            _wafInitResult = Waf.Waf.Create(_wafLibraryInvoker!, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, fromRemoteConfig ? _configurationStatus : null,
                 _settings.UseUnsafeEncoder,
                 GlobalSettings.Instance.DebugEnabledInternal && _settings.WafDebugEnabled);
             if (_wafInitResult.Success)
