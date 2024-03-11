@@ -14,14 +14,9 @@ internal interface IMqMessage
 {
     public int MessageLength { get;  }
 
-    [DuckField(Name = "properties")]
-    public Hashtable Properties { get; }
+    public void SetBytesProperty(string name, sbyte[] value);
 
-    public void SetStringProperty(string name, string value);
-
-    public string GetStringProperty(string name);
-
-    public void WriteBytes(string s);
+    public sbyte[] GetBytesProperty(string name);
 
     public void DeleteProperty(string name);
 }
