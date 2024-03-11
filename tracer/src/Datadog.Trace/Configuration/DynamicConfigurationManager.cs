@@ -45,6 +45,7 @@ namespace Datadog.Trace.Configuration
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, true);
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingLogsInjection, true);
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true);
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true);
             }
         }
 
@@ -72,6 +73,7 @@ namespace Datadog.Trace.Configuration
 
             var dynamicSettings = new ImmutableDynamicSettings
             {
+                TraceEnabled = settings.WithKeys(ConfigurationKeys.TraceEnabled).AsBool(),
                 // RuntimeMetricsEnabled = settings.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled).AsBool(),
                 // DataStreamsMonitoringEnabled = settings.WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled).AsBool(),
                 // CustomSamplingRules = settings.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString(),

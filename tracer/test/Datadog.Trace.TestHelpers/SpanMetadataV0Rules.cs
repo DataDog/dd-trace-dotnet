@@ -637,7 +637,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "SqlClient")
                 .Matches("span.kind", "client"));
 
-        public static Result IsWcfV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsWcfV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "wcf.request")
                 .Matches(Type, "web"))

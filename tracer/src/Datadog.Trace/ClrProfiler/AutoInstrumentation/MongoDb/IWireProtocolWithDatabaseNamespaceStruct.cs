@@ -19,6 +19,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         /// Gets the database namespace object passed into the wire protocol
         /// </summary>
         [DuckField(Name = "_databaseNamespace")]
-        public DatabaseNamespaceStruct? DatabaseNamespace;
+        public object? DatabaseNamespace;
     }
 }

@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
         TypeName = IbmMqConstants.MqDestinationTypeName,
         MethodName = "Get",
         ReturnTypeName = ClrNames.Void,
-        ParameterTypeNames = new[] { IbmMqConstants.MqMessageTypeName, IbmMqConstants.MqMessageGetOptionsTypeName, ClrNames.Int32 },
+        ParameterTypeNames = [IbmMqConstants.MqMessageTypeName, IbmMqConstants.MqMessageGetOptionsTypeName, ClrNames.Int32],
         MinimumVersion = "9.0.0",
         MaximumVersion = "9.*.*",
         IntegrationName = IbmMqConstants.IntegrationName)]
@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
                             pathwayContext);
                         // we need to inject new context, since message objects can theoretically be reused
                         // hence we need to make sure the parent hash changes properly
-                        dataStreams.InjectPathwayContextAsBase64String(scope.Span.Context.PathwayContext, new IbmMqHeadersAdapter(msg));
+                        dataStreams.InjectPathwayContextAsBase64String(scope.Span.Context.PathwayContext, IbmMqHelper.GetHeadersAdapter(msg));
                     }
 
                     scope.DisposeWithException(exception);
