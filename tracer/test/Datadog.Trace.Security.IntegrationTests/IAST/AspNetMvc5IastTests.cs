@@ -527,7 +527,6 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
                             .DisableRequireUniquePrefix();
     }
 
-    [Fact]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     [SkippableTheory]

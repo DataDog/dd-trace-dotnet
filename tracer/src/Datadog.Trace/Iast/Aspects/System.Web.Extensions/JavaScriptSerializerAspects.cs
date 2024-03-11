@@ -39,7 +39,7 @@ public class JavaScriptSerializerAspects
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error while casting JavaScriptSerializer");
+            Log.Error(ex, "Error while casting JavaScriptSerializer");
             return null;
         }
 
