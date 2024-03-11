@@ -127,7 +127,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                     {
-                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == 15 ? "old" : "new", null, null);
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == 15 ? "pre_2_2_5" : "post_2_2_5", null, null);
                         settings.DisableRequireUniquePrefix();
                         await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
 
