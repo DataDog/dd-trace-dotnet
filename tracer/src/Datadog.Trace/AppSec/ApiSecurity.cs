@@ -32,57 +32,73 @@ internal class ApiSecurity
 
     public bool ShouldAnalyzeSchema(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args, string? statusCode, IDictionary<string, object>? routeValues)
     {
-        if (_enabled && lastWafCall && (localRootSpan.Context.TraceContext?.SamplingPriority > (int?)SamplingPriority.AutoReject || localRootSpan.Context.SamplingPriority > (int?)SamplingPriority.AutoReject))
+        try
         {
-            var httpRouteTag = localRootSpan.GetTag(Tags.AspNetCoreEndpoint) ?? localRootSpan.GetTag(Tags.HttpRoute);
-            var httpMethod = localRootSpan.GetTag(Tags.HttpMethod);
-            statusCode ??= localRootSpan.GetTag(Tags.HttpStatusCode);
-            if (httpRouteTag == null || httpMethod == null || statusCode == null)
+            if (_enabled && lastWafCall && (localRootSpan.Context.TraceContext?.SamplingPriority > (int?)SamplingPriority.AutoReject || localRootSpan.Context.SamplingPriority > (int?)SamplingPriority.AutoReject))
             {
-                Log.Debug("Unsupported groupkey for api security {Route}, {Method}, {Status}", httpRouteTag, httpMethod, statusCode);
-                return false;
-            }
-
-            if (routeValues != null)
-            {
-                foreach (var routeValue in routeValues)
+                var httpRouteTag = localRootSpan.GetTag(Tags.AspNetCoreEndpoint) ?? localRootSpan.GetTag(Tags.HttpRoute);
+                var httpMethod = localRootSpan.GetTag(Tags.HttpMethod);
+                statusCode ??= localRootSpan.GetTag(Tags.HttpStatusCode);
+                if (httpRouteTag == null || httpMethod == null || statusCode == null)
                 {
-                    var routeKey = $"{{{routeValue.Key}}}";
-                    if (routeValue.Value is string && httpRouteTag.Contains(routeKey))
+                    Log.Debug("Unsupported groupkey for api security {Route}, {Method}, {Status}", httpRouteTag, httpMethod, statusCode);
+                    return false;
+                }
+
+                if (routeValues != null)
+                {
+                    foreach (var routeValue in routeValues)
                     {
-                        httpRouteTag = httpRouteTag.Replace(routeKey, routeValue.Value.ToString());
+                        var routeKey = $"{{{routeValue.Key}}}";
+                        if (routeValue.Value is string && httpRouteTag.Contains(routeKey))
+                        {
+                            httpRouteTag = httpRouteTag.Replace(routeKey, routeValue.Value.ToString());
+                        }
                     }
                 }
-            }
 
-            var hash = CombineHashes(httpRouteTag!, httpMethod, statusCode);
-            var now = DateTime.UtcNow;
-            if (_processedRoutes.TryGetValue<DateTime>(hash, out var lastProcessed))
-            {
-                if (now - lastProcessed > _minTimeBetweenReprocessTimeSpan)
+                var hash = CombineHashes(httpRouteTag!, httpMethod, statusCode);
+                var now = DateTime.UtcNow;
+                if (_processedRoutes.TryGetValue<DateTime>(hash, out var lastProcessed))
                 {
-                    _processedRoutes.Remove(hash);
-                    _processedRoutes.Add(hash, now);
+                    if (now - lastProcessed > _minTimeBetweenReprocessTimeSpan)
+                    {
+                        lock (_apiSecurityAddress)
+                        {
+                            _processedRoutes.Remove(hash);
+                            _processedRoutes.Add(hash, now);
+                        }
+
+                        args[AddressesConstants.WafContextProcessor] = _apiSecurityAddress;
+                        return true;
+                    }
+                }
+                else
+                {
+                    lock (_apiSecurityAddress)
+                    {
+                        // it's full, remove the oldest, as it's an ordered dic, insertion order is preserved
+                        if (_processedRoutes.Count == _maxRoutesSize)
+                        {
+                            _processedRoutes.RemoveAt(0);
+                        }
+
+                        _processedRoutes[hash] = now;
+                    }
+
                     args[AddressesConstants.WafContextProcessor] = _apiSecurityAddress;
+
                     return true;
                 }
             }
-            else
-            {
-                // it's full, remove the oldest, as it's an ordered dic, insertion order is preserved
-                if (_processedRoutes.Count == _maxRoutesSize)
-                {
-                    _processedRoutes.RemoveAt(0);
-                }
 
-                _processedRoutes.Add(hash, now);
-                args[AddressesConstants.WafContextProcessor] = _apiSecurityAddress;
-
-                return true;
-            }
+            return false;
         }
-
-        return false;
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error in ShouldAnalyzeSchema");
+            return false;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
