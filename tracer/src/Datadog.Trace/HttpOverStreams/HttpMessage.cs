@@ -6,6 +6,7 @@
 using System;
 using System.Text;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.HttpOverStreams
 {
@@ -45,20 +46,30 @@ namespace Datadog.Trace.HttpOverStreams
             }
 
             // text/plain; charset=utf-8
-            string[] pairs = contentType.Split(';');
-
-            foreach (string pair in pairs)
+            foreach (var pair in contentType.AsSpan().Split(";"))
             {
-                string[] parts = pair.Split('=');
+                var parts = pair.AsSpan();
+                var index = parts.IndexOf('=');
 
-                if (parts.Length == 2 && string.Equals(parts[0].Trim(), "charset", System.StringComparison.OrdinalIgnoreCase))
+                if (index != -1)
                 {
-                    switch (parts[1].Trim())
+                    var firstPart = parts.Slice(0, index).Trim();
+
+                    if (!firstPart.Equals("charset".AsSpan(), StringComparison.OrdinalIgnoreCase))
                     {
-                        case "utf-8":
-                            return Utf8Encoding;
-                        case "us-ascii":
-                            return Encoding.ASCII;
+                        continue;
+                    }
+
+                    var secondPart = parts.Slice(index + 1).Trim();
+
+                    if (secondPart.Equals("utf-8".AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Utf8Encoding;
+                    }
+
+                    if (secondPart.Equals("us-ascii".AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Encoding.ASCII;
                     }
                 }
             }
