@@ -152,7 +152,6 @@ namespace Datadog.Trace.TestHelpers
             private static bool IsParallelizationDisabled(ITestCollection collection)
             {
                 var attr = collection.CollectionDefinition?.GetCustomAttributes(typeof(CollectionDefinitionAttribute)).SingleOrDefault();
-
                 return attr?.GetNamedArgument<bool>(nameof(CollectionDefinitionAttribute.DisableParallelization)) is true;
             }
         }
