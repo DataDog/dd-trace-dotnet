@@ -7,7 +7,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Ci.Environment;
+namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal readonly struct DictionaryValuesProvider : IValueProvider
 {

@@ -13,7 +13,7 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.Ci.Environment;
+namespace Datadog.Trace.Ci.CiEnvironment;
 
 // ReSharper disable once InconsistentNaming
 

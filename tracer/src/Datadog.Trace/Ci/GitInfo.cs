@@ -102,7 +102,7 @@ namespace Datadog.Trace.Ci
         public static GitInfo GetCurrent()
         {
             string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            DirectoryInfo gitDirectory = GetParentGitFolder(baseDirectory) ?? GetParentGitFolder(System.Environment.CurrentDirectory);
+            DirectoryInfo gitDirectory = GetParentGitFolder(baseDirectory) ?? GetParentGitFolder(Environment.CurrentDirectory);
             return GetFrom(gitDirectory);
         }
 
@@ -400,13 +400,13 @@ namespace Datadog.Trace.Ci
 
                     if (line.StartsWith(GpgSigPrefix))
                     {
-                        string pgpLine = line.Substring(GpgSigPrefix.Length) + System.Environment.NewLine;
+                        string pgpLine = line.Substring(GpgSigPrefix.Length) + Environment.NewLine;
                         PgpSignature = pgpLine;
                         while (!pgpLine.Contains("END PGP SIGNATURE") && !pgpLine.Contains("END SSH SIGNATURE") && i + 1 < lines.Length)
                         {
                             i++;
                             pgpLine = lines[i];
-                            PgpSignature += pgpLine + System.Environment.NewLine;
+                            PgpSignature += pgpLine + Environment.NewLine;
                         }
 
                         continue;
@@ -415,7 +415,7 @@ namespace Datadog.Trace.Ci
                     msgLines.Add(line.Trim());
                 }
 
-                Message = string.Join(System.Environment.NewLine, msgLines);
+                Message = string.Join(Environment.NewLine, msgLines);
             }
 
             public static bool TryGetFromObjectFile(string filePath, out GitCommitObject commitObject)

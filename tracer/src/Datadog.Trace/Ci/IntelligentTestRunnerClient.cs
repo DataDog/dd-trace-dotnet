@@ -18,8 +18,8 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Ci.Environment;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -818,7 +818,7 @@ internal class IntelligentTestRunnerClient
                 // to handle this edge case, we create a temporal folder inside the current folder.
 
                 Log.Warning("ITR: 'git pack-objects...' returned a cross-device error, retrying using a local temporal folder.");
-                temporaryFolder = Path.Combine(System.Environment.CurrentDirectory, ".git_tmp");
+                temporaryFolder = Path.Combine(Environment.CurrentDirectory, ".git_tmp");
                 if (!Directory.Exists(temporaryFolder))
                 {
                     Directory.CreateDirectory(temporaryFolder);

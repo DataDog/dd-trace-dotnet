@@ -6,7 +6,7 @@
 
 using System.Collections;
 
-namespace Datadog.Trace.Ci.Environment;
+namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal interface IValueProvider
 {

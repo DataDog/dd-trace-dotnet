@@ -7,7 +7,7 @@
 using System.Collections;
 using Datadog.Trace.Util;
 
-namespace Datadog.Trace.Ci.Environment;
+namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal readonly struct EnvironmentVariablesProvider : IValueProvider
 {

@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Environment;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
 using FluentAssertions;
 using Newtonsoft.Json;

@@ -14,7 +14,7 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.Ci.Environment;
+namespace Datadog.Trace.Ci.CiEnvironment;
 
 #pragma warning disable SA1649
 // ReSharper disable once InconsistentNaming
@@ -332,8 +332,8 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
     {
         if (path == "~" || path?.StartsWith("~/") == true)
         {
-            var homePath = (System.Environment.OSVersion.Platform == PlatformID.Unix ||
-                            System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+            var homePath = (Environment.OSVersion.Platform == PlatformID.Unix ||
+                            Environment.OSVersion.Platform == PlatformID.MacOSX)
                                ? ValueProvider.GetValue(Constants.Home)
                                : ValueProvider.GetValue(Constants.UserProfile);
             path = homePath + path.Substring(1);

@@ -13,8 +13,8 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Ci.Environment;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
@@ -213,12 +213,12 @@ namespace Datadog.Trace.Ci
                 AsyncUtil.RunSync(() => FlushAsync(), cts.Token);
                 if (cts.IsCancellationRequested)
                 {
-                    Log.Error("Timeout occurred when flushing spans.{NewLine}{StackTrace}", System.Environment.NewLine, System.Environment.StackTrace);
+                    Log.Error("Timeout occurred when flushing spans.{NewLine}{StackTrace}", Environment.NewLine, Environment.StackTrace);
                 }
             }
             catch (TaskCanceledException)
             {
-                Log.Error("Timeout occurred when flushing spans.{NewLine}{StackTrace}", System.Environment.NewLine, System.Environment.StackTrace);
+                Log.Error("Timeout occurred when flushing spans.{NewLine}{StackTrace}", Environment.NewLine, Environment.StackTrace);
             }
             finally
             {
@@ -460,7 +460,7 @@ namespace Datadog.Trace.Ci
                         break;
                 }
 
-                return System.Environment.OSVersion.VersionString;
+                return Environment.OSVersion.VersionString;
             }
         }
 
@@ -493,9 +493,9 @@ namespace Datadog.Trace.Ci
                 {
                     processName ??= GetProcessName();
                     // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
-                    if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && System.Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
+                    if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
                     {
-                        Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", System.Environment.CommandLine);
+                        Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", Environment.CommandLine);
                         return false;
                     }
 
@@ -536,7 +536,7 @@ namespace Datadog.Trace.Ci
                 try
                 {
                     // Set the configuration key to propagate the configuration to child processes.
-                    System.Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
                 }
                 catch
                 {

@@ -4,7 +4,7 @@
 // </copyright>
 
 #nullable enable
-using Datadog.Trace.Ci.Environment;
+using Datadog.Trace.Ci.CiEnvironment;
 
 namespace Datadog.Trace.Configuration;
 

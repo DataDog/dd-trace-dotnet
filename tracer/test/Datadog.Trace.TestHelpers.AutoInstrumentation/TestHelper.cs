@@ -17,7 +17,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Environment;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.Helpers;

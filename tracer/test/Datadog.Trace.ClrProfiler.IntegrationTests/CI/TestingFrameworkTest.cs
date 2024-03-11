@@ -7,7 +7,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Environment;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
