@@ -39,18 +39,18 @@ partial class Build
     AbsolutePath ProfilerDirectory => RootDirectory / "profiler";
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
 
-    AbsolutePath OutputDirectory => TracerDirectory / "bin";
+    AbsolutePath OutputDirectory => RootDirectory / "artifacts";
     AbsolutePath SymbolsDirectory => OutputDirectory / "symbols";
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
-    AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
+    AbsolutePath BuildDataDirectory => ArtifactsDirectory / "build_data";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
     AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
 
-    AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
+    AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (OutputDirectory / "monitoring-home");
 
     [Solution("profiler/src/Demos/Datadog.Demos.sln")] readonly Solution ProfilerSamplesSolution;
     [Solution("Datadog.Profiler.sln")] readonly Solution ProfilerSolution;
@@ -200,6 +200,7 @@ partial class Build
         .Unlisted()
         .Executes(() =>
         {
+            EnsureExistingDirectory(OutputDirectory);
             EnsureExistingDirectory(MonitoringHomeDirectory);
             EnsureExistingDirectory(ArtifactsDirectory);
             EnsureExistingDirectory(BuildDataDirectory);
@@ -537,10 +538,11 @@ partial class Build
                 .Executes(async () =>
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
-                    var testDir = project.Directory;
+                    // the "correct" approach here would be to use msbuild to get the output directory,
+                    // but that's a pain, so use this hackiness instead
+                    
                     var frameworks = project.GetTargetFrameworks();
-
-                    var testBinFolder = testDir / "bin" / BuildConfiguration;
+                    var testBinFolder = OutputDirectory / "bin" / project.Name;
 
                     // dotnet test runs under x86 for net461, even on x64 platforms
                     // so copy both, just to be safe
@@ -556,7 +558,7 @@ partial class Build
                                 var source = MonitoringHomeDirectory / arch;
                                 foreach (var fmk in frameworks)
                                 {
-                                    var dest = testBinFolder / fmk / arch;
+                                    var dest = testBinFolder / GetPivot(fmk) / arch;
                                     CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                                     CopyFile(oldVersionPath, dest / $"ddwaf-{olderLibDdwafVersion}.dll", FileExistsPolicy.Overwrite);
                                 }
@@ -584,7 +586,7 @@ partial class Build
                                     // - The native tracer must be side-by-side with the running dll
                                     // As this is a managed-only unit test, the native tracer _must_ be in the root folder
                                     // For simplicity, we just copy all the native dlls there
-                                    var dest = testBinFolder / fmk;
+                                    var dest = testBinFolder / GetPivot(fmk);
 
                                     // use the files from the monitoring native folder
                                     CopyDirectoryRecursively(MonitoringHomeDirectory / (IsOsx ? "osx" : arch), dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
@@ -2241,12 +2243,14 @@ partial class Build
        .Description("Create RootDescriptors.xml file")
        .DependsOn(CompileManagedSrc)
        .Executes(() =>
-        {
-            var loaderTypes = GetTypeReferences(SourceDirectory / "bin" / "ProfilerResources" / "netcoreapp2.0" / "Datadog.Trace.ClrProfiler.Managed.Loader.dll");
+       {
+            // We explicitly don't use the "normal" pivot for the managed loader to make it easier for the native side to find the dll 
+            var loaderPath = OutputDirectory / "bin" / Projects.ManagedLoader / "netcoreapp2.0" / $"{Projects.ManagedLoader}.dll";
+            var loaderTypes = GetTypeReferences(loaderPath);
             List<(string Assembly, string Type)> datadogTraceTypes = new();
             foreach (var tfm in AppTrimmingTFMs)
             {
-                datadogTraceTypes.AddRange(GetTypeReferences(DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll"));
+                datadogTraceTypes.AddRange(GetTypeReferences(OutputDirectory / "bin" / Projects.DatadogTrace / GetPivot(tfm) / Projects.DatadogTrace + ".dll"));
             }
 
             // add Datadog projects to the root descriptors file
@@ -2877,4 +2881,14 @@ partial class Build
             .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)));
     }
+
+    /// <summary>
+    /// Get the "pivot" folder used in the build output 
+    /// </summary>
+    private string GetPivot(TargetFramework tfm) => GetPivot(tfm.ToString());
+    
+    /// <summary>
+    /// Get the "pivot" folder used in the build output 
+    /// </summary>
+    private string GetPivot(string tfm) => $"{BuildConfiguration}_{tfm}".ToLowerInvariant();
 }

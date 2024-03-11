@@ -3,8 +3,8 @@
   <PropertyGroup>
     <RootNamespace>Datadog.Trace.ClrProfiler.Managed.Loader</RootNamespace>
     <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
-    <OutputPath>..\bin\ProfilerResources\</OutputPath>
-
+    <!-- We exclude the debug/release from this to make it easier to interoperate with the c++ build -->
+    <ArtifactsPivots>$(TargetFramework)</ArtifactsPivots>
     <!-- NuGet -->
     <Version>2.49.0</Version>
 
