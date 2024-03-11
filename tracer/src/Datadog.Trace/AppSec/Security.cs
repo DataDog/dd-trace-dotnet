@@ -187,6 +187,11 @@ namespace Datadog.Trace.AppSec
                         _configurationStatus.ApplyStoredFiles();
                         InitWafAndInstrumentations(true);
                         rcmUpdateError = _wafInitResult?.ErrorMessage;
+                        if (_wafInitResult?.RuleFileVersion is not null)
+                        {
+                            WafRuleFileVersion = _wafInitResult.RuleFileVersion;
+                        }
+
                         _configurationStatus.IncomingUpdateState.SecurityStateChange = false;
                     }
                 }
