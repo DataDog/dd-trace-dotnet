@@ -30,6 +30,7 @@
     <PackageReference Include="MongoDB.Driver" Version="2.8.0" />
     <PackageReference Include="Moq" Version="4.16.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftTestSDKVersion)" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="xunit" Version="$(ApiVersion)" />
     <PackageReference Include="xunit.runner.visualstudio" Version="$(ApiVersion)">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
