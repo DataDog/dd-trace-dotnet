@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Sampling;
@@ -107,7 +108,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
                         span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
                         span.Type = SpanTypes.Test;
                         span.ResourceName = $"{fileName}/{jobItem.Key}";
-                        Ci.Environment.CIEnvironmentValues.Instance.DecorateSpan(span);
+                        CIEnvironmentValues.Instance.DecorateSpan(span);
 
                         span.SetTag(TestTags.Name, jobItem.Key);
                         span.SetTag(TestTags.Type, TestTags.TypeBenchmark);
