@@ -299,7 +299,7 @@ internal static partial class IastModule
             timeout = Regex.InfiniteMatchTimeout;
         }
 
-        return settings.RedactionEnabled ? new EvidenceRedactor(settings.RedactionKeysRegex, settings.RedactionValuesRegex, timeout) : null;
+        return settings.RedactionEnabled ? new EvidenceRedactor(settings.RedactionKeysRegex, settings.RedactionValuesRegex, timeout, settings.TruncationMaxValueLength) : null;
     }
 
     private static string BuildCommandInjectionEvidence(string file, string argumentLine, Collection<string>? argumentList)

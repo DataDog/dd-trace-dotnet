@@ -21,10 +21,12 @@ internal class EvidenceRedactor
     private TimeSpan _timeout;
     private Dictionary<string, ITokenizer> _tokenizers;
 
-    public EvidenceRedactor(string keysPattern, string valuesPattern, TimeSpan timeout, IDatadogLogger? logger = null)
+    public EvidenceRedactor(string keysPattern, string valuesPattern, TimeSpan timeout, int truncationMaxValueLength, IDatadogLogger? logger = null)
     {
         _timeout = timeout;
         _logger = logger;
+
+        TruncationUtils.Init(truncationMaxValueLength);
 
         var options = RegexOptions.IgnoreCase | RegexOptions.Compiled;
 

@@ -78,7 +78,7 @@ internal class EvidenceConverter : JsonConverter<Evidence?>
         if (evidenceValue.Ranges == null || evidenceValue.Ranges.Length == 0)
         {
             writer.WritePropertyName("value");
-            writer.WriteValue(evidenceValue.Value);
+            writer.WriteTruncableValue(evidenceValue.Value);
         }
         else
         {
@@ -125,7 +125,7 @@ internal class EvidenceConverter : JsonConverter<Evidence?>
         if (value == null) { return; }
         writer.WriteStartObject();
         writer.WritePropertyName("value");
-        writer.WriteValue(value);
+        writer.WriteTruncableValue(value);
         if (source != null)
         {
             writer.WritePropertyName("source");
@@ -143,7 +143,7 @@ internal class EvidenceConverter : JsonConverter<Evidence?>
         if (value != null)
         {
             writer.WritePropertyName("pattern");
-            writer.WriteValue(value);
+            writer.WriteTruncableValue(value);
         }
 
         if (source != null)

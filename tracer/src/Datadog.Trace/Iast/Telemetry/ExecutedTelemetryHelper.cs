@@ -19,7 +19,7 @@ internal class ExecutedTelemetryHelper
     private const string SinkExecutedTag = "executed.sink.";
     private const string PropagationExecutedTag = BasicExecutedTag + "executed.propagation";
     private const string RequestTaintedTag = BasicExecutedTag + "request.tainted";
-    private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.IastTelemetryVerbosity;
+    private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.TelemetryVerbosity;
     private int[] _executedSinks = new int[Trace.Telemetry.Metrics.IastInstrumentedSinksExtensions.Length];
     private int[] _executedSources = new int[Trace.Telemetry.Metrics.IastInstrumentedSourcesExtensions.Length];
     private int _executedPropagations = 0;
