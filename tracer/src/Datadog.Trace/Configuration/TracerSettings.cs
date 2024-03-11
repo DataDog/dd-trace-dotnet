@@ -314,7 +314,7 @@ namespace Datadog.Trace.Configuration
 
             IsActivityListenerEnabled = config
                                        .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
-                                       .AsBool(false);
+                                       .AsBool(true);
 
             OpenTelemetryLegacyOperationNameEnabled = config
                                                      .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled)
