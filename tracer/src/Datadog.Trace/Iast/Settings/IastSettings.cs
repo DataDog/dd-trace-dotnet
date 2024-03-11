@@ -82,7 +82,8 @@ internal class IastSettings
 
         TruncationMaxValueLength = config
             .WithKeys(ConfigurationKeys.Iast.TruncationMaxValueLength)
-            .AsInt32(TruncationMaxValueLengthDefault, x => x > 0);
+            .AsInt32(TruncationMaxValueLengthDefault, x => x > 0)
+            .Value;
     }
 
     public bool Enabled { get; set; }
