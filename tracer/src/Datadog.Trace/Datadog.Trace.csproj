@@ -22,11 +22,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Using Include="Datadog.Trace.Util.ThrowHelper" Alias="ThrowHelper" />
-    <Using Include="Datadog.Trace.VendoredMicrosoftCode.System" Condition="$(TargetFramework.StartsWith('net4')) OR '$(TargetFramework)' == 'netstandard2.0'" />
-  </ItemGroup>
-  
-  <ItemGroup>
     <None Include="..\..\..\docs\Datadog.Trace\README.md" Pack="true" PackagePath="\" />
     <!-- Don't include source generator output in the compilation - this is implicitly included anyway.
     the */** trick here ensures that there's at least one subdirectory, which indicates the files comes
