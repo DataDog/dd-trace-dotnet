@@ -470,6 +470,7 @@
   "DD_IAST_DEDUPLICATION_ENABLED": "iast_deduplication_enabled",
   "DD_IAST_REQUEST_SAMPLING": "iast_request_sampling_percentage",
   "DD_IAST_MAX_CONCURRENT_REQUESTS": "iast_max_concurrent_requests",
+  "DD_IAST_MAX_RANGE_COUNT": "iast_max_range_count",
   "DD_IAST_VULNERABILITIES_PER_REQUEST": "iast_vulnerability_per_request",
   "DD_IAST_REDACTION_ENABLED": "iast_redaction_enabled",
   "DD_IAST_REDACTION_KEYS_REGEXP": "iast_redaction_keys_regexp",
