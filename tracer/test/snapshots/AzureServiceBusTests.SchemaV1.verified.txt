@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -17,9 +17,7 @@
       service.name: Samples.AzureServiceBus,
       service.version: 1.0.0,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -51,8 +49,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -79,8 +75,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -104,9 +98,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -136,9 +128,7 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusProcessor,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -169,8 +159,6 @@
       otel.trace_id: Guid_1,
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -192,9 +180,7 @@
       service.name: Samples.AzureServiceBus,
       service.version: 1.0.0,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -226,8 +212,6 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -254,8 +238,6 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -281,8 +263,6 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -309,8 +289,6 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -332,9 +310,7 @@
       service.name: Samples.AzureServiceBus,
       service.version: 1.0.0,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -366,8 +342,6 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -394,8 +368,6 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -417,9 +389,7 @@
       service.name: Samples.AzureServiceBus,
       service.version: 1.0.0,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -451,8 +421,6 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -479,8 +447,6 @@
       peer.service: samples-azureservicebus-queue-session,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -504,9 +470,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_8,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       messaging.batch.message_count: 2.0,
@@ -539,8 +503,6 @@
       peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -573,8 +535,6 @@
       peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -606,8 +566,6 @@
       peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -639,8 +597,6 @@
       peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -672,8 +628,6 @@
       peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -704,9 +658,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_14,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -738,8 +690,6 @@
       peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -770,9 +720,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_16,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -802,9 +750,7 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusSessionProcessor,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_7,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -835,8 +781,6 @@
       otel.trace_id: Guid_7,
       peer.service: samples-azureservicebus-queue-session,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -858,9 +802,7 @@
       service.name: Samples.AzureServiceBus,
       service.version: 1.0.0,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -892,8 +834,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -920,8 +860,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -947,8 +885,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -974,8 +910,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -1001,8 +935,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -1028,8 +960,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -1056,8 +986,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1086,8 +1014,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -1109,9 +1035,7 @@
       service.name: Samples.AzureServiceBus,
       service.version: 1.0.0,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1143,8 +1067,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -1171,8 +1093,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -1196,9 +1116,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_19,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -1228,9 +1146,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_20,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -1261,8 +1177,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1295,8 +1209,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1327,9 +1239,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_23,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -1361,8 +1271,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1393,9 +1301,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_25,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -1427,8 +1333,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1459,9 +1363,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_27,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -1493,8 +1395,6 @@
       peer.service: samples-azureservicebus-queue/$deadletterqueue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1523,9 +1423,7 @@
       service.name: Samples.AzureServiceBus,
       service.version: 1.0.0,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1557,8 +1455,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -1584,8 +1480,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -1611,8 +1505,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -1639,8 +1531,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1665,9 +1555,7 @@
       service.name: Samples.AzureServiceBus,
       service.version: 1.0.0,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -1699,8 +1587,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -1726,8 +1612,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -1753,8 +1637,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -1781,8 +1663,6 @@
       peer.service: samples-azureservicebus-queue,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1809,9 +1689,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_31,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       messaging.batch.message_count: 3.0,
@@ -1842,9 +1720,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_32,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       messaging.batch.message_count: 3.0,
@@ -1877,8 +1753,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1911,8 +1785,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1945,8 +1817,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -1977,9 +1847,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_36,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       messaging.batch.message_count: 3.0,
@@ -2012,8 +1880,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2046,8 +1912,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2080,8 +1944,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2112,9 +1974,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_40,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2144,9 +2004,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_41,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2176,9 +2034,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_42,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2210,8 +2066,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2244,8 +2098,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2278,8 +2130,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2310,9 +2160,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_46,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       messaging.batch.message_count: 3.0,
@@ -2345,8 +2193,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2379,8 +2225,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2413,8 +2257,6 @@
       peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     },
     Metrics: {
@@ -2443,9 +2285,7 @@
       service.name: Samples.AzureServiceBus,
       service.version: 1.0.0,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -2477,8 +2317,6 @@
       peer.service: samples-azureservicebus-topic,
       span.kind: producer,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -2505,8 +2343,6 @@
       peer.service: samples-azureservicebus-topic,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -2530,9 +2366,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_51,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2562,9 +2396,7 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusProcessor,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_50,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2595,8 +2427,6 @@
       otel.trace_id: Guid_50,
       peer.service: samples-azureservicebus-topic/Subscriptions/subscription1,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -2620,9 +2450,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_52,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2652,9 +2480,7 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusProcessor,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_50,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2685,8 +2511,6 @@
       otel.trace_id: Guid_50,
       peer.service: samples-azureservicebus-topic/Subscriptions/subscription2,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   },
@@ -2710,9 +2534,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_53,
       runtime-id: Guid_2,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2742,9 +2564,7 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusProcessor,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_50,
-      span.kind: consumer,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: consumer
     },
     Metrics: {
       process_id: 0,
@@ -2775,8 +2595,6 @@
       otel.trace_id: Guid_50,
       peer.service: samples-azureservicebus-topic/Subscriptions/subscription3,
       span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: messaging.destination.name
     }
   }
