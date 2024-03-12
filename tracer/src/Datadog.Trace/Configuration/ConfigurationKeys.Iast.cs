@@ -84,7 +84,13 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for IAST verbosity.
             /// Default value is INFORMATION
             /// </summary>
-            public const string IastTelemetryVerbosity = "DD_IAST_TELEMETRY_VERBOSITY";
+            public const string TelemetryVerbosity = "DD_IAST_TELEMETRY_VERBOSITY";
+
+            /// <summary>
+            /// Configuration key for IAST evidence max lenght in chars.
+            /// Default value is 250
+            /// </summary>
+            public const string TruncationMaxValueLength = "DD_IAST_TRUNCATION_MAX_VALUE_LENGTH";
         }
     }
 }
