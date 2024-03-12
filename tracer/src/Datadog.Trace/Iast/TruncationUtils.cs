@@ -19,19 +19,10 @@ internal static class TruncationUtils
 {
     private const string TRUNCATED = "truncated";
     private const string RIGHT = "right";
-    private static int maxValueLength = 250;
 
-    public static void Init(int truncationMaxValueLength)
+    public static void WriteTruncatableValue(this JsonWriter writer, string? value, int maxValueLength)
     {
-        if (truncationMaxValueLength > 0)
-        {
-            maxValueLength = truncationMaxValueLength;
-        }
-    }
-
-    public static void WriteTruncatableValue(this JsonWriter writer, string? value)
-    {
-        if (value != null && value.Length > maxValueLength)
+        if (value != null && value.Length > maxValueLength && maxValueLength > 0)
         {
             writer.WriteValue(value.Substring(0, maxValueLength));
             writer.WritePropertyName(TRUNCATED);

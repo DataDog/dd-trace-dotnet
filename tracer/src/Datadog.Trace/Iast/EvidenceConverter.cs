@@ -44,10 +44,12 @@ internal class EvidenceConverter : JsonConverter<Evidence?>
     //   If a tainted range intersects with a sensitive range, the corresponding source must be redacted also.
 
     private bool _redactionEnabled;
+    private int _maxValueLength;
 
-    public EvidenceConverter(bool redactionEnabled)
+    public EvidenceConverter(int maxValueLength, bool redactionEnabled)
     {
         _redactionEnabled = redactionEnabled;
+        _maxValueLength = maxValueLength;
     }
 
     public override bool CanRead => false;
@@ -78,7 +80,7 @@ internal class EvidenceConverter : JsonConverter<Evidence?>
         if (evidenceValue.Ranges == null || evidenceValue.Ranges.Length == 0)
         {
             writer.WritePropertyName("value");
-            writer.WriteTruncatableValue(evidenceValue.Value);
+            writer.WriteTruncatableValue(evidenceValue.Value, _maxValueLength);
         }
         else
         {
@@ -96,7 +98,7 @@ internal class EvidenceConverter : JsonConverter<Evidence?>
         writer.WriteEndObject();
     }
 
-    private static void ToJsonTaintedValue(JsonWriter writer, string value, Range[] ranges)
+    private void ToJsonTaintedValue(JsonWriter writer, string value, Range[] ranges)
     {
         writer.WriteStartArray();
         int start = 0;
@@ -120,12 +122,12 @@ internal class EvidenceConverter : JsonConverter<Evidence?>
         writer.WriteEndArray();
     }
 
-    private static void WriteValuePart(JsonWriter writer, string? value, Source? source = null)
+    private void WriteValuePart(JsonWriter writer, string? value, Source? source = null)
     {
         if (value == null) { return; }
         writer.WriteStartObject();
         writer.WritePropertyName("value");
-        writer.WriteTruncatableValue(value);
+        writer.WriteTruncatableValue(value, _maxValueLength);
         if (source != null)
         {
             writer.WritePropertyName("source");
@@ -135,7 +137,7 @@ internal class EvidenceConverter : JsonConverter<Evidence?>
         writer.WriteEndObject();
     }
 
-    private static void WriteRedactedValuePart(JsonWriter writer, string? value, Source? source = null)
+    private void WriteRedactedValuePart(JsonWriter writer, string? value, Source? source = null)
     {
         writer.WriteStartObject();
         writer.WritePropertyName("redacted");
@@ -143,7 +145,7 @@ internal class EvidenceConverter : JsonConverter<Evidence?>
         if (value != null)
         {
             writer.WritePropertyName("pattern");
-            writer.WriteTruncatableValue(value);
+            writer.WriteTruncatableValue(value, _maxValueLength);
         }
 
         if (source != null)
@@ -155,7 +157,7 @@ internal class EvidenceConverter : JsonConverter<Evidence?>
         writer.WriteEndObject();
     }
 
-    private static void Write(JsonWriter writer, ValuePart part)
+    private void Write(JsonWriter writer, ValuePart part)
     {
         if (part.IsRedacted)
         {

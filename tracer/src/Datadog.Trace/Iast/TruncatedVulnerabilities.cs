@@ -53,12 +53,10 @@ internal struct TruncatedVulnerabilities
                 writer.WriteValue(value.Value.Type);
                 writer.WritePropertyName("evidence");
                 serializer.Serialize(writer, value.Value.Evidence);
-                // writer.WriteValue(value.Value.Evidence);
                 writer.WritePropertyName("hash");
                 writer.WriteValue(value.Value.Hash);
                 writer.WritePropertyName("location");
                 serializer.Serialize(writer, value.Value.Location);
-                // writer.WriteValue(value.Value.Location);
 
                 writer.WriteEndObject();
             }

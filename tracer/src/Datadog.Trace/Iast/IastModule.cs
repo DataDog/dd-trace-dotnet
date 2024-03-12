@@ -299,7 +299,7 @@ internal static partial class IastModule
             timeout = Regex.InfiniteMatchTimeout;
         }
 
-        return settings.RedactionEnabled ? new EvidenceRedactor(settings.RedactionKeysRegex, settings.RedactionValuesRegex, timeout, settings.TruncationMaxValueLength) : null;
+        return settings.RedactionEnabled ? new EvidenceRedactor(settings.RedactionKeysRegex, settings.RedactionValuesRegex, timeout) : null;
     }
 
     private static string BuildCommandInjectionEvidence(string file, string argumentLine, Collection<string>? argumentList)
@@ -496,7 +496,7 @@ internal static partial class IastModule
 
     internal static VulnerabilityBatch GetVulnerabilityBatch()
     {
-        return new VulnerabilityBatch(EvidenceRedactorLazy.Value);
+        return new VulnerabilityBatch(iastSettings.TruncationMaxValueLength, EvidenceRedactorLazy.Value);
     }
 
     // This method adds web vulnerabilities, with no location, only on web environments
