@@ -9,12 +9,14 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Pdb;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
@@ -37,6 +39,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private CaptureBehaviour _captureBehaviour;
         private string _message;
         private List<EvaluationError> _errors;
+        private Guid _snapshotId;
 
         public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags)
         {
@@ -52,6 +55,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             Tags = tags;
             _accumulatedDuration = new TimeSpan(0, 0, 0, 0, 0);
             Initialize();
+            _snapshotId = Guid.NewGuid();
         }
 
         internal MethodScopeMembers MethodScopeMembers { get; private set; }
@@ -308,7 +312,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal DebuggerSnapshotCreator EndSnapshot()
         {
             _jsonWriter.WritePropertyName("id");
-            _jsonWriter.WriteValue(Guid.NewGuid());
+            _jsonWriter.WriteValue(_snapshotId);
 
             _jsonWriter.WritePropertyName("timestamp");
             _jsonWriter.WriteValue(DateTimeOffset.Now.ToUnixTimeMilliseconds());
@@ -676,6 +680,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 var typeFullName = info.MethodState == MethodState.ExitEndAsync
                                        ? info.AsyncCaptureInfo.KickoffInvocationTargetType?.FullName
                                        : info.InvocationTargetType?.FullName;
+
+
                 AddEvaluationErrors()
                    .AddProbeInfo(
                         probeId,
@@ -687,9 +693,39 @@ namespace Datadog.Trace.Debugger.Snapshots
                         typeFullName,
                         null);
 
+                var activeSpan = Tracer.Instance.InternalActiveScope?.Span;
+                if (activeSpan != null)
+                {
+                    activeSpan.Tags.SetTag("_dd.entry_location.snapshot_id", _snapshotId.ToString());
+                    activeSpan.Tags.SetTag("_dd.entry_location.type", typeFullName);
+                    activeSpan.Tags.SetTag("_dd.entry_location.method", methodName);
+                    var methodLocation = ExtractFilePathAndLineNumbersFromPdb(info.Method);
+                    if (methodLocation != null)
+                    {
+                        activeSpan.Tags.SetTag("_dd.entry_location.file", methodLocation.FilePath);
+                        activeSpan.Tags.SetTag("_dd.entry_location.start_line", methodLocation.MethodBeginLineNumber);
+                        activeSpan.Tags.SetTag("_dd.entry_location.end_line", methodLocation.MethodEndLineNumber);
+                    }
+                }
+
                 var snapshot = GetSnapshotJson();
                 return snapshot;
             }
+        }
+
+        private static MethodLocation ExtractFilePathAndLineNumbersFromPdb(MethodBase method)
+        {
+            var sequencePoints = DatadogMetadataReader.CreatePdbReader(method.Module.Assembly)?.GetMethodSequencePoints((int)(method.MetadataToken));
+
+            if (sequencePoints != null && sequencePoints.Any())
+            {
+                var filePath = sequencePoints.First().URL;
+                var methodBeginLineNumber = sequencePoints.First().StartLine.ToString();
+                var methodEndLineNumber = sequencePoints.Last().EndLine.ToString();
+                return new MethodLocation(filePath, methodBeginLineNumber, methodEndLineNumber);
+            }
+
+            return null;
         }
 
         internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath)
@@ -890,6 +926,20 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 // ignored
             }
+        }
+    }
+
+    internal class MethodLocation 
+    {
+        public string FilePath { get; }
+        public string MethodBeginLineNumber { get; }
+        public string MethodEndLineNumber { get; }
+
+        public MethodLocation(string filePath, string methodBeginLineNumber, string methodEndLineNumber)
+        {
+            FilePath = filePath;
+            MethodBeginLineNumber = methodBeginLineNumber;
+            MethodEndLineNumber = methodEndLineNumber;
         }
     }
 }
