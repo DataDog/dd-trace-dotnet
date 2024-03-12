@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
@@ -15,16 +14,8 @@ public class SpanCharSplitterTests
     [Fact]
     public void SplitSpan()
     {
-        var separator = ";";
         var input = "hello;world;;a";
-
-#if NETCOREAPP3_1_OR_GREATER
-        var source = input.AsSpan();
-#else
-        var source = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(input);
-#endif
-
-        var enumerator = source.Split(separator).GetEnumerator();
+        var enumerator = input.SplitIntoSpans(';').GetEnumerator();
 
         // hello
         enumerator.MoveNext().Should().BeTrue();
@@ -57,16 +48,8 @@ public class SpanCharSplitterTests
     [Fact]
     public void Count()
     {
-        var separator = ";";
         var input = "hello;world;;a";
-
-#if NETCOREAPP3_1_OR_GREATER
-        var source = input.AsSpan();
-#else
-        var source = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(input);
-#endif
-
-        var enumerator = source.Split(separator, 3).GetEnumerator();
+        var enumerator = input.SplitIntoSpans(';', 3).GetEnumerator();
 
         // hello
         enumerator.MoveNext().Should().BeTrue();
@@ -93,16 +76,8 @@ public class SpanCharSplitterTests
     [Fact]
     public void NoSeparator()
     {
-        var separator = ";";
         var input = "hello world";
-
-#if NETCOREAPP3_1_OR_GREATER
-        var source = input.AsSpan();
-#else
-        var source = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(input);
-#endif
-
-        var enumerator = source.Split(separator).GetEnumerator();
+        var enumerator = input.SplitIntoSpans(';').GetEnumerator();
 
         enumerator.MoveNext().Should().BeTrue();
         enumerator.Current.Length.Should().Be(11);
@@ -115,16 +90,8 @@ public class SpanCharSplitterTests
     [Fact]
     public void EmptyString()
     {
-        var separator = ";";
         var input = string.Empty;
-
-#if NETCOREAPP3_1_OR_GREATER
-        var source = input.AsSpan();
-#else
-        var source = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(input);
-#endif
-
-        var enumerator = source.Split(separator).GetEnumerator();
+        var enumerator = input.SplitIntoSpans(';').GetEnumerator();
 
         enumerator.MoveNext().Should().BeTrue();
         enumerator.Current.Length.Should().Be(0);
@@ -132,29 +99,5 @@ public class SpanCharSplitterTests
         enumerator.Current.AsSpan().ToArray().Should().BeEquivalentTo(string.Empty);
 
         enumerator.MoveNext().Should().BeFalse();
-    }
-
-    [Fact]
-    public void EmptySeparator()
-    {
-        var separator = string.Empty;
-        var input = "hello world";
-
-#if NETCOREAPP3_1_OR_GREATER
-        var source = input.AsSpan();
-#else
-        var source = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(input);
-#endif
-
-        try
-        {
-            _ = source.Split(separator);
-        }
-        catch (ArgumentException)
-        {
-            return;
-        }
-
-        Assert.Fail("No exception was thrown");
     }
 }

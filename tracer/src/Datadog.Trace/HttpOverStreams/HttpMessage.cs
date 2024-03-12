@@ -46,7 +46,7 @@ namespace Datadog.Trace.HttpOverStreams
             }
 
             // text/plain; charset=utf-8
-            foreach (var pair in contentType.AsSpan().Split(";"))
+            foreach (var pair in contentType.SplitIntoSpans(';'))
             {
                 var parts = pair.AsSpan();
                 var index = parts.IndexOf('=');
@@ -70,6 +70,45 @@ namespace Datadog.Trace.HttpOverStreams
                     if (secondPart.Equals("us-ascii".AsSpan(), StringComparison.OrdinalIgnoreCase))
                     {
                         return Encoding.ASCII;
+                    }
+                }
+            }
+
+            Log.Warning("Assuming default UTF-8, Could not find an encoding for: {ContentType}", contentType);
+            return Utf8Encoding;
+        }
+
+        public Encoding GetContentEncodingOld()
+        {
+            // reduce getter calls
+            var contentType = ContentType;
+
+            if (contentType == null)
+            {
+                return null;
+            }
+
+            if (string.Equals("application/json", contentType, StringComparison.OrdinalIgnoreCase))
+            {
+                // Default
+                return Utf8Encoding;
+            }
+
+            // text/plain; charset=utf-8
+            string[] pairs = contentType.Split(';');
+
+            foreach (string pair in pairs)
+            {
+                string[] parts = pair.Split('=');
+
+                if (parts.Length == 2 && string.Equals(parts[0].Trim(), "charset", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    switch (parts[1].Trim())
+                    {
+                        case "utf-8":
+                            return Utf8Encoding;
+                        case "us-ascii":
+                            return Encoding.ASCII;
                     }
                 }
             }
