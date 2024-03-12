@@ -908,9 +908,9 @@ partial class Build
                     return;
              }
 
-             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName);
+             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName, BenchmarkCategory);
 
-             await ReplaceCommentInPullRequest(prNumber, $"## Benchmarks Report", markdown);
+             await ReplaceCommentInPullRequest(prNumber, $"## Benchmarks Report for " + BenchmarkCategory, markdown);
          });
 
     Target CompareThroughputResults => _ => _
