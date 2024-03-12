@@ -850,9 +850,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WritePropertyName("ddsource");
             _jsonWriter.WriteValue(DDSource);
 
-            _jsonWriter.WritePropertyName("ddtags");
-            _jsonWriter.WriteValue(UnknownValue);
-
             _jsonWriter.WritePropertyName("dd.trace_id");
             _jsonWriter.WriteValue(traceId);
 

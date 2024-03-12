@@ -29,7 +29,7 @@ internal class LiveDebuggerFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebuggerFactory));
 
-    public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName, ITelemetryController telemetry, DebuggerSettings debuggerSettings)
+    public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName, ITelemetryController telemetry, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
         if (!debuggerSettings.Enabled)
         {
@@ -49,7 +49,7 @@ internal class LiveDebuggerFactory
             () => new MinimalAgentHeaderHelper(),
             uri => uri);
 
-        var batchApi = AgentBatchUploadApi.Create(apiFactory, discoveryService);
+        var batchApi = AgentBatchUploadApi.Create(apiFactory, discoveryService, gitMetadataTagsProvider);
         var batchUploader = BatchUploader.Create(batchApi);
         var debuggerSink = DebuggerSink.Create(snapshotStatusSink, probeStatusSink, batchUploader, debuggerSettings);
 

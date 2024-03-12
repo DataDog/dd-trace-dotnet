@@ -21,6 +21,7 @@
    <assembly fullname="log4net" />
    <assembly fullname="Microsoft.AspNetCore.Authentication.Abstractions" />
    <assembly fullname="Microsoft.AspNetCore.Diagnostics" />
+   <assembly fullname="Microsoft.AspNetCore.Html.Abstractions" />
    <assembly fullname="Microsoft.AspNetCore.Http" />
    <assembly fullname="Microsoft.AspNetCore.Http.Abstractions">
       <type fullname="Microsoft.AspNetCore.Http.ConnectionInfo" />
@@ -549,6 +550,7 @@
       <type fullname="System.Exception" />
       <type fullname="System.FlagsAttribute" />
       <type fullname="System.FormatException" />
+      <type fullname="System.FormattableString" />
       <type fullname="System.Func`1" />
       <type fullname="System.Func`2" />
       <type fullname="System.Func`3" />
@@ -616,6 +618,7 @@
       <type fullname="System.MethodAccessException" />
       <type fullname="System.MidpointRounding" />
       <type fullname="System.MulticastDelegate" />
+      <type fullname="System.Net.WebUtility" />
       <type fullname="System.NonSerializedAttribute" />
       <type fullname="System.NotImplementedException" />
       <type fullname="System.NotSupportedException" />
@@ -710,6 +713,7 @@
       <type fullname="System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable`1/ConfiguredValueTaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.DefaultInterpolatedStringHandler" />
       <type fullname="System.Runtime.CompilerServices.ExtensionAttribute" />
+      <type fullname="System.Runtime.CompilerServices.FormattableStringFactory" />
       <type fullname="System.Runtime.CompilerServices.IAsyncStateMachine" />
       <type fullname="System.Runtime.CompilerServices.ICriticalNotifyCompletion" />
       <type fullname="System.Runtime.CompilerServices.INotifyCompletion" />
@@ -859,6 +863,7 @@
       <type fullname="System.IO.TextReader" />
       <type fullname="System.IO.TextWriter" />
       <type fullname="System.Math" />
+      <type fullname="System.Net.WebUtility" />
       <type fullname="System.Numerics.BitOperations" />
       <type fullname="System.OperatingSystem" />
       <type fullname="System.PlatformID" />
@@ -987,6 +992,9 @@
    <assembly fullname="System.Threading.Timer">
       <type fullname="System.Threading.Timer" />
       <type fullname="System.Threading.TimerCallback" />
+   </assembly>
+   <assembly fullname="System.Web.HttpUtility">
+      <type fullname="System.Web.HttpUtility" />
    </assembly>
    <assembly fullname="System.Xml.ReaderWriter">
       <type fullname="System.Xml.NameTable" />

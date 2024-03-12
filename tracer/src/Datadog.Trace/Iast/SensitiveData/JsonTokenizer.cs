@@ -26,14 +26,16 @@ internal class JsonTokenizer : ITokenizer
         _sourceValueRegex = new Regex(SourceValueRegexString, RegexOptions.Compiled | RegexOptions.IgnoreCase, timeout);
     }
 
-    public List<Range> GetTokens(string value, IntegrationId? integrationId = null)
+    public List<Range> GetTokens(Evidence evidence, IntegrationId? integrationId = null)
     {
-        var redactedRanges = new List<Range>();
+        var value = evidence.Value;
+        if (value is null) { return []; }
 
         // Remove new lines from the value by space
         // to get the correct position of the token with the .LinePosition property
         value = value.Replace("\n", " ");
 
+        var redactedRanges = new List<Range>();
         using var sr = new StringReader(value);
         using var reader = new JsonTextReader(sr);
 

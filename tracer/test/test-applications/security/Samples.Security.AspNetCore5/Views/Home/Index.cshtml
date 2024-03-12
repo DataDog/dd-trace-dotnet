@@ -26,6 +26,10 @@
             body: data
         });
     }
+    
+    window.getWithHeaders = function (url, headers) {
+        return fetch(url, { method: 'GET', headers: headers, credentials: 'same-origin' });
+    }
 
     window.GetCookieData = function (cookie1, cookie2, url) {
         document.cookie = cookie1;
@@ -118,7 +122,18 @@
 
     <div><a href="/Iast/NoSqlQueryMongoDb?price=42">GET /Iast/NoSqlQueryMongoDb</a></div>
 
-    <div><a href="/Iast/TypeReflectionInjection/?type=System.String">GET /Iast/ReflectionInjection [Type: System.String]</a></div>
+    <div><a href="/Iast/TypeReflectionInjection/?type=System.String">GET /Iast/ReflectionInjection [Type: System.String]</      a></div>
+    
+    <div><a href="/Iast/JsonParseTainting?json=%7B%22key%22%3A%20%22value%22%7D">GET /Iast/NewtonsoftJsonParseTainting [Vuln CommandExecution]</a></div>
+
+    <div><a href="javascript:getWithHeaders('/Iast/InsecureAuthProtocol', {'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='})">GET /Iast/InsecureAuthProtocol [Basic Scheme]</a></div>
+    
+	<div><a href="/Iast/ReflectedXss/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXss </a></div>
+
+	<div><a href="/Iast/ReflectedXssEscaped/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXssEscaped with INJECTION</a></div>
+
+	<div><a href="/Iast/ReflectedXssEscaped/?param=Normal Texxt">GET /Iast/ReflectedXssEscaped with normal text</a></div>
+
 
     <div>
         @Html.Raw(Context.Request.Query["q"])

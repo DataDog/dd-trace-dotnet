@@ -81,6 +81,7 @@ static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("Oracle.ManagedDataAccess"),
     WStr("DelegateDecompiler*"),
     WStr("FluentValidation*"),
+    WStr("NHibernate*"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedMethodIncludeFilters[] = {
@@ -156,12 +157,14 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler)
     HRESULT hr = profiler->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &_profiler);
     if (_profiler != nullptr)
     {
-        WCHAR version[1024];
-        ULONG versionLength;
-        if (SUCCEEDED(_profiler->GetRuntimeInformation(nullptr, &m_runtimeType, nullptr, nullptr, nullptr, nullptr, 1024,
-                                                    &versionLength, version)))
+        USHORT major;
+        USHORT minor;
+        USHORT build;
+
+        if (SUCCEEDED(_profiler->GetRuntimeInformation(nullptr, &m_runtimeType, &major, &minor, &build, nullptr, 0,
+                                                    nullptr, nullptr)))
         {
-            m_runtimeVersion = GetVersionInfo(version);
+            m_runtimeVersion = VersionInfo{major, minor, build, 0};
         }
     }
     trace::Logger::Info("Dataflow::Dataflow -> Detected runtime version : ", m_runtimeVersion.ToString());

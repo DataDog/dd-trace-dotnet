@@ -14,4 +14,9 @@ internal interface ITestMethodInfo : ITestMethod
     /// Gets the test method options
     /// </summary>
     ITestMethodOptions TestMethodOptions { get; }
+
+    /// <summary>
+    /// Gets the parent class Info object.
+    /// </summary>
+    ITestClassInfo Parent { get; }
 }

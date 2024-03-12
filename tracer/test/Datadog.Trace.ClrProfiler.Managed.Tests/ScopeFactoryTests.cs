@@ -10,6 +10,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -118,7 +119,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void CleanUri_HttpUrlTag(string uri, string expected, bool includeQuerystring)
         {
             // Set up Tracer
-            var dictionary = new Dictionary<string, object> { { ConfigurationKeys.QueryStringReportingEnabled, includeQuerystring } };
+            var dictionary = new Dictionary<string, object>
+            {
+                { ConfigurationKeys.QueryStringReportingEnabled, includeQuerystring },
+                { ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "5000" }
+            };
+
 #if NETCOREAPP2_1
             // Add old one otherwise NullReferenceException on arm64/netcoreapp2.1
             if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
@@ -135,8 +141,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(uri), IntegrationId.HttpMessageHandler, out var tags))
             {
-                Assert.Equal(expected, automaticScope.Span.GetTag(Tags.HttpUrl));
-                Assert.Equal(expected, tags.HttpUrl);
+                expected.Should().Be(automaticScope.Span.GetTag(Tags.HttpUrl));
+                expected.Should().Be(tags.HttpUrl);
             }
         }
 

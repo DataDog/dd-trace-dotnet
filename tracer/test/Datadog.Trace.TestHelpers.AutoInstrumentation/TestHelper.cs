@@ -16,6 +16,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.Helpers;
@@ -24,6 +25,7 @@ using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -79,7 +81,7 @@ namespace Datadog.Trace.TestHelpers
         {
         }
 
-        public async Task<Process> StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false)
+        public async Task<Process> StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false, bool copyCIEnvironmentValues = false)
         {
             // get path to sample app that the profiler will attach to
             string sampleAppPath = EnvironmentHelper.GetTestCommandForSampleApplicationPath(packageVersion, framework);
@@ -88,8 +90,29 @@ namespace Datadog.Trace.TestHelpers
                 throw new Exception($"application not found: {sampleAppPath}");
             }
 
+            if (copyCIEnvironmentValues)
+            {
+                // Ensure we have the CI Environment variables in the target process
+                static IEnumerable<string> GetConstants()
+                {
+                    return typeof(CIEnvironmentValues.Constants)
+                          .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+                          .Where(fi => fi.IsLiteral && !fi.IsInitOnly)
+                          .Select(fi => fi.GetValue(null)?.ToString())
+                          .Where(value => value != null);
+                }
+
+                foreach (var key in GetConstants())
+                {
+                    if (EnvironmentHelpers.GetEnvironmentVariable(key) is { Length: > 0 } value)
+                    {
+                        EnvironmentHelper.CustomEnvironmentVariables[key] = value;
+                    }
+                }
+            }
+
             Output.WriteLine($"Starting Application: {sampleAppPath}");
-            string testCli = EnvironmentHelper.GetDotNetTest();
+            string testCli = forceVsTestParam ? EnvironmentHelper.GetDotnetExe() : EnvironmentHelper.GetDotNetTest();
             string exec = testCli;
             string appPath = testCli.StartsWith("dotnet") || forceVsTestParam ? $"vstest {sampleAppPath}" : sampleAppPath;
             Output.WriteLine("Executable: " + exec);
@@ -107,9 +130,9 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false)
+        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, bool copyCIEnvironmentValues = false)
         {
-            var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam);
+            var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam, copyCIEnvironmentValues: copyCIEnvironmentValues);
 
             using var helper = new ProcessHelper(process);
 
@@ -118,6 +141,17 @@ namespace Datadog.Trace.TestHelpers
             var exitCode = process.ExitCode;
 
             Output.WriteLine($"Exit Code: " + exitCode);
+
+            if (helper.EnvironmentVariables is { } environmentVariables)
+            {
+                var strEnvironmentVariables = new StringBuilder();
+                foreach (var envVar in environmentVariables)
+                {
+                    strEnvironmentVariables.AppendLine($"\t{envVar.Key}={envVar.Value}");
+                }
+
+                Output.WriteLine($"Environment Variables:{Environment.NewLine}{strEnvironmentVariables}");
+            }
 
             var standardOutput = helper.StandardOutput;
 
@@ -360,7 +394,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void EnableIastTelemetry(int level)
         {
-            SetEnvironmentVariable(ConfigurationKeys.Iast.IastTelemetryVerbosity, ((IastMetricsVerbosityLevel)level).ToString());
+            SetEnvironmentVariable(ConfigurationKeys.Iast.TelemetryVerbosity, ((IastMetricsVerbosityLevel)level).ToString());
         }
 
         public void DisableObfuscationQueryString()

@@ -29,9 +29,12 @@ internal class HeaderInjectionTokenizer : ITokenizer
         _valueRegex = new Regex(_valuePattern, RegexOptions.Compiled | RegexOptions.IgnoreCase, timeout);
     }
 
-    public List<Range> GetTokens(string evidence, IntegrationId? integrationId = null)
+    public List<Range> GetTokens(Evidence evidence, IntegrationId? integrationId = null)
     {
-        var separatorStart = evidence.IndexOf(IastModule.HeaderInjectionEvidenceSeparator);
+        var value = evidence.Value;
+        if (value is null) { return []; }
+
+        var separatorStart = value.IndexOf(IastModule.HeaderInjectionEvidenceSeparator);
 
         if (separatorStart > 0)
         {
@@ -40,10 +43,10 @@ internal class HeaderInjectionTokenizer : ITokenizer
             // If the key patterns applies to the key or the value pattern applies to the value,
             // we should redact the value
 
-            if (_keyRegex.IsMatch(evidence.Substring(0, separatorStart)) ||
-                _valueRegex.IsMatch(evidence, separatorEnd))
+            if (_keyRegex.IsMatch(value.Substring(0, separatorStart)) ||
+                _valueRegex.IsMatch(value, separatorEnd))
             {
-                return [new Range(separatorEnd, evidence.Length - separatorEnd)];
+                return [new Range(separatorEnd, value.Length - separatorEnd)];
             }
         }
 

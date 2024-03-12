@@ -214,6 +214,7 @@
     <None Include="packages.config" />
     <Content Include="Views\Home\Upload.cshtml" />
     <Content Include="Views\User\Index.cshtml" />
+    <Content Include="Views\Iast\ReflectedXss.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj">

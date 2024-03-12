@@ -62,7 +62,6 @@ public class ClientWorker
             _logger.LogInformation("Creating GRPC client");
             var client = new Greeter.GreeterClient(callInvoker);
 
-            SendVerySlowRequest(client);
             await SendVerySlowRequestAsync(client);
             delay = Task.Delay(6_000); // longer than the slow request duration
 

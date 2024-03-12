@@ -22,6 +22,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private const string ServiceVersion = "1.0.0";
 
+        private static readonly HashSet<string> ExcludeTags = new HashSet<string>
+        {
+            "custom-tag",
+        };
+
         public WcfTests(ITestOutputHelper output)
             : base("Wcf", output)
         {
@@ -75,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "v1", false, false },
         };
 
-        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsWcf(metadataSchemaVersion);
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsWcf(metadataSchemaVersion, ExcludeTags);
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
@@ -106,6 +111,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Filter out WCF spans unrelated to the actual request handling, and filter them before returning spans
                 // so we can wait on the exact number of spans we expect.
                 agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
+
                 // The test adds a custom span to show that propagation works with WCF headers
                 agent.SpanFilters.Add(s => s.Type == SpanTypes.Web || s.Type == SpanTypes.Custom);
                 var spans = agent.WaitForSpans(expectedSpanCount);

@@ -59,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     logEntryWatcher,
                     new Config
                     {
+                        TraceEnabled = false,
                         // RuntimeMetricsEnabled = true,
                         // DebugLogsEnabled = true,
                         // DataStreamsEnabled = true,
@@ -72,6 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     },
                     new Config
                     {
+                        TraceEnabled = false,
                         // RuntimeMetricsEnabled = true,
                         // DebugLogsEnabled = true,
                         // DataStreamsEnabled = true,
@@ -118,6 +120,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     logEntryWatcher,
                     new Config
                     {
+                        TraceEnabled = false,
                         TraceSampleRate = .5,
                     });
 
@@ -127,7 +130,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     config: new Config(),
                     expectedConfig: new Config
                     {
-                        TraceSampleRate = .9 // When clearing the key from dynamic configuration, it should revert back to the initial value
+                        // When clearing the key from dynamic configuration,
+                        // it should revert back to the initial value
+                        TraceEnabled = true,
+                        TraceSampleRate = .9
                     });
             }
             finally
@@ -167,11 +173,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             capabilities[13].Should().BeTrue(); // APM_TRACING_LOGS_INJECTION
             capabilities[14].Should().BeTrue(); // APM_TRACING_HTTP_HEADER_TAGS
             capabilities[15].Should().BeTrue(); // APM_TRACING_CUSTOM_TAGS
+            capabilities[19].Should().BeTrue(); // APM_TRACING_TRACING_ENABLED
 
             request.Client.State.ConfigStates.Should().ContainSingle(f => f.Id == fileId)
                .Subject.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
 
-            var log = await logEntryWatcher.WaitForLogEntries(new[] { DiagnosticLog });
+            var log = await logEntryWatcher.WaitForLogEntries([DiagnosticLog]);
 
             using (var context = new AssertionScope())
             {
@@ -239,6 +246,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             var expectedKeys = new List<(string Key, object Value)>
             {
+                (ConfigurationKeys.TraceEnabled, config.TraceEnabled),
                 // (ConfigurationKeys.RuntimeMetricsEnabled, config.RuntimeMetricsEnabled),
                 // (ConfigurationKeys.DebugEnabled, config.DebugLogsEnabled),
                 (ConfigurationKeys.LogsInjectionEnabled, config.LogInjectionEnabled),
@@ -327,6 +335,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         internal record Config
         {
+            [JsonProperty("tracing_enabled")]
+            public bool TraceEnabled { get; init; }
+
             // [JsonProperty("runtime_metrics_enabled")]
             // public bool RuntimeMetricsEnabled { get; init; }
 

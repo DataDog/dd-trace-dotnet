@@ -1008,6 +1008,12 @@ partial class Build
             {
                 foreach (var targetFramework in TestingFrameworks.Where(x => x == Framework || Framework is null))
                 {
+                    if (IsArm64 && Framework is null && targetFramework == TargetFramework.NETCOREAPP2_1)
+                    {
+                        // Skip .NET Core 2.1 on ARM64 unless enabled explicitly - Some unit tests crash and it's not supported anyway
+                        continue;
+                    }
+
                     try
                     {
                         DotNetTest(x => x
