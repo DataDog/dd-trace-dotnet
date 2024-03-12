@@ -18,7 +18,7 @@ internal class RangeList
 
     internal RangeList(int count)
     {
-        var finalCount = count > _maxRangeCount ? _maxRangeCount : count;
+        var finalCount = Math.Min(count, _maxRangeCount);
         _ranges = new Range[finalCount];
         _remaining = finalCount;
     }
