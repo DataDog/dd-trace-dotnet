@@ -152,6 +152,33 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        internal static async Task<TelemetryData> DeserializeResponseAsync(Stream inputStream, string apiVersion, string requestType)
+        {
+            return apiVersion switch
+            {
+                TelemetryConstants.ApiVersionV2 => await DeserializeV2Async(inputStream, requestType),
+                _ => throw new Exception($"Unknown telemetry api version: {apiVersion}"),
+            };
+
+            static async Task<TelemetryData> DeserializeV2Async(Stream inputStream, string requestType)
+            {
+                if (!TelemetryConverter.V2Serializers.TryGetValue(requestType, out var serializer))
+                {
+                    throw new Exception($"Unknown V2 telemetry request type {requestType}");
+                }
+
+                // Looks like we don't have any APIs for reading the stream asynchronously
+                // so we're stuck with this
+                using var sr = new StreamReader(inputStream);
+                var text = await sr.ReadToEndAsync();
+                var tr = new StringReader(text);
+                using var jsonTextReader = new JsonTextReader(tr);
+                var telemetry = serializer.Deserialize<TelemetryData>(jsonTextReader);
+
+                return telemetry;
+            }
+        }
+
         protected virtual void OnRequestReceived(HttpListenerContext context)
         {
             RequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(context));
