@@ -241,7 +241,7 @@ namespace Datadog.Trace.RuntimeMetrics
             {
                 try
                 {
-                    PssRuntimeInformation.GetCurrentProcessMetrics(out userProcessorTime, out systemCpuTime, out threadCount, out privateMemorySize);
+                    ProcessSnapshotRuntimeInformation.GetCurrentProcessMetrics(out userProcessorTime, out systemCpuTime, out threadCount, out privateMemorySize);
                     _pssConsecutiveFailures = 0;
                 }
                 catch

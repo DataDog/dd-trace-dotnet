@@ -1,4 +1,4 @@
-// <copyright file="PssRuntimeInformation.cs" company="Datadog">
+// <copyright file="ProcessSnapshotRuntimeInformation.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,9 +13,9 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.RuntimeMetrics;
 
 // ReSharper disable InconsistentNaming UnusedMember.Local
-internal class PssRuntimeInformation
+internal class ProcessSnapshotRuntimeInformation
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<PssRuntimeInformation>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ProcessSnapshotRuntimeInformation>();
 
     private enum PSS_PROCESS_FLAGS
     {
@@ -107,8 +107,8 @@ internal class PssRuntimeInformation
                     throw new Win32Exception(result, $"PssQuerySnapshot with PSS_QUERY_PROCESS_INFORMATION (64 bits) failed with code {result}");
                 }
 
-                userTime = processInformation.UserTime;
-                kernelTime = processInformation.KernelTime;
+                userTime = (long)processInformation.UserTime;
+                kernelTime = (long)processInformation.KernelTime;
                 memoryUsage = (long)processInformation.PrivateUsage;
             }
             else
@@ -122,8 +122,8 @@ internal class PssRuntimeInformation
                     throw new Win32Exception(result, $"PssQuerySnapshot with PSS_QUERY_PROCESS_INFORMATION (32 bits) failed with code {result}");
                 }
 
-                userTime = processInformation.UserTime;
-                kernelTime = processInformation.KernelTime;
+                userTime = (long)processInformation.UserTime;
+                kernelTime = (long)processInformation.KernelTime;
                 memoryUsage = (long)processInformation.PrivateUsage;
             }
 
@@ -172,10 +172,10 @@ internal class PssRuntimeInformation
         public uint ProcessId;
         public uint ParentProcessId;
         public PSS_PROCESS_FLAGS Flags;
-        public long CreateTime;
-        public long ExitTime;
-        public long KernelTime;
-        public long UserTime;
+        public ulong CreateTime;
+        public ulong ExitTime;
+        public ulong KernelTime;
+        public ulong UserTime;
         public uint PriorityClass;
         public nint PeakVirtualSize;
         public nint VirtualSize;
@@ -203,10 +203,10 @@ internal class PssRuntimeInformation
         public uint ProcessId;
         public uint ParentProcessId;
         public PSS_PROCESS_FLAGS Flags;
-        public long CreateTime;
-        public long ExitTime;
-        public long KernelTime;
-        public long UserTime;
+        public ulong CreateTime;
+        public ulong ExitTime;
+        public ulong KernelTime;
+        public ulong UserTime;
         public uint PriorityClass;
         public nuint PeakVirtualSize;
         public nuint VirtualSize;
