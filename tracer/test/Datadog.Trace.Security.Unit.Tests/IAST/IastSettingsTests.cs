@@ -93,6 +93,17 @@ public class IastSettingsTests : SettingsTestsBase
     }
 
     [Fact]
+    public void GivenIastSettings_WhenSetMaxRangeCountToZero_MaxRangeCountIsDefaultValue()
+    {
+        var settings = new CustomSettingsForTests(new Dictionary<string, object>()
+        {
+            { ConfigurationKeys.Iast.MaxRangeCount, 0 }
+        });
+        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
+        Assert.Equal(IastSettings.MaxRangeCountDefault, iastSettings.MaxRangeCount);
+    }
+
+    [Fact]
     public void GivenIastSettings_WhenVulnerabilitiesPerRequestTo5_VulnerabilitiesPerRequestDefaultValue()
     {
         var settings = new CustomSettingsForTests(new Dictionary<string, object>()
