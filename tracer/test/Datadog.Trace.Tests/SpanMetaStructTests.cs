@@ -109,6 +109,7 @@ public class SpanMetaStructTests
     public static void GivenAEncodedSpanWithMetaStruct_WhenDecoding_ThenMetaStructIsCorrectlyDecoded(List<Tuple<string, object?>> dataToEncode)
     {
         var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
+        List<string> visitedKeys = new();
 
         // We add the elements to the meta struct
         foreach (var item in dataToEncode)
@@ -135,15 +136,21 @@ public class SpanMetaStructTests
         // We check every item in the map
         for (var i = 0; i < headerLength; i++)
         {
-            offset = CheckDictionaryItem(spanBytes, offset, dataToEncode[i].Item1, dataToEncode[i]?.Item2);
+            offset = CheckDictionaryItem(spanBytes, offset, dataToEncode, visitedKeys);
         }
+
+        visitedKeys.Count.Should().Be(dataToEncode.Count);
     }
 
-    private static int CheckDictionaryItem(byte[] bytes, int offset, string expectedKey, object? expectedValue)
+    private static int CheckDictionaryItem(byte[] bytes, int offset, List<Tuple<string, object?>> originalData, List<string> visitedKeys)
     {
         // Read the key
         string result = MessagePackBinary.ReadString(bytes, offset, out var size);
-        result.Should().Be(expectedKey);
+        var originalKey = originalData.Find(x => x.Item1 == result);
+        originalKey.Should().NotBeNull();
+        visitedKeys.Should().NotContain(result);
+        visitedKeys.Add(result);
+        var expectedValue = originalKey!.Item2;
         offset += size;
 
         // Read the value of this key

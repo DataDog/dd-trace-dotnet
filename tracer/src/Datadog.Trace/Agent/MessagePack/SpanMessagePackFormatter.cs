@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
@@ -207,15 +206,13 @@ namespace Datadog.Trace.Agent.MessagePack
 
         private void WriteMetaStruct(ref byte[] bytes, ref int offset, IReadOnlyDictionary<string, object> metaStruct)
         {
-            var data = new Dictionary<string, byte[]>(metaStruct.Count);
+            var data = new List<KeyValuePair<string, byte[]>>(metaStruct.Count);
 
-            // Since ConcurrentDictionary does not guarantee the order of the keys, we need to order them
-            // to make serialization deterministic.
             // We need to know the size of the byte array before actually writing it. Depending on the size,
             // the serializer will use a different amount of bytes in the header to encode the length of the byte array.
             // That means that we need to know the size of the array, then write the header and then, the array itself.
 
-            foreach (var keyValuePair in metaStruct.OrderBy(keyValuePair => keyValuePair.Key, StringComparer.OrdinalIgnoreCase))
+            foreach (var keyValuePair in metaStruct)
             {
                 // 256 is the size that the serializer would reserve initially for empty arrays, so we create
                 // the buffer with that size to avoid this first resize. If a bigger size is required later, the serializer
@@ -230,13 +227,13 @@ namespace Datadog.Trace.Agent.MessagePack
                     Array.Resize(ref buffer, bytesCopied);
                 }
 
-                data[keyValuePair.Key] = buffer;
+                data.Add(new KeyValuePair<string, byte[]>(keyValuePair.Key, buffer));
             }
 
             WriteMetaStructAux(ref bytes, ref offset, data);
         }
 
-        private void WriteMetaStructAux(ref byte[] bytes, ref int offset, Dictionary<string, byte[]> metaStruct)
+        private void WriteMetaStructAux(ref byte[] bytes, ref int offset, List<KeyValuePair<string, byte[]>> metaStruct)
         {
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaStructBytes);
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, metaStruct.Count);
