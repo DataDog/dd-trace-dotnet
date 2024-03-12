@@ -29,7 +29,7 @@ internal static class TruncationUtils
         }
     }
 
-    public static void WriteTruncableValue(this JsonWriter writer, string? value)
+    public static void WriteTruncatableValue(this JsonWriter writer, string? value)
     {
         if (value != null && value.Length > maxValueLength)
         {

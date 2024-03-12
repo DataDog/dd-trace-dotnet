@@ -63,13 +63,13 @@ internal class SourceConverter : JsonConverter<Source>
                 if (source.RedactedValue != null)
                 {
                     writer.WritePropertyName("pattern");
-                    writer.WriteTruncableValue(source.RedactedValue);
+                    writer.WriteTruncatableValue(source.RedactedValue);
                 }
             }
             else if (source.Value != null)
             {
                 writer.WritePropertyName("value");
-                writer.WriteTruncableValue(source.Value);
+                writer.WriteTruncatableValue(source.Value);
             }
 
             writer.WriteEndObject();
