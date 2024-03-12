@@ -207,10 +207,9 @@ namespace Datadog.Trace.Agent.MessagePack
         private int WriteMetaStruct(ref byte[] bytes, int offset, in SpanModel model)
         {
             int originalOffset = offset;
-
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaStructBytes);
 
-            // We don't know the final count yet, depending on it, a different ampount of bytes will be used for the header
+            // We don't know the final count yet, depending on it, a different amount of bytes will be used for the header
             // of the dictionary, so we need a temporal buffer
 
             var temporalBytes = new byte[256];

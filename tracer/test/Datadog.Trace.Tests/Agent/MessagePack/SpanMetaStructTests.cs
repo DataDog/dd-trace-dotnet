@@ -114,7 +114,7 @@ public class SpanMetaStructTests
         // We add the elements to the meta struct
         foreach (var item in dataToEncode)
         {
-            span.Tags.SetMetaStruct(item.Item1, MetaStructMessagePackHelper.ObjectToByteArray(item.Item2));
+            span.SetMetaStruct(item.Item1, MetaStructMessagePackHelper.ObjectToByteArray(item.Item2));
         }
 
         var spanBytes = new byte[] { };
