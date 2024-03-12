@@ -3073,7 +3073,7 @@ stages:
         artifact: windows-profiler-home
         path: $(monitoringHome)
 
-    - script: tracer\build.cmd RunBenchmarks -BenchmarkCategory 'tracer'
+    - script: tracer\build.cmd RunBenchmarks -BenchmarkCategory tracer
       displayName: RunBenchmarks
       env:
         DD_CIVISIBILITY_AGENTLESS_ENABLED: true
@@ -3140,7 +3140,7 @@ stages:
     - publish: tracer/build_data/benchmarks
       artifact: benchmarks_results
 
-    - script: tracer\build.cmd CompareBenchmarksResults -BenchmarkCategory 'tracer'
+    - script: tracer\build.cmd CompareBenchmarksResults -BenchmarkCategory tracer
       continueOnError: true
       displayName: Compare Benchmarks
       condition: and(succeeded(), eq(variables.isPullRequest, true))
@@ -3192,7 +3192,7 @@ stages:
             artifact: windows-profiler-home
             path: $(monitoringHome)
 
-        - script: tracer\build.cmd RunBenchmarks -BenchmarkCategory 'appsec'
+        - script: tracer\build.cmd RunBenchmarks -BenchmarkCategory appsec
           displayName: RunAppSecBenchmarks
           env:
             DD_CIVISIBILITY_AGENTLESS_ENABLED: true
@@ -3227,7 +3227,7 @@ stages:
         - publish: tracer/build_data/benchmarks
           artifact: benchmarks_appsec_results
 
-        - script: tracer\build.cmd CompareBenchmarksResults -BenchmarkCategory 'appsec'
+        - script: tracer\build.cmd CompareBenchmarksResults -BenchmarkCategory appsec
           continueOnError: true
           displayName: Compare AppSec Benchmarks
           condition: and(succeeded(), eq(variables.isPullRequest, true))

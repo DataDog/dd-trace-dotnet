@@ -898,9 +898,10 @@ partial class Build
              {
                  case  "tracer": artifactName = "benchmarks_results"; break;
                  case  "appsec": artifactName = "benchmarks_appsec_results"; break;
+                 default: Logger.Warning("Unknown benchmark category {BenchmarkCategory}. Skipping comparison", BenchmarkCategory); break;
              }
 
-             var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => artifactName, masterDir, buildReason: null);
+             var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", _ => artifactName, masterDir, buildReason: null);
 
              if (oldBuild is null)
              {
