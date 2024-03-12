@@ -4,10 +4,13 @@
 // </copyright>
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Vendors.StatsdClient;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -97,6 +100,64 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
                 statsd.Verify(
                     s => s.Increment(MetricsNames.ExceptionsCount, It.IsAny<int>(), It.IsAny<double>(), new[] { "exception_type:CustomException2" }),
                     Times.Never);
+            }
+        }
+
+        [Fact]
+        public async Task ShouldCaptureProcessMetrics()
+        {
+            var statsd = new Mock<IDogStatsd>();
+            var listener = new Mock<IRuntimeMetricsListener>();
+
+            using (new RuntimeMetricsWriter(statsd.Object, TimeSpan.FromSeconds(1), false, (_, _, _) => listener.Object))
+            {
+                var expectedNumberOfThreads = Process.GetCurrentProcess().Threads.Count;
+
+                var tcs = new TaskCompletionSource<bool>();
+
+                double? actualNumberOfThreads = null;
+                double? userCpuTime = null;
+                double? kernelCpuTime = null;
+                double? memoryUsage = null;
+
+                statsd.Setup(s => s.Gauge(MetricsNames.ThreadsCount, It.IsAny<double>(), It.IsAny<double>(), It.IsAny<string[]>()))
+                    .Callback<string, double, double, string[]>((_, value, _, _) => actualNumberOfThreads = value);
+
+                statsd.Setup(s => s.Gauge(MetricsNames.CommittedMemory, It.IsAny<double>(), It.IsAny<double>(), It.IsAny<string[]>()))
+                      .Callback<string, double, double, string[]>((_, value, _, _) => memoryUsage = value);
+
+                statsd.Setup(s => s.Gauge(MetricsNames.CpuUserTime, It.IsAny<double>(), It.IsAny<double>(), It.IsAny<string[]>()))
+                      .Callback<string, double, double, string[]>((_, value, _, _) => userCpuTime = value);
+
+                statsd.Setup(s => s.Gauge(MetricsNames.CpuSystemTime, It.IsAny<double>(), It.IsAny<double>(), It.IsAny<string[]>()))
+                      .Callback<string, double, double, string[]>((_, value, _, _) => kernelCpuTime = value);
+
+                // CPU percentage is the last pushed event
+                statsd.Setup(s => s.Gauge(MetricsNames.CpuPercentage, It.IsAny<double>(), It.IsAny<double>(), It.IsAny<string[]>()))
+                      .Callback<string, double, double, string[]>((_, _, _, _) => tcs.TrySetResult(true));
+
+                var timeout = Task.Delay(TimeSpan.FromSeconds(30));
+
+                await Task.WhenAny(tcs.Task, timeout);
+
+                tcs.Task.IsCompleted.Should().BeTrue();
+
+                actualNumberOfThreads.Should().NotBeNull();
+
+                // To future generations: if 10 is not enough, feel free to bump it up. We're really just checking that the value is "realistic".
+                actualNumberOfThreads.Should()
+                    .NotBeNull().And.BeGreaterThan(0).And.BeInRange(expectedNumberOfThreads - 10, expectedNumberOfThreads + 10);
+
+                // CPU time and memory usage can vary wildly, so don't try too hard to validate
+                userCpuTime.Should().NotBeNull().And.BeGreaterThan(0);
+
+                // Unfortunately we can't guarantee that the process will be eating kernel time, so greater or equal
+                kernelCpuTime.Should().NotBeNull().And.BeGreaterThanOrEqualTo(0);
+
+                // Between 10MB and 100GB seems realistic.
+                // If in the future the tests runner really get below 10MB, congratulations!
+                // If it gets above 100GB, God save us all.
+                memoryUsage.Should().NotBeNull().And.BeInRange(10.0 * 1024 * 1024, 100.0 * 1024 * 1024 * 1024);
             }
         }
 
