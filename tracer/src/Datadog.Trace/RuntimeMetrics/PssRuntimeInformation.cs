@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -62,6 +64,8 @@ internal class PssRuntimeInformation
         PSS_CREATE_RELEASE_SECTION = 0x80000000
     }
 
+    // The value of the current process handle on Windows is hardcoded to 1
+    // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentprocess#remarks
     private static IntPtr CurrentProcessHandle => new(-1);
 
     public static unsafe bool GetCurrentProcessMetrics(out TimeSpan userProcessorTime, out TimeSpan systemCpuTime, out int threadCount, out long privateMemorySize)
