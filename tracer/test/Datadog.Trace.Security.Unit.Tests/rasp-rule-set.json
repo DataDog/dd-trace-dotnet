@@ -5,6 +5,50 @@
   },
   "rules": [
     {
+      "id": "rsp-930-002",
+      "name": "SSRF Exploit detection",
+      "tags": {
+        "type": "ssrf",
+        "category": "exploit_detection",
+        "module": "rasp"
+      },
+      "conditions": [
+        {
+          "operator": "ssrf_detector",
+          "parameters": {
+            "resource": [
+              {
+                "address": "server.io.net.url"
+              }
+            ],
+            "params": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              },
+              {
+                "address": "grpc.server.request.message"
+              },
+              {
+                "address": "graphql.server.all_resolvers"
+              },
+              {
+                "address": "graphql.server.resolver"
+              }
+            ]
+          }
+        }
+      ],
+      "on_match": [
+        "block"
+      ]
+    },
+    {
       "id": "rasp-001-001",
       "name": "Path traversal attack",
       "tags": {

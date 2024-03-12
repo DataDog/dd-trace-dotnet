@@ -31,6 +31,19 @@ public class RaspWafTests : WafLibraryRequiredTest
             action);
     }
 
+    [Theory]
+    [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rsp-930-002", "rasp-rule-set.json", "block")]
+    public void SsrfRule(string value, string paramValue, string rule, string ruleFile, string action)
+    {
+        Execute(
+            AddressesConstants.RequestQuery,
+            value,
+            paramValue,
+            rule,
+            ruleFile,
+            action);
+    }
+
     private void Execute(string address, object value, string vulnerabilityType, string rule = null, string ruleFile = null, string expectedAction = null)
     {
         ExecuteInternal(address, value, vulnerabilityType, rule, true, ruleFile, true, expectedAction);
