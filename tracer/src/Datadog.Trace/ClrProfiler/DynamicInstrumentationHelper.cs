@@ -13,6 +13,10 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal class DynamicInstrumentationHelper
     {
+        /// <summary>
+        /// Gets or sets the service name.
+        /// Hack to maneuver the service name for Exception Debugging. Will be removed later.
+        /// </summary>
         public static string ServiceName { get; set; }
     }
 }

@@ -26,7 +26,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private readonly int _maxTimesToTripInTimeInterval;
         private readonly TimeSpan _resetInterval;
         private readonly Timer _timer;
-        private long _failureCount;
+        private int _failureCount;
 
         public BasicCircuitBreaker(int maxTimesToTripInTimeInterval, TimeSpan resetInterval)
         {

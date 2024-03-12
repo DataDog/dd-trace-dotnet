@@ -76,7 +76,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 () => new MinimalAgentHeaderHelper(),
                 uri => uri);
             var discoveryService = tracer.TracerManager.DiscoveryService;
-            var batchApi = AgentBatchUploadApi.Create(apiFactory, discoveryService);
+            var gitMetadataTagsProvider = tracer.TracerManager.GitMetadataTagsProvider;
+            var batchApi = AgentBatchUploadApi.Create(apiFactory, discoveryService, gitMetadataTagsProvider);
             var batchUploader = BatchUploader.Create(batchApi);
             _sink = DebuggerSink.Create(snapshotStatusSink, new NopProbeStatusSink(), batchUploader, debuggerSettings);
 
