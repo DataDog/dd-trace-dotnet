@@ -374,7 +374,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void EnableIastTelemetry(int level)
         {
-            SetEnvironmentVariable(ConfigurationKeys.Iast.IastTelemetryVerbosity, ((IastMetricsVerbosityLevel)level).ToString());
+            SetEnvironmentVariable(ConfigurationKeys.Iast.TelemetryVerbosity, ((IastMetricsVerbosityLevel)level).ToString());
         }
 
         public void DisableObfuscationQueryString()

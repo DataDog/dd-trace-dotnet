@@ -479,6 +479,7 @@
   "DD_IAST_REDACTION_REGEXP_TIMEOUT": "iast_redaction_regexp_timeout",
   "DD_IAST_REGEXP_TIMEOUT": "iast_regexp_timeout",
   "DD_IAST_TELEMETRY_VERBOSITY": "iast_telemetry_verbosity",
+  "DD_IAST_TRUNCATION_MAX_VALUE_LENGTH": "iast_truncation_max_value_length",
   "DD_TRACE_STARTUP_LOGS": "trace_startup_logs_enabled",
   "DD_MAX_LOGFILE_SIZE": "trace_log_file_max_size",
   "DD_TRACE_LOGGING_RATE": "trace_log_rate",
