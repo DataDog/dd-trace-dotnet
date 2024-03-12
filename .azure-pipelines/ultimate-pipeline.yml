@@ -3157,7 +3157,7 @@ stages:
     and(
       succeeded(),
       eq(variables.isMainRepository, true),
-      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'], 'True')
+      or(eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'], 'True'), eq(variables.force_appsec_benchmarks_run, 'true'))
     )
   dependsOn: [build_windows_tracer, build_windows_profiler, generate_variables, merge_commit_id]
   jobs:
@@ -3168,10 +3168,6 @@ stages:
     #### Windows
 
     - job: Windows
-      condition: or(
-          eq(variables.isAppSecChanged, 'True'),
-          eq(variables.force_appsec_benchmarks_run, 'true')
-        )
       strategy:
         matrix:
           BenchmarkAgent7:
@@ -3208,10 +3204,6 @@ stages:
           artifact: benchmarks_results_$(agent)
 
     - job: compare_appsec_benchmarks
-      condition: or(
-        eq(variables.isAppSecChanged, 'True'),
-        eq(variables.force_appsec_benchmarks_run, 'true')
-        )
       timeoutInMinutes: 60 #default value
       dependsOn: [ Windows ]
       pool:
