@@ -68,6 +68,7 @@ namespace Datadog.Trace.Pdb
 
             var localVariables = symbolMethod.GetLocalVariables();
             var localNames = new string[localVariablesCount];
+
             foreach (var local in localVariables)
             {
                 if (local.Attributes.HasFlag(PdbLocalAttributes.DebuggerHidden))

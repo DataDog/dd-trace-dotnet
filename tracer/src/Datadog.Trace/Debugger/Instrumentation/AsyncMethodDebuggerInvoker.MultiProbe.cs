@@ -84,6 +84,28 @@ namespace Datadog.Trace.Debugger.Instrumentation
         }
 
         /// <summary>
+        /// Logs the return value of <paramref name="methodName"/> in line number ByRef.
+        /// </summary>
+        /// <typeparam name="TReturnValue">Type of return value.</typeparam>
+        /// <param name="returnValue">The local to be logged.</param>
+        /// <param name="methodName">index of given argument.</param>
+        /// <param name="bytecodeOffset">The bytecode offset of the line where the method call exists.</param>
+        /// <param name="state">Debugger state</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void LogCall<TReturnValue>(TReturnValue returnValue, string methodName, int bytecodeOffset, ref AsyncDebuggerState state)
+        {
+            if (state.LogStates == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < state.LogStates.Length; i++)
+            {
+                LogCall(returnValue, methodName, bytecodeOffset, ref state.LogStates[i]);
+            }
+        }
+
+        /// <summary>
         /// End Method with void return value
         /// This method is called from either (1) the outer-most catch clause when the async method threw exception
         /// or (2) when the async method has logically ended.

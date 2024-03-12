@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Debugger.Helpers;
@@ -22,20 +23,23 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
         public static MethodMetadataInfo Create(MethodBase method, Type type)
         {
-            return new MethodMetadataInfo(GetParameterNames(method), GetLocalVariableNames(method), type, method);
+            var tuple = GetLocalVariableNames(method);
+            return new MethodMetadataInfo(GetParameterNames(method), tuple.Item1, type, method, tuple.Item2);
         }
 
         public static MethodMetadataInfo Create(MethodBase method, Type type, AsyncHelper.AsyncKickoffMethodInfo asyncKickOffInfo)
         {
+            var tuple = GetLocalVariableNames(method);
             return new MethodMetadataInfo(
                 GetParameterNames(method),
-                GetLocalVariableNames(method),
+                tuple.Item1,
                 AsyncHelper.GetHoistedLocalsFromStateMachine(type, asyncKickOffInfo),
                 AsyncHelper.GetHoistedArgumentsFromStateMachine(type, GetParameterNames(asyncKickOffInfo.KickoffMethod)),
                 type,
                 method,
                 asyncKickOffInfo.KickoffParentType,
-                asyncKickOffInfo.KickoffMethod);
+                asyncKickOffInfo.KickoffMethod,
+                tuple.Item2);
         }
 
         private static string[] GetParameterNames(MethodBase method)
@@ -51,7 +55,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// The names of the method's local variable, in the same order as they appear in the method's LocalVarSig.
         /// May contain null entries to denote compiler generated locals whose names are meaningless.
         /// </returns>
-        private static string[] GetLocalVariableNames(MethodBase method)
+        private static Tuple<string[], Dictionary<int, int>> GetLocalVariableNames(MethodBase method)
         {
             try
             {
@@ -61,8 +65,21 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return null; // Could not read method body, so we can't verify locals
                 }
 
+                const int hiddenSequencePoint = 0x00feefee;
+
                 using var pdbReader = DatadogMetadataReader.CreatePdbReader(method.Module.Assembly);
-                return pdbReader?.GetLocalVariableNames(method.MetadataToken, methodBody.LocalVariables.Count, true);
+                var ilOffsetToLineNumberMapping = new Dictionary<int, int>();
+                var methodRowId = method.MetadataToken & 0x00FFFFFF;
+                if (pdbReader?.HasSequencePoints(methodRowId) == true)
+                {
+                    var sequencePoints = pdbReader.GetMethodSequencePoints(methodRowId);
+                    foreach (var sp in sequencePoints.Where(sp => sp.StartLine != hiddenSequencePoint))
+                    {
+                        ilOffsetToLineNumberMapping[sp.Offset] = sp.StartLine;
+                    }
+                }
+
+                return Tuple.Create(pdbReader?.GetLocalVariableNames(method.MetadataToken, methodBody.LocalVariables.Count, true), ilOffsetToLineNumberMapping);
             }
             catch (Exception e)
             {
