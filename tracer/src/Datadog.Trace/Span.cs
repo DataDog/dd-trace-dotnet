@@ -34,7 +34,6 @@ namespace Datadog.Trace
 
         private int _isFinished;
         private bool _baseServiceTagSet;
-        private Lazy<ConcurrentDictionary<string, object>> _metaStruct = new Lazy<ConcurrentDictionary<string, object>>(() => new ConcurrentDictionary<string, object>());
 
         internal Span(SpanContext context, DateTimeOffset? start)
             : this(context, start, null)
@@ -482,6 +481,13 @@ namespace Datadog.Trace
             return this;
         }
 
+        internal Span SetMetaStruct(string key, byte[] value)
+        {
+            Tags.SetMetaStruct(key, value);
+
+            return this;
+        }
+
         internal void ResetStartTime()
         {
             StartTime = Context.TraceContext.Clock.UtcNow;
@@ -495,21 +501,6 @@ namespace Datadog.Trace
         internal void SetDuration(TimeSpan duration)
         {
             Duration = duration;
-        }
-
-        internal IReadOnlyDictionary<string, object> GetMetaStructValues()
-        {
-            return _metaStruct.IsValueCreated ? _metaStruct.Value : null;
-        }
-
-        internal bool AddMetaStructValue(string key, object value)
-        {
-            if (!string.IsNullOrEmpty(key))
-            {
-                return _metaStruct.Value.TryAdd(key, value);
-            }
-
-            return false;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

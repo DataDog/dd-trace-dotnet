@@ -138,8 +138,8 @@ namespace Datadog.Trace.Agent.MessagePack
                 len++;
             }
 
-            var metaStructValues = span.GetMetaStructValues();
-            if (metaStructValues?.Count > 0)
+            var hasMetaStruct = span.Tags.HasMetaStruct();
+            if (hasMetaStruct)
             {
                 len++;
             }
@@ -196,53 +196,39 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += WriteTags(ref bytes, offset, in spanModel, tagProcessors);
             offset += WriteMetrics(ref bytes, offset, in spanModel, tagProcessors);
 
-            if (metaStructValues?.Count > 0)
+            if (hasMetaStruct)
             {
-                WriteMetaStruct(ref bytes, ref offset, metaStructValues);
+                offset += WriteMetaStruct(ref bytes, offset, in spanModel);
             }
 
             return offset - originalOffset;
         }
 
-        private void WriteMetaStruct(ref byte[] bytes, ref int offset, IReadOnlyDictionary<string, object> metaStruct)
+        private int WriteMetaStruct(ref byte[] bytes, int offset, in SpanModel model)
         {
-            var data = new List<KeyValuePair<string, byte[]>>(metaStruct.Count);
+            int originalOffset = offset;
 
-            // We need to know the size of the byte array before actually writing it. Depending on the size,
-            // the serializer will use a different amount of bytes in the header to encode the length of the byte array.
-            // That means that we need to know the size of the array, then write the header and then, the array itself.
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaStructBytes);
 
-            foreach (var keyValuePair in metaStruct)
-            {
-                // 256 is the size that the serializer would reserve initially for empty arrays, so we create
-                // the buffer with that size to avoid this first resize. If a bigger size is required later, the serializer
-                // will resize it.
-                var buffer = new byte[256];
+            // We don't know the final count yet, depending on it, a different ampount of bytes will be used for the header
+            // of the dictionary, so we need a temporal buffer
 
-                // PrimitiveObjectFormatter relies on MessagePackBinary
-                var bytesCopied = PrimitiveObjectFormatter.Instance.Serialize(ref buffer, 0, keyValuePair.Value, null);
+            var temporalBytes = new byte[256];
+            var tagWriter = new TagWriter(this, null, temporalBytes, 0);
+            model.Span.Tags.EnumerateMetaStruct(ref tagWriter);
+            temporalBytes = tagWriter.Bytes;
+            Array.Resize(ref temporalBytes, tagWriter.Offset);
 
-                if (bytesCopied != buffer.Length)
-                {
-                    Array.Resize(ref buffer, bytesCopied);
-                }
+            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, tagWriter.Count);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, temporalBytes);
 
-                data.Add(new KeyValuePair<string, byte[]>(keyValuePair.Key, buffer));
-            }
-
-            WriteMetaStructAux(ref bytes, ref offset, data);
+            return offset - originalOffset;
         }
 
-        private void WriteMetaStructAux(ref byte[] bytes, ref int offset, List<KeyValuePair<string, byte[]>> metaStruct)
+        private void WriteMetaStruct(ref byte[] bytes, ref int offset, string key, byte[] value)
         {
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaStructBytes);
-            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, metaStruct.Count);
-
-            foreach (var item in metaStruct)
-            {
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringEncoding.UTF8.GetBytes(item.Key));
-                offset += MessagePackBinary.WriteBytes(ref bytes, offset, item.Value);
-            }
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringEncoding.UTF8.GetBytes(key));
+            offset += MessagePackBinary.WriteBytes(ref bytes, offset, value);
         }
 
         // TAGS
@@ -622,7 +608,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
         }
 
-        internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>
+        internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>
         {
             private readonly SpanMessagePackFormatter _formatter;
             private readonly ITagProcessor[] _tagProcessors;
@@ -676,6 +662,13 @@ namespace Datadog.Trace.Agent.MessagePack
                     _formatter.WriteMetric(ref Bytes, ref Offset, item.SerializedKey, item.Value, _tagProcessors);
                 }
 
+                Count++;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Process(TagItem<byte[]> item)
+            {
+                _formatter.WriteMetaStruct(ref Bytes, ref Offset, item.Key, item.Value);
                 Count++;
             }
         }
