@@ -108,9 +108,13 @@ namespace Datadog.Trace.AppSec
                             .Value;
 
             MaxStackTraceDepth = config
-                                .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
-                                .AsInt32(defaultValue: 32, validator: val => val >= 0)
-                                .Value;
+                                  .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
+                                  .AsInt32(defaultValue: 32, validator: val => val >= 0)
+                                  .Value;
+
+            WafDebugEnabled = config
+                        .WithKeys(ConfigurationKeys.AppSec.WafDebugEnabled)
+                        .AsBool(defaultValue: false)
         }
 
         public double ApiSecuritySampleDelay { get; set; }
@@ -122,6 +126,8 @@ namespace Datadog.Trace.AppSec
         public bool Enabled { get; }
 
         public bool UseUnsafeEncoder { get; }
+
+        public bool WafDebugEnabled { get; }
 
         public bool CanBeToggled { get; }
 

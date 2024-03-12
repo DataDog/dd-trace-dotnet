@@ -354,11 +354,6 @@ namespace Datadog.Trace.AppSec
             Encoder.Pool.Dispose();
         }
 
-        internal void SetDebugEnabled(bool enabled)
-        {
-            _wafLibraryInvoker?.SetupLogging(enabled);
-        }
-
         private void SetRemoteConfigCapabilites()
         {
             var rcm = RcmSubscriptionManager.Instance;

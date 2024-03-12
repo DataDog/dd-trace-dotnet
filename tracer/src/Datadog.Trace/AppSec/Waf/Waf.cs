@@ -62,7 +62,7 @@ namespace Datadog.Trace.AppSec.Waf
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
 
             // set the log level and setup the logger
-            wafLibraryInvoker.SetupLogging(GlobalSettings.Instance.DebugEnabledInternal);
+            wafLibraryInvoker.SetupLogging(GlobalSettings.Instance.DebugEnabledInternal && Security.Instance.Settings.WafDebugEnabled);
 
             var jtokenRoot = rulesFromRcm ?? WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath)!;
             if (jtokenRoot is null)

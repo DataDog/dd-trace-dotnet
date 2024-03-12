@@ -228,9 +228,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return true;
         }
 
-        internal void SetupLogging(bool instanceDebugEnabled)
+        internal void SetupLogging(bool wafDebugEnabled)
         {
-            _setupLogging(_setupLogCallbackField, DDWAF_LOG_LEVEL.DDWAF_INFO);
+            var logLevel = wafDebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
+            _setupLogging(_setupLogCallbackField, logLevel);
         }
 
         internal string GetVersion()
