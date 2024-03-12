@@ -9,6 +9,7 @@
     ParentId: Id_3,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -35,6 +36,7 @@
     ParentId: Id_5,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -61,6 +63,7 @@
     ParentId: Id_7,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -88,6 +91,7 @@
     Error: 1,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       error.msg: Something happened,
       error.stack:
@@ -119,6 +123,7 @@ at Samples.Wcf.Server.CalculatorService.EndServerAsyncAdd(IAsyncResult asyncResu
     ParentId: Id_11,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -146,6 +151,7 @@ at Samples.Wcf.Server.CalculatorService.EndServerAsyncAdd(IAsyncResult asyncResu
     Error: 1,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       error.msg: Something happened,
       error.stack:
@@ -177,6 +183,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_15,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -203,6 +210,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_17,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -229,6 +237,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_19,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -255,6 +264,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_21,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -281,6 +291,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_23,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -307,6 +318,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_25,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -333,6 +345,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_27,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,

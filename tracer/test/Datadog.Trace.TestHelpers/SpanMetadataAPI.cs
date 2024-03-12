@@ -347,11 +347,11 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsSqlClientV0(),
             };
 
-        public static Result IsWcf(this MockSpan span, string metadataSchemaVersion) =>
+        public static Result IsWcf(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsWcfV1(),
-                _ => span.IsWcfV0(),
+                "v1" => span.IsWcfV1(excludeTags),
+                _ => span.IsWcfV0(excludeTags),
             };
 
         public static Result IsWebRequest(this MockSpan span, string metadataSchemaVersion) =>

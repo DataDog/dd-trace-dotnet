@@ -10,8 +10,10 @@ using System.ServiceModel.Description;
 using System.ServiceModel.Dispatcher;
 using System.Text;
 using System.Threading.Tasks;
+using Samples.Wcf.Client;
+using Samples.Wcf.Server;
 
-namespace Samples.Wcf.Client
+namespace Samples.Wcf
 {
     /// <summary>
     /// Represents a run-time behavior extension for a client endpoint.
@@ -46,7 +48,7 @@ namespace Samples.Wcf.Client
         /// <param name="endpointDispatcher">The endpoint dispatcher to be modified or extended.</param>
         public void ApplyDispatchBehavior(ServiceEndpoint endpoint, EndpointDispatcher endpointDispatcher)
         {
-            // Nothing special here
+            endpointDispatcher.DispatchRuntime.MessageInspectors.Add(new DispatchMessageInspector());
         }
 
         /// <summary>

@@ -23,6 +23,7 @@ using Microsoft.Extensions.Primitives;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Samples.Security.Data;
 
 namespace Samples.Security.AspNetCore5.Controllers
@@ -168,6 +169,29 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return BadRequest($"No price or query was provided");
+        }
+        
+        [HttpGet("NewtonsoftJsonParseTainting")]
+        [Route("NewtonsoftJsonParseTainting")]
+        public IActionResult NewtonsoftJsonParseTainting(string json)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(json))
+                {
+                    var doc = JObject.Parse(json);
+                    var str = doc.Value<string>("key");
+
+                    // Trigger a vulnerability with the tainted string
+                    return ExecuteCommandInternal(str, "");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return BadRequest($"No json was provided");
         }
 
         [HttpGet("ExecuteCommand")]
@@ -781,6 +805,28 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
             
             return BadRequest($"No type was provided");
+        }
+        
+        [HttpGet("MaxRanges")]
+        [Route("MaxRanges")]
+        public ActionResult MaxRanges(int count, string tainted)
+        {
+            var str = string.Empty;
+            for (var i = 0; i < count; i++)
+            {
+                str += tainted;
+            }
+            
+            try
+            {
+                Type.GetType(str);
+            }
+            catch
+            {
+                // ignored
+            }
+
+            return Content(str, "text/html");
         }
 
         [HttpGet("CustomAttribute")]
