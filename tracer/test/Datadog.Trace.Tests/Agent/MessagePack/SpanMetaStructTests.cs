@@ -14,7 +14,7 @@ using Xunit;
 
 #nullable enable
 
-namespace Datadog.Trace.Tests;
+namespace Datadog.Trace.Tests.Agent.MessagePack;
 
 public class SpanMetaStructTests
 {
