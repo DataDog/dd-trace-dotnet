@@ -207,7 +207,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
         private void WriteMetaStruct(ref byte[] bytes, ref int offset, IReadOnlyDictionary<string, object> metaStruct)
         {
-            var data = new Dictionary<string, byte[]>();
+            var data = new Dictionary<string, byte[]>(metaStruct.Count);
 
             // Since ConcurrentDictionary does not guarantee the order of the keys, we need to order them
             // to make serialization deterministic.
