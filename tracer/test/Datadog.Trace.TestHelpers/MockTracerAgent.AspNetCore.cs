@@ -8,12 +8,16 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Mime;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Aspire.Dashboard.Model;
+using Aspire.Dashboard.Otlp.Storage;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using Datadog.Trace.TestHelpers.Stats;
@@ -24,14 +28,18 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.FluentUI.AspNetCore.Components;
 using Newtonsoft.Json;
 using Xunit.Abstractions;
 
@@ -58,12 +66,22 @@ public abstract partial class MockTracerAgent
         protected AspNetCoreMockAgent(bool telemetryEnabled, TestTransports transport, IEnumerable<KeyValuePair<string, string>> config)
             : base(telemetryEnabled, transport)
         {
+            System.Diagnostics.Debugger.Launch();
+            // this is a horrible hack, because I can't get UseStaticWebAssets() working
+            var wwwroot = Path.Combine(
+                EnvironmentTools.GetSolutionDirectory(),
+                "tracer",
+                "test",
+                "Datadog.Trace.TestHelpers",
+                "wwwroot");
+
             var builder = WebApplication.CreateBuilder(
                 new WebApplicationOptions()
                 {
                     ApplicationName = nameof(AspNetCoreMockAgent),
                     EnvironmentName = Environments.Development, // so we get detailed error messages
                     Args = [$"--{WebHostDefaults.PreventHostingStartupKey}=1"], // don't try to load as a hosting assembly
+                    WebRootPath = wwwroot,
                 });
 
             // clear out existing configuration so we don't get any cross-talk
@@ -80,7 +98,38 @@ public abstract partial class MockTracerAgent
             builder.Services.AddRequestDecompression();
             builder.Services.AddSingleton<MockTracerAgent>(this);
 
+            // Configure services required by .NET Aspire
+            builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+            builder.Services.AddSingleton<TelemetryRepository>();
+            builder.Services.AddTransient<StructuredLogsViewModel>();
+            builder.Services.AddTransient<TracesViewModel>();
+            builder.Services.TryAddEnumerable(ServiceDescriptor.Scoped<IOutgoingPeerResolver, ResourceOutgoingPeerResolver>());
+            builder.Services.TryAddEnumerable(ServiceDescriptor.Scoped<IOutgoingPeerResolver, BrowserLinkOutgoingPeerResolver>());
+            builder.Services.AddFluentUIComponents();
+            builder.Services.AddSingleton<ThemeManager>();
+            builder.Services.AddSingleton<IDashboardViewModelService, DashboardViewModelService>();
+
             App = builder.Build();
+
+            // Aspire config
+            App.UseStaticFiles(new StaticFileOptions()
+            {
+                OnPrepareResponse = (context) =>
+                {
+                    // If Cache-Control isn't already set to something, set it to 'no-cache' so that the
+                    // ETag and Last-Modified headers will be respected by the browser.
+                    // This may be able to be removed if https://github.com/dotnet/aspnetcore/issues/44153
+                    // is fixed to make this the default
+                    if (context.Context.Response.Headers.CacheControl.Count == 0)
+                    {
+                        context.Context.Response.Headers.CacheControl = "no-cache";
+                    }
+                }
+            });
+            App.UseAuthorization();
+            App.UseAntiforgery();
+            App.MapRazorComponents<Aspire.Dashboard.Components.App>().AddInteractiveServerRenderMode();
+            // End Aspire config
 
             // Automatically decompress gzip requests
             App.UseRequestDecompression();
@@ -125,6 +174,13 @@ public abstract partial class MockTracerAgent
 
             endpoints.MapPost("/v0.4/traces", Handlers.Traces)
                      .WithMetadata(new ResponseTypeMetadata(MockTracerResponseType.Traces));
+
+            // Use this to stop the agent after viewing the dashboard
+            endpoints.MapGet("/stop", (IHostApplicationLifetime lifetime) =>
+            {
+                CancellationTokenSource.Cancel();
+                return "Terminating...";
+            });
 
             _appTask = App.RunAsync(CancellationTokenSource.Token);
 
@@ -289,6 +345,56 @@ public abstract partial class MockTracerAgent
                     agent.TraceRequestHeaders = agent.TraceRequestHeaders.Add(headerCollection);
                 }
             }
+        }
+
+        private class DashboardViewModelService : IDashboardViewModelService,
+                                                  IAsyncEnumerator<ResourceChanged<ResourceViewModel>>,
+                                                  IAsyncEnumerable<ResourceChanged<ResourceViewModel>>,
+                                                  ILogSource
+        {
+            public ResourceChanged<ResourceViewModel> Current => default!;
+
+            public string ApplicationName => nameof(AspNetCoreMockAgent);
+
+            public ViewModelMonitor<ResourceViewModel> GetResources()
+            {
+                return new ViewModelMonitor<ResourceViewModel>(
+                    Snapshot:
+                    [
+                        new ProjectViewModel
+                        {
+                            ProjectPath = "dont/care",
+                            Name = "Test",
+                            DisplayName = "Test",
+                            Uid = "test",
+                            NamespacedName = new("test", null),
+                            LogSource = this
+                        }
+                    ],
+                    Watch: this);
+            }
+
+            public ValueTask DisposeAsync() => default;
+
+            public ValueTask<bool> MoveNextAsync() => new ValueTask<bool>(false);
+
+            public IAsyncEnumerator<ResourceChanged<ResourceViewModel>> GetAsyncEnumerator(CancellationToken cancellationToken = new CancellationToken()) => this;
+
+            public ValueTask<bool> StartAsync(CancellationToken cancellationToken) => ValueTask.FromResult(true);
+
+            public async IAsyncEnumerable<string[]> WatchOutputLogAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+            {
+                await Task.Yield();
+                yield break;
+            }
+
+            public async IAsyncEnumerable<string[]> WatchErrorLogAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+            {
+                await Task.Yield();
+                yield break;
+            }
+
+            public ValueTask StopAsync(CancellationToken cancellationToken = new CancellationToken()) => ValueTask.CompletedTask;
         }
     }
 

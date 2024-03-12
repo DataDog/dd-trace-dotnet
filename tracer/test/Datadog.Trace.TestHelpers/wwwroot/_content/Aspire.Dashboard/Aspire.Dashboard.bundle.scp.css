@@ -1,0 +1,845 @@
+/* _content/Aspire.Dashboard/Components/Controls/EnvironmentVariables.razor.rz.scp.css */
+[b-najij4uart].environment-variables-layout {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "toolbar"
+        "main";
+    overflow: auto;
+}
+
+[b-najij4uart].environment-variables-layout > fluent-toolbar {
+    grid-area: toolbar;
+}
+
+[b-najij4uart] .property-grid-container {
+    grid-area: main;
+    overflow: auto;
+    width: 100%;
+    height: 100%;
+}
+/* _content/Aspire.Dashboard/Components/Controls/GridValue.razor.rz.scp.css */
+.container[b-ts2fpirho8] {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: calc((6 + (var(--design-unit) * var(--density))) * 1px);
+    align-items: center;
+}
+
+.masking-enabled[b-ts2fpirho8] {
+    grid-template-columns: 1fr auto auto;
+}
+
+[b-ts2fpirho8] .cellText {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+[b-ts2fpirho8] .defaultHidden {
+    visibility: hidden;
+}
+
+[b-ts2fpirho8]:hover .defaultHidden {
+    visibility: visible;
+}
+/* _content/Aspire.Dashboard/Components/Controls/LogViewer.razor.rz.scp.css */
+.log-overflow[b-su4p9d2w5e] {
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+    background-color: #0C0C0C;
+}
+
+[b-su4p9d2w5e] .log-container {
+    background: #0C0C0C;
+    color: #CCCCCC;
+    font-family: 'Cascadia Mono', Consolas, monospace;
+    font-size: 0.75rem;
+    margin: 16px 0 0 0;
+    padding-bottom: 24px;
+    line-height: 20px;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    counter-reset: line-number 0;
+}
+
+[b-su4p9d2w5e] .initial-text {
+    padding-left: 12px;
+}
+
+[b-su4p9d2w5e] .line-row-container {
+    width:100%;
+    overflow: hidden;
+    counter-increment: line-number 1;
+}
+
+[b-su4p9d2w5e] .line-row {
+    cursor: text;
+    padding: 0 12px 0 12px;
+    white-space: pre-wrap;
+
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+[b-su4p9d2w5e] .line-area {
+    flex-grow: 1;
+    justify-content: flex-start;
+    display: flex;
+    flex-direction: row;
+}
+
+[b-su4p9d2w5e] .line-number {
+    padding-left: 10px;
+    min-width: 43px;
+    text-align:right;
+    align-self: flex-start;
+    flex-shrink: 0;
+}
+
+[b-su4p9d2w5e] .line-number::before {
+    content: counter(line-number);
+}
+
+[b-su4p9d2w5e] .content {
+    word-break: break-all;
+    margin-left: 1em;
+    position: relative;
+    margin-right: 6px;
+    user-select: text;
+    cursor: text;
+    white-space: pre-wrap;
+}
+
+[b-su4p9d2w5e] .content .timestamp {
+    color: gray;
+}
+
+[b-su4p9d2w5e] .content a,
+[b-su4p9d2w5e] .content a:active,
+[b-su4p9d2w5e] .content a:visited {
+    color: #CCCCCC;
+    text-decoration: none;
+}
+
+[b-su4p9d2w5e] .content a:hover {
+    text-decoration: underline;
+}
+
+[b-su4p9d2w5e] .content > fluent-badge {
+    user-select: none;
+}
+
+[b-su4p9d2w5e] .content > .timestamp + fluent-badge {
+    margin-left: 1ch;
+}
+
+[b-su4p9d2w5e] .ansi-fg-black {
+    color: #0C0C0C;
+}
+
+[b-su4p9d2w5e] .ansi-fg-blue {
+    color: #0037DA;
+}
+
+[b-su4p9d2w5e] .ansi-fg-cyan {
+    color: #3A96DD;
+}
+
+[b-su4p9d2w5e] .ansi-fg-green {
+    color: #13A10E;
+}
+
+[b-su4p9d2w5e] .ansi-fg-magenta {
+    color: #881798;
+}
+
+[b-su4p9d2w5e] .ansi-fg-red {
+    color: #C50F1F;
+}
+
+[b-su4p9d2w5e] .ansi-fg-white {
+    color: #CCCCCC;
+}
+
+[b-su4p9d2w5e] .ansi-fg-yellow {
+    color: #C19C00;
+}
+
+[b-su4p9d2w5e] .ansi-fg-brightblack {
+    color: #767676;
+}
+
+[b-su4p9d2w5e] .ansi-fg-brightblue {
+    color: #3B78FF;
+}
+
+[b-su4p9d2w5e] .ansi-fg-brightcyan {
+    color: #61D6D6;
+}
+
+[b-su4p9d2w5e] .ansi-fg-brightgreen {
+    color: #16C60C;
+}
+
+[b-su4p9d2w5e] .ansi-fg-brightmagenta {
+    color: #B4009E;
+}
+
+[b-su4p9d2w5e] .ansi-fg-brightred {
+    color: #E74856;
+}
+
+[b-su4p9d2w5e] .ansi-fg-brightwhite {
+    color: #F2F2F2;
+}
+
+[b-su4p9d2w5e] .ansi-fg-brightyellow {
+    color: #F9F1A5;
+}
+
+[b-su4p9d2w5e] .ansi-bg-black {
+    background-color: #0C0C0C;
+}
+
+[b-su4p9d2w5e] .ansi-bg-blue {
+    background-color: #0037DA;
+}
+
+[b-su4p9d2w5e] .ansi-bg-cyan {
+    background-color: #3A96DD;
+}
+
+[b-su4p9d2w5e] .ansi-bg-green {
+    background-color: #13A10E;
+}
+
+[b-su4p9d2w5e] .ansi-bg-magenta {
+    background-color: #881798;
+}
+
+[b-su4p9d2w5e] .ansi-bg-red {
+    background-color: #C50F1F;
+}
+
+[b-su4p9d2w5e] .ansi-bg-white {
+    background-color: #CCCCCC;
+}
+
+[b-su4p9d2w5e] .ansi-bg-yellow {
+    background-color: #C19C00;
+}
+/* _content/Aspire.Dashboard/Components/Controls/PropertyGrid.razor.rz.scp.css */
+/* _content/Aspire.Dashboard/Components/Controls/SpanDetails.razor.rz.scp.css */
+[b-2ivj0yt7ua].span-details-layout {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "toolbar"
+        "main";
+    overflow: auto;
+}
+
+[b-2ivj0yt7ua].span-details-layout > fluent-toolbar {
+    grid-area: toolbar;
+}
+
+[b-2ivj0yt7ua] .property-grid-container {
+    grid-area: main;
+    overflow: auto;
+    width: 100%;
+    height: 100%;
+}
+
+[b-2ivj0yt7ua] .property-grid-container h4 {
+    padding: calc(var(--design-unit) * 3px);
+    margin-top: calc(var(--design-unit) * 1px);
+    margin-bottom: 0;
+}
+
+/* _content/Aspire.Dashboard/Components/Controls/StructuredLogDetails.razor.rz.scp.css */
+[b-no4ho7sxz6].structured-log-details-layout {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "toolbar"
+        "main";
+    overflow: auto;
+}
+
+[b-no4ho7sxz6].structured-log-details-layout > fluent-toolbar {
+    grid-area: toolbar;
+}
+
+[b-no4ho7sxz6] .property-grid-container {
+    grid-area: main;
+    overflow: auto;
+    width: 100%;
+    height: 100%;
+}
+/* _content/Aspire.Dashboard/Components/Controls/SummaryDetailsView.razor.rz.scp.css */
+.summary-details-container[b-io5bvzhacu] {
+    overflow: auto;
+}
+
+[b-io5bvzhacu] split-panels {
+    height: 100%;
+    width: 100%;
+}
+
+[b-io5bvzhacu] .summary-container {
+    height: 100%;
+    min-width: 100%;
+    overflow: auto;
+}
+
+[b-io5bvzhacu] .details-container {
+    height: 100%;
+    overflow: auto;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "head"
+        "main";
+}
+
+[b-io5bvzhacu] .details-container > header {
+    height: auto;
+    grid-row-start: 1;
+    background-color: var(--neutral-layer-4);
+    color: var(--neutral-foreground-rest);
+    padding: calc(var(--design-unit) * 2px) calc(var(--design-unit) * 3px);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "title actions";
+    align-items: center;
+}
+
+[b-io5bvzhacu] .details-container > header fluent-button[appearance=stealth]:not(:hover)::part(control) {
+    background-color: var(--neutral-layer-4);
+}
+
+[b-io5bvzhacu] .details-container > *:last-child {
+    grid-row-start: 2;
+}
+
+[b-io5bvzhacu] .details-container > header > .details-header-title {
+    grid-area: title;
+    font-size: var(--type-ramp-plus-1-font-size);
+    font-weight: bold;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+[b-io5bvzhacu] .details-container > header > .header-actions {
+    white-space: nowrap;
+    grid-area: actions;
+}
+/* _content/Aspire.Dashboard/Components/Layout/MainLayout.razor.rz.scp.css */
+#blazor-error-ui[b-oo67yya9vw] {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss[b-oo67yya9vw] {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+[b-oo67yya9vw].layout {
+    height: 100vh;
+    width: 100vw;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "head head"
+        "nav main";
+    background-color: var(--fill-color);
+    color: var(--neutral-foreground-rest);
+}
+
+[b-oo67yya9vw].layout > header {
+    grid-area: head;
+}
+
+[b-oo67yya9vw].layout > .nav-menu-container {
+    grid-area: nav;
+    overflow-y: auto;
+}
+
+[b-oo67yya9vw].layout > .body-content {
+    grid-area: main;
+    overflow-x: auto; /* allow horizontal scrolling */
+}
+
+[b-oo67yya9vw] .header-right {
+    margin-left: auto;
+}
+
+[b-oo67yya9vw].layout > header fluent-button[appearance=stealth]:not(:hover)::part(control),
+[b-oo67yya9vw].layout > header fluent-anchor[appearance=stealth]:not(:hover)::part(control),
+[b-oo67yya9vw].layout > header fluent-anchor[appearance=stealth].logo::part(control) {
+    background-color: var(--neutral-layer-4);
+}
+
+[b-oo67yya9vw].layout > header {
+    background-color: var(--neutral-layer-4);
+    color: var(--accent-fill-rest);
+    margin-bottom: 0;
+}
+
+[b-oo67yya9vw] .header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--type-ramp-plus-2-font-size);
+}
+
+[b-oo67yya9vw] .header-title fluent-anchor {
+    font-size: var(--type-ramp-plus-2-font-size);
+    color: var(--accent-fill-rest);
+}
+/* _content/Aspire.Dashboard/Components/Pages/ConsoleLogs.razor.rz.scp.css */
+[b-gdq2qhi767].resource-logs-layout {
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    height: 100%;
+    width: 100%;
+    grid-template-areas:
+        "head"
+        "toolbar"
+        "main";
+    gap: calc(var(--design-unit) * 2px);
+}
+
+[b-gdq2qhi767].resource-logs-layout > h1 {
+    grid-area: head;
+}
+
+[b-gdq2qhi767].resource-logs-layout > fluent-toolbar {
+    grid-area: toolbar;
+}
+
+[b-gdq2qhi767].resource-logs-layout > .log-overflow {
+    grid-area: main;
+}
+/* _content/Aspire.Dashboard/Components/Pages/Metrics.razor.rz.scp.css */
+.empty-content[b-1niogo26bg] {
+    width: 100%;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 600;
+}
+
+/* Metrics chart SVG */
+[b-1niogo26bg] .yaxislayer-above {
+    transform: translate(-10px,0px);
+}
+
+[b-1niogo26bg] .xaxislayer-above {
+    transform: translate(0px,10px);
+}
+
+[b-1niogo26bg] .metrics-chart {
+    display: grid;
+    grid-template-columns: min-content auto;
+}
+
+[b-1niogo26bg] .metrics-chart-header {
+    margin-left: 40px;
+}
+
+[b-1niogo26bg] .metrics-chart-container {
+    grid-column: 1;
+    margin-bottom: 60px;
+}
+
+[b-1niogo26bg] .metrics-filters-container {
+    grid-column: 2;
+}
+
+@media (max-width: 1700px) {
+    [b-1niogo26bg] .metrics-filters-container {
+        grid-column: 1;
+        margin-left: 40px;
+    }
+}
+
+[b-1niogo26bg] .metrics-filters-container td.dimension-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+[b-1niogo26bg] .metrics-filters-container td.dimension-values {
+    width: auto;
+}
+
+[b-1niogo26bg] .metrics-tree {
+    min-width: auto;
+    margin-right: 3px;
+}
+
+[b-1niogo26bg] .metrics-content {
+    margin-left: 10px;
+}
+
+[b-1niogo26bg].metrics-layout {
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    height: 100%;
+    width: 100%;
+    grid-template-areas:
+        "head"
+        "toolbar"
+        "main";
+    gap: calc(var(--design-unit) * 2px);
+}
+
+[b-1niogo26bg].metrics-layout > h1 {
+    grid-area: head;
+}
+
+[b-1niogo26bg].metrics-layout > fluent-toolbar {
+    grid-area: toolbar;
+}
+
+[b-1niogo26bg].metrics-layout > .page-content-area {
+    grid-area: main;
+}
+
+.page-content-area[b-1niogo26bg] {
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+}
+/* _content/Aspire.Dashboard/Components/Pages/Resources.razor.rz.scp.css */
+[b-x7u4xwueep] .resource-state-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+[b-x7u4xwueep] .resource-error-badge {
+    padding: 0 3px;
+    cursor: pointer;
+}
+
+[b-x7u4xwueep] fluent-toolbar > h1 {
+    padding-left: calc(var(--design-unit) * 1px);
+}
+/* _content/Aspire.Dashboard/Components/Pages/StructuredLogs.razor.rz.scp.css */
+[b-qyhwcts74n].logs-layout {
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    height: 100%;
+    width: 100%;
+    grid-template-areas:
+        "head"
+        "toolbar"
+        "main";
+    gap: calc(var(--design-unit) * 2px);
+}
+
+[b-qyhwcts74n].logs-layout > h1 {
+    grid-area: head;
+}
+
+[b-qyhwcts74n].logs-layout > fluent-toolbar {
+    grid-area: toolbar;
+}
+
+[b-qyhwcts74n].logs-layout > .summary-details-container {
+    grid-area: main;
+}
+
+[b-qyhwcts74n] .log-row-critical {
+    background-color: var(--log-critical);
+}
+
+[b-qyhwcts74n] .log-row-error {
+    background-color: var(--log-error);
+}
+
+[b-qyhwcts74n] .log-row-warning {
+    background-color: var(--log-warning);
+}
+
+[b-qyhwcts74n] .logs-severity-icon {
+    vertical-align: text-bottom;
+    margin-right: 3px;
+}
+
+[b-qyhwcts74n] .logs-summary-layout {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    height: 100%;
+    width: 100%;
+    grid-template-areas:
+        "main"
+        "foot";
+    gap: calc(var(--design-unit) * 2px);
+}
+
+[b-qyhwcts74n] .logs-summary-layout > .logs-grid-container {
+    grid-area: main;
+    overflow: auto;
+}
+
+[b-qyhwcts74n] .logs-summary-layout > .total-items-footer {
+    grid-area: foot;
+    padding-bottom: calc(var(--design-unit) * 2px);
+}
+/* _content/Aspire.Dashboard/Components/Pages/TraceDetail.razor.rz.scp.css */
+.empty-content[b-0he436ibgv] {
+    width: 100%;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 600;
+}
+
+[b-0he436ibgv] .trace-id {
+    color: var(--foreground-subtext-rest);
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+[b-0he436ibgv] .trace-view-grid {
+    width: 100%;
+}
+
+[b-0he436ibgv] .trace-view-grid .selected-span {
+    background-color: var(--neutral-fill-active);
+}
+
+[b-0he436ibgv] .trace-view-grid .selected-span:hover {
+    background-color: var(--neutral-fill-hover) !important;
+}
+
+[b-0he436ibgv] .trace-view-grid fluent-data-grid-row[row-type="default"]:hover .span-bar-label-detail {
+    display: inline !important;
+}
+
+[b-0he436ibgv] .trace-view-grid fluent-data-grid-row[row-type="default"]:hover {
+    background-color: var(--neutral-fill-hover);
+}
+
+[b-0he436ibgv] .trace-view-grid fluent-data-grid-row[row-type="default"] {
+    cursor: pointer;
+}
+
+[b-0he436ibgv] .trace-view-grid fluent-data-grid-row[row-type="header"] {
+    background: var(--fill-color);
+    border-bottom: calc(var(--stroke-width) * 1px) solid var(--neutral-stroke-divider-rest);
+}
+
+[b-0he436ibgv] .trace-view-grid fluent-data-grid-row {
+    padding: 0;
+    border: 0;
+    align-items: center;
+}
+
+[b-0he436ibgv] .trace-view-grid fluent-data-grid-cell {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    vertical-align: middle;
+    height: 100%;
+}
+
+[b-0he436ibgv] .trace-view-grid fluent-data-grid-cell[grid-column="2"] fluent-divider {
+    display: none;
+}
+
+[b-0he436ibgv] .ticks {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    align-items: center;
+}
+
+[b-0he436ibgv] .ticks .tick {
+    width: 1px;
+    height: 30px;
+    background: #d8d8d8;
+    grid-row: 1;
+}
+
+[b-0he436ibgv] .ticks .end-tick {
+    justify-self: end;
+    grid-row: 1;
+}
+
+[b-0he436ibgv] .tick-label {
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
+    white-space: nowrap;
+    grid-row: 1;
+}
+
+[b-0he436ibgv] .span-name-container {
+    border-left-width: 5px;
+    border-left-style: solid;
+    padding-left: 5px;
+    line-height: 28px;
+}
+
+[b-0he436ibgv] .span-container {
+    grid-column: 1 / span 4;
+    grid-row: 1;
+    height: 100%;
+    display: grid;
+    z-index: 1;
+    align-items: center;
+}
+
+[b-0he436ibgv] .span-container .span-bar {
+    height: 15px;
+    border-radius: 5px;
+    grid-row: 1;
+}
+
+[b-0he436ibgv] .span-container .span-bar-label {
+    font-size: 12px;
+    color: var(--foreground-subtext-rest);
+    padding: 0 0.5em;
+    cursor: pointer;
+    height: min-content;
+}
+
+[b-0he436ibgv] .span-container .span-bar-label-detail {
+    display: none;
+}
+
+[b-0he436ibgv] .span-container .span-bar-label-right {
+    grid-row: 1;
+    grid-column: 3;
+}
+
+[b-0he436ibgv] .span-container .span-bar-label-left {
+    grid-row: 1;
+    grid-column: 1;
+    justify-self: end;
+}
+
+[b-0he436ibgv] .uninstrumented-peer {
+    padding-left: 0.5rem;
+}
+
+[b-0he436ibgv] .uninstrumented-peer-icon {
+    vertical-align: text-bottom;
+}
+
+[b-0he436ibgv] .span-row-name {
+    color: var(--foreground-subtext-rest);
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+[b-0he436ibgv] .selected-row .span-row-name,
+[b-0he436ibgv] .selected-row fluent-data-grid-row[row-type="default"]:hover .span-row-name,
+[b-0he436ibgv] fluent-data-grid-row[row-type="default"]:hover .span-row-name,
+[b-0he436ibgv] .selected-row .span-container .span-bar-label,
+[b-0he436ibgv] .selected-row fluent-data-grid-row[row-type="default"]:hover .span-container .span-bar-label,
+[b-0he436ibgv] fluent-data-grid-row[row-type="default"]:hover .span-container .span-bar-label {
+    color: var(--neutral-foreground-rest);
+}
+
+[b-0he436ibgv].trace-detail-layout {
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    height: 100%;
+    width: 100%;
+    grid-template-areas:
+        "head"
+        "toolbar"
+        "main";
+    gap: calc(var(--design-unit) * 2px);
+}
+
+[b-0he436ibgv].trace-detail-layout > .trace-detail-header {
+    grid-area: head;
+}
+
+[b-0he436ibgv].trace-detail-layout > fluent-toolbar {
+    grid-area: toolbar;
+}
+
+[b-0he436ibgv].trace-detail-layout > .summary-details-container {
+    grid-area: main;
+}
+
+[b-0he436ibgv] .span-details-title {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+/* _content/Aspire.Dashboard/Components/Pages/Traces.razor.rz.scp.css */
+.trace-id[b-fgllqjj151] {
+    color: var(--foreground-subtext-rest);
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+.trace-tag[b-fgllqjj151] {
+    display: flex;
+    align-items: center;
+    border: 1px solid rgb(217, 217, 217);
+    padding: 2px 7px;
+    margin-right: 7px;
+    font-size: 12px;
+    background-color: var(--neutral-fill-rest);
+    color: var(--neutral-foreground-rest);
+}
+
+.trace-service-tag[b-fgllqjj151] {
+    border-left-width: 15px;
+}
+
+[b-fgllqjj151].traces-layout {
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    height: 100%;
+    width: 100%;
+    grid-template-areas:
+        "head"
+        "toolbar"
+        "main"
+        "foot";
+    gap: calc(var(--design-unit) * 2px);
+}
+
+[b-fgllqjj151].traces-layout > h1 {
+    grid-area: head;
+}
+
+[b-fgllqjj151].traces-layout > fluent-toolbar {
+    grid-area: toolbar;
+}
+
+[b-fgllqjj151].traces-layout > .datagrid-overflow-area {
+    grid-area: main;
+}
+
+[b-fgllqjj151].traces-layout > .total-items-footer {
+    grid-area: foot;
+    padding-bottom: calc(var(--design-unit) * 2px);
+}
