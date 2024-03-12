@@ -3153,8 +3153,12 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    isAppSecChanged: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'] ]
-  condition: and(succeeded(), eq(variables.isMainRepository, true))
+  condition: >
+    and(
+      succeeded(),
+      eq(variables.isMainRepository, true),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'], 'True')
+    )
   dependsOn: [build_windows_tracer, build_windows_profiler, generate_variables, merge_commit_id]
   jobs:
     - template: steps/update-github-status-jobs.yml
