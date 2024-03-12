@@ -3204,6 +3204,10 @@ stages:
           artifact: benchmarks_results_$(agent)
 
     - job: compare_appsec_benchmarks
+      condition: or(
+        eq(variables.isAppSecChanged, 'True'),
+        eq(variables.force_appsec_benchmarks_run, 'true')
+        )
       timeoutInMinutes: 60 #default value
       dependsOn: [ Windows ]
       pool:
