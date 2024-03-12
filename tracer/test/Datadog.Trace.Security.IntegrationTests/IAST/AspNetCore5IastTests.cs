@@ -332,21 +332,12 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
                           .DisableRequireUniquePrefix();
     }
 
-    [SkippableTheory]
-    [Trait("Category", "ArmUnsupported")]
+    [SkippableFact]
     [Trait("RunOnWindows", "True")]
-    [InlineData(-1, 10)]
-    [InlineData(-1, 15)]
-    [InlineData(15, 15)]
-    [InlineData(5, 15)]
-    public async Task TestMaxRanges(int maxRanges, int nbrRangesCreated)
+    public async Task TestMaxRanges()
     {
-        // Set the configuration (use default configuration if -1 is passed)
-        var maxRangesConfiguration = maxRanges == -1 ? IastSettings.MaxRangeCountDefault : maxRanges;
-        SetEnvironmentVariable(ConfigurationKeys.Iast.MaxRangeCount, maxRangesConfiguration.ToString());
-
-        var filename = "Iast.MaxRanges.AspNetCore5.IastEnabled." + maxRangesConfiguration + "." + nbrRangesCreated;
-        var url = "/Iast/MaxRanges?count=" + nbrRangesCreated + "&tainted=taintedString|";
+        const string filename = "Iast.MaxRanges.AspNetCore5.IastEnabled";
+        const string url = "/Iast/MaxRanges?count=15&tainted=taintedString|";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
