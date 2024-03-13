@@ -81,7 +81,6 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the collection of trace-level tags.
         /// </summary>
-        [NotNull]
         public TraceTagCollection Tags { get; }
 
         /// <summary>
@@ -155,7 +154,7 @@ namespace Datadog.Trace
             ArraySegment<Span> spansToWrite = default;
 
             // Propagate the resource name to the profiler for root web spans
-            if (span.IsRootSpan && span.Type == SpanTypes.Web)
+            if (span is { IsRootSpan: true, Type: SpanTypes.Web })
             {
                 Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
 
@@ -173,10 +172,7 @@ namespace Datadog.Trace
                     }
                 }
 
-                if (_appSecRequestContext != null)
-                {
-                    _appSecRequestContext.CloseWebSpan(Tags);
-                }
+                _appSecRequestContext?.CloseWebSpan(Tags);
             }
 
             if (!string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
