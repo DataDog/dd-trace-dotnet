@@ -114,7 +114,7 @@ public class SpanMetaStructTests
         // We add the elements to the meta struct
         foreach (var item in dataToEncode)
         {
-            span.SetMetaStruct(item.Item1, MetaStructMessagePackHelper.ObjectToByteArray(item.Item2));
+            span.SetMetaStruct(item.Item1, ObjectToByteArray(item.Item2));
         }
 
         var spanBytes = new byte[] { };
@@ -188,5 +188,18 @@ public class SpanMetaStructTests
         }
 
         return offset;
+    }
+
+    private static byte[] ObjectToByteArray(object? value)
+    {
+        // 256 is the size that the serializer would reserve initially for empty arrays, so we create
+        // the buffer with that size to avoid this first resize. If a bigger size is required later, the serializer
+        // will resize it.
+
+        var buffer = new byte[256];
+        var bytesCopied = PrimitiveObjectFormatter.Instance.Serialize(ref buffer, 0, value, null);
+        Array.Resize(ref buffer, bytesCopied);
+
+        return buffer;
     }
 }
