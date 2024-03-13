@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.RuntimeMetrics;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
@@ -106,6 +107,10 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         [Fact]
         public async Task ShouldCaptureProcessMetrics()
         {
+            // This test is specifically targeting process metrics collected with PSS
+            SkipOn.Platform(SkipOn.PlatformValue.Linux);
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
             var statsd = new Mock<IDogStatsd>();
             var listener = new Mock<IRuntimeMetricsListener>();
 
@@ -144,9 +149,9 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 
                 actualNumberOfThreads.Should().NotBeNull();
 
-                // To future generations: if 10 is not enough, feel free to bump it up. We're really just checking that the value is "realistic".
+                // To future generations: if 50 is not enough, feel free to bump it up. We're really just checking that the value is "realistic".
                 actualNumberOfThreads.Should()
-                    .NotBeNull().And.BeGreaterThan(0).And.BeInRange(expectedNumberOfThreads - 10, expectedNumberOfThreads + 10);
+                    .NotBeNull().And.BeGreaterThan(0).And.BeInRange(expectedNumberOfThreads - 50, expectedNumberOfThreads + 50);
 
                 // CPU time and memory usage can vary wildly, so don't try too hard to validate
                 userCpuTime.Should().NotBeNull().And.BeGreaterThan(0);

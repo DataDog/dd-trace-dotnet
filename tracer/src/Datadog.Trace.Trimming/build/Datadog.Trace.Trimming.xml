@@ -96,6 +96,9 @@
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.Common" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.TestFramework" />
+   <assembly fullname="Microsoft.Win32.Primitives">
+      <type fullname="System.ComponentModel.Win32Exception" />
+   </assembly>
    <assembly fullname="MongoDB.Driver.Core" />
    <assembly fullname="MySql.Data" />
    <assembly fullname="MySqlConnector" />
@@ -713,6 +716,7 @@
       <type fullname="System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable`1/ConfiguredValueTaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.DefaultInterpolatedStringHandler" />
       <type fullname="System.Runtime.CompilerServices.ExtensionAttribute" />
+      <type fullname="System.Runtime.CompilerServices.FixedBufferAttribute" />
       <type fullname="System.Runtime.CompilerServices.FormattableStringFactory" />
       <type fullname="System.Runtime.CompilerServices.IAsyncStateMachine" />
       <type fullname="System.Runtime.CompilerServices.ICriticalNotifyCompletion" />
@@ -733,6 +737,7 @@
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter`1" />
       <type fullname="System.Runtime.CompilerServices.TupleElementNamesAttribute" />
+      <type fullname="System.Runtime.CompilerServices.UnsafeValueTypeAttribute" />
       <type fullname="System.Runtime.CompilerServices.YieldAwaitable" />
       <type fullname="System.Runtime.CompilerServices.YieldAwaitable/YieldAwaiter" />
       <type fullname="System.Runtime.ConstrainedExecution.CriticalFinalizerObject" />
