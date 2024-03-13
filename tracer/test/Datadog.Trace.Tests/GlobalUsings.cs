@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if !NETCOREAPP3_1_OR_GREATER
 global using Datadog.Trace.VendoredMicrosoftCode.System;
 #endif
