@@ -11,6 +11,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
@@ -115,6 +116,8 @@ namespace Datadog.Trace.TestHelpers
         {
             _cancellationTokenSource.Cancel();
         }
+
+        public virtual Task OpenDashboard() => throw new NotImplementedException();
 
         protected void IgnoreException(Action action)
         {

@@ -17,11 +17,14 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Aspire.Dashboard.Model;
+using Aspire.Dashboard.Otlp.Model;
 using Aspire.Dashboard.Otlp.Storage;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
+using Google.Protobuf;
+using Google.Protobuf.Collections;
 using MartinCostello.Logging.XUnit;
 using MessagePack;
 using Microsoft.AspNetCore.Builder;
@@ -41,6 +44,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.FluentUI.AspNetCore.Components;
 using Newtonsoft.Json;
+using OpenTelemetry.Proto.Common.V1;
+using OpenTelemetry.Proto.Resource.V1;
+using OpenTelemetry.Proto.Trace.V1;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers;
@@ -66,7 +72,6 @@ public abstract partial class MockTracerAgent
         protected AspNetCoreMockAgent(bool telemetryEnabled, TestTransports transport, IEnumerable<KeyValuePair<string, string>> config)
             : base(telemetryEnabled, transport)
         {
-            System.Diagnostics.Debugger.Launch();
             // this is a horrible hack, because I can't get UseStaticWebAssets() working
             var wwwroot = Path.Combine(
                 EnvironmentTools.GetSolutionDirectory(),
@@ -92,7 +97,7 @@ public abstract partial class MockTracerAgent
             builder.Configuration.AddInMemoryCollection(config);
 
             // Configure logging to write to the output helper only
-            builder.Logging.ClearProviders();
+            // builder.Logging.ClearProviders();
             builder.Logging.AddXUnit(this);
 
             builder.Services.AddRequestDecompression();
@@ -203,6 +208,22 @@ public abstract partial class MockTracerAgent
         protected CancellationTokenSource CancellationTokenSource { get; } = new();
 
         protected ICollection<string> ListeningAddresses { get; }
+
+        public override async Task OpenDashboard()
+        {
+            // open the aspire dashboard
+            var url = ListeningAddresses.First();
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+
+            try
+            {
+                await Task.Delay(Timeout.Infinite, CancellationTokenSource.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                // expected
+            }
+        }
 
         public override void Dispose()
         {
@@ -326,9 +347,13 @@ public abstract partial class MockTracerAgent
 
             public static async Task Traces(
                 [FromServices] MockTracerAgent agent,
+                [FromServices] TelemetryRepository repo,
                 HttpRequest request)
             {
                 var spans = await MessagePackSerializer.DeserializeAsync<IList<IList<MockSpan>>>(request.Body);
+
+                var addContext = new AddContext();
+                repo.AddTraces(addContext, OtlpConverter.GetTraces(spans));
 
                 var headerCollection = new NameValueCollection();
                 foreach (var header in request.Headers)
@@ -344,6 +369,58 @@ public abstract partial class MockTracerAgent
 
                     agent.TraceRequestHeaders = agent.TraceRequestHeaders.Add(headerCollection);
                 }
+            }
+        }
+
+        private static class OtlpConverter
+        {
+            public static RepeatedField<ResourceSpans> GetTraces(IList<IList<MockSpan>> traces)
+            {
+                var otelTraces = new RepeatedField<ResourceSpans>();
+                otelTraces.AddRange(traces.Select(GetTrace));
+                return otelTraces;
+            }
+
+            private static ResourceSpans GetTrace(IList<MockSpan> trace)
+            {
+                var resourceSpan = new ResourceSpans
+                {
+                    Resource = new Resource()
+                    {
+                        Attributes =
+                        {
+                            new KeyValue { Key = "service.name", Value = new AnyValue { StringValue = nameof(AspNetCoreMockAgent) } },
+                            new KeyValue { Key = "service.instance.id", Value = new AnyValue { StringValue = nameof(AspNetCoreMockAgent) } }
+                        }
+                    },
+                    ScopeSpans =
+                    {
+                        new ScopeSpans
+                        {
+                            Scope = new InstrumentationScope { },
+                            Spans = { }
+                        }
+                    }
+                };
+
+                resourceSpan.ScopeSpans[0].Spans.AddRange(trace.Select(GetSpan));
+
+                return resourceSpan;
+            }
+
+            private static OpenTelemetry.Proto.Trace.V1.Span GetSpan(MockSpan span)
+            {
+                var otelSpan = new OpenTelemetry.Proto.Trace.V1.Span
+                        {
+                            TraceId = ByteString.CopyFrom(Encoding.UTF8.GetBytes(span.TraceId.ToString())),
+                            SpanId = ByteString.CopyFrom(Encoding.UTF8.GetBytes(span.SpanId.ToString())),
+                            ParentSpanId = span.ParentId is null ? ByteString.Empty : ByteString.CopyFrom(Encoding.UTF8.GetBytes(span.ParentId.ToString())),
+                            StartTimeUnixNano = (ulong)span.Start,
+                            EndTimeUnixNano = (ulong)(span.Start + span.Duration),
+                            Name = span.Resource,
+                        };
+                // TODO: add the rest
+                return otelSpan;
             }
         }
 
@@ -364,10 +441,10 @@ public abstract partial class MockTracerAgent
                         new ProjectViewModel
                         {
                             ProjectPath = "dont/care",
-                            Name = "Test",
-                            DisplayName = "Test",
-                            Uid = "test",
-                            NamespacedName = new("test", null),
+                            Name = nameof(AspNetCoreMockAgent),
+                            DisplayName = nameof(AspNetCoreMockAgent),
+                            Uid = nameof(AspNetCoreMockAgent),
+                            NamespacedName = new(nameof(AspNetCoreMockAgent), null),
                             LogSource = this
                         }
                     ],
