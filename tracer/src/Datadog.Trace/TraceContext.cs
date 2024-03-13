@@ -35,14 +35,15 @@ namespace Datadog.Trace
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
         private int? _samplingPriority;
-        // _rootSpan was chosen at some point to be used as the key for a lock that protects
+
+        // _rootSpan was chosen in #4125 to be the lock that protects
         // * _spans
         // * _openSpans
         // although it's a nullable field, the _rootSpan must always be set before operations on
         // _spans & _samplingPriority take place, so it's okay to use it as a lock key
         // even though we need to override the nullable warnings in some places.
-        // The reason _rootSpan was chosen is unknown, we're assuming it's to avoid
-        // allocation a separate field for the lock
+        // The reason _rootSpan was chosen is to avoid
+        // allocating a separate object for the lock.
         private Span? _rootSpan;
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection? tags = null)
