@@ -141,6 +141,14 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
                 statsd.Setup(s => s.Gauge(MetricsNames.CpuPercentage, It.IsAny<double>(), It.IsAny<double>(), It.IsAny<string[]>()))
                       .Callback<string, double, double, string[]>((_, _, _, _) => tcs.TrySetResult(true));
 
+                // Spin a bit to eat CPU
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                while (sw.Elapsed < TimeSpan.FromMilliseconds(50))
+                {
+                    Thread.SpinWait(10);
+                }
+
                 var timeout = Task.Delay(TimeSpan.FromSeconds(30));
 
                 await Task.WhenAny(tcs.Task, timeout);
