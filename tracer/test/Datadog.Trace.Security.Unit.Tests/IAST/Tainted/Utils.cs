@@ -40,7 +40,7 @@ internal static class Utils
 
     public static VulnerabilityBatch GetRedactedBatch(double? timeoutMs = null)
     {
-        return new VulnerabilityBatch(GetDefaultRedactor(timeoutMs));
+        return new VulnerabilityBatch(IastSettings.TruncationMaxValueLengthDefault, GetDefaultRedactor(timeoutMs));
     }
 
     public static System.Func<string, string, bool> GetRegexScrubber(params string[] rules)

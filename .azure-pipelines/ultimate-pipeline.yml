@@ -3054,9 +3054,6 @@ stages:
           agent: "BenchmarkAgent5"
         BenchmarkAgent6:
           agent: "BenchmarkAgent6"
-        BenchmarkAgent7:
-          agent: "BenchmarkAgent7"
-
     timeoutInMinutes: 150
     pool:
       name: $(agent)
@@ -3076,7 +3073,7 @@ stages:
         artifact: windows-profiler-home
         path: $(monitoringHome)
 
-    - script: tracer\build.cmd RunBenchmarks
+    - script: tracer\build.cmd RunBenchmarks -BenchmarkCategory tracer
       displayName: RunBenchmarks
       env:
         DD_CIVISIBILITY_AGENTLESS_ENABLED: true
@@ -3139,17 +3136,11 @@ stages:
         artifact: benchmarks_results_BenchmarkAgent6
         path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download results BenchmarkAgent7
-      inputs:
-        artifact: benchmarks_results_BenchmarkAgent7
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
-
     # upload the combined results for simplicity in other pipelines
     - publish: tracer/build_data/benchmarks
       artifact: benchmarks_results
 
-    - script: tracer\build.cmd CompareBenchmarksResults
+    - script: tracer\build.cmd CompareBenchmarksResults -BenchmarkCategory tracer
       continueOnError: true
       displayName: Compare Benchmarks
       condition: and(succeeded(), eq(variables.isPullRequest, true))
@@ -3157,6 +3148,93 @@ stages:
         PR_NUMBER: $(System.PullRequest.PullRequestNumber)
         AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
         GITHUB_TOKEN: $(GITHUB_TOKEN)
+        
+- stage: appsec_benchmarks
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  condition: >
+    and(
+      succeeded(),
+      eq(variables.isMainRepository, true),
+      or(eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'], 'True'), eq(variables.force_appsec_benchmarks_run, 'true'))
+    )
+  dependsOn: [build_windows_tracer, build_windows_profiler, generate_variables, merge_commit_id]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [Windows, compare_appsec_benchmarks]
+    
+    #### Windows
+
+    - job: Windows
+      strategy:
+        matrix:
+          BenchmarkAgent7:
+            agent: "BenchmarkAgent7"
+      
+      timeoutInMinutes: 150
+      pool:
+        name: $(agent)
+      
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+
+        - template: steps/install-dotnet-sdks.yml
+        - template: steps/restore-working-directory.yml
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download windows profiler home
+          inputs:
+            artifact: windows-profiler-home
+            path: $(monitoringHome)
+
+        - script: tracer\build.cmd RunBenchmarks -BenchmarkCategory appsec
+          displayName: RunAppSecBenchmarks
+          env:
+            DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+            DD_PROFILING_ENABLED: true
+            DD_API_KEY: $(ddApiKey)
+            DD_DOTNET_TRACER_HOME: $(monitoringHome)
+
+        - publish: tracer/build_data/benchmarks
+          artifact: benchmarks_results_$(agent)
+
+    - job: compare_appsec_benchmarks
+      timeoutInMinutes: 60 #default value
+      dependsOn: [ Windows ]
+      pool:
+        vmImage: windows-2022
+      
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+
+        - template: steps/install-latest-dotnet-sdk.yml
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download results BenchmarkAgent7
+          inputs:
+            artifact: benchmarks_results_BenchmarkAgent7
+            path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+        
+        # upload the combined results for simplicity in other pipelines
+        - publish: tracer/build_data/benchmarks
+          artifact: benchmarks_appsec_results
+
+        - script: tracer\build.cmd CompareBenchmarksResults -BenchmarkCategory appsec
+          continueOnError: true
+          displayName: Compare AppSec Benchmarks
+          condition: and(succeeded(), eq(variables.isPullRequest, true))
+          env:
+            PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+            AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+            GITHUB_TOKEN: $(GITHUB_TOKEN)
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))

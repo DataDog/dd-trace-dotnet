@@ -104,6 +104,7 @@
       "tracer\\test\\test-applications\\integrations\\Samples.MongoDB\\Samples.MongoDB.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Msmq\\Samples.Msmq.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.MSTestTests\\Samples.MSTestTests.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.MSTestTests2\\Samples.MSTestTests2.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.MySqlConnector\\Samples.MySqlConnector.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.MySql\\Samples.MySql.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.NetActivitySdk\\Samples.NetActivitySdk.csproj",

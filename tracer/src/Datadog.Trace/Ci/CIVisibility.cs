@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -327,11 +328,11 @@ namespace Datadog.Trace.Ci
 
         internal static string? GetSkippableTestsCorrelationId() => _skippableTestsCorrelationId;
 
-        internal static string GetServiceNameFromRepository(string repository)
+        internal static string GetServiceNameFromRepository(string? repository)
         {
             if (!string.IsNullOrEmpty(repository))
             {
-                if (repository.EndsWith("/") || repository.EndsWith("\\"))
+                if (repository!.EndsWith("/") || repository.EndsWith("\\"))
                 {
                     repository = repository.Substring(0, repository.Length - 1);
                 }

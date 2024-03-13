@@ -8,7 +8,7 @@ namespace BenchmarkComparison
 {
     public static class CompareBenchmarks
     {
-        public static string GetMarkdown(string masterDir, string prDir, int prNumber, string oldCommit, string repositoryName)
+        public static string GetMarkdown(string masterDir, string prDir, int prNumber, string oldCommit, string repositoryName, string category)
         {
             var oldBranchMarkdown = $"[master](https://github.com/DataDog/{repositoryName}/tree/{oldCommit})";
             var newBranchMarkdown = $"#{prNumber}";
@@ -18,7 +18,7 @@ namespace BenchmarkComparison
 
             var comparison = BenchmarkComparer.MatchAndCompareResults(baseJsonResults, prJsonResults);
 
-            return BenchmarkMarkdownGenerator.GetMarkdown(comparison, oldBranchMarkdown, newBranchMarkdown);
+            return BenchmarkMarkdownGenerator.GetMarkdown(comparison, oldBranchMarkdown, newBranchMarkdown, category);
         }
     }
 }

@@ -5,7 +5,7 @@
 
 using System;
 using System.Globalization;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.SourceGenerators;
 

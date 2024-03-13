@@ -47,6 +47,12 @@ namespace Datadog.Trace.Configuration
             public const string MaxConcurrentRequests = "DD_IAST_MAX_CONCURRENT_REQUESTS";
 
             /// <summary>
+            /// Configuration key for the maximum number of ranges
+            /// a tainted object can hold. Defaults to 10.
+            /// </summary>
+            public const string MaxRangeCount = "DD_IAST_MAX_RANGE_COUNT";
+
+            /// <summary>
             /// Configuration key for the maximum number of IAST vulnerabilities to
             /// detect in a request. Defaults to 2.
             /// </summary>
@@ -84,7 +90,13 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for IAST verbosity.
             /// Default value is INFORMATION
             /// </summary>
-            public const string IastTelemetryVerbosity = "DD_IAST_TELEMETRY_VERBOSITY";
+            public const string TelemetryVerbosity = "DD_IAST_TELEMETRY_VERBOSITY";
+
+            /// <summary>
+            /// Configuration key for IAST evidence max lenght in chars.
+            /// Default value is 250
+            /// </summary>
+            public const string TruncationMaxValueLength = "DD_IAST_TRUNCATION_MAX_VALUE_LENGTH";
         }
     }
 }
