@@ -11,6 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -123,7 +124,7 @@ namespace Datadog.Trace.Propagators
 
         internal static string CreateTraceParentHeader(SpanContext context)
         {
-            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority ?? SamplingPriorityValues.AutoKeep;
+            var samplingPriority = context.GetSamplingPriority(TriggerSamplingDecision.IfNotSet) ?? SamplingPriorityValues.AutoKeep;
             var sampled = samplingPriority > 0 ? "01" : "00";
 #if NET6_0_OR_GREATER
             return string.Create(null, stackalloc char[128], $"00-{context.RawTraceId}-{context.RawSpanId}-{sampled}");
@@ -141,11 +142,9 @@ namespace Datadog.Trace.Propagators
                 sb.Append("dd=");
 
                 // sampling priority ("s:<value>")
-                var samplingPriority = SamplingPriorityToString(context.TraceContext?.SamplingPriority);
-
-                if (samplingPriority != null)
+                if (context.GetSamplingPriority(TriggerSamplingDecision.IfNotSet) is { } samplingPriority)
                 {
-                    sb.Append("s:").Append(samplingPriority).Append(TraceStateDatadogPairsSeparator);
+                    sb.Append("s:").Append(SamplingPriorityValues.ToString(samplingPriority)).Append(TraceStateDatadogPairsSeparator);
                 }
 
                 // origin ("o:<value>")
@@ -536,20 +535,6 @@ namespace Datadog.Trace.Propagators
                 sb.Append(otherValuesLeft).Append(TraceStateHeaderValuesSeparator).Append(otherValuesRight);
                 additionalValues = StringBuilderCache.GetStringAndRelease(sb);
             }
-        }
-
-        [return: NotNullIfNotNull("samplingPriority")]
-        private static string? SamplingPriorityToString(int? samplingPriority)
-        {
-            return samplingPriority switch
-                   {
-                       2 => "2",
-                       1 => "1",
-                       0 => "0",
-                       -1 => "-1",
-                       null => null,
-                       not null => samplingPriority.Value.ToString(CultureInfo.InvariantCulture)
-                   };
         }
 
 #if NETCOREAPP

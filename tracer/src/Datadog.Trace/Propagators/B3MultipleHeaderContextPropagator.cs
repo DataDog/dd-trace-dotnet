@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -73,9 +74,8 @@ namespace Datadog.Trace.Propagators
 
         internal static void CreateHeaders(SpanContext context, out string traceId, out string spanId, out string sampled)
         {
-            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
+            var samplingPriority = context.GetSamplingPriority(TriggerSamplingDecision.IfNotSet) ?? SamplingPriorityValues.AutoKeep;
             sampled = samplingPriority > 0 ? "1" : "0";
-
             traceId = context.RawTraceId;
             spanId = context.RawSpanId;
         }

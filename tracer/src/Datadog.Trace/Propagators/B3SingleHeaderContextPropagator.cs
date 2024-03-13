@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -139,7 +140,7 @@ namespace Datadog.Trace.Propagators
 
         internal static string CreateHeader(SpanContext context)
         {
-            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
+            var samplingPriority = context.GetSamplingPriority(TriggerSamplingDecision.IfNotSet) ?? SamplingPriorityValues.AutoKeep;
             var sampled = samplingPriority > 0 ? "1" : "0";
 
 #if NET6_0_OR_GREATER

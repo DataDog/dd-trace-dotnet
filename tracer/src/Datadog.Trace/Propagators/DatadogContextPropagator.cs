@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Globalization;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -36,19 +37,9 @@ namespace Datadog.Trace.Propagators
                 carrierSetter.Set(carrier, HttpHeaderNames.Origin, context.Origin);
             }
 
-            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
-
-            if (samplingPriority != null)
+            if (context.GetSamplingPriority(TriggerSamplingDecision.IfNotSet) is { } samplingPriority)
             {
-                var samplingPriorityString = samplingPriority.Value switch
-                                             {
-                                                 -1 => "-1",
-                                                 0 => "0",
-                                                 1 => "1",
-                                                 2 => "2",
-                                                 _ => samplingPriority.Value.ToString(invariantCulture)
-                                             };
-
+                var samplingPriorityString = SamplingPriorityValues.ToString(samplingPriority);
                 carrierSetter.Set(carrier, HttpHeaderNames.SamplingPriority, samplingPriorityString);
             }
 
