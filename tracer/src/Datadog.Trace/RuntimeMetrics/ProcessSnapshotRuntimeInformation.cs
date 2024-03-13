@@ -64,7 +64,7 @@ internal class ProcessSnapshotRuntimeInformation
         PSS_CREATE_RELEASE_SECTION = 0x80000000
     }
 
-    // The value of the current process handle on Windows is hardcoded to 1
+    // The value of the current process handle on Windows is hardcoded to -1
     // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentprocess#remarks
     private static IntPtr CurrentProcessHandle => new(-1);
 
