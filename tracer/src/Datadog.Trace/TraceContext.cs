@@ -84,14 +84,6 @@ namespace Datadog.Trace
         /// </summary>
         public TraceTagCollection Tags { get; }
 
-        /// <summary>
-        /// Gets the trace's sampling priority.
-        /// </summary>
-        public int? SamplingPriority
-        {
-            get => _samplingPriority;
-        }
-
         public string? Environment { get; set; }
 
         public string? ServiceVersion { get; set; }
