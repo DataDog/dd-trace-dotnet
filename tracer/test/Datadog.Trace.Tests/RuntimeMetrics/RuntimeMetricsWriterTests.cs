@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             }
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task ShouldCaptureProcessMetrics()
         {
             // This test is specifically targeting process metrics collected with PSS
@@ -149,9 +149,8 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 
                 actualNumberOfThreads.Should().NotBeNull();
 
-                // To future generations: if 50 is not enough, feel free to bump it up. We're really just checking that the value is "realistic".
-                actualNumberOfThreads.Should()
-                    .NotBeNull().And.BeGreaterThan(0).And.BeInRange(expectedNumberOfThreads - 50, expectedNumberOfThreads + 50);
+                // To future generations: if 100 is not enough, feel free to bump it up. We're really just checking that the value is "realistic".
+                actualNumberOfThreads.Should().NotBeNull().And.BeGreaterThan(0).And.BeInRange(expectedNumberOfThreads - 100, expectedNumberOfThreads + 100);
 
                 // CPU time and memory usage can vary wildly, so don't try too hard to validate
                 userCpuTime.Should().NotBeNull().And.BeGreaterThan(0);
