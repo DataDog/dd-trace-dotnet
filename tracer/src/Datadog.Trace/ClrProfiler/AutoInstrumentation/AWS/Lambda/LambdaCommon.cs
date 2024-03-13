@@ -40,9 +40,7 @@ internal abstract class LambdaCommon
         if (samplingPriority == null)
         {
             Log("samplingPriority not found");
-
-            var samplingDecision = tracer.CurrentTraceSettings.TraceSampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
-            span.Context.TraceContext?.SetSamplingPriority(samplingDecision);
+            _ = span.Context.TraceContext?.GetSamplingPriority(TriggerSamplingDecision.IfNotSet);
         }
         else
         {

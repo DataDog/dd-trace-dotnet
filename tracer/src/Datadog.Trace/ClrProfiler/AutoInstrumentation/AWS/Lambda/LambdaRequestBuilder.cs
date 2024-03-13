@@ -7,6 +7,7 @@ using System;
 using System.Globalization;
 using System.Net;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 #pragma warning disable CS0618 // WebRequest, HttpWebRequest, ServicePoint, and WebClient are obsolete. Use HttpClient instead.
 
@@ -47,7 +48,7 @@ internal class LambdaRequestBuilder : ILambdaExtensionRequest
             request.Headers.Set(HttpHeaderNames.TraceId, span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture));
             request.Headers.Set(HttpHeaderNames.SpanId, span.SpanId.ToString(CultureInfo.InvariantCulture));
 
-            if (span.Context.TraceContext?.SamplingPriority is { } samplingPriority)
+            if (span.Context.TraceContext?.GetSamplingPriority(TriggerSamplingDecision.IfNotSet) is { } samplingPriority)
             {
                 request.Headers.Set(HttpHeaderNames.SamplingPriority, samplingPriority.ToString());
             }
@@ -82,4 +83,3 @@ internal class LambdaRequestBuilder : ILambdaExtensionRequest
 }
 
 #endif
-
