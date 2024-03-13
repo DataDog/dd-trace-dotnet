@@ -61,7 +61,7 @@ internal readonly struct TraceChunkModel
     /// <param name="spans">The spans that will be within this <see cref="TraceChunkModel"/>.</param>
     /// <param name="samplingPriority">Optional sampling priority to override the <see cref="TraceContext"/> sampling priority.</param>
     public TraceChunkModel(in ArraySegment<Span> spans, int? samplingPriority = null)
-        : this(spans, GetTraceContext(spans), samplingPriority)
+        : this(spans, TraceContext.GetTraceContext(spans), samplingPriority)
     {
         // since all we have is an array of spans, use the trace context from the first span
         // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
@@ -129,16 +129,6 @@ internal readonly struct TraceChunkModel
 
     // used in tests
     internal bool HashSetInitialized => _hashSet?.IsValueCreated == true && _hashSet.Value.Count > 0;
-
-    private static TraceContext? GetTraceContext(in ArraySegment<Span> spans)
-    {
-        if (spans.Count > 0)
-        {
-            return spans.Array![spans.Offset].Context.TraceContext;
-        }
-
-        return null;
-    }
 
     public SpanModel GetSpanModel(int spanIndex)
     {

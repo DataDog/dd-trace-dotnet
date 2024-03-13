@@ -102,6 +102,8 @@ namespace Datadog.Trace
         /// </summary>
         internal IastRequestContext? IastRequestContext => _iastRequestContext;
 
+        internal static TraceContext? GetTraceContext(in ArraySegment<Span> spans) => spans.Count > 0 ? spans.Array![spans.Offset].Context.TraceContext : null;
+
         internal void AddWafSecurityEvents(IReadOnlyCollection<object> events)
         {
             if (Volatile.Read(ref _appSecRequestContext) is null)
