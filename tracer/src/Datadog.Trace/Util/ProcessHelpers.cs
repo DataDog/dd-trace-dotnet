@@ -61,24 +61,7 @@ namespace Datadog.Trace.Util
         /// Gets (and clears) the "do not trace" state for the current thread's call to <see cref="Process.Start()"/>
         /// </summary>
         /// <returns>True if the <see cref="Process.Start()"/> call should be traced, False if "do not trace" is set</returns>
-        public static bool ShouldTraceProcessStart()
-        {
-            var isSet = _doNotTrace;
-            if (isSet)
-            {
-                _doNotTrace = false;
-            }
-
-            return !isSet;
-        }
-
-        /// <summary>
-        /// Internal for testing
-        /// </summary>
-        internal static void SetDoNotTrace(bool doNotTrace)
-        {
-            _doNotTrace = doNotTrace;
-        }
+        public static bool ShouldTraceProcessStart() => !_doNotTrace;
 
         /// <summary>
         /// Run a command and get the standard output content as a string
@@ -98,8 +81,7 @@ namespace Datadog.Trace.Util
 #endif
             }
 
-            SetDoNotTrace(command.DoNotTrace);
-            using var processInfo = Process.Start(processStartInfo);
+            using var processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
             if (processInfo is null)
             {
                 return null;
@@ -153,8 +135,7 @@ namespace Datadog.Trace.Util
 #endif
             }
 
-            SetDoNotTrace(command.DoNotTrace);
-            using var processInfo = Process.Start(processStartInfo);
+            using var processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
             if (processInfo is null)
             {
                 return null;
@@ -190,6 +171,14 @@ namespace Datadog.Trace.Util
             return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode);
         }
 
+        /// <summary>
+        /// Internal for testing to make it easier to call using reflection from a sample app
+        /// </summary>
+        internal static void TestingOnly_RunCommand(string cmd, string? args)
+        {
+            RunCommand(new Command(cmd, args));
+        }
+
         private static ProcessStartInfo GetProcessStartInfo(Command command)
         {
             var processStartInfo = command.Arguments is null ?
@@ -217,6 +206,19 @@ namespace Datadog.Trace.Util
             }
 
             return processStartInfo;
+        }
+
+        private static Process? StartWithDoNotTrace(ProcessStartInfo startInfo, bool doNotTrace)
+        {
+            try
+            {
+                _doNotTrace = doNotTrace;
+                return Process.Start(startInfo);
+            }
+            finally
+            {
+                _doNotTrace = false;
+            }
         }
 
         public readonly struct Command

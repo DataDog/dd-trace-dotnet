@@ -45,7 +45,7 @@ namespace Samples
         private static readonly MethodInfo FromDefaultSourcesMethod = TracerSettingsType?.GetMethod("FromDefaultSources", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo SetServiceName = TracerSettingsType?.GetProperty("ServiceName")?.SetMethod;
         private static readonly MethodInfo GetMetricMethod = SpanType?.GetMethod("GetMetric", BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly MethodInfo SetDoNotTracetMethod = ProcessHelpersType?.GetMethod("SetDoNotTrace", BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly MethodInfo RunCommandMethod = ProcessHelpersType?.GetMethod("TestingOnly_RunCommand", BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly FieldInfo TracerThreePartVersionField = TracerConstantsType?.GetField("ThreePartVersion");
 
 
@@ -348,11 +348,6 @@ namespace Samples
             return envVars.ToList();
         }
 
-        public static void SetDoNotTrace(bool doNotTrace)
-        {
-            SetDoNotTracetMethod?.Invoke(null, new object[] { doNotTrace });
-        }
-
         public static Task WaitForDiscoveryService()
         {
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
@@ -383,6 +378,11 @@ namespace Samples
 
             return result as Task ?? Task.CompletedTask;
         }
+        
+        public static void RunCommand(string cmd, string args = null)
+        {
+            RunCommandMethod?.Invoke(null, [cmd, args]);
+        }    
 
         class NoOpDisposable : IDisposable
         {
