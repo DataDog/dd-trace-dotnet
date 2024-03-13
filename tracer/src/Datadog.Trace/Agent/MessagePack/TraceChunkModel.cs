@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.MessagePack;
 
@@ -78,19 +77,29 @@ internal readonly struct TraceChunkModel
 
         if (traceContext is not null)
         {
-            DefaultServiceName = traceContext.Tracer?.DefaultServiceName;
-            SamplingPriority ??= traceContext.SamplingPriority;
+            SamplingPriority ??= traceContext.GetSamplingPriority();
+
             Environment = traceContext.Environment;
             ServiceVersion = traceContext.ServiceVersion;
             Origin = traceContext.Origin;
             Tags = traceContext.Tags;
-            IsRunningInAzureAppService = traceContext.Tracer?.Settings?.IsRunningInAzureAppService ?? false;
-            AzureAppServiceSettings = traceContext.Tracer?.Settings?.AzureAppServiceMetadata ?? null;
-            if (traceContext.Tracer?.GitMetadataTagsProvider?.TryExtractGitMetadata(out var gitMetadata) == true &&
-                gitMetadata != GitMetadata.Empty)
+
+            if (traceContext.Tracer is { } tracer)
             {
-                GitRepositoryUrl = gitMetadata.RepositoryUrl;
-                GitCommitSha = gitMetadata.CommitSha;
+                DefaultServiceName = tracer.DefaultServiceName;
+
+                if (tracer.Settings is { } settings)
+                {
+                    IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
+                    AzureAppServiceSettings = settings.AzureAppServiceMetadata ?? null;
+                }
+
+                if (tracer.GitMetadataTagsProvider?.TryExtractGitMetadata(out var gitMetadata) == true &&
+                    gitMetadata != GitMetadata.Empty)
+                {
+                    GitRepositoryUrl = gitMetadata.RepositoryUrl;
+                    GitCommitSha = gitMetadata.CommitSha;
+                }
             }
         }
     }
