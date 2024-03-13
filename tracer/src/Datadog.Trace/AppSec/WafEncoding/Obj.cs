@@ -16,14 +16,8 @@ namespace Datadog.Trace.AppSec.WafEncoding
         private IntPtr ptr;
         private DdwafObjectStruct innerObj;
         private bool innerObjInitialized;
-        private bool disposed;
 
         public Obj(IntPtr ptr) => this.ptr = ptr;
-
-        ~Obj()
-        {
-            Dispose(false);
-        }
 
         public ObjType ArgsType
         {
@@ -72,32 +66,8 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
         public IntPtr RawPtr => ptr;
 
-        public void Dispose(WafLibraryInvoker libraryInvoker)
-        {
-            if (libraryInvoker != null)
-            {
-                var rawPtr = ptr;
-                libraryInvoker.ObjectFreePtr(ref rawPtr);
-                Dispose();
-            }
-        }
-
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool disposing)
-        {
-            if (disposed)
-            {
-                ptr = IntPtr.Zero;
-                return;
-            }
-
-            disposed = true;
-
             if (ptr != IntPtr.Zero)
             {
                 Marshal.FreeHGlobal(ptr);

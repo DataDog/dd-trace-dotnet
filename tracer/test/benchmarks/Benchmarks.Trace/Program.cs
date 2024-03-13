@@ -19,16 +19,18 @@ namespace Benchmarks.Trace
     {
         private static int Main(string[] args)
         {
-#if DEBUG
-            // Debug benchmark classes here
-            // Example: return Debug<StringAspectsBenchmark>("RunStringAspectBenchmark");
-#endif
-
             Console.WriteLine($"Execution context: ");
             Console.WriteLine("CurrentCulture is {0}.", CultureInfo.CurrentCulture.Name);
 
             var config = DefaultConfig.Instance;
 
+#if DEBUG
+            // Debug benchmark classes here
+            // Example: return Debug<StringAspectsBenchmark>("RunStringAspectBenchmark");
+            
+            // be able to debug benchmarks if started in debug mode
+            config = config.WithOptions(ConfigOptions.DisableOptimizationsValidator);
+#endif
             const string jetBrainsDotTrace = "-jetbrains:dottrace";
             const string jetBrainsDotTraceTimeline = "-jetbrains:dottrace:timeline";
             const string jetBrainsDotMemory = "-jetbrains:dotmemory";
@@ -59,15 +61,15 @@ namespace Benchmarks.Trace
                 args = args.Where(a => a != datadogProfiler).ToArray();
                 useDatadogProfiler = true;
             }
-            
+
             config = config.WithDatadog(useDatadogProfiler)
                            .AddExporter(JsonExporter.FullCompressed);
-            
+
             var agentName = Environment.GetEnvironmentVariable("AGENT_NAME");
             if (Enum.TryParse(agentName, out AgentFilterAttribute.Agent benchmarkAgent))
             {
                 var attributeName = $"{benchmarkAgent}Attribute";
-                Console.WriteLine($"Found agent name {agentName}; executing only benchmarks decorated with '{attributeName}");
+                Console.WriteLine($"Found agent name {agentName}; executing only benchmarks decorated with '{attributeName}'");
                 config = config.AddFilter(new AttributesFilter(new[] { attributeName }));
             }
             else
@@ -77,7 +79,6 @@ namespace Benchmarks.Trace
 
             Console.WriteLine("Running tests...");
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
-
             return Environment.ExitCode;
         }
 
@@ -99,11 +100,11 @@ namespace Benchmarks.Trace
             }
 
             T instance = new T();
-            if (arguments.Length > 0 || argMethod == null) 
+            if (arguments.Length > 0 || argMethod == null)
             {
-                Debug(instance, benchmarkMethod, arguments, initMethod, cleanupMethod); 
+                Debug(instance, benchmarkMethod, arguments, initMethod, cleanupMethod);
             }
-            else 
+            else
             {
                 var argEnumerable = argMethod?.Invoke(instance, null) as IEnumerable;
                 foreach (var arg in argEnumerable)
@@ -113,8 +114,8 @@ namespace Benchmarks.Trace
             }
 
             return 0;
-
         }
+
         private static void Debug(object instance, MethodInfo method, object[] args, MethodInfo initMethod, MethodInfo cleanupMethod)
         {
             initMethod?.Invoke(instance, null);
