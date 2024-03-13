@@ -372,10 +372,10 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
 #if !NETFRAMEWORK && !NETSTANDARD2_0
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
-    public async Task TestJsonParseTainting()
+    public async Task TestSystemTextJsonParseTainting()
     {
-        var filename = "Iast.JsonParseTainting.AspNetCore5.IastEnabled";
-        var url = "/Iast/JsonParseTainting?json={\"key\": \"value\"}";
+        var filename = "Iast.SystemTextJsonParseTainting.AspNetCore5.IastEnabled";
+        var url = "/Iast/SystemTextJsonParseTainting?json={\"key\": \"value\"}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;

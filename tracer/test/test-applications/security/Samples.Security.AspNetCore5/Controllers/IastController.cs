@@ -198,9 +198,9 @@ namespace Samples.Security.AspNetCore5.Controllers
         }
         
 #if NETCOREAPP3_0_OR_GREATER
-        [HttpGet("JsonParseTainting")]
-        [Route("JsonParseTainting")]
-        public IActionResult JsonParseTainting(string json)
+        [HttpGet("SystemTextJsonParseTainting")]
+        [Route("SystemTextJsonParseTainting")]
+        public IActionResult SystemTextJsonParseTainting(string json)
         {
             try
             {

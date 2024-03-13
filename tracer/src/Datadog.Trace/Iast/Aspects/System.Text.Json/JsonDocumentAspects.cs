@@ -5,7 +5,7 @@
 
 #nullable enable
 
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP
 using System;
 using System.Text.Json;
 using Datadog.Trace.DuckTyping;
