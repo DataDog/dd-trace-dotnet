@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Util
 {
@@ -36,6 +37,6 @@ namespace Datadog.Trace.Util
             ((id * KnuthFactor) % Modulo) <= (rate * Modulo);
 
         internal static bool IsKeptBySamplingPriority(ArraySegment<Span> trace) =>
-            trace.Array![trace.Offset].Context.TraceContext?.SamplingPriority > 0;
+            trace.Array![trace.Offset].Context.TraceContext?.GetSamplingPriority(TriggerSamplingDecision.IfNotSet) > 0;
     }
 }

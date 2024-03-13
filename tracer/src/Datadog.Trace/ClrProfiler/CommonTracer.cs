@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.ClrProfiler
@@ -15,7 +17,8 @@ namespace Datadog.Trace.ClrProfiler
     {
         public int? GetSamplingPriority()
         {
-            return Tracer.Instance.InternalActiveScope?.Span.Context.TraceContext?.SamplingPriority;
+            return Tracer.Instance.InternalActiveScope?.Span.Context.TraceContext
+                        ?.GetSamplingPriority();
         }
 
         public void SetSamplingPriority(int? samplingPriority)

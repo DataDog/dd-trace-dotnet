@@ -297,11 +297,13 @@ namespace Datadog.Trace
                 return;
             }
 
-            if (spans.Array![spans.Offset].Context.TraceContext?.SamplingPriority <= 0)
+            var samplingPriority = GetSamplingPriority();
+
+            if (SamplingPriorityValues.IsDrop(samplingPriority))
             {
                 for (int i = 0; i < spans.Count; i++)
                 {
-                    CurrentTraceSettings.SpanSampler.MakeSamplingDecision(spans.Array[i + spans.Offset]);
+                    CurrentTraceSettings.SpanSampler.MakeSamplingDecision(spans.Array![i + spans.Offset]);
                 }
             }
         }

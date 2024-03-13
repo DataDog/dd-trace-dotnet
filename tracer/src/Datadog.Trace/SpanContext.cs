@@ -343,8 +343,7 @@ namespace Datadog.Trace
 
                 case Keys.SamplingPriority:
                 case HttpHeaderNames.SamplingPriority:
-                    // return the value from TraceContext if available
-                    var samplingPriority = TraceContext?.SamplingPriority ?? SamplingPriority;
+                    var samplingPriority = GetSamplingPriority(TriggerSamplingDecision.None);
                     value = samplingPriority?.ToString(invariant);
                     return true;
 
