@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Debugger.TimeTravel;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -314,6 +315,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WritePropertyName("id");
             _jsonWriter.WriteValue(_snapshotId);
 
+            var parent = TimeTravelStateManager.GetParentSnapshotMetadata();
+
+            if (parent != null)
+            {
+                _jsonWriter.WritePropertyName("parent_id");
+                _jsonWriter.WriteValue(parent.SnapshotId);
+            }
+
             _jsonWriter.WritePropertyName("timestamp");
             _jsonWriter.WriteValue(DateTimeOffset.Now.ToUnixTimeMilliseconds());
 
@@ -380,6 +389,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void CaptureEntryMethodStartMarker<T>(ref CaptureInfo<T> info)
         {
+            TimeTravelStateManager.StartMethod(_snapshotId,null, null);
             StartEntry();
             CaptureStaticFields(ref info);
         }
@@ -694,7 +704,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         null);
 
                 var activeSpan = Tracer.Instance.InternalActiveScope?.Span;
-                if (activeSpan != null)
+                if (activeSpan != null && activeSpan.Tags.GetTag("_dd.entry_location.snapshot_id") == null)
                 {
                     activeSpan.Tags.SetTag("_dd.entry_location.snapshot_id", _snapshotId.ToString());
                     activeSpan.Tags.SetTag("_dd.entry_location.type", typeFullName);
@@ -709,7 +719,9 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
 
                 var snapshot = GetSnapshotJson();
+                TimeTravelStateManager.EndMethod();
                 return snapshot;
+                
             }
         }
 

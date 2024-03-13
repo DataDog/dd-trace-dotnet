@@ -14,9 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.PInvoke;
+using Datadog.Trace.Debugger.TimeTravel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Options;
@@ -27,20 +25,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     /// The ASP.NET Core middleware integration.
     /// </summary>
     [InstrumentMethod(
-        AssemblyName = AssemblyName,
-        TypeName = ApplicationBuilder,
+        AssemblyName = AspNetCoreBlockMiddlewareIntegrationEnd.AssemblyName,
+        TypeName = AspNetCoreBlockMiddlewareIntegrationEnd.ApplicationBuilder,
         MethodName = "Build",
         ReturnTypeName = "Microsoft.AspNetCore.Http.RequestDelegate",
-        MinimumVersion = Major3,
+        MinimumVersion = AspNetCoreBlockMiddlewareIntegrationEnd.Major3,
         MaximumVersion = "8",
         IntegrationName = nameof(IntegrationId.AspNetCore))]
     [InstrumentMethod(
-        AssemblyName = AssemblyName,
-        TypeName = InternalApplicationBuilder,
+        AssemblyName = AspNetCoreBlockMiddlewareIntegrationEnd.AssemblyName,
+        TypeName = AspNetCoreBlockMiddlewareIntegrationEnd.InternalApplicationBuilder,
         MethodName = "Build",
         ReturnTypeName = "Microsoft.AspNetCore.Http.RequestDelegate",
-        MinimumVersion = Major2,
-        MaximumVersion = Major2,
+        MinimumVersion = AspNetCoreBlockMiddlewareIntegrationEnd.Major2,
+        MaximumVersion = AspNetCoreBlockMiddlewareIntegrationEnd.Major2,
         IntegrationName = nameof(IntegrationId.AspNetCore))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -66,40 +64,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
             if (methodProbes.Any())
             {
-                // Add all ProbeProcessor(s)
                 methodProbes.ForEach(
                     tuple =>
                     {
-                        var displayName = tuple.Item1;
-                        var method = tuple.Item2;
-
-                        var templateStr = $"Entry Span : {displayName}";
-                        var template = templateStr + "{1}";
-                        var json = @"{
-    ""Ignore"": ""1""
-}";
-                        var segments = new SnapshotSegment[] { new(null, null, templateStr), new("1", json, null) };
-
-                        var methodProbeDef = new LogProbe
-                        {
-                            CaptureSnapshot = true,
-                            Id = method.ProbeId,
-                            Where = new Where { MethodName = method.TargetMethod, TypeName = method.TargetType },
-                            EvaluateAt = EvaluateAt.Entry,
-                            Template = template,
-                            Segments = segments,
-                            Sampling = new Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 1000000 }
-                        };
-                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(methodProbeDef);
+                        FakeProbeCreator.CreateAndInstallProbe(tuple.Item1, tuple.Item2);
+                        TimeTravelInitiator.InitiateTimeTravel(tuple.Item2);
                     });
 
-                // Install probes
-                DebuggerNativeMethods.InstrumentProbes(
-                    methodProbes.Select(t => t.Item2).ToArray(),
-                    Array.Empty<NativeLineProbeDefinition>(),
-                    Array.Empty<NativeSpanProbeDefinition>(),
-                    Array.Empty<NativeRemoveProbeRequest>());
-
+           
                 instance.Components.Insert(0, rd => new BlockingMiddleware(rd).Invoke);
                 instance.Components.Add(rd => new BlockingMiddleware(rd, endPipeline: true).Invoke);
 
@@ -109,11 +81,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             return default;
         }
 
-        private static List<Tuple<string, NativeMethodProbeDefinition>> GetMethodProbeLocations<TTarget>(TTarget instance) where TTarget : IApplicationBuilder
+        private static List<Tuple<string, MethodInfo>> GetMethodProbeLocations<TTarget>(TTarget instance) where TTarget : IApplicationBuilder
         {
             var service = (IEnumerable<IConfigureOptions<RouteOptions>>)instance.ApplicationServices.GetService(typeof(IEnumerable<IConfigureOptions<RouteOptions>>));
 
-            var methodProbes = new List<Tuple<string, NativeMethodProbeDefinition>>();
+            var methodProbes = new List<Tuple<string, MethodInfo>>();
 
             foreach (IConfigureOptions<RouteOptions> configureOptions in service)
             {
@@ -179,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                             continue;
                         }
 
-                        methodProbes.Add(Tuple.Create(displayName, new NativeMethodProbeDefinition($"SpanOrigin_EntrySpan_{method.DeclaringType.FullName}_{method.Name}", method.DeclaringType.FullName, method.Name, targetParameterTypesFullName: null)));
+                        methodProbes.Add(Tuple.Create(displayName, method));
                     }
                 }
             }
