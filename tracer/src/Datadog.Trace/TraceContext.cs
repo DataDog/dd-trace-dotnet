@@ -206,6 +206,8 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
+                _ = GetSamplingPriority(TriggerSamplingDecision.IfNotSet);
+
                 RunSpanSampler(spansToWrite);
                 Tracer.Write(spansToWrite);
             }
@@ -224,6 +226,8 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
+                _ = GetSamplingPriority(TriggerSamplingDecision.IfNotSet);
+
                 RunSpanSampler(spansToWrite);
                 Tracer.Write(spansToWrite);
             }

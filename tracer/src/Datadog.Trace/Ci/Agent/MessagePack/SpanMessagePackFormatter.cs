@@ -10,6 +10,7 @@ using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
@@ -357,7 +358,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 }
 
                 // add "_sampling_priority_v1" tag
-                if (span.Context.TraceContext.SamplingPriority is { } samplingPriority)
+                if (span.Context.TraceContext.GetSamplingPriority(TriggerSamplingDecision.IfNotSet) is { } samplingPriority)
                 {
                     count++;
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _samplingPriorityNameBytes);
