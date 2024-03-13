@@ -48,10 +48,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             await TryStartApp();
             var agent = Fixture.Agent;
 
-            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(string.Empty);
             var now = DateTime.UtcNow;
+            var url = "/?test=external-waf-headers";
             var result = await SubmitRequest(
-                             sanitisedUrl,
+                             url,
                              null,
                              null,
                              null,
@@ -65,7 +65,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                                  new("Akamai-User-Risk", "Test"),
                                  new("X-SigSci-RequestID", "Test")
                              });
-            var spans = agent.WaitForSpans(1, minDateTime: now);
+            var spans = WaitForSpans(agent, 1, string.Empty, now, url);
             var settings = VerifyHelper.GetSpanVerifierSettings();
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName($"{GetTestName()}.test-external-waf-headers");

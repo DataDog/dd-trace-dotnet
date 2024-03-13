@@ -23,7 +23,7 @@
       http.request.headers.x-sigsci-tags: SQLI,
       http.route: {controller=home}/{action=index}/{id?},
       http.status_code: 200,
-      http.url: http://localhost:00000/,
+      http.url: http://localhost:00000/?test=external-waf-headers,
       http.useragent: Mistake Not...,
       language: dotnet,
       network.client.ip: 127.0.0.1,
@@ -38,24 +38,6 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_3,
-    Name: aspnet_core_mvc.request,
-    Resource: GET /home/index,
-    Service: Samples.Security.AspNetCore5,
-    Type: web,
-    ParentId: Id_2,
-    Tags: {
-      aspnet_core.action: index,
-      aspnet_core.controller: home,
-      aspnet_core.route: {controller=home}/{action=index}/{id?},
-      component: aspnet_core,
-      env: integration_tests,
-      language: dotnet,
-      span.kind: server
     }
   }
 ]
