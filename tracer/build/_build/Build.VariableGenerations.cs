@@ -38,6 +38,8 @@ partial class Build : NukeBuild
                     "tracer/src/Datadog.Trace/Iast",
                     "tracer/src/Datadog.Tracer.Native/iast",
                     "tracer/src/Datadog.Trace/AppSec",
+                    "tracer/test/benchmarks/Benchmarks.Trace/Asm",
+                    "tracer/test/benchmarks/Benchmarks.Trace/Iast",
                     "tracer/test/Datadog.Trace.Security.IntegrationTests",
                     "tracer/test/Datadog.Trace.Security.Unit.Tests",
                     "tracer/test/test-applications/security",
