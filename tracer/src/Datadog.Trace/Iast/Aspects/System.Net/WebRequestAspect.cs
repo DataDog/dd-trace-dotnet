@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Iast.Dataflow;
 
 #nullable enable
@@ -26,6 +27,7 @@ public class WebRequestAspect
     public static object Review(string parameter)
     {
         IastModule.OnSSRF(parameter);
+        RaspModule.OnSSRF(parameter);
         return parameter;
     }
 
@@ -40,6 +42,7 @@ public class WebRequestAspect
     public static object Review(Uri parameter)
     {
         IastModule.OnSSRF(parameter.OriginalString);
+        RaspModule.OnSSRF(parameter.OriginalString);
         return parameter;
     }
 }

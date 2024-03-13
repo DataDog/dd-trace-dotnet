@@ -7,6 +7,8 @@
 using System.Net.Http;
 #endif
 using System;
+using System.IO;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient;
 #if NETFRAMEWORK
 using Datadog.Trace.DuckTyping;
@@ -54,6 +56,7 @@ public class HttpClientAspect
     public static string Review(string parameter)
     {
         IastModule.OnSSRF(parameter);
+        RaspModule.OnSSRF(parameter);
         return parameter;
     }
 
@@ -88,6 +91,7 @@ public class HttpClientAspect
     public static Uri ReviewUri(Uri parameter)
     {
         IastModule.OnSSRF(parameter.OriginalString);
+        RaspModule.OnSSRF(parameter.OriginalString);
         return parameter;
     }
 
@@ -115,6 +119,7 @@ public class HttpClientAspect
         if (uri is not null)
         {
             IastModule.OnSSRF(uri.OriginalString);
+            RaspModule.OnSSRF(uri.OriginalString);
         }
 
         return parameter;
@@ -127,6 +132,7 @@ public class HttpClientAspect
         if (uri is not null)
         {
             IastModule.OnSSRF(uri.OriginalString);
+            RaspModule.OnSSRF(uri.OriginalString);
         }
 
         return parameter;

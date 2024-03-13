@@ -12,6 +12,7 @@ namespace Datadog.Trace.AppSec
     {
         public const string RequestUriRaw = "server.request.uri.raw";
         public const string FileAccess = "server.io.fs.file";
+        public const string UrlAccess = "server.io.net.url";
         public const string RequestMethod = "server.request.method";
         public const string RequestQuery = "server.request.query";
         public const string RequestCookies = "server.request.cookies";
