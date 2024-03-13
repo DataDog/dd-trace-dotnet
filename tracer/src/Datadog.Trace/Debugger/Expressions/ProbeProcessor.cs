@@ -138,7 +138,10 @@ namespace Datadog.Trace.Debugger.Expressions
             ExpressionEvaluationResult evaluationResult = default;
             try
             {
-                snapshotCreator.StopSampling();
+                if (info.MethodState is not (MethodState.BeginLine or MethodState.BeginLineAsync or MethodState.EntryStart or MethodState.EntryAsync))
+                {
+                    snapshotCreator.StopSampling();
+                }
 
                 switch (info.MethodState)
                 {

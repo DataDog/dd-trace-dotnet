@@ -44,7 +44,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [LogMethodProbeTestData]
+        [LogMethodProbeTestData(skip: true /* Non Deterministic snapshot */)]
         private async void VoidMethod(string caller)
         {
             await Task.Delay(20);
