@@ -181,8 +181,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         private static void AddTemporaryHeaders(IMetadata metadata, int grpcType, string? methodName, string? serviceName, DateTimeOffset startTime, ISpanContext? parentContext)
         {
             metadata.Add(TemporaryHeaders.MethodKind, GrpcCommon.GetGrpcMethodKind(grpcType));
-            metadata.Add(TemporaryHeaders.MethodName, methodName);
-            metadata.Add(TemporaryHeaders.Service, serviceName);
+            if (methodName is not null)
+            {
+                metadata.Add(TemporaryHeaders.MethodName, methodName);
+            }
+
+            if (serviceName is not null)
+            {
+                metadata.Add(TemporaryHeaders.Service, serviceName);
+            }
+
             metadata.Add(TemporaryHeaders.StartTime, startTime.ToUnixTimeMilliseconds().ToString());
             if (parentContext is not null)
             {

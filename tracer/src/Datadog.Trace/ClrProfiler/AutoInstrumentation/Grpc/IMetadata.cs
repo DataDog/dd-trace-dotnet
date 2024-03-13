@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
 
         public IEnumerable GetAll(string key);
 
-        public void Add(string key, string? value);
+        public void Add(string key, string value);
 
         public void Add(object entry);
 
