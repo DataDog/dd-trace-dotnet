@@ -7,8 +7,10 @@
     <OutputType>Exe</OutputType>
     <LangVersion>latest</LangVersion>
 
-    <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">obj\$(ApiVersion)\</BaseIntermediateOutputPath>
-    <BaseOutputPath Condition="'$(ApiVersion)'!=''">bin\$(ApiVersion)\</BaseOutputPath>
+    <!-- Control build output locations -->
+    <ArtifactsPath>$(MSBuildThisFileDirectory)../../../artifacts</ArtifactsPath>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <ArtifactsPivots Condition="'$(ApiVersion)'!=''">$(Configuration.ToLowerInvariant())_$(TargetFramework.ToLowerInvariant())_$(ApiVersion)</ArtifactsPivots>
 
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
