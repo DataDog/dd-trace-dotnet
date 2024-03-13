@@ -58,7 +58,7 @@ internal class ApiSecurity
                     }
                 }
 
-                var hash = CombineHashes(httpRouteTag!, httpMethod, statusCode);
+                var hash = CombineHashes(httpRouteTag, httpMethod, statusCode);
                 var now = DateTime.UtcNow;
                 if (_processedRoutes.TryGetValue<DateTime>(hash, out var lastProcessed))
                 {
@@ -84,11 +84,17 @@ internal class ApiSecurity
                             _processedRoutes.RemoveAt(0);
                         }
 
-                        _processedRoutes[hash] = now;
+                        if (!_processedRoutes.Contains(hash))
+                        {
+                            _processedRoutes.Add(hash, now);
+                        }
+                        else
+                        {
+                            return false;
+                        }
                     }
 
                     args[AddressesConstants.WafContextProcessor] = _apiSecurityAddress;
-
                     return true;
                 }
             }
