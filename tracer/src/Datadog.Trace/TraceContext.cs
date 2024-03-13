@@ -229,6 +229,31 @@ namespace Datadog.Trace
             }
         }
 
+        /// <summary>
+        /// Gets the trace's sampling priority, optionally triggering a sampling decision.
+        /// </summary>
+        public int? GetSamplingPriority(TriggerSamplingDecision trigger = TriggerSamplingDecision.None)
+        {
+            if (trigger == TriggerSamplingDecision.Always ||
+                (trigger == TriggerSamplingDecision.IfNotSet && _samplingPriority == null))
+            {
+                MakeSamplingDecision();
+            }
+
+            return _samplingPriority;
+        }
+
+        private void MakeSamplingDecision()
+        {
+            if (_rootSpan is null)
+            {
+                return;
+            }
+
+            var samplingDecision = CurrentTraceSettings.TraceSampler?.MakeSamplingDecision(_rootSpan) ?? SamplingDecision.Default;
+            SetSamplingPriority(samplingDecision);
+        }
+
         public void SetSamplingPriority(SamplingDecision decision, bool notifyDistributedTracer = true)
         {
             SetSamplingPriority(decision.Priority, decision.Mechanism, notifyDistributedTracer);

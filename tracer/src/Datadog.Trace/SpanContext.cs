@@ -9,6 +9,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Datadog.Trace.Ci;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -392,6 +393,23 @@ namespace Datadog.Trace
                        // otherwise use the 64-bit trace id from ISpanContext
                        _ => (TraceId)context.TraceId
                    };
+        }
+
+        /// <summary>
+        /// If <see cref="TraceContext"/> is not null, returns <see cref="TraceContext.GetSamplingPriority"/>,
+        /// optionally triggering a sampling decision.
+        /// Otherwise, returns <see cref="SamplingPriority"/>.
+        /// </summary>
+        internal int? GetSamplingPriority(TriggerSamplingDecision trigger)
+        {
+            return TraceContext switch
+            {
+                // this a propagated context
+                null => SamplingPriority,
+
+                // this SpanContext belongs to a local trace
+                not null => TraceContext.GetSamplingPriority(trigger)
+            };
         }
 
         [return: MaybeNull]
