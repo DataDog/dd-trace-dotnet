@@ -60,6 +60,7 @@
    <assembly fullname="Microsoft.AspNetCore.Mvc.Core" />
    <assembly fullname="Microsoft.AspNetCore.Routing">
       <type fullname="Microsoft.AspNetCore.Routing.RouteBase" />
+      <type fullname="Microsoft.AspNetCore.Routing.RouteOptions" />
       <type fullname="Microsoft.AspNetCore.Routing.Template.RouteTemplate" />
       <type fullname="Microsoft.AspNetCore.Routing.Template.TemplateParser" />
       <type fullname="Microsoft.AspNetCore.Routing.Template.TemplatePart" />
@@ -83,6 +84,9 @@
    <assembly fullname="Microsoft.Extensions.Identity.Core" />
    <assembly fullname="Microsoft.Extensions.Logging" />
    <assembly fullname="Microsoft.Extensions.Logging.Abstractions" />
+   <assembly fullname="Microsoft.Extensions.Options">
+      <type fullname="Microsoft.Extensions.Options.IConfigureOptions`1" />
+   </assembly>
    <assembly fullname="Microsoft.Extensions.Primitives">
       <type fullname="Microsoft.Extensions.Primitives.StringSegment" />
       <type fullname="Microsoft.Extensions.Primitives.StringValues" />
@@ -154,6 +158,9 @@
    </assembly>
    <assembly fullname="System.Collections.Specialized">
       <type fullname="System.Collections.Specialized.NameValueCollection" />
+   </assembly>
+   <assembly fullname="System.ComponentModel">
+      <type fullname="System.IServiceProvider" />
    </assembly>
    <assembly fullname="System.ComponentModel.Primitives">
       <type fullname="System.ComponentModel.BrowsableAttribute" />

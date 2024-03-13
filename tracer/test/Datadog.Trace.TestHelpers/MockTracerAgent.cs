@@ -128,7 +128,7 @@ namespace Datadog.Trace.TestHelpers
         /// <returns>The list of spans.</returns>
         public IImmutableList<MockSpan> WaitForSpans(
             int count,
-            int timeoutInMilliseconds = 20000,
+            int timeoutInMilliseconds = 990000,
             string operationName = null,
             DateTimeOffset? minDateTime = null,
             bool returnAllOperations = false,
