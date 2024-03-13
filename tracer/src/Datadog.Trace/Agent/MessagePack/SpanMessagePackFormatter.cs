@@ -210,16 +210,16 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaStructBytes);
 
             // We don't know the final count yet, depending on it, a different amount of bytes will be used for the header
-            // of the dictionary, so we need a temporal buffer
+            // of the dictionary, so we need a temporary buffer
 
-            var temporalBytes = new byte[256];
-            var tagWriter = new TagWriter(this, null, temporalBytes, 0);
+            var temporaryBytes = new byte[256];
+            var tagWriter = new TagWriter(this, null, temporaryBytes, 0);
             model.Span.Tags.EnumerateMetaStruct(ref tagWriter);
-            temporalBytes = tagWriter.Bytes;
-            Array.Resize(ref temporalBytes, tagWriter.Offset);
+            temporaryBytes = tagWriter.Bytes;
+            Array.Resize(ref temporaryBytes, tagWriter.Offset);
 
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, tagWriter.Count);
-            offset += MessagePackBinary.WriteRaw(ref bytes, offset, temporalBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, temporaryBytes);
 
             return offset - originalOffset;
         }
