@@ -74,5 +74,20 @@ public class ExecutedTelemetryHelperTests
         {
             throw new NotImplementedException();
         }
+
+        bool ITags.HasMetaStruct()
+        {
+            throw new NotImplementedException();
+        }
+
+        void ITags.SetMetaStruct(string key, byte[] value)
+        {
+            throw new NotImplementedException();
+        }
+
+        void ITags.EnumerateMetaStruct<TProcessor>(ref TProcessor processor)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
