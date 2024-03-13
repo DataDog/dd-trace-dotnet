@@ -293,7 +293,7 @@ internal partial class ProbeExpressionParser<T>
 
                                 default:
                                     {
-                                        AddError(readerValue, "Operator has not defined");
+                                        AddError(readerValue, "Operator is not defined");
                                         return ReturnDefaultValueExpression();
                                     }
                             }
