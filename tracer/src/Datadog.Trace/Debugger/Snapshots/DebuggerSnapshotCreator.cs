@@ -704,7 +704,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         null);
 
                 var activeSpan = Tracer.Instance.InternalActiveScope?.Span;
-                if (activeSpan != null && activeSpan.Tags.GetTag("_dd.entry_location.snapshot_id") == null)
+                if (activeSpan != null && probeId.StartsWith("SpanEntry"))
                 {
                     activeSpan.Tags.SetTag("_dd.entry_location.snapshot_id", _snapshotId.ToString());
                     activeSpan.Tags.SetTag("_dd.entry_location.type", typeFullName);

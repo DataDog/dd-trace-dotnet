@@ -15,7 +15,7 @@ public class TimeTravelInitiator
         var calledMethods = GetCalledMethodsWithDnlib(method);
         foreach (var callee in calledMethods)
         {
-            FakeProbeCreator.CreateAndInstallProbe("callee-" + callee.Name, callee);
+            FakeProbeCreator.CreateAndInstallProbe("TimeTravel", callee);
         }
     }
 

@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                 methodProbes.ForEach(
                     tuple =>
                     {
-                        FakeProbeCreator.CreateAndInstallProbe(tuple.Item1, tuple.Item2);
+                        FakeProbeCreator.CreateAndInstallProbe("SpanEntry", tuple.Item2);
                         TimeTravelInitiator.InitiateTimeTravel(tuple.Item2);
                     });
 

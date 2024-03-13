@@ -10,8 +10,9 @@ public static class FakeProbeCreator
 {
     public static void CreateAndInstallProbe(string displayName, MethodInfo methodInfo)
     {
-        var method = new NativeMethodProbeDefinition($"SpanOrigin_EntrySpan_{methodInfo.DeclaringType.FullName}_{methodInfo.Name}", methodInfo.DeclaringType.FullName, methodInfo.Name, targetParameterTypesFullName: null);
-        var templateStr = $"Entry Span : {displayName}";
+        var probeName = $"{displayName}_{methodInfo.DeclaringType.FullName}_{methodInfo.Name}";
+        var method = new NativeMethodProbeDefinition(probeName, methodInfo.DeclaringType.FullName, methodInfo.Name, targetParameterTypesFullName: null);
+        var templateStr = probeName;
         var template = templateStr + "{1}";
         var json = @"{
     ""Ignore"": ""1""
