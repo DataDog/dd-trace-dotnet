@@ -381,7 +381,7 @@ namespace Samples
         
         public static void RunCommand(string cmd, string args = null)
         {
-            RunCommandMethod?.Invoke(null, [cmd, args]);
+            RunCommandMethod?.Invoke(null, new object[] {cmd, args});
         }    
 
         class NoOpDisposable : IDisposable
