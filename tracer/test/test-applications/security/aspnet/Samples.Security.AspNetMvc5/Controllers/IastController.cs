@@ -463,6 +463,22 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content(result, "text/html");
         }
 
+        [Route("SsrfAttack")]
+        public ActionResult SsrfAttack(string host)
+        {
+            string result = string.Empty;
+            try
+            {
+                result = new HttpClient().GetStringAsync("https://" + host + "/path").Result;
+            }
+            catch (Exception ex)
+            {
+                result = "Error in request." + ex.ToString();
+            }
+
+            return Content(result);
+        }
+
         [Route("LDAP")]
         public ActionResult Ldap(string path, string userName)
         {

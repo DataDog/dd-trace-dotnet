@@ -97,7 +97,7 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
     }
 
     [SkippableTheory]
-    [InlineData("/Iast/Ssrf?host=127.0.0.1", "SSRF")]
+    [InlineData("/Iast/SsrfAttack?host=127.0.0.1", "SSRF")]
     [Trait("RunOnWindows", "True")]
     public async Task TestRaspRequest(string url, string exploit)
     {

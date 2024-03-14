@@ -32,11 +32,13 @@ public class RaspWafTests : WafLibraryRequiredTest
     }
 
     [Theory]
+    [InlineData("https://user:password@127.0.0.1:443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo", "127.0.0.1", "rsp-930-002", "rasp-rule-set.json", "block")]
+    [InlineData("https://localhost/path", "localhost", "rsp-930-002", "rasp-rule-set.json", "block")]
     [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rsp-930-002", "rasp-rule-set.json", "block")]
     public void SsrfRule(string value, string paramValue, string rule, string ruleFile, string action)
     {
         Execute(
-            AddressesConstants.RequestQuery,
+            AddressesConstants.UrlAccess,
             value,
             paramValue,
             rule,

@@ -60,6 +60,19 @@ internal readonly partial struct SecurityCoordinator
         return headersDic;
     }
 
+    internal void CheckAndBlockRasp(IResult? result)
+    {
+        if (result is not null)
+        {
+            TryReport(result, result.ShouldBlock);
+
+            if (result!.ShouldBlock)
+            {
+                throw new BlockException(result, true);
+            }
+        }
+    }
+
     internal void CheckAndBlock(IResult? result)
     {
         if (result is not null)
