@@ -46,7 +46,7 @@ public:
 TraceExporter::TraceExporter() = default;
 TraceExporter::~TraceExporter() = default;
 
-void TraceExporter::Initialize(std::string const& host, std::uint16_t port, std::string const& tracer_version,
+bool TraceExporter::Initialize(std::string const& host, std::uint16_t port, std::string const& tracer_version,
                                std::string const& language, std::string const& language_version,
                                std::string const& language_interpreter)
 {
@@ -61,10 +61,11 @@ void TraceExporter::Initialize(std::string const& host, std::uint16_t port, std:
     if (traceExporter == nullptr)
     {
         Logger::Info("Failed to initialize TraceExporter.");
-        return;
+        return false;
     }
 
     _impl = std::make_unique<Impl>(traceExporter);
+    return true;
 }
 
 std::string TraceExporter::Send(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count) const

@@ -12,7 +12,7 @@ public:
     TraceExporter();
     ~TraceExporter();
 
-    void Initialize(std::string const& host, std::uint16_t port, std::string const& tracer_version,
+    bool Initialize(std::string const& host, std::uint16_t port, std::string const& tracer_version,
                     std::string const& language, std::string const& language_version,
                     std::string const& language_interpreter);
 
