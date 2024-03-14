@@ -17,6 +17,7 @@ namespace Datadog.Trace.Tagging
         protected static readonly Lazy<IDatadogLogger> Logger = new(() => DatadogLogging.GetLoggerFor<TagsList>());
         private List<KeyValuePair<string, string>> _tags;
         private List<KeyValuePair<string, double>> _metrics;
+        private List<KeyValuePair<string, byte[]>> _metaStruct;
 
         public virtual string GetTag(string key)
         {
@@ -167,6 +168,79 @@ namespace Datadog.Trace.Tagging
             }
         }
 
+        public virtual bool HasMetaStruct()
+        {
+            var metastruct = Volatile.Read(ref _metaStruct);
+            if (metastruct is not null)
+            {
+                lock (metastruct)
+                {
+                    return metastruct.Count > 0;
+                }
+            }
+
+            return false;
+        }
+
+        public virtual void SetMetaStruct(string key, byte[] value)
+        {
+            if (!string.IsNullOrEmpty(key))
+            {
+                var metastruct = Volatile.Read(ref _metaStruct);
+
+                if (metastruct == null)
+                {
+                    var newMetastruct = new List<KeyValuePair<string, byte[]>>();
+                    metastruct = Interlocked.CompareExchange(ref _metaStruct, newMetastruct, null) ?? newMetastruct;
+                }
+
+                lock (metastruct)
+                {
+                    for (int i = 0; i < metastruct.Count; i++)
+                    {
+                        if (metastruct[i].Key == key)
+                        {
+                            if (value == null)
+                            {
+                                metastruct.RemoveAt(i);
+                            }
+                            else
+                            {
+                                metastruct[i] = new KeyValuePair<string, byte[]>(key, value);
+                            }
+
+                            return;
+                        }
+                    }
+
+                    // If we get there, the key wasn't in the collection
+                    if (value != null)
+                    {
+                        metastruct.Add(new KeyValuePair<string, byte[]>(key, value));
+                    }
+                }
+            }
+        }
+
+        public virtual void EnumerateMetaStruct<TProcessor>(ref TProcessor processor)
+    where TProcessor : struct, IItemProcessor<byte[]>
+        {
+            var metastruct = Volatile.Read(ref _metaStruct);
+            if (metastruct is null)
+            {
+                return;
+            }
+
+            lock (metastruct)
+            {
+                for (var i = 0; i < metastruct.Count; i++)
+                {
+                    var item = metastruct[i];
+                    processor.Process(new TagItem<byte[]>(item.Key, item.Value, null));
+                }
+            }
+        }
+
         public override string ToString()
         {
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
@@ -193,6 +267,19 @@ namespace Datadog.Trace.Tagging
                     foreach (var pair in metrics)
                     {
                         sb.Append($"{pair.Key} (metric):{pair.Value}");
+                    }
+                }
+            }
+
+            var metaStruct = Volatile.Read(ref _metaStruct);
+
+            if (metaStruct != null)
+            {
+                lock (metaStruct)
+                {
+                    foreach (var pair in metaStruct)
+                    {
+                        sb.Append($"{pair.Key} (metaStruct)");
                     }
                 }
             }

@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -136,10 +138,10 @@ namespace Datadog.Trace
         internal bool IsTopLevel => Context.ParentInternal == null
                                  || Context.ParentInternal.SpanId == 0
                                  || Context.ParentInternal switch
-                                    {
-                                        SpanContext s => s.ServiceNameInternal != ServiceName,
-                                        { } s => s.ServiceName != ServiceName,
-                                    };
+                                 {
+                                     SpanContext s => s.ServiceNameInternal != ServiceName,
+                                     { } s => s.ServiceName != ServiceName,
+                                 };
 
         /// <summary>
         /// Record the end time of the span and flushes it to the backend.
@@ -484,6 +486,13 @@ namespace Datadog.Trace
         internal Span SetMetric(string key, double? value)
         {
             Tags.SetMetric(key, value);
+
+            return this;
+        }
+
+        internal Span SetMetaStruct(string key, byte[] value)
+        {
+            Tags.SetMetaStruct(key, value);
 
             return this;
         }
