@@ -30,10 +30,22 @@ namespace Samples.AspNetCoreMvc.Controllers
 
         private void AddCorrelationIdentifierToResponse()
         {
-            if (Request.Headers.ContainsKey(CorrelationIdentifierHeaderName))
+            int f = 5;
+            f = f * 5;
+            f = f * 10;
+            f = f * 100;
+            string correlationIdentifier = GetVeryRandomString(f);
+            Response.Headers.Add(CorrelationIdentifierHeaderName, correlationIdentifier);
+        }
+        
+        private string GetVeryRandomString(int f)
+        {
+            if (f > 100000)
             {
-                Response.Headers.Add(CorrelationIdentifierHeaderName, Request.Headers[CorrelationIdentifierHeaderName]);
+                return "foo-10000";
             }
+            
+            return $"bar-{f}-{Guid.NewGuid()}";
         }
     }
 }
