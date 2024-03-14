@@ -16,6 +16,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
         private IntPtr ptr;
         private DdwafObjectStruct innerObj;
         private bool innerObjInitialized;
+        private bool _disposed;
 
         public Obj(IntPtr ptr) => this.ptr = ptr;
 
@@ -68,10 +69,14 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
         public void Dispose()
         {
-            if (ptr != IntPtr.Zero)
+            if (!_disposed)
             {
-                Marshal.FreeHGlobal(ptr);
-                ptr = IntPtr.Zero;
+                _disposed = true;
+                if (ptr != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(ptr);
+                    ptr = IntPtr.Zero;
+                }
             }
         }
 
