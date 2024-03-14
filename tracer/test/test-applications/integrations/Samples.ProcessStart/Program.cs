@@ -16,6 +16,23 @@ namespace Samples.ProcessStart
             {
                 ProcessStartCollectionTests();
             }
+            else if(Environment.GetEnvironmentVariable("DO_NOT_TRACE_PROCESS") == "1")
+            {
+                // don't trace this one
+                try
+                {
+                    SampleHelpers.RunCommand("nonexisting1.exe");
+                }
+                // we expect this to throw because it doesn't exist, so catch the expected case 
+                catch (System.Reflection.TargetInvocationException ex) when(ex.InnerException is Win32Exception) { }
+
+                // This one should be traced as usual
+                try
+                {
+                    Process.Start(new ProcessStartInfo("nonexisting2.exe", "arg1"));
+                }
+                catch (Win32Exception) { }
+            }
             else
             {
                 ProcessStartTests();
