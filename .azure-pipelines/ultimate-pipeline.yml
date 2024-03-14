@@ -550,9 +550,9 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [build]
+      jobs: [managed, native, merge]
 
-  - job: build
+  - job: managed
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
@@ -569,13 +569,14 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
+        command: "Clean BuildManagedTracerHome"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
-      displayName: Uploading linux tracer home artifact
-      artifact: linux-tracer-home-linux-arm64
-
+      displayName: Uploading linux tracer home artifact (managed only)
+      artifact: linux-tracer-home-linux-arm64-managed-only
+      
+      # note that this does not include the native bits, only the managed bit
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
       artifact: build-linux-arm64-working-directory
@@ -583,6 +584,57 @@ stages:
     - publish: $(symbols)
       displayName: Upload linux tracer symbols
       artifact: linux-tracer-symbols-linux-arm64
+
+  - job: native
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    pool:
+      name: aws-arm64-auto-scaling
+    workspace:
+      clean: all
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "Clean BuildNativeTracerHome CompileManagedLoader ExtractDebugInfoLinux"
+        retryCountForRunCommand: 1
+
+    - publish: $(monitoringHome)
+      displayName: Uploading linux tracer home artifact (native only)
+      artifact: linux-tracer-home-linux-arm64-native-only
+
+    - publish: $(symbols)
+      displayName: Upload linux tracer symbols
+      artifact: linux-tracer-symbols-linux-arm64
+
+  - job: merge
+    timeoutInMinutes: 60 #default value
+    dependsOn: [managed, native]
+    pool:
+      name: azure-linux-scale-set-2 # shouldn't matter which pool
+    steps:
+      - checkout: none
+      - task: DownloadPipelineArtifact@2
+        displayName: Download managed arm64 tracer home
+        inputs:
+          artifact: linux-tracer-home-linux-arm64-managed-only
+          path: $(System.DefaultWorkingDirectory)/monitoring-home
+
+      - task: DownloadPipelineArtifact@2
+        displayName: Download native arm64 tracer home
+        inputs:
+          artifact: linux-tracer-home-linux-arm64-native-only
+          path: $(System.DefaultWorkingDirectory)/monitoring-home
+
+      - publish: $(System.DefaultWorkingDirectory)/monitoring-home
+        displayName: Upload linux tracer home artifact
+        artifact: linux-tracer-home-linux-arm64
 
 - stage: build_arm64_profiler
   dependsOn: [merge_commit_id]
