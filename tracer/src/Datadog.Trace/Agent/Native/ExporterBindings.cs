@@ -14,14 +14,14 @@ namespace Datadog.Trace.Agent.Native
     {
         private static readonly bool IsWindows = FrameworkDescription.Instance.IsWindows();
 
-        public static bool TryInitializeExporter(string url, string containerId, string language, string languageVersion, string languageInterpreter,  string entityId, string tracerVersion)
+        public static bool TryInitializeExporter(string host, int port, string containerId, string language, string languageVersion, string languageInterpreter,  string entityId, string tracerVersion)
         {
             if (IsWindows)
             {
-                return ExporterWindows.InitializeExporter(url, containerId, language, languageVersion, languageInterpreter, entityId, tracerVersion);
+                return ExporterWindows.InitializeExporter(host, port, containerId, language, languageVersion, languageInterpreter, entityId, tracerVersion);
             }
 
-            return ExporterNonWindows.InitializeExporter(url, containerId, language, languageVersion, languageInterpreter, entityId, tracerVersion);
+            return ExporterNonWindows.InitializeExporter(host, port, containerId, language, languageVersion, languageInterpreter, entityId, tracerVersion);
         }
 
         public static void SendTrace(byte[] buffer, int traceCount)
@@ -51,7 +51,8 @@ namespace Datadog.Trace.Agent.Native
         {
             [DllImport("Datadog.Tracer.Native.dll")]
             public static extern bool InitializeExporter(
-                [MarshalAs(UnmanagedType.LPWStr)] string url,
+                [MarshalAs(UnmanagedType.LPWStr)] string host,
+                int port,
                 [MarshalAs(UnmanagedType.LPWStr)] string containerId,
                 [MarshalAs(UnmanagedType.LPWStr)] string language,
                 [MarshalAs(UnmanagedType.LPWStr)] string languageVersion,
@@ -69,7 +70,8 @@ namespace Datadog.Trace.Agent.Native
         {
             [DllImport("Datadog.Tracer.Native")]
             public static extern bool InitializeExporter(
-                [MarshalAs(UnmanagedType.LPWStr)] string url,
+                [MarshalAs(UnmanagedType.LPWStr)] string host,
+                int port,
                 [MarshalAs(UnmanagedType.LPWStr)] string containerId,
                 [MarshalAs(UnmanagedType.LPWStr)] string language,
                 [MarshalAs(UnmanagedType.LPWStr)] string languageVersion,

@@ -30,7 +30,8 @@ namespace Datadog.Trace.Agent.Native
             try
             {
                 if (!ExporterBindings.TryInitializeExporter(
-                        string.Empty,
+                        "localhost",
+                        8126,
                         ContainerMetadata.GetContainerId(),
                         ".NET",
                         FrameworkDescription.Instance.ProductVersion,
