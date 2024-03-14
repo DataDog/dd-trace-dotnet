@@ -18,6 +18,7 @@ namespace Benchmarks.Trace.Asm;
 
 [MemoryDiagnoser]
 [BenchmarkAgent7]
+[BenchmarkCategory(Constants.AppSecCategory)]
 public class AppSecEncoderBenchmark
 {
     private static readonly Encoder _encoder;
@@ -96,7 +97,7 @@ public class AppSecEncoderBenchmark
         return new NestedMap(root, nestingDepth, withAttack);
     }
 
-    // [Benchmark]
+    [Benchmark]
     public void EncodeArgs()
     {
         using var pwArgs = _encoder.Encode(_args.Map, applySafetyLimits: true);
