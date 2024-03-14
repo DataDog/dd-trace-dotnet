@@ -40,7 +40,6 @@ namespace Datadog.Trace.Tests.Agent
             var statsAggregator = new Mock<IStatsAggregator>();
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
             statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
-            statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
 
             var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
@@ -68,7 +67,6 @@ namespace Datadog.Trace.Tests.Agent
             var statsAggregator = new Mock<IStatsAggregator>();
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
             statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
-            statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var settings = SpanSamplingRule("*", "*");
             var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
             var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
@@ -99,7 +97,6 @@ namespace Datadog.Trace.Tests.Agent
             var statsAggregator = new Mock<IStatsAggregator>();
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
             statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
-            statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var settings = SpanSamplingRule("*", "*");
             var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
             var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
@@ -135,7 +132,6 @@ namespace Datadog.Trace.Tests.Agent
             var statsAggregator = new Mock<IStatsAggregator>();
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
             statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
-            statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var settings = SpanSamplingRule("*", "operation");
             var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
             var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
@@ -439,7 +435,7 @@ namespace Datadog.Trace.Tests.Agent
             var api = new Mock<IApi>();
             api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()))
                .ReturnsAsync(() => true);
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, calculator, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, batchInterval: 100);
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, calculator, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, batchInterval: 100, isRareSamplerEnabled: false);
 
             // Fill both buffers
             agent.WriteTrace(spans);

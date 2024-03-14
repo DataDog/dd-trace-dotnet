@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Agent.TraceSamplers;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -43,6 +44,10 @@ namespace Datadog.Trace.Agent
         private readonly IKeepRateCalculator _traceKeepRateCalculator;
 
         private readonly IStatsAggregator _statsAggregator;
+        private readonly PrioritySampler _prioritySampler;
+        private readonly ErrorSampler _errorSampler;
+        private readonly RareSampler _rareSampler;
+        private readonly AnalyticsEventsSampler _analyticsEventSampler;
 
         /// <summary>
         /// The currently active buffer.
@@ -62,12 +67,12 @@ namespace Datadog.Trace.Agent
 
         private long _droppedTraces;
 
-        public AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100)
-        : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval)
+        public AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool isRareSamplerEnabled = false)
+        : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval, isRareSamplerEnabled)
         {
         }
 
-        internal AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval)
+        internal AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval, bool isRareSamplerEnabled)
         {
             _statsAggregator = statsAggregator;
 
@@ -91,6 +96,11 @@ namespace Datadog.Trace.Agent
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
 
             _backBufferFlushTask = _frontBufferFlushTask = Task.CompletedTask;
+
+            _prioritySampler = new PrioritySampler();
+            _errorSampler = new ErrorSampler();
+            _rareSampler = new RareSampler(isRareSamplerEnabled);
+            _analyticsEventSampler = new AnalyticsEventsSampler();
         }
 
         internal event Action Flushed;
@@ -394,7 +404,7 @@ namespace Datadog.Trace.Agent
             if (CanComputeStats)
             {
                 spans = _statsAggregator?.ProcessTrace(spans) ?? spans;
-                bool shouldSendTrace = _statsAggregator?.ShouldKeepTrace(spans) ?? true;
+                bool shouldSendTrace = ShouldKeepTrace(spans);
                 _statsAggregator?.AddRange(spans);
                 var singleSpanSamplingSpans = new List<Span>(); // TODO maybe we can store this from above?
 
@@ -513,6 +523,25 @@ namespace Datadog.Trace.Agent
                 _statsd.Increment(TracerMetricNames.Queue.DroppedTraces);
                 _statsd.Increment(TracerMetricNames.Queue.DroppedSpans, spans.Count);
             }
+        }
+
+        /// <summary>
+        /// Runs a series of samplers over the entire trace chunk
+        /// </summary>
+        /// <param name="spans">The trace chunk to sample</param>
+        /// <returns>True if the trace chunk should be sampled, false otherwise.</returns>
+        private bool ShouldKeepTrace(ArraySegment<Span> spans)
+        {
+            // Note: The RareSampler must be run before all other samplers so that
+            // the first rare span in the trace chunk (if any) is marked with "_dd.rare".
+            // The sampling decision is only used if no other samplers choose to keep the trace chunk.
+            // Another note: rare sampler actually wasn't supposed to be implemented.
+            bool rareSpanFound = _rareSampler.Sample(spans);
+
+            return rareSpanFound
+                || _prioritySampler.Sample(spans)
+                || _errorSampler.Sample(spans)
+                || _analyticsEventSampler.Sample(spans);
         }
 
         private void SerializeTracesLoop()

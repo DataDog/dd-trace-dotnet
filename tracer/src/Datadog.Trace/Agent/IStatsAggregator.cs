@@ -38,13 +38,6 @@ namespace Datadog.Trace.Agent
         /// <param name="spans">The ArraySegment of spans to process.</param>
         void AddRange(ArraySegment<Span> spans);
 
-        /// <summary>
-        /// Runs a series of samplers over the entire trace chunk
-        /// </summary>
-        /// <param name="spans">The trace chunk to sample</param>
-        /// <returns>True if the trace chunk should be sampled, false otherwise.</returns>
-        bool ShouldKeepTrace(ArraySegment<Span> spans);
-
         ArraySegment<Span> ProcessTrace(ArraySegment<Span> trace);
 
         Task DisposeAsync();

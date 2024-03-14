@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Agent.Native;
 using Datadog.Trace.Agent.TraceSamplers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -34,20 +35,14 @@ namespace Datadog.Trace.Agent
         private readonly TaskCompletionSource<bool> _processExit;
 
         private readonly TimeSpan _bucketDuration;
-
         private readonly Task _flushTask;
-
-        private readonly IDiscoveryService _discoveryService;
-
-        private readonly PrioritySampler _prioritySampler;
-        private readonly ErrorSampler _errorSampler;
-        private readonly RareSampler _rareSampler;
-        private readonly AnalyticsEventsSampler _analyticsEventSampler;
+        private readonly StatsDiscovery _statsDiscovery;
 
         private int _currentBuffer;
 
         internal StatsAggregator(IApi api, ImmutableTracerSettings settings, IDiscoveryService discoveryService)
         {
+            _statsDiscovery = new StatsDiscovery(discoveryService);
             _api = api;
             _processExit = new TaskCompletionSource<bool>();
             _bucketDuration = TimeSpan.FromSeconds(settings.StatsComputationInterval);
@@ -57,11 +52,6 @@ namespace Datadog.Trace.Agent
                 new Processors.NormalizerTraceProcessor(),
                 new Processors.ObfuscatorTraceProcessor(false),
             };
-
-            _prioritySampler = new PrioritySampler();
-            _errorSampler = new ErrorSampler();
-            _rareSampler = new RareSampler(settings);
-            _analyticsEventSampler = new AnalyticsEventsSampler();
 
             var header = new ClientStatsPayload
             {
@@ -77,9 +67,6 @@ namespace Datadog.Trace.Agent
 
             _flushTask = Task.Run(Flush);
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
-
-            _discoveryService = discoveryService;
-            discoveryService.SubscribeToChanges(HandleConfigUpdate);
         }
 
         /// <summary>
@@ -89,16 +76,17 @@ namespace Datadog.Trace.Agent
         /// </summary>
         internal StatsBuffer CurrentBuffer => _buffers[_currentBuffer];
 
-        public bool? CanComputeStats { get; private set; } = null;
+        public bool? CanComputeStats => _statsDiscovery.CanComputeStats;
 
         public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings, IDiscoveryService discoveryService)
         {
-            return settings.StatsComputationEnabledInternal ? new StatsAggregator(api, settings, discoveryService) : new NullStatsAggregator();
+            // return settings.StatsComputationEnabledInternal ? new StatsAggregator(api, settings, discoveryService) : new NullStatsAggregator();
+            return settings.StatsComputationEnabledInternal ? new NativeStatsAggregator(settings, discoveryService) : new NullStatsAggregator();
         }
 
         public Task DisposeAsync()
         {
-            _discoveryService.RemoveSubscription(HandleConfigUpdate);
+            _statsDiscovery.Dispose();
             _processExit.TrySetResult(true);
             return _flushTask;
         }
@@ -121,19 +109,6 @@ namespace Datadog.Trace.Agent
                     AddToBuffer(spans.Array[i + spans.Offset]);
                 }
             }
-        }
-
-        public bool ShouldKeepTrace(ArraySegment<Span> trace)
-        {
-            // Note: The RareSampler must be run before all other samplers so that
-            // the first rare span in the trace chunk (if any) is marked with "_dd.rare".
-            // The sampling decision is only used if no other samplers choose to keep the trace chunk.
-            bool rareSpanFound = _rareSampler.Sample(trace);
-
-            return rareSpanFound
-                || _prioritySampler.Sample(trace)
-                || _errorSampler.Sample(trace)
-                || _analyticsEventSampler.Sample(trace);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -268,20 +243,6 @@ namespace Datadog.Trace.Agent
             else
             {
                 bucket.OkSummary.Add(ConvertTimestamp(duration));
-            }
-        }
-
-        private void HandleConfigUpdate(AgentConfiguration config)
-        {
-            CanComputeStats = !string.IsNullOrWhiteSpace(config.StatsEndpoint) && config.ClientDropP0s == true;
-
-            if (CanComputeStats.Value)
-            {
-                Log.Debug("Stats computation has been enabled.");
-            }
-            else
-            {
-                Log.Warning("Stats computation disabled because the detected agent does not support this feature.");
             }
         }
     }
