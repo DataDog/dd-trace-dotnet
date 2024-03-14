@@ -19,6 +19,7 @@ using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Nuke.Common;
 using Nuke.Common.IO;
+using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
@@ -401,6 +402,71 @@ partial class Build
 
             ReplaceReceivedFilesInSnapshots();
       });
+
+    Target RegenerateSamplesSln
+        => _ => _
+               .Description("Regenerates the 'samples' solution")
+               .Executes(() =>
+                {
+                    // Create a copy of the "full solution"
+                    var sln = ProjectModelTasks.CreateSolution(
+                        fileName: RootDirectory / "Datadog.Trace.Samples.g.sln",
+                        solutions: new[] { Solution },
+                        folderNameProvider: x => x?.Name,
+                        randomizeProjectIds: false);
+
+                    // Remove everything except the test-application projects
+                    sln.AllProjects
+                       .Where(x => !IsTestApplication(x))
+                       .ForEach(x =>
+                        {
+                            Logger.Information("Removing project '{Name}'", x.Name);
+                            sln.RemoveProject(x);
+                        });
+                    
+                    // Remove the _build project 
+                    sln.RemoveProject(Solution.GetProject("_build"));
+
+                    sln.Save();
+
+                    bool IsTestApplication(Project x)
+                    {
+                        // Include test-applications, but exclude the following for now
+                        // - test-applications/regression
+                        // - test-applications/aspnet
+                        // - test-applications/security/aspnet
+                        var solutionFolder = x.SolutionFolder;
+                        while (solutionFolder is not null)
+                        {
+                            if(solutionFolder.Name == "regression" && solutionFolder.SolutionFolder?.Name == "test-applications")
+                            {
+                                return false;
+                            }
+
+                            if(solutionFolder.Name == "aspnet" && solutionFolder.SolutionFolder?.Name == "test-applications")
+                            {
+                                return false;
+                            }
+
+                            if(solutionFolder.Name == "aspnet"
+                                && solutionFolder.SolutionFolder?.Name == "security"
+                                && solutionFolder.SolutionFolder?.SolutionFolder?.Name == "test-applications")
+                            {
+                                return false;
+                            }
+
+                            if (solutionFolder.Name == "test-applications")
+                            {
+                                return true;
+                            }
+
+                            solutionFolder = solutionFolder.SolutionFolder;
+                        }
+
+                        return false;
+                    }
+                });
+
 
     private void ReplaceReceivedFilesInSnapshots()
     {
