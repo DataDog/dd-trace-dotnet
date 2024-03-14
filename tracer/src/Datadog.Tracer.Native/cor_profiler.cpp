@@ -899,6 +899,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_nonwindows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_nonwindows_nativemethods_type);
 #endif // _WIN32
+        RewritingPInvokeMaps(module_metadata, WStr("exporter_bindings"), exporter_bindings_type_name);
 
         mdTypeDef bubbleUpTypeDef;
         call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata, &bubbleUpTypeDef);
@@ -2189,14 +2190,14 @@ bool CorProfiler::ShouldHeal(ModuleID moduleId, int methodToken, const WCHAR* in
     return fault_tolerant::FaultTolerantTracker::Instance()->ShouldHeal(moduleId, methodId, instrumentationIdString, instrumentingProducts, rejit_handler);
 }
 
-void CorProfiler::ConfigureExporter(std::string const& host, std::uint16_t port, std::string const& tracer_version,
+void CorProfiler::InitializeExporter(std::string const& host, std::uint16_t port, std::string const& tracer_version,
                                     std::string const& language, std::string const& language_version,
                                     std::string const& language_interpreter)
 {
     _traceExporter->Initialize(host, port, tracer_version, language, language_version, language_interpreter);
 }
 
-std::string CorProfiler::Send(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count)
+std::string CorProfiler::SendTrace(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count)
 {
     return _traceExporter->Send(buffer, buffer_size, trace_count);
 }

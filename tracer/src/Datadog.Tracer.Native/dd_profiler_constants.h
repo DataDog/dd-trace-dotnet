@@ -116,6 +116,8 @@ const shared::WSTRING distributed_tracer_target_method_name = WStr("__GetInstanc
 
 const shared::WSTRING instrumentation_type_name = WStr("Datadog.Trace.ClrProfiler.Instrumentation");
 
+const shared::WSTRING exporter_bindings_type_name = WStr("Datadog.Trace.Agent.Native.ExporterBindings+NativeMethods");
+
 #ifdef _WIN32
 const shared::WSTRING native_dll_filename = WStr("DATADOG.TRACER.NATIVE.DLL");
 #elif MACOS

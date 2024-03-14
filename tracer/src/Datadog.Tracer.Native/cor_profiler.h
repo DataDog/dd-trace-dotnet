@@ -242,10 +242,10 @@ public:
     //
     // Native TraceExporter
     //
-    void ConfigureExporter(std::string const& host, std::uint16_t port, std::string const& tracer_version,
+    void InitializeExporter(std::string const& host, std::uint16_t port, std::string const& tracer_version,
                            std::string const& language, std::string const& language_version,
                            std::string const& language_interpreter);
-    std::string Send(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count);
+    std::string SendTrace(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count);
 
     //
     // Disable profiler

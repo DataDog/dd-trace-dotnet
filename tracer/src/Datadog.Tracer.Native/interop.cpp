@@ -269,14 +269,14 @@ EXTERN_C int dddlclose (void *handle)
 }
 #endif
 
-EXTERN_C void ConfigureExporter(const char* host, std::uint16_t port, const char* tracer_version, const char* language, const char* language_version, const char* language_interpreter)
+EXTERN_C void InitializeExporter(const char* host, std::uint16_t port, const char* tracer_version, const char* language, const char* language_version, const char* language_interpreter)
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in ConfigureExporter call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Error("Error in InitializeExporter call. Tracer CLR Profiler was not initialized.");
     }
 
-    trace::profiler->ConfigureExporter(host, port, tracer_version, language, language_version, language_interpreter);
+    trace::profiler->InitializeExporter(host, port, tracer_version, language, language_version, language_interpreter);
 }
 
 EXTERN_C void Send(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count)
@@ -287,5 +287,5 @@ EXTERN_C void Send(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintpt
     }
 
     // TODO: forget return value for now
-    trace::profiler->Send(buffer, buffer_size, trace_count);
+    trace::profiler->SendTrace(buffer, buffer_size, trace_count);
 }

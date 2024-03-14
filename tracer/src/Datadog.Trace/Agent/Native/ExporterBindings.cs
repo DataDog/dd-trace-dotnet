@@ -12,26 +12,14 @@ namespace Datadog.Trace.Agent.Native
 {
     internal static class ExporterBindings
     {
-        private static readonly bool IsWindows = FrameworkDescription.Instance.IsWindows();
-
-        public static bool TryInitializeExporter(string host, int port, string containerId, string language, string languageVersion, string languageInterpreter,  string entityId, string tracerVersion)
+        public static bool TryInitializeExporter(string host, int port, string tracer_version, string language, string languageVersion, string languageInterpreter)
         {
-            if (IsWindows)
-            {
-                return ExporterWindows.InitializeExporter(host, port, containerId, language, languageVersion, languageInterpreter, entityId, tracerVersion);
-            }
-
-            return ExporterNonWindows.InitializeExporter(host, port, containerId, language, languageVersion, languageInterpreter, entityId, tracerVersion);
+            return NativeMethods.InitializeExporter(host, port, tracer_version, language, languageVersion, languageInterpreter);
         }
 
         public static void SendTrace(byte[] buffer, int traceCount)
         {
-            if (IsWindows)
-            {
-                ExporterWindows.SendTrace(buffer, traceCount);
-            }
-
-            ExporterNonWindows.SendTrace(buffer, traceCount);
+            NativeMethods.SendTrace(buffer, buffer.Length, traceCount);
         }
 
         public static void SetSamplingRateCallback(Action<Dictionary<string, float>> updateSampleRates)
@@ -44,43 +32,19 @@ namespace Datadog.Trace.Agent.Native
             // ExporterNonWindows.SetSamplingRateCallback(url, containerId, language, languageVersion, languageInterpreter, entityId, tracerVersion);
         }
 
-        // the "dll" extension is required on .NET Framework
-        // and optional on .NET Core
-        // The DllImport methods are re-written by cor_profiler to have the correct vales
-        private static class ExporterWindows
-        {
-            [DllImport("Datadog.Tracer.Native.dll")]
-            public static extern bool InitializeExporter(
-                [MarshalAs(UnmanagedType.LPWStr)] string host,
-                int port,
-                [MarshalAs(UnmanagedType.LPWStr)] string containerId,
-                [MarshalAs(UnmanagedType.LPWStr)] string language,
-                [MarshalAs(UnmanagedType.LPWStr)] string languageVersion,
-                [MarshalAs(UnmanagedType.LPWStr)] string languageInterpreter,
-                [MarshalAs(UnmanagedType.LPWStr)] string entityId,
-                [MarshalAs(UnmanagedType.LPWStr)] string tracerVersion);
-
-            [DllImport("Datadog.Tracer.Native.dll")]
-            public static extern void SendTrace([MarshalAs(UnmanagedType.LPArray)] byte[] buffer, int nbTrace);
-        }
-
-        // assume .NET Core if not running on Windows
-        // The DllImport methods are re-written by cor_profiler to have the correct vales
-        private static class ExporterNonWindows
+        private static class NativeMethods
         {
             [DllImport("Datadog.Tracer.Native")]
             public static extern bool InitializeExporter(
-                [MarshalAs(UnmanagedType.LPWStr)] string host,
+                string host,
                 int port,
-                [MarshalAs(UnmanagedType.LPWStr)] string containerId,
-                [MarshalAs(UnmanagedType.LPWStr)] string language,
-                [MarshalAs(UnmanagedType.LPWStr)] string languageVersion,
-                [MarshalAs(UnmanagedType.LPWStr)] string languageInterpreter,
-                [MarshalAs(UnmanagedType.LPWStr)] string entityId,
-                [MarshalAs(UnmanagedType.LPWStr)] string tracerVersion);
+                string tracerVersion,
+                string language,
+                string languageVersion,
+                string languageInterpreter);
 
             [DllImport("Datadog.Tracer.Native")]
-            public static extern void SendTrace([MarshalAs(UnmanagedType.LPArray)] byte[] buffer, int nbTrace);
+            public static extern void SendTrace(byte[] buffer, int buffer_size, int nbTrace);
         }
     }
 }
