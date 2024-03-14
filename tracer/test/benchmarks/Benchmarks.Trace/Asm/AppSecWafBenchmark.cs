@@ -31,6 +31,7 @@ public class AppSecWafBenchmark
 
     static AppSecWafBenchmark()
     {
+        AppSecBenchmarkUtils.SetupDummyAgent();
         var wafLibraryInvoker = AppSecBenchmarkUtils.CreateWafLibraryInvoker();
 
         var rulesPath = Path.Combine(Directory.GetCurrentDirectory(), "Asm", "rule-set.1.10.0.json");

@@ -7,11 +7,18 @@ using System;
 using System.IO;
 using Datadog.Trace;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Configuration;
 
 namespace Benchmarks.Trace.Asm;
 
 internal class AppSecBenchmarkUtils
 {
+    internal static void SetupDummyAgent()
+    {
+        var settings = new TracerSettings { StartupDiagnosticLogEnabled = false, MaxTracesSubmittedPerSecond = 0 };
+        Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
+    }
+
     internal static WafLibraryInvoker CreateWafLibraryInvoker()
     {
         var fDesc = FrameworkDescription.Instance;

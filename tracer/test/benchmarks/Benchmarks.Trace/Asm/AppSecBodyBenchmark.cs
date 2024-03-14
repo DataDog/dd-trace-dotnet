@@ -52,6 +52,7 @@ namespace Benchmarks.Trace.Asm
 
         static AppSecBodyBenchmark()
         {
+            AppSecBenchmarkUtils.SetupDummyAgent();
             var dir = Directory.GetCurrentDirectory();
             Environment.SetEnvironmentVariable("DD_APPSEC_ENABLED", "true");
             _security = Security.Instance;
