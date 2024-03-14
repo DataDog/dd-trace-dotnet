@@ -24,4 +24,9 @@ internal sealed class AspectMethodReplaceAttribute : AspectAttribute
         : base(targetMethod, targetType, new int[0], new bool[0], filters, AspectType.Default)
     {
     }
+
+    public AspectMethodReplaceAttribute(string targetMethod, int[] paramShift, bool[] boxParam)
+       : base(targetMethod, string.Empty, paramShift, boxParam, new AspectFilter[0], AspectType.Default)
+    {
+    }
 }
