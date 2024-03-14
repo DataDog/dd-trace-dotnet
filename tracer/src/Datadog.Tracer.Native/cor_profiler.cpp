@@ -20,6 +20,7 @@
 #include "resource.h"
 #include "stats.h"
 #include "version.h"
+#include "TraceExporter.h"
 
 #include "../../../shared/src/native-src/pal.h"
 
@@ -338,7 +339,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // iast stuff
-    
+
     bool isRaspEnabled = IsRaspEnabled();
     bool isIastEnabled = IsIastEnabled();
 
@@ -361,6 +362,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     {
         Logger::Info("Callsite instrumentation is disabled.");
     }
+
+    Logger::Info("TraceExporter creation");
+    _traceExporter = std::make_unique<TraceExporter>();
 
     // we're in!
     Logger::Info("Profiler filepath: ", currentModuleFileName);
@@ -608,7 +612,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
     auto modules = module_ids.Get();
-    
+
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_ || rejit_handler == nullptr)
     {
@@ -652,13 +656,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(rejitModuleIds, integration_definitions_,
                                                                                 promise);
 
-            // wait and get the value from the future<ULONG>            
+            // wait and get the value from the future<ULONG>
             const auto status = future.wait_for(100ms);
 
             if (status != std::future_status::timeout)
             {
                 const auto& numReJITs = future.get();
-                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);    
+                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
             }
             else
             {
@@ -1536,7 +1540,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                 Logger::Debug("JITCompilationStarted: Startup hook skipped from a type with <Module> as a parent. ", caller.type.name, ".", caller.name, "()");
                 return S_OK;
             }
-                
+
             pType = pType->parent_type;
         }
 
@@ -2183,6 +2187,18 @@ bool CorProfiler::ShouldHeal(ModuleID moduleId, int methodToken, const WCHAR* in
     const auto instrumentingProducts = static_cast<InstrumentingProducts>(products);
     const auto methodId = static_cast<mdMethodDef>(methodToken);
     return fault_tolerant::FaultTolerantTracker::Instance()->ShouldHeal(moduleId, methodId, instrumentationIdString, instrumentingProducts, rejit_handler);
+}
+
+void CorProfiler::ConfigureExporter(std::string const& host, std::uint16_t port, std::string const& tracer_version,
+                                    std::string const& language, std::string const& language_version,
+                                    std::string const& language_interpreter)
+{
+    _traceExporter->Initialize(host, port, tracer_version, language, language_version, language_interpreter);
+}
+
+std::string CorProfiler::Send(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count)
+{
+    return _traceExporter->Send(buffer, buffer_size, trace_count);
 }
 
 //
@@ -3191,7 +3207,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
                                                     ELEMENT_TYPE_U1};
     ULONG start_length = sizeof(appdomain_load_signature_start);
     ULONG end_length = sizeof(appdomain_load_signature_end);
-    
+
     BYTE system_reflection_assembly_type_ref_compressed_token[4];
     ULONG token_length =
         CorSigCompressToken(system_reflection_assembly_type_ref, system_reflection_assembly_type_ref_compressed_token);
@@ -3791,7 +3807,7 @@ extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_p
 #endif
 
 void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
-                                             int* symbolsSize) 
+                                             int* symbolsSize)
 {
 #ifdef _WIN32
     HINSTANCE hInstance = DllHandle;

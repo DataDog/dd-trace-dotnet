@@ -7,6 +7,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <memory>
 #include <vector>
 
 #include "cor_profiler_base.h"
@@ -22,6 +23,7 @@
 #include "Synchronized.hpp"
 #include "fault_tolerant_method_duplicator.h"
 #include "fault_tolerant_rewriter.h"
+#include "TraceExporter.h"
 
 #include "../../../shared/src/native-src/pal.h"
 
@@ -127,7 +129,7 @@ private:
     static bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
     static bool EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata, mdTypeDef* mdTypeDefToken);
     static bool EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const ModuleMetadata& module_metadata, mdTypeDef typeDef);
-    
+
     //
     // Startup methods
     //
@@ -139,6 +141,9 @@ private:
     // Initialization methods
     //
     void InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived, bool isInterface, bool enable = true);
+
+    std::unique_ptr<TraceExporter> _traceExporter = nullptr;
+
 
 public:
     CorProfiler() = default;
@@ -233,6 +238,14 @@ public:
     //
     void ReportSuccessfulInstrumentation(ModuleID moduleId, int methodToken, const WCHAR* instrumentationId, int products);
     bool ShouldHeal(ModuleID moduleId, int methodToken, const WCHAR* instrumentationId, int products);
+
+    //
+    // Native TraceExporter
+    //
+    void ConfigureExporter(std::string const& host, std::uint16_t port, std::string const& tracer_version,
+                           std::string const& language, std::string const& language_version,
+                           std::string const& language_interpreter);
+    std::string Send(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count);
 
     //
     // Disable profiler

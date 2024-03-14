@@ -80,6 +80,7 @@
     <ClCompile Include="iast\method_analyzers.cpp" />
     <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp" />
     <ClCompile Include="iast\method_analyzer.cpp" />
+    <ClCompile Include="TraceExporter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -192,6 +193,7 @@
     <ClInclude Include="fault_tolerant_cor_profiler_function_control.h">
       <Filter>FaultTolerant\Hooks</Filter>
     </ClInclude>
+    <ClInclude Include="TraceExporter.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Debugger">
@@ -206,5 +208,8 @@
     <Filter Include="FaultTolerant\Hooks">
       <UniqueIdentifier>{35c3ef95-c2c0-4141-8a54-ee60d6a8c348}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
