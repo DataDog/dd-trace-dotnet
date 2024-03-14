@@ -247,9 +247,9 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [build]
+      jobs: [managed, native, merge]
 
-  - job: build
+  - job: managed
     timeoutInMinutes: 60 #default value
     pool:
       name: azure-windows-scale-set
@@ -260,17 +260,60 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: tracer\build.cmd BuildTracerHome BuildNativeLoader
+    - script: tracer\build.cmd BuildManagedTracerHome
       displayName: Build tracer home
       retryCountOnTaskFailure: 1
 
     - publish: $(monitoringHome)
       displayName: Upload Windows tracer home directory
-      artifact: windows-tracer-home
+      artifact: windows-tracer-home-managed-only
 
+      # note that this does not include the native bits, only the managed bit
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the managed build
       artifact: build-windows-working-directory
+
+  - job: native
+    timeoutInMinutes: 60 #default value
+    pool:
+      name: azure-windows-scale-set
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - script: tracer\build.cmd BuildNativeTracerHome CompileManagedLoader
+      displayName: Build tracer home
+      retryCountOnTaskFailure: 1
+
+    - publish: $(monitoringHome)
+      displayName: Upload Windows tracer home directory
+      artifact: windows-tracer-home-native-only
+
+  - job: merge
+    timeoutInMinutes: 60 #default value
+    dependsOn: [managed, native]
+    pool:
+      name: azure-linux-scale-set-2 # shouldn't matter which pool
+    steps:
+      - checkout: none
+      - task: DownloadPipelineArtifact@2
+        displayName: Download managed windows tracer home
+        inputs:
+          artifact: windows-tracer-home-managed-only
+          path: $(System.DefaultWorkingDirectory)/monitoring-home
+
+      - task: DownloadPipelineArtifact@2
+        displayName: Download native windows tracer home
+        inputs:
+          artifact: windows-tracer-home-native-only
+          path: $(System.DefaultWorkingDirectory)/monitoring-home
+
+      - publish: $(System.DefaultWorkingDirectory)/monitoring-home
+        displayName: Upload Windows tracer home directory
+        artifact: windows-tracer-home
 
 - stage: build_windows_profiler
   dependsOn: [merge_commit_id]
