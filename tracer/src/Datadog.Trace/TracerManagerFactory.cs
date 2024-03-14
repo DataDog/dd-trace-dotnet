@@ -9,6 +9,7 @@ using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Agent.Native;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
@@ -293,8 +294,9 @@ namespace Datadog.Trace
 
         protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
-            var apiRequestFactory = TracesTransportStrategy.Get(settings.ExporterInternal);
-            var api = new Api(apiRequestFactory, statsd, updateSampleRates, settings.ExporterInternal.PartialFlushEnabledInternal);
+            // var apiRequestFactory = TracesTransportStrategy.Get(settings.ExporterInternal);
+            // var api = new Api(apiRequestFactory, statsd, updateSampleRates, settings.ExporterInternal.PartialFlushEnabledInternal);
+            var api = new NativeApi(updateSampleRates, settings.ExporterInternal.PartialFlushEnabledInternal);
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
