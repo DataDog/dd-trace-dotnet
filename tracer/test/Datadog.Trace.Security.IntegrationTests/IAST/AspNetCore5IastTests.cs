@@ -313,7 +313,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
                           .DisableRequireUniquePrefix();
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("RunOnWindows", "True")]
     public async Task TestJsonParseTainting()
     {
