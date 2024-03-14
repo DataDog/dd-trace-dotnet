@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 namespace Datadog.Trace.Debugger.PInvoke
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    internal struct NativeLineProbeDefinition
+    public struct NativeLineProbeDefinition
     {
         [MarshalAs(UnmanagedType.LPWStr)]
         public string ProbeId;

@@ -8,33 +8,56 @@ using Datadog.Trace.Debugger.PInvoke;
 
 public static class FakeProbeCreator
 {
-    public static void CreateAndInstallProbe(string displayName, MethodInfo methodInfo)
+    public static void CreateAndInstallMethodProbe(string displayName, MethodInfo methodInfo)
     {
         var probeName = $"{displayName}_{methodInfo.DeclaringType.FullName}_{methodInfo.Name}";
         var method = new NativeMethodProbeDefinition(probeName, methodInfo.DeclaringType.FullName, methodInfo.Name, targetParameterTypesFullName: null);
+
+        var where = new Where { MethodName = method.TargetMethod, TypeName = method.TargetType };
+        
+        CreateProbeProcessor(probeName, where, method.ProbeId);
+        
+        DebuggerNativeMethods.InstrumentProbes(
+            new[] { method },
+            Array.Empty<NativeLineProbeDefinition>(),
+            Array.Empty<NativeSpanProbeDefinition>(),
+            Array.Empty<NativeRemoveProbeRequest>());
+    }
+
+    public static void CreateAndInstallLineProbe(string displayName, NativeLineProbeDefinition lineProbeDefinition)
+    {
+        var probeName = $"{displayName}_{lineProbeDefinition.ProbeId}";
+        var where = new Where { SourceFile = lineProbeDefinition.ProbeFilePath, Lines = new[] { lineProbeDefinition.LineNumber.ToString() } };
+        
+        CreateProbeProcessor(probeName, where, lineProbeDefinition.ProbeId);
+        
+        DebuggerNativeMethods.InstrumentProbes(
+            Array.Empty<NativeMethodProbeDefinition>(),
+            new[] { lineProbeDefinition },
+            Array.Empty<NativeSpanProbeDefinition>(),
+            Array.Empty<NativeRemoveProbeRequest>());
+    }
+        
+    
+    
+
+    private static void CreateProbeProcessor(string probeName, Where where, string probeId)
+    {
         var templateStr = probeName;
-        var template = templateStr + "{1}";
-        var json = @"{
-    ""Ignore"": ""1""
-}";
-        var segments = new SnapshotSegment[] { new(null, null, templateStr), new("1", json, null) };
+        var template = templateStr;
+    
+        var segments = new SnapshotSegment[] { new(null, null, templateStr) };
 
         var methodProbeDef = new LogProbe
         {
             CaptureSnapshot = true,
-            Id = method.ProbeId,
-            Where = new Where { MethodName = method.TargetMethod, TypeName = method.TargetType },
+            Id = probeId,
+            Where = where,
             EvaluateAt = EvaluateAt.Entry,
             Template = template,
             Segments = segments,
             Sampling = new Sampling { SnapshotsPerSecond = 1000000 }
         };
         ProbeExpressionsProcessor.Instance.AddProbeProcessor(methodProbeDef);
-        // Install probes
-        DebuggerNativeMethods.InstrumentProbes(
-            new[] { method },
-            Array.Empty<NativeLineProbeDefinition>(),
-            Array.Empty<NativeSpanProbeDefinition>(),
-            Array.Empty<NativeRemoveProbeRequest>());
     }
 }

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
+using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
 
@@ -11,15 +13,32 @@ public class TimeTravelInitiator
 {
     public static void InitiateTimeTravel(MethodInfo method)
     {
-        // use dnlib to find all the methods that are directly called by this method
-        var calledMethods = GetCalledMethodsWithDnlib(method);
+        var alreadyVisited = new HashSet<MethodInfo> { };
+        InitiateTimeTravel(method, alreadyVisited);
+    }
+
+    private static void InitiateTimeTravel(MethodInfo method, HashSet<MethodInfo> alreadyVisited)
+    {
+        if (!alreadyVisited.Add(method)) return;
+
+        // use dnlib to find the file path and line numbers of the method
+        var lineProbes = GetLineProbeLocationsWithDnlib(method);
+        foreach (var lineProbe in lineProbes)
+        {
+            FakeProbeCreator.CreateAndInstallLineProbe("TimeTravelLine", lineProbe);
+        }
+        
+        // use dnlib to find all the methods that are directly called by this method,
+        // and create probes for them, and then call this method recursively
+        var calledMethods = GetCalleesWithDnlib(method);
         foreach (var callee in calledMethods)
         {
-            FakeProbeCreator.CreateAndInstallProbe("TimeTravel", callee);
+            FakeProbeCreator.CreateAndInstallMethodProbe("TimeTravel", callee);
+            InitiateTimeTravel(callee, alreadyVisited);
         }
     }
 
-    private static List<MethodInfo> GetCalledMethodsWithDnlib(MethodInfo methodInfo)
+    private static List<MethodInfo> GetCalleesWithDnlib(MethodInfo methodInfo)
     {
         var result = new List<MethodInfo>();
 
@@ -56,6 +75,30 @@ public class TimeTravelInitiator
         return result;
     }
 
+    
+    private static NativeLineProbeDefinition[] GetLineProbeLocationsWithDnlib(MethodInfo methodInfo)
+    {
+        var targetMethod = FindMethod(methodInfo);
+
+        var mvid = methodInfo.DeclaringType.Assembly.ManifestModule.ModuleVersionId;
+        if (targetMethod is { HasBody: true })
+        {
+            return targetMethod.Body.Instructions
+                               .Where(i => i.SequencePoint?.StartLine is not null && i.SequencePoint?.StartLine != 0)
+                               .GroupBy(i => i.SequencePoint?.StartLine)
+                               .Select(g => new NativeLineProbeDefinition(
+                                           $"{methodInfo.Name}, line {g.Key.Value}", 
+                                                mvid, 
+                                                methodInfo.MetadataToken, 
+                                                (int)g.Min(i => i.Offset), 
+                                                g.Key.Value, 
+                                                g.First().SequencePoint.Document.Url))
+                               .ToArray();
+        }
+
+        return Array.Empty<NativeLineProbeDefinition>();
+    }
+    
     private static MethodDef FindMethod(MethodInfo methodInfo)
     {
         ModuleDefMD module = ModuleDefMD.Load(methodInfo.DeclaringType.Assembly.Location);

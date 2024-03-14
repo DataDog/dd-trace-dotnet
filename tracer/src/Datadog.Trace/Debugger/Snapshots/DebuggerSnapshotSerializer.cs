@@ -41,6 +41,11 @@ namespace Datadog.Trace.Debugger.Snapshots
             string name,
             JsonWriter jsonWriter)
         {
+            if (type.Name == "ApiController")
+            {
+                return;
+            }
+
             using var cts = CreateCancellationTimeout();
             SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false);
         }

@@ -675,8 +675,16 @@ namespace Datadog.Trace.Debugger.Snapshots
                         info.LineCaptureInfo.ProbeFilePath);
 
                 var snapshot = GetSnapshotJson();
+                WriteSnapshotJsonToDisk(probeId, snapshot);
                 return snapshot;
             }
+        }
+
+        private static string GetSnapshotsDirectory()
+        {
+            var directory = Path.Combine(Path.GetTempPath(), "snapshots", Process.GetCurrentProcess().Id.ToString());
+            Directory.CreateDirectory(directory);
+            return directory;
         }
 
         internal string FinalizeMethodSnapshot<T>(string probeId, int probeVersion, ref CaptureInfo<T> info)
@@ -719,11 +727,29 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
 
                 var snapshot = GetSnapshotJson();
+                WriteSnapshotJsonToDisk(probeId, snapshot);
                 TimeTravelStateManager.EndMethod();
                 return snapshot;
                 
             }
         }
+
+        private static void WriteSnapshotJsonToDisk(string probeId, string snapshot)
+        {
+            File.WriteAllText(Path.Combine(GetSnapshotsDirectory(), probeId + ".json"), JsonPrettify(snapshot));
+            Console.WriteLine($@"Snapshot written to {GetSnapshotsDirectory()}: {probeId}.json");
+        }
+
+        private static string JsonPrettify(string json)
+        {
+            using var stringReader = new StringReader(json);
+            using var stringWriter = new StringWriter();
+            var jsonReader = new JsonTextReader(stringReader);
+            var jsonWriter = new JsonTextWriter(stringWriter) { Formatting = Formatting.Indented };
+            jsonWriter.WriteToken(jsonReader);
+            return stringWriter.ToString();
+        }
+
 
         private static MethodLocation ExtractFilePathAndLineNumbersFromPdb(MethodBase method)
         {
