@@ -16,6 +16,9 @@ using MemoryMarshal = System.Runtime.InteropServices.MemoryMarshal;
 using BitConverter = Datadog.Trace.Util.BitConverterShim;
 using MemoryMarshal = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices.MemoryMarshal;
 #endif
+#if NETFRAMEWORK
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+#endif
 
 namespace Datadog.Trace.Util;
 
@@ -298,13 +301,12 @@ internal static class HexString
             return false;
         }
 
-        var bytesPtr = stackalloc byte[1];
+        var bytesPtr = Unsafe.AsPointer(ref value);
         var bytes = new Span<byte>(bytesPtr, 1);
 
         if (TryParseBytes(chars, bytes))
         {
             // no need to reverse endianness on a single byte
-            value = bytes[0];
             return true;
         }
 
