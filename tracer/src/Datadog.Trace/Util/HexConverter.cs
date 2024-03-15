@@ -1,4 +1,4 @@
-// <copyright file="HexConverter.netcore.cs" company="Datadog">
+// <copyright file="HexConverter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,8 +7,6 @@
 
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-
-#if NETCOREAPP3_1_OR_GREATER
 
 #nullable enable
 
@@ -37,7 +35,13 @@ internal static class HexConverter
     /// <summary>
     /// Gets a map from an ASCII char to its hex value, e.g. arr['b'] == 11. 0xFF means it's not a hex digit.
     /// </summary>
-    public static ReadOnlySpan<byte> CharToHexLookup =>
+#if NETCOREAPP
+    private static ReadOnlySpan<byte> CharToHexLookup =>
+#else
+#pragma warning disable SA1201 // Elements should appear in the correct order
+    private static readonly byte[] CharToHexLookup =
+#pragma warning restore SA1201 // Elements should appear in the correct order
+#endif
     [
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 15
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 31
@@ -128,9 +132,18 @@ internal static class HexConverter
     public static unsafe string ToString(ReadOnlySpan<byte> bytes, Casing casing = Casing.Upper)
     {
 #if NETFRAMEWORK || NETSTANDARD2_0
-        Span<char> result = bytes.Length > 16 ?
-            new char[bytes.Length * 2].AsSpan() :
-            stackalloc char[bytes.Length * 2];
+
+        Span<char> result;
+
+        if (bytes.Length > 16)
+        {
+            result = new char[bytes.Length * 2].AsSpan();
+        }
+        else
+        {
+            var resultPtr = stackalloc char[bytes.Length * 2];
+            result = new Span<char>(resultPtr, bytes.Length * 2);
+        }
 
         int pos = 0;
         foreach (byte b in bytes)
@@ -138,6 +151,7 @@ internal static class HexConverter
             ToCharsBuffer(b, result, pos, casing);
             pos += 2;
         }
+
         return result.ToString();
 #else
 #pragma warning disable CS8500 // takes address of managed type
@@ -285,5 +299,3 @@ internal static class HexConverter
         return (uint)(c - '0') <= 9 || (uint)(c - 'a') <= ('f' - 'a');
     }
 }
-
-#endif // NETCOREAPP3_1_OR_GREATER
