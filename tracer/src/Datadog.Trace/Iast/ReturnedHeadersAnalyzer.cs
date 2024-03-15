@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
 using Datadog.Trace.Configuration;
@@ -27,7 +26,7 @@ internal static class ReturnedHeadersAnalyzer
     private const string MaxAgeConst = "max-age=";
     private const string Location = "Location";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ReturnedHeadersAnalyzer));
-    private static string[] headerInjectionExceptions = new string[] { "location", "Sec-WebSocket-Location", "Sec-WebSocket-Accept", "Upgrade", "Connection" };
+    private static readonly string[] HeaderInjectionExceptions = ["location", "Sec-WebSocket-Location", "Sec-WebSocket-Accept", "Upgrade", "Connection"];
 
     // Analyze the headers. If the response is HTML, check for X-Content-Type-Options: nosniff. If it
     // is not present, report a vulnerability. When getting the headers, make sure that keys are searched taking
@@ -41,7 +40,14 @@ internal static class ReturnedHeadersAnalyzer
         AnalyzeXContentTypeOptionsVulnerability(responseHeaders, integrationId, serviceName, responseCode);
         AnalyzeStrictTransportSecurity(responseHeaders, integrationId, serviceName, responseCode, protocol);
         AnalyzeUnvalidatedRedirect(responseHeaders, integrationId);
-        AnalyzeHeaderInjectionVulnerability(responseHeaders, integrationId);
+
+        #if NETFRAMEWORK
+        // Start an analysis only for .NET Framework because wrappers has only been implemented for .NET Core
+        for (var i = 0; i < responseHeaders.Count; i++)
+        {
+            AnalyzeHeaderInjectionVulnerability(responseHeaders.GetKey(i), responseHeaders.GetValues(i), integrationId);
+        }
+        #endif
     }
 
     // In header injections, we should exclude some headers to prevent false positives:
@@ -56,11 +62,10 @@ internal static class ReturnedHeadersAnalyzer
     // <header_value> matches with  a RegExp
     // We should redact the sensitive information from the evidence when:
     // Tainted range is considered sensitive value
-
 #if NETFRAMEWORK
-    private static void AnalyzeHeaderInjectionVulnerability(NameValueCollection responseHeaders, IntegrationId integrationId)
+    internal static void AnalyzeHeaderInjectionVulnerability(string headerKey, string[] headerValues, IntegrationId integrationId)
 #else
-    private static void AnalyzeHeaderInjectionVulnerability(IHeaderDictionary responseHeaders, IntegrationId integrationId)
+    internal static void AnalyzeHeaderInjectionVulnerability(string headerKey, StringValues headerValues, IntegrationId integrationId)
 #endif
     {
         try
@@ -69,33 +74,16 @@ internal static class ReturnedHeadersAnalyzer
             var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
             var iastRequestContext = currentSpan?.Context?.TraceContext?.IastRequestContext;
 
-            if (iastRequestContext is null)
+            if (iastRequestContext is null || string.IsNullOrWhiteSpace(headerKey) || IsHeaderInjectionException(headerKey))
             {
                 return;
             }
 
-#if NETFRAMEWORK
-            for (int i = 0; i < responseHeaders.Count; i++)
+            foreach (var headerValue in headerValues)
             {
-                var headerKey = responseHeaders.GetKey(i);
-                var headerValues = responseHeaders.GetValues(i);
-#else
-            foreach (var headerKeyValue in responseHeaders)
-            {
-                var headerKey = headerKeyValue.Key;
-                var headerValues = headerKeyValue.Value;
-#endif
-                if (string.IsNullOrWhiteSpace(headerKey) || IsHeaderInjectionException(headerKey))
+                if (IsHeaderInjectionVulnerable(headerKey, headerValue, iastRequestContext))
                 {
-                    continue;
-                }
-
-                foreach (var headerValue in headerValues)
-                {
-                    if (IsHeaderInjectionVulnerable(headerKey, headerValue, iastRequestContext))
-                    {
-                        IastModule.OnHeaderInjection(integrationId, headerKey, headerValue);
-                    }
+                    IastModule.OnHeaderInjection(integrationId, headerKey, headerValue);
                 }
             }
         }
@@ -135,7 +123,7 @@ internal static class ReturnedHeadersAnalyzer
     private static bool IsHeaderInjectionException(string headerKey)
     {
         bool isHeaderInjectionException = false;
-        foreach (var excludeType in headerInjectionExceptions)
+        foreach (var excludeType in HeaderInjectionExceptions)
         {
             if (excludeType.Equals(headerKey, StringComparison.OrdinalIgnoreCase))
             {
@@ -199,8 +187,8 @@ internal static class ReturnedHeadersAnalyzer
                 return;
             }
 
-            string contentTypeValue = responseHeaders[ContentType];
-            string contentOptionValue = responseHeaders[XContentTypeOptions];
+            var contentTypeValue = responseHeaders[ContentType];
+            var contentOptionValue = responseHeaders[XContentTypeOptions];
 
             if (!IsHtmlResponse(contentTypeValue))
             {
@@ -230,9 +218,9 @@ internal static class ReturnedHeadersAnalyzer
                 return;
             }
 
-            string contentTypeValue = responseHeaders[ContentType];
-            string strictTransportSecurityValue = responseHeaders[StrictTransportSecurity];
-            string xForwardedProtoValue = responseHeaders[XForwardedProto];
+            var contentTypeValue = responseHeaders[ContentType];
+            var strictTransportSecurityValue = responseHeaders[StrictTransportSecurity];
+            var xForwardedProtoValue = responseHeaders[XForwardedProto];
 
             if (!IsHtmlResponse(contentTypeValue))
             {

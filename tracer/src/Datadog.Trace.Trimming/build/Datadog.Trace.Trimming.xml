@@ -43,6 +43,7 @@
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Http.Features">
       <type fullname="Microsoft.AspNetCore.Http.Features.IFeatureCollection" />
+      <type fullname="Microsoft.AspNetCore.Http.Features.IHttpResponseFeature" />
       <type fullname="Microsoft.AspNetCore.Http.IHeaderDictionary" />
       <type fullname="Microsoft.AspNetCore.Http.IQueryCollection" />
       <type fullname="Microsoft.AspNetCore.Http.IRequestCookieCollection" />
