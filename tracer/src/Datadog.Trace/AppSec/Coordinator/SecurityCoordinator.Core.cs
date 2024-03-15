@@ -73,6 +73,19 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
+    internal void CheckAndBlockRasp(IResult? result)
+    {
+        if (result is not null)
+        {
+            TryReport(result, result.ShouldBlock);
+
+            if (result!.ShouldBlock)
+            {
+                throw new BlockException(result, true);
+            }
+        }
+    }
+
     private Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
         var request = _context.Request;

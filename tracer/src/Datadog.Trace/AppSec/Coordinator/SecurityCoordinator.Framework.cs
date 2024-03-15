@@ -271,6 +271,21 @@ internal readonly partial struct SecurityCoordinator
         CheckAndBlock(result);
     }
 
+    internal void CheckAndBlockRasp(IResult? result)
+    {
+        if (result is not null)
+        {
+            var reporting = MakeReportingFunction(result);
+            // here we assume if we haven't blocked we'll have collected the correct status elsewhere
+            reporting(null, result.ShouldBlock);
+
+            if (result.ShouldBlock)
+            {
+                ChooseBlockingMethodAndBlock(result, reporting);
+            }
+        }
+    }
+
     internal void CheckAndBlock(IResult? result)
     {
         if (result is not null)

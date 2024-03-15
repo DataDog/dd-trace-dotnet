@@ -85,24 +85,22 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
     }
 
     [SkippableTheory]
-    [InlineData("/etc/password")]
-    [InlineData("filename")]
     [Trait("Category", "EndToEnd")]
+    [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
+    [InlineData("/Iast/GetFileContent?file=filename", "Lfi")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
-    public async Task TestRaspIastPathTraversalRequest(string file)
+    public async Task TestRaspRequest(string url, string exploit)
     {
-        var methodName = "PathTraversal";
         var testName = _enableIast ? "RaspIast.AspNetMvc5" : "Rasp.AspNetMvc5";
         testName += _classicMode ? ".Classic" : ".Integrated";
-        var url = $"/Iast/GetFileContent?file={file}";
         IncludeAllHttpSpans = true;
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.UseParameters(file);
+        settings.UseParameters(url, exploit);
         settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: methodName);
+        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: exploit);
     }
 
     public async Task InitializeAsync()

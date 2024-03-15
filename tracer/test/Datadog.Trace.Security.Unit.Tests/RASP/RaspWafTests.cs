@@ -34,8 +34,8 @@ public class RaspWafTests : WafLibraryRequiredTest
     private void Execute(string address, object value, string vulnerabilityType, string rule = null, string ruleFile = null, string expectedAction = null)
     {
         ExecuteInternal(address, value, vulnerabilityType, rule, true, ruleFile, true, expectedAction);
-        ExecuteInternal(address, value, vulnerabilityType, rule, false, ruleFile, false, expectedAction);
-        ExecuteInternal(address, value, vulnerabilityType, rule, true, ruleFile, true, expectedAction);
+        ExecuteInternal(address, value, vulnerabilityType, rule, true, ruleFile, false, expectedAction);
+        ExecuteInternal(address, value, vulnerabilityType, rule, false, ruleFile, true, expectedAction);
         ExecuteInternal(address, value, vulnerabilityType, rule, false, ruleFile, false, expectedAction);
     }
 
@@ -49,7 +49,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         }
 
         args.Add(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
-        args.Add(AddressesConstants.RequestBody, new[] { "file", requestParam });
+        args.Add(AddressesConstants.RequestBody, new[] { "param", requestParam });
         args.Add(AddressesConstants.RequestMethod, "GET");
 
         var initResult = Waf.Create(

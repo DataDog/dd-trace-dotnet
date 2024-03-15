@@ -15,6 +15,11 @@ internal static class RaspModule
 {
     internal static void OnLfi(string file)
     {
+        CheckVulnerability(AddressesConstants.FileAccess, file);
+    }
+
+    private static void CheckVulnerability(string address, string valueToCheck)
+    {
         var security = Security.Instance;
 
         if (!security.RaspEnabled)
@@ -29,17 +34,14 @@ internal static class RaspModule
             return;
         }
 
-        var arguments = new Dictionary<string, object> { [AddressesConstants.FileAccess] = file };
+        var arguments = new Dictionary<string, object> { [address] = valueToCheck };
         RunWaf(arguments);
     }
 
     private static void RunWaf(Dictionary<string, object> arguments)
     {
-        if (Tracer.Instance.InternalActiveScope?.Root?.Span != null)
-        {
-            var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, Tracer.Instance.InternalActiveScope.Root.Span);
-            var result = securityCoordinator.RunWaf(arguments, (log, ex) => log.Error(ex, "Error in RASP OnLfi"));
-            securityCoordinator.CheckAndBlock(result);
-        }
+        var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, Tracer.Instance.InternalActiveScope.Root.Span);
+        var result = securityCoordinator.RunWaf(arguments, (log, ex) => log.Error(ex, "Error in RASP OnLfi"));
+        securityCoordinator.CheckAndBlockRasp(result);
     }
 }

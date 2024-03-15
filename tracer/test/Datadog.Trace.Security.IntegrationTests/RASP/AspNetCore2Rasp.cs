@@ -76,23 +76,21 @@ public abstract class AspNetCore2Rasp : AspNetBase, IClassFixture<AspNetCoreTest
     }
 
     [SkippableTheory]
-    [InlineData("/etc/password")]
-    [InlineData("filename")]
+    [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
+    [InlineData("/Iast/GetFileContent?file=filename", "Lfi")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestRaspIastPathTraversalRequest(string file)
+    public async Task TestRaspRequest(string url, string exploit)
     {
-        var methodName = "PathTraversal";
         var testName = IastEnabled ? "RaspIast.AspNetCore2" : "Rasp.AspNetCore2";
-        var url = $"/Iast/GetFileContent?file={file}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spans = await SendRequestsAsync(agent, [url]);
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.UseParameters(file);
+        settings.UseParameters(url, exploit);
         settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: methodName);
+        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: exploit);
     }
 }
 #endif
