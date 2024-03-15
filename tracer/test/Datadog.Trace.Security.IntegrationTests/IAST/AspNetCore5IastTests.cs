@@ -369,7 +369,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         newFixture.SetOutput(null);
     }
 
-#if !NETFRAMEWORK && !NETSTANDARD2_0
+#if !NETFRAMEWORK && NETCOREAPP3_1_OR_GREATER
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
     public async Task TestSystemTextJsonParseTainting()
