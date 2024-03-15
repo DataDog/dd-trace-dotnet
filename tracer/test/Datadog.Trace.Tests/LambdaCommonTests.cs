@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void TestCreatePlaceholderScopeSuccessWithTraceIdOnly()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", null);
 
             scope.Should().NotBeNull();
@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void TestCreatePlaceholderScopeSuccessWithSamplingPriorityOnly()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, "-1");
 
             scope.Should().NotBeNull();
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void TestCreatePlaceholderScopeSuccessWithFullContext()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
 
             scope.Should().NotBeNull();
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tests
         [Trait("Category", "ArmUnsupported")]
         public void TestCreatePlaceholderScopeSuccessWithoutContext()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
 
             scope.Should().NotBeNull();
@@ -74,14 +74,14 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void TestCreatePlaceholderScopeInvalidTraceId()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             Assert.Throws<FormatException>(() => LambdaCommon.CreatePlaceholderScope(tracer, "invalid-trace-id", "-1"));
         }
 
         [Fact]
         public void TestCreatePlaceholderScopeInvalidSamplingPriority()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             Assert.Throws<FormatException>(() => LambdaCommon.CreatePlaceholderScope(tracer, "1234", "invalid-sampling-priority"));
         }
 
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Tests
         [Trait("Category", "ArmUnsupported")]
         public void TestSendEndInvocationFailure()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -164,7 +164,7 @@ namespace Datadog.Trace.Tests
         [Trait("Category", "ArmUnsupported")]
         public void TestSendEndInvocationSuccess()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -187,7 +187,7 @@ namespace Datadog.Trace.Tests
         [Trait("Category", "ArmUnsupported")]
         public void TestSendEndInvocationFalse()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);

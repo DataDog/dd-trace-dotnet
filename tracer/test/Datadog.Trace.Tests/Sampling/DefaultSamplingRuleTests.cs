@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -33,7 +34,7 @@ namespace Datadog.Trace.Tests.Sampling
         {
             // create span, setting service and environment
             var settings = new TracerSettings { ServiceName = expectedService };
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+            using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             using var scope = (Scope)tracer.StartActive("root");
             scope.Span.Context.TraceContext.Environment = expectedEnv;
 
@@ -55,7 +56,7 @@ namespace Datadog.Trace.Tests.Sampling
             var rule = new DefaultSamplingRule();
 
             var settings = new TracerSettings();
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+            using var tracer = TracerHelper.CreateWithFakeAgent(settings);
 
             var firstScope = (Scope)tracer.StartActive("first");
             var firstSpan = firstScope.Span;

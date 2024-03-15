@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void TestGetEndInvocationRequestWithError()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, true);
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void TestGetEndInvocationRequestWithoutError()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, false);
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void TestGetEndInvocationRequestWithScope()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, false);
@@ -72,7 +72,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void TestGetEndInvocationRequestWithErrorTags()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
             scope.Span.SetTag("error.msg", "Exception");
             scope.Span.SetTag("error.type", "Exception");
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void TestGetEndInvocationRequestWithoutErrorTags()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, true);

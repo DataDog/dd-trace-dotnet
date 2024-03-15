@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void SampleUniqueSpans()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
             var sampler = new RareSampler(new ImmutableTracerSettings(settings));
 
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData(SamplingPriorityValues.AutoKeep, false)]
         public void OnlySampleRejectPriorities(int priority, bool expected)
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
             var sampler = new RareSampler(new ImmutableTracerSettings(settings));
 
@@ -100,7 +100,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void OnlySampleTopLevelSpans()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
             var sampler = new RareSampler(new ImmutableTracerSettings(settings));
 
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData(Tags.PartialSnapshot)]
         public void SampleSpecialMetrics(string metricName)
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
             var sampler = new RareSampler(new ImmutableTracerSettings(settings));
 

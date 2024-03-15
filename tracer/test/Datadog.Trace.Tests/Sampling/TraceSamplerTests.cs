@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -145,7 +146,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void Choose_Between_Sampling_Mechanisms()
         {
             var settings = new TracerSettings { ServiceName = ServiceName };
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+            using var tracer = TracerHelper.CreateWithFakeAgent(settings);
 
             using var scope = (Scope)tracer.StartActive(OperationName);
             scope.Span.Context.TraceContext.Environment = Env;
@@ -177,7 +178,7 @@ namespace Datadog.Trace.Tests.Sampling
             var userKeeps = 0;
 
             var settings = new TracerSettings { ServiceName = ServiceName };
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+            using var tracer = TracerHelper.CreateWithFakeAgent(settings);
 
             while (sampleSize-- > 0)
             {

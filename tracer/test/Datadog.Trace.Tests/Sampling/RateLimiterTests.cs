@@ -21,7 +21,8 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void One_Is_Allowed()
         {
-            var traceContext = new TraceContext(TracerHelper.Create());
+            using var tracer = TracerHelper.CreateWithFakeAgent();
+            var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
             var span = new Span(spanContext, null);
             var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null);
@@ -111,7 +112,8 @@ namespace Datadog.Trace.Tests.Sampling
 
         private static int AskTheRateLimiterABunchOfTimes(RateLimiter rateLimiter, int howManyTimes)
         {
-            var traceContext = new TraceContext(TracerHelper.Create());
+            using var tracer = TracerHelper.CreateWithFakeAgent();
+            var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
             var span = new Span(spanContext, null);
 

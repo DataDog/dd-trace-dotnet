@@ -24,8 +24,8 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void NormalTracerInstanceSwap()
         {
-            var tracerOne = TracerHelper.Create();
-            var tracerTwo = TracerHelper.Create();
+            using var tracerOne = TracerHelper.CreateWithFakeAgent();
+            using var tracerTwo = TracerHelper.CreateWithFakeAgent();
 
             TracerRestorerAttribute.SetTracer(tracerOne);
             Tracer.Instance.Should().Be(tracerOne);
@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void LockedTracerInstanceSwap()
         {
-            var tracerOne = TracerHelper.Create();
+            using var tracerOne = TracerHelper.CreateWithFakeAgent();
             var tracerTwo = new LockedTracer();
 
             TracerRestorerAttribute.SetTracer(tracerOne);

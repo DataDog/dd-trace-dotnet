@@ -118,7 +118,7 @@ public class SpanMessagePackFormatterTests
     {
         var mockApi = new MockApi();
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, generate128BitTraceId } });
-        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null);
+        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, automaticFlush: false);
         var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
         using (_ = tracer.StartActive("root"))

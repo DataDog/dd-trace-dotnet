@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tests
         public void SimpleActivitiesAndSpansTest()
         {
             var settings = new TracerSettings();
-            var tracer = TracerHelper.Create(settings);
+            var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 
             Tracer.Instance.ActiveScope.Should().BeNull();
@@ -134,7 +134,7 @@ namespace Datadog.Trace.Tests
         public void SimpleSpansAndActivitiesTest()
         {
             var settings = new TracerSettings();
-            var tracer = TracerHelper.Create(settings);
+            var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 
             Tracer.Instance.ActiveScope.Should().BeNull();

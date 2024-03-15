@@ -402,7 +402,7 @@ namespace Datadog.Trace.Tests
         public void SetEnv(string env)
         {
             var settings = new TracerSettings { Environment = env };
-            var tracer = TracerHelper.Create(settings);
+            using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
 
             scope.Span.GetTag(Tags.Env).Should().Be(env);
@@ -415,7 +415,7 @@ namespace Datadog.Trace.Tests
         public void SetVersion(string version)
         {
             var settings = new TracerSettings { ServiceVersion = version };
-            var tracer = TracerHelper.Create(settings);
+            using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
 
             scope.Span.GetTag(Tags.Version).Should().Be(version);
@@ -437,7 +437,7 @@ namespace Datadog.Trace.Tests
                 ServiceName = tracerServiceName,
             };
 
-            var tracer = TracerHelper.Create(settings);
+            using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             ISpan span = tracer.StartSpan("operationName", serviceName: spanServiceName);
 
             if (expectedServiceName == null)

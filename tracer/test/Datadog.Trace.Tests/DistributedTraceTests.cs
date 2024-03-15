@@ -13,7 +13,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void ManuallyDistributedTrace_CarriesExpectedValues()
         {
-            var tracer = TracerHelper.Create();
+            using var tracer = TracerHelper.CreateWithFakeAgent();
 
             ulong traceId;
             ulong parentSpanId;
@@ -33,7 +33,7 @@ namespace Datadog.Trace.Tests
             }
 
             var distributedTraceContext = new SpanContext(traceId, parentSpanId);
-            var secondTracer = TracerHelper.Create();
+            using var secondTracer = TracerHelper.CreateWithFakeAgent();
             var spanCreationSettings = new SpanCreationSettings() { Parent = distributedTraceContext };
 
             using (var scope = secondTracer.StartActive("manual.trace", spanCreationSettings))
