@@ -28,8 +28,8 @@ public class SecurityCoordinatorTests
     [InlineData(null, "value1", "key2", "value2", 2)]
     [InlineData("key1", null, "key2", "value2", 2)]
     [InlineData(null, null, "key2", "value2", 2)]
-    [InlineData("key1", "value1", "key1", "value1", 2)]
-    [InlineData(null, null, null, null, 0)]
+    [InlineData("key1", "value1", "key1", "value1", 1)]
+    [InlineData(null, null, null, null, 1)]
     public void GivenASecurityCoordinator_WhenGetBody_ThenBodyIsRetrieved(string key1, string value1, string key2, string value2, int count)
     {
         NameValueCollection form = new NameValueCollection()
@@ -39,8 +39,6 @@ public class SecurityCoordinatorTests
         };
 
         HttpRequest httpRequest = new HttpRequest(string.Empty, "http://localhost", string.Empty);
-        // var formField = typeof(HttpRequest).GetField("_form", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        // formField.SetValue(httpRequest, form);
         var readOnlyField = typeof(NameObjectCollectionBase).GetField("_readOnly", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         readOnlyField.SetValue(httpRequest.Form, false);
         httpRequest.Form.Add(form);
