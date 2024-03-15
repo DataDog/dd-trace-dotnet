@@ -10,8 +10,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.RuntimeMetrics
@@ -246,9 +244,9 @@ namespace Datadog.Trace.RuntimeMetrics
                 }
                 catch
                 {
-                    _pssConsecutiveFailures += 1;
+                    var consecutiveFailures = Interlocked.Increment(ref _pssConsecutiveFailures);
 
-                    if (_pssConsecutiveFailures >= 3)
+                    if (consecutiveFailures >= 3)
                     {
                         Log.Error("Pss failed 3 times in a row, falling back to the Process API");
                     }
