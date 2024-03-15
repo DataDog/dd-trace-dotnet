@@ -37,7 +37,7 @@ public:
             return *this;
         }
 
-        Exporter = std::exchange(other.Exporter, nullptr);
+        Exporter = std::exchange(other.Exporter, Exporter);
     }
 
     ddog_TraceExporter* Exporter = nullptr;
@@ -51,9 +51,7 @@ bool TraceExporter::Initialize(std::string const& host, std::uint16_t port, std:
                                std::string const& language_interpreter)
 {
     auto* traceExporter = ddog_trace_exporter_new(
-        {.ptr = host.data(), .len = host.size()},
-        port,
-        {.ptr = tracer_version.data(), .len = tracer_version.size()},
+        {.ptr = host.data(), .len = host.size()}, port, {.ptr = tracer_version.data(), .len = tracer_version.size()},
         {.ptr = language.data(), .len = language.size()},
         {.ptr = language_version.data(), .len = language_version.size()},
         {.ptr = language_interpreter.data(), .len = language_interpreter.size()});
@@ -76,7 +74,20 @@ std::string TraceExporter::Send(std::uint8_t* buffer, std::uintptr_t buffer_size
         return "Cannot send trace. TraceExporter is not correctly initialize.";
     }
 
-    return ddog_trace_exporter_send(_impl->Exporter, {.ptr = buffer, .len = buffer_size}, trace_count);
+    struct free_char
+    {
+        void operator()(void* s)
+        {
+            free(s);
+        }
+    };
+
+    // ddog_trace_exporter_send allocates a char* using libc::malloc
+    // so we own the memory and have to release it by calling free
+    auto result = std::unique_ptr<char, free_char>(
+        ddog_trace_exporter_send(_impl->Exporter, {.ptr = buffer, .len = buffer_size}, trace_count));
+
+    return std::string(result.get());
 }
 
 } // namespace trace
