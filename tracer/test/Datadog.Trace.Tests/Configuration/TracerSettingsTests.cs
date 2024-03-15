@@ -962,7 +962,7 @@ namespace Datadog.Trace.Tests.Configuration
             var expected = "net6.0";
 #elif NETCOREAPP3_1_OR_GREATER
             var expected = "netcoreapp3.1";
-#elif NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_0
+#elif NETCOREAPP2_1_OR_GREATER
             var expected = "netcoreapp2.1";
 #elif NETFRAMEWORK
             var expected = "net461";
