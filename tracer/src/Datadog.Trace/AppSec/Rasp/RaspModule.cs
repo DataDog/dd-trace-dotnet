@@ -18,7 +18,12 @@ internal static class RaspModule
         CheckVulnerability(AddressesConstants.FileAccess, file);
     }
 
-    private static void RunWaf(Dictionary<string, object> arguments)
+    internal static void OnSSRF(string url)
+    {
+        CheckVulnerability(AddressesConstants.UrlAccess, url);
+    }
+
+    private static void CheckVulnerability(string address, string valueToCheck)
     {
         var security = Security.Instance;
 
@@ -34,36 +39,14 @@ internal static class RaspModule
             return;
         }
 
-        IResult? result = null;
-        SecurityCoordinator? securityCoordinator = null;
+        var arguments = new Dictionary<string, object> { [address] = valueToCheck };
+        RunWaf(arguments);
+    }
 
-#if NETFRAMEWORK
-        var context = HttpContext.Current;
-        securityCoordinator = new SecurityCoordinator(security, context, rootSpan);
-        result = securityCoordinator?.RunWaf(arguments);
-#else
-        if (CoreHttpContextStore.Instance.Get() is { } httpContext)
-        {
-            var transport = new SecurityCoordinator.HttpTransport(httpContext);
-            if (!transport.IsBlocked)
-            {
-                securityCoordinator = new SecurityCoordinator(security, httpContext, rootSpan, transport);
-                result = securityCoordinator?.RunWaf(arguments);
-            }
-        }
-#endif
-        if (result is not null)
-        {
-            var json = JsonConvert.SerializeObject(result.Data);
-            Log.Information("RASP WAF result: {Result}", json);
-            if (result!.ShouldBlock)
-            {
-                throw new BlockException(result);
-            }
-            else
-            {
-                securityCoordinator?.TryReport(result, result.ShouldBlock);
-            }
-        }
+    private static void RunWaf(Dictionary<string, object> arguments)
+    {
+        var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, Tracer.Instance.InternalActiveScope.Root.Span);
+        var result = securityCoordinator.RunWaf(arguments, (log, ex) => log.Error(ex, "Error in RASP OnLfi"));
+        securityCoordinator.CheckAndBlockRasp(result);
     }
 }

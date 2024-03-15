@@ -800,7 +800,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             if (!string.IsNullOrEmpty(propagationHeader))
             {
-                Response.Headers.Add("propagation", propagationHeader);
+                Response.Headers.TryAdd("propagation", propagationHeader);
                 return Content($"returned propagation header");
             }
 

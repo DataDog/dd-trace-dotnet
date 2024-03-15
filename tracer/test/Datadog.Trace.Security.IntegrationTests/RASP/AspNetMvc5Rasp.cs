@@ -88,24 +88,7 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
     [Trait("Category", "EndToEnd")]
     [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
     [InlineData("/Iast/GetFileContent?file=filename", "Lfi")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    public async Task TestRaspRequest(string url, string exploit)
-    {
-        var testName = _enableIast ? "RaspIast.AspNetMvc5" : "Rasp.AspNetMvc5";
-        testName += _classicMode ? ".Classic" : ".Integrated";
-        IncludeAllHttpSpans = true;
-        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.UseParameters(url, exploit);
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: exploit);
-    }
-
-    [SkippableTheory]
     [InlineData("/Iast/SsrfAttack?host=127.0.0.1", "SSRF")]
-    [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     public async Task TestRaspRequest(string url, string exploit)
