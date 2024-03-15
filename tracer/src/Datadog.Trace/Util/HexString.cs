@@ -24,14 +24,6 @@ namespace Datadog.Trace.Util;
 /// </summary>
 internal static class HexString
 {
-#if !NETCOREAPP3_1_OR_GREATER
-    /// <summary>
-    /// Thread static buffer used to avoid allocating a new byte array on each conversion.
-    /// </summary>
-    [ThreadStatic]
-    private static byte[]? _buffer;
-#endif
-
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ReverseIfLittleEndian(ulong value)
@@ -56,19 +48,6 @@ internal static class HexString
 
         return value;
     }
-
-#if !NETCOREAPP3_1_OR_GREATER
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ArraySegment<byte> GetBuffer(int size)
-    {
-        if (_buffer == null || _buffer.Length < size)
-        {
-            _buffer = new byte[size];
-        }
-
-        return new ArraySegment<byte>(_buffer, 0, size);
-    }
-#endif
 
     /// <summary>
     /// Converts the specified <see cref="ulong"/> value into hexadecimal characters, two for each byte,
