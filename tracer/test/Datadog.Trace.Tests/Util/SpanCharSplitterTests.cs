@@ -88,6 +88,40 @@ public class SpanCharSplitterTests
     }
 
     [Fact]
+    public void EmptyEnding()
+    {
+        var input = "hello;world;;";
+        var enumerator = input.SplitIntoSpans(';').GetEnumerator();
+
+        // hello
+        enumerator.MoveNext().Should().BeTrue();
+        enumerator.Current.Length.Should().Be(5);
+        enumerator.Current.StartIndex.Should().Be(0);
+        enumerator.Current.AsSpan().ToArray().Should().BeEquivalentTo("hello");
+
+        // world
+        enumerator.MoveNext().Should().BeTrue();
+        enumerator.Current.Length.Should().Be(5);
+        enumerator.Current.StartIndex.Should().Be(6);
+        enumerator.Current.AsSpan().ToArray().Should().BeEquivalentTo("world");
+
+        // ;
+        enumerator.MoveNext().Should().BeTrue();
+        enumerator.Current.Length.Should().Be(0);
+        enumerator.Current.StartIndex.Should().Be(12);
+        enumerator.Current.AsSpan().ToArray().Should().BeEquivalentTo(string.Empty);
+
+        // ;
+        enumerator.MoveNext().Should().BeTrue();
+        enumerator.Current.Length.Should().Be(0);
+        enumerator.Current.StartIndex.Should().Be(13);
+        enumerator.Current.AsSpan().ToArray().Should().BeEquivalentTo(string.Empty);
+
+        // end
+        enumerator.MoveNext().Should().BeFalse();
+    }
+
+    [Fact]
     public void EmptyString()
     {
         var input = string.Empty;
