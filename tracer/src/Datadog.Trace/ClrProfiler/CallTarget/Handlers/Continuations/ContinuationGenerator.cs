@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static TReturn ToTReturn<TFrom>(TFrom returnValue)
         {
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
             return Unsafe.As<TFrom, TReturn>(ref returnValue);
 #else
             return VendoredUnsafe.As<TFrom, TReturn>(ref returnValue);
@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static TTo FromTReturn<TTo>(TReturn returnValue)
         {
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
             return Unsafe.As<TReturn, TTo>(ref returnValue);
 #else
             return VendoredUnsafe.As<TReturn, TTo>(ref returnValue);
