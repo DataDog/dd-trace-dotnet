@@ -24,3 +24,8 @@ EXPORTS
     ShouldHeal
     ReportSuccessfulInstrumentation
     GetUserStrings
+    InitializeTraceExporter
+    SendTrace
+    InitializeStatsExporter
+    AddSpanToBucket
+    FlushStats

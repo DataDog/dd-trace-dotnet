@@ -24,6 +24,7 @@
 #include "fault_tolerant_method_duplicator.h"
 #include "fault_tolerant_rewriter.h"
 #include "TraceExporter.h"
+#include "StatsExporter.h"
 
 #include "../../../shared/src/native-src/pal.h"
 
@@ -143,6 +144,7 @@ private:
     void InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived, bool isInterface, bool enable = true);
 
     std::unique_ptr<TraceExporter> _traceExporter = nullptr;
+    std::unique_ptr<StatsExporter> _statsExporter = nullptr;
 
 
 public:
@@ -242,10 +244,24 @@ public:
     //
     // Native TraceExporter
     //
-    void InitializeExporter(std::string const& host, std::uint16_t port, std::string const& tracer_version,
-                           std::string const& language, std::string const& language_version,
-                           std::string const& language_interpreter);
+    void InitializeTraceExporter(std::string const& host, std::uint16_t port, std::string const& tracer_version,
+                                 std::string const& language, std::string const& language_version,
+                                 std::string const& language_interpreter);
     std::string SendTrace(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count);
+
+    //
+    // Native Stats Exporter
+    //
+    void InitializeStatsExporter(std::string_view hostname, std::string_view env, std::string_view version, std::string_view lang,
+                                 std::string_view tracerVersion, std::string_view runtimeId, std::string_view service,
+                                 std::string_view containerId, std::string_view gitCommitSha,
+                                 std::vector<std::string_view> const& tags, std::string_view agentUrl);
+
+    void AddSpanToBucket(std::string_view resourceName, std::string_view serviceName, std::string_view operationName,
+                         std::string_view spanType, std::int32_t httpStatusCode, bool isSyntheticsRequest,
+                         bool isTopLevel, bool isError, std::int64_t duration);
+
+    void FlushStats();
 
     //
     // Disable profiler

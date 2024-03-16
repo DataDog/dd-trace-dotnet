@@ -365,6 +365,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     Logger::Info("TraceExporter creation");
     _traceExporter = std::make_unique<TraceExporter>();
+    _statsExporter = std::make_unique<StatsExporter>();
 
     // we're in!
     Logger::Info("Profiler filepath: ", currentModuleFileName);
@@ -2190,9 +2191,9 @@ bool CorProfiler::ShouldHeal(ModuleID moduleId, int methodToken, const WCHAR* in
     return fault_tolerant::FaultTolerantTracker::Instance()->ShouldHeal(moduleId, methodId, instrumentationIdString, instrumentingProducts, rejit_handler);
 }
 
-void CorProfiler::InitializeExporter(std::string const& host, std::uint16_t port, std::string const& tracer_version,
-                                    std::string const& language, std::string const& language_version,
-                                    std::string const& language_interpreter)
+void CorProfiler::InitializeTraceExporter(std::string const& host, std::uint16_t port,
+                                          std::string const& tracer_version, std::string const& language,
+                                          std::string const& language_version, std::string const& language_interpreter)
 {
     _traceExporter->Initialize(host, port, tracer_version, language, language_version, language_interpreter);
 }
@@ -2200,6 +2201,27 @@ void CorProfiler::InitializeExporter(std::string const& host, std::uint16_t port
 std::string CorProfiler::SendTrace(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count)
 {
     return _traceExporter->Send(buffer, buffer_size, trace_count);
+}
+
+void CorProfiler::InitializeStatsExporter(std::string_view hostname, std::string_view env, std::string_view version,
+                                          std::string_view lang, std::string_view tracerVersion, std::string_view runtimeId,
+                                          std::string_view service, std::string_view containerId, std::string_view gitCommitSha,
+                                          std::vector<std::string_view> const& tags, std::string_view agentUrl)
+{
+    _statsExporter->Initialize(hostname, env, version, lang, tracerVersion, runtimeId, service, containerId, gitCommitSha, tags, agentUrl);
+}
+
+void CorProfiler::AddSpanToBucket(std::string_view resourceName, std::string_view serviceName,
+                                  std::string_view operationName, std::string_view spanType,
+                                  std::int32_t httpStatusCode, bool isSyntheticsRequest, bool isTopLevel, bool isError,
+                                  std::int64_t duration)
+{
+    _statsExporter->AddSpanToBucket(resourceName, serviceName, operationName, spanType, httpStatusCode, isSyntheticsRequest, isTopLevel, isError, duration);
+}
+
+void CorProfiler::FlushStats()
+{
+    _statsExporter->Flush();
 }
 
 //

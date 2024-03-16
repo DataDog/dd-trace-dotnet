@@ -333,6 +333,7 @@
     <ClInclude Include="rejit_preprocessor.h" />
     <ClInclude Include="rejit_work_offloader.h" />
     <ClInclude Include="stats.h" />
+    <ClInclude Include="StatsExporter.h" />
     <ClInclude Include="Synchronized.hpp" />
     <ClInclude Include="TraceExporter.h" />
     <ClInclude Include="tracer_tokens.h" />
@@ -385,6 +386,7 @@
     <ClCompile Include="rejit_handler.cpp" />
     <ClCompile Include="rejit_preprocessor.cpp" />
     <ClCompile Include="rejit_work_offloader.cpp" />
+    <ClCompile Include="StatsExporter.cpp" />
     <ClCompile Include="TraceExporter.cpp" />
     <ClCompile Include="tracer_tokens.cpp" />
   </ItemGroup>

@@ -24,7 +24,7 @@ namespace Datadog.Trace.Agent.Native
 
         public static void CreateStatsExporter(string hostname, string env, string version, string lang, string tracerVersion, string runtimeId, string service, string containerId, string gitCommitSha, string[] tags, string agentUrl)
         {
-            NativeMethods.CreateStatsExporter(hostname, env, version, lang, tracerVersion, runtimeId, service, containerId, gitCommitSha, tags, agentUrl);
+            NativeMethods.CreateStatsExporter(hostname, env, version, lang, tracerVersion, runtimeId, service, containerId, gitCommitSha, tags, tags.Length, agentUrl);
         }
 
         public static void AddSpanToBucket(string resourceName, string serviceName, string operationName, string spanType, int httpStatusCode, bool isSyntheticsRequest, bool isTopLevel, bool isError, long duration)
@@ -49,7 +49,7 @@ namespace Datadog.Trace.Agent.Native
 
         private static class NativeMethods
         {
-            [DllImport("Datadog.Tracer.Native")]
+            [DllImport("Datadog.Tracer.Native", EntryPoint = "InitializeTraceExporter")]
             public static extern bool InitializeExporter(
                 string host,
                 int port,
@@ -58,16 +58,28 @@ namespace Datadog.Trace.Agent.Native
                 string languageVersion,
                 string languageInterpreter);
 
-            [DllImport("Datadog.Tracer.Native")]
+            [DllImport("Datadog.Tracer.Native", EntryPoint = "SendTrace")]
             public static extern void SendTrace(byte[] buffer, int bufferSize, int nbTrace);
 
-            [DllImport("Datadog.Tracer.Native")]
-            public static extern void CreateStatsExporter(string hostname, string env, string version, string lang, string tracerVersion, string runtimeId, string service, string containerId, string gitCommitSha, string[] tags, string agentUrl);
+            [DllImport("Datadog.Tracer.Native", EntryPoint = "InitializeStatsExporter")]
+            public static extern void CreateStatsExporter(
+                string hostname,
+                string env,
+                string version,
+                string lang,
+                string tracerVersion,
+                string runtimeId,
+                string service,
+                string containerId,
+                string gitCommitSha,
+                string[] tags,
+                long nbTags,
+                string agentUrl);
 
-            [DllImport("Datadog.Tracer.Native")]
+            [DllImport("Datadog.Tracer.Native", EntryPoint = "AddSpanToBucket")]
             public static extern void AddSpanToBucket(string resourceName, string serviceName, string operationName, string spanType, int httpStatusCode, bool isSyntheticsRequest, bool isTopLevel, bool isError, long duration);
 
-            [DllImport("Datadog.Tracer.Native")]
+            [DllImport("Datadog.Tracer.Native", EntryPoint = "FlushStats")]
             public static extern void FlushStats(long bucketDurationNs);
         }
     }

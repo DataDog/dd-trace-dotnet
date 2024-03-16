@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-   <Import Project="..\..\..\packages\libdatadog.42.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\packages\libdatadog.42.0.0\build\native\libdatadog.props')" />
+  <Import Project="..\..\..\packages\libdatadog.42.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\packages\libdatadog.42.0.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -246,6 +246,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>.\Datadog.Tracer.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>PowrProf.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PreBuildEvent>
       <Command>IF EXIST $(ProjectDir)pre-build-events-cpp.bat CALL $(ProjectDir)pre-build-events-cpp.bat  "$(TargetPath)"  "$(TargetFileName)"  "$(TargetDir)"  "$(TargetName)"</Command>
@@ -331,7 +333,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-    <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>

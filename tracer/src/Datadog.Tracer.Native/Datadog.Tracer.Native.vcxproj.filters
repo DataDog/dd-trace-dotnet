@@ -81,6 +81,7 @@
     <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp" />
     <ClCompile Include="iast\method_analyzer.cpp" />
     <ClCompile Include="TraceExporter.cpp" />
+    <ClCompile Include="StatsExporter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -194,6 +195,7 @@
       <Filter>FaultTolerant\Hooks</Filter>
     </ClInclude>
     <ClInclude Include="TraceExporter.h" />
+    <ClInclude Include="StatsExporter.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Debugger">
