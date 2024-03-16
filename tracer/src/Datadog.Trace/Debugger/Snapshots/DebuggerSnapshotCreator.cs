@@ -33,6 +33,8 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private readonly JsonTextWriter _jsonWriter;
         private readonly StringBuilder _jsonUnderlyingString;
+        private readonly JsonTextWriter _methodCallsJsonWriter;
+        private readonly StringBuilder _methodCallsJsonUnderlyingString;
         private readonly bool _isFullSnapshot;
         private readonly ProbeLocation _probeLocation;
         private long _lastSampledTime;
@@ -48,6 +50,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             _probeLocation = location;
             _jsonUnderlyingString = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
             _jsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
+            _methodCallsJsonUnderlyingString = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            _methodCallsJsonWriter = new JsonTextWriter(new StringWriter(_methodCallsJsonUnderlyingString));
             MethodScopeMembers = default;
             _captureBehaviour = CaptureBehaviour.Capture;
             _errors = null;
@@ -223,6 +227,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 StartCaptures();
             }
+
+            _methodCallsJsonWriter.WritePropertyName("methodsReturnValues");
+            _methodCallsJsonWriter.WriteStartArray();
         }
 
         internal void StartDebugger()
@@ -295,6 +302,15 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 // end lines
                 _jsonWriter.WriteEndObject();
+            }
+
+            // insert method returns
+            _methodCallsJsonWriter.WriteEndArray();
+            var methodCallsJsonString = StringBuilderCache.GetStringAndRelease(_methodCallsJsonUnderlyingString);
+
+            if (!methodCallsJsonString.Equals("\"methodsReturnValues\":[]"))
+            {
+                _jsonWriter.WriteRaw("," + methodCallsJsonString);
             }
 
             // end captures
@@ -372,6 +388,39 @@ namespace Datadog.Trace.Debugger.Snapshots
             StartLocalsOrArgsIfNeeded("locals");
             // in case TLocal is object and we have the concrete type, use it
             DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TLocal), name, _jsonWriter);
+        }
+
+        internal void CaptureReturnValue<TReturnValue>(TReturnValue value, string methodName, int lineNumber, Type type = null)
+        {
+            const string prefixOfFailedToCapture = "<DI_FAILED>";
+            var isFailedToCapture = methodName.StartsWith(prefixOfFailedToCapture);
+
+            if (isFailedToCapture)
+            {
+                methodName = methodName.Replace(prefixOfFailedToCapture, string.Empty);
+            }
+
+            _methodCallsJsonWriter.WriteStartObject();
+            _methodCallsJsonWriter.WritePropertyName("methodName");
+            _methodCallsJsonWriter.WriteValue(methodName);
+
+            if (lineNumber > -1)
+            {
+                _methodCallsJsonWriter.WritePropertyName("lineNumber");
+                _methodCallsJsonWriter.WriteValue(lineNumber);
+            }
+
+            if (isFailedToCapture)
+            {
+                _methodCallsJsonWriter.WritePropertyName("notCapturedReason");
+                _methodCallsJsonWriter.WriteValue("failure");
+            }
+            else
+            {
+                DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TReturnValue), "returnValue", _methodCallsJsonWriter);
+            }
+
+            _methodCallsJsonWriter.WriteEndObject();
         }
 
         internal void CaptureException(Exception ex)
@@ -969,6 +1018,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 MethodScopeMembers.Dispose();
                 MethodScopeMembers = null;
                 _jsonWriter?.Close();
+                _methodCallsJsonWriter?.Close();
             }
             catch
             {

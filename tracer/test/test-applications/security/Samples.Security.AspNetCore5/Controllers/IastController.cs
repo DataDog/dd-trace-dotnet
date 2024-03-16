@@ -806,6 +806,28 @@ namespace Samples.Security.AspNetCore5.Controllers
             
             return BadRequest($"No type was provided");
         }
+        
+        [HttpGet("MaxRanges")]
+        [Route("MaxRanges")]
+        public ActionResult MaxRanges(int count, string tainted)
+        {
+            var str = string.Empty;
+            for (var i = 0; i < count; i++)
+            {
+                str += tainted;
+            }
+            
+            try
+            {
+                Type.GetType(str);
+            }
+            catch
+            {
+                // ignored
+            }
+
+            return Content(str, "text/html");
+        }
 
         [HttpGet("CustomAttribute")]
         [Route("CustomAttribute")]
