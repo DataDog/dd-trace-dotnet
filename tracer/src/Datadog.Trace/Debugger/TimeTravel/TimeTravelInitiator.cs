@@ -38,7 +38,7 @@ public class TimeTravelInitiator
         }
     }
 
-    private static List<MethodInfo> GetCalleesWithDnlib(MethodInfo methodInfo)
+    internal static List<MethodInfo> GetCalleesWithDnlib(MethodInfo methodInfo)
     {
         var result = new List<MethodInfo>();
 
@@ -98,12 +98,11 @@ public class TimeTravelInitiator
 
         return Array.Empty<NativeLineProbeDefinition>();
     }
-    
-    private static MethodDef FindMethod(MethodInfo methodInfo)
+
+    internal static MethodDef FindMethod(MethodInfo methodInfo)
     {
         ModuleDefMD module = ModuleDefMD.Load(methodInfo.DeclaringType.Assembly.Location);
-
-
+        
         // Resolve the method you're interested in
         MethodDef targetMethod = null;
         foreach (TypeDef type in module.GetTypes())

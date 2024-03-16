@@ -5,19 +5,30 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.PInvoke;
+using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Debugger.TimeTravel;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.Pdb;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.dnlib.DotNet;
+using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
+using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
@@ -492,6 +503,15 @@ namespace Datadog.Trace
                 OperationName = operationName,
             };
 
+            try
+            {
+                SpanOriginResolution(span);
+            }
+            catch
+            {
+                // Ignored
+            }
+            
             // Apply any global tags
             if (Settings.GlobalTagsInternal.Count > 0)
             {
@@ -520,6 +540,127 @@ namespace Datadog.Trace
         internal Task FlushAsync()
         {
             return TracerManager.AgentWriter.FlushTracesAsync();
+        }
+
+        private static void SpanOriginResolution(Span span)
+        {
+            // Deal with pending snapshot
+            // if (!string.IsNullOrEmpty(ProbeProcessor.NextSnapshot.Value))
+            // {
+            //     var nextSnapshotToBeUploaded = ProbeProcessor.NextSnapshot.Value;
+            //
+            //     nextSnapshotToBeUploaded = nextSnapshotToBeUploaded.Replace("TO_BE_ADDED_SPAN_ID", span.SpanId.ToString())
+            //                                                        .Replace("TO_BE_ADDED_TRACE_ID", span.TraceId.ToString());
+                
+            if (LocalSpanOriginMethod(out var nonUserMethod, out var userMethod))
+            {
+                return;
+            }
+            var userModule = ModuleDefMD.Load(userMethod.Module.Assembly.ManifestModule);
+            var userRid = MDToken.ToRID(userMethod.MetadataToken);
+            var userMdMethod = userModule.ResolveMethod(userRid);
+
+            if (!userMdMethod.Body.HasInstructions)
+            {
+                Log.Warning("Method {0} has no instructions", userMdMethod.FullName);
+                return;
+            }
+
+            var nonUserModule = ModuleDefMD.Load(nonUserMethod.Module.Assembly.ManifestModule);
+            var nonUserRid = MDToken.ToRID(nonUserMethod.MetadataToken);
+            var nonUserMdMethod = nonUserModule.ResolveMethod(nonUserRid);
+
+            // We have to assign the module context to be able to resolve memberRef to memberdef.
+            userModule.Context = ModuleDef.CreateModuleContext();
+            var nonUserMethodFullName = nonUserMdMethod.FullName;
+
+            var callsToInstrument = userMdMethod.Body.Instructions.Where(
+                                     instruction => instruction.OpCode.FlowControl == FlowControl.Call &&
+                                                    (((instruction.Operand as IMethod) != null &&
+                                                    ((instruction.Operand as IMethod)!).FullName == nonUserMethodFullName) ||
+                                                    (((IMethod)instruction.Operand).DeclaringType.FullName == nonUserMethod.DeclaringType.BaseType.FullName &&
+                                                     ((IMethod)instruction.Operand).Name == nonUserMethod.Name)));
+
+            var calls = callsToInstrument as Instruction[] ?? callsToInstrument.ToArray();
+            if (!calls.Any())
+            {
+                Log.Warning("No calls to {0} found in {1}", nonUserMethodFullName, userMethod.Module.Assembly.FullName);
+                return;
+            }
+
+            uint offsetOfSpanOrigin = calls.First().Offset;
+            var instructions = TimeTravelInitiator.FindMethod((MethodInfo)userMethod).Body.Instructions;
+            var sequencePoint = instructions.Reverse().First(instruction => instruction.SequencePoint != null && 
+                                                                            instruction.Offset < offsetOfSpanOrigin).SequencePoint;            
+            
+            span.Tags.SetTag("_dd.exit_location.file", sequencePoint.Document.Url);
+            span.Tags.SetTag("_dd.exit_location.line", sequencePoint.StartLine.ToString());
+            span.Tags.SetTag("_dd.exit_location.snapshot_id", DebuggerSnapshotCreator.LastSnapshotId.ToString());
+            FakeProbeCreator.CreateAndInstallLineProbe("ExitLocation", new NativeLineProbeDefinition(
+                "SpanExit",
+                userMethod.Module.ModuleVersionId,
+                userMethod.MetadataToken,
+                (int)offsetOfSpanOrigin,
+                sequencePoint.StartLine,
+                sequencePoint.Document.Url));
+            // // Add probes
+            // DebuggerNativeMethods.InstrumentProbes(
+            //     Array.Empty<NativeMethodProbeDefinition>(),
+            //     lineProbes,
+            //     Array.Empty<NativeSpanProbeDefinition>(),
+            //     Array.Empty<NativeRemoveProbeRequest>());
+        }
+
+        private static bool LocalSpanOriginMethod(out MethodBase nonUserMethod, out MethodBase userMethod)
+        {
+            var stackFrames = new System.Diagnostics.StackTrace();
+
+            var encounteredUserCode = false;
+            System.Reflection.MethodBase firstNonUserCodeMethod = null;
+            System.Reflection.MethodBase firstUserCodeMethod = null;
+
+            foreach (var frame in stackFrames.GetFrames()!)
+            {
+                var method = frame.GetMethod();
+                if (method?.DeclaringType == null)
+                {
+                    continue;
+                }
+
+                static bool IsUserCode(string methodFullName) // Not Comprehensive Enough
+                {
+                    return !(methodFullName.StartsWith("Microsoft") ||
+                             methodFullName.StartsWith("System") ||
+                             methodFullName.StartsWith("Datadog.Trace") ||
+                             methodFullName.StartsWith("Serilog") ||
+                             methodFullName.StartsWith("Swashbuckle") ||
+                             methodFullName.StartsWith("MySql.Data"));
+                }
+
+                if (IsUserCode(method.DeclaringType.FullName))
+                {
+                    encounteredUserCode = true;
+                    firstUserCodeMethod = method;
+                    break;
+                }
+
+                if (!encounteredUserCode)
+                {
+                    firstNonUserCodeMethod = method;
+                }
+            }
+
+            if (firstNonUserCodeMethod == null || firstUserCodeMethod == null)
+            {
+                // TODO LOG
+                nonUserMethod = null;
+                userMethod = null;
+                return true;
+            }
+
+            nonUserMethod = firstNonUserCodeMethod;
+            userMethod = firstUserCodeMethod;
+            return false;
         }
     }
 }

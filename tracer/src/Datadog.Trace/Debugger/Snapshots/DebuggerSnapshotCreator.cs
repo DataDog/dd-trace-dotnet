@@ -56,7 +56,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             Tags = tags;
             _accumulatedDuration = new TimeSpan(0, 0, 0, 0, 0);
             Initialize();
-            _snapshotId = Guid.NewGuid();
+            _snapshotId = LastSnapshotId = Guid.NewGuid();
         }
 
         internal MethodScopeMembers MethodScopeMembers { get; private set; }
@@ -78,6 +78,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 _captureBehaviour = value;
             }
         }
+
+        public static Guid LastSnapshotId { get; set; }
 
         internal void StartSampling()
         {
@@ -736,8 +738,16 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static void WriteSnapshotJsonToDisk(string probeId, string snapshot)
         {
-            File.WriteAllText(Path.Combine(GetSnapshotsDirectory(), probeId + ".json"), JsonPrettify(snapshot));
-            Console.WriteLine($@"Snapshot written to {GetSnapshotsDirectory()}: {probeId}.json");
+            try
+            {
+                File.WriteAllText(Path.Combine(GetSnapshotsDirectory(), probeId + ".json"), JsonPrettify(snapshot));
+                Console.WriteLine($@"Snapshot written to {GetSnapshotsDirectory()}: {probeId}.json");
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         private static string JsonPrettify(string json)

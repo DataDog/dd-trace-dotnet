@@ -24,7 +24,7 @@ namespace Samples.AspNetCoreMvc.Controllers
         public ActionResult Delay(int seconds)
         {
             HttpClient client = new HttpClient();
-            client.GetAsync("http://localhost:5003/api/double/5");
+            client.GetAsync("http://localhost:5003/api/double/10");
             Thread.Sleep(TimeSpan.FromSeconds(seconds));
             AddCorrelationIdentifierToResponse();
             return Ok(seconds);
