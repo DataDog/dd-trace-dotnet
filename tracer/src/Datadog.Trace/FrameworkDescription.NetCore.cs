@@ -8,6 +8,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace
 {
@@ -185,16 +186,7 @@ namespace Datadog.Trace
                 {
                     if (!version.IsEmpty)
                     {
-#if NETCOREAPP3_1_OR_GREATER
-                        return string.Concat(name, " ", version);
-#else
-                        // We're pretty happy this is a small enough string to stack allocate
-                        Span<char> buffer = stackalloc char[name.Length + version.Length + 1];
-                        name.CopyTo(buffer);
-                        buffer[name.Length] = ' ';
-                        version.CopyTo(buffer.Slice(name.Length + 1));
-                        return new string(buffer);
-#endif
+                        return StringHelpers.Concat(name, " ", version);
                     }
 
                     return new string(name);
