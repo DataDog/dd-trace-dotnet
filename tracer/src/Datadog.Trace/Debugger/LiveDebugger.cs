@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,6 +27,7 @@ using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Debugger
@@ -49,6 +51,7 @@ namespace Datadog.Trace.Debugger
         private readonly object _instanceLock = new();
         private bool _isInitialized;
         private bool _isRcmAvailable;
+        private readonly FileSystemWatcher _watcher;
 
         private LiveDebugger(
             DebuggerSettings settings,
@@ -82,6 +85,64 @@ namespace Datadog.Trace.Debugger
                 },
                 RcmProducts.LiveDebugging);
             discoveryService?.SubscribeToChanges(DiscoveryCallback);
+
+            _watcher = new FileSystemWatcher(Path.Combine(Path.GetTempPath(), "new_probes"), "*.json")
+            {
+                IncludeSubdirectories = true,
+                EnableRaisingEvents = true,
+                NotifyFilter = NotifyFilters.FileName
+            };
+
+            _watcher.Created += WatcherOnCreated;
+        }
+
+        class NewProbe
+        {
+            public string TypeName { get; set; }
+            public string MethodName { get; set; }
+        }
+
+        private void WatcherOnCreated(object sender, FileSystemEventArgs e)
+        {
+            var content = File.ReadAllText(e.FullPath);
+            var newProbe = JsonConvert.DeserializeObject<NewProbe>(content);
+
+            var method = new NativeMethodProbeDefinition(
+                e.Name,
+                newProbe.TypeName,
+                newProbe.MethodName,
+                targetParameterTypesFullName: null);
+
+            var where = new Where { MethodName = method.TargetMethod, TypeName = method.TargetType };
+
+            DebuggerNativeMethods.InstrumentProbes(
+                new[] { method },
+                Array.Empty<NativeLineProbeDefinition>(),
+                Array.Empty<NativeSpanProbeDefinition>(),
+                Array.Empty<NativeRemoveProbeRequest>());
+
+            CreateProbeProcessor(Path.GetFileNameWithoutExtension(e.Name), where, method.ProbeId);
+        }
+
+        private static void CreateProbeProcessor(string probeName, Where where, string probeId)
+        {
+            var templateStr = probeName;
+            var template = templateStr;
+
+            var segments = new SnapshotSegment[] { new(null, null, templateStr) };
+
+            var methodProbeDef = new LogProbe
+            {
+                CaptureSnapshot = true,
+                Id = probeId,
+                Where = where,
+                EvaluateAt = EvaluateAt.Entry,
+                Template = template,
+                Segments = segments,
+            };
+
+            ProbeExpressionsProcessor.Instance.AddProbeProcessor(methodProbeDef);
+            ProbeRateLimiter.Instance.SetRate(methodProbeDef.Id, methodProbeDef.CaptureSnapshot ? 1 : 5000);
         }
 
         public static LiveDebugger Instance { get; private set; }
@@ -173,6 +234,7 @@ namespace Datadog.Trace.Debugger
                 LifetimeManager.Instance.AddShutdownTask(_dogStats.Dispose);
                 LifetimeManager.Instance.AddShutdownTask(() => _subscriptionManager.Unsubscribe(_subscription));
                 LifetimeManager.Instance.AddShutdownTask(_symbolsUploader.Dispose);
+                LifetimeManager.Instance.AddShutdownTask(_watcher.Dispose);
             }
         }
 

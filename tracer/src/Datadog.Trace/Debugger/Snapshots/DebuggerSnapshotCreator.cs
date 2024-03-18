@@ -719,7 +719,16 @@ namespace Datadog.Trace.Debugger.Snapshots
                     activeSpan.Tags.SetTag("_dd.entry_location.snapshot_id", _snapshotId.ToString());
                     activeSpan.Tags.SetTag("_dd.entry_location.type", typeFullName);
                     activeSpan.Tags.SetTag("_dd.entry_location.method", methodName);
-                    var methodLocation = ExtractFilePathAndLineNumbersFromPdb(info.Method);
+                    MethodLocation methodLocation;
+                    if (info.IsAsyncCapture())
+                    {
+                        methodLocation = ExtractFilePathAndLineNumbersFromPdb(info.AsyncCaptureInfo.KickoffMethod);
+                    }
+                    else
+                    {
+                        methodLocation = ExtractFilePathAndLineNumbersFromPdb(info.Method);
+                    }
+
                     if (methodLocation != null)
                     {
                         activeSpan.Tags.SetTag("_dd.entry_location.file", methodLocation.FilePath);
