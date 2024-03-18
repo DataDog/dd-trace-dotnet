@@ -425,7 +425,7 @@ namespace Datadog.Trace
                 catch (Exception ex)
                 {
                     // We have found rare cases where exception.ToString() throws an exception, such as in a FileNotFoundException
-                    Log.Warning(ex, "Error setting exception tags on span {SpanId} in trace {TraceId}", SpanId, TraceId);
+                    Log.Warning(ex, "Error setting exception tags on span {SpanId} in trace {TraceId128}", SpanId, TraceId128);
                 }
             }
         }
