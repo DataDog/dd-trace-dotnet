@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 using Datadog.Trace.TestHelpers;
 
@@ -21,9 +22,9 @@ namespace Datadog.Trace.Tests
         private readonly Mock<ILambdaExtensionRequest> _lambdaRequestMock = new();
 
         [Fact]
-        public void TestCreatePlaceholderScopeSuccessWithTraceIdOnly()
+        public async Task TestCreatePlaceholderScopeSuccessWithTraceIdOnly()
         {
-            using var tracer = TracerHelper.CreateWithFakeAgent();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", null);
 
             scope.Should().NotBeNull();
@@ -33,9 +34,9 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void TestCreatePlaceholderScopeSuccessWithSamplingPriorityOnly()
+        public async Task TestCreatePlaceholderScopeSuccessWithSamplingPriorityOnly()
         {
-            using var tracer = TracerHelper.CreateWithFakeAgent();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, "-1");
 
             scope.Should().NotBeNull();
@@ -46,9 +47,9 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void TestCreatePlaceholderScopeSuccessWithFullContext()
+        public async Task TestCreatePlaceholderScopeSuccessWithFullContext()
         {
-            using var tracer = TracerHelper.CreateWithFakeAgent();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
 
             scope.Should().NotBeNull();
@@ -60,9 +61,9 @@ namespace Datadog.Trace.Tests
 
         [Fact]
         [Trait("Category", "ArmUnsupported")]
-        public void TestCreatePlaceholderScopeSuccessWithoutContext()
+        public async Task TestCreatePlaceholderScopeSuccessWithoutContext()
         {
-            using var tracer = TracerHelper.CreateWithFakeAgent();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
 
             scope.Should().NotBeNull();
@@ -72,16 +73,16 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void TestCreatePlaceholderScopeInvalidTraceId()
+        public async Task TestCreatePlaceholderScopeInvalidTraceId()
         {
-            using var tracer = TracerHelper.CreateWithFakeAgent();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             Assert.Throws<FormatException>(() => LambdaCommon.CreatePlaceholderScope(tracer, "invalid-trace-id", "-1"));
         }
 
         [Fact]
-        public void TestCreatePlaceholderScopeInvalidSamplingPriority()
+        public async Task TestCreatePlaceholderScopeInvalidSamplingPriority()
         {
-            using var tracer = TracerHelper.CreateWithFakeAgent();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             Assert.Throws<FormatException>(() => LambdaCommon.CreatePlaceholderScope(tracer, "1234", "invalid-sampling-priority"));
         }
 
@@ -142,9 +143,9 @@ namespace Datadog.Trace.Tests
 
         [Fact]
         [Trait("Category", "ArmUnsupported")]
-        public void TestSendEndInvocationFailure()
+        public async Task TestSendEndInvocationFailure()
         {
-            using var tracer = TracerHelper.CreateWithFakeAgent();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -162,9 +163,9 @@ namespace Datadog.Trace.Tests
 
         [Fact]
         [Trait("Category", "ArmUnsupported")]
-        public void TestSendEndInvocationSuccess()
+        public async Task TestSendEndInvocationSuccess()
         {
-            using var tracer = TracerHelper.CreateWithFakeAgent();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -185,9 +186,9 @@ namespace Datadog.Trace.Tests
 
         [Fact]
         [Trait("Category", "ArmUnsupported")]
-        public void TestSendEndInvocationFalse()
+        public async Task TestSendEndInvocationFalse()
         {
-            using var tracer = TracerHelper.CreateWithFakeAgent();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);

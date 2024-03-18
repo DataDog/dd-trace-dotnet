@@ -3,14 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
-using Datadog.Trace.Agent;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling
@@ -30,11 +28,11 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData("service:hello:1,env:world", "hello:1", "world", .5f)]
         // ':' in env name
         [InlineData("service:hello,env:world:1", "hello", "world:1", .5f)]
-        public void KeyParsing(string key, string expectedService, string expectedEnv, float expectedRate)
+        public async Task KeyParsing(string key, string expectedService, string expectedEnv, float expectedRate)
         {
             // create span, setting service and environment
             var settings = new TracerSettings { ServiceName = expectedService };
-            using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             using var scope = (Scope)tracer.StartActive("root");
             scope.Span.Context.TraceContext.Environment = expectedEnv;
 
@@ -47,7 +45,7 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         [Fact]
-        public void DefaultSamplingRuleIsApplied()
+        public async Task DefaultSamplingRuleIsApplied()
         {
             const string configuredService = "NiceService";
             const string configuredEnv = "BeautifulEnv";
@@ -56,7 +54,7 @@ namespace Datadog.Trace.Tests.Sampling
             var rule = new DefaultSamplingRule();
 
             var settings = new TracerSettings();
-            using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
 
             var firstScope = (Scope)tracer.StartActive("first");
             var firstSpan = firstScope.Span;

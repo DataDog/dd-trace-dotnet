@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
@@ -36,16 +37,16 @@ namespace Datadog.Trace.TestHelpers
             return new ScopedTracer(settings, Mock.Of<IAgentWriter>());
         }
 
-        public class ScopedTracer : Tracer, IDisposable
+        public class ScopedTracer : Tracer, IAsyncDisposable
         {
             public ScopedTracer(TracerSettings settings = null, IAgentWriter agentWriter = null, ITraceSampler sampler = null, IScopeManager scopeManager = null, IDogStatsd statsd = null)
                 : base(settings, agentWriter, sampler, scopeManager, statsd)
             {
             }
 
-            public void Dispose()
+            public async ValueTask DisposeAsync()
             {
-                TracerManager.ShutdownAsync().GetAwaiter().GetResult();
+                await TracerManager.ShutdownAsync();
             }
         }
     }

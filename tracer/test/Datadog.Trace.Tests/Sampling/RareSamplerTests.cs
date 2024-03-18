@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent.TraceSamplers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -15,9 +16,9 @@ namespace Datadog.Trace.Tests.Sampling
     public class RareSamplerTests
     {
         [Fact]
-        public void SampleUniqueSpans()
+        public async Task SampleUniqueSpans()
         {
-            using var tracer = TracerHelper.CreateWithFakeAgent();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
             var sampler = new RareSampler(new ImmutableTracerSettings(settings));
 
@@ -44,9 +45,9 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData(SamplingPriorityValues.AutoReject, true)]
         [InlineData(SamplingPriorityValues.UserKeep, false)]
         [InlineData(SamplingPriorityValues.AutoKeep, false)]
-        public void OnlySampleRejectPriorities(int priority, bool expected)
+        public async Task OnlySampleRejectPriorities(int priority, bool expected)
         {
-            using var tracer = TracerHelper.CreateWithFakeAgent();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
             var sampler = new RareSampler(new ImmutableTracerSettings(settings));
 
@@ -98,9 +99,9 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         [Fact]
-        public void OnlySampleTopLevelSpans()
+        public async Task OnlySampleTopLevelSpans()
         {
-            using var tracer = TracerHelper.CreateWithFakeAgent();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
             var sampler = new RareSampler(new ImmutableTracerSettings(settings));
 
@@ -124,9 +125,9 @@ namespace Datadog.Trace.Tests.Sampling
         [Theory]
         [InlineData(Tags.Measured)]
         [InlineData(Tags.PartialSnapshot)]
-        public void SampleSpecialMetrics(string metricName)
+        public async Task SampleSpecialMetrics(string metricName)
         {
-            using var tracer = TracerHelper.CreateWithFakeAgent();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
             var sampler = new RareSampler(new ImmutableTracerSettings(settings));
 
