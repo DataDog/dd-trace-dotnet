@@ -46,9 +46,9 @@ public:
 TraceExporter::TraceExporter() = default;
 TraceExporter::~TraceExporter() = default;
 
-bool TraceExporter::Initialize(std::string const& host, std::uint16_t port, std::string const& tracer_version,
-                               std::string const& language, std::string const& language_version,
-                               std::string const& language_interpreter)
+bool TraceExporter::Initialize(std::string_view const& host, std::uint16_t port, std::string_view const& tracer_version,
+                               std::string_view const& language, std::string_view const& language_version,
+                               std::string_view const& language_interpreter)
 {
     auto* traceExporter = ddog_trace_exporter_new(
         {.ptr = host.data(), .len = host.size()}, port, {.ptr = tracer_version.data(), .len = tracer_version.size()},

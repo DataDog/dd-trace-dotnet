@@ -244,9 +244,9 @@ public:
     //
     // Native TraceExporter
     //
-    void InitializeTraceExporter(std::string const& host, std::uint16_t port, std::string const& tracer_version,
-                                 std::string const& language, std::string const& language_version,
-                                 std::string const& language_interpreter);
+    void InitializeTraceExporter(std::string_view const& host, std::uint16_t port, std::string_view const& tracer_version,
+                                 std::string_view const& language, std::string_view const& language_version,
+                                 std::string_view const& language_interpreter);
     std::string SendTrace(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count);
 
     //

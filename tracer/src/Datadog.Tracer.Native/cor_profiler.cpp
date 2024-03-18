@@ -2191,9 +2191,9 @@ bool CorProfiler::ShouldHeal(ModuleID moduleId, int methodToken, const WCHAR* in
     return fault_tolerant::FaultTolerantTracker::Instance()->ShouldHeal(moduleId, methodId, instrumentationIdString, instrumentingProducts, rejit_handler);
 }
 
-void CorProfiler::InitializeTraceExporter(std::string const& host, std::uint16_t port,
-                                          std::string const& tracer_version, std::string const& language,
-                                          std::string const& language_version, std::string const& language_interpreter)
+void CorProfiler::InitializeTraceExporter(std::string_view const& host, std::uint16_t port,
+                                          std::string_view const& tracer_version, std::string_view const& language,
+                                          std::string_view const& language_version, std::string_view const& language_interpreter)
 {
     _traceExporter->Initialize(host, port, tracer_version, language, language_version, language_interpreter);
 }

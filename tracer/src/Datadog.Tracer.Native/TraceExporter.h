@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include <string>
+#include <string_view>
 
 namespace trace
 {
@@ -12,9 +12,9 @@ public:
     TraceExporter();
     ~TraceExporter();
 
-    bool Initialize(std::string const& host, std::uint16_t port, std::string const& tracer_version,
-                    std::string const& language, std::string const& language_version,
-                    std::string const& language_interpreter);
+    bool Initialize(std::string_view const& host, std::uint16_t port, std::string_view const& tracer_version,
+                    std::string_view const& language, std::string_view const& language_version,
+                    std::string_view const& language_interpreter);
 
     std::string Send(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count) const;
 

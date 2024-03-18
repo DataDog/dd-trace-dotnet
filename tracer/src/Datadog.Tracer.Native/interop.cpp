@@ -286,8 +286,8 @@ EXTERN_C void SendTrace(std::uint8_t* buffer, std::uintptr_t buffer_size, std::u
         trace::Logger::Error("Error in SendTrace call. Tracer CLR Profiler was not initialized.");
     }
 
-    // TODO: forget return value for now
-    trace::profiler->SendTrace(buffer, buffer_size, trace_count);
+    auto s = trace::profiler->SendTrace(buffer, buffer_size, trace_count);
+    Logger::Debug("Trace sent. Result: ", s);
 }
 
 EXTERN_C void InitializeStatsExporter(const char* hostname, const char* env, const char* version,
