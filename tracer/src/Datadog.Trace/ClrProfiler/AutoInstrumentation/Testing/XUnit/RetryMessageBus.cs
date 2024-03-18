@@ -49,7 +49,8 @@ internal class RetryMessageBus : IMessageBus
         _listOfMessages ??= new List<object>[_totalExecutions];
         if (_listOfMessages[index] is not { } lstRetryInstance)
         {
-            _listOfMessages[index] = lstRetryInstance = [];
+            lstRetryInstance = [];
+            _listOfMessages[index] = lstRetryInstance;
         }
 
         lstRetryInstance.Add(message);
@@ -71,10 +72,12 @@ internal class RetryMessageBus : IMessageBus
         }
 
         // Let's check for a passing execution to flush that one.
+        List<object>? defaultMessages = null;
         foreach (var messages in _listOfMessages)
         {
             if (messages is not null)
             {
+                defaultMessages ??= messages;
                 foreach (var sinkMessage in messages)
                 {
                     if (sinkMessage.GetType().Name == "TestPassed")
@@ -85,8 +88,13 @@ internal class RetryMessageBus : IMessageBus
             }
         }
 
-        // If we don't detect any passing execution, we just flush the first one.
-        return InternalFlushMessages(_listOfMessages[0]!);
+        // If we don't detect any passing execution, we just flush the first not null one.
+        if (defaultMessages is null)
+        {
+            return false;
+        }
+
+        return InternalFlushMessages(defaultMessages);
 
         bool InternalFlushMessages(List<object> messages)
         {
