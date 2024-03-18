@@ -3,9 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
+using static FluentAssertions.FluentActions;
 
 namespace Datadog.Trace.Tests.Util;
 
@@ -71,6 +73,31 @@ public class SpanCharSplitterTests
 
         // end
         enumerator.MoveNext().Should().BeFalse();
+    }
+
+    [Fact]
+    public void Empty()
+    {
+        var input = string.Empty;
+        var enumerator = input.SplitIntoSpans(';', 3).GetEnumerator();
+
+        // Empty
+        enumerator.MoveNext().Should().BeTrue();
+        enumerator.Current.Length.Should().Be(0);
+        enumerator.Current.StartIndex.Should().Be(0);
+        enumerator.Current.AsSpan().ToArray().Should().BeEquivalentTo(string.Empty);
+
+        // end
+        enumerator.MoveNext().Should().BeFalse();
+    }
+
+    [Fact]
+    public void Null()
+    {
+        string input = null;
+
+        // ReSharper disable once AssignNullToNotNullAttribute
+        Invoking(() => input.SplitIntoSpans(';')).Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
