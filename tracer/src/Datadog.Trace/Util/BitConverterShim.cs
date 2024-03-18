@@ -9,10 +9,8 @@
 
 using System;
 using System.Runtime.CompilerServices;
-#if NETFRAMEWORK
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
-#endif
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
+using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
 namespace Datadog.Trace.Util;
 
