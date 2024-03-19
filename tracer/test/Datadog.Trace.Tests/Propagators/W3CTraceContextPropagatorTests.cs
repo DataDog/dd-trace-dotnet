@@ -226,33 +226,33 @@ namespace Datadog.Trace.Tests.Propagators
             injectedHeaders.VerifyNoOtherCalls();
         }
 
-        [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void Inject_LastParentId_IsRemote(bool isRemote)
+        [Fact]
+        public void Inject_LastParentId_IsRemote()
         {
-            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>(), tags: null)
-            {
-                Origin = "origin",
-                AdditionalW3CTraceState = "key1=value1"
-            };
-
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism: null, notifyDistributedTracer: false);
-            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)123456789, spanId: 987654321, rawTraceId: null, rawSpanId: null);
-
-            var expectedLastParent = "0123456789abcdef";
-            if (isRemote)
-            {
-                // expect that the injected last parent is the same as the extracted
-                expectedLastParent = "fedcba9876543210";
-            }
+            var spanContext = new SpanContext(traceId: (TraceId)123456789, spanId: 987654321, samplingPriority: 2, serviceName: "serviceName", origin: "origin") { LastParentId = "fedcba9876543210" };
+            // expect that the injected last parent is the same as the extracted
+            var expectedLastParent = "fedcba9876543210";
 
             var headers = new Mock<IHeadersCollection>();
 
             W3CPropagator.Inject(spanContext, headers.Object, (carrier, name, value) => carrier.Set(name, value));
 
             headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
-            headers.Verify(h => h.Set("tracestate", $"dd=s:2;o:origin;p:{expectedLastParent},key1=value1"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", $"dd=s:2;o:origin;p:{expectedLastParent}"), Times.Once());
+            headers.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public void Inject_NoLastParentId_IsRemote()
+        {
+            var spanContext = new SpanContext(traceId: (TraceId)123456789, spanId: 987654321, samplingPriority: 2, serviceName: "serviceName", origin: "origin");
+
+            var headers = new Mock<IHeadersCollection>();
+
+            W3CPropagator.Inject(spanContext, headers.Object, (carrier, name, value) => carrier.Set(name, value));
+
+            headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", $"dd=s:2;o:origin"), Times.Once());
             headers.VerifyNoOtherCalls();
         }
 

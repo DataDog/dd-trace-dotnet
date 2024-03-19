@@ -150,7 +150,13 @@ namespace Datadog.Trace.Propagators
                 sb.Append("dd=");
 
                 // sampling priority ("s:<value>")
-                var samplingPriority = SamplingPriorityToString(context.TraceContext?.SamplingPriority);
+                var samplingValue = context.TraceContext?.SamplingPriority;
+                if (samplingValue is null && context.IsRemote)
+                {
+                    samplingValue = context.SamplingPriority;
+                }
+
+                var samplingPriority = SamplingPriorityToString(samplingValue);
 
                 if (samplingPriority != null)
                 {
@@ -160,6 +166,11 @@ namespace Datadog.Trace.Propagators
                 // origin ("o:<value>")
                 var origin = context.TraceContext?.Origin;
 
+                if (origin is null && context.IsRemote)
+                {
+                    origin = context.Origin;
+                }
+
                 if (!string.IsNullOrWhiteSpace(origin))
                 {
                     var replacedOrigin = ReplaceCharacters(origin!, LowerBound, UpperBound, OutOfBoundsReplacement, InjectOriginReplacements);
@@ -167,7 +178,7 @@ namespace Datadog.Trace.Propagators
                 }
 
                 // last parent ("p:<value>")
-                if (context.IsRemote && context.LastParentId != ZeroLastParent)
+                if (context.IsRemote && !string.IsNullOrEmpty(context.LastParentId) && context.LastParentId != ZeroLastParent)
                 {
                     // for remote contexts only add p: if we had a value (that was not 0s) and if so use that old value
                     sb.Append("p:").Append(context.LastParentId).Append(TraceStateDatadogPairsSeparator);
