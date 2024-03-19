@@ -6,6 +6,10 @@ on:
       azdo_build_id:
         description: 'The specific AzDo build from which the release artifacts will be downloaded.'
         required: true
+      checkout_commit_id:
+        description: 'Force checking out a specific commit? If provided, this will use the Nuke build from this commit'
+        required: false
+        default: ''
 
 jobs:
   build-and-publish-init-image:
@@ -17,6 +21,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
+        ref: '${{ github.event.inputs.checkout_commit_id }}'
 
     - uses: actions/setup-dotnet@v1
       with:
@@ -47,6 +52,8 @@ jobs:
     - name: Set up Docker Buildx
       id: buildx
       uses: docker/setup-buildx-action@v2
+      with:
+        version: v0.12.1 # 0.13.0 is causing the builds to fail
 
     - name: Login to Docker
       run: docker login -u publisher -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
