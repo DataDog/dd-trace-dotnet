@@ -28,7 +28,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             Enabled = config.WithKeys(ConfigurationKeys.Debugger.ExceptionDebuggingEnabled).AsBool(false);
 
-            CaptureFullCallStack = config.WithKeys(ConfigurationKeys.Debugger.ExceptionDebuggingCaptureFullCallStack).AsBool(false);
+            CaptureFullCallStack = config.WithKeys(ConfigurationKeys.Debugger.ExceptionDebuggingCaptureFullCallStackEnabled).AsBool(false);
 
             var maximumFramesToCapture = config
                                         .WithKeys(ConfigurationKeys.Debugger.ExceptionDebuggingMaxFramesToCapture)

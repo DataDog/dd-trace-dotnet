@@ -110,7 +110,7 @@ namespace Datadog.Trace.Configuration
             /// Default value is false.
             /// </summary>
             /// <seealso cref="ExceptionDebuggingSettings.CaptureFullCallStack"/>
-            public const string ExceptionDebuggingCaptureFullCallStack = "DD_EXCEPTION_DEBUGGING_CAPTURE_FULL_CALLSTACK";
+            public const string ExceptionDebuggingCaptureFullCallStackEnabled = "DD_EXCEPTION_DEBUGGING_CAPTURE_FULL_CALLSTACK_ENABLED";
 
             /// <summary>
             /// Configuration key for the interval used to track exceptions
