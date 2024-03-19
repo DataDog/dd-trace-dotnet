@@ -138,7 +138,7 @@ void CorProfilerCallback::InitializeServices()
         return _pManagedThreadList->GetHighCountAndReset();
     });
 
-    _managedThreadsMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_managed_thre..UIniads_low", [this]() {
+    _managedThreadsMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_managed_threads_low", [this]() {
         return _pManagedThreadList->GetLowCountAndReset();
     });
 
