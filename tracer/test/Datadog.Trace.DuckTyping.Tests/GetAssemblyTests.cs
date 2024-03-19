@@ -61,6 +61,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
             else
             {
+                // When running inside CI Visibility, we will generate additional duck types
 #if NETFRAMEWORK
                 asmDuckTypes.Should().BeGreaterThan(1131);
 #elif NETCOREAPP2_1
