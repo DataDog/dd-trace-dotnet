@@ -195,7 +195,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             if (parentContext is not null)
             {
                 metadata.Add(TemporaryHeaders.ParentId, parentContext.SpanId.ToString());
-                metadata.Add(TemporaryHeaders.ParentService, parentContext is SpanContext s ? s.ServiceNameInternal : parentContext.ServiceName);
+                var parentService = parentContext is SpanContext s ? s.ServiceNameInternal : parentContext.ServiceName;
+                if (parentService is not null)
+                {
+                    metadata.Add(TemporaryHeaders.ParentService, parentService);
+                }
             }
         }
 
