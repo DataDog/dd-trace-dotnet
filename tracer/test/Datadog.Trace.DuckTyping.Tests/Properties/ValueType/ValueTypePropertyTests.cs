@@ -478,6 +478,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
             Assert.Equal(TaskStatus.WaitingForActivation, duckInterface.Status);
             Assert.Equal(TaskStatus.WaitingForActivation, duckAbstract.Status);
             Assert.Equal(TaskStatus.WaitingForActivation, duckVirtual.Status);
+
+            duckInterface.Status = TaskStatus.RanToCompletion;
         }
 
         [Theory]
