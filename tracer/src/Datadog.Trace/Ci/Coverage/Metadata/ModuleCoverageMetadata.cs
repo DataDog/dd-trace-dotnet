@@ -15,52 +15,30 @@ namespace Datadog.Trace.Ci.Coverage.Metadata;
 /// </summary>
 public abstract class ModuleCoverageMetadata
 {
-    /// <summary>
-    /// Gets or sets the metadata array
-    /// </summary>
 #pragma warning disable SA1401
-    protected readonly long[] Metadata = Array.Empty<long>();
-#pragma warning restore SA1401
+    /// <summary>
+    /// Gets or sets the total lines in the module
+    /// </summary>
+    public readonly int TotalLines;
 
     /// <summary>
-    /// Gets or sets the metadata array
+    /// Gets or sets the coverage mode
     /// </summary>
-#pragma warning disable SA1401
-    protected readonly int[] SequencePoints = Array.Empty<int>();
-#pragma warning restore SA1401
+    public readonly int CoverageMode;
 
     /// <summary>
-    /// Gets the total instructions number
+    /// Gets or sets the file metadata array
     /// </summary>
-#pragma warning disable SA1401
-    protected readonly long TotalInstructions = 0;
+    protected internal readonly FileCoverageMetadata[] Files = Array.Empty<FileCoverageMetadata>();
 #pragma warning restore SA1401
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal int GetMethodsCount() => Metadata.Length;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal int GetTotalSequencePointsOfMethod(int methodIndex)
+    internal int GetOffset(int fileIndex)
     {
 #if NETCOREAPP3_0_OR_GREATER
-        return SequencePoints.FastGetReference(methodIndex);
+        return Files.FastGetReference(fileIndex).Offset;
 #else
-        return SequencePoints[methodIndex];
+        return Files[fileIndex].Offset;
 #endif
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void GetMethodsMetadata(int methodIndex, out int typeIdx, out int methodIdx)
-    {
-#if NETCOREAPP3_0_OR_GREATER
-        var methodMetadataIndexes = Metadata.FastGetReference(methodIndex);
-#else
-        var methodMetadataIndexes = Metadata[methodIndex];
-#endif
-        methodIdx = (int)(methodMetadataIndexes & 0xFFFF);
-        typeIdx = (int)(methodMetadataIndexes >> 32);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal long GetTotalInstructions() => TotalInstructions;
 }
