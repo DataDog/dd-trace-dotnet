@@ -55,7 +55,7 @@ internal class RetryMessageBus : IMessageBus
 
         lstRetryInstance.Add(message);
 
-        if (messageType.Name == "TestCaseFinished" && currentExecutionNumber == 1)
+        if (messageType.Name == "TestFinished" && currentExecutionNumber == 1)
         {
             return FlushMessages();
         }
