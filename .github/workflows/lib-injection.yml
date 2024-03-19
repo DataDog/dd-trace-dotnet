@@ -1,4 +1,4 @@
-name: "Lib Injection Test"
+name: "Lib Injection Images"
 on:
   # This GitHub Action will be invoked automatically from the main Azure DevOps build
   workflow_dispatch:
@@ -125,42 +125,23 @@ jobs:
           --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-musl-arm64v8.outputs.digest}}"
         docker manifest push ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ env.COMMIT_SHA }}-musl
 
-  test:
+  lib-injection-image-test:
     needs:
       - build-and-publish-init-image
-    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     strategy:
       matrix:
         lib-injection-connection: ['network','uds']
-        lib-injection-use-admission-controller: ['', 'use-admission-controller']
-        weblog-variant: ['dd-lib-dotnet-init-test-app']
+        lib-injection-use-admission-controller: [false, true]
         runtime: ['bullseye-slim','alpine']
-        include:
-          - runtime: 'bullseye-slim'
-            init-tag-suffix: ''
-          - runtime: 'alpine'
-            init-tag-suffix: '-musl'
       fail-fast: false
-    env:
-      TEST_LIBRARY: dotnet
-      WEBLOG_VARIANT: ${{ matrix.weblog-variant }}
-      LIBRARY_INJECTION_CONNECTION: ${{ matrix.lib-injection-connection }}
-      LIBRARY_INJECTION_ADMISSION_CONTROLLER: ${{ matrix.lib-injection-use-admission-controller }}
-      DOCKER_REGISTRY_IMAGES_PATH: ghcr.io/datadog
-      DOCKER_IMAGE_TAG: ${{ github.event.inputs.commit_id || github.sha }}${{ matrix.init-tag-suffix }}
-      DOCKER_IMAGE_WEBLOG_TAG: ${{ github.event.inputs.commit_id || github.sha }}-${{ matrix.runtime }}
-      RUNTIME: ${{ matrix.runtime }}
-      BUILDX_PLATFORMS: linux/amd64
-      MODE: manual
-    steps:
-      - name: lib-injection test runner
-        id: lib-injection-test-runner
-        uses: DataDog/system-tests/lib-injection/runner@main
-        with:
-          docker-registry: ghcr.io
-          docker-registry-username: ${{ github.repository_owner }}
-          docker-registry-password: ${{ secrets.GITHUB_TOKEN }}
-          test-script: ./lib-injection/run-manual-lib-injection.sh
+    uses: ./.github/workflows/lib-injection-test.yml
+    with:
+      commit_id: ${{ github.event.inputs.commit_id || github.sha }}
+      lib_injection_connection: ${{ matrix.lib-injection-connection }}
+      lib_injection_use_admission_controller: ${{ matrix.lib-injection-use-admission-controller }}
+      runtime: ${{ matrix.runtime }}
+    secrets:
+      DOCKER_REGISTRY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
