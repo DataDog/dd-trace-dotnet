@@ -894,16 +894,24 @@ internal unsafe ref struct FileBitmap
     /// <summary>
     /// Enumerator for iterating over the bits of a <see cref="FileBitmap"/>.
     /// </summary>
-    public struct Enumerator(byte* bitMap, int size) : IEnumerator<byte>
+    public struct Enumerator : IEnumerator<byte>
     {
         private int _index = -1;
+        private byte* _bitMap;
+        private int _size;
 
-        public byte Current => bitMap[_index];
+        internal Enumerator(byte* bitMap, int size)
+        {
+            _bitMap = bitMap;
+            _size = size;
+        }
+
+        public byte Current => _bitMap[_index];
 
         object IEnumerator.Current => Current;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool MoveNext() => ++_index < size;
+        public bool MoveNext() => ++_index < _size;
 
         public void Reset()
         {
@@ -912,8 +920,8 @@ internal unsafe ref struct FileBitmap
 
         public void Dispose()
         {
-            bitMap = null;
-            size = 0;
+            _bitMap = null;
+            _size = 0;
             _index = 0;
         }
     }
