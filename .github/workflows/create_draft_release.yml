@@ -8,7 +8,28 @@ on:
         required: false
 
 jobs:
+  lib-injection-image-test:
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        lib-injection-connection: ['network','uds']
+        lib-injection-use-admission-controller: [false, true]
+        runtime: ['bullseye-slim','alpine']
+      fail-fast: false
+    uses: ./.github/workflows/lib-injection-test.yml
+    with:
+      commit_id: ${{ github.event.inputs.forced_commit_id || github.sha }}
+      lib_injection_connection: ${{ matrix.lib-injection-connection }}
+      lib_injection_use_admission_controller: ${{ matrix.lib-injection-use-admission-controller }}
+      runtime: ${{ matrix.runtime }}
+    secrets:
+      DOCKER_REGISTRY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   create_draft_release:
+    needs:
+      - lib-injection-image-test
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
