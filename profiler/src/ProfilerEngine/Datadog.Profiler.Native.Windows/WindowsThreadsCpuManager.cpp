@@ -9,6 +9,7 @@
 #include "SystemTime.h"
 #include <iomanip>
 #include <tlhelp32.h>
+#include "OpSysTools.h"
 
 void ThreadsCpuManager::LogCpuTimes()
 {
@@ -41,10 +42,10 @@ void ThreadsCpuManager::LogCpuTimes()
 
     // I don't see why this API would fail for the current process...
     bool isProcessTimesAvailable = ::GetProcessTimes(::GetCurrentProcess(), &processCreationTime, &processExitTime, &processKernelTime, &processUserTime);
-    DWORD64 ProcessUserTimeMs = 0;
+    DWORD64 ProcessCpuTimeMs = 0;
     if (isProcessTimesAvailable)
     {
-        ProcessUserTimeMs = GetTotalMilliseconds(processUserTime);
+        ProcessCpuTimeMs = GetTotalMilliseconds(processUserTime) + GetTotalMilliseconds(processKernelTime);
     }
 
     std::stringstream builder;
@@ -72,10 +73,10 @@ void ThreadsCpuManager::LogCpuTimes()
         }
         else
         {
-            auto ThreadMs = GetTotalMilliseconds(userTime);
+            auto ThreadMs = GetTotalMilliseconds(userTime) + GetTotalMilliseconds(kernelTime);
             float percent = -1; // in case GetProcessTimes fails
-            if (ProcessUserTimeMs != 0)
-                percent = ((static_cast<float>(ThreadMs) * 100) / ProcessUserTimeMs);
+            if (ProcessCpuTimeMs != 0)
+                percent = ((static_cast<float>(ThreadMs) * 100) / ProcessCpuTimeMs);
 
             // show the thread name if any
             auto element = _threads.find(threadEntry.th32ThreadID);
@@ -83,7 +84,9 @@ void ThreadsCpuManager::LogCpuTimes()
             {
                 builder << std::setw(6) << threadEntry.th32ThreadID << " | ";
                 builder << std::setw(8) << ThreadMs << " ms [";
-                builder << std::setw(5) << std::setprecision(2) << percent << " %]";
+                builder << std::setw(5) << std::setprecision(2) << percent << " %] "; // 1 less space than our threads to easily make the difference
+                auto name = OpSysTools::GetNativeThreadName(hThread);
+                builder << shared::ToString(name);
                 builder << "\r\n";
             }
             else

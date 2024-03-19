@@ -39,6 +39,7 @@ namespace Samples.Computer01
         ForceSigSegvHandler,
         Obfuscation,
         ThreadSpikes,
+        StringConcat, // parameter = number of strings to concatenate
     }
 
     public class Program
@@ -74,6 +75,7 @@ namespace Samples.Computer01
             // 23: sigsegv handling validation
             // 24: use an obfuscated library
             // 25: create thread spikes
+            // 26: string concatenation
             //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--service] [--iterations <number of iterations to execute>] " +
