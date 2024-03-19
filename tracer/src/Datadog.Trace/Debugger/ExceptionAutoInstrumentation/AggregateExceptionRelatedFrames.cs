@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class AggregateExceptionRelatedFrames : ExceptionRelatedFrames
@@ -23,7 +24,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public override IEnumerable<ParticipatingFrame> GetAllFlattenedFrames()
         {
-            foreach (var frame in InnerFrames.SelectMany(innerFrame => innerFrame?.GetAllFlattenedFrames()))
+            foreach (var frame in InnerFrames.SelectMany(innerFrame => innerFrame.GetAllFlattenedFrames()))
             {
                 yield return frame;
             }

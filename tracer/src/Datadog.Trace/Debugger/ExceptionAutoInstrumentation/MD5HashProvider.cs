@@ -7,13 +7,14 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Debugger.Helpers;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal static class MD5HashProvider
     {
         internal static string GetHash(ExceptionIdentifier exceptionId)
         {
-            return ((byte)exceptionId.ErrorOrigin + string.Concat(exceptionId.ExceptionTypes.Select(ex => ex.FullName)) + string.Concat(exceptionId.StackTrace.Select(method => method.Method.GetFullyQualifiedName()))).ToUUID();
+            return ((byte)exceptionId.ErrorOrigin + string.Concat(exceptionId.ExceptionTypes.Select(ex => ex.FullName)) + string.Concat(exceptionId.StackTrace.Select(method => method.Method.GetFullyQualifiedName() ?? method.Method.Name))).ToUUID();
         }
     }
 }

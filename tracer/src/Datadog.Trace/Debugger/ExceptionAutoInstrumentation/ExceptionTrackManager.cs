@@ -23,6 +23,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionTrackManager
@@ -36,7 +37,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static readonly int MaxFramesToCapture = ExceptionDebugging.Settings.MaximumFramesToCapture;
         private static readonly TimeSpan RateLimit = ExceptionDebugging.Settings.RateLimit;
         private static readonly BasicCircuitBreaker ReportingCircuitBreaker = new(ExceptionDebugging.Settings.MaxExceptionAnalysisLimit, TimeSpan.FromSeconds(1));
-        private static Task _exceptionProcessorTask;
+        private static Task? _exceptionProcessorTask;
         private static bool _isInitialized;
 
         private static async Task StartExceptionProcessingAsync(CancellationToken cancellationToken)
@@ -52,7 +53,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        public static void Report(Span span, Exception exception)
+        public static void Report(Span span, Exception? exception)
         {
             if (!_isInitialized)
             {
@@ -96,7 +97,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return;
             }
 
-            var nonEmptyShadowStack = ShadowStackHolder.IsShadowStackTrackingEnabled && ShadowStackHolder.ShadowStack.ContainsReport(exception);
+            var nonEmptyShadowStack = ShadowStackHolder.IsShadowStackTrackingEnabled && ShadowStackHolder.ShadowStack!.ContainsReport(exception);
             if (nonEmptyShadowStack)
             {
                 ProcessException(exception, errorOrigin, rootSpan);
@@ -108,7 +109,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        private static void ProcessException(Exception exception, ErrorOriginKind errorOrigin, Span rootSpan)
+        private static void ProcessException(Exception exception, ErrorOriginKind errorOrigin, Span? rootSpan)
         {
             var allParticipatingFrames = GetAllExceptionRelatedStackFrames(exception);
             var allParticipatingFramesFlattened = allParticipatingFrames.GetAllFlattenedFrames().Reverse().ToArray();
@@ -156,7 +157,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     return;
                 }
 
-                var resultCallStackTree = ShadowStackHolder.ShadowStack.CreateResultReport(exceptionPath: exception);
+                var resultCallStackTree = ShadowStackHolder.ShadowStack!.CreateResultReport(exceptionPath: exception);
                 if (resultCallStackTree == null || !resultCallStackTree.Frames.Any())
                 {
                     Log.Error("ExceptionTrackManager: Received an empty tree from the shadow stack for exception: {Exception}.", exception.ToString());
@@ -280,7 +281,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        private static string GetNoCaptureReason(ParticipatingFrame frame, ExceptionDebuggingProbe probe)
+        private static string GetNoCaptureReason(ParticipatingFrame frame, ExceptionDebuggingProbe? probe)
         {
             var noCaptureReason = GetNoCaptureReasonForFrame(frame);
 
@@ -332,13 +333,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             var snapshot = record.Snapshot;
 
             span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
-            span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType.Name);
+            span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType?.Name);
             span.Tags.SetTag(tagPrefix + "snapshot_id", snapshotId);
 
             tagPrefix = tagPrefix.Replace("_", string.Empty);
 
             span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
-            span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType.Name);
+            span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType?.Name);
             span.Tags.SetTag(tagPrefix + "snapshot_id", snapshotId);
 
             ExceptionDebugging.AddSnapshot(probeId, snapshot);
@@ -347,13 +348,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static void TagMissingFrame(Span span, string tagPrefix, MethodBase method, string reason)
         {
             span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
-            span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType.Name);
+            span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType?.Name);
             span.Tags.SetTag(tagPrefix + "no_capture_reason", reason);
 
             tagPrefix = tagPrefix.Replace("_", string.Empty);
 
             span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
-            span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType.Name);
+            span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType?.Name);
             span.Tags.SetTag(tagPrefix + "no_capture_reason", reason);
         }
 
@@ -373,7 +374,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         }
 
         private static bool IsSupportedExceptionType(Exception ex) =>
-            IsSupportedExceptionType(ex?.GetType());
+            IsSupportedExceptionType(ex.GetType());
 
         public static void Initialize()
         {
@@ -422,18 +423,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public static ExceptionRelatedFrames GetAllExceptionRelatedStackFrames(Exception exception)
         {
-            if (exception == null)
-            {
-                return ExceptionRelatedFrames.Empty;
-            }
-
             return CreateExceptionPath(exception, true);
 
             ExceptionRelatedFrames CreateExceptionPath(Exception e, bool isTopFrame)
             {
                 var frames = GetParticipatingFrames(new StackTrace(e, false), isTopFrame, ParticipatingFrameState.Default);
 
-                ExceptionRelatedFrames innerFrame = null;
+                ExceptionRelatedFrames? innerFrame = null;
 
                 // the first inner exception in the inner exceptions list of the aggregate exception is similar to the inner exception`
                 innerFrame = e.InnerException != null ? CreateExceptionPath(e.InnerException, false) : null;
@@ -454,7 +450,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             var frames = isTopFrame
                              ? stackTrace.GetFrames()?.
                                           Reverse().
-                                          SkipWhile(frame => FrameFilter.ShouldSkipNamespaceIfOnTopOfStack(frame.GetMethod())).
+                                          SkipWhile(frame =>
+                                          {
+                                              var method = frame?.GetMethod();
+
+                                              if (method == null)
+                                              {
+                                                  return true;
+                                              }
+
+                                              return FrameFilter.ShouldSkipNamespaceIfOnTopOfStack(method);
+                                          }).
                                           Reverse().
                                           GetAsyncFriendlyFrameMethods()
                              : stackTrace.GetFrames()?.GetAsyncFriendlyFrameMethods();
@@ -466,7 +472,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             foreach (var frame in frames)
             {
-                var method = frame?.GetMethod();
+                if (frame == null)
+                {
+                    continue;
+                }
+
+                var method = frame.GetMethod();
 
                 if (method == null)
                 {
@@ -476,7 +487,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 var assembly = method.Module.Assembly;
                 var assemblyName = assembly.GetName().Name;
 
-                if (FrameFilter.IsDatadogAssembly(assemblyName))
+                if (assemblyName != null && FrameFilter.IsDatadogAssembly(assemblyName))
                 {
                     continue;
                 }

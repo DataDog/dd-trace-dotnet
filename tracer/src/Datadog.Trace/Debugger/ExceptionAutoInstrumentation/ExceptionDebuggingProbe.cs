@@ -15,6 +15,7 @@ using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionDebuggingProbe
@@ -30,17 +31,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _hashCode = ComputeHashCode();
         }
 
-        internal string ProbeId { get; private set; }
+        internal string? ProbeId { get; private set; }
 
         internal MethodUniqueIdentifier Method { get; }
 
-        internal ExceptionDebuggingProcessor ExceptionDebuggingProcessor { get; private set; }
+        internal ExceptionDebuggingProcessor? ExceptionDebuggingProcessor { get; private set; }
 
         internal bool MayBeOmittedFromCallStack { get; private set; }
 
         internal Status ProbeStatus { get; set; }
 
-        internal string ErrorMessage { get; set; }
+        internal string? ErrorMessage { get; set; }
 
         internal bool IsInstrumented
         {
@@ -66,7 +67,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         private bool CheckIfMethodMayBeOmittedFromCallStack()
         {
-            return FrameworkDescription.Instance.IsCoreClr() && RuntimeHelper.IsNetOnward(6) && RuntimeHelper.IsModuleDebugCompiled(Method.Method.DeclaringType.Assembly);
+            return FrameworkDescription.Instance.IsCoreClr() && RuntimeHelper.IsNetOnward(6) && Method.Method.DeclaringType?.Assembly != null && RuntimeHelper.IsModuleDebugCompiled(Method.Method.DeclaringType.Assembly);
         }
 
         private void ProcessCase(ExceptionCase @case)
@@ -89,13 +90,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                     var processor = new ExceptionProbeProcessor(probe, @case.ExceptionId.ExceptionTypes, parentProbes: parentProbes, childProbes: childProbes);
                     @case.Processors.TryAdd(processor, 0);
-                    ExceptionDebuggingProcessor.AddProbeProcessor(processor);
+                    ExceptionDebuggingProcessor?.AddProbeProcessor(processor);
                 }
             }
 
             foreach (var probe in probes.Where(p => p.IsInstrumented))
             {
-                probe.ExceptionDebuggingProcessor.InvalidateEnterLeave();
+                probe.ExceptionDebuggingProcessor?.InvalidateEnterLeave();
             }
         }
 
@@ -110,14 +111,20 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         ProcessCase(existingCase);
                     }
 
+                    if (string.IsNullOrEmpty(ProbeId))
+                    {
+                        Log.Warning("ProbeId is null in `AddExceptionCase`, with case: {Case}", @case);
+                        return;
+                    }
+
                     // We don't care about sampling Exception Probes. To save memory, NopAdaptiveSampler is used.
                     ProbeRateLimiter.Instance.TryAddSampler(ProbeId, NopAdaptiveSampler.Instance);
                     if (!ProbeExpressionsProcessor.Instance.TryAddProbeProcessor(ProbeId, ExceptionDebuggingProcessor))
                     {
-                        Log.Error("Could not add ExceptionDebuggingProcessor. Method: {TypeName}.{MethodName}", Method.Method.DeclaringType.Name, Method.Method.Name);
+                        Log.Error("Could not add ExceptionDebuggingProcessor. Method: {TypeName}.{MethodName}", Method.Method.DeclaringType?.Name, Method.Method.Name);
                     }
 
-                    InstrumentationRequester.Instrument(ProbeId, Method.Method);
+                    InstrumentationRequester.Instrument(ProbeId!, Method.Method);
                 }
 
                 _exceptionCases.Add(@case);
@@ -145,14 +152,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return Method.Equals(other.Method);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj.GetType() != this.GetType())
-            {
-                return false;
-            }
-
-            return Equals((ExceptionDebuggingProbe)obj);
+            return obj is ExceptionDebuggingProbe other && Equals(other);
         }
 
         public override int GetHashCode()

@@ -12,13 +12,14 @@ using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.PInvoke;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class InstrumentationRequester
     {
         internal static void Instrument(string probeId, MethodBase method)
         {
-            var rejitRequest = new NativeMethodProbeDefinition(probeId, method.DeclaringType.FullName, method.Name, targetParameterTypesFullName: null);
+            var rejitRequest = new NativeMethodProbeDefinition(probeId, method.DeclaringType?.FullName, method.Name, targetParameterTypesFullName: null);
 
             DebuggerNativeMethods.InstrumentProbes(
                 new[] { rejitRequest },

@@ -14,6 +14,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Datadog.Trace.Util;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.Helpers
 {
     internal static class MethodExtensions
@@ -22,7 +23,7 @@ namespace Datadog.Trace.Debugger.Helpers
         /// Gets fully qualified name of a method with parameters and generics. For example SkyApm.Sample.ConsoleApp.Program.Main(String[] args).
         /// Code was copied from System.Diagnostics.StackTrace.ToString() - .NET Standard implementation, not .NET Framework
         /// </summary>
-        internal static string GetFullyQualifiedName(this MethodBase mb)
+        internal static string? GetFullyQualifiedName(this MethodBase mb)
         {
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
@@ -89,7 +90,7 @@ namespace Datadog.Trace.Debugger.Helpers
                     sb.Append(']');
                 }
 
-                ParameterInfo[] pi = null;
+                ParameterInfo[]? pi = null;
                 try
                 {
                     pi = mb.GetParameters();
@@ -145,11 +146,11 @@ namespace Datadog.Trace.Debugger.Helpers
             }
         }
 
-        private static bool TryResolveStateMachineMethod(ref MethodBase method, out Type declaringType)
+        private static bool TryResolveStateMachineMethod(ref MethodBase method, out Type? declaringType)
         {
             declaringType = method.DeclaringType;
 
-            var parentType = declaringType.DeclaringType;
+            var parentType = declaringType?.DeclaringType;
             if (parentType == null)
             {
                 return false;

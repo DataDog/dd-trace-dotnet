@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.Helpers
 {
     internal class RuntimeHelper

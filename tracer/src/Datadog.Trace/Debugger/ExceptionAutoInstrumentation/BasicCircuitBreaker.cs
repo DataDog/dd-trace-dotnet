@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal enum CircuitBreakerState
@@ -46,7 +47,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return newValue > _maxTimesToTripInTimeInterval ? CircuitBreakerState.Opened : CircuitBreakerState.Closed;
         }
 
-        private void OnTimerIntervalReached(object state)
+        private void OnTimerIntervalReached(object? state)
         {
             Interlocked.Exchange(ref _failureCount, 0);
             _timer.Change(Timeout.Infinite, Timeout.Infinite);

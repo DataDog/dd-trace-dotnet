@@ -16,19 +16,27 @@ using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ShadowStackTree
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ShadowStackTree));
 
-        private readonly AsyncLocal<TrackedStackFrameNode> _trackedStackFrameActiveNode = new();
+        private readonly AsyncLocal<TrackedStackFrameNode?> _trackedStackFrameActiveNode = new();
         private ReaderWriterLockSlim _lock;
         private HashSet<int> _uniqueSequencesLeaves;
-        private TrackedStackFrameNode _trackedStackFrameRootNode;
+        private TrackedStackFrameNode? _trackedStackFrameRootNode;
         private ConcurrentDictionary<TrackedStackFrameNode, Exception> _prematurelyUnwoundedFrames;
 
-        public TrackedStackFrameNode CurrentStackFrameNode => _trackedStackFrameActiveNode.Value;
+        internal ShadowStackTree()
+        {
+            _uniqueSequencesLeaves = new HashSet<int>();
+            _prematurelyUnwoundedFrames = new ConcurrentDictionary<TrackedStackFrameNode, Exception>();
+            _lock = new ReaderWriterLockSlim();
+        }
+
+        public TrackedStackFrameNode? CurrentStackFrameNode => _trackedStackFrameActiveNode.Value;
 
         public bool IsInRequestContext { get; set; }
 
@@ -38,7 +46,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return _trackedStackFrameActiveNode.Value;
         }
 
-        public bool Leave(TrackedStackFrameNode trackedStackFrameNode, Exception exception)
+        public bool Leave(TrackedStackFrameNode trackedStackFrameNode, Exception? exception)
         {
             var currentActiveNode = _trackedStackFrameActiveNode.Value;
 
@@ -50,7 +58,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     Log.Debug("Leave: The top of the shadowstack is different than the unwinding method, keeping it aside for future unwindings");
                 }
 
-                _prematurelyUnwoundedFrames.TryAdd(trackedStackFrameNode, exception);
+                if (exception != null)
+                {
+                    _prematurelyUnwoundedFrames.TryAdd(trackedStackFrameNode, exception);
+                }
+                else
+                {
+                    Log.Debug("Leave: exception object is null.");
+                }
+
                 return false;
             }
 
@@ -90,6 +106,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             var rootNode = _trackedStackFrameRootNode ?? _trackedStackFrameActiveNode.Value;
+
+            if (rootNode == null)
+            {
+                return tree;
+            }
 
             if (!rootNode.HasChildException(exceptionPath))
             {
@@ -137,7 +158,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             var rootNode = _trackedStackFrameRootNode ?? _trackedStackFrameActiveNode.Value;
 
-            return rootNode.HasChildException(exceptionPath);
+            return rootNode?.HasChildException(exceptionPath) == true;
         }
 
         public bool AddUniqueId(int id)
@@ -186,12 +207,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _trackedStackFrameActiveNode.Value?.Dispose();
             _trackedStackFrameActiveNode.Value = null;
             IsInRequestContext = false;
-            _uniqueSequencesLeaves?.Clear();
-            _uniqueSequencesLeaves = null;
-            _prematurelyUnwoundedFrames?.Clear();
-            _prematurelyUnwoundedFrames = null;
-            _lock?.Dispose();
-            _lock = null;
+            _uniqueSequencesLeaves.Clear();
+            _prematurelyUnwoundedFrames.Clear();
+            _lock.Dispose();
         }
 
         public void Init()

@@ -9,14 +9,15 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.Logging;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionCaseScheduler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ExceptionCaseScheduler>();
-        private static readonly List<ScheduledException> ScheduledExceptions = new();
-        private static readonly object Lock = new();
-        private static Timer _timer;
+        private readonly List<ScheduledException> _scheduledExceptions = new();
+        private readonly object _lock = new();
+        private readonly Timer _timer;
 
         public ExceptionCaseScheduler()
         {
@@ -28,22 +29,22 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             var dueTime = DateTime.UtcNow.Add(delay);
             var scheduledTask = new ScheduledException { Case = doneCase, DueTime = dueTime };
 
-            lock (Lock)
+            lock (_lock)
             {
-                ScheduledExceptions.Add(scheduledTask);
-                ScheduledExceptions.Sort();
-                if (ScheduledExceptions[0] == scheduledTask)
+                _scheduledExceptions.Add(scheduledTask);
+                _scheduledExceptions.Sort();
+                if (_scheduledExceptions[0] == scheduledTask)
                 {
                     SetNextTimer(dueTime);
                 }
             }
         }
 
-        private void TimerCallback(object state)
+        private void TimerCallback(object? state)
         {
             try
             {
-                SafeTimerCallback(state);
+                SafeTimerCallback();
             }
             catch (Exception ex)
             {
@@ -51,23 +52,26 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        private void SafeTimerCallback(object state)
+        private void SafeTimerCallback()
         {
             var casesToInstrument = new List<TrackedExceptionCase>();
 
-            lock (Lock)
+            lock (_lock)
             {
                 var now = DateTime.UtcNow;
-                var dueTasks = ScheduledExceptions.TakeWhile(e => e.DueTime <= now).ToList();
+                var dueTasks = _scheduledExceptions.TakeWhile(e => e.DueTime <= now).ToList();
                 foreach (var task in dueTasks)
                 {
-                    casesToInstrument.Add(task.Case);
-                    ScheduledExceptions.Remove(task);
+                    if (task.Case != null)
+                    {
+                        casesToInstrument.Add(task.Case);
+                        _scheduledExceptions.Remove(task);
+                    }
                 }
 
-                if (ScheduledExceptions.Any())
+                if (_scheduledExceptions.Any())
                 {
-                    SetNextTimer(ScheduledExceptions[0].DueTime);
+                    SetNextTimer(_scheduledExceptions[0].DueTime);
                 }
             }
 
@@ -80,18 +84,23 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private void SetNextTimer(DateTime dueTime)
         {
             var delay = Math.Max((dueTime - DateTime.UtcNow).TotalMilliseconds, 0);
-            _timer.Change((int)delay, Timeout.Infinite);
+            _timer?.Change((int)delay, Timeout.Infinite);
         }
 
         private class ScheduledException : IComparable<ScheduledException>
         {
-            public TrackedExceptionCase Case { get; set; }
+            public TrackedExceptionCase? Case { get; set; }
 
             public DateTime DueTime { get; set; }
 
-            public int CompareTo(ScheduledException other)
+            public int CompareTo(ScheduledException? other)
             {
-                return DueTime.CompareTo(other?.DueTime);
+                if (other is null)
+                {
+                    return 1;
+                }
+
+                return DueTime.CompareTo(other.DueTime);
             }
         }
     }

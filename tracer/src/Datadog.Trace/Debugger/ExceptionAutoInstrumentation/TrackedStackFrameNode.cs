@@ -12,20 +12,21 @@ using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Snapshots;
 using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class TrackedStackFrameNode
     {
-        private TrackedStackFrameNode _parent;
-        private List<TrackedStackFrameNode> _activeChildNodes;
+        private TrackedStackFrameNode? _parent;
+        private List<TrackedStackFrameNode>? _activeChildNodes;
         private bool _disposed;
         private int? _enterSequenceHash;
         private int? _leaveSequenceHash;
         private bool _childNodesAlreadyCleansed;
-        private string _snapshot;
-        private string _snapshotId;
+        private string? _snapshot;
+        private string? _snapshotId;
 
-        public TrackedStackFrameNode(TrackedStackFrameNode parent, MethodBase method, bool isInvalidPath = false)
+        public TrackedStackFrameNode(TrackedStackFrameNode? parent, MethodBase method, bool isInvalidPath = false)
         {
             _parent = parent;
             Method = method;
@@ -58,9 +59,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        public TrackedStackFrameNode Parent => _parent;
+        public TrackedStackFrameNode? Parent => _parent;
 
-        public Exception LeavingException { get; private set; }
+        public Exception? LeavingException { get; private set; }
 
         public string Snapshot
         {
@@ -80,7 +81,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     _ = Snapshot;
                 }
 
-                return _snapshotId;
+                return _snapshotId!;
             }
         }
 
@@ -94,17 +95,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public bool IsFrameUnwound { get; private set; }
 
-        internal string ProbeId { get; set; }
+        internal string? ProbeId { get; set; }
 
-        internal MethodScopeMembers Members { get; set; }
+        internal MethodScopeMembers? Members { get; set; }
 
         internal int MethodMetadataIndex { get; set; }
 
         internal bool IsAsyncMethod { get; set; }
 
-        internal object MoveNextInvocationTarget { get; set; }
+        internal object? MoveNextInvocationTarget { get; set; }
 
-        internal object KickoffInvocationTarget { get; set; }
+        internal object? KickoffInvocationTarget { get; set; }
 
         internal bool? HasArgumentsOrLocals { get; set; }
 
@@ -119,7 +120,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         private string CreateSnapshot()
         {
-            using var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, location: ProbeLocation.Method, hasCondition: false, Array.Empty<string>(), Members);
+            var members = Members;
+
+            if (members == null)
+            {
+                members = new MethodScopeMembers(0, 0);
+            }
+
+            using var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, location: ProbeLocation.Method, hasCondition: false, Array.Empty<string>(), members);
 
             _snapshotId = snapshotCreator.SnapshotId;
 
@@ -137,7 +145,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
             else
             {
-                info = new CaptureInfo<object>(MethodMetadataIndex, value: Members.InvocationTarget, type: methodMetadataInfo.DeclaringType, invocationTargetType: methodMetadataInfo.DeclaringType, memberKind: ScopeMemberKind.This, methodState: MethodState.ExitEnd, hasLocalOrArgument: HasArgumentsOrLocals, method: methodMetadataInfo.Method);
+                info = new CaptureInfo<object>(MethodMetadataIndex, value: members.InvocationTarget, type: methodMetadataInfo.DeclaringType, invocationTargetType: methodMetadataInfo.DeclaringType, memberKind: ScopeMemberKind.This, methodState: MethodState.ExitEnd, hasLocalOrArgument: HasArgumentsOrLocals, method: methodMetadataInfo.Method);
             }
 
             snapshotCreator.CaptureBehaviour = CaptureBehaviour.Evaluate;
@@ -229,7 +237,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        public TrackedStackFrameNode RecordFunctionExit(Exception ex)
+        public TrackedStackFrameNode? RecordFunctionExit(Exception? ex)
         {
             if (ex == null)
             {
@@ -260,7 +268,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return _parent;
         }
 
-        private TrackedStackFrameNode RecordFunctionExit()
+        private TrackedStackFrameNode? RecordFunctionExit()
         {
             var parent = _parent;
             Dispose();
@@ -328,7 +336,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public bool HasChildException(Exception exception)
         {
-            if (LeavingException == exception || LeavingException == exception?.InnerException)
+            if (LeavingException == null)
+            {
+                return false;
+            }
+
+            if (LeavingException == exception || LeavingException == exception.InnerException)
             {
                 return true;
             }

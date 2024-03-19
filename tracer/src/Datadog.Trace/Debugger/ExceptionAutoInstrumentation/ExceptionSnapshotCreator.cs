@@ -5,6 +5,7 @@
 
 using Datadog.Trace.Debugger.Snapshots;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionSnapshotCreator : IDebuggerSnapshotCreator
@@ -23,6 +24,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public int LeaveHash { get; set; }
 
-        public TrackedStackFrameNode TrackedStackFrameNode { get; set; }
+        public TrackedStackFrameNode? TrackedStackFrameNode { get; set; }
     }
 }

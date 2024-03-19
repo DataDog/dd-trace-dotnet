@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal enum ParticipatingFrameState
@@ -28,7 +29,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         }
 
         public ParticipatingFrame(StackFrame stackFrame, ParticipatingFrameState state)
-            : this(stackFrame?.GetMethod(), state, stackFrame?.GetILOffset() ?? UndefinedIlOffset)
+            : this(stackFrame.GetMethod() ?? throw new ArgumentNullException(nameof(stackFrame.GetMethod)), state, stackFrame.GetILOffset())
         {
         }
 
@@ -50,14 +51,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return MethodIdentifier.Equals(other.MethodIdentifier);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj.GetType() != this.GetType())
-            {
-                return false;
-            }
-
-            return Equals((ParticipatingFrame)obj);
+            return obj is ParticipatingFrame other && Equals(other);
         }
 
         public override string ToString()

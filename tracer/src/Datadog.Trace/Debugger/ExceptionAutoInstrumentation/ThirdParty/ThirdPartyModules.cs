@@ -6,11 +6,12 @@
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
 {
     internal class ThirdPartyModules
     {
-        private static HashSet<string> _thirdPartyModuleNames;
+        private static HashSet<string>? _thirdPartyModuleNames;
 
         internal static bool PopulateFromConfig()
         {
@@ -20,7 +21,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
 
         internal static bool Contains(string moduleName)
         {
-            return _thirdPartyModuleNames.Contains(moduleName);
+            return _thirdPartyModuleNames?.Contains(moduleName) == true;
         }
     }
 }

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+#nullable enable
 namespace Datadog.Trace.ClrProfiler
 {
     internal class DynamicInstrumentationHelper
@@ -17,6 +18,6 @@ namespace Datadog.Trace.ClrProfiler
         /// Gets or sets the service name.
         /// Hack to maneuver the service name for Exception Debugging. Will be removed later.
         /// </summary>
-        public static string ServiceName { get; set; }
+        public static string ServiceName { get; set; } = string.Empty;
     }
 }

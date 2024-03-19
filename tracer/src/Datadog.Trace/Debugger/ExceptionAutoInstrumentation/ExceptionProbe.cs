@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Configurations.Models;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionProbe

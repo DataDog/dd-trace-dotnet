@@ -9,11 +9,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.Helpers
 {
     internal static class ExceptionExtensions
     {
-        public static bool IsSelfOrInnerExceptionEquals(this Exception checkSelfAndInner, Exception toCheckAgainst, out Exception matchedException)
+        public static bool IsSelfOrInnerExceptionEquals(this Exception? checkSelfAndInner, Exception toCheckAgainst, out Exception? matchedException)
         {
             matchedException = checkSelfAndInner;
 

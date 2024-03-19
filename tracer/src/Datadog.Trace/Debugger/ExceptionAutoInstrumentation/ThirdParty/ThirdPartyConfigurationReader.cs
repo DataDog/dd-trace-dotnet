@@ -12,6 +12,7 @@ using System.Reflection;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
 {
     internal class ThirdPartyConfigurationReader
@@ -38,7 +39,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
 
             if (TryGetThirdPartyManifestStream(out var stream))
             {
-                using var sr = new StreamReader(stream);
+                using var sr = new StreamReader(stream!);
                 using var jsonReader = new JsonTextReader(sr);
 
                 while (jsonReader.Read())
@@ -56,7 +57,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
             return modules;
         }
 
-        private static bool TryGetThirdPartyManifestStream(out Stream resourceStream)
+        private static bool TryGetThirdPartyManifestStream(out Stream? resourceStream)
         {
             var assembly = Assembly.GetExecutingAssembly();
             resourceStream = assembly.GetManifestResourceStream(ThirdPartyResourceName);

@@ -18,13 +18,14 @@ using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionProbeProcessor
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionProbeProcessor));
         private readonly HashSet<Type> _exceptionTypes;
-        private readonly Type _singleExceptionType;
+        private readonly Type? _singleExceptionType;
         private readonly ExceptionDebuggingProbe[] _childProbes;
         private readonly ExceptionDebuggingProbe[] _parentProbes;
         private readonly object _locker = new();
@@ -33,7 +34,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal ExceptionProbeProcessor(ExceptionDebuggingProbe probe, HashSet<Type> exceptionTypes, ExceptionDebuggingProbe[] parentProbes, ExceptionDebuggingProbe[] childProbes)
         {
-            ExceptionDebuggingProcessor = probe.ExceptionDebuggingProcessor;
+            ExceptionDebuggingProcessor = probe.ExceptionDebuggingProcessor ?? throw new ArgumentException($"probe.ExceptionDebuggingProcessor is null. Probe: {probe}");
             _exceptionTypes = exceptionTypes;
             _singleExceptionType = _exceptionTypes.Count == 1 ? _exceptionTypes.Single() : null;
             _childProbes = childProbes;

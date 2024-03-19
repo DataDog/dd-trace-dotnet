@@ -7,6 +7,7 @@ using System;
 using System.Reflection;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 
 internal class ExceptionStackNodeRecord
@@ -14,7 +15,7 @@ internal class ExceptionStackNodeRecord
     public ExceptionStackNodeRecord(int level, TrackedStackFrameNode node)
     {
         Level = level;
-        ProbeId = node.ProbeId;
+        ProbeId = node.ProbeId ?? string.Empty;
         MethodInfo = MethodMetadataCollection.Instance.Get(node.MethodMetadataIndex);
         Snapshot = node.Snapshot;
         SnapshotId = node.SnapshotId;

@@ -11,6 +11,7 @@ using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionDebuggingProcessor : IProbeProcessor
@@ -85,6 +86,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         return true;
                     case MethodState.ExitStart:
                     case MethodState.ExitStartAsync:
+                        if (snapshotCreator.TrackedStackFrameNode == null)
+                        {
+                            throw new InvalidOperationException("Encountered invalid state of snapshotCreator in ExitState/ExitStateAsync. `snapshotCreator.TrackedStackFrameNode` should not be null.");
+                        }
+
                         if (snapshotCreator.TrackedStackFrameNode.IsFrameUnwound)
                         {
                             Log.Warning("ExceptionDebuggingProcessor: Frame is already unwound. Probe Id: {ProbeId}", ProbeId);
@@ -150,6 +156,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         break;
                     case MethodState.ExitEnd:
                     case MethodState.ExitEndAsync:
+                        if (snapshotCreator.TrackedStackFrameNode == null)
+                        {
+                            throw new InvalidOperationException("Encountered invalid state of snapshotCreator in ExitEnd/ExitEndAsync. `snapshotCreator.TrackedStackFrameNode` should not be null.");
+                        }
+
                         if (snapshotCreator.TrackedStackFrameNode.CapturingStrategy != SnapshotCapturingStrategy.None)
                         {
                             snapshotCreator.TrackedStackFrameNode.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
@@ -174,6 +185,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         return true;
                     case MethodState.LogLocal:
                     case MethodState.LogArg:
+                        if (snapshotCreator.TrackedStackFrameNode == null)
+                        {
+                            throw new InvalidOperationException("Encountered invalid state of snapshotCreator in LogLocal/LogArg. `snapshotCreator.TrackedStackFrameNode` should not be null.");
+                        }
+
                         if (snapshotCreator.TrackedStackFrameNode.CapturingStrategy != SnapshotCapturingStrategy.None)
                         {
                             snapshotCreator.TrackedStackFrameNode.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);

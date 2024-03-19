@@ -5,6 +5,7 @@
 
 using Datadog.Trace.Debugger.Expressions;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.Snapshots
 {
     internal interface IDebuggerSnapshotCreator

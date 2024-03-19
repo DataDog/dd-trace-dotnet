@@ -8,6 +8,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Snapshots;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.Expressions
 {
     internal interface IProbeProcessor

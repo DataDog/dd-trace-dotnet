@@ -9,19 +9,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionRelatedFrames
     {
-        public static readonly ExceptionRelatedFrames Empty = new(ex: null, frames: null);
-
         public ExceptionRelatedFrames(Exception ex, ParticipatingFrame[] frames)
         {
             Exception = ex;
             Frames = frames;
         }
 
-        public ExceptionRelatedFrames(Exception ex, ParticipatingFrame[] frames, ExceptionRelatedFrames innerFrame)
+        public ExceptionRelatedFrames(Exception ex, ParticipatingFrame[] frames, ExceptionRelatedFrames? innerFrame)
             : this(ex, frames)
         {
             InnerFrame = innerFrame;
@@ -31,7 +30,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public Exception Exception { get; }
 
-        public ExceptionRelatedFrames InnerFrame { get; }
+        public ExceptionRelatedFrames? InnerFrame { get; }
 
         public virtual IEnumerable<ParticipatingFrame> GetAllFlattenedFrames()
         {

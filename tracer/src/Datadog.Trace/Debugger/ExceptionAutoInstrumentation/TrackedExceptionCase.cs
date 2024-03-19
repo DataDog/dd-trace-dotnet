@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     /// <summary>
@@ -112,7 +113,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return ExceptionIdentifier.GetHashCode();
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is TrackedExceptionCase trackedExceptionCase)
             {

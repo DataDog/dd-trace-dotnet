@@ -8,19 +8,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ShadowStackHolder
     {
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<ShadowStackHolder>();
-        private static readonly AsyncLocal<ShadowStackTree> ShadowStackTree = new();
+        private static readonly AsyncLocal<ShadowStackTree?> ShadowStackTree = new();
         [ThreadStatic]
-        private static ShadowStackTree _lastShadowStackTreeOnThisThread;
+        private static ShadowStackTree? _lastShadowStackTreeOnThisThread;
 
-        public static ShadowStackTree ShadowStack
+        public static ShadowStackTree? ShadowStack
         {
             get => ShadowStackTree.Value ?? _lastShadowStackTreeOnThisThread;
-            set => ShadowStackTree.Value = value;
+            set => ShadowStackTree.Value = value!;
         }
 
         public static bool IsShadowStackTrackingEnabled => ShadowStack != null;

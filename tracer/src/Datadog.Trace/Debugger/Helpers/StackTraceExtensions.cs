@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.Helpers
 {
     /// <summary>
@@ -30,7 +31,7 @@ namespace Datadog.Trace.Debugger.Helpers
         /// </remarks>
         /// <param name="stackFrames">The stack frames.</param>
         /// <returns>An async-friendly readable representation of the stack trace.</returns>
-        public static IEnumerable<StackFrame> GetAsyncFriendlyFrameMethods(this IEnumerable<StackFrame> stackFrames)
+        public static IEnumerable<StackFrame> GetAsyncFriendlyFrameMethods(this IEnumerable<StackFrame?> stackFrames)
         {
             if (stackFrames == null)
             {
@@ -39,6 +40,11 @@ namespace Datadog.Trace.Debugger.Helpers
 
             foreach (var frame in stackFrames)
             {
+                if (frame == null)
+                {
+                    continue;
+                }
+
                 var method = frame.GetMethod();
 
                 if (method == null)
@@ -50,7 +56,7 @@ namespace Datadog.Trace.Debugger.Helpers
                 // skip awaiters
                 if (declaringType != null &&
                     (typeof(INotifyCompletion).GetTypeInfo().IsAssignableFrom(declaringType) ||
-                     method.DeclaringType == typeof(ExceptionDispatchInfo)))
+                     method.DeclaringType! == typeof(ExceptionDispatchInfo)))
                 {
                     continue;
                 }

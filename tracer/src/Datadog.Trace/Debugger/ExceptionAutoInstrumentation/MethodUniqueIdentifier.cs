@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal readonly record struct MethodUniqueIdentifier(Guid Mvid, int MethodToken, MethodBase Method)
@@ -53,14 +54,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return Probes.SequenceEqual(other.Probes);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj.GetType() != this.GetType())
-            {
-                return false;
-            }
-
-            return Equals((ExceptionCase)obj);
+            return obj is ExceptionCase other && Equals(other);
         }
 
         public override int GetHashCode()
@@ -119,14 +115,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                    StackTrace.SequenceEqual(other.StackTrace);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj.GetType() != this.GetType())
-            {
-                return false;
-            }
-
-            return Equals((ExceptionIdentifier)obj);
+            return obj is ExceptionIdentifier && Equals((ExceptionIdentifier)obj);
         }
 
         public override int GetHashCode()
