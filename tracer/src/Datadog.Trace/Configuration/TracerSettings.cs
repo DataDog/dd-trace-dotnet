@@ -291,7 +291,7 @@ namespace Datadog.Trace.Configuration
 
             WcfWebHttpResourceNamesEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.WcfWebHttpResourceNamesEnabled)
-                                            .AsBool(defaultValue: false);
+                                            .AsBool(defaultValue: true);
 
             WcfObfuscationEnabled = config
                                    .WithKeys(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled)
