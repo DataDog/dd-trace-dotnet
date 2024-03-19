@@ -18,6 +18,92 @@
 
 
 
+
+## [Release 2.49.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.49.0)
+
+## Summary
+* Significantly improved runtime metrics performance
+* Fixes for MSTestV2 integration on .NET Framework
+* Fixes for IbmMq instrumentation for DSM
+* Added additional integration and improvements for IAST
+* Added `DD_TAGS` to snapshot query parameter for Dynamic Instrumentation
+
+## Changes
+
+### Tracer
+* [Tracing] Support configuring `DD_TRACE_ENABLED` remotely (#5181)
+* Add support for `DD_DOGSTATSD_URL` (#5224)
+* Minor (potential) fixes for `NullReferenceException` (#5230)
+* Warm up the query string obfuscator regex (#5266)
+* Include the trace sampling priority in the span debug log (#5274)
+* [Tracer] Include propagation style in the configuration log (#5275)
+* Fix errors identified from telemetry (#5279)
+* Allow skipping span generation in `ProcessStart` integration (#5280)
+* Don't allow adding `null` to the GRPC headers (#5286)
+* Add `meta_struct` capability to the tracer (#5287)
+* Handle case where `SetExceptionTags()` throws (#5291)
+* Use vendored spans in tags generation (#5298)
+* Optimize runtime metrics (#5304)
+* [Tracing] Update instrumentation point for DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED=true (#5206)
+
+### CI Visibility
+* [CI Visibility] - Enable snapshot testing of current testing framework implementations (#5226)
+* [CI Visibility] - Add a rate limit to the warning message of the OriginTagTraceProcessor (#5261)
+* Disable profiling in benchmarks (#5262)
+* [CI Visibility] Fix MSTestV2 integration on .NET Framework (#5269)
+
+### ASM
+* [ASM][IAST] Insecure Auth Vulnerability (#5148)
+* [IAST] Added tests cases for Custom Manual and Attribute spans (#5218)
+* [ASM][IAST] Support manual JSON deserialisation (System.Text.Json)  (#5223)
+* [IAST] XSS vulnerability (#5231)
+* [ASM] Rework encoder telemetry and logs (#5234)
+* [ASM][IAST] Support manual JSON deserialisation (Newtonsoft.Json) (#5238)
+* [IAST] Set redaction config values according to documentation (#5242)
+* [ASM] Add processors and scanners to ruleset  (#5248)
+* [ASM][IAST] Support manual JSON deserialisation (JavaScriptSerializer) #5238  (#5251)
+* [ASM] Exclude NHibernate from callsite instrumentation (#5265)
+* [ASM][IAST] Configure maximum IAST Ranges (#5292)
+* [ASM] Deactivate benchmark for legacy encoder to help CI (#5299)
+* [IAST] Vulnerability and Evidence truncation (#5302)
+* [ASM] Try fix memory buildup in asm benchmarks removing destructor in Obj (#5305)
+* [ASM] Add dummy agent writer for benchmarks (#5307)
+* [ASM] - Fix HttpRequestValidationException Error (#5221)
+* [IAST] Path in location is always the fully qualified type name (#5256)
+* [IAST] Fix version parsing in Dataflow (#5263)
+
+### Continuous Profiler
+* [Profiler] Force gen2 GCs to avoid test flakyness (#5273)
+* [Profiler] Exclude export error message from flaky test (#5277)
+
+### Debugger
+* [Dynamic Instrumentation] Fix not equal (ne\!=) operator in EL (#5212)
+* [Dynamic Instrumentation] Remove async void in SymbolsUploader (#5155)
+* [Dynamic Instrumentation] Adding ddtags to snapshot query parameter (#5210)
+
+### Build / Test
+* Enable Datadog static analysis (#5057)
+* Try play asm benchmark only on  appsec changed (#5066)
+* Report library configuration through telemetry (#5126)
+* Removing check to allow the test to create snapshots (#5246)
+* [Tracer] Adding Optional Parameter for MockTraceAgent's WaitForSpans (#5253)
+* [Tracer] Fixing Missing Query String for CleanUri_HttpUrlTag Tests (#5258)
+* [Tracer] Updating GrpcLegacy Sample App and Tests (#5264)
+* Add analyzer to avoid implicitly capturing parameters with primary constructors (#5276)
+* add a test case where message attributes are null (integration tests) (#5282)
+* Skip .NET Core 2.1 tests on ARM64 (#5283)
+* Set big regex timeouts for tests (#5297)
+* Running All Datadog.Trace.ClrProfiler.IntegrationTests Tests Serially  (#5310)
+* Fix: Skip System.Text.Json tainting tests on netcore3.0 (#5314)
+* Skipping 3.0 Snapshot Check (#5316)
+* [Tracer] Increasing GraphQL ObfuscationQueryStringRegexTimeout To Prevent Flakes (#5255)
+
+### Miscellaneous
+* [DSM] - Fixes for IbmMq instrumentation (#5271)
+* Add db name & host to sql injected tags (#5278)
+
+[Changes since 2.48.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.48.0...v2.49.0)
+
 ## [Release 2.48.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.48.0)
 
 ## Summary
