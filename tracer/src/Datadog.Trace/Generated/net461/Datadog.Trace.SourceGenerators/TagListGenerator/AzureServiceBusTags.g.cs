@@ -15,29 +15,13 @@ namespace Datadog.Trace.Tagging
     partial class AzureServiceBusTags
     {
         // AnalyticsSampleRateBytes = MessagePack.Serialize("_dd1.sr.eausr");
-#if NETCOREAPP
         private static ReadOnlySpan<byte> AnalyticsSampleRateBytes => new byte[] { 173, 95, 100, 100, 49, 46, 115, 114, 46, 101, 97, 117, 115, 114 };
-#else
-        private static readonly byte[] AnalyticsSampleRateBytes = new byte[] { 173, 95, 100, 100, 49, 46, 115, 114, 46, 101, 97, 117, 115, 114 };
-#endif
         // MessageQueueTimeMsBytes = MessagePack.Serialize("message.queue_time_ms");
-#if NETCOREAPP
         private static ReadOnlySpan<byte> MessageQueueTimeMsBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
-#else
-        private static readonly byte[] MessageQueueTimeMsBytes = new byte[] { 181, 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
-#endif
         // MessagingSourceNameBytes = MessagePack.Serialize("messaging.source.name");
-#if NETCOREAPP
         private static ReadOnlySpan<byte> MessagingSourceNameBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 111, 117, 114, 99, 101, 46, 110, 97, 109, 101 };
-#else
-        private static readonly byte[] MessagingSourceNameBytes = new byte[] { 181, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 111, 117, 114, 99, 101, 46, 110, 97, 109, 101 };
-#endif
         // MessagingDestinationNameBytes = MessagePack.Serialize("messaging.destination.name");
-#if NETCOREAPP
         private static ReadOnlySpan<byte> MessagingDestinationNameBytes => new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
-#else
-        private static readonly byte[] MessagingDestinationNameBytes = new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
-#endif
 
         public override string? GetTag(string key)
         {

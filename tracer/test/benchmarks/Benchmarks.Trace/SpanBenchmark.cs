@@ -11,6 +11,7 @@ namespace Benchmarks.Trace
     /// </summary>
     [MemoryDiagnoser]
     [BenchmarkAgent6]
+    [BenchmarkCategory(Constants.TracerCategory)]
     public class SpanBenchmark
     {
         private static readonly Tracer Tracer;

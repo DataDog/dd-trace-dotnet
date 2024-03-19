@@ -121,6 +121,7 @@
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Abstractions" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Web.Routing" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Configuration" />
@@ -214,6 +215,7 @@
     <None Include="packages.config" />
     <Content Include="Views\Home\Upload.cshtml" />
     <Content Include="Views\User\Index.cshtml" />
+    <Content Include="Views\Iast\ReflectedXss.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj">

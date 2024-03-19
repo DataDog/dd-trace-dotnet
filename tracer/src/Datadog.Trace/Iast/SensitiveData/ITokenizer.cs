@@ -12,5 +12,5 @@ namespace Datadog.Trace.Iast.SensitiveData;
 
 internal interface ITokenizer
 {
-    List<Range> GetTokens(string value, IntegrationId? integrationId = null);
+    List<Range> GetTokens(Evidence evidence, IntegrationId? integrationId = null);
 }

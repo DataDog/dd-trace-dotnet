@@ -46,19 +46,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             // But we only add the extra headers for the client side code, so do a short-circuit check
             // for one of the temporary headers that should always be there in client side code
             var metadata = metadataInstance.DuckCast<IMetadata>();
-            if (GetAndRemove(metadata, TemporaryHeaders.Service) is { } service)
+            if (GetAndRemove(metadata, TemporaryHeaders.MethodKind) is { } methodKind)
             {
                 // Remove our temporary headers so they don't get sent over the wire
-                var methodKind = GetAndRemove(metadata, TemporaryHeaders.MethodKind);
+                var service = GetAndRemove(metadata, TemporaryHeaders.Service);
                 var methodName = GetAndRemove(metadata, TemporaryHeaders.MethodName);
                 var startTime = GetAndRemove(metadata, TemporaryHeaders.StartTime);
 
                 var parentId = GetAndRemove(metadata, TemporaryHeaders.ParentId);
                 var parentService = GetAndRemove(metadata, TemporaryHeaders.ParentService);
 
-                if (methodKind is not null
-                 && methodName is not null
-                 && startTime is not null)
+                if (startTime is not null)
                 {
                     var temporaryHeaders = new TemporaryGrpcHeaders(
                         metadata,
@@ -98,8 +96,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 // Add our temporary headers back in, so we can access them later
                 var metadata = headers.Metadata;
                 metadata.Add(headers.MethodKind);
-                metadata.Add(headers.MethodName);
-                metadata.Add(headers.Service);
+                if (headers.MethodName is not null)
+                {
+                    metadata.Add(headers.MethodName);
+                }
+
+                if (headers.Service is not null)
+                {
+                    metadata.Add(headers.Service);
+                }
+
                 metadata.Add(headers.StartTime);
 
                 if (headers.ParentId is not null)
@@ -120,8 +126,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         {
             public TemporaryGrpcHeaders(
                 IMetadata metadata,
-                object service,
-                object methodName,
+                object? service,
+                object? methodName,
                 object startTime,
                 object methodKind,
                 object? parentId,
@@ -138,9 +144,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
             public IMetadata Metadata { get; }
 
-            public object Service { get; }
+            public object? Service { get; }
 
-            public object MethodName { get; }
+            public object? MethodName { get; }
 
             public object StartTime { get; }
 

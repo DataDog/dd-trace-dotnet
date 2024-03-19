@@ -443,7 +443,7 @@ namespace Datadog.Trace
                     writer.WritePropertyName("querystring_reporting_enabled");
                     writer.WriteValue(instanceSettings.QueryStringReportingEnabled);
 
-                    writer.WritePropertyName("obfuscation_querystring_regex_timout");
+                    writer.WritePropertyName("obfuscation_querystring_regex_timeout");
                     writer.WriteValue(instanceSettings.ObfuscationQueryStringRegexTimeout);
 
                     writer.WritePropertyName("obfuscation_querystring_size");
@@ -545,6 +545,29 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("service_mapping");
                     WriteDictionary(instanceSettings.ServiceNameMappings);
+
+                    writer.WritePropertyName("trace_propagation_style_extract_first_only");
+                    writer.WriteValue(instanceSettings.PropagationExtractFirstOnly);
+
+                    writer.WritePropertyName("trace_propagation_style_inject");
+                    writer.WriteStartArray();
+
+                    foreach (var warning in instanceSettings.PropagationStyleInject)
+                    {
+                        writer.WriteValue(warning);
+                    }
+
+                    writer.WriteEndArray();
+
+                    writer.WritePropertyName("trace_propagation_style_extract");
+                    writer.WriteStartArray();
+
+                    foreach (var warning in instanceSettings.PropagationStyleExtract)
+                    {
+                        writer.WriteValue(warning);
+                    }
+
+                    writer.WriteEndArray();
 
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload

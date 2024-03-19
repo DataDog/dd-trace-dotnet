@@ -12,15 +12,21 @@ using System.Reflection;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Text.Json;
+#endif
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Primitives;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Samples.Security.Data;
 
 namespace Samples.Security.AspNetCore5.Controllers
@@ -55,7 +61,7 @@ namespace Samples.Security.AspNetCore5.Controllers
     [XContentTypeOptionsAttribute]
     [Route("[controller]")]
     [ApiController]
-    public class IastController : ControllerBase
+    public class IastController : Controller
     {
         static SQLiteConnection dbConnection = null;
         static IMongoDatabase mongoDb = null;
@@ -63,6 +69,18 @@ namespace Samples.Security.AspNetCore5.Controllers
         public IActionResult Index()
         {
             return Content("Ok\n");
+        }
+
+        private SQLiteConnection DbConnection 
+        {
+            get 
+            {
+                if (dbConnection is null)
+                {
+                    dbConnection = IastControllerHelper.CreateDatabase();
+                }
+                return dbConnection;
+            }
         }
 
         [HttpGet("HardcodedSecrets")]
@@ -99,21 +117,16 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                if (dbConnection is null)
-                {
-                    dbConnection = IastControllerHelper.CreateDatabase();
-                }
-
                 if (!string.IsNullOrEmpty(username))
                 {
                     var taintedQuery = "SELECT Surname from Persons where name = '" + username + "'";
-                    var rname = new SQLiteCommand(taintedQuery, dbConnection).ExecuteScalar();
+                    var rname = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar();
                     return Content($"Result: " + rname);
                 }
 
                 if (!string.IsNullOrEmpty(query))
                 {
-                    var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+                    var rname = new SQLiteCommand(query, DbConnection).ExecuteScalar();
                     return Content($"Result: " + rname);
                 }
             }
@@ -161,6 +174,54 @@ namespace Samples.Security.AspNetCore5.Controllers
             return BadRequest($"No price or query was provided");
         }
 
+        [HttpGet("NewtonsoftJsonParseTainting")]
+        [Route("NewtonsoftJsonParseTainting")]
+        public IActionResult NewtonsoftJsonParseTainting(string json)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(json))
+                {
+                    var doc = JObject.Parse(json);
+                    var str = doc.Value<string>("key");
+
+                    // Trigger a vulnerability with the tainted string
+                    return ExecuteCommandInternal(str, "");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return BadRequest($"No json was provided");
+        }
+        
+#if NETCOREAPP3_0_OR_GREATER
+        [HttpGet("SystemTextJsonParseTainting")]
+        [Route("SystemTextJsonParseTainting")]
+        public IActionResult SystemTextJsonParseTainting(string json)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(json))
+                {
+                    var doc = JsonDocument.Parse(json);
+                    var str = doc.RootElement.GetProperty("key").GetString();
+                    
+                    // Trigger a vulnerability with the tainted string
+                    return ExecuteCommandInternal(str, "");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return BadRequest($"No json was provided");
+        }
+#endif
+
         [HttpGet("ExecuteCommand")]
         [Route("ExecuteCommand")]
         public IActionResult ExecuteCommand(string file, string argumentLine)
@@ -198,11 +259,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                if (dbConnection is null)
-                {
-                    dbConnection = IastControllerHelper.CreateDatabase();
-                }
-
                 return Query(query);
             }
             catch (Exception ex)
@@ -268,14 +324,9 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                if (dbConnection is null)
-                {
-                    dbConnection = IastControllerHelper.CreateDatabase();
-                }
-
                 if (!string.IsNullOrEmpty(query))
                 {
-                    var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+                    var rname = new SQLiteCommand(query, DbConnection).ExecuteScalar();
                     return Content($"Result: " + rname);
                 }
             }
@@ -292,11 +343,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                if (dbConnection is null)
-                {
-                    dbConnection = IastControllerHelper.CreateDatabase();
-                }
-
                 if (!string.IsNullOrEmpty(queryjson))
                 {
                     var query = JsonConvert.DeserializeObject<QueryData>(queryjson);
@@ -463,6 +509,18 @@ namespace Samples.Security.AspNetCore5.Controllers
             Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
             return Content("Sending AllVulnerabilitiesCookie");
         }
+        
+        [HttpGet("InsecureAuthProtocol")]
+        [Route("InsecureAuthProtocol")]
+        public IActionResult InsecureAuthProtocol(bool forbidden = false)
+        {
+            if (forbidden)
+            {
+                return StatusCode(403);
+            }
+            
+            return Content("InsecureAuthProtocol page");
+        }
 
         [HttpGet("SSRF")]
         [Route("SSRF")]
@@ -490,7 +548,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         private ActionResult ExecuteQuery(string query)
         {
-            var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+            var rname = new SQLiteCommand(query, DbConnection).ExecuteScalar();
             return Content($"Result: " + rname);
         }
 
@@ -775,6 +833,88 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
             
             return BadRequest($"No type was provided");
+        }
+        
+        [HttpGet("MaxRanges")]
+        [Route("MaxRanges")]
+        public ActionResult MaxRanges(int count, string tainted)
+        {
+            var str = string.Empty;
+            for (var i = 0; i < count; i++)
+            {
+                str += tainted;
+            }
+            
+            try
+            {
+                Type.GetType(str);
+            }
+            catch
+            {
+                // ignored
+            }
+
+            return Content(str, "text/html");
+        }
+
+        [HttpGet("CustomAttribute")]
+        [Route("CustomAttribute")]
+        public ActionResult CustomAttribute(string userName)
+        {
+            string result = GetCustomString(userName);
+            return Content(result, "text/html");
+        }
+
+        [Datadog.Trace.Annotations.Trace(OperationName = "span.custom.attribute", ResourceName = "IastController.GetCustomString")]
+        private string GetCustomString(string userName)
+        {
+            var fileInfo = new System.IO.FileInfo(userName);
+            return fileInfo.FullName;
+        }
+
+        [HttpGet("CustomManual")]
+        [Route("CustomManual")]
+        public ActionResult CustomManual(string userName)
+        {
+            string result = string.Empty;
+            try
+            {
+                using (var parentScope = SampleHelpers.CreateScope("span.custom.manual"))
+                {
+                    SampleHelpers.TrySetResourceName(parentScope, "<CUSTOM MANUAL PARENT RESOURCE NAME>");
+                    using (var childScope = SampleHelpers.CreateScope("new.FileInfo"))
+                    {
+                        // Nest using statements around the code to trace
+                        SampleHelpers.TrySetResourceName(childScope, "<CUSTOM MANUAL CHILD RESOURCE NAME>");
+                        _ = new System.IO.FileInfo(userName);
+                    }
+                }
+            }
+            catch
+            {
+                result = "Error in request.";
+            }
+
+            return Content(result, "text/html");
+        }
+
+
+        [HttpGet("ReflectedXss")]
+        [Route("ReflectedXss")]
+        public IActionResult ReflectedXss(string param)
+        {
+            ViewData["XSS"] = param + "<b>More Text</b>";
+            return View("ReflectedXss");
+        }
+
+        [HttpGet("ReflectedXssEscaped")]
+        [Route("ReflectedXssEscaped")]
+        public IActionResult ReflectedXssEscaped(string param)
+        {
+            var escapedText = System.Net.WebUtility.HtmlEncode($"System.Net.WebUtility.HtmlEncode({param})") + Environment.NewLine
+                            + System.Web.HttpUtility.HtmlEncode($"System.Web.HttpUtility.HtmlEncode({param})") + Environment.NewLine;
+            ViewData["XSS"] = escapedText;
+            return View("ReflectedXss");
         }
 
         static string CopyStringAvoidTainting(string original)

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
     /// <summary>
@@ -13,6 +15,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <summary>
         /// Gets the request message
         /// </summary>
-        IMessage RequestMessage { get; }
+        IMessage? RequestMessage { get; }
     }
 }

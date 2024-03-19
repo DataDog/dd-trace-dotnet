@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Coverage.Util;

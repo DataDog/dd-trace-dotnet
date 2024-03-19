@@ -12,6 +12,7 @@ using System.Net.Http;
 using System.DirectoryServices;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web.Script.Serialization;
 using System.Xml;
 
 namespace Samples.Security.AspNetCore5.Controllers
@@ -110,6 +111,31 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content("Error in query.", "text/html");
             }            
+        }
+        
+        [Route("JavaScriptSerializerDeserializeObject")]
+        public ActionResult JavaScriptSerializerDeserializeObject(string input)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(input))
+                {
+                    var serializer = new JavaScriptSerializer();
+                    var json = @"{ ""cmd"": """ + input + @""", ""arg"": ""arg1"" }";
+                    var obj = (Dictionary<string, object>)serializer.DeserializeObject(json);
+                    var cmd = obj["cmd"] as string;
+                    var arg = obj["arg"] as string;
+
+                    // Trigger a vulnerability with the tainted string
+                    return ExecuteCommandInternal(cmd, arg);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return Content("No input was provided");
         }
 
         [Route("ExecuteCommand")]
@@ -604,6 +630,22 @@ namespace Samples.Security.AspNetCore5.Controllers
         public ActionResult StackTraceLeak()
         {
             throw new SystemException("Custom exception message");
+        }
+
+        [ValidateInput(false)]
+        [Route("ReflectedXss")]
+        public ActionResult ReflectedXss(string param)
+        {
+            ViewData["XSS"] = param + "<b>More Text</b>";
+            return View();
+        }
+
+        [ValidateInput(false)]
+        [Route("ReflectedXssEscaped")]
+        public ActionResult ReflectedXssEscaped(string param)
+        {
+            ViewData["XSS"] = WebUtility.HtmlEncode(param);
+            return View("ReflectedXss");
         }
     }
 }

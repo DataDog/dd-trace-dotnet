@@ -26,7 +26,7 @@
   "vulnerabilities": [
     {
       "type": "COMMAND_INJECTION",
-      "hash": 2000904247,
+      "hash": 1750686827,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.DataRazorIastPageModel",

@@ -78,7 +78,6 @@ src/Datadog.Trace/AppSec/SpanExtensions.cs
 src/Datadog.Trace/AspNet/MimeTypes.cs
 src/Datadog.Trace/AspNet/SharedItems.cs
 src/Datadog.Trace/AspNet/TracingHttpModule.cs
-src/Datadog.Trace/Ci/CIEnvironmentValues.cs
 src/Datadog.Trace/Ci/CITracerManager.cs
 src/Datadog.Trace/Ci/CITracerManagerFactory.cs
 src/Datadog.Trace/Ci/CodeOwners.cs
@@ -124,7 +123,6 @@ src/Datadog.Trace/ContinuousProfiler/IProfilerStatus.cs
 src/Datadog.Trace/ContinuousProfiler/NativeInterop.cs
 src/Datadog.Trace/ContinuousProfiler/Profiler.cs
 src/Datadog.Trace/ContinuousProfiler/ProfilerStatus.cs
-src/Datadog.Trace/DatabaseMonitoring/DatabaseMonitoringPropagator.cs
 src/Datadog.Trace/DataStreamsMonitoring/CheckpointKind.cs
 src/Datadog.Trace/Debugger/ILineProbeResolver.cs
 src/Datadog.Trace/Debugger/LiveDebugger.cs
@@ -528,8 +526,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/OwinContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/OwinRequestStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ReflectedHttpActionDescriptor_ExecuteAsync_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/RequestContextStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ThreadContext_AssociateWithCurrentThread_Integration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ThreadContext_DisassociateFromCurrentThread_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ViewContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/AspNetCoreBlockMiddlewareIntegrationEnd.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/BindingSource.cs
@@ -612,16 +608,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartIntegratio
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartTags.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RabbitMQ/RabbitMQConstants.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/Common.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/AsyncMethodInvoker_InvokeBegin_Integration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/AsyncMethodInvoker_InvokeEnd_Integration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/ChannelHandlerIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/HttpRequestMessagePropertyStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/IMessage.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/IMessageHeaders.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/IOperationContextStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/IRequestContext.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/SyncMethodInvokerIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/TaskMethodInvokerIntegration.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/BeginMethodHandler.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/BeginMethodHandler`1.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/BeginMethodHandler`2.cs

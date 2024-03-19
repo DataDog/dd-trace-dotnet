@@ -34,7 +34,7 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
             var vulnerability = new Vulnerability("sqli", new Location(), evidence);
 
             var i = vulnerability.GetHashCode();
-            i.Should().Be(453619706);
+            i.Should().Be(453421860);
         }
     }
 }

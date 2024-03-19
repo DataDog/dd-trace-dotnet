@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
 
 internal interface IReceiveMessageRequest : IAmazonSQSRequestWithQueueUrl, IDuckType
 {
-    List<string?> MessageAttributeNames { get; }
+    List<string?>? MessageAttributeNames { get; set; }
 
-    List<string?> AttributeNames { get; }
+    List<string?>? AttributeNames { get; set; }
 }

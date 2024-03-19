@@ -27,8 +27,11 @@ internal class CommandTokenizer : ITokenizer
         _patternRegex = new(_patternCommand, RegexOptions.Compiled | RegexOptions.IgnoreCase, timeout);
     }
 
-    public List<Range> GetTokens(string value, IntegrationId? integrationId = null)
+    public List<Range> GetTokens(Evidence evidence, IntegrationId? integrationId = null)
     {
+        var value = evidence.Value;
+        if (value is null) { return []; }
+
         var res = new List<Range>(1);
         var match = _patternRegex.Match(value);
         if (match != null && match.Success)

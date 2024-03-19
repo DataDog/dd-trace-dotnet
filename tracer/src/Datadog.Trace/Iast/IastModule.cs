@@ -22,7 +22,7 @@ using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast;
 
-internal static class IastModule
+internal static partial class IastModule
 {
     public const string HeaderInjectionEvidenceSeparator = ": ";
     private const string OperationNameStackTraceLeak = "stacktrace_leak";
@@ -41,6 +41,8 @@ internal static class IastModule
     private const string OperationNameHeaderInjection = "header_injection";
     private const string OperationNameXPathInjection = "xpath_injection";
     private const string OperationNameReflectionInjection = "reflection_injection";
+    private const string OperationInsecureAuthProtocol = "insecure_auth_protocol";
+    private const string OperationNameXss = "xss";
     private const string ReferrerHeaderName = "Referrer";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
@@ -381,6 +383,13 @@ internal static class IastModule
         }
     }
 
+    public static IastModuleResponse OnInsecureAuthProtocol(string authHeader, IntegrationId integrationId)
+    {
+        OnExecutedSinkTelemetry(IastInstrumentedSinks.InsecureAuthProtocol);
+        // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
+        return AddWebVulnerability(authHeader, integrationId, VulnerabilityTypeName.InsecureAuthProtocol, (VulnerabilityTypeName.InsecureAuthProtocol + ':' + authHeader).GetStaticHashCode());
+    }
+
     public static IastModuleResponse OnCipherAlgorithm(Type type, IntegrationId integrationId)
     {
         if (!Iast.Instance.Settings.Enabled)
@@ -429,6 +438,25 @@ internal static class IastModule
         return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakHash, OperationNameWeakHash);
     }
 
+    public static IastModuleResponse OnXss(string? text)
+    {
+        try
+        {
+            if (!Iast.Instance.Settings.Enabled || string.IsNullOrEmpty(text))
+            {
+                return IastModuleResponse.Empty;
+            }
+
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.Xss);
+            return GetScope(text!, IntegrationId.Xss, VulnerabilityTypeName.Xss, OperationNameXss, Always);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for XSS.");
+            return IastModuleResponse.Empty;
+        }
+    }
+
     internal static void OnExecutedPropagationTelemetry()
     {
         if (ExecutedTelemetryHelper.EnabledDebug())
@@ -468,7 +496,7 @@ internal static class IastModule
 
     internal static VulnerabilityBatch GetVulnerabilityBatch()
     {
-        return new VulnerabilityBatch(EvidenceRedactorLazy.Value);
+        return new VulnerabilityBatch(iastSettings.TruncationMaxValueLength, EvidenceRedactorLazy.Value);
     }
 
     // This method adds web vulnerabilities, with no location, only on web environments
@@ -556,23 +584,12 @@ internal static class IastModule
         if (addLocation)
         {
             var frameInfo = StackWalker.GetFrame(externalStack);
-
             if (!frameInfo.IsValid)
             {
                 return IastModuleResponse.Empty;
             }
 
-            // Sometimes we do not have the file/line but we have the method/class.
-            var stackFrame = frameInfo.StackFrame;
-            var filename = stackFrame?.GetFileName();
-            var line = string.IsNullOrEmpty(filename) ? 0 : (stackFrame?.GetFileLineNumber() ?? 0);
-
-            location = new Location(
-                    stackFile: filename,
-                    methodName: string.IsNullOrEmpty(filename) ? stackFrame?.GetMethod()?.Name : null,
-                    line: line > 0 ? line : null,
-                    spanId: currentSpan?.SpanId,
-                    methodTypeName: string.IsNullOrEmpty(filename) ? GetMethodTypeName(stackFrame) : null);
+            location = new Location(frameInfo.StackFrame, currentSpan?.SpanId);
         }
 
         var vulnerability = (hash is null) ?
@@ -627,11 +644,6 @@ internal static class IastModule
         scope.Span.Type = SpanTypes.IastVulnerability;
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
         return new IastModuleResponse(scope);
-    }
-
-    private static string? GetMethodTypeName(StackFrame? frame)
-    {
-        return frame?.GetMethod()?.DeclaringType?.FullName;
     }
 
     private static bool InvalidHashAlgorithm(string algorithm)

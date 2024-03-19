@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Logging;

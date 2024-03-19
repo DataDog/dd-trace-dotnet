@@ -407,6 +407,18 @@
     ]
   },
   {
+    "IntegrationName": "MSTest2",
+    "SampleProjectName": "Samples.MSTestTests2",
+    "NugetPackageSearchName": "MSTest.TestFramework",
+    "MinVersion": "2.0.0",
+    "MaxVersionExclusive": "4.0.0",
+    "SpecificVersions": [
+      "2.0.*",
+      "2.*.*",
+      "3.*.*"
+    ]
+  },
+  {
     "IntegrationName": "Kafka",
     "SampleProjectName": "Samples.Kafka",
     "NugetPackageSearchName": "Confluent.Kafka",

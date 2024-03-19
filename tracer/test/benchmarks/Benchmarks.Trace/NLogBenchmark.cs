@@ -11,6 +11,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkAgent3]
+    [BenchmarkCategory(Constants.TracerCategory)]
     public class NLogBenchmark
     {
         private static readonly Tracer LogInjectionTracer;

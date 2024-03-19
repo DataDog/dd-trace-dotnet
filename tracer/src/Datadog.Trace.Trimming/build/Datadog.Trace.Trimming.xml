@@ -21,6 +21,7 @@
    <assembly fullname="log4net" />
    <assembly fullname="Microsoft.AspNetCore.Authentication.Abstractions" />
    <assembly fullname="Microsoft.AspNetCore.Diagnostics" />
+   <assembly fullname="Microsoft.AspNetCore.Html.Abstractions" />
    <assembly fullname="Microsoft.AspNetCore.Http" />
    <assembly fullname="Microsoft.AspNetCore.Http.Abstractions">
       <type fullname="Microsoft.AspNetCore.Http.ConnectionInfo" />
@@ -95,6 +96,9 @@
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.Common" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.TestFramework" />
+   <assembly fullname="Microsoft.Win32.Primitives">
+      <type fullname="System.ComponentModel.Win32Exception" />
+   </assembly>
    <assembly fullname="MongoDB.Driver.Core" />
    <assembly fullname="MySql.Data" />
    <assembly fullname="MySqlConnector" />
@@ -549,6 +553,7 @@
       <type fullname="System.Exception" />
       <type fullname="System.FlagsAttribute" />
       <type fullname="System.FormatException" />
+      <type fullname="System.FormattableString" />
       <type fullname="System.Func`1" />
       <type fullname="System.Func`2" />
       <type fullname="System.Func`3" />
@@ -616,6 +621,7 @@
       <type fullname="System.MethodAccessException" />
       <type fullname="System.MidpointRounding" />
       <type fullname="System.MulticastDelegate" />
+      <type fullname="System.Net.WebUtility" />
       <type fullname="System.NonSerializedAttribute" />
       <type fullname="System.NotImplementedException" />
       <type fullname="System.NotSupportedException" />
@@ -694,7 +700,6 @@
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder`1" />
-      <type fullname="System.Runtime.CompilerServices.AsyncVoidMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.CallerFilePathAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerLineNumberAttribute" />
       <type fullname="System.Runtime.CompilerServices.CompilationRelaxationsAttribute" />
@@ -710,6 +715,8 @@
       <type fullname="System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable`1/ConfiguredValueTaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.DefaultInterpolatedStringHandler" />
       <type fullname="System.Runtime.CompilerServices.ExtensionAttribute" />
+      <type fullname="System.Runtime.CompilerServices.FixedBufferAttribute" />
+      <type fullname="System.Runtime.CompilerServices.FormattableStringFactory" />
       <type fullname="System.Runtime.CompilerServices.IAsyncStateMachine" />
       <type fullname="System.Runtime.CompilerServices.ICriticalNotifyCompletion" />
       <type fullname="System.Runtime.CompilerServices.INotifyCompletion" />
@@ -729,6 +736,7 @@
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter`1" />
       <type fullname="System.Runtime.CompilerServices.TupleElementNamesAttribute" />
+      <type fullname="System.Runtime.CompilerServices.UnsafeValueTypeAttribute" />
       <type fullname="System.Runtime.CompilerServices.YieldAwaitable" />
       <type fullname="System.Runtime.CompilerServices.YieldAwaitable/YieldAwaiter" />
       <type fullname="System.Runtime.ConstrainedExecution.CriticalFinalizerObject" />
@@ -859,6 +867,7 @@
       <type fullname="System.IO.TextReader" />
       <type fullname="System.IO.TextWriter" />
       <type fullname="System.Math" />
+      <type fullname="System.Net.WebUtility" />
       <type fullname="System.Numerics.BitOperations" />
       <type fullname="System.OperatingSystem" />
       <type fullname="System.PlatformID" />
@@ -945,6 +954,15 @@
       <type fullname="System.Text.UnicodeEncoding" />
       <type fullname="System.Text.UTF8Encoding" />
    </assembly>
+   <assembly fullname="System.Text.Json">
+      <type fullname="System.Text.Json.JsonDocument" />
+      <type fullname="System.Text.Json.JsonDocumentOptions" />
+      <type fullname="System.Text.Json.JsonElement" />
+      <type fullname="System.Text.Json.JsonElement/ArrayEnumerator" />
+      <type fullname="System.Text.Json.JsonElement/ObjectEnumerator" />
+      <type fullname="System.Text.Json.JsonProperty" />
+      <type fullname="System.Text.Json.JsonValueKind" />
+   </assembly>
    <assembly fullname="System.Text.RegularExpressions">
       <type fullname="System.Text.RegularExpressions.Capture" />
       <type fullname="System.Text.RegularExpressions.CaptureCollection" />
@@ -979,7 +997,6 @@
       <type fullname="System.OperationCanceledException" />
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1" />
-      <type fullname="System.Runtime.CompilerServices.AsyncVoidMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.ConfiguredAsyncDisposable" />
       <type fullname="System.Threading.CancellationTokenSource" />
       <type fullname="System.Threading.Tasks.TaskAsyncEnumerableExtensions" />
@@ -997,6 +1014,9 @@
    <assembly fullname="System.Threading.Timer">
       <type fullname="System.Threading.Timer" />
       <type fullname="System.Threading.TimerCallback" />
+   </assembly>
+   <assembly fullname="System.Web.HttpUtility">
+      <type fullname="System.Web.HttpUtility" />
    </assembly>
    <assembly fullname="System.Xml.ReaderWriter">
       <type fullname="System.Xml.NameTable" />

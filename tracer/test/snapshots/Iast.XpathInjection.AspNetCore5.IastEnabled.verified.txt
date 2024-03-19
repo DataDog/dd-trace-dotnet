@@ -26,7 +26,7 @@
   "vulnerabilities": [
     {
       "type": "XPATH_INJECTION",
-      "hash": 1127184885,
+      "hash": 874141243,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",

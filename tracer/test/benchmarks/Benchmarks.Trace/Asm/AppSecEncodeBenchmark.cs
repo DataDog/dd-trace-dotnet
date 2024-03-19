@@ -26,8 +26,8 @@ public class AppSecEncoderBenchmark
 
     static AppSecEncoderBenchmark()
     {
+        AppSecBenchmarkUtils.SetupDummyAgent();
         _encoder = new Encoder();
-
         var wafLibraryInvoker = AppSecBenchmarkUtils.CreateWafLibraryInvoker();
         _encoderLegacy = new EncoderLegacy(wafLibraryInvoker);
 
@@ -96,8 +96,7 @@ public class AppSecEncoderBenchmark
         return new NestedMap(root, nestingDepth, withAttack);
     }
 
-
-    [Benchmark]
+    // [Benchmark]
     public void EncodeArgs()
     {
         using var pwArgs = _encoder.Encode(_args.Map, applySafetyLimits: true);

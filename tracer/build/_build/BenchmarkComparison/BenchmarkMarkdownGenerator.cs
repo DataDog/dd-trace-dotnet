@@ -19,10 +19,10 @@ namespace BenchmarkComparison
     {
         private const int ShowTopNResults = 10;
 
-        public static string GetMarkdown(List<MatchedSummary> comparison, string oldBranchMarkdown, string newBranchMarkdown)
+        public static string GetMarkdown(List<MatchedSummary> comparison, string oldBranchMarkdown, string newBranchMarkdown, string category)
         {
             var sb = new StringBuilder(
-                $@"## Benchmarks Report :snail:
+                $@"## Benchmarks Report for {category} :snail:
 
 Benchmarks for {newBranchMarkdown} compared to {oldBranchMarkdown}: 
 ");

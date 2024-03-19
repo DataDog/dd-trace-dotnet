@@ -34,6 +34,7 @@
     ParentId: Id_2,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
       language: dotnet,
@@ -58,6 +59,7 @@
     ParentId: Id_2,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
       language: dotnet,
@@ -82,6 +84,7 @@
     ParentId: Id_2,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
       language: dotnet,
@@ -106,6 +109,7 @@
     ParentId: Id_2,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
       language: dotnet,
@@ -130,6 +134,7 @@
     ParentId: Id_2,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
       language: dotnet,
@@ -154,6 +159,7 @@
     ParentId: Id_2,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
       language: dotnet,
@@ -178,6 +184,7 @@
     ParentId: Id_2,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
       language: dotnet,
@@ -202,6 +209,7 @@
     ParentId: Id_2,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
       language: dotnet,
@@ -226,6 +234,7 @@
     ParentId: Id_2,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
       language: dotnet,
@@ -251,6 +260,7 @@
     Error: 1,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       error.msg: Something happened,
       error.stack:
@@ -280,6 +290,7 @@ at Samples.Wcf.Server.CalculatorService.EndServerAsyncAdd(IAsyncResult asyncResu
     ParentId: Id_2,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
       language: dotnet,
@@ -305,6 +316,7 @@ at Samples.Wcf.Server.CalculatorService.EndServerAsyncAdd(IAsyncResult asyncResu
     Error: 1,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       error.msg: Something happened,
       error.stack:
@@ -334,6 +346,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_2,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
       language: dotnet,

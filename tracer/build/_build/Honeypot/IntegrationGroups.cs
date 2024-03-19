@@ -99,6 +99,7 @@ namespace Honeypot
             NugetPackages.Add("Azure.Messaging.ServiceBus", new string[] { "Azure.Messaging.ServiceBus" });
             NugetPackages.Add("amqmdnetstd", new [] { "IBMMQDotnetClient" });
             NugetPackages.Add("Yarp.ReverseProxy", new [] { "Yarp.ReverseProxy" });
+            NugetPackages.Add("Microsoft.AspNetCore.Html.Abstractions", new [] { "Microsoft.AspNetCore.Html.Abstractions" });
         }
 
         private IntegrationMap()

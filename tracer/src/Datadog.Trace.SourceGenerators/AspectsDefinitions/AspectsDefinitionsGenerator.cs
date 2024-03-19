@@ -218,9 +218,12 @@ namespace Datadog.Trace.ClrProfiler
                 // AspectMethodReplaceAttribute(string targetMethod, params AspectFilter[] filters)
                 2 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1], "[None]")},Default,[])]",
                 // AspectMethodReplaceAttribute(string targetMethod, string targetType, params AspectFilter[] filters)
-                3 => $"[AspectMethodReplace({arguments[0]},{arguments[1]},[0],[False],{Check(arguments[2], "[None]")},Default,[])]",
-                // AspectMethodReplaceAttribute(string targetMethod, AspectFilter[] filters, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
-                4 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],[{Check(arguments[1], "[0]")}],arguments[2],{Check(arguments[2])})]",
+                3 => arguments[1] switch
+                {
+                    { } when arguments[1].StartsWith("[") => $"[AspectMethodReplace({arguments[0]},\"\",{arguments[1]},{arguments[2]},[None],Default,[])]",
+                    // AspectMethodReplaceAttribute(string targetMethod, string targetType, params AspectFilter[] filters)
+                    _ => $"[AspectMethodReplace({arguments[0]},{arguments[1]},[0],[False],{Check(arguments[2], "[None]")},Default,[])]",
+                },
                 _ => throw new ArgumentException($"Could not find AspectMethodReplaceAttribute overload with {arguments.Length} parameters")
             },
             "AspectMethodInsertBeforeAttribute" => arguments.Length switch
