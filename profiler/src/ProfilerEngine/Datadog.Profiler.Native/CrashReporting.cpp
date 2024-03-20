@@ -81,6 +81,8 @@ void CrashReporting::ReportCrash(char** frames, int count, char* threadId)
         return;
     }
 
+    std::cout << "Crash uploaded to endpoint" << std::endl;
+
     for (int i = 0; i < count; i++)
     {
         delete[] stackFrames[i].names.ptr;

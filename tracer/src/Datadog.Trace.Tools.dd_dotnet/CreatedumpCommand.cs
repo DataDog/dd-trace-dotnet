@@ -64,6 +64,8 @@ internal class CreatedumpCommand : Command
 
         function(framesPtr, frames.Length, threadId);
 
+        AnsiConsole.WriteLine("Returned from call");
+
         Marshal.FreeHGlobal(framesPtr);
         Marshal.FreeHGlobal(threadId);
 
