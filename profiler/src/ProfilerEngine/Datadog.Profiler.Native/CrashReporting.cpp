@@ -66,12 +66,39 @@ void CrashReporting::ReportCrash(char** frames, int count, char* threadId)
     auto threadId2 = "threadId2";
 
     ddog_crashinfo_set_stacktrace(crashInfo, { threadId2, std::strlen(threadId2) }, stackTrace);
+    ddog_crashinfo_set_stacktrace(crashInfo, { nullptr, 0 }, stackTrace);
 
-    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
-    {
-        std::cout << "Error setting stacktrace: " << libdatadog::FfiHelper::GetErrorMessage(result.err) << std::endl;
-        return;
-    }
+    auto sigInfo = "NullReferenceException";
+
+    ddog_crashinfo_set_siginfo(crashInfo, { 139, { sigInfo, std::strlen(sigInfo)} });
+
+    auto libName = "testCrashTracking";
+    auto libVersion = "1.0.0";
+    auto family = "csharp";
+    auto tag1 = "tag1";
+    auto value1 = "value1";
+    auto tag2 = "tag2";
+    auto value2 = "value2";
+
+    auto tags = ddog_Vec_Tag_new();
+
+    ddog_Vec_Tag_push(&tags, { tag1, std::strlen(tag1) }, { value1, std::strlen(value1) });
+    ddog_Vec_Tag_push(&tags, { tag2, std::strlen(tag2) }, { value2, std::strlen(value2) });
+
+    const ddog_prof_CrashtrackerMetadata metadata = {
+        .profiling_library_name = { libName, std::strlen(libName) },
+        .profiling_library_version = { libVersion, std::strlen(libVersion) },
+        .family = { family, std::strlen(family) },
+        .tags = &tags,
+    };
+
+    ddog_crashinfo_set_metadata(crashInfo, metadata);
+
+        if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+        {
+            std::cout << "Error setting stacktrace: " << libdatadog::FfiHelper::GetErrorMessage(result.err) << std::endl;
+            return;
+        }
 
     const std::string endpointUrl = "file://tmp/crash.txt";
 
@@ -88,6 +115,7 @@ void CrashReporting::ReportCrash(char** frames, int count, char* threadId)
     std::cout << "Crash uploaded to endpoint" << std::endl;
 
     ddog_crashinfo_drop(crashInfo);
+    ddog_Vec_Tag_drop(tags);
 
     std::cout << "Called ddog_crashinfo_drop" << std::endl;
 
