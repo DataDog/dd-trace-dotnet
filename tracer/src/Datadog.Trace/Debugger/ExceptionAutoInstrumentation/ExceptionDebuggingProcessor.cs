@@ -112,6 +112,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         }
 
                         var exception = info.Value as Exception;
+                        snapshotCreator.TrackedStackFrameNode.LeavingException = exception;
                         snapshotCreator.LeaveHash = shadowStack.CurrentStackFrameNode?.LeaveSequenceHash ?? Fnv1aHash.FnvOffsetBias;
 
                         var leavingExceptionType = info.Value.GetType();
