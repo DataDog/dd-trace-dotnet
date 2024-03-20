@@ -81,9 +81,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 span.SetHeaderTags(requestMetadataWrapper, tracer.Settings.GrpcTagsInternal, GrpcCommon.RequestMetadataTagPrefix);
                 scope = tracer.ActivateSpan(span);
 
-                if (setSamplingPriority && existingSpanContext?.SamplingPriority is not null)
+                if (setSamplingPriority && existingSpanContext?.SamplingPriority is { } samplingPriority)
                 {
-                    span.Context.TraceContext?.SetSamplingPriority(existingSpanContext.SamplingPriority.Value);
+                    span.Context.TraceContext?.SetSamplingPriority(samplingPriority);
                 }
 
                 GrpcCommon.RecordFinalStatus(span, receivedStatus.StatusCode, receivedStatus.Detail, receivedStatus.DebugException);
