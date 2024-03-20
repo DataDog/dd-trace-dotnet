@@ -65,7 +65,7 @@ void CrashReporting::ReportCrash(char** frames, int count, char* threadId)
 
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
     {
-        std::cout << "Error setting stacktrace: " << libdatadog::FfiHelper::GetErrorMessage(result.err);
+        std::cout << "Error setting stacktrace: " << libdatadog::FfiHelper::GetErrorMessage(result.err) << std::endl;
         return;
     }
 
@@ -80,7 +80,7 @@ void CrashReporting::ReportCrash(char** frames, int count, char* threadId)
 
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
     {
-        std::cout << "Error uploading to endpoint: " << libdatadog::FfiHelper::GetErrorMessage(result.err);
+        std::cout << "Error uploading to endpoint: " << libdatadog::FfiHelper::GetErrorMessage(result.err) << std::endl;
         return;
     }
 
