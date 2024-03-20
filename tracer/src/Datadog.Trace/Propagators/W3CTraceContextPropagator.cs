@@ -111,6 +111,7 @@ namespace Datadog.Trace.Propagators
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.TraceContext);
+
             var traceparent = CreateTraceParentHeader(context);
             carrierSetter.Set(carrier, TraceParentHeaderName, traceparent);
 
@@ -124,8 +125,8 @@ namespace Datadog.Trace.Propagators
 
         internal static string CreateTraceParentHeader(SpanContext context)
         {
-            var samplingPriority = context.GetSamplingPriority(TriggerSamplingDecision.IfNotSet) ?? SamplingPriorityValues.AutoKeep;
-            var sampled = samplingPriority > 0 ? "01" : "00";
+            var samplingPriority = context.GetSamplingPriority(triggerSamplingDecision: true) ?? SamplingPriorityValues.AutoKeep;
+            var sampled = SamplingPriorityValues.IsKeep(samplingPriority) ? "01" : "00";
 #if NET6_0_OR_GREATER
             return string.Create(null, stackalloc char[128], $"00-{context.RawTraceId}-{context.RawSpanId}-{sampled}");
 #else
@@ -142,7 +143,7 @@ namespace Datadog.Trace.Propagators
                 sb.Append("dd=");
 
                 // sampling priority ("s:<value>")
-                if (context.GetSamplingPriority(TriggerSamplingDecision.IfNotSet) is { } samplingPriority)
+                if (context.GetSamplingPriority(triggerSamplingDecision: true) is { } samplingPriority)
                 {
                     sb.Append("s:").Append(SamplingPriorityValues.ToString(samplingPriority)).Append(TraceStateDatadogPairsSeparator);
                 }

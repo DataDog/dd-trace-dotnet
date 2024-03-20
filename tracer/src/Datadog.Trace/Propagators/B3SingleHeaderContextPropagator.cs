@@ -140,8 +140,8 @@ namespace Datadog.Trace.Propagators
 
         internal static string CreateHeader(SpanContext context)
         {
-            var samplingPriority = context.GetSamplingPriority(TriggerSamplingDecision.IfNotSet) ?? SamplingPriorityValues.AutoKeep;
-            var sampled = samplingPriority > 0 ? "1" : "0";
+            var samplingPriority = context.GetSamplingPriority(triggerSamplingDecision: true) ?? SamplingPriorityValues.AutoKeep;
+            var sampled = SamplingPriorityValues.IsKeep(samplingPriority) ? "1" : "0";
 
 #if NET6_0_OR_GREATER
             return string.Create(null, stackalloc char[128], $"{context.RawTraceId}-{context.RawSpanId}-{sampled}");

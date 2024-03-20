@@ -200,7 +200,7 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
-                _ = GetSamplingPriority(TriggerSamplingDecision.IfNotSet);
+                _ = GetSamplingPriority(triggerSamplingDecision: true);
 
                 RunSpanSampler(spansToWrite);
                 Tracer.Write(spansToWrite);
@@ -220,7 +220,7 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
-                _ = GetSamplingPriority(TriggerSamplingDecision.IfNotSet);
+                _ = GetSamplingPriority(triggerSamplingDecision: true);
 
                 RunSpanSampler(spansToWrite);
                 Tracer.Write(spansToWrite);
@@ -230,11 +230,11 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the trace's sampling priority, optionally triggering a sampling decision.
         /// </summary>
-        public int? GetSamplingPriority(TriggerSamplingDecision trigger = TriggerSamplingDecision.None)
+        public int? GetSamplingPriority(bool triggerSamplingDecision = false)
         {
-            if (trigger == TriggerSamplingDecision.Always ||
-                (trigger == TriggerSamplingDecision.IfNotSet && _samplingPriority == null))
+            if (_samplingPriority == null && triggerSamplingDecision)
             {
+                // this call sets _samplingPriority
                 MakeSamplingDecision();
             }
 
