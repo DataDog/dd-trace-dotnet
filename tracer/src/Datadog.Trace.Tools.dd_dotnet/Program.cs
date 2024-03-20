@@ -72,6 +72,7 @@ internal class Program
         }
 
         builder.Command.AddCommand(new RunCommand());
+        builder.Command.AddCommand(new CreatedumpCommand());
 
         var parser = builder.Build();
 
