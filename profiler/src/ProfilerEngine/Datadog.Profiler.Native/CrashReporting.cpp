@@ -1,5 +1,6 @@
 #include "CrashReporting.h"
 
+#include "unknwn.h"
 #include "FfiHelper.h"
 
 #include <iostream>
@@ -9,7 +10,6 @@ extern "C"
 {
 #include "datadog/common.h"
 #include "datadog/profiling.h"
-#include "datadog/telemetry.h"
 }
 
 extern "C" void __stdcall ReportCrash(char** frames, int count, char* threadId)
