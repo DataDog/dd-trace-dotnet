@@ -20,7 +20,7 @@ internal enum TriggerSamplingDecision
     IfNotSet,
 
     /// <summary>
-    /// Always trigger a sampling decision.
+    /// Always trigger a sampling decision, overwriting any previous sampling decision.
     /// </summary>
     Always
 }
