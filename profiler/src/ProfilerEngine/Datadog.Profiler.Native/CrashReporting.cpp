@@ -87,11 +87,6 @@ void CrashReporting::ReportCrash(char** frames, int count, char* threadId)
 
     std::cout << "Called ddog_crashinfo_drop" << std::endl;
 
-    for (int i = 0; i < count; i++)
-    {
-        delete[] stackFrames[i].names.ptr;
-    }
-
     delete[] stackFrames;
     delete[] stackFrameNames;
 }
