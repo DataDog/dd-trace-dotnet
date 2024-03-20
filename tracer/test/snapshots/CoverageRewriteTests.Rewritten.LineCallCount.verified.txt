@@ -24,52 +24,48 @@ namespace CoverageRewriterAssembly
 {
 	public class Class1
 	{
-		public string MyProperty
+		public unsafe string MyProperty
 		{
 			[CompilerGenerated]
 			get
 			{
-				int[] counters = CoverageReporter<ModuleCoverage>.GetCounters(0);
-				counters[0]++;
+				(*(int*)((byte*)CoverageReporter<ModuleCoverage>.GetFileCounter(0) + (nint)4 * (nint)4))++;
 				return <MyProperty>k__BackingField;
 			}
 			[CompilerGenerated]
 			set
 			{
-				int[] counters = CoverageReporter<ModuleCoverage>.GetCounters(1);
-				counters[0]++;
+				(*(int*)((byte*)CoverageReporter<ModuleCoverage>.GetFileCounter(0) + (nint)4 * (nint)4))++;
 				<MyProperty>k__BackingField = value;
 			}
 		}
 
-		public void Main()
+		public unsafe void Main()
 		{
-			int[] counters = CoverageReporter<ModuleCoverage>.GetCounters(2);
-			_ = counters[10];
-			counters[0]++;
-			counters[1]++;
+			int* fileCounter = (int*)CoverageReporter<ModuleCoverage>.GetFileCounter(0);
+			fileCounter[7]++;
+			fileCounter[8]++;
 			Console.WriteLine("Main Method");
-			counters[2]++;
+			fileCounter[9]++;
 			int num = 0;
 			while (true)
 			{
-				counters[7]++;
+				fileCounter[9]++;
 				if (num >= 100)
 				{
 					break;
 				}
-				counters[3]++;
-				counters[4]++;
+				fileCounter[10]++;
+				fileCounter[11]++;
 				Console.WriteLine(num);
-				counters[5]++;
-				counters[6]++;
+				fileCounter[12]++;
 				num++;
 			}
-			counters[8]++;
+			fileCounter[14]++;
 			MyProperty = "Value";
-			counters[9]++;
+			fileCounter[16]++;
 			Console.WriteLine(MyProperty);
-			counters[10]++;
+			fileCounter[17]++;
 		}
 
 		[AsyncStateMachine(typeof(<MainAsync>d__5))]
@@ -91,17 +87,10 @@ namespace Datadog.Trace.Ci.Coverage.Metadata.Target
 	{
 		public ModuleCoverage()
 		{
-			SequencePoints = new int[4];
-			SequencePoints[0] = 1;
-			SequencePoints[1] = 1;
-			SequencePoints[2] = 11;
-			SequencePoints[3] = 3;
-			Metadata = new long[4];
-			Metadata[0] = 4294967296L;
-			Metadata[1] = 4294967297L;
-			Metadata[2] = 4294967298L;
-			Metadata[3] = 8589934593L;
-			TotalInstructions = 16L;
+			Files = new FileCoverageMetadata[1];
+			Files[0] = new FileCoverageMetadata("/Users/tony.redondo/repos/CoverageRewriterAssembly/CoverageRewriterAssembly/Class1.cs", 0, 23, new byte[3] { 9, 250, 206 });
+			TotalLines = 23;
+			CoverageMode = 1;
 		}
 	}
 }

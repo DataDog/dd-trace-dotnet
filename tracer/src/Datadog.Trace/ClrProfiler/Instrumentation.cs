@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Iast.Dataflow;
@@ -383,11 +384,37 @@ namespace Datadog.Trace.ClrProfiler
             {
                 try
                 {
+                    DynamicInstrumentationHelper.ServiceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceNameInternal ?? tracer.DefaultServiceName);
+                }
+                catch (Exception e)
+                {
+                    DynamicInstrumentationHelper.ServiceName = tracer.DefaultServiceName;
+                    Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
+                }
+
+                try
+                {
                     InitLiveDebugger(tracer);
                 }
                 catch (Exception e)
                 {
                     Log.Error(e, "Failed to initialize Remote Configuration Management.");
+                }
+
+                try
+                {
+                    if (ExceptionDebugging.Enabled)
+                    {
+                        ExceptionDebugging.Initialize();
+                    }
+                    else
+                    {
+                        Log.Information("Exception Debugging is disabled. To enable it, please set DD_EXCEPTION_DEBUGGING_ENABLED environment variable to 'true'.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error initializing Exception Debugging");
                 }
 
                 // RCM isn't _actually_ initialized at this point, as we do it in the background, so we record that separately
@@ -476,7 +503,7 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             // Service Name must be lowercase, otherwise the agent will not be able to find the service
-            var serviceName = TraceUtil.NormalizeTag(settings.ServiceNameInternal ?? tracer.DefaultServiceName);
+            var serviceName = DynamicInstrumentationHelper.ServiceName;
             var discoveryService = tracer.TracerManager.DiscoveryService;
 
             Task.Run(

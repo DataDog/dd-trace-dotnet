@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests
                 ServiceVersion = version,
                 Environment = env
             };
-            var tracer = TracerHelper.Create(settings);
+            var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 
             using (var parentScope = Tracer.Instance.StartActive("parent"))
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tests
         public void VersionAndEnv_EmptyStringIfUnset()
         {
             var settings = new TracerSettings();
-            var tracer = TracerHelper.Create(settings);
+            var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 
             using (var parentScope = Tracer.Instance.StartActive("parent"))
@@ -96,7 +96,7 @@ namespace Datadog.Trace.Tests
         public void Service_DefaultServiceNameIfUnset()
         {
             var settings = new TracerSettings();
-            var tracer = TracerHelper.Create(settings);
+            var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 
             using (var parentScope = Tracer.Instance.StartActive("parent"))

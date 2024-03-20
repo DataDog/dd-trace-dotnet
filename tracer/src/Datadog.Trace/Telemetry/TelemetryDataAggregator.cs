@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryDataAggregator.cs" company="Datadog">
+// <copyright file="TelemetryDataAggregator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -155,7 +155,7 @@ internal class TelemetryDataAggregator
         {
             Appsec = newValues.Appsec ?? previous.Appsec,
             Profiler = newValues.Profiler ?? previous.Profiler,
-            DynamicInstrumentation = newValues.DynamicInstrumentation ?? previous.DynamicInstrumentation,
+            DynamicInstrumentation = newValues.DynamicInstrumentation ?? previous.DynamicInstrumentation
         };
     }
 }

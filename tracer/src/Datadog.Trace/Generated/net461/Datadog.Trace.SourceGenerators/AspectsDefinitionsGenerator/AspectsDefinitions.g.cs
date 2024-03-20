@@ -243,6 +243,8 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodInsertBefore(\"System.Web.HttpResponse::Redirect(System.String,System.Boolean)\",\"\",[1],[False],[None],Default,[])] Redirect(System.String)",
 "  [AspectMethodInsertBefore(\"System.Web.HttpResponse::RedirectPermanent(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String)",
 "  [AspectMethodInsertBefore(\"System.Web.HttpResponse::RedirectPermanent(System.String,System.Boolean)\",\"\",[1],[False],[None],Default,[])] Redirect(System.String)",
+"[AspectClass(\"System.Web.Extensions\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.System.Web.Extensions.JavaScriptSerializerAspects",
+"  [AspectMethodReplace(\"System.Web.Script.Serialization.JavaScriptSerializer::DeserializeObject(System.String)\",\"\",[0],[False],[None],Default,[])] DeserializeObject(System.Object,System.String)",
 "[AspectClass(\"System.Web.Mvc\",[None],Sink,[UnvalidatedRedirect])] Datadog.Trace.Iast.Aspects.System.Web.HttpControllerAspect",
 "  [AspectMethodInsertBefore(\"System.Web.Mvc.Controller::Redirect(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String)",
 "  [AspectMethodInsertBefore(\"System.Web.Mvc.Controller::RedirectPermanent(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String)",

@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -16,6 +17,9 @@ namespace Datadog.Trace.Util
     internal static class ProcessHelpers
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessHelpers));
+
+        [ThreadStatic]
+        private static bool _doNotTrace;
 
         /// <summary>
         /// Wrapper around <see cref="Process.GetCurrentProcess"/> and <see cref="Process.ProcessName"/>
@@ -54,6 +58,12 @@ namespace Datadog.Trace.Util
         }
 
         /// <summary>
+        /// Gets (and clears) the "do not trace" state for the current thread's call to <see cref="Process.Start()"/>
+        /// </summary>
+        /// <returns>True if the <see cref="Process.Start()"/> call should be traced, False if "do not trace" is set</returns>
+        public static bool ShouldTraceProcessStart() => !_doNotTrace;
+
+        /// <summary>
         /// Run a command and get the standard output content as a string
         /// </summary>
         /// <param name="command">Command to run</param>
@@ -71,7 +81,7 @@ namespace Datadog.Trace.Util
 #endif
             }
 
-            using var processInfo = Process.Start(processStartInfo);
+            using var processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
             if (processInfo is null)
             {
                 return null;
@@ -125,7 +135,7 @@ namespace Datadog.Trace.Util
 #endif
             }
 
-            using var processInfo = Process.Start(processStartInfo);
+            using var processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
             if (processInfo is null)
             {
                 return null;
@@ -161,6 +171,14 @@ namespace Datadog.Trace.Util
             return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode);
         }
 
+        /// <summary>
+        /// Internal for testing to make it easier to call using reflection from a sample app
+        /// </summary>
+        internal static void TestingOnly_RunCommand(string cmd, string? args)
+        {
+            RunCommand(new Command(cmd, args));
+        }
+
         private static ProcessStartInfo GetProcessStartInfo(Command command)
         {
             var processStartInfo = command.Arguments is null ?
@@ -190,6 +208,19 @@ namespace Datadog.Trace.Util
             return processStartInfo;
         }
 
+        private static Process? StartWithDoNotTrace(ProcessStartInfo startInfo, bool doNotTrace)
+        {
+            try
+            {
+                _doNotTrace = doNotTrace;
+                return Process.Start(startInfo);
+            }
+            finally
+            {
+                _doNotTrace = false;
+            }
+        }
+
         public readonly struct Command
         {
             public readonly string Cmd;
@@ -199,8 +230,9 @@ namespace Datadog.Trace.Util
             public readonly Encoding? OutputEncoding;
             public readonly Encoding? ErrorEncoding;
             public readonly Encoding? InputEncoding;
+            public readonly bool DoNotTrace;
 
-            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null, Encoding? outputEncoding = null, Encoding? errorEncoding = null, Encoding? inputEncoding = null)
+            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null, Encoding? outputEncoding = null, Encoding? errorEncoding = null, Encoding? inputEncoding = null, bool doNotTrace = true)
             {
                 Cmd = cmd;
                 Arguments = arguments;
@@ -209,6 +241,7 @@ namespace Datadog.Trace.Util
                 OutputEncoding = outputEncoding;
                 ErrorEncoding = errorEncoding;
                 InputEncoding = inputEncoding;
+                DoNotTrace = doNotTrace;
             }
         }
 

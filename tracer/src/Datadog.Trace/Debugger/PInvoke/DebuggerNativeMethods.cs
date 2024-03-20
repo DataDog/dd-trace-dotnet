@@ -56,7 +56,7 @@ namespace Datadog.Trace.Debugger.PInvoke
         {
             return (nativeProbeStatus.Status == Status.ERROR && nativeProbeStatus.ErrorMessage != IntPtr.Zero) ?
                        Marshal.PtrToStringUni(nativeProbeStatus.ErrorMessage) :
-                       null;
+                       string.Empty;
         }
 
         // the "dll" extension is required on .NET Framework

@@ -26,8 +26,8 @@ public class AppSecEncoderBenchmark
 
     static AppSecEncoderBenchmark()
     {
+        AppSecBenchmarkUtils.SetupDummyAgent();
         _encoder = new Encoder();
-
         var wafLibraryInvoker = AppSecBenchmarkUtils.CreateWafLibraryInvoker();
         _encoderLegacy = new EncoderLegacy(wafLibraryInvoker);
 
@@ -96,7 +96,6 @@ public class AppSecEncoderBenchmark
         return new NestedMap(root, nestingDepth, withAttack);
     }
 
-    // deactivate for now as it's slowing CI down. Reactivate when run only when an appsecfile changed is setup in CI
     // [Benchmark]
     public void EncodeArgs()
     {

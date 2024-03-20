@@ -1,4 +1,4 @@
-name: "Lib Injection Test"
+name: "Lib Injection Images"
 on:
   # This GitHub Action will be invoked automatically from the main Azure DevOps build
   workflow_dispatch:
@@ -6,17 +6,23 @@ on:
       azdo_build_id:
         description: 'The specific AzDo build from which the release artifacts will be downloaded.'
         required: true
+      commit_id:
+        description: 'Use a specific commit? If provided, this commit will be checked out, and the github images will be tagged with this commit'
+        required: false
+        default: ''
 
 jobs:
   build-and-publish-init-image:
     runs-on: ubuntu-latest
     env:
       AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
+      COMMIT_SHA: "${{ github.event.inputs.commit_id || github.sha }}" 
     steps:
     - name: Checkout
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
+        ref: '${{ env.COMMIT_SHA }}'
 
     - uses: actions/setup-dotnet@v1
       with:
@@ -47,6 +53,8 @@ jobs:
     - name: Set up Docker Buildx
       id: buildx
       uses: docker/setup-buildx-action@v2
+      with:
+        version: v0.12.1 # 0.13.0 is causing the builds to fail
 
     - name: Login to Docker
       run: docker login -u publisher -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
@@ -56,7 +64,7 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}'
+        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ env.COMMIT_SHA }}'
         platforms: 'linux/amd64' # for windows, we can run windows/amd64,windows/386,windows/arm64
         context: ${{steps.assets.outputs.artifacts_path}}
         build-args: |
@@ -67,7 +75,7 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}'
+        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ env.COMMIT_SHA }}'
         platforms: 'linux/arm64/v8'
         context: ${{steps.assets.outputs.artifacts_path}}
         build-args: |
@@ -78,7 +86,7 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-musl'
+        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ env.COMMIT_SHA }}-musl'
         platforms: 'linux/amd64'
         context: ${{steps.assets.outputs.artifacts_path}}
         build-args: |
@@ -89,7 +97,7 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-musl'
+        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ env.COMMIT_SHA }}-musl'
         platforms: 'linux/arm64/v8'
         context: ${{steps.assets.outputs.artifacts_path}}
         # When we actually produce linux-musl-arm64 binaries, use that instead of the placeholder 'linux-musl-arm' directory
@@ -106,53 +114,34 @@ jobs:
         # In the new manifest we directly reference each platform-specific image, so the tag becomes a multiarch image.
         
         docker manifest create \
-          ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }} \
+          ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ env.COMMIT_SHA }} \
           --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-amd64.outputs.digest}}" \
           --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-arm64v8.outputs.digest}}"
-        docker manifest push ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}
+        docker manifest push ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ env.COMMIT_SHA }}
 
         docker manifest create \
-          ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-musl \
+          ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ env.COMMIT_SHA }}-musl \
           --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-musl-amd64.outputs.digest}}" \
           --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-musl-arm64v8.outputs.digest}}"
-        docker manifest push ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-musl
+        docker manifest push ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ env.COMMIT_SHA }}-musl
 
-  test:
+  lib-injection-image-test:
     needs:
       - build-and-publish-init-image
-    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     strategy:
       matrix:
         lib-injection-connection: ['network','uds']
-        lib-injection-use-admission-controller: ['', 'use-admission-controller']
-        weblog-variant: ['dd-lib-dotnet-init-test-app']
+        lib-injection-use-admission-controller: [false, true]
         runtime: ['bullseye-slim','alpine']
-        include:
-          - runtime: 'bullseye-slim'
-            init-tag-suffix: ''
-          - runtime: 'alpine'
-            init-tag-suffix: '-musl'
       fail-fast: false
-    env:
-      TEST_LIBRARY: dotnet
-      WEBLOG_VARIANT: ${{ matrix.weblog-variant }}
-      LIBRARY_INJECTION_CONNECTION: ${{ matrix.lib-injection-connection }}
-      LIBRARY_INJECTION_ADMISSION_CONTROLLER: ${{ matrix.lib-injection-use-admission-controller }}
-      DOCKER_REGISTRY_IMAGES_PATH: ghcr.io/datadog
-      DOCKER_IMAGE_TAG: ${{ github.sha }}${{ matrix.init-tag-suffix }}
-      DOCKER_IMAGE_WEBLOG_TAG: ${{ github.sha }}-${{ matrix.runtime }}
-      RUNTIME: ${{ matrix.runtime }}
-      BUILDX_PLATFORMS: linux/amd64
-      MODE: manual
-    steps:
-      - name: lib-injection test runner
-        id: lib-injection-test-runner
-        uses: DataDog/system-tests/lib-injection/runner@main
-        with:
-          docker-registry: ghcr.io
-          docker-registry-username: ${{ github.repository_owner }}
-          docker-registry-password: ${{ secrets.GITHUB_TOKEN }}
-          test-script: ./lib-injection/run-manual-lib-injection.sh
+    uses: ./.github/workflows/lib-injection-test.yml
+    with:
+      commit_id: ${{ github.event.inputs.commit_id || github.sha }}
+      lib_injection_connection: ${{ matrix.lib-injection-connection }}
+      lib_injection_use_admission_controller: ${{ matrix.lib-injection-use-admission-controller }}
+      runtime: ${{ matrix.runtime }}
+    secrets:
+      DOCKER_REGISTRY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

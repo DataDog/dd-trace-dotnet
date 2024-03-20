@@ -96,6 +96,9 @@
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.Common" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.TestFramework" />
+   <assembly fullname="Microsoft.Win32.Primitives">
+      <type fullname="System.ComponentModel.Win32Exception" />
+   </assembly>
    <assembly fullname="MongoDB.Driver.Core" />
    <assembly fullname="MySql.Data" />
    <assembly fullname="MySqlConnector" />
@@ -583,6 +586,7 @@
       <type fullname="System.IntPtr" />
       <type fullname="System.InvalidCastException" />
       <type fullname="System.InvalidOperationException" />
+      <type fullname="System.InvalidProgramException" />
       <type fullname="System.IO.BinaryReader" />
       <type fullname="System.IO.BinaryWriter" />
       <type fullname="System.IO.Directory" />
@@ -712,6 +716,7 @@
       <type fullname="System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable`1/ConfiguredValueTaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.DefaultInterpolatedStringHandler" />
       <type fullname="System.Runtime.CompilerServices.ExtensionAttribute" />
+      <type fullname="System.Runtime.CompilerServices.FixedBufferAttribute" />
       <type fullname="System.Runtime.CompilerServices.FormattableStringFactory" />
       <type fullname="System.Runtime.CompilerServices.IAsyncStateMachine" />
       <type fullname="System.Runtime.CompilerServices.ICriticalNotifyCompletion" />
@@ -732,6 +737,7 @@
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter`1" />
       <type fullname="System.Runtime.CompilerServices.TupleElementNamesAttribute" />
+      <type fullname="System.Runtime.CompilerServices.UnsafeValueTypeAttribute" />
       <type fullname="System.Runtime.CompilerServices.YieldAwaitable" />
       <type fullname="System.Runtime.CompilerServices.YieldAwaitable/YieldAwaiter" />
       <type fullname="System.Runtime.ConstrainedExecution.CriticalFinalizerObject" />
@@ -808,6 +814,7 @@
       <type fullname="System.TypeCode" />
       <type fullname="System.TypedReference" />
       <type fullname="System.TypeInitializationException" />
+      <type fullname="System.TypeLoadException" />
       <type fullname="System.UInt16" />
       <type fullname="System.UInt32" />
       <type fullname="System.UInt64" />
@@ -895,6 +902,16 @@
       <type fullname="System.Runtime.InteropServices.OSPlatform" />
       <type fullname="System.Runtime.InteropServices.RuntimeInformation" />
    </assembly>
+   <assembly fullname="System.Runtime.Intrinsics">
+      <type fullname="System.Runtime.Intrinsics.Arm.AdvSimd" />
+      <type fullname="System.Runtime.Intrinsics.Vector128" />
+      <type fullname="System.Runtime.Intrinsics.Vector128`1" />
+      <type fullname="System.Runtime.Intrinsics.Vector256" />
+      <type fullname="System.Runtime.Intrinsics.Vector256`1" />
+      <type fullname="System.Runtime.Intrinsics.X86.Avx" />
+      <type fullname="System.Runtime.Intrinsics.X86.Avx2" />
+      <type fullname="System.Runtime.Intrinsics.X86.Sse2" />
+   </assembly>
    <assembly fullname="System.Runtime.Loader">
       <type fullname="System.Runtime.Loader.AssemblyLoadContext" />
    </assembly>
@@ -938,6 +955,15 @@
    <assembly fullname="System.Text.Encoding.Extensions">
       <type fullname="System.Text.UnicodeEncoding" />
       <type fullname="System.Text.UTF8Encoding" />
+   </assembly>
+   <assembly fullname="System.Text.Json">
+      <type fullname="System.Text.Json.JsonDocument" />
+      <type fullname="System.Text.Json.JsonDocumentOptions" />
+      <type fullname="System.Text.Json.JsonElement" />
+      <type fullname="System.Text.Json.JsonElement/ArrayEnumerator" />
+      <type fullname="System.Text.Json.JsonElement/ObjectEnumerator" />
+      <type fullname="System.Text.Json.JsonProperty" />
+      <type fullname="System.Text.Json.JsonValueKind" />
    </assembly>
    <assembly fullname="System.Text.RegularExpressions">
       <type fullname="System.Text.RegularExpressions.Capture" />

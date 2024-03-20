@@ -19,9 +19,10 @@ namespace Datadog.Trace.Tests.Sampling
         private const int DefaultLimitPerSecond = 100;
 
         [Fact]
-        public void One_Is_Allowed()
+        public async Task One_Is_Allowed()
         {
-            var traceContext = new TraceContext(TracerHelper.Create());
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
             var span = new Span(spanContext, null);
             var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null);
@@ -30,26 +31,26 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         [Fact]
-        public void All_Traces_Disabled()
+        public async Task All_Traces_Disabled()
         {
             var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: 0);
-            var allowedCount = AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
+            var allowedCount = await AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
             Assert.Equal(expected: 0, actual: allowedCount);
         }
 
         [Fact]
-        public void All_Traces_Allowed()
+        public async Task All_Traces_Allowed()
         {
             var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: -1);
-            var allowedCount = AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
+            var allowedCount = await AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
             Assert.Equal(expected: 500, actual: allowedCount);
         }
 
         [Fact]
-        public void Only_100_Allowed_In_500_Burst_For_Default()
+        public async Task Only_100_Allowed_In_500_Burst_For_Default()
         {
             var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null);
-            var allowedCount = AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
+            var allowedCount = await AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
             Assert.Equal(expected: DefaultLimitPerSecond, actual: allowedCount);
         }
 
@@ -109,9 +110,10 @@ namespace Datadog.Trace.Tests.Sampling
                 $"Expected rate between {lowestRate} and {highestRate}, received {result.ReportedRate}.");
         }
 
-        private static int AskTheRateLimiterABunchOfTimes(RateLimiter rateLimiter, int howManyTimes)
+        private static async Task<int> AskTheRateLimiterABunchOfTimes(RateLimiter rateLimiter, int howManyTimes)
         {
-            var traceContext = new TraceContext(TracerHelper.Create());
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
             var span = new Span(spanContext, null);
 

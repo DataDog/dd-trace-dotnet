@@ -15,6 +15,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
     public class GarbageCollectorCpuTimeTest
     {
         private const string ScenarioGenerics = "--scenario 12 --param 2";
+        private const string ScenarioAllocations = "--scenario 26 --param 2500";
         private static readonly StackFrame GcFrame = new("|lm:[native] GC |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:");
         private static readonly StackFrame ClrFrame = new("|lm:[native] CLR |ns: |ct: |cg: |fn:.NET |fg: |sg:");
 
@@ -30,7 +31,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
         public void CheckCpuTimeForGcThreadsIsReported(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioAllocations);
             runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "1");
 
             // Enable walltime and check GC frame does not have a value for this column
