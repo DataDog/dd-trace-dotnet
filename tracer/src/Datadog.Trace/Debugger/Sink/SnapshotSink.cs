@@ -17,7 +17,7 @@ namespace Datadog.Trace.Debugger.Sink
         private readonly int _batchSize;
         private readonly SnapshotSlicer _snapshotSlicer;
 
-        private SnapshotSink(int batchSize, SnapshotSlicer snapshotSlicer)
+        internal SnapshotSink(int batchSize, SnapshotSlicer snapshotSlicer)
         {
             _snapshotSlicer = snapshotSlicer;
             _batchSize = batchSize;

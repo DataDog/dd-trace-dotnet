@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <!-- NuGet -->
@@ -67,7 +67,9 @@
 
   <ItemGroup>
     <None Remove="AppSec\Waf\ConfigFiles\rule-set.json" />
+    <None Remove="Debugger\ExceptionAutoInstrumentation\ConfigFiles\third-party-module-names.json" />
     <EmbeddedResource Include="AppSec\Waf\ConfigFiles\rule-set.json" />
+    <EmbeddedResource Include="Debugger\ExceptionAutoInstrumentation\ConfigFiles\third-party-module-names.json" />
     <None Remove="AppSec\Waf\ConfigFiles\apisecurity-config.json" />
   </ItemGroup>
 

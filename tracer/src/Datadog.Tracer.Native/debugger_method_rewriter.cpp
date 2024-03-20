@@ -326,6 +326,12 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
                      spanOnMethodProbes.size(), " span probes on methodDef: ", methodHandler->GetMethodDef());
 
         auto hr = Rewrite(moduleHandler, methodHandler, pFunctionControl, methodProbes, lineProbes, spanOnMethodProbes);
+
+        if (hr == S_OK)
+        {
+            MarkAllProbesAsInstrumented(methodProbes, lineProbes, spanOnMethodProbes);
+        }
+
         return FAILED(hr) ? S_FALSE : S_OK;
     }
 }
@@ -1536,7 +1542,7 @@ void DebuggerMethodRewriter::LogDebugCallerInfo(const FunctionInfo* caller, cons
 }
 
 HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
-    const MethodProbeDefinitions& methodProbes, ModuleID module_id,
+    MethodProbeDefinitions& methodProbes, ModuleID module_id,
     ModuleMetadata& module_metadata, FunctionInfo* caller,
     DebuggerTokens* debugger_tokens, mdToken function_token, bool isStatic, TypeSignature* methodReturnType,
     const std::vector<TypeSignature>& methodLocals, int numLocals, ILRewriterWrapper& rewriterWrapper,
@@ -1699,6 +1705,16 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     ILInstr* loadInstanceInstr;
     hr = LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &loadInstanceInstr, debugger_tokens);
     IfFailRet(hr);
+
+    if (loadInstanceInstr->m_opcode == CEE_LDNULL)
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::ApplyMethodProbe() Failed to load this for async method. "
+                     "methodProbeId = ",
+                     methodProbeId, " module_id= ", module_id, ", functon_token=", function_token);
+        MarkAllMethodProbesAsError(methodProbes, async_method_could_not_load_this);
+        return E_FAIL;
+    }
+
     rewriterWrapper.LoadInt32(instrumentedMethodIndex);
     rewriterWrapper.LoadInt32(instrumentationVersion);
     rewriterWrapper.LoadToken(function_token);
@@ -2026,6 +2042,25 @@ HRESULT DebuggerMethodRewriter::GetTaskReturnType(const ILInstr* instruction, Mo
 
     Logger::Error("DebuggerMethodRewriter::GetTaskReturnType: Failed to get task result");
     return E_FAIL;
+}
+
+void DebuggerMethodRewriter::MarkAllProbesAsInstrumented(MethodProbeDefinitions& methodProbes,
+    LineProbeDefinitions& lineProbes, SpanProbeOnMethodDefinitions& spanOnMethodProbes)
+{
+    for (const auto& probe : methodProbes)
+    {
+        ProbesMetadataTracker::Instance()->SetProbeStatus(probe->probeId, ProbeStatus::INSTRUMENTED);
+    }
+
+    for (const auto& probe : lineProbes)
+    {
+        ProbesMetadataTracker::Instance()->SetProbeStatus(probe->probeId, ProbeStatus::INSTRUMENTED);
+    }
+
+    for (const auto& probe : spanOnMethodProbes)
+    {
+        ProbesMetadataTracker::Instance()->SetProbeStatus(probe->probeId, ProbeStatus::INSTRUMENTED);
+    }
 }
 
 void DebuggerMethodRewriter::MarkAllProbesAsError(MethodProbeDefinitions& methodProbes,

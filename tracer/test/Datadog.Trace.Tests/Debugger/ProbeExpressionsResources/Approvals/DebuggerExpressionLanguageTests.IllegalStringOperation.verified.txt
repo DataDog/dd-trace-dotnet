@@ -36,4 +36,4 @@ Expressions:
 }
 Result: The result of the expression is: UndefinedValue
 Errors:
-EvaluationError { Expression = reverse, Message = Operator has not defined }
+EvaluationError { Expression = reverse, Message = Operator is not defined }
