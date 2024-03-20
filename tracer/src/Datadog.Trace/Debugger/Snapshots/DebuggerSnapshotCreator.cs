@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
@@ -22,7 +23,7 @@ using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal class DebuggerSnapshotCreator : IDisposable
+    internal class DebuggerSnapshotCreator : IDebuggerSnapshotCreator, IDisposable
     {
         private const string LoggerVersion = "2";
         private const string DDSource = "dd_debugger";
@@ -37,6 +38,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private CaptureBehaviour _captureBehaviour;
         private string _message;
         private List<EvaluationError> _errors;
+        private string _snapshotId;
 
         public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags)
         {
@@ -52,6 +54,21 @@ namespace Datadog.Trace.Debugger.Snapshots
             Tags = tags;
             _accumulatedDuration = new TimeSpan(0, 0, 0, 0, 0);
             Initialize();
+        }
+
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers)
+            : this(isFullSnapshot, location, hasCondition, tags)
+        {
+            MethodScopeMembers = methodScopeMembers;
+        }
+
+        internal string SnapshotId
+        {
+            get
+            {
+                _snapshotId ??= Guid.NewGuid().ToString();
+                return _snapshotId;
+            }
         }
 
         internal MethodScopeMembers MethodScopeMembers { get; private set; }
@@ -82,11 +99,6 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal void StopSampling()
         {
             _accumulatedDuration += StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _lastSampledTime);
-        }
-
-        public static DebuggerSnapshotCreator BuildSnapshotCreator(ProbeProcessor processor)
-        {
-            return new DebuggerSnapshotCreator(processor.ProbeInfo.IsFullSnapshot, processor.ProbeInfo.ProbeLocation, processor.ProbeInfo.HasCondition, processor.ProbeInfo.Tags);
         }
 
         internal CaptureBehaviour DefineSnapshotBehavior<TCapture>(ref CaptureInfo<TCapture> info, EvaluateAt evaluateAt, bool hasCondition)
@@ -308,7 +320,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal DebuggerSnapshotCreator EndSnapshot()
         {
             _jsonWriter.WritePropertyName("id");
-            _jsonWriter.WriteValue(Guid.NewGuid());
+            _jsonWriter.WriteValue(SnapshotId);
 
             _jsonWriter.WritePropertyName("timestamp");
             _jsonWriter.WriteValue(DateTimeOffset.Now.ToUnixTimeMilliseconds());
@@ -704,7 +716,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             .EndSnapshot()
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
-            .AddGeneralInfo(LiveDebugger.Instance?.ServiceName, traceId, spanId)
+            .AddGeneralInfo(DynamicInstrumentationHelper.ServiceName, traceId, spanId)
             .AddMessage()
             .Complete();
         }
@@ -882,7 +894,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             try
             {
                 Stop();
-                MethodScopeMembers.Dispose();
+                MethodScopeMembers?.Dispose();
                 MethodScopeMembers = null;
                 _jsonWriter?.Close();
             }

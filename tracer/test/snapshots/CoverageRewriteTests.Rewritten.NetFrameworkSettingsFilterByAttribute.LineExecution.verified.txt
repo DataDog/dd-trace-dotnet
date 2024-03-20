@@ -26,34 +26,32 @@ namespace CoverageRewriterAssembly
 	{
 		public string MyProperty { get; set; }
 
-		public void Main()
+		public unsafe void Main()
 		{
-			int[] counters = CoverageReporter<ModuleCoverage>.GetCounters(0);
-			_ = counters[10];
-			counters[0] = 1;
-			counters[1] = 1;
+			byte* fileCounter = (byte*)CoverageReporter<ModuleCoverage>.GetFileCounter(0);
+			fileCounter[7] = 1;
+			fileCounter[8] = 1;
 			Console.WriteLine("Main Method");
-			counters[2] = 1;
+			fileCounter[9] = 1;
 			int num = 0;
 			while (true)
 			{
-				counters[7] = 1;
+				fileCounter[9] = 1;
 				if (num >= 100)
 				{
 					break;
 				}
-				counters[3] = 1;
-				counters[4] = 1;
+				fileCounter[10] = 1;
+				fileCounter[11] = 1;
 				Console.WriteLine(num);
-				counters[5] = 1;
-				counters[6] = 1;
+				fileCounter[12] = 1;
 				num++;
 			}
-			counters[8] = 1;
+			fileCounter[14] = 1;
 			MyProperty = "Value";
-			counters[9] = 1;
+			fileCounter[16] = 1;
 			Console.WriteLine(MyProperty);
-			counters[10] = 1;
+			fileCounter[17] = 1;
 		}
 
 		public async Task MainAsync()
@@ -68,11 +66,10 @@ namespace Datadog.Trace.Ci.Coverage.Metadata.Target
 	{
 		public ModuleCoverage()
 		{
-			SequencePoints = new int[1];
-			SequencePoints[0] = 11;
-			Metadata = new long[1];
-			Metadata[0] = 4294967298L;
-			TotalInstructions = 11L;
+			Files = new FileCoverageMetadata[1];
+			Files[0] = new FileCoverageMetadata("/Users/tony.redondo/repos/CoverageRewriterAssembly/CoverageRewriterAssembly/Class1.cs", 0, 18, new byte[3] { 1, 250, 192 });
+			TotalLines = 18;
+			CoverageMode = 0;
 		}
 	}
 }

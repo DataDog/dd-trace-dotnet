@@ -15,7 +15,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         internal class NestedAsyncGenericClass<T> where T : IGeneric
         {
             [MethodImpl(MethodImplOptions.NoInlining)]
-            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /*in optimize code this will create a nested struct inside generic parent*/)]
+            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /*in optimize code this will create a nested struct inside generic parent*/, expectProbeStatusFailure: true)]
             public async Task<string> Method(T generic, string input)
             {
                 var output = generic.Message + input + ".";

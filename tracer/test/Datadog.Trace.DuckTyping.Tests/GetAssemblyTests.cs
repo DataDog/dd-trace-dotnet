@@ -6,6 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Datadog.Trace.Ci;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.DuckTyping.Tests
@@ -47,13 +49,27 @@ namespace Datadog.Trace.DuckTyping.Tests
              * WARNING: This number is expected to change if you add
              * a another test to the ducktype assembly.
              */
+            if (!CIVisibility.IsRunning)
+            {
 #if NETFRAMEWORK
-            Assert.Equal(1131, asmDuckTypes);
+                asmDuckTypes.Should().Be(1131);
 #elif NETCOREAPP2_1
-            Assert.Equal(1134, asmDuckTypes);
+                asmDuckTypes.Should().Be(1134);
 #else
-            Assert.Equal(1135, asmDuckTypes);
+                asmDuckTypes.Should().Be(1135);
 #endif
+            }
+            else
+            {
+                // When running inside CI Visibility, we will generate additional duck types
+#if NETFRAMEWORK
+                asmDuckTypes.Should().BeGreaterThan(1131);
+#elif NETCOREAPP2_1
+                asmDuckTypes.Should().BeGreaterThan(1134);
+#else
+                asmDuckTypes.Should().BeGreaterThan(1135);
+#endif
+            }
         }
     }
 }

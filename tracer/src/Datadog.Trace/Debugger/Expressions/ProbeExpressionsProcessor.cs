@@ -22,7 +22,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private static ProbeExpressionsProcessor _instance;
 
-        private readonly ConcurrentDictionary<string, ProbeProcessor> _processors = new();
+        private readonly ConcurrentDictionary<string, IProbeProcessor> _processors = new();
 
         internal static ProbeExpressionsProcessor Instance
         {
@@ -50,12 +50,25 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
+        internal bool TryAddProbeProcessor(string probeId, IProbeProcessor probeProcessor)
+        {
+            try
+            {
+                return _processors.TryAdd(probeId, probeProcessor);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Failed to create probe processor for probe: {Id}", probeId);
+                return false;
+            }
+        }
+
         internal void Remove(string probeId)
         {
             _processors.TryRemove(probeId, out _);
         }
 
-        internal ProbeProcessor Get(string probeId)
+        internal IProbeProcessor Get(string probeId)
         {
             _processors.TryGetValue(probeId, out var probeProcessor);
             return probeProcessor;

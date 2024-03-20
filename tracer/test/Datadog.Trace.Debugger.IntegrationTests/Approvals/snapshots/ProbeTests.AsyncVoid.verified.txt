@@ -8,55 +8,6 @@
         "captures": {
           "entry": {
             "arguments": {
-              "caller": {
-                "type": "String",
-                "value": "VoidTaskMethod"
-              }
-            }
-          },
-          "return": {
-            "arguments": {
-              "caller": {
-                "type": "String",
-                "value": "VoidTaskMethod"
-              }
-            }
-          }
-        },
-        "duration": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "VoidMethod",
-            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncVoid"
-          },
-          "version": 0
-        },
-        "stack": "ScrubbedValue",
-        "timestamp": "ScrubbedValue"
-      }
-    },
-    "logger": {
-      "method": "VoidMethod",
-      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncVoid",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "ScrubbedValue",
-    "service": "probes"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "snapshot": {
-        "captures": {
-          "entry": {
-            "arguments": {
               "this": {
                 "type": "AsyncVoid",
                 "value": "AsyncVoid"

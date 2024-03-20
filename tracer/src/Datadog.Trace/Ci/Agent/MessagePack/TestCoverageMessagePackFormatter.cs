@@ -15,7 +15,7 @@ internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<Test
     private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
     private readonly byte[] _filesBytes = StringEncoding.UTF8.GetBytes("files");
     private readonly byte[] _filenameBytes = StringEncoding.UTF8.GetBytes("filename");
-    private readonly byte[] _segmentsBytes = StringEncoding.UTF8.GetBytes("segments");
+    private readonly byte[] _bitmapBytes = StringEncoding.UTF8.GetBytes("bitmap");
 
     public override int Serialize(ref byte[] bytes, int offset, TestCoverage value, IFormatterResolver formatterResolver)
     {
@@ -73,30 +73,8 @@ internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<Test
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _filenameBytes);
                 offset += MessagePackBinary.WriteString(ref bytes, offset, file.FileName);
 
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _segmentsBytes);
-                if (file.Segments is { Count: > 0 } segments)
-                {
-                    offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)segments.Count);
-                    foreach (var segment in segments)
-                    {
-                        if (segment is null)
-                        {
-                            offset += MessagePackBinary.WriteNil(ref bytes, offset);
-                        }
-                        else
-                        {
-                            offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)segment.Length);
-                            foreach (var i in segment)
-                            {
-                                offset += MessagePackBinary.WriteUInt32(ref bytes, offset, i);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    offset += MessagePackBinary.WriteNil(ref bytes, offset);
-                }
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _bitmapBytes);
+                offset += MessagePackBinary.WriteBytes(ref bytes, offset, file.Bitmap);
             }
         }
         else

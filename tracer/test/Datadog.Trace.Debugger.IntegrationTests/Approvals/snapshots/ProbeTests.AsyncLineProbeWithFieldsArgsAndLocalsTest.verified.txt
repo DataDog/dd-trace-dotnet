@@ -460,10 +460,7 @@
                         "isNull": "true",
                         "type": "Object"
                       },
-                      "m_taskId": {
-                        "type": "Int32",
-                        "value": "0"
-                      },
+                      "m_taskId": "ScrubbedValue",
                       "m_taskScheduler": {
                         "isNull": "true",
                         "type": "TaskScheduler"
@@ -2363,10 +2360,7 @@
                           "isNull": "true",
                           "type": "Object"
                         },
-                        "m_taskId": {
-                          "type": "Int32",
-                          "value": "0"
-                        },
+                        "m_taskId": "ScrubbedValue",
                         "m_taskScheduler": {
                           "isNull": "true",
                           "type": "TaskScheduler"

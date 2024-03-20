@@ -1,18 +1,4 @@
-[
-  {
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "diagnostics": {
-        "exception": null,
-        "probeId": "3410cda1-5b13-a34e-6f84-a54adf7a0ea0",
-        "probeVersion": 0,
-        "runtimeId": "scrubbed",
-        "status": "INSTALLED"
-      }
-    },
-    "message": "Installed probe 3410cda1-5b13-a34e-6f84-a54adf7a0ea0.",
-    "service": "probes"
-  },
+﻿[
   {
     "ddsource": "dd_debugger",
     "debugger": {
