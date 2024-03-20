@@ -99,16 +99,39 @@ namespace Datadog.Trace.Debugger
         class NewProbe
         {
             public string TypeName { get; set; }
+
             public string MethodName { get; set; }
         }
 
         private void WatcherOnCreated(object sender, FileSystemEventArgs e)
         {
-            var content = File.ReadAllText(e.FullPath);
+            const int maxRetries = 5;
+            const int sleepForMs = 500;
+            string content = null;
+            for (int i = 1; i <= maxRetries; ++i)
+            {
+                try
+                {
+                    using var fileStream = File.Open(e.FullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var stream = new StreamReader(fileStream);
+                    content = stream.ReadToEnd();
+                    break;
+                }
+                catch (IOException ex) when (i < maxRetries)
+                {
+                    Thread.Sleep(sleepForMs);
+                }
+            }
+
+            if (string.IsNullOrEmpty(content))
+            {
+                throw new InvalidOperationException($"Fail to read the content of the file: {e.FullPath}");
+            }
+
             var newProbe = JsonConvert.DeserializeObject<NewProbe>(content);
 
             var method = new NativeMethodProbeDefinition(
-                e.Name,
+                Path.GetFileNameWithoutExtension(e.Name),
                 newProbe.TypeName,
                 newProbe.MethodName,
                 targetParameterTypesFullName: null);
