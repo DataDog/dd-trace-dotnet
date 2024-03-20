@@ -76,18 +76,7 @@ void CrashReporting::ReportCrash(char** frames, int count, char* threadId)
     const std::string stdErr = "/tmp/crash_stderr.txt";
     const std::string stdOut = "/tmp/crash_stdout.txt";
 
-    ddog_prof_CrashtrackerConfiguration config = {
-        .collect_stacktrace = false,
-        .create_alt_stack = false,
-        .endpoint = *endpoint,
-        .optional_stderr_filename = libdatadog::FfiHelper::StringToCharSlice(stdErr),
-        .optional_stdout_filename = libdatadog::FfiHelper::StringToCharSlice(stdOut),
-        .path_to_receiver_binary = {nullptr, 0},
-        .resolve_frames = DDOG_PROF_CRASHTRACKER_RESOLVE_FRAMES_NEVER,
-        .timeout_secs = 30
-    };
-
-    result = ddog_crashinfo_upload_to_endpoint(crashInfo, config);
+    result = ddog_crashinfo_upload_to_endpoint(crashInfo, *endpoint, 30);
 
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
     {
