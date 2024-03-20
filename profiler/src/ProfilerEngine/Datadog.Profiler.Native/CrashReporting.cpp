@@ -89,4 +89,6 @@ void CrashReporting::ReportCrash(char** frames, int count, char* threadId)
 
     delete[] stackFrames;
     delete[] stackFrameNames;
+
+    std::cout << "Returning from ReportCrash" << std::endl;
 }
