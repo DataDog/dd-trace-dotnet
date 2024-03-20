@@ -400,16 +400,14 @@ namespace Datadog.Trace
         /// Otherwise, returns <see cref="SamplingPriority"/>.
         /// </summary>
         internal int? GetSamplingPriority(TriggerSamplingDecision trigger)
+        => TraceContext switch
         {
-            return TraceContext switch
-            {
-                // this a propagated context
-                null => SamplingPriority,
+            // this a propagated context
+            null => SamplingPriority,
 
-                // this SpanContext belongs to a local trace
-                not null => TraceContext.GetSamplingPriority(trigger)
-            };
-        }
+            // this SpanContext belongs to a local trace
+            not null => TraceContext.GetSamplingPriority(trigger)
+        };
 
         [return: MaybeNull]
         internal TraceTagCollection PrepareTagsForPropagation()
