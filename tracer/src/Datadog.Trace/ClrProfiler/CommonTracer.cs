@@ -5,8 +5,6 @@
 
 #nullable enable
 
-using Datadog.Trace.Sampling;
-
 namespace Datadog.Trace.ClrProfiler
 {
     /// <summary>

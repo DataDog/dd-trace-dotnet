@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Util
 {
