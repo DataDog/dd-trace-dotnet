@@ -69,12 +69,9 @@ void CrashReporting::ReportCrash(char** frames, int count, char* threadId)
         return;
     }
 
-    const std::string endpointUrl = "file:///tmp/crash.txt";
+    const std::string endpointUrl = "file://tmp/crash.txt";
 
     auto endpoint = ddog_prof_Endpoint_agent(libdatadog::FfiHelper::StringToCharSlice(endpointUrl));
-
-    const std::string stdErr = "/tmp/crash_stderr.txt";
-    const std::string stdOut = "/tmp/crash_stdout.txt";
 
     result = ddog_crashinfo_upload_to_endpoint(crashInfo, endpoint, 30);
 
