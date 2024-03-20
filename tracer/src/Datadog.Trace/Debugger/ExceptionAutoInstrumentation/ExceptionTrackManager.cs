@@ -336,11 +336,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType?.Name);
             span.Tags.SetTag(tagPrefix + "snapshot_id", snapshotId);
 
-            tagPrefix = tagPrefix.Replace("_", string.Empty);
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                tagPrefix = tagPrefix.Replace("_", string.Empty);
 
-            span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
-            span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType?.Name);
-            span.Tags.SetTag(tagPrefix + "snapshot_id", snapshotId);
+                span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
+                span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType?.Name);
+                span.Tags.SetTag(tagPrefix + "snapshot_id", snapshotId);
+            }
 
             ExceptionDebugging.AddSnapshot(probeId, snapshot);
         }

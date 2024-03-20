@@ -61,7 +61,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public TrackedStackFrameNode? Parent => _parent;
 
-        public Exception? LeavingException { get; private set; }
+        public Exception? LeavingException { get; set; }
 
         public string Snapshot
         {
@@ -180,9 +180,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             Members.AddMember(new ScopeMember(name, type, value, memberKind));
         }
 
-        private IEnumerable<Exception> FlattenException(Exception exception)
+        private IEnumerable<Exception?> FlattenException(Exception? exception)
         {
-            var exceptionList = new Stack<Exception>();
+            var exceptionList = new Stack<Exception?>();
 
             exceptionList.Push(exception);
 
@@ -334,14 +334,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        public bool HasChildException(Exception exception)
+        public bool HasChildException(Exception? exception)
         {
-            if (LeavingException == null)
-            {
-                return false;
-            }
-
-            if (LeavingException == exception || LeavingException == exception.InnerException)
+            if (LeavingException == exception || LeavingException == exception?.InnerException)
             {
                 return true;
             }
