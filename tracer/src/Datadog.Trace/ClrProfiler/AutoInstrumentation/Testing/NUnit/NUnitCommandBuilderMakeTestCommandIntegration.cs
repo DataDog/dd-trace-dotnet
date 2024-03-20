@@ -40,7 +40,7 @@ public class NUnitCommandBuilderMakeTestCommandIntegration
     {
         if (returnValue.TryDuckCast<ITestCommand>(out var testCommand))
         {
-            var retryTestCommand = new RetryTestCommand(testCommand, 3);
+            var retryTestCommand = new CIVisibilityTestCommand(testCommand, 3);
             returnValue = (TReturn)retryTestCommand.DuckImplement(typeof(TReturn));
         }
 

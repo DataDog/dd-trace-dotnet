@@ -1,4 +1,4 @@
-// <copyright file="RetryTestCommand.cs" company="Datadog">
+// <copyright file="CIVisibilityTestCommand.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,12 +9,12 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
-internal class RetryTestCommand
+internal class CIVisibilityTestCommand
 {
     private readonly ITestCommand _innerCommand;
     private readonly int _retries;
 
-    public RetryTestCommand(ITestCommand innerCommand, int retries)
+    public CIVisibilityTestCommand(ITestCommand innerCommand, int retries)
     {
         _innerCommand = innerCommand;
         _retries = retries;
@@ -86,7 +86,16 @@ internal class RetryTestCommand
 
     private ITestResult ExecuteTest(ITestExecutionContext context)
     {
+        var test = NUnitIntegration.CreateTest(context.CurrentTest);
+
+        Common.Log.Information("InnerCommand Type = {FullName} | {Test}", _innerCommand.Type.FullName, context.CurrentTest.FullName);
+        if (_innerCommand.Type.FullName == "NUnit.Framework.Internal.Commands.SkipCommand")
+        {
+            test?.Close(Ci.TestStatus.Skip, TimeSpan.Zero);
+        }
+
         ITestResult? testResult = null;
+        Exception? executeException = null;
         try
         {
             testResult = _innerCommand.Execute(context);
@@ -97,6 +106,12 @@ internal class RetryTestCommand
             // and we want to look at restructuring the API in the future.
             testResult ??= context.CurrentTest.MakeTestResult();
             testResult.RecordException(ex);
+            executeException = ex;
+        }
+
+        if (test is not null)
+        {
+            NUnitIntegration.FinishTest(test, executeException);
         }
 
         return testResult;
