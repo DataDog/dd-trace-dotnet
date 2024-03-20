@@ -196,7 +196,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     // Attach tags to the root span
                     var debugErrorPrefix = "_dd.debug.error";
                     rootSpan.Tags.SetTag("error.debug_info_captured", "true");
-                    rootSpan.Tags.SetTag($"{debugErrorPrefix}.exception_id", trackedExceptionCase.ErrorHash);
+                    rootSpan.Tags.SetTag($"{debugErrorPrefix}.exception_hash", trackedExceptionCase.ErrorHash);
+                    rootSpan.Tags.SetTag($"{debugErrorPrefix}.exception_id", Guid.NewGuid().ToString());
 
                     var @case = trackedExceptionCase.ExceptionCase;
                     var capturedFrames = resultCallStackTree.Frames;
