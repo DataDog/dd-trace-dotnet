@@ -53,6 +53,7 @@ public:
 
     inline shared::span<uintptr_t> Data();
     inline Callstack GetCallstack();
+    inline void SetCallstack(Callstack callstack);
 
     StackSnapshotResultBuffer();
     ~StackSnapshotResultBuffer();
@@ -190,4 +191,9 @@ inline shared::span<uintptr_t> StackSnapshotResultBuffer::Data()
 inline Callstack StackSnapshotResultBuffer::GetCallstack()
 {
     return std::exchange(_callstack, {});
+}
+
+inline void StackSnapshotResultBuffer::SetCallstack(Callstack callstack)
+{
+    _callstack = std::move(callstack);
 }

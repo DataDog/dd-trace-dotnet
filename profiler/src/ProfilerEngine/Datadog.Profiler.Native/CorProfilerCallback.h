@@ -10,6 +10,7 @@
 
 #include "AllocationsProvider.h"
 #include "ApplicationStore.h"
+#include "CallstackPool.h"
 #include "EventPipeEventsManager.h"
 #include "ExceptionsProvider.h"
 #include "IAppDomainStore.h"

@@ -7,20 +7,29 @@
 
 #include "shared/src/native-src/dd_span.hpp"
 
+class CallstackPool;
+
 class Callstack
 {
 public:
     static constexpr std::uint16_t MaxFrames = 1024;
 
     Callstack();
+    ~Callstack();
 
+    Callstack(Callstack const&) = delete;
+    Callstack& operator=(Callstack const&) = delete;
+
+    Callstack(Callstack&& other) noexcept;
+    Callstack& operator=(Callstack&& other) noexcept;
 
     bool Add(std::uintptr_t ip);
 
-    shared::span<std::uintptr_t> Data();
+    shared::span<std::uintptr_t> Data() const;
     void SetCount(std::size_t count);
 
     std::size_t size() const;
+    std::size_t capacity() const;
 
     // iterator
     std::uintptr_t* begin() const;
@@ -28,6 +37,10 @@ public:
 
 
 private:
-    std::unique_ptr<std::uintptr_t[]> _callstack;
+    friend CallstackPool;
+    Callstack(CallstackPool* pool);
+
+    CallstackPool* _pool;
+    shared::span<std::uintptr_t> _buffer;
     std::size_t _count;
 };

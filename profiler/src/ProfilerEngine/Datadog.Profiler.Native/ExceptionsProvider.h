@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "CallstackPool.h"
 #include "CollectorBase.h"
 #include "IFrameStore.h"
 #include "IManagedThreadList.h"
@@ -16,6 +17,8 @@
 #include "MetricsRegistry.h"
 #include "CounterMetric.h"
 #include "IUpscaleProvider.h"
+
+#include <memory>
 
 class IConfiguration;
 class SampleValueTypeProvider;
@@ -71,4 +74,5 @@ private:
     IConfiguration const* const _pConfiguration;
     std::shared_ptr<CounterMetric> _exceptionsCountMetric;
     std::shared_ptr<CounterMetric> _sampledExceptionsCountMetric;
+    std::unique_ptr<CallstackPool> _callstackPool;
 };

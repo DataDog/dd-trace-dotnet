@@ -3,10 +3,12 @@
 
 #include "StackFramesCollectorBase.h"
 
+#include "CallstackPool.h"
 #include "Configuration.h"
 #include "EnvironmentVariables.h"
 #include "ManagedThreadList.h"
 #include "OpSysTools.h"
+
 #include "shared/src/native-src/dd_span.hpp"
 
 #include <assert.h>
@@ -143,12 +145,13 @@ StackSnapshotResultBuffer* StackFramesCollectorBase::GetStackSnapshotResult()
 // They perform the work required for the shared base implementation (this class) and then invoke the respective XxxImplementaiton(..) method.
 // This is less error-prone than simply making these methods virtual and relying on the sub-classes to remember calling the base class method.
 
-void StackFramesCollectorBase::PrepareForNextCollection()
+void StackFramesCollectorBase::PrepareForNextCollection(CallstackPool* callstackPool)
 {
     // We cannot allocate memory once a thread is suspended.
     // This is because malloc() uses a lock and so if we suspend a thread that was allocating, we will deadlock.
     // So we pre-allocate the memory buffer and reset it before suspending the target thread.
     _pStackSnapshotResult->Reset();
+    _pStackSnapshotResult->SetCallstack(callstackPool->Get());
 
     // Clear the current collection thread pointer:
     _pCurrentCollectionThreadInfo = nullptr;

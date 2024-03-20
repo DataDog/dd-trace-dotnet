@@ -16,6 +16,7 @@
 #include "corprof.h"
 // end
 
+#include "CallstackPool.h"
 #include "ManagedThreadInfo.h"
 #include "ICollector.h"
 #include "IService.h"
@@ -97,6 +98,7 @@ private:
     std::shared_ptr<MeanMaxMetric> _walltimeDurationMetric;
     std::shared_ptr<MeanMaxMetric> _cpuDurationMetric;
     bool _isStopped;
+    std::unique_ptr<CallstackPool> _callstackPool;
 
 private:
     void MainLoop();

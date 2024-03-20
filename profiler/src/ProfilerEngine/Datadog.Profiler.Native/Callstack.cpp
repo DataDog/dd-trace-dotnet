@@ -3,26 +3,66 @@
 
 #include "Callstack.h"
 
+#include "CallstackPool.h"
+
 #include <cassert>
+#include <utility>
 
 Callstack::Callstack() :
-    _callstack{std::make_unique<std::uintptr_t[]>(MaxFrames)},
+    Callstack(nullptr)
+{
+}
+
+Callstack::Callstack(CallstackPool* pool) :
+    _pool{pool},
+    _buffer{},
     _count{0}
 {
+    if (_pool != nullptr)
+    {
+        _buffer = _pool->Acquire();
+    }
+}
+
+Callstack::~Callstack()
+{
+    if (_pool != nullptr)
+    {
+        _pool->Release(std::exchange(_buffer, {}));
+    }
+}
+
+Callstack::Callstack(Callstack&& other) noexcept
+{
+    *this = std::move(other);
+}
+
+Callstack& Callstack::operator=(Callstack&& other) noexcept
+{
+    if (this == &other)
+    {
+        return *this;
+    }
+
+    std::exchange(_pool, other._pool);
+    std::exchange(_buffer, other._buffer);
+    std::exchange(_count, other._count);
+
+    return *this;
 }
 
 bool Callstack::Add(std::uintptr_t ip)
 {
-    if (_count >= MaxFrames)
+    if (_count >= _buffer.size())
         return false;
 
-    _callstack[_count++] = ip;
+    _buffer[_count++] = ip;
     return true;
 }
 
-shared::span<std::uintptr_t> Callstack::Data()
+shared::span<std::uintptr_t> Callstack::Data() const
 {
-    return shared::span<std::uintptr_t>(_callstack.get(), MaxFrames);
+    return _buffer;
 }
 
 void Callstack::SetCount(std::size_t count)
@@ -35,12 +75,17 @@ std::size_t Callstack::size() const
     return _count;
 }
 
+std::size_t Callstack::capacity() const
+{
+    return _buffer.size();
+}
+
 std::uintptr_t* Callstack::begin() const
 {
-    return _callstack.get();
+    return _buffer.data();
 }
 
 std::uintptr_t* Callstack::end() const
 {
-    return _callstack.get() + _count;
+    return _buffer.data() + _count;
 }

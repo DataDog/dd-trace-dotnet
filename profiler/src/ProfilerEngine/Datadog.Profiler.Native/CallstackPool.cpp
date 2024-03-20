@@ -1,0 +1,43 @@
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+
+#include "CallstackPool.h"
+
+#include <cassert>
+
+CallstackPool::CallstackPool(std::size_t nbPools) :
+    _nbPools{nbPools},
+    _pools{std::make_unique<std::uint8_t[]>(nbPools * sizeof(Pool))},
+    _current{0}
+{
+}
+
+Callstack CallstackPool::Get()
+{
+    return Callstack(this);
+}
+
+shared::span<std::uintptr_t> CallstackPool::Acquire()
+{
+    for (auto i = 0; i < MaxRetry; i++)
+    {
+        auto v = _current.fetch_add(1);
+        auto idx_linear = v % _nbPools;
+        auto offset = idx_linear * sizeof(Pool);
+        auto* pool = reinterpret_cast<Pool*>(_pools.get() + offset);
+
+        if (std::atomic_exchange(&pool->_header._lock, 1) == 0)
+        {
+            // move past the header
+            auto* data = reinterpret_cast<std::uintptr_t*>(reinterpret_cast<std::uint8_t*>(pool) + sizeof(PoolHeader));
+            return {data, Callstack::MaxFrames};
+        }
+    }
+    return {};
+}
+
+void CallstackPool::Release(shared::span<std::uintptr_t> buffer)
+{
+    auto* header = reinterpret_cast<PoolHeader*>(reinterpret_cast<std::uint8_t*>(buffer.data()) - sizeof(PoolHeader));
+    std::atomic_exchange(&header->_lock, 0);
+}

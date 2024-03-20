@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "CallstackPool.h"
 #include "CollectorBase.h"
 #include "CounterMetric.h"
 #include "GenericSampler.h"
@@ -11,6 +12,8 @@
 #include "MetricsRegistry.h"
 #include "RawAllocationSample.h"
 #include "SumMetric.h"
+
+#include <memory>
 
 class IConfiguration;
 class IManagedThreadList;
@@ -75,4 +78,5 @@ private:
     std::shared_ptr<CounterMetric> _sampledAllocationsCountMetric;
     std::shared_ptr<MeanMaxMetric> _sampledAllocationsSizeMetric;
     std::shared_ptr<SumMetric> _totalAllocationsSizeMetric;
+    std::unique_ptr<CallstackPool> _callstackPool;
 };

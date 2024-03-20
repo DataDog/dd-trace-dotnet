@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "AllocationsProvider.h"
+
 #include "COMHelpers.h"
 #include "HResultConverter.h"
 #include "IConfiguration.h"
@@ -75,6 +76,8 @@ AllocationsProvider::AllocationsProvider(
 
     // disable sub sampling when recording allocations
     _shouldSubSample = !_pConfiguration->IsAllocationRecorderEnabled();
+    // TODO compute optimal size
+    _callstackPool = std::make_unique<CallstackPool>(200);
 }
 
 
@@ -101,7 +104,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
     const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
-    pStackFramesCollector->PrepareForNextCollection();
+    pStackFramesCollector->PrepareForNextCollection(_callstackPool.get());
 
     uint32_t hrCollectStack = E_FAIL;
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);

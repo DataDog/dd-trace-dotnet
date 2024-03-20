@@ -12,6 +12,7 @@
 #include <sstream>
 #include <stdio.h>
 
+#include "CallstackPool.h"
 #include "Configuration.h"
 #include "HResultConverter.h"
 #include "ICollector.h"
@@ -88,6 +89,10 @@ StackSamplerLoop::StackSamplerLoop(
         _walltimeDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_walltime_iterations_duration");
         _cpuDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_cpu_iterations_duration");
     }
+
+    // TODO change 500 to a more accurate number
+    // depending on activation of walltime and cpu providers
+    _callstackPool = std::make_unique<CallstackPool>(500);
 }
 
 StackSamplerLoop::~StackSamplerLoop()
@@ -429,7 +434,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
         // Prepare the collector for the next iteration. Among other things, this will pre-allocate the memory to store
         // the collected frames info. This is because we cannot allocate memory once a thread is suspended:
         // malloc() uses a lock and so if we susped a thread that was alocating, we will deadlock.
-        _pStackFramesCollector->PrepareForNextCollection();
+        _pStackFramesCollector->PrepareForNextCollection(_callstackPool.get());
 
 
         // block used to ensure that NotifyIterationFinished gets called

@@ -5,6 +5,7 @@
 
 #include <atomic>
 
+#include "CallstackPool.h"
 #include "CollectorBase.h"
 #include "CounterMetric.h"
 #include "GenericSampler.h"
@@ -14,6 +15,8 @@
 #include "MeanMaxMetric.h"
 #include "MetricsRegistry.h"
 #include "RawContentionSample.h"
+
+#include <memory>
 
 class IConfiguration;
 class IManagedThreadList;
@@ -67,4 +70,6 @@ private:
     std::shared_ptr<CounterMetric> _sampledLockContentionsCountMetric;
     std::shared_ptr<MeanMaxMetric> _sampledLockContentionsDurationMetric;
     std::mutex _contentionsLock;
+
+    std::unique_ptr<CallstackPool> _callstackPool;
 };

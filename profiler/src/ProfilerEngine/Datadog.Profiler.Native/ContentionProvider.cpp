@@ -1,5 +1,6 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+
 #include "ContentionProvider.h"
 
 #include "COMHelpers.h"
@@ -117,7 +118,7 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
         const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
-        pStackFramesCollector->PrepareForNextCollection();
+        pStackFramesCollector->PrepareForNextCollection(_callstackPool.get());
 
         uint32_t hrCollectStack = E_FAIL;
         const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
@@ -154,7 +155,7 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         // We know that we don't have any span ID nor end point details
 
         rawSample.Timestamp = timestamp;
-        auto end_stack = stack.begin() + std::min(stack.size(), static_cast<std::size_t>(Callstack::MaxFrames));
+        auto end_stack = stack.begin() + std::min(stack.size(), static_cast<std::size_t>(rawSample.Stack.capacity()));
         std::copy(stack.begin(), end_stack, rawSample.Stack.begin());
 
         // we need to create a fake IThreadInfo if there is no thread in ManagedThreadList with the same OS thread id

@@ -437,6 +437,9 @@
     <ClInclude Include="Callstack.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
+    <ClInclude Include="CallstackPool.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -653,6 +656,9 @@
       <Filter>Threads</Filter>
     </ClCompile>
     <ClCompile Include="Callstack.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="CallstackPool.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
   </ItemGroup>

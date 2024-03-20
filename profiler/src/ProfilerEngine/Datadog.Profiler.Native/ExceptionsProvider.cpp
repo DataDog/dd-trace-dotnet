@@ -142,7 +142,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     uint32_t hrCollectStack = E_FAIL;
     const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
 
-    pStackFramesCollector->PrepareForNextCollection();
+    pStackFramesCollector->PrepareForNextCollection(_callstackPool.get());
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
 
     static uint64_t failureCount = 0;
