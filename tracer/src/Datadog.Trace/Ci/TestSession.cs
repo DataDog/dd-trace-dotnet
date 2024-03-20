@@ -28,7 +28,7 @@ public sealed class TestSession
 {
     private static readonly AsyncLocal<TestSession?> CurrentSession = new();
     private readonly Span _span;
-    private readonly Dictionary<string, string>? _environmentVariablesToRestore = null;
+    private readonly Dictionary<string, string?>? _environmentVariablesToRestore = null;
     private int _finished;
 
     private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
@@ -426,7 +426,7 @@ public sealed class TestSession
         {
             foreach (var eVar in envVars)
             {
-                EnvironmentHelpers.SetEnvironmentVariable(eVar.Key, eVar.Value);
+                EnvironmentHelpers.SetEnvironmentVariable(eVar.Key, eVar.Value ?? string.Empty);
             }
         }
 
