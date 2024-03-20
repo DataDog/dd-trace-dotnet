@@ -9,9 +9,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage.Exceptions;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
@@ -157,7 +155,7 @@ namespace Datadog.Trace.Coverage.Collector
 
             var processedDirectories = new HashSet<string>();
             var numAssemblies = 0;
-            var tracerAssemblyName = typeof(Tracer).Assembly.GetName().Name;
+            var tracerAssemblyName = DatadogTraceConstants.AssemblyName;
 
             // Process assemblies in parallel.
             Parallel.ForEach(
@@ -235,7 +233,7 @@ namespace Datadog.Trace.Coverage.Collector
             {
                 foreach (var directory in processedDirectories)
                 {
-                    var version = typeof(Instrumentation).Assembly.GetName().Version?.ToString();
+                    var version = DatadogTraceConstants.AssemblyVersion.ToString();
                     foreach (var depsJsonPath in Directory.EnumerateFiles(directory, "*.deps.json", SearchOption.TopDirectoryOnly))
                     {
                         try

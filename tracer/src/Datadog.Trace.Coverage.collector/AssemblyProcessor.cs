@@ -13,8 +13,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Attributes;
 using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Ci.Coverage.Util;
@@ -29,6 +27,9 @@ namespace Datadog.Trace.Coverage.Collector
 {
     internal class AssemblyProcessor
     {
+        public const string ModuleCoverageMetadataNamespace = DatadogTraceConstants.Namespaces.ModuleCoverageMetadata;
+        public const string ModuleCoverageMetadataFullName = DatadogTraceConstants.TypeNames.ModuleCoverageMetadata;
+        public const string CoverageReporterFullName = DatadogTraceConstants.TypeNames.CoverageReporter;
         private static readonly string? ExcludeFromCodeCoverageAttributeFullName = typeof(ExcludeFromCodeCoverageAttribute).FullName;
         private static readonly string? AvoidCoverageAttributeFullName = typeof(AvoidCoverageAttribute).FullName;
         private static readonly string? CoveredAssemblyAttributeFullName = typeof(CoveredAssemblyAttribute).FullName;
@@ -37,7 +38,6 @@ namespace Datadog.Trace.Coverage.Collector
 
         private static readonly object PadLock = new();
         private static readonly Regex NetCorePattern = new(@".NETCoreApp,Version=v(\d.\d)", RegexOptions.Compiled);
-        private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
         private static readonly string[] IgnoredAssemblies =
         {
             "NUnit3.TestAdapter.dll",
@@ -209,11 +209,11 @@ namespace Datadog.Trace.Coverage.Collector
                 var moduleTypes = module.GetTypes().ToList();
                 var fileDictionaryIndex = new Dictionary<string, FileMetadata>();
 
-                var moduleCoverageMetadataTypeDefinition = datadogTracerAssembly.MainModule.GetType(typeof(ModuleCoverageMetadata).FullName);
+                var moduleCoverageMetadataTypeDefinition = datadogTracerAssembly.MainModule.GetType(ModuleCoverageMetadataFullName);
                 var moduleCoverageMetadataTypeReference = module.ImportReference(moduleCoverageMetadataTypeDefinition);
 
                 var moduleCoverageMetadataImplTypeDef = new TypeDefinition(
-                    typeof(ModuleCoverageMetadata).Namespace + ".Target",
+                    ModuleCoverageMetadataNamespace + ".Target",
                     "ModuleCoverage",
                     TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NotPublic,
                     moduleCoverageMetadataTypeReference);
@@ -229,7 +229,7 @@ namespace Datadog.Trace.Coverage.Collector
                 // Add the .ctor to the metadata type
                 moduleCoverageMetadataImplTypeDef.Methods.Add(moduleCoverageMetadataImplCtor);
 
-                var coverageReporterTypeDefinition = datadogTracerAssembly.MainModule.GetType(typeof(CoverageReporter<>).FullName);
+                var coverageReporterTypeDefinition = datadogTracerAssembly.MainModule.GetType(CoverageReporterFullName);
                 var coverageReporterTypeReference = module.ImportReference(coverageReporterTypeDefinition);
                 var reportTypeGenericInstance = new GenericInstanceType(coverageReporterTypeReference);
                 reportTypeGenericInstance.GenericArguments.Add(moduleCoverageMetadataImplTypeDef);
@@ -849,12 +849,10 @@ namespace Datadog.Trace.Coverage.Collector
                 lock (PadLock)
                 {
                     // Copying the Datadog.Trace assembly
-                    var assembly = typeof(Tracer).Assembly;
-                    var assemblyLocation = assembly.Location;
-                    var outputAssemblyDllLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileName(assemblyLocation));
-                    var outputAssemblyPdbLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileNameWithoutExtension(assemblyLocation) + ".pdb");
+                    var outputAssemblyDllLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileName(DatadogTraceConstants.AssemblyFileName));
+                    var outputAssemblyPdbLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileNameWithoutExtension(DatadogTraceConstants.AssemblyFileName) + ".pdb");
                     if (!File.Exists(outputAssemblyDllLocation) ||
-                        assembly.GetName().Version >= AssemblyName.GetAssemblyName(outputAssemblyDllLocation).Version)
+                        DatadogTraceConstants.AssemblyVersion >= AssemblyName.GetAssemblyName(outputAssemblyDllLocation).Version)
                     {
                         _logger.Debug($"CopyRequiredAssemblies: Writing ({tracerTarget}) {outputAssemblyDllLocation} ...");
 
@@ -967,10 +965,19 @@ namespace Datadog.Trace.Coverage.Collector
                 }
                 catch (AssemblyResolutionException arEx)
                 {
-                    var tracerAssemblyName = TracerAssembly.GetName();
-                    if (name.Name == tracerAssemblyName.Name && name.Version == tracerAssemblyName.Version)
+                    if (name.Name == DatadogTraceConstants.AssemblyName && name.Version == DatadogTraceConstants.AssemblyVersion)
                     {
-                        var cAssemblyLocation = !string.IsNullOrEmpty(_tracerAssemblyLocation) ? _tracerAssemblyLocation : TracerAssembly.Location;
+                        string cAssemblyLocation;
+                        if (!string.IsNullOrEmpty(_tracerAssemblyLocation))
+                        {
+                            cAssemblyLocation = _tracerAssemblyLocation;
+                        }
+                        else
+                        {
+                            var thisDirectory = Path.GetDirectoryName(typeof(AssemblyProcessor).Assembly.Location);
+                            cAssemblyLocation = Path.Combine(thisDirectory, DatadogTraceConstants.AssemblyFileName);
+                        }
+
                         try
                         {
                             assembly = AssemblyDefinition.ReadAssembly(cAssemblyLocation);
