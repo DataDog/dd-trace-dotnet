@@ -16,8 +16,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         ITest CurrentTest { get; }
 
         /// <summary>
-        /// Gets the current result
+        /// Gets or sets the current result
         /// </summary>
-        ITestResult CurrentResult { get; }
+        ITestResult CurrentResult { get; set; }
+
+        /// <summary>
+        /// Gets or sets the current repeat count
+        /// </summary>
+        int CurrentRepeatCount { get; set; }
     }
 }

@@ -348,9 +348,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         private static void WriteSetUpOrTearDownError(ITestResult testResult, ITest item, string exceptionType)
         {
+            var message = testResult.Message ?? "SetUp or TearDown error";
             if (item.Method?.MethodInfo is not null && CreateTest(item) is { } test)
             {
-                test.SetErrorInfo(exceptionType, testResult.Message, testResult.StackTrace);
+                test.SetErrorInfo(exceptionType, message, testResult.StackTrace);
                 test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
             }
 
@@ -359,13 +360,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             {
                 if (GetTestSuiteFrom(item) is { } existingSuite)
                 {
-                    existingSuite.SetErrorInfo(exceptionType, testResult.Message, testResult.StackTrace);
+                    existingSuite.SetErrorInfo(exceptionType, message, testResult.StackTrace);
                     existingSuite.Tags.Status = TestTags.StatusFail;
                 }
                 else if (GetTestModuleFrom(item) is { } module)
                 {
                     suite = module.InternalGetOrCreateSuite(item.FullName);
-                    suite.SetErrorInfo(exceptionType, testResult.Message, testResult.StackTrace);
+                    suite.SetErrorInfo(exceptionType, message, testResult.StackTrace);
                     suite.Tags.Status = TestTags.StatusFail;
                     SetTestSuiteTo(item, suite);
                 }

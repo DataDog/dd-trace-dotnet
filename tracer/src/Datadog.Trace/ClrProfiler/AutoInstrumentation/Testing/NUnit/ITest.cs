@@ -103,6 +103,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         /// </summary>
         /// <value>The parent test or null if none exists.</value>
         ITest Parent { get; }
+
+        /// <summary>
+        /// Make test result
+        /// </summary>
+        /// <returns>TestResult instance</returns>
+        ITestResult MakeTestResult();
     }
 
     internal struct TestAssemblyStruct
