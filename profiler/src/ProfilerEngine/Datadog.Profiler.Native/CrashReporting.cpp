@@ -63,6 +63,10 @@ void CrashReporting::ReportCrash(char** frames, int count, char* threadId)
 
     auto result = ddog_crashinfo_set_stacktrace(crashInfo, { threadId, std::strlen(threadId) }, stackTrace);
 
+    auto threadId2 = "threadId2";
+
+    ddog_crashinfo_set_stacktrace(crashInfo, { threadId2, std::strlen(threadId2) }, stackTrace);
+
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
     {
         std::cout << "Error setting stacktrace: " << libdatadog::FfiHelper::GetErrorMessage(result.err) << std::endl;
