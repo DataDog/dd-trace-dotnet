@@ -15,6 +15,8 @@
 #include "Sample.h"
 #include "SampleValueTypeProvider.h"
 
+#include <math.h>
+
 
 std::vector<uintptr_t> ContentionProvider::_emptyStack;
 
@@ -134,7 +136,7 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         rawSample.SpanId = result->GetSpanId();
         rawSample.AppDomainId = result->GetAppDomainId();
         rawSample.Timestamp = result->GetUnixTimeUtc();
-        result->CopyInstructionPointers(rawSample.Stack);
+        rawSample.Stack = result->GetCallstack();
         rawSample.ThreadInfo = threadInfo;
     }
     else
@@ -152,8 +154,8 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         // We know that we don't have any span ID nor end point details
 
         rawSample.Timestamp = timestamp;
-        rawSample.Stack.reserve(stack.size());
-        rawSample.Stack.insert(rawSample.Stack.end(), stack.begin(), stack.end());
+        auto end_stack = stack.begin() + std::min(stack.size(), static_cast<std::size_t>(Callstack::MaxFrames));
+        std::copy(stack.begin(), end_stack, rawSample.Stack.begin());
 
         // we need to create a fake IThreadInfo if there is no thread in ManagedThreadList with the same OS thread id
         // There is one race condition here: the contention events are received asynchronously so the event thread might be dead

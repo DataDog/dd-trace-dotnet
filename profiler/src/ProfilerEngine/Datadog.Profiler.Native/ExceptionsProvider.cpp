@@ -163,7 +163,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
     rawSample.SpanId = result->GetSpanId();
     rawSample.AppDomainId = result->GetAppDomainId();
-    result->CopyInstructionPointers(rawSample.Stack);
+    rawSample.Stack = result->GetCallstack();
     rawSample.ThreadInfo = threadInfo;
     rawSample.ExceptionMessage = std::move(message);
     rawSample.ExceptionType = std::move(name);

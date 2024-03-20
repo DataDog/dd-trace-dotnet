@@ -11,6 +11,11 @@
 #include <array>
 #include <vector>
 #include <cstdint>
+#include <utility>
+
+#include "Callstack.h"
+
+#include "shared/src/native-src/dd_span.hpp"
 
 /// <summary>
 /// Allocating when a thread is suspended can lead to deadlocks.
@@ -21,8 +26,6 @@
 class StackSnapshotResultBuffer
 {
 public:
-    static constexpr std::uint16_t MaxSnapshotStackDepth_Limit = 2049;
-
     inline std::uint64_t GetUnixTimeUtc() const;
     inline std::uint64_t SetUnixTimeUtc(std::uint64_t value);
 
@@ -40,7 +43,6 @@ public:
 
     inline std::size_t GetFramesCount() const;
     inline void SetFramesCount(std::uint16_t count);
-    inline void CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const;
 
     inline void DetermineAppDomain(ThreadID threadId, ICorProfilerInfo4* pCorProfilerInfo);
 
@@ -49,7 +51,8 @@ public:
     inline bool AddFrame(std::uintptr_t ip);
     inline bool AddFakeFrame();
 
-    inline uintptr_t* Data();
+    inline shared::span<uintptr_t> Data();
+    inline Callstack GetCallstack();
 
     StackSnapshotResultBuffer();
     ~StackSnapshotResultBuffer();
@@ -59,7 +62,7 @@ protected:
     std::uint64_t _unixTimeUtc;
     std::uint64_t _representedDurationNanoseconds;
     AppDomainID _appDomainId;
-    std::array<uintptr_t, MaxSnapshotStackDepth_Limit> _instructionPointers;
+    Callstack _callstack;
     std::uint16_t _currentFramesCount;
 
     std::uint64_t _localRootSpanId;
@@ -135,15 +138,7 @@ inline std::size_t StackSnapshotResultBuffer::GetFramesCount() const
 
 inline void StackSnapshotResultBuffer::SetFramesCount(std::uint16_t count)
 {
-    _currentFramesCount = count;
-}
-
-inline void StackSnapshotResultBuffer::CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const
-{
-    ips.reserve(_currentFramesCount);
-
-    // copy the instruction pointer to the out-parameter
-    ips.insert(ips.end(), _instructionPointers.begin(), _instructionPointers.begin() + _currentFramesCount);
+    _callstack.SetCount(count);
 }
 
 inline void StackSnapshotResultBuffer::DetermineAppDomain(ThreadID threadId, ICorProfilerInfo4* pCorProfilerInfo)
@@ -179,19 +174,7 @@ inline void StackSnapshotResultBuffer::DetermineAppDomain(ThreadID threadId, ICo
 
 inline bool StackSnapshotResultBuffer::AddFrame(std::uintptr_t ip)
 {
-    if (_currentFramesCount >= MaxSnapshotStackDepth_Limit)
-    {
-        return false;
-    }
-
-    if (_currentFramesCount == MaxSnapshotStackDepth_Limit - 1)
-    {
-        _instructionPointers[_currentFramesCount++] = 0;
-        return false;
-    }
-
-    _instructionPointers[_currentFramesCount++] = ip;
-    return true;
+    return _callstack.Add(ip);
 }
 
 inline bool StackSnapshotResultBuffer::AddFakeFrame()
@@ -199,7 +182,12 @@ inline bool StackSnapshotResultBuffer::AddFakeFrame()
     return AddFrame(0);
 }
 
-inline uintptr_t* StackSnapshotResultBuffer::Data()
+inline shared::span<uintptr_t> StackSnapshotResultBuffer::Data()
 {
-    return _instructionPointers.data();
+    return _callstack.Data();
+}
+
+inline Callstack StackSnapshotResultBuffer::GetCallstack()
+{
+    return std::exchange(_callstack, {});
 }

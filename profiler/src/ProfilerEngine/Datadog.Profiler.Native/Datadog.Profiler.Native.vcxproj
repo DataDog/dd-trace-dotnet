@@ -235,6 +235,7 @@
   <ItemGroup>
     <ClInclude Include="AdaptiveSampler.h" />
     <ClInclude Include="AllocationsRecorder.h" />
+    <ClInclude Include="Callstack.h" />
     <ClInclude Include="CounterMetric.h" />
     <ClInclude Include="DebugInfoStore.h" />
     <ClInclude Include="EnabledProfilers.h" />
@@ -369,6 +370,7 @@
     <ClCompile Include="AllocationsRecorder.cpp" />
     <ClCompile Include="AppDomainStore.cpp" />
     <ClCompile Include="ApplicationStore.cpp" />
+    <ClCompile Include="Callstack.cpp" />
     <ClCompile Include="ClrEventsParser.cpp" />
     <ClCompile Include="cgroup.cpp" />
     <ClCompile Include="ClrLifetime.cpp" />

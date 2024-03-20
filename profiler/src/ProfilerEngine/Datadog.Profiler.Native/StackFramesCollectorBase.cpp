@@ -7,6 +7,7 @@
 #include "EnvironmentVariables.h"
 #include "ManagedThreadList.h"
 #include "OpSysTools.h"
+#include "shared/src/native-src/dd_span.hpp"
 
 #include <assert.h>
 #include <chrono>
@@ -38,9 +39,9 @@ void StackFramesCollectorBase::SetFrameCount(std::uint16_t count)
     _pStackSnapshotResult->SetFramesCount(count);
 }
 
-std::pair<uintptr_t*, std::uint16_t> StackFramesCollectorBase::Data()
+shared::span<uintptr_t> StackFramesCollectorBase::Data()
 {
-    return {_pStackSnapshotResult->Data(), StackSnapshotResultBuffer::MaxSnapshotStackDepth_Limit};
+    return _pStackSnapshotResult->Data();
 }
 
 void StackFramesCollectorBase::RequestAbortCurrentCollection()

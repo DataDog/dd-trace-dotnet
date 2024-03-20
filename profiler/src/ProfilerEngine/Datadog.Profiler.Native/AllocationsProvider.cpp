@@ -122,7 +122,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
     rawSample.SpanId = result->GetSpanId();
     rawSample.AppDomainId = result->GetAppDomainId();
-    result->CopyInstructionPointers(rawSample.Stack);
+    rawSample.Stack = result->GetCallstack();
     rawSample.ThreadInfo = threadInfo;
     rawSample.AllocationSize = objectSize;
     rawSample.Address = address;

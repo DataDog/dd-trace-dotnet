@@ -23,7 +23,7 @@ protected:
     void AddFakeFrame();
     void SetFrameCount(std::uint16_t count);
 
-    std::pair<uintptr_t*, std::uint16_t> Data();
+    shared::span<uintptr_t> Data();
 
     StackSnapshotResultBuffer* GetStackSnapshotResult();
     bool IsCurrentCollectionAbortRequested();
