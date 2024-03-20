@@ -15,11 +15,10 @@ public class HttpMessageTests
     [Fact]
     public void Json()
     {
-        // var headers = new HttpHeaders { { "Content-Type", "text/plain; charset=utf-8" } };
         var headers = new HttpHeaders { { "Content-Type", "application/json" } };
         var httpResponse = new HttpResponse(200, "OK", headers, null);
 
-        httpResponse.GetContentEncoding().Should().Be(new UTF8Encoding(false));
+        httpResponse.GetContentEncoding().Should().Be(new UTF8Encoding(false, true));
     }
 
     [Fact]
@@ -36,7 +35,7 @@ public class HttpMessageTests
         var headers = new HttpHeaders { { "Content-Type", "text/plain; charset=iso-8859-1" } };
         var httpResponse = new HttpResponse(200, "OK", headers, null);
 
-        httpResponse.GetContentEncoding().Should().Be(new UTF8Encoding(false));
+        httpResponse.GetContentEncoding().Should().Be(new UTF8Encoding(false, true));
     }
 
     [Fact]
@@ -54,6 +53,6 @@ public class HttpMessageTests
         var headers = new HttpHeaders { { "Content-Type", "text/plain; charset=us-ascii=" } };
         var httpResponse = new HttpResponse(200, "OK", headers, null);
 
-        httpResponse.GetContentEncoding().Should().Be(new UTF8Encoding(false));
+        httpResponse.GetContentEncoding().Should().Be(new UTF8Encoding(false, true));
     }
 }
