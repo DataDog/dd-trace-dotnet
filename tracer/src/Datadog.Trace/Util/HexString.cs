@@ -16,8 +16,8 @@ using MemoryMarshal = System.Runtime.InteropServices.MemoryMarshal;
 using BitConverter = Datadog.Trace.Util.BitConverterShim;
 using MemoryMarshal = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices.MemoryMarshal;
 #endif
-#if NETFRAMEWORK
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+#if NETFRAMEWORK || NETSTANDARD2_0
+using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 #endif
 
 namespace Datadog.Trace.Util;
