@@ -3,9 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -156,11 +158,12 @@ public abstract class AzureFunctionsTests : TestHelper
             {
                 const int expectedSpanCount = 21;
                 var spans = agent.WaitForSpans(expectedSpanCount);
+                var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
 
                 using var s = new AssertionScope();
-                spans.Count.Should().Be(expectedSpanCount);
+                filteredSpans.Count.Should().Be(expectedSpanCount);
 
-                await AssertInProcessSpans(spans);
+                await AssertInProcessSpans(filteredSpans);
             }
         }
     }
