@@ -114,7 +114,7 @@ namespace Datadog.Trace.AppSec
 
             MaxStackTraceDepth = config
                                   .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
-                                  .AsInt32(defaultValue: 2, validator: val => val >= 0)
+                                  .AsInt32(defaultValue: 32, validator: val => val >= 0)
                                   .Value;
         }
 
