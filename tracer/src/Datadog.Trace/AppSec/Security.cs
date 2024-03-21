@@ -16,6 +16,7 @@ using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -387,7 +388,15 @@ namespace Datadog.Trace.AppSec
                 _wafLibraryInvoker = _libraryInitializationResult.WafLibraryInvoker;
             }
 
-            _wafInitResult = Waf.Waf.Create(_wafLibraryInvoker!, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _configurationStatus.RulesByFile.Values.FirstOrDefault()?.All, setupWafSchemaExtraction: _settings.ApiSecurityEnabled, _settings.UseUnsafeEncoder);
+            _wafInitResult = Waf.Waf.Create(
+                _wafLibraryInvoker!,
+                _settings.ObfuscationParameterKeyRegex,
+                _settings.ObfuscationParameterValueRegex,
+                _settings.Rules,
+                _configurationStatus.RulesByFile.Values.FirstOrDefault()?.All,
+                setupWafSchemaExtraction: _settings.ApiSecurityEnabled,
+                _settings.UseUnsafeEncoder,
+                GlobalSettings.Instance.DebugEnabledInternal && _settings.WafDebugEnabled);
             if (_wafInitResult.Success)
             {
                 // we don't reapply configurations to the waf here because it's all done in the subscription function, as new data might have been received at the same time as the enable command, we don't want to update twice (here and in the subscription)

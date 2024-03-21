@@ -113,8 +113,8 @@ namespace Datadog.Trace.AppSec
                                   .Value;
 
             WafDebugEnabled = config
-                        .WithKeys(ConfigurationKeys.AppSec.WafDebugEnabled)
-                        .AsBool(defaultValue: false)
+                             .WithKeys(ConfigurationKeys.AppSec.WafDebugEnabled)
+                             .AsBool(defaultValue: false);
         }
 
         public double ApiSecuritySampleDelay { get; set; }
