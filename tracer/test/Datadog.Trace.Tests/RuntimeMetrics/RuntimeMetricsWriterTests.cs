@@ -157,6 +157,12 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 
                 actualNumberOfThreads.Should().NotBeNull();
 
+                if (actualNumberOfThreads > expectedNumberOfThreads + 100)
+                {
+                    // Too many thread, try to force a memory dump
+                    Environment.FailFast("(╯°□°)╯︵ ┻━┻");
+                }
+
                 // To future generations: if 100 is not enough, feel free to bump it up. We're really just checking that the value is "realistic".
                 actualNumberOfThreads.Should().NotBeNull().And.BeGreaterThan(0).And.BeInRange(expectedNumberOfThreads - 100, expectedNumberOfThreads + 100);
 
