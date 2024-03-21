@@ -414,6 +414,8 @@ class ExplorationTestDescription
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "test/RestSharp.Tests",
                 SupportedFrameworks = new[] { TargetFramework.NET6_0 },
+                // Workaround for https://github.com/dotnet/runtime/issues/95653
+                EnvironmentVariables = new[] { ("DD_CLR_ENABLE_INLINING", "0") },
             },
             ExplorationTestName.serilog => new ExplorationTestDescription()
             {
