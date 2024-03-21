@@ -64,7 +64,6 @@ protected:
     std::uint64_t _representedDurationNanoseconds;
     AppDomainID _appDomainId;
     Callstack _callstack;
-    std::uint16_t _currentFramesCount;
 
     std::uint64_t _localRootSpanId;
     std::uint64_t _spanId;
@@ -134,7 +133,7 @@ inline std::uint64_t StackSnapshotResultBuffer::SetSpanId(std::uint64_t value)
 
 inline std::size_t StackSnapshotResultBuffer::GetFramesCount() const
 {
-    return _currentFramesCount;
+    return _callstack.size();
 }
 
 inline void StackSnapshotResultBuffer::SetFramesCount(std::uint16_t count)

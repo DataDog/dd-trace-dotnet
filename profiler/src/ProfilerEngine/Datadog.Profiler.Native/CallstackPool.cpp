@@ -3,8 +3,6 @@
 
 #include "CallstackPool.h"
 
-#include <cassert>
-
 CallstackPool::CallstackPool(std::size_t nbPools) :
     _nbPools{nbPools},
     _pools{std::make_unique<std::uint8_t[]>(nbPools * sizeof(Pool))},
@@ -26,7 +24,7 @@ shared::span<std::uintptr_t> CallstackPool::Acquire()
         auto offset = idx_linear * sizeof(Pool);
         auto* pool = reinterpret_cast<Pool*>(_pools.get() + offset);
 
-        if (std::atomic_exchange(&pool->_header._lock, 1) == 0)
+        if (pool->_header._lock.exchange(1, std::memory_order_seq_cst) == 0)
         {
             // move past the header
             auto* data = reinterpret_cast<std::uintptr_t*>(reinterpret_cast<std::uint8_t*>(pool) + sizeof(PoolHeader));
@@ -39,5 +37,5 @@ shared::span<std::uintptr_t> CallstackPool::Acquire()
 void CallstackPool::Release(shared::span<std::uintptr_t> buffer)
 {
     auto* header = reinterpret_cast<PoolHeader*>(reinterpret_cast<std::uint8_t*>(buffer.data()) - sizeof(PoolHeader));
-    std::atomic_exchange(&header->_lock, 0);
+    header->_lock.exchange(0, std::memory_order_seq_cst);
 }

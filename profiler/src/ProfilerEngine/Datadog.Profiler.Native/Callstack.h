@@ -17,6 +17,32 @@ public:
     Callstack();
     ~Callstack();
 
+#ifdef DD_TEST
+    Callstack(shared::span<std::uintptr_t> buffer)
+    {
+        _pool = nullptr;
+        _buffer = buffer;
+        _count = buffer.size();
+    }
+
+    bool operator==(Callstack const& other) const
+    {
+        if (other._count != _count)
+        {
+            return false;
+        }
+
+        for (auto i = 0; i < _count; i++)
+        {
+            if (_buffer[i] != other._buffer[i])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+#endif
+
     Callstack(Callstack const&) = delete;
     Callstack& operator=(Callstack const&) = delete;
 
@@ -34,7 +60,6 @@ public:
     // iterator
     std::uintptr_t* begin() const;
     std::uintptr_t* end() const;
-
 
 private:
     friend CallstackPool;

@@ -17,7 +17,7 @@ public:
 
 private:
 
-    static constexpr std::uint8_t MaxRetry =3;
+    static constexpr std::uint8_t MaxRetry = 3;
 
     friend Callstack;
 

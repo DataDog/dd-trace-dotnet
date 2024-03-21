@@ -5,6 +5,8 @@
 
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/LinuxStackFramesCollector.h"
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/ProfilerSignalManager.h"
+
+#include "CallstackPool.h"
 #include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
 #include "StackSnapshotResultBuffer.h"
@@ -210,7 +212,7 @@ public:
         _callbackCalledFuture = _callbackCalledPromise.get_future();
     }
 
-    void ValidateCallstack(const std::vector<uintptr_t>& ips)
+    void ValidateCallstack(const Callstack& callstack)
     {
         // Disable this check on Alpine due to flackyness
         // Libunwind randomly fails with unw_backtrace2 (from a signal handler)
@@ -219,13 +221,16 @@ public:
         const auto& expectedCallstack = _workerThread->GetExpectedCallStack();
 
         const auto expectedNbFrames = expectedCallstack.size();
-        const auto collectedNbFrames = ips.size();
+        const auto collectedNbFrames = callstack.size();
 
         EXPECT_GE(expectedNbFrames, 2);
         EXPECT_GE(collectedNbFrames, 2);
 
-        EXPECT_EQ(ips[collectedNbFrames - 1], (uintptr_t)expectedCallstack[expectedNbFrames - 1]);
-        EXPECT_EQ(ips[collectedNbFrames - 2], (uintptr_t)expectedCallstack[expectedNbFrames - 2]);
+        auto callstackView = callstack.Data();
+        auto expectedCallstackView = expectedCallstack.Data();
+
+        EXPECT_EQ(callstackView[collectedNbFrames - 1], expectedCallstackView[expectedNbFrames - 1]);
+        EXPECT_EQ(callstackView[collectedNbFrames - 2], expectedCallstackView[expectedNbFrames - 2]);
 #endif
     }
 
@@ -241,7 +246,8 @@ private:
         WorkerThread(const std::atomic<bool>& stopWorker) :
             _stopWorker(stopWorker),
             _workerThreadIdPromise(),
-            _workerThreadIdFuture{_workerThreadIdPromise.get_future()}
+            _workerThreadIdFuture{_workerThreadIdPromise.get_future()},
+            _callstack{shared::span<std::uintptr_t>(_framesBuffer.data(), _framesBuffer.size())}
 
         {
             _worker = std::thread(&WorkerThread::Work, this);
@@ -249,7 +255,6 @@ private:
 
         ~WorkerThread()
         {
-            _callstack.clear();
             _worker.join();
         }
 
@@ -258,7 +263,7 @@ private:
             return _workerThreadIdFuture.get();
         }
 
-        const std::vector<void*>& GetExpectedCallStack() const
+        const Callstack& GetExpectedCallStack() const
         {
             return _callstack;
         }
@@ -267,10 +272,9 @@ private:
         void Work()
         {
             // Get the callstack
-            const int32_t nbMaxFrames = 20;
-            _callstack.resize(nbMaxFrames);
-            auto nb = unw_backtrace(_callstack.data(), nbMaxFrames);
-            _callstack.resize(nb);
+            auto buffer = _callstack.Data();
+            auto nb = unw_backtrace((void**)buffer.data(), buffer.size());
+            _callstack.SetCount(nb);
 
             _workerThreadIdPromise.set_value(OpSysTools::GetThreadId());
             while (!_stopWorker.load())
@@ -283,7 +287,9 @@ private:
         std::promise<pid_t> _workerThreadIdPromise;
         std::shared_future<pid_t> _workerThreadIdFuture;
         std::thread _worker;
-        std::vector<void*> _callstack;
+        static constexpr std::uint8_t MaxFrames = 20;
+        std::array<std::uintptr_t, MaxFrames> _framesBuffer;
+        Callstack _callstack;
     };
 
     bool _isStopped;
@@ -310,13 +316,14 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
 
+    CallstackPool p(1);
+    collector.PrepareForNextCollection(&p);
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 
-    std::vector<uintptr_t> ips;
-    buffer->CopyInstructionPointers(ips);
+    auto callstack = buffer->GetCallstack();
 
-    ValidateCallstack(ips);
+    ValidateCallstack(callstack);
 }
 
 TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWithOldWay)
@@ -334,13 +341,14 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWith
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
 
+    CallstackPool p(1);
+    collector.PrepareForNextCollection(&p);
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 
-    std::vector<uintptr_t> ips;
-    buffer->CopyInstructionPointers(ips);
+    auto callstack = buffer->GetCallstack();
 
-    ValidateCallstack(ips);
+    ValidateCallstack(callstack);
 }
 
 TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCall)
@@ -402,18 +410,22 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
+
+    CallstackPool p(5);
+    collector.PrepareForNextCollection(&p);
+
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 
-    std::vector<uintptr_t> ips;
-    buffer->CopyInstructionPointers(ips);
+    auto callstack = buffer->GetCallstack();
 
-    ValidateCallstack(ips);
+    ValidateCallstack(callstack);
 
     // 2nd install test handler
     InstallHandler();
 
     // The profiler must not work
+    collector.PrepareForNextCollection(&p);
     ASSERT_DURATION_LE(3s, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, E_FAIL);
 
@@ -422,12 +434,13 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
 
     // Reset to validate that the profiler will not call the test handler
     ResetCallbackState();
+    collector.PrepareForNextCollection(&p);
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 
-    buffer->CopyInstructionPointers(ips);
+    callstack = buffer->GetCallstack();
 
-    ValidateCallstack(ips);
+    ValidateCallstack(callstack);
 
     // now the custmer handler must not work
     EXPECT_FALSE(WasCallbackCalled());
@@ -463,14 +476,15 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     threadInfo.SetOsInfo((DWORD)threadId, (HANDLE)0);
 
     // validate it's working
+    CallstackPool p(1);
+    collector.PrepareForNextCollection(&p);
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
 
     EXPECT_EQ(hr, S_OK);
 
-    std::vector<uintptr_t> ips;
-    buffer->CopyInstructionPointers(ips);
+    auto callstack = buffer->GetCallstack();
 
-    ValidateCallstack(ips);
+    ValidateCallstack(callstack);
 
     EXPECT_FALSE(WasCallbackCalled()) << "Test handler was called.";
 
@@ -506,14 +520,15 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     threadInfo.SetOsInfo((DWORD)threadId, (HANDLE)0);
 
     // validate it's working
+    CallstackPool p(1);
+    collector.PrepareForNextCollection(&p);
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
 
     EXPECT_EQ(hr, S_OK);
 
-    std::vector<uintptr_t> ips;
-    buffer->CopyInstructionPointers(ips);
+    auto callstack = buffer->GetCallstack();
 
-    ValidateCallstack(ips);
+    ValidateCallstack(callstack);
 
     EXPECT_FALSE(WasCallbackCalled()) << "Test handler was called.";
 
@@ -550,14 +565,15 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     threadInfo.SetOsInfo((DWORD)threadId, (HANDLE)0);
 
     // validate it's working
+    CallstackPool p(1);
+    collector.PrepareForNextCollection(&p);
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
 
     EXPECT_EQ(hr, S_OK);
 
-    std::vector<uintptr_t> ips;
-    buffer->CopyInstructionPointers(ips);
+    auto callstack = buffer->GetCallstack();
 
-    ValidateCallstack(ips);
+    ValidateCallstack(callstack);
 
     EXPECT_FALSE(WasCallbackCalled());
 
@@ -616,12 +632,13 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckThatProfilerHandlerAndOtherHandler
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
+    CallstackPool p(1);
+    collector.PrepareForNextCollection(&p);
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
 
     EXPECT_EQ(hr, S_OK);
-    std::vector<uintptr_t> ips;
-    buffer->CopyInstructionPointers(ips);
-    ValidateCallstack(ips);
+    auto callstack = buffer->GetCallstack();
+    ValidateCallstack(callstack);
 
     SendSignal();
     // here I do not know if the stack collection was done
@@ -661,6 +678,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
+    CallstackPool p(2);
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
 
     const auto threadId = GetWorkerThreadId();
@@ -670,26 +688,25 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
     StackSnapshotResultBuffer* buffer;
 
     {
-        collector.PrepareForNextCollection();
+        collector.PrepareForNextCollection(&p);
         // validate it's working
         ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, S_OK);
 
-        std::vector<uintptr_t> ips;
-        buffer->CopyInstructionPointers(ips);
-        ValidateCallstack(ips);
+        auto callstack = buffer->GetCallstack();
+        ValidateCallstack(callstack);
     }
 
     InstallHandler(SA_SIGINFO);
 
     {
         // profiler handler was replaced, so the signal will be lost and we will return after 2s
-        collector.PrepareForNextCollection();
+        collector.PrepareForNextCollection(&p);
         ASSERT_DURATION_LE(3s, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, E_FAIL);
 
         // At this point, the profiler restored its handler, ensure it's working as expected
-        collector.PrepareForNextCollection();
+        collector.PrepareForNextCollection(&p);
         ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, S_OK);
     }
@@ -700,14 +717,14 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
 
     {
         // profiler handler was replaced, so the signal will be lost and we will return after 2s
-        collector.PrepareForNextCollection();
+        collector.PrepareForNextCollection(&p);
         ASSERT_DURATION_LE(3s, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, E_FAIL);
 
         ResetCallbackState();
 
         // At this point, we stop restoring the profiler signal handler and stop profiling
-        collector.PrepareForNextCollection();
+        collector.PrepareForNextCollection(&p);
         ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, E_FAIL);
     }
