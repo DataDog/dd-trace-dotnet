@@ -14,6 +14,7 @@ using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.RuntimeMetrics
 {
@@ -21,6 +22,13 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
     [Collection(nameof(RuntimeMetricsWriterTests))]
     public class RuntimeMetricsWriterTests
     {
+        private readonly ITestOutputHelper _output;
+
+        public RuntimeMetricsWriterTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
         [Fact]
         public void PushEvents()
         {
@@ -160,7 +168,13 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
                 if (actualNumberOfThreads > expectedNumberOfThreads + 100)
                 {
                     // Too many thread, try to force a memory dump
-                    Environment.FailFast("(╯°□°)╯︵ ┻━┻");
+                    if (!MemoryDumpHelper.IsAvailable)
+                    {
+                        await MemoryDumpHelper.InitializeAsync(new Progress<string>(s => _output.WriteLine(s)));
+                    }
+
+                    var dumpResult = MemoryDumpHelper.CaptureMemoryDump(Process.GetCurrentProcess());
+                    Environment.FailFast(dumpResult.ToString());
                 }
 
                 // To future generations: if 100 is not enough, feel free to bump it up. We're really just checking that the value is "realistic".
