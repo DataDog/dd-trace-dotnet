@@ -51,6 +51,25 @@ namespace Datadog.Profiler.SmokeTests
             get => _testApplicationRunner.Environment;
         }
 
+        public void RunAndCheckWithRetries(int retryCount, string[] errorExceptions = null)
+        {
+            // allow retries for the test to pass due to named pipe flackiness in CI
+            for (int i = 0; i < retryCount; i++)
+            {
+                try
+                {
+                    RunAndCheck(errorExceptions);
+                    return;
+                }
+                catch (Exception e)
+                {
+                    _output.WriteLine($"Attempt {i + 1} failed: {e}");
+                }
+            }
+
+            RunAndCheck(errorExceptions);
+        }
+
         public void RunAndCheck(string[] errorExceptions = null)
         {
             using var agent = Run();
