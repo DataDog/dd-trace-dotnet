@@ -24,10 +24,12 @@ private:
     shared::span<std::uintptr_t> Acquire();
     void Release(shared::span<std::uintptr_t> buffer);
 
+    constexpr std::size_t GetPoolAlignedPoolSize();
+
     struct PoolHeader
     {
         // TODO create an aligned version of this struct
-        std::atomic<std::uint8_t> _lock;
+        std::atomic<std::uint64_t> _lock;
     };
 
     struct Pool
