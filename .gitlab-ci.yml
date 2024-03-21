@@ -10,9 +10,6 @@ include:
 
 variables:
   GIT_PROFILER_REF: master
-  DEPLOY_TO_DEBUGGER_BACKEND:
-    value: "false"
-    description: "Set to true to deploy to debugger backend demo application"
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
 
@@ -155,20 +152,6 @@ deploy_latest_musl_tag_to_docker_registries:
     IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA-musl
     IMG_DESTINATIONS: dd-lib-dotnet-init:latest-musl
     IMG_SIGNING: "false"
-
-deploy_to_debugger_backend:
-  stage: deploy
-  rules:
-    - if: '$DEPLOY_TO_DEBUGGER_BACKEND == "true"'
-  trigger:
-    project: DataDog/debugger-demos
-    branch: main
-  variables:
-    UPSTREAM_PACKAGE_JOB: build
-    UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
-    UPSTREAM_BRANCH: $CI_COMMIT_BRANCH
-    UPSTREAM_TAG: $DEPLOY_TAG
-
 
 package:
   extends: .package
