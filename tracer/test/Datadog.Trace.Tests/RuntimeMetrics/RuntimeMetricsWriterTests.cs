@@ -14,7 +14,6 @@ using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.RuntimeMetrics
 {
@@ -22,13 +21,6 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
     [Collection(nameof(RuntimeMetricsWriterTests))]
     public class RuntimeMetricsWriterTests
     {
-        private readonly ITestOutputHelper _output;
-
-        public RuntimeMetricsWriterTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
         [Fact]
         public void PushEvents()
         {
