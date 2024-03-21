@@ -18,8 +18,8 @@ using Datadog.Trace.Security.Unit.Tests.Iast;
 namespace Benchmarks.Trace.Iast;
 
 [MemoryDiagnoser]
-[BenchmarkAgent7]
-[BenchmarkCategory(Constants.AppSecCategory)]
+// [BenchmarkAgent7]
+// [BenchmarkCategory(Constants.AppSecCategory)]
 public class StringAspectsBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;

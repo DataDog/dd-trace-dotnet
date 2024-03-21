@@ -23,8 +23,8 @@ using Microsoft.AspNetCore.Http.Features;
 namespace Benchmarks.Trace.Asm
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent7]
-    [BenchmarkCategory(Constants.AppSecCategory)]
+    // [BenchmarkAgent7]
+    // [BenchmarkCategory(Constants.AppSecCategory)]
     public class AppSecBodyBenchmark
     {
         private static readonly Security _security;

@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+#pragma warning disable SA1401
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
@@ -19,7 +20,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 #else
         private const string DllName = "ddwaf";
 #endif
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafLibraryInvoker));
         private readonly GetVersionDelegate _getVersionField;
         private readonly InitDelegate _initField;
@@ -47,6 +47,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
         private readonly UpdateDelegate _updateField;
         private string _version = null;
+        internal static int SizeOfDdWafObject = Marshal.SizeOf(typeof(DdwafObjectStruct));
 
         private WafLibraryInvoker(IntPtr libraryHandle)
         {
@@ -278,63 +279,63 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal IntPtr ObjectInvalid()
         {
-            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            var ptr = AllocateDdWafObject();
             _objectInvalidField(ptr);
             return ptr;
         }
 
         internal IntPtr ObjectStringLength(string s, ulong length)
         {
-            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            var ptr = AllocateDdWafObject();
             _objectStringLengthField(ptr, s, length);
             return ptr;
         }
 
         internal IntPtr ObjectBool(bool b)
         {
-            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            var ptr = AllocateDdWafObject();
             _objectBoolField(ptr, b);
             return ptr;
         }
 
         internal IntPtr ObjectLong(long l)
         {
-            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            var ptr = AllocateDdWafObject();
             _objectLongField(ptr, l);
             return ptr;
         }
 
         internal IntPtr ObjectUlong(ulong l)
         {
-            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            var ptr = AllocateDdWafObject();
             _objectUlongField(ptr, l);
             return ptr;
         }
 
         internal IntPtr ObjectDouble(double b)
         {
-            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            var ptr = AllocateDdWafObject();
             _objectDoubleField(ptr, b);
             return ptr;
         }
 
         internal IntPtr ObjectNull()
         {
-            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            var ptr = AllocateDdWafObject();
             _objectNullField(ptr);
             return ptr;
         }
 
         internal IntPtr ObjectArray()
         {
-            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            var ptr = AllocateDdWafObject();
             _objectArrayField(ptr);
             return ptr;
         }
 
         internal IntPtr ObjectMap()
         {
-            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            var ptr = AllocateDdWafObject();
             _objectMapField(ptr);
             return ptr;
         }
@@ -351,6 +352,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         }
 
         internal void ResultFree(ref DdwafResultStruct output) => _freeResultField(ref output);
+
+        private IntPtr AllocateDdWafObject()
+        {
+            var ptr = Marshal.AllocHGlobal(SizeOfDdWafObject);
+            GC.AddMemoryPressure(SizeOfDdWafObject);
+            return ptr;
+        }
 
         private void LoggingCallback(
             DDWAF_LOG_LEVEL level,

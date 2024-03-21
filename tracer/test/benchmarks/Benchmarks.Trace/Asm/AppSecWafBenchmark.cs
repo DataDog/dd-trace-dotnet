@@ -16,8 +16,8 @@ using Datadog.Trace.AppSec.Waf.NativeBindings;
 namespace Benchmarks.Trace.Asm;
 
 [MemoryDiagnoser]
-[BenchmarkAgent7]
-[BenchmarkCategory(Constants.AppSecCategory)]
+// [BenchmarkAgent7]
+// [BenchmarkCategory(Constants.AppSecCategory)]
 public class AppSecWafBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;

@@ -359,6 +359,8 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 {
                     arg.Dispose();
                 }
+
+                _argCache.Clear();
             }
         }
     }

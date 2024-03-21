@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.AppSec;
@@ -32,7 +33,7 @@ public class AppSecEncoderBenchmark
         var wafLibraryInvoker = AppSecBenchmarkUtils.CreateWafLibraryInvoker();
         _encoderLegacy = new EncoderLegacy(wafLibraryInvoker);
 
-        _args = MakeNestedMap(20);
+        _args = MakeNestedMap(50);
     }
 
     /// <summary>
@@ -97,16 +98,16 @@ public class AppSecEncoderBenchmark
         return new NestedMap(root, nestingDepth, withAttack);
     }
 
-    [Benchmark]
+    // [Benchmark]
     public void EncodeArgs()
     {
-        using var pwArgs = _encoder.Encode(_args.Map, applySafetyLimits: true);
+        using var _ = _encoder.Encode(_args.Map, applySafetyLimits: true);
     }
 
     [Benchmark]
     public void EncodeLegacyArgs()
     {
-        using var pwArgs = _encoderLegacy.Encode(_args.Map, applySafetyLimits: true);
+        using var _ = _encoderLegacy.Encode(_args.Map, applySafetyLimits: true);
     }
 
     public record NestedMap(Dictionary<string, object> Map, int NestingDepth, bool IsAttack = false)

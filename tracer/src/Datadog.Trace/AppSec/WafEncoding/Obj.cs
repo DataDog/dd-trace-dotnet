@@ -5,7 +5,6 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
 namespace Datadog.Trace.AppSec.WafEncoding
@@ -75,6 +74,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 if (ptr != IntPtr.Zero)
                 {
                     Marshal.FreeHGlobal(ptr);
+                    GC.RemoveMemoryPressure(WafLibraryInvoker.SizeOfDdWafObject);
                     ptr = IntPtr.Zero;
                 }
             }
