@@ -27,8 +27,9 @@ namespace Datadog.Trace.Agent.MessagePack
         // this class so that's fine.
 
         // top-level span fields
-        private readonly byte[] _metaStructBytes = StringEncoding.UTF8.GetBytes("meta_struct");
+
         private readonly byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
+        private readonly byte[] _traceIdHighBytes = StringEncoding.UTF8.GetBytes("trace_id_high");
         private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
         private readonly byte[] _nameBytes = StringEncoding.UTF8.GetBytes("name");
         private readonly byte[] _resourceBytes = StringEncoding.UTF8.GetBytes("resource");
@@ -38,7 +39,8 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _durationBytes = StringEncoding.UTF8.GetBytes("duration");
         private readonly byte[] _parentIdBytes = StringEncoding.UTF8.GetBytes("parent_id");
         private readonly byte[] _errorBytes = StringEncoding.UTF8.GetBytes("error");
-
+        private readonly byte[] _metaStructBytes = StringEncoding.UTF8.GetBytes("meta_struct");
+        private readonly byte[] _spanLinkBytes = StringEncoding.UTF8.GetBytes("span_link");
         // string tags
         private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
 
@@ -199,6 +201,33 @@ namespace Datadog.Trace.Agent.MessagePack
             if (hasMetaStruct)
             {
                 offset += WriteMetaStruct(ref bytes, offset, in spanModel);
+            }
+
+            if (span.SpanLinkList is { Count: > 0 })
+            {
+                offset += WriteSpanLink(ref bytes, offset, in spanModel);
+            }
+
+            return offset - originalOffset;
+        }
+
+        private int WriteSpanLink(ref byte[] bytes, int offset, in SpanModel spanModel)
+        {
+            int originalOffset = offset;
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanLinkBytes);
+            offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, spanModel.Span.SpanLinkList.Count);
+            foreach (var spanLink in spanModel.Span.SpanLinkList)
+            {
+                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 3);
+                // individal key-value pairs - traceid - lower
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, spanLink.TraceId.Lower);
+                // individal key-value pairs - traceid - higher
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdHighBytes);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, spanLink.TraceId.Upper);
+                // spanid
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, spanLink.SpanId);
             }
 
             return offset - originalOffset;

@@ -111,6 +111,59 @@ public class SpanMessagePackFormatterTests
         }
     }
 
+    [Fact]
+    public void SpanLink_Tag_Serialization()
+    {
+        var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
+
+        var parentContext = new SpanContext(new TraceId(0, 1), 2, (int)SamplingPriority.UserKeep, "ServiceName1", "origin1");
+
+        var spans = new[]
+        {
+            new Span(parentContext, DateTimeOffset.UtcNow),
+            new Span(new SpanContext(parentContext, new TraceContext(Mock.Of<IDatadogTracer>()), "ServiceName1"), DateTimeOffset.UtcNow),
+            new Span(new SpanContext(new TraceId(0, 5), 6, (int)SamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
+        };
+
+        spans[0].AddSpanLink(spans[1]);
+        spans[1].AddSpanLink(spans[2]);
+        spans[2].AddSpanLink(spans[0]);
+
+        foreach (var span in spans)
+        {
+            span.SetDuration(TimeSpan.FromSeconds(1));
+        }
+
+        var traceChunk = new TraceChunkModel(new(spans));
+
+        byte[] bytes = [];
+
+        var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
+
+        var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
+
+        for (int i = 0; i < result.Length; i++)
+        {
+            var expected = spans[i];
+            var actual = result[i];
+
+            var tagsProcessor = new TagsProcessor<string>(actual.Tags);
+            expected.Tags.EnumerateTags(ref tagsProcessor);
+
+            // _dd.span_link is added during serialization
+            if (actual.ParentId == null)
+            {
+                tagsProcessor.Remaining.Should()
+                             .HaveCount(3).And.Contain(new KeyValuePair<string, string>("_dd.span_link", "I don't know what this looks like yet, I'll add a break point to check later"));
+            }
+            else
+            {
+                tagsProcessor.Remaining.Should()
+                             .HaveCount(1).And.Contain(new KeyValuePair<string, string>("language", "dotnet"));
+            }
+        }
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
