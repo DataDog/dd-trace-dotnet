@@ -29,9 +29,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in new string[] { string.Empty }
+            => from packageVersionArray in PackageVersions.AzureServiceBus
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new string[] { packageVersionArray, metadataSchemaVersion };
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
@@ -56,10 +56,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedProcessorSpanCount = 91;
+                // Default version is 7.13.0
+                var version = string.IsNullOrEmpty(packageVersion) ? new Version(7, 13) : new Version(packageVersion);
+                var expectedProcessorSpanCount = version >= new Version(7, 10) ? 91 : 74;
+                var snapshotSuffix = version switch
+                {
+                    { Major: 7, Minor: >= 17 } => "7_17",
+                    { Major: 7, Minor: >= 13 } => "7_13",
+                    { Major: 7, Minor: >= 10 } => "7_10",
+                    _ => "7_04"
+                };
+
                 agent.SpanFilters.Add(s =>
                     (s.Tags.TryGetValue("otel.library.name", out var value) && value == "Samples.AzureServiceBus")
-                    || (s.Tags.TryGetValue("messaging.system", out value) && value == "servicebus")); // Exclude the Admin requests
+                    || (s.Tags.TryGetValue("messaging.system", out value) && value == "servicebus") // Exclude the Admin requests
+                    || (s.Tags.TryGetValue("message_bus.destination", out _))); // Include older versions of the library
                 var spans = agent.WaitForSpans(expectedProcessorSpanCount);
 
                 using var s = new AssertionScope();
@@ -68,11 +79,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 var serviceBusSpans = spans.Where(s => s.Tags["span.kind"] != "internal");
                 ValidateIntegrationSpans(serviceBusSpans, metadataSchemaVersion, expectedServiceName: "Samples.AzureServiceBus", isExternalSpan: false);
 
-                var filename = $"{nameof(AzureServiceBusTests)}.Schema{metadataSchemaVersion.ToUpper()}";
+                var filename = $"{nameof(AzureServiceBusTests)}_{snapshotSuffix}.Schema{metadataSchemaVersion.ToUpper()}";
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(new Regex(@"net.peer.name: [a-zA-Z0-9-]+.servicebus.windows.net"), "net.peer.name: localhost");
                 settings.AddRegexScrubber(new Regex(@"peer.service: [a-zA-Z0-9-]+.servicebus.windows.net"), "peer.service: localhost");
+                settings.AddRegexScrubber(new Regex(@"peer.address: [a-zA-Z0-9-]+.servicebus.windows.net"), "peer.address: localhost");
+                settings.AddRegexScrubber(new Regex(@"server.address: [a-zA-Z0-9-]+.servicebus.windows.net"), "server.address: localhost");
 
                 await VerifyHelper.VerifySpans(spans, settings, OrderSpans)
                                   .UseFileName(filename)

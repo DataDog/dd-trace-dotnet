@@ -26,6 +26,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.MessagingDestinationName)]
         public string MessagingDestinationName { get; set; }
 
+        [Tag(Trace.Tags.LegacyMessageBusDestination)]
+        public string LegacyMessageBusDestination { get; set; }
+
         public override string SpanKind
         {
             get => MessagingOperation switch
@@ -69,7 +72,7 @@ namespace Datadog.Trace.Tagging
                     return null;
                 }
 
-                return _peerServiceOverride ?? MessagingDestinationName;
+                return _peerServiceOverride ?? MessagingDestinationName ?? LegacyMessageBusDestination;
             }
             private set => _peerServiceOverride = value;
         }
@@ -86,7 +89,9 @@ namespace Datadog.Trace.Tagging
 
                 return _peerServiceOverride is not null
                             ? "peer.service"
-                            : Trace.Tags.MessagingDestinationName;
+                            : MessagingDestinationName is not null
+                                ? Trace.Tags.MessagingDestinationName
+                                : Trace.Tags.LegacyMessageBusDestination;
             }
         }
     }
