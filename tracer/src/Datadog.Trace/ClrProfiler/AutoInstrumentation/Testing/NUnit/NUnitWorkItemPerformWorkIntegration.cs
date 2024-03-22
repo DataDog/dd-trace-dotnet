@@ -66,7 +66,6 @@ public static class NUnitWorkItemPerformWorkIntegration
                     item.Properties.Set(NUnitIntegration.SkipReasonKey, IntelligentTestRunnerTags.SkippedByReason);
                 }
 
-                NUnitIntegration.GetOrCreateTest(item);
                 break;
         }
 

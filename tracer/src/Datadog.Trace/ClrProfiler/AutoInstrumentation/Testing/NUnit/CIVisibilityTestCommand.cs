@@ -5,6 +5,8 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
@@ -24,7 +26,8 @@ internal class CIVisibilityTestCommand
     public object Execute(ITestExecutionContext context)
     {
         var result = ExecuteTest(context);
-        if (result.ResultState.Status != TestStatus.Skipped)
+        if (result.ResultState.Status != TestStatus.Skipped &&
+            result.ResultState.Status != TestStatus.Inconclusive)
         {
             // Retries
             ClearResultForRetry();
@@ -86,15 +89,7 @@ internal class CIVisibilityTestCommand
 
     private ITestResult ExecuteTest(ITestExecutionContext context)
     {
-        // var test = NUnitIntegration.CreateTest(context.CurrentTest);
-
-        // Common.Log.Information("InnerCommand Type = {FullName} | {Test}", _innerCommand.Type.FullName, context.CurrentTest.FullName);
-        // if (_innerCommand.Type.FullName == "NUnit.Framework.Internal.Commands.SkipCommand")
-        // {
-        //     test?.Close(Ci.TestStatus.Skip, TimeSpan.Zero);
-        //     test = null;
-        // }
-
+        var test = NUnitIntegration.GetOrCreateTest(context.CurrentTest, context.CurrentRepeatCount);
         ITestResult? testResult = null;
         try
         {
@@ -108,10 +103,10 @@ internal class CIVisibilityTestCommand
             testResult.RecordException(ex);
         }
 
-        // if (test is not null)
-        // {
-        //     NUnitIntegration.FinishTest(test, testResult);
-        // }
+        if (test is not null)
+        {
+            NUnitIntegration.FinishTest(test, testResult);
+        }
 
         return testResult;
     }

@@ -6,10 +6,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
@@ -30,9 +32,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-        internal static Test? GetOrCreateTest(ITest currentTest)
+        internal static Test? GetOrCreateTest(ITest currentTest, int repeatCount = 0)
         {
-            var key = $"{currentTest.Id}|{currentTest.TestCaseCount}";
+            var key = $"{currentTest.Id}|{repeatCount}";
+            Common.Log.Information("GetOrCreateTest: {Key}", key);
             lock (Tests)
             {
                 if (Tests.TryGetValue(key, out var testReference) && testReference.TryGetTarget(out var test))
@@ -47,6 +50,162 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 }
 
                 return test;
+            }
+        }
+
+        internal static void FinishTest(Test test, ITestResult testResult)
+        {
+            GetExceptionAndMessage(testResult, out var exceptionType, out var resultMessage);
+            switch (testResult.ResultState.Status)
+            {
+                case TestStatus.Skipped or TestStatus.Inconclusive:
+                    test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, resultMessage);
+                    break;
+                case TestStatus.Failed:
+                    test.SetErrorInfo(exceptionType, resultMessage, testResult.StackTrace);
+                    test.Close(Ci.TestStatus.Fail);
+                    break;
+                default:
+                {
+                    if (!string.IsNullOrEmpty(resultMessage))
+                    {
+                        test.SetTag(TestTags.Message, resultMessage);
+                    }
+
+                    test.Close(Ci.TestStatus.Pass);
+                    break;
+                }
+            }
+        }
+
+        internal static TTestCommand WrapWithRetryCommand<TTestCommand>(TTestCommand testCommand)
+        {
+            if (testCommand.TryDuckCast<ITestCommand>(out var duckTypedTestCommand))
+            {
+                var retryTestCommand = new CIVisibilityTestCommand(duckTypedTestCommand, 0);
+                return (TTestCommand)retryTestCommand.DuckImplement(typeof(TTestCommand));
+            }
+
+            return testCommand;
+        }
+
+        internal static TestModule? GetTestModuleFrom(ITest? test)
+        {
+            if (test is null)
+            {
+                return null;
+            }
+
+            if (test.TestType != TestModuleConst)
+            {
+                test = GetParentWithTestType(test, TestModuleConst);
+            }
+
+            if (test is not null &&
+                ModulesItems.TryGetValue(test.Instance!, out var moduleObject) &&
+                moduleObject is TestModule module)
+            {
+                return module;
+            }
+
+            return null;
+        }
+
+        internal static void SetTestModuleTo(ITest test, TestModule module)
+        {
+            if (test.TestType == TestModuleConst)
+            {
+                ModulesItems.Add(test.Instance!, module);
+            }
+            else if (GetParentWithTestType(test, TestModuleConst) is { } assemblyITest)
+            {
+                ModulesItems.Add(assemblyITest.Instance!, module);
+            }
+        }
+
+        internal static TestSuite? GetTestSuiteFrom(ITest? test)
+        {
+            if (test is null)
+            {
+                return null;
+            }
+
+            if (test.TestType != TestSuiteConst)
+            {
+                test = GetParentWithTestType(test, TestSuiteConst);
+            }
+
+            if (test is not null &&
+                SuiteItems.TryGetValue(test.Instance!, out var suiteObject) &&
+                suiteObject is TestSuite suite)
+            {
+                return suite;
+            }
+
+            return null;
+        }
+
+        internal static void SetTestSuiteTo(ITest test, TestSuite suite)
+        {
+            if (test.TestType == TestSuiteConst)
+            {
+                SuiteItems.Add(test.Instance!, suite);
+            }
+            else if (GetParentWithTestType(test, TestSuiteConst) is { } suiteITest)
+            {
+                SuiteItems.Add(suiteITest.Instance!, suite);
+            }
+        }
+
+        internal static bool ShouldSkip(ITest currentTest, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>>? traits = null)
+        {
+            isUnskippable = false;
+            isForcedRun = false;
+
+            if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
+            {
+                return false;
+            }
+
+            var testMethod = currentTest.Method.MethodInfo;
+            var testSuite = testMethod.DeclaringType?.FullName ?? string.Empty;
+            var itrShouldSkip = Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
+            if (traits is null)
+            {
+                ExtractTraits(currentTest, ref traits);
+            }
+
+            isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
+            isForcedRun = itrShouldSkip && isUnskippable;
+            return itrShouldSkip && !isUnskippable;
+        }
+
+        internal static void GetExceptionAndMessage(ITestResult result, out string exceptionType, out string resultMessage)
+        {
+            exceptionType = result.ResultState.Site switch
+            {
+                FailureSite.Child => "ChildException",
+                FailureSite.Parent => "ParentException",
+                FailureSite.Test => "TestException",
+                FailureSite.SetUp => "SetUpException",
+                FailureSite.TearDown => "TearDownException",
+                _ => string.Empty
+            };
+
+            resultMessage = result.Message ?? string.Empty;
+            while (true)
+            {
+                var resultSplittedMessage = resultMessage.Split(':');
+                if (resultSplittedMessage.Length < 2 ||
+                    resultSplittedMessage[0]?.Trim() is not { Length: > 0 } exType ||
+                    exType.Contains(" "))
+                {
+                    Common.Log.Debug("Exception type: {ExceptionType}, Message: {ResultMessage}", exceptionType, resultMessage);
+                    break;
+                }
+
+                resultMessage = string.Join(":", resultSplittedMessage.Skip(1)).Trim();
+                exceptionType = exType;
             }
         }
 
@@ -190,97 +349,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     }
                 }
             }
-        }
-
-        internal static TestModule? GetTestModuleFrom(ITest? test)
-        {
-            if (test is null)
-            {
-                return null;
-            }
-
-            if (test.TestType != TestModuleConst)
-            {
-                test = GetParentWithTestType(test, TestModuleConst);
-            }
-
-            if (test is not null &&
-                ModulesItems.TryGetValue(test.Instance!, out var moduleObject) &&
-                moduleObject is TestModule module)
-            {
-                return module;
-            }
-
-            return null;
-        }
-
-        internal static void SetTestModuleTo(ITest test, TestModule module)
-        {
-            if (test.TestType == TestModuleConst)
-            {
-                ModulesItems.Add(test.Instance!, module);
-            }
-            else if (GetParentWithTestType(test, TestModuleConst) is { } assemblyITest)
-            {
-                ModulesItems.Add(assemblyITest.Instance!, module);
-            }
-        }
-
-        internal static TestSuite? GetTestSuiteFrom(ITest? test)
-        {
-            if (test is null)
-            {
-                return null;
-            }
-
-            if (test.TestType != TestSuiteConst)
-            {
-                test = GetParentWithTestType(test, TestSuiteConst);
-            }
-
-            if (test is not null &&
-                SuiteItems.TryGetValue(test.Instance!, out var suiteObject) &&
-                suiteObject is TestSuite suite)
-            {
-                return suite;
-            }
-
-            return null;
-        }
-
-        internal static void SetTestSuiteTo(ITest test, TestSuite suite)
-        {
-            if (test.TestType == TestSuiteConst)
-            {
-                SuiteItems.Add(test.Instance!, suite);
-            }
-            else if (GetParentWithTestType(test, TestSuiteConst) is { } suiteITest)
-            {
-                SuiteItems.Add(suiteITest.Instance!, suite);
-            }
-        }
-
-        internal static bool ShouldSkip(ITest currentTest, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>>? traits = null)
-        {
-            isUnskippable = false;
-            isForcedRun = false;
-
-            if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
-            {
-                return false;
-            }
-
-            var testMethod = currentTest.Method.MethodInfo;
-            var testSuite = testMethod.DeclaringType?.FullName ?? string.Empty;
-            var itrShouldSkip = Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
-            if (traits is null)
-            {
-                ExtractTraits(currentTest, ref traits);
-            }
-
-            isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
-            isForcedRun = itrShouldSkip && isUnskippable;
-            return itrShouldSkip && !isUnskippable;
         }
 
         private static ITest? GetParentWithTestType(ITest test, string testType)

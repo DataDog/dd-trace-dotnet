@@ -5,7 +5,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Linq;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -47,8 +46,7 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
         var item = instance.Test;
         var result = instance.Result;
 
-        GetExceptionAndMessage(result, out var exceptionType, out var resultMessage);
-
+        NUnitIntegration.GetExceptionAndMessage(result, out var exceptionType, out var resultMessage);
         switch (item.TestType)
         {
             case "Assembly" when NUnitIntegration.GetTestModuleFrom(item) is { } module:
@@ -105,7 +103,8 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
                             {
                                 foreach (var childWorkItemObject in childCompositeWorkItemChildren)
                                 {
-                                    if (childWorkItemObject.TryDuckCast<IWorkItem>(out var childWorkItem) && childWorkItem.Result.ResultState.Site == FailureSite.Parent)
+                                    if (childWorkItemObject.TryDuckCast<IWorkItem>(out var childWorkItem) &&
+                                        childWorkItem.Result.ResultState.Site == FailureSite.Parent)
                                     {
                                         if (NUnitIntegration.GetOrCreateTest(childWorkItem.Test) is { IsClosed: false } test)
                                         {
@@ -115,7 +114,8 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
                                     }
                                 }
                             }
-                            else if (childCompositeWorkItem.Test.HasChildren && childCompositeWorkItem.Test.Tests?.Count > 0)
+                            else if (childCompositeWorkItem.Test.HasChildren &&
+                                     childCompositeWorkItem.Test.Tests?.Count > 0)
                             {
                                 foreach (var childTestObject in childCompositeWorkItem.Test.Tests)
                                 {
@@ -135,59 +135,9 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
 
                 suite.Close();
                 break;
-            case "TestMethod" when NUnitIntegration.GetOrCreateTest(item) is { IsClosed: false } test:
-                if (result.ResultState.Status is TestStatus.Skipped or TestStatus.Inconclusive)
-                {
-                    test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, result.Message);
-                }
-                else if (result.ResultState.Status == TestStatus.Failed)
-                {
-                    test.SetErrorInfo(exceptionType, resultMessage, result.StackTrace);
-                    test.Close(Ci.TestStatus.Fail);
-                }
-                else
-                {
-                    if (!string.IsNullOrEmpty(resultMessage))
-                    {
-                        test.SetTag(TestTags.Message, resultMessage);
-                    }
-
-                    test.Close(Ci.TestStatus.Pass);
-                }
-
-                break;
         }
 
         return CallTargetState.GetDefault();
-    }
-
-    private static void GetExceptionAndMessage(ITestResult result, out string exceptionType, out string resultMessage)
-    {
-        exceptionType = result.ResultState.Site switch
-        {
-            FailureSite.Child => "ChildException",
-            FailureSite.Parent => "ParentException",
-            FailureSite.Test => "TestException",
-            FailureSite.SetUp => "SetUpException",
-            FailureSite.TearDown => "TearDownException",
-            _ => string.Empty
-        };
-
-        resultMessage = result.Message ?? string.Empty;
-        while (true)
-        {
-            var resultSplittedMessage = resultMessage.Split(':');
-            if (resultSplittedMessage.Length < 2 ||
-                resultSplittedMessage[0]?.Trim() is not { Length: > 0 } exType ||
-                exType.Contains(" "))
-            {
-                Common.Log.Debug("Exception type: {ExceptionType}, Message: {ResultMessage}", exceptionType, resultMessage);
-                break;
-            }
-
-            resultMessage = string.Join(":", resultSplittedMessage.Skip(1)).Trim();
-            exceptionType = exType;
-        }
     }
 
     private static void WriteDebugInfo(IWorkItem workItem)
