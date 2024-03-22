@@ -129,7 +129,8 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
-            span.SetMetric(Metrics.SamplingRuleDecision, _samplingRate);
+            var rootSpan = span.Context.TraceContext.RootSpan ?? span;
+            rootSpan.SetMetric(Metrics.SamplingRuleDecision, _samplingRate);
             return _samplingRate;
         }
 

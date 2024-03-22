@@ -35,7 +35,9 @@ namespace Datadog.Trace.Sampling
         public float GetSamplingRate(Span span)
         {
             Log.Debug("Using the global sampling rate: {Rate}", _globalRate);
-            span.SetMetric(Metrics.SamplingRuleDecision, _globalRate);
+
+            var rootSpan = span.Context.TraceContext.RootSpan ?? span;
+            rootSpan.SetMetric(Metrics.SamplingRuleDecision, _globalRate);
             return _globalRate;
         }
     }

@@ -75,13 +75,15 @@ namespace Datadog.Trace.Sampling
 
             static void SetSamplingAgentDecision(Span span, float sampleRate)
             {
-                if (span.Tags is CommonTags commonTags)
+                var rootSpan = span.Context.TraceContext.RootSpan ?? span;
+
+                if (rootSpan.Tags is CommonTags commonTags)
                 {
                     commonTags.SamplingAgentDecision = sampleRate;
                 }
                 else
                 {
-                    span.SetMetric(Metrics.SamplingAgentDecision, sampleRate);
+                    rootSpan.SetMetric(Metrics.SamplingAgentDecision, sampleRate);
                 }
             }
         }
