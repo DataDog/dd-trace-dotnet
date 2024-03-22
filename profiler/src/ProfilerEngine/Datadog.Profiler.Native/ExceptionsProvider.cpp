@@ -46,6 +46,7 @@ ExceptionsProvider::ExceptionsProvider(
 {
     _exceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_exceptions");
     _sampledExceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_exceptions");
+    _callstackPool = std::make_unique<CallstackPool>(500);
 }
 
 bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)

@@ -27,7 +27,6 @@ std::vector<SampleValueType> ContentionProvider::SampleTypeDefinitions(
         {"lock-time", "nanoseconds"}
     });
 
-
 ContentionProvider::ContentionProvider(
     SampleValueTypeProvider& valueTypeProvider,
     ICorProfilerInfo4* pCorProfilerInfo,
@@ -51,6 +50,7 @@ ContentionProvider::ContentionProvider(
     _lockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_lock_contentions_duration");
     _sampledLockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_lock_contentions");
     _sampledLockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_sampled_lock_contentions_duration");
+    _callstackPool = std::make_unique<CallstackPool>(500);
 }
 
 std::string ContentionProvider::GetBucket(double contentionDurationNs)
