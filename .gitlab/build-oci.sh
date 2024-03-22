@@ -19,7 +19,8 @@ curl --location --fail \
 fpm --input-type deb \
   --output-type dir \
   --name datadog-dotnet-apm \
-  $TMP_DIR/datadog-dotnet-apm.old
+  --package $TMP_DIR
+  datadog-dotnet-apm.old
 
 echo -n $DOTNET_PACKAGE_VERSION > $TMP_DIR/opt/datadog/version/auto_inject-dotnet.version
 
