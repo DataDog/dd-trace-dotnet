@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class XUnitTestRunnerRunAsyncIntegration
 {
-    private static readonly int Retries = 3;
+    private static readonly int Retries = 0;
     private static readonly ConditionalWeakTable<object, StrongBox<int>> ExecutionCount = new();
 
     /// <summary>
