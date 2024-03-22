@@ -146,6 +146,11 @@ namespace Datadog.Trace.Agent.MessagePack
                 len++;
             }
 
+            if (span.SpanLinkList is { Count: > 0 })
+            {
+                len++;
+            }
+
             len += 2; // Tags and metrics
 
             int originalOffset = offset;
