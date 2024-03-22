@@ -2,7 +2,7 @@
 #include "RawSample.h"
 #include "Sample.h"
 
-class RawExceptionSample : public RawSample
+class RawExceptionSample : public RawSample<RawExceptionSample>
 {
 public:
     RawExceptionSample() = default;

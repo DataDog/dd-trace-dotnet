@@ -8,6 +8,7 @@
 #include "cor.h"
 #include "corprof.h"
 
+#include "Log.h"
 #include "IThreadInfo.h"
 #include "ScopedHandle.h"
 #include "Semaphore.h"
@@ -84,6 +85,8 @@ public:
 
     inline std::string GetProfileThreadId() override;
     inline std::string GetProfileThreadName() override;
+
+    inline AppDomainID GetAppDomainId(ICorProfilerInfo4* pCorProfilerInfo) const;
 
 #ifdef LINUX
     inline void SetSharedMemory(volatile int* memoryArea);
@@ -415,3 +418,19 @@ inline void ManagedThreadInfo::SetSharedMemory(volatile int* memoryArea)
     _sharedMemoryArea = memoryArea;
 }
 #endif
+
+AppDomainID ManagedThreadInfo::GetAppDomainId(ICorProfilerInfo4* pCorProfilerInfo) const
+{
+    AppDomainID appDomainId = static_cast<AppDomainID>(NULL);
+    HRESULT hr = pCorProfilerInfo->GetThreadAppDomain(_clrThreadId, &appDomainId);
+
+    if (Log::IsDebugEnabled())
+    {
+        if (FAILED(hr))
+        {
+            Log::Info("Failed to retrieve AppDomainID for the thread: ", _clrThreadId, " / ", _osThreadId, " (ThreadID/OS Thread Id)");
+        }
+    }
+
+    return appDomainId;
+}
