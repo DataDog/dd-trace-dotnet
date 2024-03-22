@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -24,7 +26,7 @@ namespace Datadog.Trace.Util
         /// </summary>
         /// <param name="key">Name of the environment variable to set</param>
         /// <param name="value">Value to set</param>
-        public static void SetEnvironmentVariable(string key, string value)
+        public static void SetEnvironmentVariable(string key, string? value)
         {
             try
             {
@@ -40,7 +42,7 @@ namespace Datadog.Trace.Util
         /// Safe wrapper around Environment.MachineName
         /// </summary>
         /// <returns>The value of <see cref="Environment.MachineName"/>, or null if an error occured</returns>
-        public static string GetMachineName()
+        public static string? GetMachineName()
         {
             try
             {
@@ -60,7 +62,7 @@ namespace Datadog.Trace.Util
         /// <param name="key">Name of the environment variable to fetch</param>
         /// <param name="defaultValue">Value to return in case of error</param>
         /// <returns>The value of the environment variable, or the default value if an error occured</returns>
-        public static string GetEnvironmentVariable(string key, string defaultValue = null)
+        public static string? GetEnvironmentVariable(string key, string? defaultValue = null)
         {
             try
             {
