@@ -87,13 +87,13 @@ namespace Datadog.Trace.AppSec
 
             ApiSecuritySampling = config
                                  .WithKeys(ConfigurationKeys.AppSec.ApiSecurityRequestSampleRate)
-                                 .AsDouble(val => val is <= 1 and >= 0)
-                                 .GetValueOrDefault(0.1);
+                                 .AsDouble(defaultValue: 0.1, validator: val => val is <= 1 and >= 0)
+                                 .Value;
 
             ApiSecurityMaxConcurrentRequests = config
                                               .WithKeys(ConfigurationKeys.AppSec.ApiSecurityMaxConcurrentRequests)
-                                              .AsInt32(val => val >= 1)
-                                              .GetValueOrDefault(1);
+                                              .AsInt32(defaultValue: 1, validator: val => val >= 1)
+                                              .Value;
 
             ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled)
                                        .AsBool(false);
@@ -109,13 +109,13 @@ namespace Datadog.Trace.AppSec
 
             MaxStackTraces = config
                                   .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)
-                                  .AsInt32(val => val >= 0)
-                                  .GetValueOrDefault(2);
+                                  .AsInt32(defaultValue: 2, validator: val => val >= 0)
+                                  .Value;
 
             MaxStackTraceDepth = config
                                   .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
-                                  .AsInt32(val => val >= 0)
-                                  .GetValueOrDefault(32);
+                                  .AsInt32(defaultValue: 32, validator: val => val >= 0)
+                                  .Value;
         }
 
         public double ApiSecuritySampling { get; }

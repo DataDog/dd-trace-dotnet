@@ -406,6 +406,8 @@ public class AspNetCore5IastTestsFullSamplingRedactionEnabled : AspNetCore5IastT
     }
 }
 
+[Collection(nameof(AspNetCore5IastTestsFullSampling))]
+[CollectionDefinition(nameof(AspNetCore5IastTestsFullSampling), DisableParallelization = true)]
 public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 {
     public AspNetCore5IastTestsFullSampling(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? vulnerabilitiesPerRequest = null, bool redactionEnabled = false)

@@ -3,19 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
-using System.Reflection;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Datadog.Trace.Tests.PlatformHelpers
 {
@@ -27,14 +22,6 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         private const string AppServiceType = "app";
         private const string FunctionKind = "functionapp";
         private const string FunctionType = "function";
-
-        private static readonly List<string> EnvVars = new List<string>()
-        {
-            ConfigurationKeys.AzureAppService.AzureAppServicesContextKey,
-            ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey,
-            ConfigurationKeys.AzureAppService.ResourceGroupKey,
-            ConfigurationKeys.AzureAppService.SiteNameKey
-        };
 
         private static readonly string SubscriptionId = "8c500027-5f00-400e-8f00-60000000000f";
         private static readonly string PlanResourceGroup = "apm-dotnet";
@@ -200,12 +187,12 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         }
 
         [Fact]
-        public void DoNotTagSpans()
+        public async Task DoNotTagSpans()
         {
             // AAS Tags are handled at serialization now. So no tags should be set on spans
             var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
             var settings = new TracerSettings(vars);
-            var tracer = TracerHelper.Create(settings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var spans = new List<ISpan>();
             var iterations = 5;
             var remaining = iterations;

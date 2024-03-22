@@ -125,6 +125,19 @@ jobs:
           --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-musl-arm64v8.outputs.digest}}"
         docker manifest push ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ env.COMMIT_SHA }}-musl
 
+        # We also create latest_snapshot images
+        docker manifest create \
+          ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:latest_snapshot \
+          --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-amd64.outputs.digest}}" \
+          --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-arm64v8.outputs.digest}}"
+        docker manifest push ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:latest_snapshot
+
+        docker manifest create \
+          ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:latest_snapshot-musl \
+          --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-musl-amd64.outputs.digest}}" \
+          --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-musl-arm64v8.outputs.digest}}"
+        docker manifest push ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:latest_snapshot-musl
+
   lib-injection-image-test:
     needs:
       - build-and-publish-init-image

@@ -7,7 +7,7 @@ using System;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.TestHelpers;
@@ -40,10 +40,10 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void Do_not_send_metrics_when_disabled()
+        public async Task Do_not_send_metrics_when_disabled()
         {
             var statsd = new Mock<IDogStatsd>();
-            var spans = SendSpan(tracerMetricsEnabled: false, statsd.Object);
+            var spans = await SendSpan(tracerMetricsEnabled: false, statsd.Object);
 
             Assert.True(spans.Count == 1, AssertionFailureMessage(1, spans));
 
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void Send_metrics_when_enabled()
+        public async Task Send_metrics_when_enabled()
         {
             var statsd = new Mock<IDogStatsd>();
 
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tests
             statsd.Setup(s => s.Counter(TracerMetricNames.Api.Responses, 1, 1, It.IsAny<string[]>())).Callback(() => requestSuccessful = true);
             statsd.Setup(s => s.Counter(TracerMetricNames.Api.Errors, 1, 1, It.IsAny<string[]>())).Callback(() => requestEncounteredErrors = true);
 
-            var spans = SendSpan(tracerMetricsEnabled: true, statsd.Object);
+            var spans = await SendSpan(tracerMetricsEnabled: true, statsd.Object);
 
             Assert.True(spans.Count == 1, AssertionFailureMessage(1, spans));
 
@@ -225,7 +225,7 @@ namespace Datadog.Trace.Tests
         }
 #endif
 
-        private static IImmutableList<MockSpan> SendSpan(bool tracerMetricsEnabled, IDogStatsd statsd)
+        private static async Task<IImmutableList<MockSpan>> SendSpan(bool tracerMetricsEnabled, IDogStatsd statsd)
         {
             IImmutableList<MockSpan> spans;
             var agentPort = TcpPortProvider.GetOpenPort();
@@ -242,12 +242,12 @@ namespace Datadog.Trace.Tests
                     StartupDiagnosticLogEnabled = false,
                 };
 
-                var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd);
+                await using var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd);
 
                 using (var scope = tracer.StartActive("root"))
                 {
                     scope.Span.ResourceName = "resource";
-                    Thread.Sleep(5);
+                    await Task.Delay(5);
                 }
 
                 spans = agent.WaitForSpans(1);

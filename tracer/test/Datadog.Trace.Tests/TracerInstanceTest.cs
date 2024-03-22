@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
@@ -22,10 +23,10 @@ namespace Datadog.Trace.Tests
     public class TracerInstanceTest
     {
         [Fact]
-        public void NormalTracerInstanceSwap()
+        public async Task NormalTracerInstanceSwap()
         {
-            var tracerOne = TracerHelper.Create();
-            var tracerTwo = TracerHelper.Create();
+            await using var tracerOne = TracerHelper.CreateWithFakeAgent();
+            await using var tracerTwo = TracerHelper.CreateWithFakeAgent();
 
             TracerRestorerAttribute.SetTracer(tracerOne);
             Tracer.Instance.Should().Be(tracerOne);
@@ -40,9 +41,9 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void LockedTracerInstanceSwap()
+        public async Task LockedTracerInstanceSwap()
         {
-            var tracerOne = TracerHelper.Create();
+            await using var tracerOne = TracerHelper.CreateWithFakeAgent();
             var tracerTwo = new LockedTracer();
 
             TracerRestorerAttribute.SetTracer(tracerOne);

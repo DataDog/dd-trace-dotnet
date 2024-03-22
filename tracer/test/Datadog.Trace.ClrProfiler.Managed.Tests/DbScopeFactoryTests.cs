@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -57,10 +58,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
-        public void CreateDbCommandScope_ReturnsScopeForEnabledIntegration(Type commandType, string integrationName, string dbType)
+        public async Task CreateDbCommandScope_ReturnsScopeForEnabledIntegration(Type commandType, string integrationName, string dbType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
-            var tracer = CreateTracerWithIntegrationEnabled(integrationName, enabled: true);
+            await using var tracer = CreateTracerWithIntegrationEnabled(integrationName, enabled: true);
 
             // Create scope
             using var scope = CreateDbCommandScope(tracer, command);
@@ -70,13 +71,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
-        public void CreateDbCommandScope_ReturnNullForDisabledIntegration(Type commandType, string integrationName, string dbType)
+        public async Task CreateDbCommandScope_ReturnNullForDisabledIntegration(Type commandType, string integrationName, string dbType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
             // HACK: avoid analyzer warning about not using arguments
             _ = dbType;
 
-            var tracer = CreateTracerWithIntegrationEnabled(integrationName, enabled: false);
+            await using var tracer = CreateTracerWithIntegrationEnabled(integrationName, enabled: false);
 
             // Create scope
             using var scope = CreateDbCommandScope(tracer, command);
@@ -85,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
-        public void CreateDbCommandScope_ReturnNullForAdoNetDisabledIntegration(Type commandType, string integrationName, string dbType)
+        public async Task CreateDbCommandScope_ReturnNullForAdoNetDisabledIntegration(Type commandType, string integrationName, string dbType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
             // HACK: avoid analyzer warning about not using arguments
@@ -94,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var tracerSettings = new TracerSettings();
             tracerSettings.Integrations[integrationName].Enabled = true;
             tracerSettings.Integrations[nameof(IntegrationId.AdoNet)].Enabled = false;
-            var tracer = TracerHelper.Create(tracerSettings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             // Create scope
             using var scope = CreateDbCommandScope(tracer, command);
@@ -103,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
-        public void CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(Type commandType, string integrationName, string dbType)
+        public async Task CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(Type commandType, string integrationName, string dbType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
             // HACK: avoid analyzer warning about not using arguments
@@ -113,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var collection = new NameValueCollection { { ConfigurationKeys.ServiceNameMappings, $"{dbType}:my-custom-type" } };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source);
-            var tracer = TracerHelper.Create(tracerSettings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             // Create scope
             using var scope = CreateDbCommandScope(tracer, command);
@@ -122,7 +123,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
-        public void CreateDbCommandScope_IgnoresReplacementServiceNameWhenNotProvided(Type commandType, string integrationName, string dbType)
+        public async Task CreateDbCommandScope_IgnoresReplacementServiceNameWhenNotProvided(Type commandType, string integrationName, string dbType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
             // HACK: avoid analyzer warning about not using arguments
@@ -133,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var collection = new NameValueCollection { { ConfigurationKeys.ServiceNameMappings, "something:my-custom-type" } };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source);
-            var tracer = TracerHelper.Create(tracerSettings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             // Create scope
             using var scope = CreateDbCommandScope(tracer, command);
@@ -142,9 +143,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetEnabledDbmData))]
-        public void CreateDbCommandScope_InjectsDbmWhenEnabled(Type commandType, string dbmMode)
+        public async Task CreateDbCommandScope_InjectsDbmWhenEnabled(Type commandType, string dbmMode)
         {
-            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            var command = (IDbCommand)Activator.CreateInstance(commandType)!;
             command.CommandText = DbmCommandText;
 
             var collection = new NameValueCollection
@@ -153,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
-            var tracer = TracerHelper.Create(tracerSettings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using var scope = CreateDbCommandScope(tracer, command);
             scope.Should().NotBeNull();
@@ -164,9 +165,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetEnabledDbmData))]
-        public void CreateDbCommandScope_OnlyInjectsDbmOnceWhenCommandIsReused(Type commandType, string dbmMode)
+        public async Task CreateDbCommandScope_OnlyInjectsDbmOnceWhenCommandIsReused(Type commandType, string dbmMode)
         {
-            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            var command = (IDbCommand)Activator.CreateInstance(commandType)!;
             command.CommandText = DbmCommandText;
 
             var collection = new NameValueCollection
@@ -175,7 +176,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
-            var tracer = TracerHelper.Create(tracerSettings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using (var scope = CreateDbCommandScope(tracer, command))
             {
@@ -199,9 +200,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetEnabledDbmData))]
-        public void CreateDbCommandScope_DoesNotInjectDbmIntoStoredProcedures(Type commandType, string dbmMode)
+        public async Task CreateDbCommandScope_DoesNotInjectDbmIntoStoredProcedures(Type commandType, string dbmMode)
         {
-            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            var command = (IDbCommand)Activator.CreateInstance(commandType)!;
             command.CommandText = DbmCommandText;
             command.CommandType = CommandType.StoredProcedure;
 
@@ -211,7 +212,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
-            var tracer = TracerHelper.Create(tracerSettings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using var scope = CreateDbCommandScope(tracer, command);
             scope.Should().NotBeNull();
@@ -222,9 +223,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetDbmCommands))]
-        public void CreateDbCommandScope_DoesNotInjectDbmWhenDisabled(Type commandType)
+        public async Task CreateDbCommandScope_DoesNotInjectDbmWhenDisabled(Type commandType)
         {
-            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            var command = (IDbCommand)Activator.CreateInstance(commandType)!;
             command.CommandText = DbmCommandText;
 
             var collection = new NameValueCollection
@@ -233,7 +234,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
-            var tracer = TracerHelper.Create(tracerSettings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using var scope = CreateDbCommandScope(tracer, command);
             scope.Should().NotBeNull();
@@ -246,7 +247,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [MemberData(nameof(GetDbCommands))]
         internal void TryGetIntegrationDetails_CorrectNameGenerated(Type commandType, string expectedIntegrationName, string expectedDbType)
         {
-            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            var command = (IDbCommand)Activator.CreateInstance(commandType)!;
             command.CommandText = DbmCommandText;
 
             bool result = DbScopeFactory.TryGetIntegrationDetails(command.GetType().FullName, out var actualIntegrationId, out var actualDbType);
@@ -285,7 +286,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.Equal(expectedDbType, actualDbType);
         }
 
-        private static Tracer CreateTracerWithIntegrationEnabled(string integrationName, bool enabled)
+        private static TracerHelper.ScopedTracer CreateTracerWithIntegrationEnabled(string integrationName, bool enabled)
         {
             // Set up tracer
             var tracerSettings = new TracerSettings();
