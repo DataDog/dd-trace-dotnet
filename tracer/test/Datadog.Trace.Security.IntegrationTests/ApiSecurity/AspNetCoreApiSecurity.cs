@@ -23,7 +23,7 @@ namespace Datadog.Trace.Security.IntegrationTests.ApiSecurity;
 
 public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
-    private readonly AspNetCoreTestFixture _fixture;
+    private AspNetCoreTestFixture _fixture;
 
     protected AspNetCoreApiSecurity(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableApiSecurity, string sampleName)
         : base(sampleName, outputHelper, "/shutdown", testName: $"ApiSecurity.{sampleName}.{(enableApiSecurity ? "ApiSecOn" : "ApiSecOff")}")
@@ -74,6 +74,9 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
 
     private async Task TryStartApp()
     {
+        _fixture?.Dispose();
+        _fixture = new AspNetCoreTestFixture();
+        _fixture.SetOutput(Output);
         // we don't test with security off, but test with api security off, otherwise the matrix of tests would be too large
         await _fixture.TryStartApp(this, true);
         SetHttpPort(_fixture.HttpPort);
