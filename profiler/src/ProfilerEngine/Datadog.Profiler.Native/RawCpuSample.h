@@ -6,7 +6,7 @@
 #include "RawSample.h"
 #include "Sample.h"
 
-class RawCpuSample : public RawSample
+class RawCpuSample : public RawSample<RawCpuSample>
 {
 public:
     RawCpuSample() noexcept = default;

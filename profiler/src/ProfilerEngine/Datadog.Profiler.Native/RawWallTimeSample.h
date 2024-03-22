@@ -8,7 +8,7 @@
 
 #include "RawSample.h"
 
-class RawWallTimeSample : public RawSample
+class RawWallTimeSample final : public RawSample<RawWallTimeSample>
 {
 public:
     RawWallTimeSample() = default;

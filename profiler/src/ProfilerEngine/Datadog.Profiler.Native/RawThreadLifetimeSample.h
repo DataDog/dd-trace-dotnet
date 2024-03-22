@@ -14,7 +14,7 @@ enum class ThreadEventKind
 };
 
 
-class RawThreadLifetimeSample : public RawSample
+class RawThreadLifetimeSample : public RawSample<RawThreadLifetimeSample>
 {
 public:
     ThreadEventKind Kind;

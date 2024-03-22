@@ -100,8 +100,10 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     std::shared_ptr<ManagedThreadInfo> threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
+    RawAllocationSample rawSample;
+
     const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
-    pStackFramesCollector->PrepareForNextCollection();
+    pStackFramesCollector->PrepareForNextCollection(&rawSample);
 
     uint32_t hrCollectStack = E_FAIL;
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
@@ -114,14 +116,9 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
         return;
     }
 
-    result->SetUnixTimeUtc(GetCurrentTimestamp());
-    result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
 
-    RawAllocationSample rawSample;
-    rawSample.Timestamp = result->GetUnixTimeUtc();
-    rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
-    rawSample.SpanId = result->GetSpanId();
-    rawSample.AppDomainId = result->GetAppDomainId();
+    rawSample.Timestamp = GetCurrentTimestamp();
+    rawSample.AppDomainId = threadInfo->GetAppDomainId(_pCorProfilerInfo);
     result->CopyInstructionPointers(rawSample.Stack);
     rawSample.ThreadInfo = threadInfo;
     rawSample.AllocationSize = objectSize;
