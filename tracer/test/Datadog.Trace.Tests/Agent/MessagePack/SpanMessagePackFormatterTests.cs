@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -139,7 +140,7 @@ public class SpanMessagePackFormatterTests
         byte[] bytes = [];
 
         var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
-
+        File.WriteAllBytes("/Users/mohammad.islam/DDrepos/MessagePackTools/bits/msgpack-bytes.bin", bytes);
         var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
 
         for (int i = 0; i < result.Length; i++)
@@ -150,16 +151,11 @@ public class SpanMessagePackFormatterTests
             var tagsProcessor = new TagsProcessor<string>(actual.Tags);
             expected.Tags.EnumerateTags(ref tagsProcessor);
 
-            // _dd.span_link is added during serialization
-            if (actual.ParentId == null)
+            for (int j = 0; j < expected.SpanLinkList.Count; j++)
             {
-                tagsProcessor.Remaining.Should()
-                             .HaveCount(3).And.Contain(new KeyValuePair<string, string>("_dd.span_link", "I don't know what this looks like yet, I'll add a break point to check later"));
-            }
-            else
-            {
-                tagsProcessor.Remaining.Should()
-                             .HaveCount(1).And.Contain(new KeyValuePair<string, string>("language", "dotnet"));
+                var expectedSpanlink = expected.SpanLinkList[j];
+                var actualSpanLink = actual.SpanLinkList[j];
+                actualSpanLink.Should().Be(expectedSpanlink);
             }
         }
     }
