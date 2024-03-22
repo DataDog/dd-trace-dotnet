@@ -197,6 +197,7 @@ package-arm:
     ARCH: arm64
 
 package-oci:
+  stage: package
   extends: .package-oci
   rules:
     - if: $DOTNET_PACKAGE_VERSION
