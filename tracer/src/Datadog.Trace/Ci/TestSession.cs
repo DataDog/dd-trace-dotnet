@@ -426,7 +426,7 @@ public sealed class TestSession
         {
             foreach (var eVar in envVars)
             {
-                EnvironmentHelpers.SetEnvironmentVariable(eVar.Key, eVar.Value ?? string.Empty);
+                EnvironmentHelpers.SetEnvironmentVariable(eVar.Key, eVar.Value);
             }
         }
 
