@@ -100,7 +100,7 @@ namespace Datadog.Trace.AppSec.Waf
                 // Calling _encoder.Encode(null) results in a null object that will cause the WAF to error
                 // The WAF can be called with an empty dictionary (though we should avoid doing this).
 
-                var pwPersistentArgs = IntPtr.Zero;
+                DdwafObjectStruct pwPersistentArgs = default;
                 if (persistentAddressData != null)
                 {
                     var persistentArgs = _encoder.Encode(persistentAddressData, applySafetyLimits: true);
@@ -113,16 +113,16 @@ namespace Datadog.Trace.AppSec.Waf
                     ephemeralAddressData is { Count: > 0 }
                     ? _encoder.Encode(ephemeralAddressData, applySafetyLimits: true)
                     : null;
-                var pwEphemeralArgs = ephemeralArgs?.Result ?? IntPtr.Zero;
+                var pwEphemeralArgs = ephemeralArgs?.Result ?? default;
 
-                if (pwPersistentArgs == IntPtr.Zero && pwEphemeralArgs == IntPtr.Zero)
+                if (pwPersistentArgs.Type == DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID && pwEphemeralArgs.Type == DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID)
                 {
                     Log.Error("Both pwPersistentArgs and pwEphemeralArgs are null");
                     return null;
                 }
 
                 // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
-                code = _waf.Run(_contextHandle, pwPersistentArgs, pwEphemeralArgs,  ref retNative, timeoutMicroSeconds);
+                code = _waf.Run(_contextHandle, ref pwPersistentArgs, ref pwEphemeralArgs,  ref retNative, timeoutMicroSeconds);
             }
 
             _stopwatch.Stop();

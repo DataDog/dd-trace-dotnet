@@ -21,6 +21,12 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog.Events;
 
+#if NETSTANDARD || NETFRAMEWORK
+using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+#else
+using Unsafe = System.Runtime.CompilerServices.Unsafe;
+#endif
+
 namespace Datadog.Trace.AppSec.WafEncoding
 {
     internal class Encoder : IEncoder
@@ -259,262 +265,262 @@ namespace Datadog.Trace.AppSec.WafEncoding
             switch (o)
             {
                 case string str:
-                {
-                    ddwafObjectStruct = GetStringObject(str);
-                    break;
-                }
+                    {
+                        ddwafObjectStruct = GetStringObject(str);
+                        break;
+                    }
 
                 case JValue:
-                {
-                    ddwafObjectStruct = GetStringObject(o?.ToString() ?? string.Empty);
-                    break;
-                }
+                    {
+                        ddwafObjectStruct = GetStringObject(o?.ToString() ?? string.Empty);
+                        break;
+                    }
 
                 case null:
-                {
-                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_NULL };
-                    break;
-                }
+                    {
+                        ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_NULL };
+                        break;
+                    }
 
                 case ulong u:
-                {
-                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_UNSIGNED, UintValue = u };
-                    break;
-                }
+                    {
+                        ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_UNSIGNED, UintValue = u };
+                        break;
+                    }
 
                 case uint u:
-                {
-                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_UNSIGNED, UintValue = u };
-                    break;
-                }
+                    {
+                        ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_UNSIGNED, UintValue = u };
+                        break;
+                    }
 
                 case int i:
-                {
-                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED, IntValue = i };
-                    break;
-                }
+                    {
+                        ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED, IntValue = i };
+                        break;
+                    }
 
                 case long u:
-                {
-                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED, IntValue = u };
-                    break;
-                }
+                    {
+                        ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED, IntValue = u };
+                        break;
+                    }
 
                 case decimal d:
-                {
-                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_DOUBLE, DoubleValue = (double)d };
-                    break;
-                }
+                    {
+                        ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_DOUBLE, DoubleValue = (double)d };
+                        break;
+                    }
 
                 case double d:
-                {
-                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_DOUBLE, DoubleValue = d };
-                    break;
-                }
+                    {
+                        ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_DOUBLE, DoubleValue = d };
+                        break;
+                    }
 
                 case float d:
-                {
-                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_DOUBLE, DoubleValue = d };
-                    break;
-                }
+                    {
+                        ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_DOUBLE, DoubleValue = d };
+                        break;
+                    }
 
                 case bool b:
                     ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL, ByteValue = b ? (byte)1 : (byte)0 };
                     break;
 
                 case IEnumerable<KeyValuePair<string, object>> objDict:
-                {
-                    var collectionDict = objDict as ICollection<KeyValuePair<string, object>> ?? objDict.ToList();
-                    var count = collectionDict.Count;
-                    ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey1, &GetValue1);
-                    static string GetKey1(KeyValuePair<string, object> item) => item.Key;
-                    static object GetValue1(KeyValuePair<string, object> item) => item.Value;
-                    break;
-                }
-
-                case IEnumerable<KeyValuePair<string, bool>> objDict:
-                {
-                    var collectionDict = objDict as ICollection<KeyValuePair<string, bool>> ?? objDict.ToList();
-                    var count = collectionDict.Count;
-                    ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey1, &GetValue1);
-                    static string GetKey1(KeyValuePair<string, bool> item) => item.Key;
-                    static object GetValue1(KeyValuePair<string, bool> item) => item.Value;
-                    break;
-                }
-
-                case IEnumerable<KeyValuePair<string, string>> objDict:
-                {
-                    var collectionDict = objDict as ICollection<KeyValuePair<string, string>> ?? objDict.ToList();
-                    var count = collectionDict.Count;
-                    ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey2, &GetValue2);
-                    static string GetKey2(KeyValuePair<string, string> item) => item.Key;
-                    static object GetValue2(KeyValuePair<string, string> item) => item.Value;
-                    break;
-                }
-
-                case IEnumerable<KeyValuePair<string, JToken>> objDict:
-                {
-                    var collectionDict = objDict as ICollection<KeyValuePair<string, JToken>> ?? objDict.ToList();
-                    var count = collectionDict.Count;
-                    ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey3, &GetValue3);
-                    static string GetKey3(KeyValuePair<string, JToken> item) => item.Key;
-                    static object GetValue3(KeyValuePair<string, JToken> item) => item.Value;
-                    break;
-                }
-
-                case IEnumerable<KeyValuePair<string, string[]>> objDict:
-                {
-                    var collectionDict = objDict as ICollection<KeyValuePair<string, string[]>> ?? objDict.ToList();
-                    var count = collectionDict.Count;
-                    ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey4, &GetValue4);
-                    static string GetKey4(KeyValuePair<string, string[]> item) => item.Key;
-                    static object GetValue4(KeyValuePair<string, string[]> item) => item.Value;
-                    break;
-                }
-
-                case IEnumerable<KeyValuePair<string, List<string>>> objDict:
-                {
-                    var collectionDict = objDict as ICollection<KeyValuePair<string, List<string>>> ?? objDict.ToList();
-                    var count = collectionDict.Count;
-                    ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey5, &GetValue5);
-                    static string GetKey5(KeyValuePair<string, List<string>> item) => item.Key;
-                    static object GetValue5(KeyValuePair<string, List<string>> item) => item.Value;
-                    break;
-                }
-
-                case IEnumerable enumerable:
-                {
-                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY };
-
-                    if (applySafetyLimits && remainingDepth-- <= 0)
                     {
-                        TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
-                        if (Log.IsEnabled(LogEventLevel.Debug))
-                        {
-                            Log.Debug("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", enumerable));
-                        }
-
+                        var collectionDict = objDict as ICollection<KeyValuePair<string, object>> ?? objDict.ToList();
+                        var count = collectionDict.Count;
+                        ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey1, &GetValue1);
+                        static string GetKey1(KeyValuePair<string, object> item) => item.Key;
+                        static object GetValue1(KeyValuePair<string, object> item) => item.Value;
                         break;
                     }
 
-                    if (enumerable is IList { Count: var count } listInstance)
+                case IEnumerable<KeyValuePair<string, bool>> objDict:
                     {
-                        if (applySafetyLimits && count > WafConstants.MaxContainerSize)
+                        var collectionDict = objDict as ICollection<KeyValuePair<string, bool>> ?? objDict.ToList();
+                        var count = collectionDict.Count;
+                        ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey1, &GetValue1);
+                        static string GetKey1(KeyValuePair<string, bool> item) => item.Key;
+                        static object GetValue1(KeyValuePair<string, bool> item) => item.Value;
+                        break;
+                    }
+
+                case IEnumerable<KeyValuePair<string, string>> objDict:
+                    {
+                        var collectionDict = objDict as ICollection<KeyValuePair<string, string>> ?? objDict.ToList();
+                        var count = collectionDict.Count;
+                        ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey2, &GetValue2);
+                        static string GetKey2(KeyValuePair<string, string> item) => item.Key;
+                        static object GetValue2(KeyValuePair<string, string> item) => item.Value;
+                        break;
+                    }
+
+                case IEnumerable<KeyValuePair<string, JToken>> objDict:
+                    {
+                        var collectionDict = objDict as ICollection<KeyValuePair<string, JToken>> ?? objDict.ToList();
+                        var count = collectionDict.Count;
+                        ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey3, &GetValue3);
+                        static string GetKey3(KeyValuePair<string, JToken> item) => item.Key;
+                        static object GetValue3(KeyValuePair<string, JToken> item) => item.Value;
+                        break;
+                    }
+
+                case IEnumerable<KeyValuePair<string, string[]>> objDict:
+                    {
+                        var collectionDict = objDict as ICollection<KeyValuePair<string, string[]>> ?? objDict.ToList();
+                        var count = collectionDict.Count;
+                        ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey4, &GetValue4);
+                        static string GetKey4(KeyValuePair<string, string[]> item) => item.Key;
+                        static object GetValue4(KeyValuePair<string, string[]> item) => item.Value;
+                        break;
+                    }
+
+                case IEnumerable<KeyValuePair<string, List<string>>> objDict:
+                    {
+                        var collectionDict = objDict as ICollection<KeyValuePair<string, List<string>>> ?? objDict.ToList();
+                        var count = collectionDict.Count;
+                        ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey5, &GetValue5);
+                        static string GetKey5(KeyValuePair<string, List<string>> item) => item.Key;
+                        static object GetValue5(KeyValuePair<string, List<string>> item) => item.Value;
+                        break;
+                    }
+
+                case IEnumerable enumerable:
+                    {
+                        ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY };
+
+                        if (applySafetyLimits && remainingDepth-- <= 0)
                         {
-                            TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                            TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
                             if (Log.IsEnabled(LogEventLevel.Debug))
                             {
-                                Log.Debug<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
+                                Log.Debug("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", enumerable));
                             }
+
+                            break;
                         }
 
-                        var childrenCount = !applySafetyLimits || count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
-                        var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
-                        var childrenData = childrenFromPool ? pool.Rent() : Marshal.AllocCoTaskMem(ObjectStructSize * childrenCount);
-
-                        // Avoid boxing of known values types from the switch above
-                        switch (listInstance)
+                        if (enumerable is IList { Count: var count } listInstance)
                         {
-                            case IList<bool> boolCollection:
-                                EnumerateAndEncode(boolCollection);
-                                break;
-                            case IList<decimal> intCollection:
-                                EnumerateAndEncode(intCollection);
-                                break;
-                            case IList<double> intCollection:
-                                EnumerateAndEncode(intCollection);
-                                break;
-                            case IList<float> intCollection:
-                                EnumerateAndEncode(intCollection);
-                                break;
-                            case IList<int> intCollection:
-                                EnumerateAndEncode(intCollection);
-                                break;
-                            case IList<uint> uintCollection:
-                                EnumerateAndEncode(uintCollection);
-                                break;
-                            case IList<long> longCollection:
-                                EnumerateAndEncode(longCollection);
-                                break;
-                            case IList<ulong> ulongCollection:
-                                EnumerateAndEncode(ulongCollection);
-                                break;
-                            default:
-                                EnumerateAndEncodeIList(listInstance);
-                                break;
-                        }
-
-                        ddwafObjectStruct.Array = childrenData;
-                        ddwafObjectStruct.NbEntries = (ulong)childrenCount;
-                        argToFree.Add(childrenData);
-
-                        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                        void EnumerateAndEncode<T>(IList<T> lstInstance)
-                        {
-                            var itemData = childrenData;
-                            for (var idx = 0; idx < childrenCount; idx++)
-                            {
-                                *(DdwafObjectStruct*)itemData = Encode(lstInstance[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth, pool: pool);
-                                itemData += ObjectStructSize;
-                            }
-                        }
-
-                        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                        void EnumerateAndEncodeIList(IList lstInstance)
-                        {
-                            var itemData = childrenData;
-                            for (var idx = 0; idx < childrenCount; idx++)
-                            {
-                                *(DdwafObjectStruct*)itemData = Encode(lstInstance[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth, pool: pool);
-                                itemData += ObjectStructSize;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        var childrenCount = 0;
-                        // Let's enumerate first.
-                        foreach (var val in enumerable)
-                        {
-                            childrenCount++;
-                            if (applySafetyLimits && childrenCount == WafConstants.MaxContainerSize)
+                            if (applySafetyLimits && count > WafConstants.MaxContainerSize)
                             {
                                 TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
                                 if (Log.IsEnabled(LogEventLevel.Debug))
                                 {
                                     Log.Debug<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
                                 }
-
-                                break;
                             }
-                        }
 
-                        if (childrenCount > 0)
-                        {
+                            var childrenCount = !applySafetyLimits || count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
                             var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
                             var childrenData = childrenFromPool ? pool.Rent() : Marshal.AllocCoTaskMem(ObjectStructSize * childrenCount);
-                            var itemData = childrenData;
-                            var idx = 0;
-                            foreach (var val in enumerable)
-                            {
-                                if (idx > childrenCount)
-                                {
-                                    break;
-                                }
 
-                                *(DdwafObjectStruct*)itemData = Encode(val, argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth, pool: pool);
-                                itemData += ObjectStructSize;
-                                idx++;
+                            // Avoid boxing of known values types from the switch above
+                            switch (listInstance)
+                            {
+                                case IList<bool> boolCollection:
+                                    EnumerateAndEncode(boolCollection);
+                                    break;
+                                case IList<decimal> intCollection:
+                                    EnumerateAndEncode(intCollection);
+                                    break;
+                                case IList<double> intCollection:
+                                    EnumerateAndEncode(intCollection);
+                                    break;
+                                case IList<float> intCollection:
+                                    EnumerateAndEncode(intCollection);
+                                    break;
+                                case IList<int> intCollection:
+                                    EnumerateAndEncode(intCollection);
+                                    break;
+                                case IList<uint> uintCollection:
+                                    EnumerateAndEncode(uintCollection);
+                                    break;
+                                case IList<long> longCollection:
+                                    EnumerateAndEncode(longCollection);
+                                    break;
+                                case IList<ulong> ulongCollection:
+                                    EnumerateAndEncode(ulongCollection);
+                                    break;
+                                default:
+                                    EnumerateAndEncodeIList(listInstance);
+                                    break;
                             }
 
                             ddwafObjectStruct.Array = childrenData;
                             ddwafObjectStruct.NbEntries = (ulong)childrenCount;
                             argToFree.Add(childrenData);
-                        }
-                    }
 
-                    break;
-                }
+                            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                            void EnumerateAndEncode<T>(IList<T> lstInstance)
+                            {
+                                var itemData = childrenData;
+                                for (var idx = 0; idx < childrenCount; idx++)
+                                {
+                                    *(DdwafObjectStruct*)itemData = Encode(lstInstance[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth, pool: pool);
+                                    itemData += ObjectStructSize;
+                                }
+                            }
+
+                            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                            void EnumerateAndEncodeIList(IList lstInstance)
+                            {
+                                var itemData = childrenData;
+                                for (var idx = 0; idx < childrenCount; idx++)
+                                {
+                                    *(DdwafObjectStruct*)itemData = Encode(lstInstance[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth, pool: pool);
+                                    itemData += ObjectStructSize;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var childrenCount = 0;
+                            // Let's enumerate first.
+                            foreach (var val in enumerable)
+                            {
+                                childrenCount++;
+                                if (applySafetyLimits && childrenCount == WafConstants.MaxContainerSize)
+                                {
+                                    TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                                    if (Log.IsEnabled(LogEventLevel.Debug))
+                                    {
+                                        Log.Debug<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
+                                    }
+
+                                    break;
+                                }
+                            }
+
+                            if (childrenCount > 0)
+                            {
+                                var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
+                                var childrenData = childrenFromPool ? pool.Rent() : Marshal.AllocCoTaskMem(ObjectStructSize * childrenCount);
+                                var itemData = childrenData;
+                                var idx = 0;
+                                foreach (var val in enumerable)
+                                {
+                                    if (idx > childrenCount)
+                                    {
+                                        break;
+                                    }
+
+                                    *(DdwafObjectStruct*)itemData = Encode(val, argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth, pool: pool);
+                                    itemData += ObjectStructSize;
+                                    idx++;
+                                }
+
+                                ddwafObjectStruct.Array = childrenData;
+                                ddwafObjectStruct.NbEntries = (ulong)childrenCount;
+                                argToFree.Add(childrenData);
+                            }
+                        }
+
+                        break;
+                    }
 
                 default:
                     if (Log.IsEnabled(LogEventLevel.Debug))
@@ -658,7 +664,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 _handle = GCHandle.Alloc(result, GCHandleType.Pinned);
             }
 
-            public IntPtr Result => _handle.AddrOfPinnedObject();
+            public unsafe ref DdwafObjectStruct Result => ref Unsafe.AsRef<DdwafObjectStruct>((void*)_handle.AddrOfPinnedObject());
 
             public DdwafObjectStruct ResultDdwafObject { get; }
 

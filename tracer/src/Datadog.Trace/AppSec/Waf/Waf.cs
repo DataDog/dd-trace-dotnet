@@ -70,7 +70,7 @@ namespace Datadog.Trace.AppSec.Waf
                 return InitResult.FromUnusableRuleFile();
             }
 
-            IntPtr rulesObj;
+            DdwafObjectStruct rulesObj;
             DdwafConfigStruct configWafStruct = default;
             IEncodeResult? result = null;
             IEncoder encoder;
@@ -97,7 +97,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             try
             {
-                var initResult = wafConfigurator.Configure(rulesObj, encoder, configWafStruct, ref diagnostics, rulesFromRcm == null ? embeddedRulesetPath : "RemoteConfig");
+                var initResult = wafConfigurator.Configure(ref rulesObj, encoder, configWafStruct, ref diagnostics, rulesFromRcm == null ? embeddedRulesetPath : "RemoteConfig");
                 initResult.EmbeddedRules = jtokenRoot;
                 return initResult;
             }
@@ -115,7 +115,7 @@ namespace Datadog.Trace.AppSec.Waf
 
                 if (diagnostics.Array != IntPtr.Zero)
                 {
-                    wafLibraryInvoker.ObjectFreePtr(ref diagnostics.Array);
+                    wafLibraryInvoker.ObjectFreePtr(ref diagnostics);
                 }
 
                 if (useUnsafeEncoder)
@@ -133,7 +133,7 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 diagnostics = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
                 var diagnosticsValue = diagnostics.Value;
-                var newHandle = _wafLibraryInvoker.Update(_wafHandle, updateData.Result, ref diagnosticsValue);
+                var newHandle = _wafLibraryInvoker.Update(_wafHandle, ref updateData.Result, ref diagnosticsValue);
                 if (newHandle != IntPtr.Zero)
                 {
                     var oldHandle = _wafHandle;
@@ -159,7 +159,7 @@ namespace Datadog.Trace.AppSec.Waf
                 if (diagnostics?.Array != IntPtr.Zero)
                 {
                     var diagValue = diagnostics!.Value;
-                    _wafLibraryInvoker.ObjectFreePtr(ref diagValue.Array);
+                    _wafLibraryInvoker.ObjectFreePtr(ref diagValue);
                 }
 
                 updateData.Dispose();
@@ -231,8 +231,8 @@ namespace Datadog.Trace.AppSec.Waf
         }
 
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)
-        public WafReturnCode Run(IntPtr contextHandle, IntPtr rawPersistentData, IntPtr rawEphemeralData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds)
-            => _wafLibraryInvoker.Run(contextHandle, rawPersistentData, rawEphemeralData, ref retNative, timeoutMicroSeconds);
+        public WafReturnCode Run(IntPtr contextHandle, ref DdwafObjectStruct rawPersistentData, ref DdwafObjectStruct rawEphemeralData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds)
+            => _wafLibraryInvoker.Run(contextHandle, ref rawPersistentData, ref rawEphemeralData, ref retNative, timeoutMicroSeconds);
 
         internal static List<RuleData> MergeRuleData(IEnumerable<RuleData> res)
         {

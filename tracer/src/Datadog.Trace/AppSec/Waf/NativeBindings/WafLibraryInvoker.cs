@@ -6,6 +6,7 @@
 using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -86,45 +87,45 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate void FreeResultDelegate(ref DdwafResultStruct output);
 
-        private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafObjectStruct diagnostics);
+        private delegate IntPtr InitDelegate(ref DdwafObjectStruct wafRule, ref DdwafConfigStruct config, ref DdwafObjectStruct diagnostics);
 
-        private delegate IntPtr UpdateDelegate(IntPtr oldWafHandle, IntPtr wafRule, ref DdwafObjectStruct diagnostics);
+        private delegate IntPtr UpdateDelegate(IntPtr oldWafHandle, ref DdwafObjectStruct wafRule, ref DdwafObjectStruct diagnostics);
 
         private delegate IntPtr InitContextDelegate(IntPtr wafHandle);
 
-        private delegate WafReturnCode RunDelegate(IntPtr context, IntPtr rawPersistentData, IntPtr rawEphemeralData, ref DdwafResultStruct result, ulong timeLeftInUs);
+        private delegate WafReturnCode RunDelegate(IntPtr context, ref DdwafObjectStruct rawPersistentData, ref DdwafObjectStruct rawEphemeralData, ref DdwafResultStruct result, ulong timeLeftInUs);
 
         private delegate void DestroyDelegate(IntPtr handle);
 
         private delegate void ContextDestroyDelegate(IntPtr context);
 
-        private delegate IntPtr ObjectInvalidDelegate(IntPtr emptyObjPtr);
+        private delegate IntPtr ObjectInvalidDelegate(ref DdwafObjectStruct emptyObjPtr);
 
-        private delegate IntPtr ObjectStringLengthDelegate(IntPtr emptyObjPtr, string s, ulong length);
+        private delegate IntPtr ObjectStringLengthDelegate(ref DdwafObjectStruct emptyObjPtr, string s, ulong length);
 
-        private delegate IntPtr ObjectBoolDelegate(IntPtr emptyObjPtr, bool b);
+        private delegate IntPtr ObjectBoolDelegate(ref DdwafObjectStruct emptyObjPtr, bool b);
 
-        private delegate IntPtr ObjectDoubleDelegate(IntPtr emptyObjPtr, double value);
+        private delegate IntPtr ObjectDoubleDelegate(ref DdwafObjectStruct emptyObjPtr, double value);
 
-        private delegate IntPtr ObjectNullDelegate(IntPtr emptyObjPtr);
+        private delegate IntPtr ObjectNullDelegate(ref DdwafObjectStruct emptyObjPtr);
 
-        private delegate IntPtr ObjectUlongDelegate(IntPtr emptyObjPtr, ulong value);
+        private delegate IntPtr ObjectUlongDelegate(ref DdwafObjectStruct emptyObjPtr, ulong value);
 
-        private delegate IntPtr ObjectLongDelegate(IntPtr emptyObjPtr, long value);
+        private delegate IntPtr ObjectLongDelegate(ref DdwafObjectStruct emptyObjPtr, long value);
 
-        private delegate IntPtr ObjectArrayDelegate(IntPtr emptyObjPtr);
+        private delegate IntPtr ObjectArrayDelegate(ref DdwafObjectStruct emptyObjPtr);
 
-        private delegate IntPtr ObjectMapDelegate(IntPtr emptyObjPtr);
+        private delegate IntPtr ObjectMapDelegate(ref DdwafObjectStruct emptyObjPtr);
 
-        private delegate bool ObjectArrayAddDelegate(IntPtr array, IntPtr entry);
+        private delegate bool ObjectArrayAddDelegate(ref DdwafObjectStruct array, ref DdwafObjectStruct entry);
 
-        private delegate IntPtr ObjectArrayGetAtIndexDelegate(IntPtr array, long index);
+        private delegate ref DdwafObjectStruct ObjectArrayGetAtIndexDelegate(ref DdwafObjectStruct array, long index);
 
-        private delegate bool ObjectMapAddDelegateX64(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry);
+        private delegate bool ObjectMapAddDelegateX64(ref DdwafObjectStruct map, string entryName, ulong entryNameLength, ref DdwafObjectStruct entry);
 
-        private delegate bool ObjectMapAddDelegateX86(IntPtr map, string entryName, uint entryNameLength, IntPtr entry);
+        private delegate bool ObjectMapAddDelegateX86(ref DdwafObjectStruct map, string entryName, uint entryNameLength, ref DdwafObjectStruct entry);
 
-        private delegate void FreeObjectDelegate(IntPtr input);
+        private delegate void FreeObjectDelegate(ref DdwafObjectStruct input);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate void SetupLogCallbackDelegate(
@@ -246,7 +247,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return _version;
         }
 
-        internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafObjectStruct diagnostics) => _initField(wafRule, ref config, ref diagnostics);
+        internal IntPtr Init(ref DdwafObjectStruct wafRule, ref DdwafConfigStruct config, ref DdwafObjectStruct diagnostics) => _initField(ref wafRule, ref config, ref diagnostics);
 
         /// <summary>
         /// Only give a non null ruleSetInfo when updating rules. When updating rules overrides, rules datas, the ruleSetInfo will return no error and no diagnostics, even if there are, it's misleading, so give null in this case.
@@ -255,7 +256,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// <param name="wafData">a pointer to the new waf data (rules or overrides or other)</param>
         /// <param name="diagnostics">errors and diagnostics of the update, only for valid for new rules</param>
         /// <returns>the new waf handle, if error, will be a nullptr</returns>
-        internal IntPtr Update(IntPtr oldWafHandle, IntPtr wafData, ref DdwafObjectStruct diagnostics) => _updateField(oldWafHandle, wafData, ref diagnostics);
+        internal IntPtr Update(IntPtr oldWafHandle, ref DdwafObjectStruct wafData, ref DdwafObjectStruct diagnostics) => _updateField(oldWafHandle, ref wafData, ref diagnostics);
 
         internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
 
@@ -268,96 +269,93 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// <param name="result">Result</param>
         /// <param name="timeLeftInUs">timeout</param>
         /// <returns>Return waf code</returns>
-        internal WafReturnCode Run(IntPtr context, IntPtr rawPersistentData, IntPtr rawEphemeralData, ref DdwafResultStruct result, ulong timeLeftInUs)
-            => _runField(context, rawPersistentData, rawEphemeralData, ref result, timeLeftInUs);
+        internal WafReturnCode Run(IntPtr context, ref DdwafObjectStruct rawPersistentData, ref DdwafObjectStruct rawEphemeralData, ref DdwafResultStruct result, ulong timeLeftInUs)
+            => _runField(context, ref rawPersistentData, ref rawEphemeralData, ref result, timeLeftInUs);
 
         internal void Destroy(IntPtr wafHandle) => _destroyField(wafHandle);
 
         internal void ContextDestroy(IntPtr handle) => _contextDestroyField(handle);
 
-        internal IntPtr ObjectArrayGetIndex(IntPtr array, long index) => _objectArrayGetIndex(array, index);
+        internal ref DdwafObjectStruct ObjectArrayGetIndex(ref DdwafObjectStruct array, long index) => ref _objectArrayGetIndex(ref array, index);
 
-        internal IntPtr ObjectInvalid()
+        internal DdwafObjectStruct ObjectInvalid()
         {
             var ptr = AllocateDdWafObject();
-            _objectInvalidField(ptr);
+            _objectInvalidField(ref ptr);
             return ptr;
         }
 
-        internal IntPtr ObjectStringLength(string s, ulong length)
+        internal DdwafObjectStruct ObjectStringLength(string s, ulong length)
         {
             var ptr = AllocateDdWafObject();
-            _objectStringLengthField(ptr, s, length);
+            _objectStringLengthField(ref ptr, s, length);
             return ptr;
         }
 
-        internal IntPtr ObjectBool(bool b)
+        internal DdwafObjectStruct ObjectBool(bool b)
         {
             var ptr = AllocateDdWafObject();
-            _objectBoolField(ptr, b);
+            _objectBoolField(ref ptr, b);
             return ptr;
         }
 
-        internal IntPtr ObjectLong(long l)
+        internal DdwafObjectStruct ObjectLong(long l)
         {
             var ptr = AllocateDdWafObject();
-            _objectLongField(ptr, l);
+            _objectLongField(ref ptr, l);
             return ptr;
         }
 
-        internal IntPtr ObjectUlong(ulong l)
+        internal DdwafObjectStruct ObjectUlong(ulong l)
         {
             var ptr = AllocateDdWafObject();
-            _objectUlongField(ptr, l);
+            _objectUlongField(ref ptr, l);
             return ptr;
         }
 
-        internal IntPtr ObjectDouble(double b)
+        internal DdwafObjectStruct ObjectDouble(double b)
         {
             var ptr = AllocateDdWafObject();
-            _objectDoubleField(ptr, b);
+            _objectDoubleField(ref ptr, b);
             return ptr;
         }
 
-        internal IntPtr ObjectNull()
+        internal DdwafObjectStruct ObjectNull()
         {
             var ptr = AllocateDdWafObject();
-            _objectNullField(ptr);
+            _objectNullField(ref ptr);
             return ptr;
         }
 
-        internal IntPtr ObjectArray()
+        internal DdwafObjectStruct ObjectArray()
         {
             var ptr = AllocateDdWafObject();
-            _objectArrayField(ptr);
+            _objectArrayField(ref ptr);
             return ptr;
         }
 
-        internal IntPtr ObjectMap()
+        internal DdwafObjectStruct ObjectMap()
         {
             var ptr = AllocateDdWafObject();
-            _objectMapField(ptr);
+            _objectMapField(ref ptr);
             return ptr;
         }
 
-        internal bool ObjectArrayAdd(IntPtr array, IntPtr entry) => _objectArrayAddField(array, entry);
+        internal bool ObjectArrayAdd(ref DdwafObjectStruct array, ref DdwafObjectStruct entry) => _objectArrayAddField(ref array, ref entry);
 
         // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
-        internal bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry) => Environment.Is64BitProcess ? _objectMapAddFieldX64!(map, entryName, entryNameLength, entry) : _objectMapAddFieldX86!(map, entryName, (uint)entryNameLength, entry);
+        internal bool ObjectMapAdd(ref DdwafObjectStruct map, string entryName, ulong entryNameLength, ref DdwafObjectStruct entry) => Environment.Is64BitProcess ? _objectMapAddFieldX64!(ref map, entryName, entryNameLength, ref entry) : _objectMapAddFieldX86!(ref map, entryName, (uint)entryNameLength, ref entry);
 
-        internal void ObjectFreePtr(ref IntPtr input)
+        internal void ObjectFreePtr(ref DdwafObjectStruct input)
         {
-            _freeObjectield(input);
-            input = IntPtr.Zero;
+            _freeObjectield(ref input);
         }
 
         internal void ResultFree(ref DdwafResultStruct output) => _freeResultField(ref output);
 
-        private IntPtr AllocateDdWafObject()
+        private DdwafObjectStruct AllocateDdWafObject()
         {
-            var ptr = Marshal.AllocHGlobal(SizeOfDdWafObject);
-            GC.AddMemoryPressure(SizeOfDdWafObject);
-            return ptr;
+            return new DdwafObjectStruct();
         }
 
         private void LoggingCallback(
