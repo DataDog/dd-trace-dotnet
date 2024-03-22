@@ -44,6 +44,8 @@ shared::span<std::uintptr_t> CallstackPool::Acquire()
 
 void CallstackPool::Release(shared::span<std::uintptr_t> buffer)
 {
+    if (buffer.data() == nullptr)
+        return;
     auto alignup = [](std::size_t x) { return ((x - 1) | (8 - 1)) + 1; };
     auto* header = reinterpret_cast<PoolHeader*>(reinterpret_cast<std::uint8_t*>(buffer.data()) - alignup(sizeof(PoolHeader)));
     header->_lock.exchange(0, std::memory_order_seq_cst);
