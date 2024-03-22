@@ -22,7 +22,9 @@ fpm --input-type deb \
   --package $TMP_DIR \
   $TMP_DIR/datadog-dotnet-apm.old
 
-echo -n $DOTNET_PACKAGE_VERSION > $TMP_DIR/opt/datadog/version/auto_inject-dotnet.version
+echo -n $DOTNET_PACKAGE_VERSION > auto_inject-dotnet.version
+
+cp auto_inject-dotnet.version $TMP_DIR/datadog-dotnet-apm.dir/opt/datadog/version
 
 # Build packages
 datadog-package create \
