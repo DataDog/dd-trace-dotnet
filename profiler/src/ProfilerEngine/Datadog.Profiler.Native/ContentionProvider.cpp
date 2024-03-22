@@ -36,7 +36,8 @@ ContentionProvider::ContentionProvider(
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration,
-    MetricsRegistry& metricsRegistry)
+    MetricsRegistry& metricsRegistry,
+    CallstackPool* pool)
     :
     CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo{pCorProfilerInfo},
@@ -44,13 +45,13 @@ ContentionProvider::ContentionProvider(
     _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval(), false),
     _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()},
     _sampleLimit{pConfiguration->ContentionSampleLimit()},
-    _pConfiguration{pConfiguration}
+    _pConfiguration{pConfiguration},
+    _callstackPool{pool}
 {
     _lockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_lock_contentions");
     _lockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_lock_contentions_duration");
     _sampledLockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_lock_contentions");
     _sampledLockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_sampled_lock_contentions_duration");
-    _callstackPool = std::make_unique<CallstackPool>(500);
 }
 
 std::string ContentionProvider::GetBucket(double contentionDurationNs)
@@ -118,7 +119,7 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
         const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
-        pStackFramesCollector->PrepareForNextCollection(_callstackPool.get());
+        pStackFramesCollector->PrepareForNextCollection(_callstackPool);
 
         uint32_t hrCollectStack = E_FAIL;
         const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);

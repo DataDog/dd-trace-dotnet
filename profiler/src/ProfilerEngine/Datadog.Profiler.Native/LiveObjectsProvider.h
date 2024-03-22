@@ -24,6 +24,7 @@ class IRuntimeIdStore;
 class IConfiguration;
 class ISampledAllocationsListener;
 class SampleValueTypeProvider;
+class CallstackPool;
 
 class LiveObjectsProvider : public IService,
                             public IBatchedSamplesProvider,
@@ -40,7 +41,8 @@ public:
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        CallstackPool* pool);
 
 public:
     // Inherited via IService

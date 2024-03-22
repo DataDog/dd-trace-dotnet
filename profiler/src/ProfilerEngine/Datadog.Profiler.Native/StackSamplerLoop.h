@@ -16,7 +16,6 @@
 #include "corprof.h"
 // end
 
-#include "CallstackPool.h"
 #include "ManagedThreadInfo.h"
 #include "ICollector.h"
 #include "IService.h"
@@ -33,6 +32,7 @@ class StackSamplerLoopManager;
 class IThreadsCpuManager;
 class IManagedThreadList;
 class IConfiguration;
+class CallstackPool;
 
 
 typedef enum
@@ -56,7 +56,8 @@ public:
         IManagedThreadList* pCodeHotspotThreadList,
         ICollector<RawWallTimeSample>* pWallTimeCollector,
         ICollector<RawCpuSample>* pCpuTimeCollector,
-        MetricsRegistry& metricsRegistry
+        MetricsRegistry& metricsRegistry,
+        CallstackPool* callstackPool
         );
     ~StackSamplerLoop();
     StackSamplerLoop(StackSamplerLoop const&) = delete;
@@ -98,7 +99,7 @@ private:
     std::shared_ptr<MeanMaxMetric> _walltimeDurationMetric;
     std::shared_ptr<MeanMaxMetric> _cpuDurationMetric;
     bool _isStopped;
-    std::unique_ptr<CallstackPool> _callstackPool;
+    CallstackPool* _callstackPool;
 
 private:
     void MainLoop();

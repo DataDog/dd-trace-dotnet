@@ -44,7 +44,8 @@ StackSamplerLoop::StackSamplerLoop(
     IManagedThreadList* pCodeHotspotThreadList,
     ICollector<RawWallTimeSample>* pWallTimeCollector,
     ICollector<RawCpuSample>* pCpuTimeCollector,
-    MetricsRegistry& metricsRegistry)
+    MetricsRegistry& metricsRegistry,
+    CallstackPool* callstackPool)
     :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pStackFramesCollector{pStackFramesCollector},
@@ -67,7 +68,8 @@ StackSamplerLoop::StackSamplerLoop(
     _isWalltimeEnabled{pConfiguration->IsWallTimeProfilingEnabled()},
     _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled()},
     _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()},
-    _isStopped{false}
+    _isStopped{false},
+    _callstackPool{callstackPool}
 {
     _nbCores = OsSpecificApi::GetProcessorCount();
     Log::Info("Processor cores = ", _nbCores);
@@ -89,10 +91,6 @@ StackSamplerLoop::StackSamplerLoop(
         _walltimeDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_walltime_iterations_duration");
         _cpuDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_cpu_iterations_duration");
     }
-
-    // TODO change 500 to a more accurate number
-    // depending on activation of walltime and cpu providers
-    _callstackPool = std::make_unique<CallstackPool>(500);
 }
 
 StackSamplerLoop::~StackSamplerLoop()
@@ -434,7 +432,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
         // Prepare the collector for the next iteration. Among other things, this will pre-allocate the memory to store
         // the collected frames info. This is because we cannot allocate memory once a thread is suspended:
         // malloc() uses a lock and so if we susped a thread that was alocating, we will deadlock.
-        _pStackFramesCollector->PrepareForNextCollection(_callstackPool.get());
+        _pStackFramesCollector->PrepareForNextCollection(_callstackPool);
 
 
         // block used to ensure that NotifyIterationFinished gets called
@@ -573,7 +571,8 @@ void StackSamplerLoop::PersistStackSnapshotResults(
     std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
     PROFILING_TYPE profilingType)
 {
-    if (pSnapshotResult == nullptr || pSnapshotResult->GetFramesCount() == 0)
+    auto callstack = pSnapshotResult->GetCallstack();
+    if (pSnapshotResult == nullptr || callstack.size() == 0)
     {
         return;
     }
@@ -586,7 +585,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
         rawSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
         rawSample.SpanId = pSnapshotResult->GetSpanId();
         rawSample.AppDomainId = pSnapshotResult->GetAppDomainId();
-        rawSample.Stack = pSnapshotResult->GetCallstack();
+        rawSample.Stack = std::move(callstack);
         rawSample.ThreadInfo = pThreadInfo;
         rawSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
         _pWallTimeCollector->Add(std::move(rawSample));
@@ -600,7 +599,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
         rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
         rawCpuSample.SpanId = pSnapshotResult->GetSpanId();
         rawCpuSample.AppDomainId = pSnapshotResult->GetAppDomainId();
-        rawCpuSample.Stack = pSnapshotResult->GetCallstack();
+        rawCpuSample.Stack = std::move(callstack);
         rawCpuSample.ThreadInfo = pThreadInfo;
         rawCpuSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
         _pCpuTimeCollector->Add(std::move(rawCpuSample));

@@ -265,6 +265,9 @@ private :
     std::unique_ptr<IMetadataProvider> _pMetadataProvider;
     std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
     bool _isETWStarted = false;
+    std::unique_ptr<CallstackPool> _stackSamplerLoopPool;
+    std::unique_ptr<CallstackPool> _allocationsProviderPool;
+    std::unique_ptr<CallstackPool> _contentionProviderPool;
 
 private:
     static void ConfigureDebugLog();

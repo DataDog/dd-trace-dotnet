@@ -41,7 +41,8 @@ public:
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
         ISampledAllocationsListener* pListener,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        CallstackPool* pool);
 
     AllocationsProvider(
         std::vector<SampleValueTypeProvider::Offset> valueTypeProvider,
@@ -53,7 +54,8 @@ public:
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
         ISampledAllocationsListener* pListener,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        CallstackPool* pool);
 
     void OnAllocation(uint32_t allocationKind,
                       ClassID classId,
@@ -78,5 +80,5 @@ private:
     std::shared_ptr<CounterMetric> _sampledAllocationsCountMetric;
     std::shared_ptr<MeanMaxMetric> _sampledAllocationsSizeMetric;
     std::shared_ptr<SumMetric> _totalAllocationsSizeMetric;
-    std::unique_ptr<CallstackPool> _callstackPool;
+    CallstackPool* _callstackPool;
 };

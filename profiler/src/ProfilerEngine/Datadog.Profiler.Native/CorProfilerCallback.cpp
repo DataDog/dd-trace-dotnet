@@ -190,6 +190,7 @@ bool CorProfilerCallback::InitializeServices()
         {
             if (_pCorProfilerInfoLiveHeap != nullptr)
             {
+                _allocationsProviderPool = std::make_unique<CallstackPool>(400);
                 _pLiveObjectsProvider = RegisterService<LiveObjectsProvider>(
                     valueTypeProvider,
                     _pCorProfilerInfoLiveHeap,
@@ -199,7 +200,8 @@ bool CorProfilerCallback::InitializeServices()
                     _pAppDomainStore.get(),
                     pRuntimeIdStore,
                     _pConfiguration.get(),
-                    _metricsRegistry);
+                    _metricsRegistry,
+                    _allocationsProviderPool.get());
 
                 _pAllocationsProvider = RegisterService<AllocationsProvider>(
                     valueTypeProvider,
@@ -211,7 +213,8 @@ bool CorProfilerCallback::InitializeServices()
                     pRuntimeIdStore,
                     _pConfiguration.get(),
                     _pLiveObjectsProvider,
-                    _metricsRegistry
+                    _metricsRegistry,
+                    _allocationsProviderPool.get()
                     );
 
                 if (!_pConfiguration->IsAllocationProfilingEnabled())
@@ -228,6 +231,7 @@ bool CorProfilerCallback::InitializeServices()
         // check for allocations profiling only (without heap profiling)
         if (_pConfiguration->IsAllocationProfilingEnabled() && (_pAllocationsProvider == nullptr))
         {
+            _allocationsProviderPool = std::make_unique<CallstackPool>(200);
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
                 valueTypeProvider,
                 _pCorProfilerInfo,
@@ -238,12 +242,14 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 nullptr, // no listener
-                _metricsRegistry
+                _metricsRegistry,
+                _allocationsProviderPool.get()
                 );
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
+            _contentionProviderPool = std::make_unique<CallstackPool>(200);
             _pContentionProvider = RegisterService<ContentionProvider>(
                 valueTypeProvider,
                 _pCorProfilerInfo,
@@ -253,7 +259,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
                 _pConfiguration.get(),
-                _metricsRegistry
+                _metricsRegistry,
+                _contentionProviderPool.get()
                 );
         }
 
@@ -306,6 +313,7 @@ bool CorProfilerCallback::InitializeServices()
         // check for allocations profiling only (without heap profiling)
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
+            _allocationsProviderPool = std::make_unique<CallstackPool>(200);
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
                 valueTypeProvider,
                 _pCorProfilerInfo,
@@ -316,11 +324,13 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 nullptr, // no listener
-                _metricsRegistry);
+                _metricsRegistry,
+                _allocationsProviderPool.get());
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
+            _contentionProviderPool = std::make_unique<CallstackPool>(200);
             _pContentionProvider = RegisterService<ContentionProvider>(
                 valueTypeProvider,
                 _pCorProfilerInfo,
@@ -330,7 +340,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
                 _pConfiguration.get(),
-                _metricsRegistry);
+                _metricsRegistry,
+                _contentionProviderPool.get());
         }
 
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
@@ -408,6 +419,7 @@ bool CorProfilerCallback::InitializeServices()
     auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
+    _stackSamplerLoopPool = std::make_unique<CallstackPool>(500);
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
         _pConfiguration.get(),
@@ -418,7 +430,8 @@ bool CorProfilerCallback::InitializeServices()
         _pCodeHotspotsThreadList,
         _pWallTimeProvider,
         _pCpuTimeProvider,
-        _metricsRegistry);
+        _metricsRegistry,
+        _stackSamplerLoopPool.get());
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 

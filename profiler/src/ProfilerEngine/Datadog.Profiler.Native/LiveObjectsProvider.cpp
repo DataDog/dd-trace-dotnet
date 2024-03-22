@@ -4,9 +4,11 @@
 #include <string>
 #include <vector>
 
+
 #include "GarbageCollection.h"
 #include "IConfiguration.h"
 #include "LiveObjectsProvider.h"
+#include "CallstackPool.h"
 #include "OpSysTools.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
@@ -32,7 +34,8 @@ LiveObjectsProvider::LiveObjectsProvider(
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration,
-    MetricsRegistry& metricsRegistry)
+    MetricsRegistry& metricsRegistry,
+    CallstackPool* pool)
     :
     _pCorProfilerInfo(pCorProfilerInfo),
     _isTimestampsAsLabelEnabled(pConfiguration->IsTimestampsAsLabelEnabled())
@@ -47,7 +50,8 @@ LiveObjectsProvider::LiveObjectsProvider(
         pRuntimeIdStore,
         pConfiguration,
         nullptr,
-        metricsRegistry);
+        metricsRegistry,
+        pool);
 }
 
 const char* LiveObjectsProvider::GetName()

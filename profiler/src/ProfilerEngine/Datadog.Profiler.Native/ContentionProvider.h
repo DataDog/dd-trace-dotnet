@@ -25,6 +25,7 @@ class IThreadsCpuManager;
 class IAppDomainStore;
 class IRuntimeIdStore;
 class SampleValueTypeProvider;
+class CallstackPool;
 
 
 class ContentionProvider :
@@ -42,7 +43,8 @@ public:
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        CallstackPool* pool);
 
     // IContentionListener implementation
     void OnContention(double contentionDurationNs) override;
@@ -71,5 +73,5 @@ private:
     std::shared_ptr<MeanMaxMetric> _sampledLockContentionsDurationMetric;
     std::mutex _contentionsLock;
 
-    std::unique_ptr<CallstackPool> _callstackPool;
+    CallstackPool* _callstackPool;
 };

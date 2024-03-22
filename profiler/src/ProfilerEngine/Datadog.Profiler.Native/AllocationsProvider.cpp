@@ -36,7 +36,8 @@ AllocationsProvider::AllocationsProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration,
     ISampledAllocationsListener* pListener,
-    MetricsRegistry& metricsRegistry)
+    MetricsRegistry& metricsRegistry,
+    CallstackPool* pool)
     :
     AllocationsProvider(
         valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
@@ -44,7 +45,8 @@ AllocationsProvider::AllocationsProvider(
         pThreadsCpuManager, pAppDomainStore, pRuntimeIdStore,
         pConfiguration,
         pListener,
-        metricsRegistry)
+        metricsRegistry,
+        pool)
 {
 }
 
@@ -58,7 +60,8 @@ AllocationsProvider::AllocationsProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration,
     ISampledAllocationsListener* pListener,
-    MetricsRegistry& metricsRegistry) :
+    MetricsRegistry& metricsRegistry,
+    CallstackPool* pool) :
     CollectorBase<RawAllocationSample>("AllocationsProvider", std::move(valueTypes), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
@@ -66,7 +69,8 @@ AllocationsProvider::AllocationsProvider(
     _pListener(pListener),
     _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval()),
     _sampleLimit(pConfiguration->AllocationSampleLimit()),
-    _pConfiguration(pConfiguration)
+    _pConfiguration(pConfiguration),
+    _callstackPool{pool}
 {
     _allocationsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_allocations");
     _allocationsSizeMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_allocations_size");
@@ -76,8 +80,6 @@ AllocationsProvider::AllocationsProvider(
 
     // disable sub sampling when recording allocations
     _shouldSubSample = !_pConfiguration->IsAllocationRecorderEnabled();
-    // TODO compute optimal size
-    _callstackPool = std::make_unique<CallstackPool>(200);
 }
 
 
@@ -104,7 +106,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
     const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
-    pStackFramesCollector->PrepareForNextCollection(_callstackPool.get());
+    pStackFramesCollector->PrepareForNextCollection(_callstackPool);
 
     uint32_t hrCollectStack = E_FAIL;
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
