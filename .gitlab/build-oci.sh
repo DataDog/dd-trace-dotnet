@@ -30,5 +30,5 @@ datadog-package create \
     --archive=true \
     --archive-path="datadog-apm-library-dotnet-$DOTNET_PACKAGE_VERSION-$ARCH.tar" \
     --arch "$ARCH" \ 
-    --os "linux"
+    --os "linux" \
     $TMP_DIR/datadog-dotnet-apm.dir/opt/datadog
