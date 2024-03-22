@@ -841,6 +841,7 @@
       <type fullname="System.Version" />
       <type fullname="System.Void" />
       <type fullname="System.WeakReference" />
+      <type fullname="System.WeakReference`1" />
    </assembly>
    <assembly fullname="System.Runtime.CompilerServices.Unsafe">
       <type fullname="System.Runtime.CompilerServices.Unsafe" />

@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.ComponentModel;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
@@ -34,31 +36,66 @@ public static class NUnitWorkItemPerformWorkIntegration
     /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
-        where TTarget : IWorkItem
+        where TTarget : IWorkItem, IDuckType
     {
-        if (NUnitIntegration.IsEnabled)
+        if (!NUnitIntegration.IsEnabled)
         {
-            var item = instance.Test;
-            switch (item.TestType)
-            {
-                case "Assembly" when NUnitIntegration.GetTestModuleFrom(item) is null && item.Instance.TryDuckCast<TestAssemblyStruct>(out var itemAssembly):
-                    var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
-                    var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
-                    CIVisibility.WaitForSkippableTaskToFinish();
-                    NUnitIntegration.SetTestModuleTo(item, TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameNUnit, frameworkVersion));
-                    break;
-                case "TestFixture" when NUnitIntegration.GetTestSuiteFrom(item) is null && NUnitIntegration.GetTestModuleFrom(item) is { } module:
-                    NUnitIntegration.SetTestSuiteTo(item, module.InternalGetOrCreateSuite(item.FullName));
-                    break;
-                case "TestMethod" when NUnitIntegration.ShouldSkip(item, out _, out _):
+            return CallTargetState.GetDefault();
+        }
+
+        WriteDebugInfo(instance);
+        var item = instance.Test;
+
+        switch (item.TestType)
+        {
+            case "Assembly" when NUnitIntegration.GetTestModuleFrom(item) is null && item.Instance.TryDuckCast<TestAssemblyStruct>(out var itemAssembly):
+                var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
+                var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
+                CIVisibility.WaitForSkippableTaskToFinish();
+                NUnitIntegration.SetTestModuleTo(item, TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameNUnit, frameworkVersion));
+                break;
+            case "TestFixture" when NUnitIntegration.GetTestSuiteFrom(item) is null && NUnitIntegration.GetTestModuleFrom(item) is { } module:
+                NUnitIntegration.SetTestSuiteTo(item, module.InternalGetOrCreateSuite(item.FullName));
+                break;
+            case "TestMethod":
+                if (NUnitIntegration.ShouldSkip(item, out _, out _))
+                {
                     var testMethod = item.Method.MethodInfo;
                     Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", testMethod.DeclaringType?.FullName, testMethod.Name);
                     item.RunState = RunState.Ignored;
                     item.Properties.Set(NUnitIntegration.SkipReasonKey, IntelligentTestRunnerTags.SkippedByReason);
-                    break;
-            }
+                }
+
+                NUnitIntegration.GetOrCreateTest(item);
+                break;
         }
 
         return CallTargetState.GetDefault();
+    }
+
+    private static void WriteDebugInfo(IWorkItem workItem)
+    {
+        if (!Common.Log.IsEnabled(LogEventLevel.Debug))
+        {
+            return;
+        }
+
+        var item = workItem.Test;
+        if (item.TestType is "Assembly" or "TestFixture" or "TestMethod")
+        {
+            var strMessage = $"->{workItem.Type.Name}.PerformWork | TestType: {item.TestType} | FullName: {item.FullName} | MethodName: {item.MethodName} | Id: {item.Id} | IsSuite: {item.IsSuite} | HasChildren: {item.HasChildren} | Parent FullName: {item.Parent?.FullName}";
+            if (item.TestType == "TestFixture")
+            {
+                strMessage = "\t" + strMessage;
+            }
+            else if (item.TestType == "TestMethod")
+            {
+                strMessage = "\t\t" + strMessage;
+            }
+
+#pragma warning disable DDLOG004
+            Common.Log.Debug(strMessage);
+#pragma warning restore DDLOG004
+        }
     }
 }

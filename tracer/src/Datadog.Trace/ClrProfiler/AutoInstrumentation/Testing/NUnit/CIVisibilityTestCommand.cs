@@ -86,16 +86,16 @@ internal class CIVisibilityTestCommand
 
     private ITestResult ExecuteTest(ITestExecutionContext context)
     {
-        var test = NUnitIntegration.CreateTest(context.CurrentTest);
+        // var test = NUnitIntegration.CreateTest(context.CurrentTest);
 
-        Common.Log.Information("InnerCommand Type = {FullName} | {Test}", _innerCommand.Type.FullName, context.CurrentTest.FullName);
-        if (_innerCommand.Type.FullName == "NUnit.Framework.Internal.Commands.SkipCommand")
-        {
-            test?.Close(Ci.TestStatus.Skip, TimeSpan.Zero);
-        }
+        // Common.Log.Information("InnerCommand Type = {FullName} | {Test}", _innerCommand.Type.FullName, context.CurrentTest.FullName);
+        // if (_innerCommand.Type.FullName == "NUnit.Framework.Internal.Commands.SkipCommand")
+        // {
+        //     test?.Close(Ci.TestStatus.Skip, TimeSpan.Zero);
+        //     test = null;
+        // }
 
         ITestResult? testResult = null;
-        Exception? executeException = null;
         try
         {
             testResult = _innerCommand.Execute(context);
@@ -106,13 +106,12 @@ internal class CIVisibilityTestCommand
             // and we want to look at restructuring the API in the future.
             testResult ??= context.CurrentTest.MakeTestResult();
             testResult.RecordException(ex);
-            executeException = ex;
         }
 
-        if (test is not null)
-        {
-            NUnitIntegration.FinishTest(test, executeException);
-        }
+        // if (test is not null)
+        // {
+        //     NUnitIntegration.FinishTest(test, testResult);
+        // }
 
         return testResult;
     }

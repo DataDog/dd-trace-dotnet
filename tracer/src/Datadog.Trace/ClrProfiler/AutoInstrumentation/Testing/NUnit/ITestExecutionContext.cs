@@ -24,5 +24,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         /// Gets or sets the current repeat count
         /// </summary>
         int CurrentRepeatCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the current test object
+        /// </summary>
+        object TestObject { get; set; }
     }
 }

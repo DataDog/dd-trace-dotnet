@@ -11,6 +11,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
+/*
 /// <summary>
 /// NUnit.Framework.Internal.Commands.TestCommand NUnit.Framework.Internal.Execution.SimpleWorkItem::MakeTestCommand() calltarget instrumentation
 /// </summary>
@@ -48,3 +49,4 @@ public class NUnitSimpleWorkItemMakeTestCommandIntegration
         return new CallTargetReturn<TReturn>(returnValue);
     }
 }
+*/

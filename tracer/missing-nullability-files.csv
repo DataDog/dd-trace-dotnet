@@ -819,7 +819,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/IPropertyBag.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/IResultState.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/ITest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/ITestExecutionContext.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/ITestResult.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/ITestSuite.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/IWorkItem.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/NUnitCompositeWorkItemPerformOneTimeSetUpIntegration.cs
