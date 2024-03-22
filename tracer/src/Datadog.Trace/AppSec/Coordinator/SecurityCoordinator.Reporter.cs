@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -47,6 +46,17 @@ internal readonly partial struct SecurityCoordinator
         { "Accept", string.Empty },
         { "Accept-Encoding", string.Empty },
         { "Accept-Language", string.Empty },
+    };
+
+    private static readonly Dictionary<string, string?> ExternalWafsRequestHeaders = new()
+    {
+        { "X-Amzn-Trace-Id", string.Empty },
+        { "CF-ray", string.Empty },
+        { "X-Cloud-Trace-Context", string.Empty },
+        { "X-Appgw-Trace-id", string.Empty },
+        { "Akamai-User-Risk", string.Empty },
+        { "X-SigSci-RequestID", string.Empty },
+        { "X-SigSci-Tags", string.Empty },
     };
 
     private static readonly Dictionary<string, string?> ResponseHeaders = new() { { "content-length", string.Empty }, { "content-type", string.Empty }, { "Content-Encoding", string.Empty }, { "Content-Language", string.Empty } };

@@ -13,6 +13,7 @@ using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.MessagePack;
@@ -70,6 +71,8 @@ internal readonly partial struct SecurityCoordinator
             {
                 _localRootSpan.Context.TraceContext.MarkApiSecurity();
             }
+
+            AddHeaderTags(_localRootSpan, _httpTransport.GetRequestHeaders(), ExternalWafsRequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
         }
 
         return RunWaf(args);
