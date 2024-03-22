@@ -54,28 +54,56 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public SpanTagAssertion<T> IsPresent(string tagName)
+        public SpanTagAssertion<T> IsPresent(string tagName, params string[] fallbackTagNames)
         {
-            bool keyExists = _tags.TryGetValue(tagName, out T value);
-            if (keyExists)
+            // Instead of passing all arguments using params, require one string argument at compile-time
+            var expectedTagNames = (new string[] { tagName }).Concat(fallbackTagNames).ToArray();
+            List<string> foundTags = new();
+
+            foreach (var expectedTagName in expectedTagNames)
             {
-                _tags.Remove(tagName);
+                if (_tags.TryGetValue(expectedTagName, out T value) && value is not null)
+                {
+                    _tags.Remove(expectedTagName);
+                    foundTags.Add(tagName);
+                }
             }
 
-            if (!keyExists || value is null)
+            if (foundTags.Count == 0)
             {
-                _result.WithFailure(GeneratePresentFailureString("tag", tagName));
+                var propertyName = string.Join(" or ", expectedTagNames.Select(s => '"' + s + '"'));
+                _result.WithFailure(GeneratePresentFailureString("tag", propertyName));
+            }
+            else if (foundTags.Count > 1)
+            {
+                var propertyName = string.Join(" and ", expectedTagNames.Select(s => '"' + s + '"'));
+                var found = string.Join(" and ", foundTags.Select(s => '"' + s + '"'));
+                _result.WithFailure(GeneratePresentFoundMultipleFailureString("tag", propertyName, found));
             }
 
             return this;
         }
 
-        public SpanTagAssertion<T> IsOptional(string tagName)
+        public SpanTagAssertion<T> IsOptional(string tagName, params string[] fallbackTagNames)
         {
-            bool keyExists = _tags.TryGetValue(tagName, out T value);
-            if (keyExists)
+            // Instead of passing all arguments using params, require one string argument at compile-time
+            var expectedTagNames = (new string[] { tagName }).Concat(fallbackTagNames).ToArray();
+            List<string> foundTags = new();
+
+            foreach (var expectedTagName in expectedTagNames)
             {
-                _tags.Remove(tagName);
+                if (_tags.TryGetValue(expectedTagName, out T value) && value is not null)
+                {
+                    _tags.Remove(expectedTagName);
+                    foundTags.Add(tagName);
+                }
+            }
+
+            if (foundTags.Count > 1)
+            {
+                var propertyName = string.Join(" and ", expectedTagNames.Select(s => '"' + s + '"'));
+                var found = string.Join(" and ", foundTags.Select(s => '"' + s + '"'));
+                _result.WithFailure(GeneratePresentFoundMultipleFailureString("tag", propertyName, found));
             }
 
             return this;
