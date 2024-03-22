@@ -34,7 +34,6 @@
     <Compile Include="..\Datadog.Trace\IScope.cs" />
     <Compile Include="..\Datadog.Trace\ISpan.cs" />
     <Compile Include="..\Datadog.Trace\ISpanContext.cs" />
-    <Compile Include="..\Datadog.Trace\ISpanContextExtractor.cs" />
     <Compile Include="..\Datadog.Trace\ITracer.cs" />
     <Compile Include="..\Datadog.Trace\SamplingPriority.cs" />
     <Compile Include="..\Datadog.Trace\SamplingPriorityValues.cs" />
