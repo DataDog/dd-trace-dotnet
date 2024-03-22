@@ -49,7 +49,7 @@ namespace Datadog.Trace.TestHelpers
         [Key("metrics")]
         public Dictionary<string, double> Metrics { get; set; }
 
-        [Key("span_link")]
+        [Key("span_links")]
         public List<Dictionary<string, string>> SpanLinks { get; set; }
 
         public string GetTag(string key)
