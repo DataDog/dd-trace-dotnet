@@ -38,9 +38,10 @@ namespace Samples.AspNetCoreSimpleController
 
                 if (!isAttached && tracerEnabled)
                 {
-                    Console.WriteLine("Error: Profiler is required and is not loaded.");
-                    Environment.Exit(1);
-                    return;
+                    Console.WriteLine("Error: Profiler is required and is not loaded!!!");
+                    Console.WriteLine(" * Running without profiler.");
+                    /*Environment.Exit(1);
+                    return;*/
                 }
 
                 nativeTracerVersion = SampleHelpers.GetNativeTracerVersion();
