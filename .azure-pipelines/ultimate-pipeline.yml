@@ -3891,7 +3891,7 @@ stages:
 
   - job: Linux64
     timeoutInMinutes: 60
-    pool: Throughput
+    pool: Throughput-Appsec
 
     steps:
     - template: steps/clone-repo.yml
@@ -4028,12 +4028,6 @@ stages:
   - job: AsmLinux64
     timeoutInMinutes: 60
     pool: Throughput
-    condition: >
-      or(
-        eq(variables.isMainBranch, true),
-        eq(variables.force_appsec_throughput_run, 'true'),
-        eq(variables.isAppSecChanged, 'True')
-      )
 
     steps:
     - template: steps/clone-repo.yml
