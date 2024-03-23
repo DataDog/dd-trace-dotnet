@@ -3988,7 +3988,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-
     - task: DownloadPipelineArtifact@2
       displayName: Download arm64 native binary
       inputs:
@@ -4028,14 +4027,19 @@ stages:
 
   - job: AsmLinux64
     timeoutInMinutes: 60
-    pool: Throughput-AppSec
+    pool: Throughput
+    condition: >
+      or(
+        eq(variables.isMainBranch, true),
+        eq(variables.force_appsec_throughput_run, 'true'),
+        eq(variables.isAppSecChanged, 'True')
+      )
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
@@ -4046,8 +4050,6 @@ stages:
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
-        mkdir -p tracer/bin/netcoreapp3.1
-        cp tracer/tracer-home-linux/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
         mkdir -p $(CrankDir)/results/logs
         cd $(CrankDir)
         chmod +x ./run-appsec.sh
@@ -4056,8 +4058,6 @@ stages:
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
-        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
-        DD_API_KEY: $(ddApiKey)
 
     - script: |
         cp $(CrankDir)/*.json $(CrankDir)/results
@@ -5959,7 +5959,6 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download crank_linux_x64_asm_1
       continueOnError: true
-      condition: succeededOrFailed()
       inputs:
         artifact: crank_linux_x64_asm_1
         path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_x64_asm_1
