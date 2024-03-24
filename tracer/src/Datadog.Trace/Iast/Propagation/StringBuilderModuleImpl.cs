@@ -151,24 +151,32 @@ internal static class StringBuilderModuleImpl
             }
 
             var newRangesLeft = taintedTarget != null ? Ranges.ForRemove(index, target.Length, taintedTarget.Ranges) : null;
-            var newRangesLeftLength = newRangesLeft?.Length ?? 0;
-
             var newRangesRight = taintedTarget != null ? Ranges.ForRemove(0, index, taintedTarget.Ranges) : null;
-            var newRangesRightLength = newRangesRight?.Length ?? 0;
+            var rangesTotal = (newRangesLeft?.Length ?? 0) + (valueToInsertRanges?.Length ?? 0) + (newRangesRight?.Length ?? 0);
+            var rangesResult = new Range[rangesTotal];
 
-            var valueToInsertRangesLength = valueToInsertRanges?.Length ?? 0;
-            var rangesResult = new RangeList(newRangesLeftLength + newRangesRightLength + valueToInsertRangesLength);
-            rangesResult.Add(newRangesLeft, 0);
-            rangesResult.Add(valueToInsertRanges, index);
-            rangesResult.Add(newRangesRight, index + valueLenght);
+            if (newRangesLeft != null)
+            {
+                Ranges.CopyShift(newRangesLeft, rangesResult, 0, 0);
+            }
+
+            if (valueToInsertRanges != null)
+            {
+                Ranges.CopyShift(valueToInsertRanges, rangesResult, (newRangesLeft?.Length ?? 0), index);
+            }
+
+            if (newRangesRight != null)
+            {
+                Ranges.CopyShift(newRangesRight, rangesResult, (newRangesLeft?.Length ?? 0) + (valueToInsertRanges?.Length ?? 0), index + valueLenght);
+            }
 
             if (taintedTarget is null)
             {
-                taintedObjects.Taint(target, rangesResult.ToArray());
+                taintedObjects.Taint(target, rangesResult);
             }
             else
             {
-                taintedTarget.Ranges = rangesResult.ToArray();
+                taintedTarget.Ranges = rangesResult;
             }
         }
         catch (Exception error)

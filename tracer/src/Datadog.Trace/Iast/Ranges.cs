@@ -14,20 +14,13 @@ internal static class Ranges
 {
     public static void CopyShift(Range[] src, Range[] dst, int dstPos, int shift)
     {
-        CopyShift(src, dst, dstPos, shift, src.Length);
-    }
-
-    public static void CopyShift(Range[] src, Range[] dst, int dstPos, int shift, int max)
-    {
-        var srcLength = Math.Min(src.Length, max);
-
         if (shift == 0)
         {
-            Array.Copy(src, 0, dst, dstPos, srcLength);
+            Array.Copy(src, 0, dst, dstPos, src.Length);
         }
         else
         {
-            for (int iSrc = 0, iDst = dstPos; iSrc < srcLength; iSrc++, iDst++)
+            for (int iSrc = 0, iDst = dstPos; iSrc < src.Length; iSrc++, iDst++)
             {
                 dst[iDst] = src[iSrc].Shift(shift);
             }
@@ -36,29 +29,16 @@ internal static class Ranges
 
     public static Range[] MergeRanges(int offset, Range[] rangesLeft, Range[] rangesRight)
     {
-        var nRanges = rangesLeft.Length + rangesRight.Length;
-        var finalRangesCount = nRanges > Iast.Instance.Settings.MaxRangeCount ? Iast.Instance.Settings.MaxRangeCount : nRanges;
-
-        // Don't allocate a new array if the left ranges count is the same as the maximum number of ranges allowed
-        // No more ranges can be added to that array
-        if (rangesLeft.Length == Iast.Instance.Settings.MaxRangeCount)
-        {
-            return rangesLeft;
-        }
-
-        var ranges = new Range[finalRangesCount];
-        var remainingRanges = ranges.Length;
-
+        int nRanges = rangesLeft.Length + rangesRight.Length;
+        Range[] ranges = new Range[nRanges];
         if (rangesLeft.Length > 0)
         {
-            var count = Math.Min(rangesLeft.Length, remainingRanges);
-            Array.Copy(rangesLeft, 0, ranges, 0, count);
-            remainingRanges -= count;
+            Array.Copy(rangesLeft, 0, ranges, 0, rangesLeft.Length);
         }
 
-        if (rangesRight.Length > 0 && remainingRanges > 0)
+        if (rangesRight.Length > 0)
         {
-            CopyShift(rangesRight, ranges, rangesLeft.Length, offset, remainingRanges);
+            Ranges.CopyShift(rangesRight, ranges, rangesLeft.Length, offset);
         }
 
         return ranges;
@@ -104,12 +84,6 @@ internal static class Ranges
         }
 
         var newRangesSize = lastRangeExcludedIndex - firstRangeIncludedIndex;
-        if (newRangesSize > Iast.Instance.Settings.MaxRangeCount)
-        {
-            // Truncate the ranges to the maximum number of ranges
-            newRangesSize = Iast.Instance.Settings.MaxRangeCount;
-        }
-
         var newRanges = new Range[newRangesSize];
         for (int rangeIndex = firstRangeIncludedIndex, newRangeIndex = 0; newRangeIndex < newRangesSize; rangeIndex++, newRangeIndex++)
         {
@@ -157,12 +131,6 @@ internal static class Ranges
 
             // range is inside the removed area
             if (!startBeforeRemoveArea && !starAfterRemoveArea && !endAfterRemoveArea)
-            {
-                continue;
-            }
-
-            // Check if the range array is already full to not exceed the maximum number of ranges
-            if (newRanges.Count > Iast.Instance.Settings.MaxRangeCount)
             {
                 continue;
             }

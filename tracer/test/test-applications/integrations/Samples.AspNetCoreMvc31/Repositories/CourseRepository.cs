@@ -13,6 +13,7 @@ namespace WebService.Repositories
 
         static CourseRepository()
         {
+            
             Courses.Add(new Course()
             {
                 Name = "Intoduction to superheroes",

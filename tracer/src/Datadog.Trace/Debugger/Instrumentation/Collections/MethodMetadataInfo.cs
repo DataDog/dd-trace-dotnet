@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Debugger.Helpers;
 
@@ -17,12 +16,12 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
     {
         private readonly object _locker = new();
 
-        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, Type type, MethodBase method, Dictionary<int, int> ilOffsetToLineNumberMapping)
-            : this(parameterNames, localVariableNames, null, null, type, method, null, null, ilOffsetToLineNumberMapping)
+        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, Type type, MethodBase method)
+            : this(parameterNames, localVariableNames, null, null, type, method, null, null)
         {
         }
 
-        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, AsyncHelper.FieldInfoNameSanitized[] asyncMethodHoistedLocals, FieldInfo[] asyncMethodHoistedArguments, Type type, MethodBase method, Type kickoffType, MethodBase kickoffMethod, Dictionary<int, int> ilOffsetToLineNumberMapping)
+        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, AsyncHelper.FieldInfoNameSanitized[] asyncMethodHoistedLocals, FieldInfo[] asyncMethodHoistedArguments, Type type, MethodBase method, Type kickoffType, MethodBase kickoffMethod)
         {
             ParameterNames = parameterNames;
             LocalVariableNames = localVariableNames ?? Array.Empty<string>();
@@ -32,7 +31,6 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
             Method = method;
             KickoffInvocationTargetType = kickoffType;
             KickoffMethod = kickoffMethod;
-            ILOffsetToLineNumberMapping = ilOffsetToLineNumberMapping;
         }
 
         public string[] ParameterNames { get; }
@@ -89,11 +87,6 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         /// If a probe is getting added and/or removed, then this number will be re-updated using new instrumentation, and have a new version number, "hard-coded" by the instrumentation.
         /// </summary>
         public int InstrumentationVersion { get; private set; } = -1;
-
-        /// <summary>
-        /// Gets the mapping IL Offset -> IL Number.
-        /// </summary>
-        public Dictionary<int, int> ILOffsetToLineNumberMapping { get; }
 
         /// <summary>
         /// Updates, atomically using a locking object for syncing, <see cref="ProbeIds"/> and <see cref="ProbeMetadataIndices"/>.

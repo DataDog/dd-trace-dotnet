@@ -71,39 +71,6 @@ public class IastSettingsTests : SettingsTestsBase
     }
 
     [Fact]
-    public void GivenIastSettings_WhenMaxRangeCountTo5_MaxRangeCountIsDefaultValue()
-    {
-        var settings = new CustomSettingsForTests(new Dictionary<string, object>()
-        {
-            { ConfigurationKeys.Iast.MaxRangeCount, 5 }
-        });
-        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
-        Assert.Equal(5, iastSettings.MaxRangeCount);
-    }
-
-    [Fact]
-    public void GivenIastSettings_WhenSetMaxRangeCountToMinus1_MaxRangeCountIsDefaultValue()
-    {
-        var settings = new CustomSettingsForTests(new Dictionary<string, object>()
-        {
-            { ConfigurationKeys.Iast.MaxRangeCount, -1 }
-        });
-        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
-        Assert.Equal(IastSettings.MaxRangeCountDefault, iastSettings.MaxRangeCount);
-    }
-
-    [Fact]
-    public void GivenIastSettings_WhenSetMaxRangeCountToZero_MaxRangeCountIsDefaultValue()
-    {
-        var settings = new CustomSettingsForTests(new Dictionary<string, object>()
-        {
-            { ConfigurationKeys.Iast.MaxRangeCount, 0 }
-        });
-        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
-        Assert.Equal(IastSettings.MaxRangeCountDefault, iastSettings.MaxRangeCount);
-    }
-
-    [Fact]
     public void GivenIastSettings_WhenVulnerabilitiesPerRequestTo5_VulnerabilitiesPerRequestDefaultValue()
     {
         var settings = new CustomSettingsForTests(new Dictionary<string, object>()

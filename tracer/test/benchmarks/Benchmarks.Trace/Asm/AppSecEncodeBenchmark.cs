@@ -96,8 +96,8 @@ public class AppSecEncoderBenchmark
         return new NestedMap(root, nestingDepth, withAttack);
     }
 
-    // deactivate for now as it's slowing CI down. Reactivate when run only when an appsecfile changed is setup in CI
-    // [Benchmark]
+
+    [Benchmark]
     public void EncodeArgs()
     {
         using var pwArgs = _encoder.Encode(_args.Map, applySafetyLimits: true);

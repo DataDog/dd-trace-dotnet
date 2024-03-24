@@ -15,14 +15,12 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
-    [UsesVerify]
-    public class XUnitTests : TestingFrameworkTest
+    public class XUnitTests : TestHelper
     {
         private const string TestBundleName = "Samples.XUnitTests";
         private const string TestSuiteName = "Samples.XUnitTests.TestSuite";
@@ -61,10 +59,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         spans = agent.WaitForSpans(ExpectedSpanCount)
                                      .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
                                      .ToList();
-
-                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings("all");
-                        settings.DisableRequireUniquePrefix();
-                        await Verifier.Verify(spans.OrderBy(s => s.Resource).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Parameters)), settings);
 
                         // Check the span count
                         Assert.Equal(ExpectedSpanCount, spans.Count);
@@ -237,6 +231,157 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 WriteSpans(spans);
                 throw;
             }
+        }
+
+        private static void WriteSpans(List<MockSpan> spans)
+        {
+            if (spans is null || spans.Count == 0)
+            {
+                return;
+            }
+
+            Console.WriteLine("***********************************");
+
+            int i = 0;
+            foreach (var span in spans)
+            {
+                Console.Write($" {i++}) ");
+                Console.Write($"TraceId={span.TraceId}, ");
+                Console.Write($"SpanId={span.SpanId}, ");
+                Console.Write($"Service={span.Service}, ");
+                Console.Write($"Name={span.Name}, ");
+                Console.Write($"Resource={span.Resource}, ");
+                Console.Write($"Type={span.Type}, ");
+                Console.Write($"Error={span.Error}");
+                Console.WriteLine();
+                Console.WriteLine($"   Tags=");
+                foreach (var kv in span.Tags)
+                {
+                    Console.WriteLine($"       => {kv.Key} = {kv.Value}");
+                }
+
+                Console.WriteLine();
+            }
+
+            Console.WriteLine("***********************************");
+        }
+
+        private static void AssertTargetSpanAnyOf(MockSpan targetSpan, string key, params string[] values)
+        {
+            string actualValue = targetSpan.Tags[key];
+            Assert.Contains(actualValue, values);
+            targetSpan.Tags.Remove(key);
+        }
+
+        private static void AssertTargetSpanEqual(MockSpan targetSpan, string key, string value)
+        {
+            Assert.Equal(value, targetSpan.Tags[key]);
+            targetSpan.Tags.Remove(key);
+        }
+
+        private static void AssertTargetSpanExists(MockSpan targetSpan, string key)
+        {
+            Assert.True(targetSpan.Tags.ContainsKey(key));
+            targetSpan.Tags.Remove(key);
+        }
+
+        private static void AssertTargetSpanContains(MockSpan targetSpan, string key, string value)
+        {
+            Assert.Contains(value, targetSpan.Tags[key]);
+            targetSpan.Tags.Remove(key);
+        }
+
+        private static void CheckCIEnvironmentValuesDecoration(MockSpan targetSpan)
+        {
+            var context = new SpanContext(parent: null, traceContext: null, serviceName: null);
+            var span = new Span(context, DateTimeOffset.UtcNow);
+            CIEnvironmentValues.Instance.DecorateSpan(span);
+
+            AssertEqual(CommonTags.CIProvider);
+            AssertEqual(CommonTags.CIPipelineId);
+            AssertEqual(CommonTags.CIPipelineName);
+            AssertEqual(CommonTags.CIPipelineNumber);
+            AssertEqual(CommonTags.CIPipelineUrl);
+            AssertEqual(CommonTags.CIJobUrl);
+            AssertEqual(CommonTags.CIJobName);
+            AssertEqual(CommonTags.StageName);
+            AssertEqual(CommonTags.CIWorkspacePath);
+            AssertEqual(CommonTags.GitRepository);
+            AssertEqual(CommonTags.GitCommit);
+            AssertEqual(CommonTags.GitBranch);
+            AssertEqual(CommonTags.GitTag);
+            AssertEqual(CommonTags.GitCommitAuthorName);
+            AssertEqual(CommonTags.GitCommitAuthorEmail);
+            AssertEqual(CommonTags.GitCommitAuthorDate);
+            AssertEqual(CommonTags.GitCommitCommitterName);
+            AssertEqual(CommonTags.GitCommitCommitterEmail);
+            AssertEqual(CommonTags.GitCommitCommitterDate);
+            AssertEqual(CommonTags.GitCommitMessage);
+            AssertEqual(CommonTags.BuildSourceRoot);
+
+            void AssertEqual(string key)
+            {
+                if (span.GetTag(key) is not null)
+                {
+                    Assert.Equal(span.GetTag(key), targetSpan.Tags[key]);
+                    targetSpan.Tags.Remove(key);
+                }
+            }
+        }
+
+        private static void CheckRuntimeValues(MockSpan targetSpan)
+        {
+            AssertTargetSpanExists(targetSpan, CommonTags.RuntimeName);
+            AssertTargetSpanExists(targetSpan, CommonTags.RuntimeVersion);
+            AssertTargetSpanExists(targetSpan, CommonTags.RuntimeArchitecture);
+            AssertTargetSpanExists(targetSpan, CommonTags.OSArchitecture);
+            AssertTargetSpanExists(targetSpan, CommonTags.OSPlatform);
+            AssertTargetSpanEqual(targetSpan, CommonTags.OSVersion, CIVisibility.GetOperatingSystemVersion());
+        }
+
+        private static void CheckTraitsValues(MockSpan targetSpan)
+        {
+            // Check the traits tag value
+            AssertTargetSpanEqual(targetSpan, TestTags.Traits, "{\"Category\":[\"Category01\"],\"Compatibility\":[\"Windows\",\"Linux\"]}");
+        }
+
+        private static void CheckOriginTag(MockSpan targetSpan)
+        {
+            // Check the test origin tag
+            AssertTargetSpanEqual(targetSpan, Tags.Origin, TestTags.CIAppTestOriginName);
+        }
+
+        private static void CheckSimpleTestSpan(MockSpan targetSpan)
+        {
+            // Check the Test Status
+            AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusPass);
+        }
+
+        private static void CheckSimpleSkipFromAttributeTest(MockSpan targetSpan)
+        {
+            // Check the Test Status
+            AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusSkip);
+
+            // Check the Test skip reason
+            AssertTargetSpanEqual(targetSpan, TestTags.SkipReason, "Simple skip reason");
+        }
+
+        private static void CheckSimpleErrorTest(MockSpan targetSpan)
+        {
+            // Check the Test Status
+            AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusFail);
+
+            // Check the span error flag
+            Assert.Equal(1, targetSpan.Error);
+
+            // Check the error type
+            AssertTargetSpanEqual(targetSpan, Tags.ErrorType, typeof(DivideByZeroException).FullName);
+
+            // Check the error stack
+            AssertTargetSpanContains(targetSpan, Tags.ErrorStack, typeof(DivideByZeroException).FullName);
+
+            // Check the error message
+            AssertTargetSpanEqual(targetSpan, Tags.ErrorMsg, new DivideByZeroException().Message);
         }
 
         private class MockLogsIntakeForCiVisibility : MockLogsIntake<MockLogsIntakeForCiVisibility.Log>
