@@ -25,7 +25,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         private readonly Waf _waf;
 
-        private readonly List<IEncodeResult> _argCache;
+        private readonly List<IEncodeResult> _encodeResults;
         private readonly Stopwatch _stopwatch;
         private readonly WafLibraryInvoker _wafLibraryInvoker;
         private readonly IEncoder _encoder;
@@ -41,7 +41,7 @@ namespace Datadog.Trace.AppSec.Waf
             _wafLibraryInvoker = wafLibraryInvoker;
             _encoder = encoder;
             _stopwatch = new Stopwatch();
-            _argCache = new(64);
+            _encodeResults = new(64);
         }
 
         ~Context() => Dispose(false);
@@ -100,29 +100,47 @@ namespace Datadog.Trace.AppSec.Waf
                 // Calling _encoder.Encode(null) results in a null object that will cause the WAF to error
                 // The WAF can be called with an empty dictionary (though we should avoid doing this).
 
-                var pwPersistentArgs = IntPtr.Zero;
+                DdwafObjectStruct? pwPersistentArgs = null;
                 if (persistentAddressData != null)
                 {
                     var persistentArgs = _encoder.Encode(persistentAddressData, applySafetyLimits: true);
-                    pwPersistentArgs = persistentArgs.Result;
-                    _argCache.Add(persistentArgs);
+                    pwPersistentArgs = persistentArgs.ResultDdwafObject;
+                    _encodeResults.Add(persistentArgs);
                 }
 
                 // pwEphemeralArgs follow a different lifecycle and should be disposed immediately
-                using var ephemeralArgs =
-                    ephemeralAddressData is { Count: > 0 }
-                    ? _encoder.Encode(ephemeralAddressData, applySafetyLimits: true)
-                    : null;
-                var pwEphemeralArgs = ephemeralArgs?.Result ?? IntPtr.Zero;
+                using var ephemeralArgs = ephemeralAddressData is { Count: > 0 }
+                                              ? _encoder.Encode(ephemeralAddressData, applySafetyLimits: true)
+                                              : null;
+                var pwEphemeralArgs = ephemeralArgs?.ResultDdwafObject;
 
-                if (pwPersistentArgs == IntPtr.Zero && pwEphemeralArgs == IntPtr.Zero)
+                if (pwPersistentArgs is null && pwEphemeralArgs is null)
                 {
                     Log.Error("Both pwPersistentArgs and pwEphemeralArgs are null");
                     return null;
                 }
 
-                // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
-                code = _waf.Run(_contextHandle, pwPersistentArgs, pwEphemeralArgs,  ref retNative, timeoutMicroSeconds);
+                unsafe
+                {
+                    var pwEphemeralArgsValue = IntPtr.Zero;
+                    if (pwEphemeralArgs.HasValue)
+                    {
+                        var val = pwEphemeralArgs.Value;
+                        var pointer = &val;
+                        pwEphemeralArgsValue = (IntPtr)pointer;
+                    }
+
+                    var pwPersistentArgsValue = IntPtr.Zero;
+                    if (pwPersistentArgs.HasValue)
+                    {
+                        var val = pwPersistentArgs.Value;
+                        var pointer = &val;
+                        pwPersistentArgsValue = (IntPtr)pointer;
+                    }
+
+                    // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
+                    code = _waf.Run(_contextHandle, pwPersistentArgsValue, pwEphemeralArgsValue, ref retNative, timeoutMicroSeconds);
+                }
             }
 
             _stopwatch.Stop();
@@ -151,9 +169,9 @@ namespace Datadog.Trace.AppSec.Waf
             _disposed = true;
 
             // WARNING do not move this above, this should only be disposed in the end of the context's life
-            foreach (var arg in _argCache)
+            foreach (var encodeResult in _encodeResults)
             {
-                arg.Dispose();
+                encodeResult.Dispose();
             }
 
             lock (_stopwatch)
