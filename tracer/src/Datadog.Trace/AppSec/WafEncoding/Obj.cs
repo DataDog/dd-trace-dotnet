@@ -3,92 +3,66 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
+#nullable enable
 using System.Runtime.InteropServices;
-using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
 namespace Datadog.Trace.AppSec.WafEncoding
 {
     // NOTE: this is referred to as ddwaf_object in the C++ code, we call it Obj to avoid a naming clash
-    internal class Obj : IDisposable
+    internal class Obj
     {
-        private IntPtr ptr;
-        private DdwafObjectStruct innerObj;
-        private bool innerObjInitialized;
-        private bool _disposed;
+        private GCHandle? _handle;
+        private DdwafObjectStruct _innerObj;
 
-        public Obj(IntPtr ptr) => this.ptr = ptr;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Obj"/> class.
+        /// Obj encapsulates a ddwaf_object struct
+        /// </summary>
+        /// <param name="innerObj">the ddwaf struct</param>
+        /// <param name="parentObj">if it's the top parent obj, we need to call the waf to dispose it otherwise we dont</param>
+        public Obj(ref DdwafObjectStruct innerObj, bool parentObj = false)
+        {
+            _innerObj = innerObj;
+            if (parentObj)
+            {
+                // we pin only the parent and the waf will dispose it as well as its children
+                _handle = GCHandle.Alloc(_innerObj, GCHandleType.Pinned);
+            }
+        }
 
         public ObjType ArgsType
         {
-            get
-            {
-                Initialize();
-                return EncoderLegacy.DecodeArgsType(innerObj.Type);
-            }
+            get { return EncoderLegacy.DecodeArgsType(_innerObj.Type); }
         }
 
         public long IntValue
         {
-            get
-            {
-                Initialize();
-                return innerObj.IntValue;
-            }
+            get { return _innerObj.IntValue; }
         }
 
         public ulong UintValue
         {
-            get
-            {
-                Initialize();
-                return innerObj.UintValue;
-            }
+            get { return _innerObj.UintValue; }
         }
 
         public nint InnerPtr
         {
-            get
-            {
-                Initialize();
-                return innerObj.Array;
-            }
+            get { return _innerObj.Array; }
         }
 
-        public DdwafObjectStruct InnerStruct
+        public ref DdwafObjectStruct InnerStruct
         {
-            get
-            {
-                Initialize();
-                return innerObj;
-            }
+            get { return ref _innerObj; }
         }
 
-        public IntPtr RawPtr => ptr;
-
-        public void Dispose()
+        public void DisposeAllChildren(WafLibraryInvoker wafLibraryInvoker)
         {
-            if (!_disposed)
+            if (_handle is not null)
             {
-                _disposed = true;
-                if (ptr != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(ptr);
-                    ptr = IntPtr.Zero;
-                }
+                wafLibraryInvoker.ObjectFreePtr(_handle.Value.AddrOfPinnedObject());
+                _handle.Value.Free();
             }
-        }
-
-        private void Initialize()
-        {
-            if (innerObjInitialized)
-            {
-                return;
-            }
-
-            innerObjInitialized = true;
-            innerObj = (DdwafObjectStruct)Marshal.PtrToStructure(ptr, typeof(DdwafObjectStruct));
         }
     }
 }
