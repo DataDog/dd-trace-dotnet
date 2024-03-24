@@ -18,6 +18,7 @@ namespace Benchmarks.Trace.Asm;
 
 [MemoryDiagnoser]
 [BenchmarkAgent7]
+[BenchmarkCategory(Constants.AppSecCategory)]
 public class AppSecEncoderBenchmark
 {
     private static readonly Encoder _encoder;
@@ -30,7 +31,6 @@ public class AppSecEncoderBenchmark
         _encoder = new Encoder();
         var wafLibraryInvoker = AppSecBenchmarkUtils.CreateWafLibraryInvoker();
         _encoderLegacy = new EncoderLegacy(wafLibraryInvoker);
-
         _args = MakeNestedMap(20);
     }
 
@@ -74,6 +74,13 @@ public class AppSecEncoderBenchmark
                     "lorem",
                     "ipsum",
                     "dolor",
+                    "sit",
+                    "amet",
+                    "lorem",
+                    "ipsum",
+                    "dolor",
+                    "sit",
+                    "amet",
                     AddressesConstants.RequestCookies,
                     new Dictionary<string, string> { { "something", ".htaccess" }, { "something2", ";shutdown--" } }
                 };
@@ -84,6 +91,7 @@ public class AppSecEncoderBenchmark
             {
                 { "lorem", "ipsum" },
                 { "dolor", "sit" },
+                { "ipsum", "sit" },
                 { "amet", "amet" },
                 { "lorem2", "dolor2" },
                 { "sit2", true },
@@ -96,16 +104,16 @@ public class AppSecEncoderBenchmark
         return new NestedMap(root, nestingDepth, withAttack);
     }
 
-    // [Benchmark]
+    [Benchmark]
     public void EncodeArgs()
     {
-        using var pwArgs = _encoder.Encode(_args.Map, applySafetyLimits: true);
+        using var _ = _encoder.Encode(_args.Map, applySafetyLimits: true);
     }
 
     [Benchmark]
     public void EncodeLegacyArgs()
     {
-        using var pwArgs = _encoderLegacy.Encode(_args.Map, applySafetyLimits: true);
+        using var _ = _encoderLegacy.Encode(_args.Map, applySafetyLimits: true);
     }
 
     public record NestedMap(Dictionary<string, object> Map, int NestingDepth, bool IsAttack = false)
