@@ -26,6 +26,11 @@ internal static class TimeTravelStateManager
 
     public static SnapshotMetadata GetParentSnapshotMetadata()
     {
+        if (_shadowStack.Value == null)
+        {
+            return null;
+        }
+
         var stack = _shadowStack.Value;
         if (stack.Count > 0)
         {
