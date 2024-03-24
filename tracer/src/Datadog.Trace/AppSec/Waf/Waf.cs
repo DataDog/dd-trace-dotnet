@@ -79,7 +79,7 @@ namespace Datadog.Trace.AppSec.Waf
                 return InitResult.FromUnusableRuleFile();
             }
 
-            IntPtr rulesObj;
+            DdwafObjectStruct rulesObj;
             DdwafConfigStruct configWafStruct = default;
             IEncodeResult? result = null;
             IEncoder encoder;
@@ -87,19 +87,19 @@ namespace Datadog.Trace.AppSec.Waf
             var valueRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterValueRegex);
             configWafStruct.KeyRegex = keyRegex;
             configWafStruct.ValueRegex = valueRegex;
+            // here we decide not to configure any free function like `configWafStruct.FreeWafFunction = wafLibraryInvoker.ObjectFreeFuncPtr`
+            // as we free the object ourselves in both cases calling for the legacy encoder wafLibraryInvoker.ObjectFreeFuncPtr manually and for the other ones, handling our own allocations
             if (useUnsafeEncoder)
             {
                 encoder = new Encoder();
                 result = encoder.Encode(jtokenRoot, applySafetyLimits: false);
-                rulesObj = result.Result;
-                configWafStruct.FreeWafFunction = IntPtr.Zero;
+                rulesObj = result.ResultDdwafObject;
             }
             else
             {
                 encoder = new EncoderLegacy(wafLibraryInvoker);
                 var configObjWrapper = encoder.Encode(jtokenRoot, applySafetyLimits: false);
-                rulesObj = configObjWrapper.Result;
-                configWafStruct.FreeWafFunction = wafLibraryInvoker.ObjectFreeFuncPtr;
+                rulesObj = configObjWrapper.ResultDdwafObject;
             }
 
             var diagnostics = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
@@ -122,10 +122,7 @@ namespace Datadog.Trace.AppSec.Waf
                     Marshal.FreeHGlobal(valueRegex);
                 }
 
-                if (diagnostics.Array != IntPtr.Zero)
-                {
-                    wafLibraryInvoker.ObjectFreePtr(ref diagnostics.Array);
-                }
+                // wafLibraryInvoker.ObjectFreePtr(Marshal.StructureToPtr());
 
                 if (useUnsafeEncoder)
                 {
@@ -142,7 +139,7 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 diagnostics = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
                 var diagnosticsValue = diagnostics.Value;
-                var newHandle = _wafLibraryInvoker.Update(_wafHandle, updateData.Result, ref diagnosticsValue);
+                var newHandle = _wafLibraryInvoker.Update(_wafHandle, ref updateData.ResultDdwafObject, ref diagnosticsValue);
                 if (newHandle != IntPtr.Zero)
                 {
                     var oldHandle = _wafHandle;
@@ -165,10 +162,10 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 res ??= new(diagnostics, false);
 
-                if (diagnostics?.Array != IntPtr.Zero)
+                if (diagnostics is not null)
                 {
                     var diagValue = diagnostics!.Value;
-                    _wafLibraryInvoker.ObjectFreePtr(ref diagValue.Array);
+                    // _wafLibraryInvoker.ObjectFreePtr(ref diagValue);
                 }
 
                 updateData.Dispose();
