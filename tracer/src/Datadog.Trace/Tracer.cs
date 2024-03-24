@@ -572,14 +572,13 @@ namespace Datadog.Trace
 
             // We have to assign the module context to be able to resolve memberRef to memberdef.
             userModule.Context = ModuleDef.CreateModuleContext();
-            var nonUserMethodFullName = nonUserMdMethod.FullName;
+            var nonUserMethodFullName = nonUserMdMethod.Name;
 
             var callsToInstrument = userMdMethod.Body.Instructions.Where(
-                                     instruction => instruction.OpCode.FlowControl == FlowControl.Call &&
-                                                    (((instruction.Operand as IMethod) != null &&
-                                                    ((instruction.Operand as IMethod)!).FullName == nonUserMethodFullName) ||
-                                                    (((IMethod)instruction.Operand).DeclaringType.FullName == nonUserMethod.DeclaringType.BaseType.FullName &&
-                                                     ((IMethod)instruction.Operand).Name == nonUserMethod.Name)));
+                instruction => instruction.OpCode.FlowControl == FlowControl.Call &&
+                               (instruction.Operand as IMethod != null &&
+                                (instruction.Operand as IMethod)!.Name == nonUserMethodFullName));
+                
 
             var calls = callsToInstrument as Instruction[] ?? callsToInstrument.ToArray();
             if (!calls.Any())
@@ -633,6 +632,7 @@ namespace Datadog.Trace
                              methodFullName.StartsWith("System") ||
                              methodFullName.StartsWith("Datadog.Trace") ||
                              methodFullName.StartsWith("Serilog") ||
+                             methodFullName.StartsWith("NHibernate") ||
                              methodFullName.StartsWith("Swashbuckle") ||
                              methodFullName.StartsWith("MySql.Data"));
                 }
