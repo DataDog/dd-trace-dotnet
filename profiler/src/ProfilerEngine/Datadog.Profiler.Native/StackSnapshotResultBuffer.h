@@ -12,6 +12,8 @@
 #include <vector>
 #include <cstdint>
 
+#include "CallStack.hpp"
+
 /// <summary>
 /// Allocating when a thread is suspended can lead to deadlocks.
 /// This container holds a buffer that is used while walking stacks to temporarily hold results.
@@ -40,7 +42,7 @@ public:
 
     inline std::size_t GetFramesCount() const;
     inline void SetFramesCount(std::uint16_t count);
-    inline void CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const;
+    inline void CopyInstructionPointers(CallStack2& ips) const;
 
     inline void DetermineAppDomain(ThreadID threadId, ICorProfilerInfo4* pCorProfilerInfo);
 
@@ -138,12 +140,14 @@ inline void StackSnapshotResultBuffer::SetFramesCount(std::uint16_t count)
     _currentFramesCount = count;
 }
 
-inline void StackSnapshotResultBuffer::CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const
+inline void StackSnapshotResultBuffer::CopyInstructionPointers(CallStack2& ips) const
 {
-    ips.reserve(_currentFramesCount);
-
     // copy the instruction pointer to the out-parameter
-    ips.insert(ips.end(), _instructionPointers.begin(), _instructionPointers.begin() + _currentFramesCount);
+    auto buffer = ips.GetBuffer();
+    auto nbElements = (std::min)(buffer.size(), (std::size_t)_currentFramesCount);
+    std::copy(_instructionPointers.begin(), _instructionPointers.begin() + nbElements, buffer.data());
+    ips.SetCount(nbElements);
+    //ips.insert(ips.end(), _instructionPointers.begin(), _instructionPointers.begin() + _currentFramesCount);
 }
 
 inline void StackSnapshotResultBuffer::DetermineAppDomain(ThreadID threadId, ICorProfilerInfo4* pCorProfilerInfo)

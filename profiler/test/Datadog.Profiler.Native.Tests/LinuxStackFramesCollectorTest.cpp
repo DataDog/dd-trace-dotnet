@@ -5,6 +5,7 @@
 
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/LinuxStackFramesCollector.h"
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/ProfilerSignalManager.h"
+#include "CallStack.hpp"
 #include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
 #include "StackSnapshotResultBuffer.h"
@@ -210,7 +211,7 @@ public:
         _callbackCalledFuture = _callbackCalledPromise.get_future();
     }
 
-    void ValidateCallstack(const std::vector<uintptr_t>& ips)
+    void ValidateCallstack(const CallStack2& ips)
     {
         // Disable this check on Alpine due to flackyness
         // Libunwind randomly fails with unw_backtrace2 (from a signal handler)
@@ -224,8 +225,8 @@ public:
         EXPECT_GE(expectedNbFrames, 2);
         EXPECT_GE(collectedNbFrames, 2);
 
-        EXPECT_EQ(ips[collectedNbFrames - 1], (uintptr_t)expectedCallstack[expectedNbFrames - 1]);
-        EXPECT_EQ(ips[collectedNbFrames - 2], (uintptr_t)expectedCallstack[expectedNbFrames - 2]);
+        EXPECT_EQ(ips.begin()[collectedNbFrames - 1], (uintptr_t)expectedCallstack[expectedNbFrames - 1]);
+        EXPECT_EQ(ips.begin()[collectedNbFrames - 2], (uintptr_t)expectedCallstack[expectedNbFrames - 2]);
 #endif
     }
 
@@ -313,7 +314,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 
-    std::vector<uintptr_t> ips;
+    CallStack2 ips;
     buffer->CopyInstructionPointers(ips);
 
     ValidateCallstack(ips);
@@ -337,7 +338,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWith
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 
-    std::vector<uintptr_t> ips;
+    CallStack2 ips;
     buffer->CopyInstructionPointers(ips);
 
     ValidateCallstack(ips);
@@ -405,7 +406,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 
-    std::vector<uintptr_t> ips;
+    CallStack2 ips;
     buffer->CopyInstructionPointers(ips);
 
     ValidateCallstack(ips);
@@ -467,7 +468,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
 
     EXPECT_EQ(hr, S_OK);
 
-    std::vector<uintptr_t> ips;
+    CallStack2 ips;
     buffer->CopyInstructionPointers(ips);
 
     ValidateCallstack(ips);
@@ -510,7 +511,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
 
     EXPECT_EQ(hr, S_OK);
 
-    std::vector<uintptr_t> ips;
+    CallStack2 ips;
     buffer->CopyInstructionPointers(ips);
 
     ValidateCallstack(ips);
@@ -554,7 +555,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
 
     EXPECT_EQ(hr, S_OK);
 
-    std::vector<uintptr_t> ips;
+    CallStack2 ips;
     buffer->CopyInstructionPointers(ips);
 
     ValidateCallstack(ips);
@@ -619,7 +620,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckThatProfilerHandlerAndOtherHandler
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
 
     EXPECT_EQ(hr, S_OK);
-    std::vector<uintptr_t> ips;
+    CallStack2 ips;
     buffer->CopyInstructionPointers(ips);
     ValidateCallstack(ips);
 
@@ -675,7 +676,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
         ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, S_OK);
 
-        std::vector<uintptr_t> ips;
+        CallStack2 ips;
         buffer->CopyInstructionPointers(ips);
         ValidateCallstack(ips);
     }

@@ -82,7 +82,7 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
     rawSample.SpanId = 0;
     rawSample.AppDomainId = (AppDomainID) nullptr;
     rawSample.ThreadInfo = nullptr;
-    rawSample.Stack.clear();
+    //rawSample.Stack.clear();
 
     rawSample.Number = number;
     rawSample.Generation = generation;

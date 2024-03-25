@@ -5,13 +5,20 @@
 #pragma once
 #include <list>
 
+#include "allocators.h"
+
 template <class TRawSample>
 class RawSamples
 {
 public:
     using const_iterator = typename std::list<TRawSample>::const_iterator;
 
-    RawSamples() = default;
+    RawSamples() :
+        _allocator{allocators::get_default_sample_allocator<TRawSample>()},
+        _samples(_allocator)
+    {
+
+    }
 
     RawSamples(RawSamples&& other)
     {
@@ -31,7 +38,7 @@ public:
     {
         std::lock_guard<std::mutex> lock(_lock);
 
-        std::list<TRawSample> result;
+        std::pmr::list<TRawSample> result{allocators::get_default_sample_allocator<TRawSample>()};
         _samples.swap(result);
 
         return RawSamples(std::move(result));
@@ -59,11 +66,12 @@ public:
     }
 
 private:
-    RawSamples(std::list<TRawSample> samples) :
+    RawSamples(std::pmr::list<TRawSample> samples) :
         _samples{std::move(samples)}
     {
     }
 
     std::mutex _lock;
-    std::list<TRawSample> _samples;
+    pmr::polymorphic_allocator<TRawSample> _allocator;
+    std::pmr::list<TRawSample> _samples;
 };

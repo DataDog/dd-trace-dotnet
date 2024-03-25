@@ -38,11 +38,12 @@ RawWallTimeSample GetWallTimeRawSample(
     raw.LocalRootSpanId = traceId;
     raw.SpanId = spanId;
 
-    raw.Stack.reserve(frameCount);
+    auto buffer = raw.Stack.GetBuffer();
     for (size_t i = 0; i < frameCount; i++)
     {
-        raw.Stack.push_back(i + 1); // instruction pointers start at 1 (convention in this test)
+        buffer.data()[i] = (i + 1); // instruction pointers start at 1 (convention in this test)
     }
+    raw.Stack.SetCount(frameCount);
 
     // skip thread info resolution
     raw.ThreadInfo = nullptr;
@@ -65,11 +66,12 @@ RawCpuSample GetRawCpuSample(
     raw.LocalRootSpanId = traceId;
     raw.SpanId = spanId;
 
-    raw.Stack.reserve(frameCount);
+    auto buffer = raw.Stack.GetBuffer();
     for (size_t i = 0; i < frameCount; i++)
     {
-        raw.Stack.push_back(i + 1); // instruction pointers start at 1 (convention in this test)
+        buffer.data()[i] = (i + 1); // instruction pointers start at 1 (convention in this test)
     }
+    raw.Stack.SetCount(frameCount);
 
     // skip thread info resolution
     raw.ThreadInfo = nullptr;
