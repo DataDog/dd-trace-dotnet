@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Sampling
@@ -42,46 +41,33 @@ namespace Datadog.Trace.Sampling
         public float GetSamplingRate(Span span)
         {
             Log.Debug("Using the default sampling logic");
-            float defaultRate;
 
-            if (_sampleRates.Count == 0)
+            if (_sampleRates.Count > 0)
             {
-                // either we don't have sampling rate from the agent yet (cold start),
-                // or the only rate we received is for "service:,env:", which is not added to _sampleRates
-                defaultRate = _defaultSamplingRate ?? 1;
-                SetSamplingAgentDecision(span, defaultRate); // Keep it to ease investigations
-                return defaultRate;
+                var key = new SampleRateKey(span.ServiceName, span.Context.TraceContext.Environment);
+
+                if (_sampleRates.TryGetValue(key, out var sampleRate))
+                {
+                    SetSamplingAgentDecision(span, sampleRate, SamplingMechanism);
+                    return sampleRate;
+                }
+
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {Rate}", span.TraceId128, _defaultSamplingRate ?? 1);
+                }
             }
 
-            var env = span.Context.TraceContext.Environment;
-            var service = span.ServiceName;
-
-            var key = new SampleRateKey(service, env);
-
-            if (_sampleRates.TryGetValue(key, out var sampleRate))
-            {
-                SetSamplingAgentDecision(span, sampleRate);
-                return sampleRate;
-            }
-
-            if (Log.IsEnabled(LogEventLevel.Debug))
-            {
-                Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {Rate}", span.Context.RawTraceId, _defaultSamplingRate);
-            }
-
-            defaultRate = _defaultSamplingRate ?? 1;
-            SetSamplingAgentDecision(span, defaultRate);
+            var defaultRate = _defaultSamplingRate ?? 1;
+            SetSamplingAgentDecision(span, defaultRate, SamplingMechanism);
             return defaultRate;
 
-            static void SetSamplingAgentDecision(Span span, float sampleRate)
+            static void SetSamplingAgentDecision(Span span, float sampleRate, string mechanism)
             {
-                if (span.Tags is CommonTags commonTags)
+                if (span.Context.TraceContext is not null)
                 {
-                    commonTags.SamplingAgentDecision = sampleRate;
-                }
-                else
-                {
-                    span.SetMetric(Metrics.SamplingAgentDecision, sampleRate);
+                    span.Context.TraceContext.InitialSamplingRate ??= sampleRate;
+                    span.Context.TraceContext.InitialSamplingMechanism ??= mechanism;
                 }
             }
         }

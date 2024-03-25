@@ -96,6 +96,10 @@ namespace Datadog.Trace
 
         public string? Origin { get; set; }
 
+        public double? InitialSamplingRate { get; set; }
+
+        public string? InitialSamplingMechanism { get; set; }
+
         /// <summary>
         /// Gets or sets additional key/value pairs from upstream "tracestate" header that we will propagate downstream.
         /// This value will _not_ include the "dd" key, which is parsed out into other individual values
@@ -249,6 +253,7 @@ namespace Datadog.Trace
             }
 
             _samplingPriority = priority;
+            InitialSamplingMechanism = mechanism;
 
             if (priority > 0 && mechanism != null)
             {
