@@ -555,12 +555,5 @@ namespace Datadog.Trace
             var spanLink = new SpanLink(spanLinkToAdd, optionalAttributes);
             SpanLinkList.Add(spanLink);
         }
-
-        internal void AddSpanLink(SpanContext spanLinkContextToAdd, Dictionary<string, object> optionalAttributes = null)
-        {
-            SpanLinkList ??= new List<SpanLink>();
-            var spanLink = new SpanLink(spanLinkContextToAdd, optionalAttributes);
-            SpanLinkList.Add(spanLink);
-        }
     }
 }

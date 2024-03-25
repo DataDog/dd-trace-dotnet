@@ -18,50 +18,21 @@ internal class SpanLink
     /// A span link describes a tuple of trace id and span id
     /// in OpenTelemetry that's called a Span Context, which may also include tracestate and trace flags.
     /// </summary>
-    /// <param name="traceId">The TraceId of the Span to be linked</param>
-    /// <param name="spanId">The SpanId of the Span to be linked</param>
-    internal SpanLink(TraceId traceId, ulong spanId)
-    {
-        SpanId = spanId;
-        TraceId = traceId;
-    }
-
+    /// <param name="spanLinkContext">The context of the spanlink to extract attributes from</param>
+    /// <param name="optionalAttributes">Optional dictionary of attributes to take for the spanlink.</param>
     internal SpanLink(SpanContext spanLinkContext, Dictionary<string, object> optionalAttributes)
     {
-        TraceId = spanLinkContext.TraceId128;
-        SpanId = spanLinkContext.SpanId;
-        // this is to avoid making the dictionary if the user isn't adding attributes - better perf if I recall correctly
+        SpanLinkContext = spanLinkContext;
         if (optionalAttributes is not null)
         {
             Attributes = optionalAttributes;
         }
-
-        // Where do I even find the the properties below?
-        TraceState = W3CTraceContextPropagator.CreateTraceStateHeader(spanLinkContext);
-        // 3 possible values, 1, 0 or null
-        var samplingPriority = spanLinkContext.TraceContext?.SamplingPriority ?? spanLinkContext.SamplingPriority;
-        TraceFlags = samplingPriority switch
-        {
-            null => 0,
-            > 0 => 1u + (1u << 31),
-            <= 0 => 1u << 31,
-        };
-
-        // TraceFlags = spanLinkContext.traceFlags;
     }
 
     internal SpanLink(Span spanToLink, Dictionary<string, object> optionalAttributes)
         : this(spanToLink.Context, optionalAttributes)
     {
     }
-
-    internal TraceId TraceId { get; }
-
-    internal ulong SpanId { get;  }
-
-    internal string TraceState { get;  }
-
-    internal uint TraceFlags { get; }
 
     internal Dictionary<string, object> Attributes { get;  }
 

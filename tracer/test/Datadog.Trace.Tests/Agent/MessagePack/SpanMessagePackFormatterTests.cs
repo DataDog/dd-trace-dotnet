@@ -126,7 +126,7 @@ public class SpanMessagePackFormatterTests
             new Span(new SpanContext(new TraceId(0, 5), 6, (int)SamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
         };
 
-        spans[0].AddSpanLink(spans[1]);
+        spans[0].AddSpanLink(spans[1], new Dictionary<string, object> { { "link.name", "manually_linking" }, { "pair", false }, { "arbitrary", 56709 } });
         spans[1].AddSpanLink(spans[2]);
         spans[1].AddSpanLink(spans[0]);
 
@@ -148,16 +148,20 @@ public class SpanMessagePackFormatterTests
             var expected = spans[i];
             var actual = result[i];
 
-            var tagsProcessor = new TagsProcessor<string>(actual.Tags);
-            expected.Tags.EnumerateTags(ref tagsProcessor);
-
-            for (int j = 0; j < expected.SpanLinkList.Count; j++)
+            if (expected.SpanLinkList is not null)
             {
-                var expectedSpanlink = expected.SpanLinkList[j];
-                var actualSpanLink = actual.SpanLinkList[j];
-                actualSpanLink.TraceIdHigh.Should().Be(expectedSpanlink.TraceId.Upper);
-                actualSpanLink.TraceIdLow.Should().Be(expectedSpanlink.TraceId.Lower);
-                actualSpanLink.SpanId.Should().Be(expectedSpanlink.SpanId);
+                for (int j = 0; j < expected.SpanLinkList.Count; j++)
+                {
+                    var expectedSpanlink = expected.SpanLinkList[j];
+                    var actualSpanLink = actual.SpanLinkList[j];
+                    actualSpanLink.TraceIdHigh.Should().Be(expectedSpanlink.SpanLinkContext.TraceId128.Upper);
+                    actualSpanLink.TraceIdLow.Should().Be(expectedSpanlink.SpanLinkContext.TraceId128.Lower);
+                    actualSpanLink.SpanId.Should().Be(expectedSpanlink.SpanLinkContext.SpanId);
+                    if (expectedSpanlink.Attributes is not null && expectedSpanlink.Attributes.Count > 0)
+                    {
+                        actualSpanLink.Attributes.Should().BeEquivalentTo(expectedSpanlink.Attributes);
+                    }
+                }
             }
         }
     }
