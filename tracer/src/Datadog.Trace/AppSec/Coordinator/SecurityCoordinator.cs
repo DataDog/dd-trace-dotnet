@@ -75,7 +75,7 @@ internal readonly partial struct SecurityCoordinator
         return RunWaf(args);
     }
 
-    public IResult? RunWaf(Dictionary<string, object> args, Action<IDatadogLogger, Exception>? logException = null)
+    public IResult? RunWaf(Dictionary<string, object> args, Action<IDatadogLogger, Exception>? logException = null, bool runWithEphemeral = false)
     {
         LogAddressIfDebugEnabled(args);
         IResult? result = null;
@@ -96,7 +96,15 @@ internal readonly partial struct SecurityCoordinator
             if (additiveContext != null)
             {
                 // run the WAF and execute the results
-                result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
+                if (runWithEphemeral)
+                {
+                    result = additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds);
+                }
+                else
+                {
+                    result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
+                }
+
                 RecordTelemetry(result);
 
                 // Show the deserilized string of additiveContext

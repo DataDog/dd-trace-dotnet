@@ -41,7 +41,7 @@ internal static class RaspModule
     private static void RunWaf(Dictionary<string, object> arguments)
     {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, Tracer.Instance.InternalActiveScope.Root.Span);
-        var result = securityCoordinator.RunWaf(arguments, (log, ex) => log.Error(ex, "Error in RASP."));
+        var result = securityCoordinator.RunWaf(arguments, (log, ex) => log.Error(ex, "Error in RASP OnLfi"), true);
         securityCoordinator.CheckAndBlockRasp(result);
     }
 }
