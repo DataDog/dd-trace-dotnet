@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
@@ -81,7 +80,6 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the collection of trace-level tags.
         /// </summary>
-        [NotNull]
         public TraceTagCollection Tags { get; }
 
         /// <summary>
