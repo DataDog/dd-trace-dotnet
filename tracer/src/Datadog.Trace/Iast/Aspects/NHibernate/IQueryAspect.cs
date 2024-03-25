@@ -5,13 +5,14 @@
 
 #nullable enable
 
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast.Aspects.NHibernate;
 
 /// <summary> NHibernate class aspect </summary>
-[AspectClass("NHibernate", AspectType.Sink)]
+[AspectClass("NHibernate", AspectType.Sink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class IQueryAspect
@@ -19,13 +20,15 @@ public class IQueryAspect
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IQueryAspect));
 
     /// <summary>
-    ///     MongoDB Driver aspect
+    ///     NHibernate aspect
     /// </summary>
     /// <param name="command"> the mongodb command </param>
     /// <returns> the original command </returns>
-    [AspectMethodInsertBefore("NHibernate.ISession::CreateQuery(string)", 0)]
-    public static object? AnalyzeCommand(object? command)
+    [AspectMethodInsertBefore("NHibernate.ISession::CreateQuery(System.String)", 0)]
+    [AspectMethodInsertBefore("NHibernate.ISession::CreateSQLQuery(System.String)", 0)]
+    public static object AnalyzeQuery(string command)
     {
-        return null;
+        IastModule.OnSqlQuery(command, IntegrationId.NHibernate);
+        return command;
     }
 }
