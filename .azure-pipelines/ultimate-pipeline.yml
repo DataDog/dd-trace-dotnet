@@ -4027,7 +4027,7 @@ stages:
 
   - job: AsmLinux64
     timeoutInMinutes: 60
-    pool: Throughput
+    pool: Throughput-AppSec
 
     steps:
       - template: steps/clone-repo.yml
