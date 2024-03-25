@@ -528,6 +528,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingPriority);
             }
 
+            // add "_dd.top_level" to top-level spans (aka service-entry spans)
             if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
             {
                 count++;
