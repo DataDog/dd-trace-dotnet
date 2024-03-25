@@ -2425,7 +2425,7 @@ partial class Build
            // avoid any issue with CLR events that are not supported before 5.1 or .NET Framework
            knownPatterns.Add(new(@".*Event-based profilers \(Allocation, LockContention\) are not supported for", RegexOptions.Compiled));
            // There's a race in the profiler where unwinding when the thread is running
-           knownPatterns.Add(new(@".*Failed to walk \d+ stacks for sampled exception", RegexOptions.Compiled));
+           knownPatterns.Add(new(@".*Failed to walk \d+ stacks for sampled exception:\s+CORPROF_E_STACKSNAPSHOT_UNSAFE", RegexOptions.Compiled));
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
