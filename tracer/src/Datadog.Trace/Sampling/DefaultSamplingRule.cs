@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Sampling
 {
@@ -40,25 +39,23 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
-            Log.Debug("Using the default sampling logic");
-
             if (_sampleRates.Count > 0)
             {
-                var key = new SampleRateKey(span.ServiceName, span.Context.TraceContext.Environment);
+                var service = span.ServiceName;
+                var env = span.Context.TraceContext.Environment;
+                var key = new SampleRateKey(service, env);
 
                 if (_sampleRates.TryGetValue(key, out var sampleRate))
                 {
+                    Log.Debug("Using agent sampling rate {Rate} for trace {TraceId} after matching \"service:{Service},env:{Env}\".", sampleRate, span.TraceId128, service, env);
                     SetSamplingAgentDecision(span, sampleRate, SamplingMechanism);
                     return sampleRate;
-                }
-
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {Rate}", span.TraceId128, _defaultSamplingRate ?? 1);
                 }
             }
 
             var defaultRate = _defaultSamplingRate ?? 1;
+
+            Log.Debug("Using default agent sampling rate {Rate} for trace {TraceId}.", defaultRate, span.TraceId128);
             SetSamplingAgentDecision(span, defaultRate, SamplingMechanism);
             return defaultRate;
 

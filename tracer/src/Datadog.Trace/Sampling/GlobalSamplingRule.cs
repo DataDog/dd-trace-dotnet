@@ -34,7 +34,7 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
-            Log.Debug("Using the global sampling rate: {Rate}", _globalRate);
+            Log.Debug("Using the global sampling rate {Rate} for trace {TraceId}", _globalRate, span.TraceId128);
 
             if (span.Context.TraceContext is not null)
             {

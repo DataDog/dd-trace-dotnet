@@ -129,6 +129,8 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
+            Log.Debug("Using the sampling rate {Rate} from custom sampling rule for trace {TraceId}", _samplingRate, span.TraceId128);
+
             if (span.Context.TraceContext is not null)
             {
                 span.Context.TraceContext.InitialSamplingRate ??= _samplingRate;
