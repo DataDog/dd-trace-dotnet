@@ -10,14 +10,20 @@ extern "C"
 {
 #include "datadog/common.h"
 #include "datadog/profiling.h"
+#include "OsSpecificApi.h"
 }
 
-extern "C" void __stdcall ReportCrash(char** frames, int count, char* threadId)
+extern "C" void __stdcall ReportCrash(int32_t pid, ResolveManagedMethod resolveCallback)
 {
-    CrashReporting::ReportCrash(frames, count, threadId);
+#ifdef _WIN32
+    std::cout << "CrashReporting::ReportCrash not implemented on Windows" << std::endl;
+#else
+    CrashReportingLinux crashReporting;
+    crashReporting.ReportCrash(pid, resolveCallback);
+#endif
 }
 
-void CrashReporting::ReportCrash(char** frames, int count, char* threadId)
+void CrashReporting::ReportCrash(int32_t pid, ResolveManagedMethod resolveCallback)
 {
     auto crashInfoResult = ddog_crashinfo_new();
 
@@ -28,49 +34,65 @@ void CrashReporting::ReportCrash(char** frames, int count, char* threadId)
 
     auto* crashInfo = &crashInfoResult.ok;
 
-    ddog_prof_Slice_StackFrame stackTrace;
+    auto threads = GetThreads(pid);
 
-    stackTrace.len = count;
-
-    auto stackFrames = new ddog_prof_StackFrame[count];
-    auto stackFrameNames = new ddog_prof_StackFrameNames[count];
-    auto strings = new std::string[count];
-
-    stackTrace.ptr = stackFrames;
-
-    for (int i = 0; i < count; i++)
+    for (auto threadId : threads)
     {
-        strings[i] = frames[i];
+        auto frames = GetThreadFrames(pid, threadId, resolveCallback);
 
-        stackFrameNames[i] = ddog_prof_StackFrameNames{
-            .colno = { DDOG_PROF_OPTION_U32_NONE_U32, 0},
-            .filename = {nullptr, 0},
-            .lineno = { DDOG_PROF_OPTION_U32_NONE_U32, 0},
-            .name = libdatadog::FfiHelper::StringToCharSlice(strings[i])
-        };
+        ddog_prof_Slice_StackFrame stackTrace;
 
-        stackFrames[i] = ddog_prof_StackFrame{
-            .ip = 1,
-            .module_base_address = 2,
-            .names{
-                .ptr = &stackFrameNames[i],
-                .len = 1,
-            },
-            .sp = 3,
-            .symbol_address = 4,
-        };
+        auto count = frames.size();
+
+        stackTrace.len = count;
+
+        auto stackFrames = new ddog_prof_StackFrame[count];
+        auto stackFrameNames = new ddog_prof_StackFrameNames[count];
+        auto strings = new std::string[count];
+
+        stackTrace.ptr = stackFrames;
+
+        for (int i = 0; i < count; i++)
+        {
+            strings[i] = frames.at(i).second;
+
+            stackFrameNames[i] = ddog_prof_StackFrameNames{
+                .colno = { DDOG_PROF_OPTION_U32_NONE_U32, 0},
+                .filename = {nullptr, 0},
+                .lineno = { DDOG_PROF_OPTION_U32_NONE_U32, 0},
+                .name = libdatadog::FfiHelper::StringToCharSlice(strings[i])
+            };
+
+            stackFrames[i] = ddog_prof_StackFrame{
+                .ip = frames.at(i).first,
+                .module_base_address = 2,
+                .names{
+                    .ptr = &stackFrameNames[i],
+                    .len = 1,
+                },
+                .sp = 3,
+                .symbol_address = 4,
+            };
+        }
+
+        auto threadIdStr = std::to_string(threadId);
+
+        auto result = ddog_crashinfo_set_stacktrace(crashInfo, { threadIdStr.c_str(), threadIdStr.length() }, stackTrace);
+
+        if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+        {
+            std::cout << "Error setting stacktrace: " << libdatadog::FfiHelper::GetErrorMessage(result.err) << std::endl;
+            return;
+        }
+
+        delete[] stackFrames;
+        delete[] stackFrameNames;
+        delete[] strings;
     }
 
-    auto result = ddog_crashinfo_set_stacktrace(crashInfo, { threadId, std::strlen(threadId) }, stackTrace);
+    //auto sigInfo = "NullReferenceException";
 
-    auto threadId2 = "threadId2";
-
-    ddog_crashinfo_set_stacktrace(crashInfo, { threadId2, std::strlen(threadId2) }, stackTrace);
-    ddog_crashinfo_set_stacktrace(crashInfo, { nullptr, 0 }, stackTrace);
-
-    auto sigInfo = "NullReferenceException";
-
-    ddog_crashinfo_set_siginfo(crashInfo, { 139, { sigInfo, std::strlen(sigInfo)} });
+    //ddog_crashinfo_set_siginfo(crashInfo, { 139, { sigInfo, std::strlen(sigInfo)} });
 
     auto libName = "testCrashTracking";
     auto libVersion = "1.0.0";
@@ -94,17 +116,11 @@ void CrashReporting::ReportCrash(char** frames, int count, char* threadId)
 
     ddog_crashinfo_set_metadata(crashInfo, metadata);
 
-        if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
-        {
-            std::cout << "Error setting stacktrace: " << libdatadog::FfiHelper::GetErrorMessage(result.err) << std::endl;
-            return;
-        }
-
     const std::string endpointUrl = "file://tmp/crash.txt";
 
     auto endpoint = ddog_Endpoint_file(libdatadog::FfiHelper::StringToCharSlice(endpointUrl));
 
-    result = ddog_crashinfo_upload_to_endpoint(crashInfo, endpoint, 30);
+    auto result = ddog_crashinfo_upload_to_endpoint(crashInfo, endpoint, 30);
 
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
     {
@@ -116,11 +132,4 @@ void CrashReporting::ReportCrash(char** frames, int count, char* threadId)
 
     ddog_crashinfo_drop(crashInfo);
     ddog_Vec_Tag_drop(tags);
-
-    std::cout << "Called ddog_crashinfo_drop" << std::endl;
-
-    delete[] stackFrames;
-    delete[] stackFrameNames;
-
-    std::cout << "Returning from ReportCrash" << std::endl;
 }

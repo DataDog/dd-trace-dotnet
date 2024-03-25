@@ -30,9 +30,9 @@ internal class CreatedumpCommand : Command
 
         var path = _pathArgument.GetValue(context)!;
 
-        AnsiConsole.WriteLine($"Loading Datadog.Profiler.Native.dll from {path}");
+        AnsiConsole.WriteLine($"Loading Datadog.Profiler.Native.so from {path}");
 
-        var lib = NativeLibrary.Load(Path.Combine(path, "Datadog.Profiler.Native.dll"));
+        var lib = NativeLibrary.Load(Path.Combine(path, "Datadog.Profiler.Native.so"));
 
         var export = NativeLibrary.GetExport(lib, "ReportCrash");
 
