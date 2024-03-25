@@ -58,7 +58,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// <param name="useUnsafeEncoder">use legacy encoder</param>
         /// <param name="wafDebugEnabled">if debug level logs should be enabled for the WAF</param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static InitResult Create(
+        internal static unsafe InitResult Create(
             WafLibraryInvoker wafLibraryInvoker,
             string obfuscationParameterKeyRegex,
             string obfuscationParameterValueRegex,
@@ -122,7 +122,7 @@ namespace Datadog.Trace.AppSec.Waf
                     Marshal.FreeHGlobal(valueRegex);
                 }
 
-                // wafLibraryInvoker.ObjectFreePtr(Marshal.StructureToPtr());
+                wafLibraryInvoker.ObjectFreePtr((IntPtr)(&diagnostics));
 
                 if (useUnsafeEncoder)
                 {
@@ -131,14 +131,12 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
-        private UpdateResult UpdateWafAndDispose(IEncodeResult updateData)
+        private unsafe UpdateResult UpdateWafAndDispose(IEncodeResult updateData)
         {
             UpdateResult? res = null;
-            DdwafObjectStruct? diagnostics = null;
+            var diagnosticsValue = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
             try
             {
-                diagnostics = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
-                var diagnosticsValue = diagnostics.Value;
                 var newHandle = _wafLibraryInvoker.Update(_wafHandle, ref updateData.ResultDdwafObject, ref diagnosticsValue);
                 if (newHandle != IntPtr.Zero)
                 {
@@ -160,14 +158,8 @@ namespace Datadog.Trace.AppSec.Waf
             }
             finally
             {
-                res ??= new(diagnostics, false);
-
-                if (diagnostics is not null)
-                {
-                    var diagValue = diagnostics!.Value;
-                    // _wafLibraryInvoker.ObjectFreePtr(ref diagValue);
-                }
-
+                res ??= new(diagnosticsValue, false);
+                _wafLibraryInvoker.ObjectFreePtr((IntPtr)(&diagnosticsValue));
                 updateData.Dispose();
             }
 
