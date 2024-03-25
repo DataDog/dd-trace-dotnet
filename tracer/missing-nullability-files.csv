@@ -297,7 +297,6 @@ src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Framework.cs
 src/Datadog.Trace/AppSec/Waf/IWaf.cs
 src/Datadog.Trace/AppSec/Waf/WafConstants.cs
 src/Datadog.Trace/AppSec/Waf/WafReturnCode.cs
-src/Datadog.Trace/AppSec/WafEncoding/Obj.cs
 src/Datadog.Trace/AppSec/WafEncoding/ObjType.cs
 src/Datadog.Trace/Ci/Agent/ApmAgentWriter.cs
 src/Datadog.Trace/Ci/Agent/CIVisibilityProtocolWriter.cs
