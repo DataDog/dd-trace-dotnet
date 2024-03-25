@@ -4028,12 +4028,6 @@ stages:
   - job: AsmLinux64
     timeoutInMinutes: 60
     pool: Throughput
-    condition: >
-      or(
-        eq(variables.isMainBranch, true),
-        eq(variables.force_appsec_throughput_run, 'true'),
-        eq(variables.isAppSecChanged, 'True')
-      )
 
     steps:
       - template: steps/clone-repo.yml
@@ -4047,6 +4041,7 @@ stages:
           path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
       - script: |
+          export AGENT_ALLOW_RUNASROOT=1
           test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
           test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
           test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
