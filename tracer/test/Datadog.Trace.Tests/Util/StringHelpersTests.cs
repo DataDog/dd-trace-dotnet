@@ -38,7 +38,8 @@ public class StringHelpersTests
     public void Concat_ReturnsExpected_TwoArg(string str0, string str1)
     {
         var expected = string.Concat(str0, str1);
-        var actual = StringHelpers.Concat(str0.AsSpan(), str1.AsSpan());
+        // Make sure we use the "real" span, not the vendored version
+        var actual = StringHelpers.Concat(System.MemoryExtensions.AsSpan(str0), System.MemoryExtensions.AsSpan(str1));
 
         actual.Should().Be(expected);
     }
@@ -48,7 +49,8 @@ public class StringHelpersTests
     public void Concat_ReturnsExpected_ThreeArg(string str0, string str1, string str2)
     {
         var expected = string.Concat(str0, str1, str2);
-        var actual = StringHelpers.Concat(str0.AsSpan(), str1.AsSpan(), str2.AsSpan());
+        // Make sure we use the "real" span, not the vendored version
+        var actual = StringHelpers.Concat(System.MemoryExtensions.AsSpan(str0), System.MemoryExtensions.AsSpan(str1), System.MemoryExtensions.AsSpan(str2));
 
         actual.Should().Be(expected);
     }
