@@ -241,7 +241,7 @@ namespace Datadog.Trace
             SetSamplingPriority(decision.Priority, decision.Mechanism, notifyDistributedTracer);
         }
 
-        public void SetSamplingPriority(int? priority, int? mechanism = null, bool notifyDistributedTracer = true)
+        public void SetSamplingPriority(int? priority, string? mechanism = null, bool notifyDistributedTracer = true)
         {
             if (priority == null)
             {
@@ -250,16 +250,14 @@ namespace Datadog.Trace
 
             _samplingPriority = priority;
 
-            const string tagName = Trace.Tags.Propagated.DecisionMaker;
-
             if (priority > 0 && mechanism != null)
             {
-                Tags.TryAddTag(tagName, SamplingMechanism.GetTagValue(mechanism.Value));
+                Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, mechanism);
             }
             else if (priority <= 0)
             {
                 // remove tag if priority is AUTO_DROP (0) or USER_DROP (-1)
-                Tags.RemoveTag(tagName);
+                Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
             }
 
             if (notifyDistributedTracer)

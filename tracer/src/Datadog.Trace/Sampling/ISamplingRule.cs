@@ -20,7 +20,7 @@ namespace Datadog.Trace.Sampling
         /// </summary>
         int Priority { get; }
 
-        int SamplingMechanism { get; }
+        string SamplingMechanism { get; }
 
         bool IsMatch(Span span);
 
