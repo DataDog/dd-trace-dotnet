@@ -50,7 +50,7 @@ namespace Datadog.Trace.TestHelpers
         public Dictionary<string, double> Metrics { get; set; }
 
         [Key("span_links")]
-        public List<MockSpanLink> SpanLinkList { get; set; }
+        internal List<MockSpanLink> SpanLinkList { get; set; }
 
         public string GetTag(string key)
         {

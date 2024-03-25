@@ -3,17 +3,23 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.TestHelpers;
+using System.Diagnostics;
+using MessagePack;
 
-public class MockSpanLink
+namespace Datadog.Trace.TestHelpers
 {
-    internal MockSpanLink(TraceId traceId, ulong spanId)
+    [MessagePackObject]
+    [DebuggerDisplay("{ToString(),nq}")]
+    internal class MockSpanLink
     {
-        SpanId = spanId;
-        TraceId = traceId;
+        public MockSpanLink(TraceId traceId, ulong spanId)
+        {
+            SpanId = spanId;
+            TraceId = traceId;
+        }
+
+        internal TraceId TraceId { get; }
+
+        internal ulong SpanId { get; }
     }
-
-    internal TraceId TraceId { get; }
-
-    internal ulong SpanId { get;  }
 }
