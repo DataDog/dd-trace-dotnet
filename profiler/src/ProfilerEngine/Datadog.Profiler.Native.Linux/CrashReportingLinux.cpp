@@ -45,7 +45,7 @@ std::vector<std::pair<uintptr_t, std::string>> CrashReportingLinux::GetThreadFra
 
     unw_cursor_t cursor;
 
-    auto result = unw_init_remote(&cursor, addressSpace, context);
+    auto result = unw_init_remote(&cursor, _addressSpace, context);
 
     if (result != 0)
     {
