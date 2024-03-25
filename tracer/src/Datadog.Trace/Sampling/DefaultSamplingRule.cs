@@ -124,8 +124,8 @@ namespace Datadog.Trace.Sampling
 
         private readonly struct SampleRateKey : IEquatable<SampleRateKey>
         {
-            private static readonly char[] PartSeparator = new[] { ',' };
-            private static readonly char[] ValueSeparator = new[] { ':' };
+            private static readonly char[] PartSeparator = [','];
+            private static readonly char[] ValueSeparator = [':'];
 
             private readonly string _service;
             private readonly string _env;
