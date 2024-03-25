@@ -220,3 +220,10 @@ package-oci:
   stage: deploy
   variables:
     PRODUCT_NAME: auto_inject-dotnet
+  
+release-staging-repo-package-no-auto-release:
+  extends: .release-package
+  variables:
+    TARGET_REPO: staging
+    TARGET_BRANCH: beta
+    AUTO_RELEASE: "false"
