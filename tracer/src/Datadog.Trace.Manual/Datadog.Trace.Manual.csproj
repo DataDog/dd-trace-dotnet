@@ -24,7 +24,7 @@
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Attributes\*.cs" Link="Ci\Coverage\Attributes\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Exceptions\*.cs" Link="Ci\Coverage\Exceptions\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Metadata\*.cs" Link="Ci\Coverage\Metadata\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Ci\Coverage\Util\*.cs" Link="Ci\Coverage\Util\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\Ci\Coverage\Util\ArrayExtensions.cs" Link="Ci\Coverage\Util\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\TestStatus.cs" Link="Ci\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\TracerSettingKeyConstants.cs"  Link="Configuration\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\IntegrationSettingsSerializationHelper.cs"  Link="Configuration\%(Filename)%(Extension)" />
