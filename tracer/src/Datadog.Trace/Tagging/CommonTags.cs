@@ -14,8 +14,5 @@ namespace Datadog.Trace.Tagging
 
         [Metric(Trace.Metrics.TracesKeepRate)]
         public double? TracesKeepRate { get; set; }
-
-        [Metric(Trace.Metrics.SamplingAgentDecision)]
-        public double? SamplingAgentDecision { get; set; }
     }
 }
