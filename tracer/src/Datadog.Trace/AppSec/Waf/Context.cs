@@ -64,7 +64,7 @@ namespace Datadog.Trace.AppSec.Waf
         public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds)
             => RunInternal(null, ephemeralAddressData, timeoutMicroSeconds);
 
-        private IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds)
+        private unsafe IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds)
         {
             if (_disposed)
             {
@@ -100,47 +100,32 @@ namespace Datadog.Trace.AppSec.Waf
                 // Calling _encoder.Encode(null) results in a null object that will cause the WAF to error
                 // The WAF can be called with an empty dictionary (though we should avoid doing this).
 
-                DdwafObjectStruct? pwPersistentArgs = null;
+                var pwPersistentArgsPtr = IntPtr.Zero;
+                var pwEphemeralArgsPtr = IntPtr.Zero;
+
+                DdwafObjectStruct ddwafObjectPersistent;
                 if (persistentAddressData != null)
                 {
                     var persistentArgs = _encoder.Encode(persistentAddressData, applySafetyLimits: true);
-                    pwPersistentArgs = persistentArgs.ResultDdwafObject;
+                    ddwafObjectPersistent = persistentArgs.ResultDdwafObject;
+                    pwPersistentArgsPtr = (IntPtr)(&ddwafObjectPersistent);
                     _encodeResults.Add(persistentArgs);
                 }
 
+                IEncodeResult? ephemeralArgs = null;
                 // pwEphemeralArgs follow a different lifecycle and should be disposed immediately
-                using var ephemeralArgs = ephemeralAddressData is { Count: > 0 }
-                                              ? _encoder.Encode(ephemeralAddressData, applySafetyLimits: true)
-                                              : null;
-                var pwEphemeralArgs = ephemeralArgs?.ResultDdwafObject;
-
-                if (pwPersistentArgs is null && pwEphemeralArgs is null)
+                DdwafObjectStruct ddwafObjectEphemeral;
+                if (ephemeralAddressData is { Count: > 0 })
                 {
-                    Log.Error("Both pwPersistentArgs and pwEphemeralArgs are null");
-                    return null;
+                    var ephemeralArgsResult = _encoder.Encode(ephemeralAddressData, applySafetyLimits: true);
+                    ddwafObjectEphemeral = ephemeralArgsResult.ResultDdwafObject;
+                    pwEphemeralArgsPtr = (IntPtr)(&ddwafObjectEphemeral);
+                    ephemeralArgs = ephemeralArgsResult;
                 }
 
-                unsafe
-                {
-                    var pwEphemeralArgsValue = IntPtr.Zero;
-                    if (pwEphemeralArgs.HasValue)
-                    {
-                        var val = pwEphemeralArgs.Value;
-                        var pointer = &val;
-                        pwEphemeralArgsValue = (IntPtr)pointer;
-                    }
-
-                    var pwPersistentArgsValue = IntPtr.Zero;
-                    if (pwPersistentArgs.HasValue)
-                    {
-                        var val = pwPersistentArgs.Value;
-                        var pointer = &val;
-                        pwPersistentArgsValue = (IntPtr)pointer;
-                    }
-
-                    // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
-                    code = _waf.Run(_contextHandle, pwPersistentArgsValue, pwEphemeralArgsValue, ref retNative, timeoutMicroSeconds);
-                }
+                // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
+                code = _waf.Run(_contextHandle, pwPersistentArgsPtr, pwEphemeralArgsPtr, ref retNative, timeoutMicroSeconds);
+                ephemeralArgs?.Dispose();
             }
 
             _stopwatch.Stop();
