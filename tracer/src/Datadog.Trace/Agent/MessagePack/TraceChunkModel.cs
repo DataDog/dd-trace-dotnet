@@ -33,6 +33,10 @@ internal readonly struct TraceChunkModel
 
     public readonly int? SamplingPriority = null;
 
+    public readonly double? InitialSamplingRate = null;
+
+    public readonly string? InitialSamplingMechanism = null;
+
     public readonly string? Environment = null;
 
     public readonly string? ServiceVersion = null;
@@ -79,6 +83,8 @@ internal readonly struct TraceChunkModel
         if (traceContext is not null)
         {
             SamplingPriority ??= traceContext.SamplingPriority;
+            InitialSamplingRate = traceContext.InitialSamplingRate;
+            InitialSamplingMechanism = traceContext.InitialSamplingMechanism;
             Environment = traceContext.Environment;
             ServiceVersion = traceContext.ServiceVersion;
             Origin = traceContext.Origin;
@@ -95,13 +101,13 @@ internal readonly struct TraceChunkModel
                 }
 
                 if (tracer.GitMetadataTagsProvider?.TryExtractGitMetadata(out var gitMetadata) == true &&
-                gitMetadata != GitMetadata.Empty)
-            {
-                GitRepositoryUrl = gitMetadata.RepositoryUrl;
-                GitCommitSha = gitMetadata.CommitSha;
+                    gitMetadata != GitMetadata.Empty)
+                {
+                    GitRepositoryUrl = gitMetadata.RepositoryUrl;
+                    GitCommitSha = gitMetadata.CommitSha;
+                }
             }
         }
-    }
     }
 
     // used in tests
