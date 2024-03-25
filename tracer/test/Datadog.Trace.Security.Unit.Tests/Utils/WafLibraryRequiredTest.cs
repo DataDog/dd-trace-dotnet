@@ -5,9 +5,12 @@
 
 #nullable enable
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests.Utils;
 
+[Collection(nameof(WafLibraryRequiredTest))]
+[CollectionDefinition(nameof(WafLibraryRequiredTest), DisableParallelization=true)]
 public class WafLibraryRequiredTest
 {
     /// <summary>
