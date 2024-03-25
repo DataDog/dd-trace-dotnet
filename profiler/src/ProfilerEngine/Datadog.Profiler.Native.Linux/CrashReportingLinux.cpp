@@ -68,16 +68,30 @@ std::vector<std::pair<uintptr_t, std::string>> CrashReportingLinux::GetThreadFra
 
         std::cout << " - " << std::hex << ip << "\n";
 
-        char symbol[1];
+        char symbol[256];
 
         int requiredBufferSize;
 
-        if (resolveManagedMethod(ip, symbol, sizeof(symbol), &requiredBufferSize) == -1)
+        auto resolved = resolveManagedMethod(ip, symbol, sizeof(symbol), &requiredBufferSize);
+
+        if (resolved == 1)
+        {
+            // Not a managed method
+            unw_word_t offset;
+            unw_get_proc_name(&cursor, symbol, sizeof(symbol), &offset);
+
+            std::cout << symbol << "(native)\n";
+        }
+        else if (resolved == -1)
         {
             char* buffer = new char[requiredBufferSize];
             resolveManagedMethod(ip, buffer, requiredBufferSize, &requiredBufferSize);
-            std::cout << buffer << "\n";
+            std::cout << buffer << "(managed)\n";
             delete[] buffer;
+        }
+        else if (resolved == 0)
+        {
+            std::cout << symbol << "(managed)\n";
         }
 
         // unw_word_t offset;
