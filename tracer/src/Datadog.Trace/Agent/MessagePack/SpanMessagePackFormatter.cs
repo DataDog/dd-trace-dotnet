@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
@@ -61,6 +62,12 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
 
         private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingPriority);
+
+        private readonly byte[] _agentSamplingRateNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingAgentDecision);
+
+        private readonly byte[] _ruleSamplingRateNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingRuleDecision);
+
+        private readonly byte[] _rateLimitNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingLimitDecision);
 
         private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Metrics.ProcessId);
 
@@ -507,14 +514,35 @@ namespace Datadog.Trace.Agent.MessagePack
             offset = tagWriter.Offset;
             count += tagWriter.Count;
 
-            // add "process_id" tag to local root span (if present)
-            var processId = DomainMetadata.Instance.ProcessId;
-
-            if (processId != 0 && model.IsLocalRoot)
+            if (model.IsLocalRoot)
             {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
-                offset += MessagePackBinary.WriteDouble(ref bytes, offset, processId);
+                // add "process_id" tag to local root span if available
+                var processId = DomainMetadata.Instance.ProcessId;
+
+                if (processId != 0)
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
+                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, processId);
+                }
+
+                // add sampling rate to local root span if available
+                if (model.TraceChunk.InitialSamplingRate is { } samplingRate)
+                {
+                    var tagNameBytes = model.TraceChunk.InitialSamplingMechanism switch
+                    {
+                        // sampling rule or global sampling rate
+                        SamplingMechanism.TraceSamplingRule => _ruleSamplingRateNameBytes,
+                        // agent sampling rate (matched) or default agent sampling rate (no match) or default fallback (1.0)
+                        SamplingMechanism.AgentRate or SamplingMechanism.Default => _agentSamplingRateNameBytes,
+                        // no sampling rate was used
+                        _ => null
+                    };
+
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, tagNameBytes);
+                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingRate);
+                }
             }
 
             // add "_sampling_priority_v1" tag to all "chunk orphans"
