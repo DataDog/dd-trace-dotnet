@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             {
                 // Default version is 7.13.0
                 var version = string.IsNullOrEmpty(packageVersion) ? new Version(7, 13) : new Version(packageVersion);
-                var expectedProcessorSpanCount = version >= new Version(7, 10) ? 91 : 74;
+                var expectedProcessorSpanCount = version >= new Version(7, 10) ? 91 : 74; // Message spans (17 in total) are added starting with v7.10.x
                 var snapshotSuffix = version switch
                 {
                     { Major: 7, Minor: >= 17 } => "7_17",
