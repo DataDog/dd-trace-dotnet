@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
 using System.Diagnostics;
 using MessagePack;
 
@@ -20,5 +21,14 @@ namespace Datadog.Trace.TestHelpers
 
         [Key("span_id")]
         public ulong SpanId { get; set; }
+
+        [Key("flags")]
+        public uint TraceFlags { get; set; }
+
+        [Key("tracestate")]
+        public string TraceState { get; set; }
+
+        [Key("tags")]
+        public Dictionary<string, object>  Attributes { get; set; }
     }
 }

@@ -128,7 +128,7 @@ public class SpanMessagePackFormatterTests
 
         spans[0].AddSpanLink(spans[1]);
         spans[1].AddSpanLink(spans[2]);
-        spans[2].AddSpanLink(spans[0]);
+        spans[1].AddSpanLink(spans[0]);
 
         foreach (var span in spans)
         {

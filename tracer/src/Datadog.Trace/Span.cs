@@ -549,10 +549,17 @@ namespace Datadog.Trace
                 new object[] { Context.RawSpanId, Context.ParentIdInternal, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags, ToString() });
         }
 
-        internal void AddSpanLink(Span spanLinkToAdd)
+        internal void AddSpanLink(Span spanLinkToAdd, Dictionary<string, object> optionalAttributes = null)
         {
             SpanLinkList ??= new List<SpanLink>();
-            var spanLink = new SpanLink(spanLinkToAdd.TraceId128, spanLinkToAdd.SpanId);
+            var spanLink = new SpanLink(spanLinkToAdd, optionalAttributes);
+            SpanLinkList.Add(spanLink);
+        }
+
+        internal void AddSpanLink(SpanContext spanLinkContextToAdd, Dictionary<string, object> optionalAttributes = null)
+        {
+            SpanLinkList ??= new List<SpanLink>();
+            var spanLink = new SpanLink(spanLinkContextToAdd, optionalAttributes);
             SpanLinkList.Add(spanLink);
         }
     }

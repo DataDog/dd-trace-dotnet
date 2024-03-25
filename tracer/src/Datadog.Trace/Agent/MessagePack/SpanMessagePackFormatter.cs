@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
@@ -40,7 +41,12 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _parentIdBytes = StringEncoding.UTF8.GetBytes("parent_id");
         private readonly byte[] _errorBytes = StringEncoding.UTF8.GetBytes("error");
         private readonly byte[] _metaStructBytes = StringEncoding.UTF8.GetBytes("meta_struct");
+        // span links metadata
         private readonly byte[] _spanLinkBytes = StringEncoding.UTF8.GetBytes("span_links");
+        private readonly byte[] _traceStateBytes = StringEncoding.UTF8.GetBytes("tracestate");
+        private readonly byte[] _traceFlagBytes = StringEncoding.UTF8.GetBytes("flags");
+        private readonly byte[] _tags = StringEncoding.UTF8.GetBytes("tags");
+
         // string tags
         private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
 
@@ -223,16 +229,66 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, spanModel.Span.SpanLinkList.Count);
             foreach (var spanLink in spanModel.Span.SpanLinkList)
             {
-                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 3);
+                var context = spanLink.SpanLinkContext;
+                var traceState = W3CTraceContextPropagator.CreateTraceStateHeader(context);
+                // 3 possible values, 1, 0 or null
+                var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
+                var traceFlags = samplingPriority switch
+                {
+                    null => 0u,
+                    > 0 => 1u + (1u << 31),
+                    <= 0 => 1u << 31,
+                };
+                var len = 3;
+                if (string.IsNullOrEmpty(traceState))
+                {
+                    len++;
+                }
+
+                if (traceFlags > 0)
+                {
+                    len++;
+                }
+
+                if (spanLink.Attributes is { Count: > 0 })
+                {
+                    len++;
+                }
+
+                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
                 // individal key-value pairs - traceid - lower
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
-                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, spanLink.TraceId.Lower);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId128.Lower);
                 // individal key-value pairs - traceid - higher
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdHighBytes);
-                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, spanLink.TraceId.Upper);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId128.Upper);
                 // spanid
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
-                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, spanLink.SpanId);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
+                // optional serialization
+                // tracestate
+                if (string.IsNullOrEmpty(traceState))
+                {
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceStateBytes);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, traceState);
+                }
+
+                if (traceFlags > 0)
+                {
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceFlagBytes);
+                    offset += MessagePackBinary.WriteUInt32(ref bytes, offset, traceFlags);
+                }
+
+                if (spanLink.Attributes is { Count: > 0 })
+                {
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _tags);
+                    offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, spanLink.Attributes.Count);
+                    foreach (var attribute in spanLink.Attributes)
+                    {
+                        offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
+                        offset += PrimitiveObjectFormatter.Instance.Serialize(ref bytes, offset, attribute.Value, null);
+                    }
+                }
             }
 
             return offset - originalOffset;
