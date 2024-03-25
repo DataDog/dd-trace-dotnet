@@ -10,27 +10,20 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 public class NHibernateTests : InstrumentationTestsBase
 {
     private readonly string _taintedValue = "1";
-    private readonly Mock<ISession> _session;
+
+    private static readonly Mock<ISessionFactory> SessionFactoryMock = new();
+    private static readonly Mock<ISession> SessionMock = new();
+    private static readonly Mock<ISQLQuery> SqlQueryMock = new();
+    private static ISessionFactory SessionFactory => SessionFactoryMock.Object;
 
     public NHibernateTests()
     {
         AddTainted(_taintedValue);
-
-        _session = new Mock<ISession>();
-    }
-
-    private void SetupMockedQuery(string query)
-    {
-        var queryMock = new Mock<IQuery>();
-        queryMock.Setup(x => x.List<string>()).Returns(new List<string>{"test2"} );
-        _session.Setup(session => session.CreateQuery(query)).Returns(queryMock.Object);
-    }
-    
-    private void SetupMockedSqlQuery(string query)
-    {
-        var queryMock = new Mock<ISQLQuery>();
-        queryMock.Setup(x => x.List<string>()).Returns(new List<string>{"test2"} );
-        _session.Setup(session => session.CreateSQLQuery(query)).Returns(queryMock.Object);
+        
+        SessionFactoryMock.Setup(m => m.OpenSession()).Returns(SessionMock.Object);
+        SessionMock.Setup(m => m.CreateSQLQuery(It.IsAny<string>())).Returns(SqlQueryMock.Object);
+        SessionMock.Setup(m => m.CreateQuery(It.IsAny<string>())).Returns(SqlQueryMock.Object);
+        SqlQueryMock.Setup(m => m.List<string>()).Returns(new List<string>{"test"});
     }
 
     // With CreateQuery
@@ -39,8 +32,8 @@ public class NHibernateTests : InstrumentationTestsBase
     {
         var query = "SELECT * FROM Books WHERE id = " + _taintedValue;
 
-        SetupMockedQuery(query);
-        var result = _session.Object.CreateQuery(query).List<string>();
+        using var session = SessionFactory.OpenSession();
+        var result = session.CreateSQLQuery(query).List<string>();
 
         Assert.NotNull(result);
         AssertVulnerable();
@@ -51,8 +44,8 @@ public class NHibernateTests : InstrumentationTestsBase
     {
         var query = "SELECT * FROM Books WHERE id = 2";
         
-        SetupMockedQuery(query);
-        var result = _session.Object.CreateQuery(query).List<string>();
+        using var session = SessionFactory.OpenSession();
+        var result = session.CreateSQLQuery(query).List<string>();
 
         Assert.NotNull(result);
         AssertNotVulnerable();
@@ -64,8 +57,8 @@ public class NHibernateTests : InstrumentationTestsBase
     {
         var query = "SELECT * FROM Books WHERE id = " + _taintedValue;
 
-        SetupMockedSqlQuery(query);
-        var result = _session.Object.CreateSQLQuery(query).List<string>();
+        using var session = SessionFactory.OpenSession();
+        var result = session.CreateSQLQuery(query).List<string>();
 
         Assert.NotNull(result);
         AssertVulnerable();
@@ -76,8 +69,8 @@ public class NHibernateTests : InstrumentationTestsBase
     {
         var query = "SELECT * FROM Books WHERE id = 2";
         
-        SetupMockedSqlQuery(query);
-        var result = _session.Object.CreateSQLQuery(query).List<string>();
+        using var session = SessionFactory.OpenSession();
+        var result = session.CreateSQLQuery(query).List<string>();
 
         Assert.NotNull(result);
         AssertNotVulnerable();

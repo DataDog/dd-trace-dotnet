@@ -26,12 +26,11 @@
   "vulnerabilities": [
     {
       "type": "SQL_INJECTION",
-      "hash": 1306950336,
+      "hash": 1532278957,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Data.NHibernateHelper",
-        "method": "CreateSqlQuery",
-        "line": XXX
+        "path": "Samples.Security.Data.NHibernateHelper",
+        "method": "CreateSqlQuery"
       },
       "evidence": {
         "valueParts": [
