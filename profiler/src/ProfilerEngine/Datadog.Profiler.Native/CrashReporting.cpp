@@ -22,6 +22,14 @@ extern "C" void __stdcall ReportCrash(int32_t pid, ResolveManagedMethod resolveC
 #endif
 }
 
+CrashReporting::CrashReporting()
+{
+}
+
+CrashReporting::~CrashReporting()
+{
+}
+
 void CrashReporting::ReportCrash(int32_t pid, ResolveManagedMethod resolveCallback)
 {
     auto crashInfoResult = ddog_crashinfo_new();
