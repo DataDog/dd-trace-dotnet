@@ -8,6 +8,7 @@
 #include <libunwind-ptrace.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
+#include <iostream>
 
 CrashReportingLinux::CrashReportingLinux()
 {
