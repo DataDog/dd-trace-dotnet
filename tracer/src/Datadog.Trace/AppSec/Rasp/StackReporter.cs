@@ -52,26 +52,11 @@ internal static class StackReporter
 
     internal static void AddStackToSpan(SecuritySettings settings, Span span, string eventCategoryText, string? stackId = null)
     {
-        var jsonSettings = new JsonSerializerSettings
-        {
-            NullValueHandling = NullValueHandling.Ignore,
-            ContractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new CamelCaseNamingStrategy()
-                {
-                    ProcessDictionaryKeys = true,
-                    OverrideSpecifiedNames = true
-                }
-            }
-        };
-
         var frames = GetFrames(settings);
 
         if (frames is not null)
         {
-            var eventCategory = new EventCategory(null, "dotnet", stackId, null, frames);
-            var json = JsonConvert.SerializeObject(new List<EventCategory> { eventCategory }, jsonSettings);
-            span.SetTag($"_dd.stack.{eventCategoryText}", json);
+            span.SetMetaStruct($"_dd.stack.{eventCategoryText}", MetaStructHelper.StackToByteArray(null, "dotnet", stackId ?? Guid.NewGuid().ToString(), null, frames));
         }
     }
 }

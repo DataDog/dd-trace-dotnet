@@ -5,7 +5,7 @@
 
 #nullable enable
 
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.AppSec.Rasp;
 
@@ -56,4 +56,49 @@ internal readonly struct StackFrame
     public string? ClassName => _className;
 
     public string? Function => _function;
+
+    public Dictionary<string, object> ToDictionary()
+    {
+        var dict = new Dictionary<string, object>(8)
+        {
+            { "id", _id }
+        };
+
+        if (_text != null)
+        {
+            dict["text"] = _text;
+        }
+
+        if (_file != null)
+        {
+            dict["file"] = _file;
+        }
+
+        if (_line.HasValue)
+        {
+            dict["line"] = _line.Value;
+        }
+
+        if (_column.HasValue)
+        {
+            dict["column"] = _column.Value;
+        }
+
+        if (_namespace != null)
+        {
+            dict["namespace"] = _namespace;
+        }
+
+        if (_className != null)
+        {
+            dict["class_name"] = _className;
+        }
+
+        if (_function != null)
+        {
+            dict["function"] = _function;
+        }
+
+        return dict;
+    }
 }
