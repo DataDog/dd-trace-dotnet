@@ -129,7 +129,9 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
-            var rootSpan = span.Context.TraceContext.RootSpan ?? span;
+            // span.Context.TraceContext can be null only in tests,
+            // where we sometimes create "detached" spans
+            var rootSpan = span.Context.TraceContext?.RootSpan ?? span;
             rootSpan.SetMetric(Metrics.SamplingRuleDecision, _samplingRate);
             return _samplingRate;
         }
