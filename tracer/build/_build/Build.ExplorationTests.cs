@@ -385,6 +385,8 @@ class ExplorationTestDescription
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "src/Cake.Common.Tests",
                 SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0 },
+                // Workaround for https://github.com/dotnet/runtime/issues/95653
+                EnvironmentVariables = new[] { ("DD_CLR_ENABLE_INLINING", "0") },
             },
             ExplorationTestName.swashbuckle => new ExplorationTestDescription()
             {
@@ -394,6 +396,8 @@ class ExplorationTestDescription
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "test/Swashbuckle.AspNetCore.SwaggerGen.Test",
                 SupportedFrameworks = new[] { TargetFramework.NET6_0 },
+                // Workaround for https://github.com/dotnet/runtime/issues/95653
+                EnvironmentVariables = new[] { ("DD_CLR_ENABLE_INLINING", "0") },
             },
             ExplorationTestName.paket => new ExplorationTestDescription()
             {
