@@ -16,12 +16,34 @@ namespace Datadog.Trace.Tools.dd_dotnet;
 internal class CreatedumpCommand : Command
 {
     private readonly Argument<string?> _pathArgument = new("path") { Arity = ArgumentArity.ExactlyOne };
+    private readonly Argument<int?> _pidArgument = new("pid") { Arity = ArgumentArity.ExactlyOne };
 
     public CreatedumpCommand()
         : base("createdump")
     {
         AddArgument(_pathArgument);
+        AddArgument(_pidArgument);
         this.SetHandler(Execute);
+    }
+
+    [UnmanagedCallersOnly]
+    private static unsafe int ResolveManagedMethod(IntPtr ip, char* buffer, int bufferSize, int* requiredBufferSize)
+    {
+        string name = "plop";
+
+        if (bufferSize < name.Length + 1)
+        {
+            *requiredBufferSize = name.Length + 1;
+            return -1;
+        }
+
+        buffer[0] = 'p';
+        buffer[1] = 'l';
+        buffer[2] = 'o';
+        buffer[3] = 'p';
+        buffer[4] = '\0';
+
+        return 0;
     }
 
     private unsafe void Execute(InvocationContext context)
@@ -29,6 +51,7 @@ internal class CreatedumpCommand : Command
         AnsiConsole.WriteLine("Createdump command");
 
         var path = _pathArgument.GetValue(context)!;
+        var pid = _pidArgument.GetValue(context)!;
 
         AnsiConsole.WriteLine($"Loading Datadog.Profiler.Native.so from {path}");
 
@@ -42,34 +65,12 @@ internal class CreatedumpCommand : Command
             return;
         }
 
-        // extern "C" void __stdcall ReportCrash(char** frames, int count, char* threadId)
-        var function = (delegate* unmanaged<IntPtr, int, IntPtr, void>)export;
+        // extern "C" void __stdcall ReportCrash(int32_t pid, ResolveManagedMethod resolveCallback)
+        var function = (delegate* unmanaged<int, IntPtr, void>)export;
 
-        var frames = new string[]
-        {
-            "frame1",
-            "frame2",
-            "frame3",
-        };
 
-        var framesPtr = Marshal.AllocHGlobal(frames.Length * IntPtr.Size);
+        function(pid, );
 
-        for (var i = 0; i < frames.Length; i++)
-        {
-            var frame = Marshal.StringToHGlobalAnsi(frames[i]);
-            Marshal.WriteIntPtr(framesPtr, i * IntPtr.Size, frame);
-        }
-
-        var threadId = Marshal.StringToHGlobalAnsi("1234");
-
-        function(framesPtr, frames.Length, threadId);
-
-        AnsiConsole.WriteLine("Returned from call");
-
-        Marshal.FreeHGlobal(framesPtr);
-        Marshal.FreeHGlobal(threadId);
-
-        NativeLibrary.Free(lib);
 
         AnsiConsole.WriteLine("Createdump command finished");
     }
