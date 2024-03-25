@@ -57,6 +57,8 @@ internal readonly partial struct SecurityCoordinator
 
     private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
 
+    public static HttpContext Context => HttpContext.Current;
+
     private static Action<IResult, HttpStatusCode, string, string>? CreateThrowHttpResponseExceptionDynMeth()
     {
         try
@@ -266,6 +268,26 @@ internal readonly partial struct SecurityCoordinator
         }
 
         var result = RunWaf(args);
+        CheckAndBlock(result);
+    }
+
+    internal void CheckAndBlockRasp(IResult? result)
+    {
+        if (result is not null)
+        {
+            var reporting = MakeReportingFunction(result);
+            // here we assume if we haven't blocked we'll have collected the correct status elsewhere
+            reporting(null, result.ShouldBlock);
+
+            if (result.ShouldBlock)
+            {
+                ChooseBlockingMethodAndBlock(result, reporting);
+            }
+        }
+    }
+
+    internal void CheckAndBlock(IResult? result)
+    {
         if (result is not null)
         {
             var reporting = MakeReportingFunction(result);

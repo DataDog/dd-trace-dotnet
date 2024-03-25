@@ -127,6 +127,8 @@ namespace Datadog.Trace.AppSec
 
         internal bool Enabled { get; private set; }
 
+        internal bool RaspEnabled => _settings.RaspEnabled && Enabled;
+
         internal string? InitializationError { get; private set; }
 
         internal bool WafExportsErrorHappened => _libraryInitializationResult?.ExportErrorHappened ?? false;
