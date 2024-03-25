@@ -8,6 +8,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.dd_dotnet;
@@ -26,21 +27,22 @@ internal class CreatedumpCommand : Command
     }
 
     [UnmanagedCallersOnly]
-    private static unsafe int ResolveManagedMethod(IntPtr ip, char* buffer, int bufferSize, int* requiredBufferSize)
+    private static unsafe int ResolveManagedMethod(IntPtr ip, byte* buffer, int bufferSize, int* requiredBufferSize)
     {
         string name = "plop";
 
-        if (bufferSize < name.Length + 1)
+        var length = Encoding.ASCII.GetByteCount(name);
+
+        if (bufferSize < length + 1)
         {
-            *requiredBufferSize = name.Length + 1;
+            *requiredBufferSize = length + 1;
             return -1;
         }
 
-        buffer[0] = 'p';
-        buffer[1] = 'l';
-        buffer[2] = 'o';
-        buffer[3] = 'p';
-        buffer[4] = '\0';
+        Encoding.ASCII.GetBytes(name, new Span<byte>(buffer, bufferSize));
+
+        // Add the \0
+        buffer[length] = (byte)'\0';
 
         return 0;
     }
