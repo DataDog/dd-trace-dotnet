@@ -100,32 +100,35 @@ namespace Datadog.Trace.AppSec.Waf
                 // Calling _encoder.Encode(null) results in a null object that will cause the WAF to error
                 // The WAF can be called with an empty dictionary (though we should avoid doing this).
 
-                var pwPersistentArgsPtr = IntPtr.Zero;
-                var pwEphemeralArgsPtr = IntPtr.Zero;
+                DdwafObjectStruct pwPersistentArgs = default;
+                DdwafObjectStruct pwEphemeralArgsValue = default;
 
-                DdwafObjectStruct ddwafObjectPersistent;
-                if (persistentAddressData != null)
+                if (persistentAddressData is not null)
                 {
                     var persistentArgs = _encoder.Encode(persistentAddressData, applySafetyLimits: true);
-                    ddwafObjectPersistent = persistentArgs.ResultDdwafObject;
-                    pwPersistentArgsPtr = (IntPtr)(&ddwafObjectPersistent);
+                    pwPersistentArgs = persistentArgs.ResultDdwafObject;
                     _encodeResults.Add(persistentArgs);
                 }
 
-                IEncodeResult? ephemeralArgs = null;
                 // pwEphemeralArgs follow a different lifecycle and should be disposed immediately
-                DdwafObjectStruct ddwafObjectEphemeral;
-                if (ephemeralAddressData is { Count: > 0 })
+                using var ephemeralArgs = ephemeralAddressData is { Count: > 0 }
+                                              ? _encoder.Encode(ephemeralAddressData, applySafetyLimits: true)
+                                              : null;
+
+                if (persistentAddressData is null && ephemeralArgs is null)
                 {
-                    var ephemeralArgsResult = _encoder.Encode(ephemeralAddressData, applySafetyLimits: true);
-                    ddwafObjectEphemeral = ephemeralArgsResult.ResultDdwafObject;
-                    pwEphemeralArgsPtr = (IntPtr)(&ddwafObjectEphemeral);
-                    ephemeralArgs = ephemeralArgsResult;
+                    Log.Error("Both pwPersistentArgs and pwEphemeralArgs are null");
+                    return null;
+                }
+
+                if (ephemeralArgs is not null)
+                {
+                    // WARNING: Don't use ref here, we need to make a copy because ephemeralArgs is on the heap
+                    pwEphemeralArgsValue = ephemeralArgs.ResultDdwafObject;
                 }
 
                 // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
-                code = _waf.Run(_contextHandle, pwPersistentArgsPtr, pwEphemeralArgsPtr, ref retNative, timeoutMicroSeconds);
-                ephemeralArgs?.Dispose();
+                code = _waf.Run(_contextHandle, persistentAddressData != null ? &pwPersistentArgs : null, ephemeralArgs != null ? &pwEphemeralArgsValue : null, ref retNative, timeoutMicroSeconds);
             }
 
             _stopwatch.Stop();

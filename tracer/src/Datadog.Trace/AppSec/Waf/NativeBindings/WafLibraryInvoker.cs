@@ -92,7 +92,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate IntPtr InitContextDelegate(IntPtr wafHandle);
 
-        private delegate WafReturnCode RunDelegate(IntPtr context, IntPtr rawPersistentData, IntPtr rawEphemeralData, ref DdwafResultStruct result, ulong timeLeftInUs);
+        private unsafe delegate WafReturnCode RunDelegate(IntPtr context, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafResultStruct result, ulong timeLeftInUs);
 
         private delegate void DestroyDelegate(IntPtr handle);
 
@@ -268,7 +268,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// <param name="result">Result</param>
         /// <param name="timeLeftInUs">timeout</param>
         /// <returns>Return waf code</returns>
-        internal WafReturnCode Run(IntPtr context, IntPtr rawPersistentData, IntPtr rawEphemeralData, ref DdwafResultStruct result, ulong timeLeftInUs)
+        internal unsafe WafReturnCode Run(IntPtr context, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafResultStruct result, ulong timeLeftInUs)
             => _runField(context, rawPersistentData, rawEphemeralData, ref result, timeLeftInUs);
 
         internal void Destroy(IntPtr wafHandle) => _destroyField(wafHandle);
