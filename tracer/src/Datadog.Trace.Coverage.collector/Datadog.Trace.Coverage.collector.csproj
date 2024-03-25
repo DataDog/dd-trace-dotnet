@@ -19,6 +19,10 @@
       <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="5.0.0" />
 
       <!-- Required for vendored Unsafe code -->
+      <PackageReference Include="Fody" Version="6.8.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
       <PackageReference Include="InlineIL.Fody" Version="1.7.4" PrivateAssets="All" />
     </ItemGroup>
 
