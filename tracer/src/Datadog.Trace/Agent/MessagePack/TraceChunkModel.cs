@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.MessagePack;
 
