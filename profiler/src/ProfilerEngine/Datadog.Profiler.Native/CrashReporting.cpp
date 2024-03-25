@@ -101,25 +101,25 @@ void CrashReporting::ReportCrash(int32_t pid, ResolveManagedMethod resolveCallba
     auto tag2 = "tag2";
     auto value2 = "value2";
 
-    auto tags = ddog_Vec_Tag_new();
-
-    ddog_Vec_Tag_push(&tags, { tag1, std::strlen(tag1) }, { value1, std::strlen(value1) });
-    ddog_Vec_Tag_push(&tags, { tag2, std::strlen(tag2) }, { value2, std::strlen(value2) });
-
     const ddog_prof_CrashtrackerMetadata metadata = {
         .profiling_library_name = { libName, std::strlen(libName) },
         .profiling_library_version = { libVersion, std::strlen(libVersion) },
-        .family = { family, std::strlen(family) },
-        .tags = &tags,
+        .family = { family, std::strlen(family) }
     };
 
-    ddog_crashinfo_set_metadata(crashInfo, metadata);
+    auto result = ddog_crashinfo_set_metadata(crashInfo, metadata);
+
+    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+    {
+        std::cout << "Error setting metadata: " << libdatadog::FfiHelper::GetErrorMessage(result.err) << std::endl;
+        return;
+    }
 
     const std::string endpointUrl = "file://tmp/crash.txt";
 
     auto endpoint = ddog_Endpoint_file(libdatadog::FfiHelper::StringToCharSlice(endpointUrl));
 
-    auto result = ddog_crashinfo_upload_to_endpoint(crashInfo, endpoint, 30);
+    result = ddog_crashinfo_upload_to_endpoint(crashInfo, endpoint, 30);
 
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
     {
@@ -130,5 +130,4 @@ void CrashReporting::ReportCrash(int32_t pid, ResolveManagedMethod resolveCallba
     std::cout << "Crash uploaded to endpoint" << std::endl;
 
     ddog_crashinfo_drop(crashInfo);
-    ddog_Vec_Tag_drop(tags);
 }
