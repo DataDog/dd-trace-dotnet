@@ -171,11 +171,19 @@ namespace Datadog.Trace.Ci.Coverage.Attributes
 }
 namespace Datadog.Trace.Ci.Coverage.Metadata
 {
+    public readonly struct FileCoverageMetadata
+    {
+        public readonly byte[] Bitmap;
+        public readonly int LastExecutableLine;
+        public readonly int Offset;
+        public readonly string Path;
+        public FileCoverageMetadata(string path, int offset, int lastExecutableLine, byte[] bitmap) { }
+    }
     public abstract class ModuleCoverageMetadata
     {
-        protected readonly long[] Metadata;
-        protected readonly int[] SequencePoints;
-        protected readonly long TotalInstructions;
+        public readonly int CoverageMode;
+        protected readonly Datadog.Trace.Ci.Coverage.Metadata.FileCoverageMetadata[] Files;
+        public readonly int TotalLines;
         protected ModuleCoverageMetadata() { }
     }
 }
