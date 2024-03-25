@@ -21,5 +21,6 @@ namespace Datadog.Trace.TestHelpers
         internal TraceId TraceId { get; }
 
         internal ulong SpanId { get; }
+        
     }
 }
