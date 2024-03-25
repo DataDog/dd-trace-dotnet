@@ -155,7 +155,9 @@ public class SpanMessagePackFormatterTests
             {
                 var expectedSpanlink = expected.SpanLinkList[j];
                 var actualSpanLink = actual.SpanLinkList[j];
-                actualSpanLink.Should().Be(expectedSpanlink);
+                actualSpanLink.TraceIdHigh.Should().Be(expectedSpanlink.TraceId.Upper);
+                actualSpanLink.TraceIdLow.Should().Be(expectedSpanlink.TraceId.Lower);
+                actualSpanLink.SpanId.Should().Be(expectedSpanlink.SpanId);
             }
         }
     }

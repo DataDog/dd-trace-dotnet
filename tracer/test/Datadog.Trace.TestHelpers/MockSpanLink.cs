@@ -10,16 +10,15 @@ namespace Datadog.Trace.TestHelpers
 {
     [MessagePackObject]
     [DebuggerDisplay("{ToString(),nq}")]
-    internal class MockSpanLink
+    public class MockSpanLink
     {
-        public MockSpanLink(TraceId traceId, ulong spanId)
-        {
-            SpanId = spanId;
-            TraceId = traceId;
-        }
+        [Key("trace_id")]
+        public ulong TraceIdLow { get; set; }
 
-        internal TraceId TraceId { get; }
+        [Key("trace_id_high")]
+        public ulong TraceIdHigh { get; set; }
 
-        internal ulong SpanId { get; }
+        [Key("span_id")]
+        public ulong SpanId { get; set; }
     }
 }
