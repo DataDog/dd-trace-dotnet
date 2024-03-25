@@ -104,13 +104,13 @@ namespace Datadog.Trace.AppSec
 
             MaxStackTraces = config
                             .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)
-                            .AsInt32(val => val >= 0)
-                            .GetValueOrDefault(2);
+                            .AsInt32(defaultValue: 2, validator: val => val >= 0)
+                            .Value;
 
             MaxStackTraceDepth = config
                                 .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
-                                .AsInt32(val => val >= 0)
-                                .GetValueOrDefault(32);
+                                .AsInt32(defaultValue: 32, validator: val => val >= 0)
+                                .Value;
         }
 
         public double ApiSecuritySampleDelay { get; set; }
