@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include <string>
 
 typedef int (*ResolveManagedMethod)(uintptr_t ip, char* buffer, int bufferSize, int* requiredBufferSize);
 

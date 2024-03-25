@@ -1,5 +1,5 @@
 #pragma once
-#include "C:\git\dd-trace-dotnet\profiler\src\ProfilerEngine\Datadog.Profiler.Native\CrashReporting.h"
+#include "CrashReporting.h"
 #include <string>
 
 #include <libunwind.h>

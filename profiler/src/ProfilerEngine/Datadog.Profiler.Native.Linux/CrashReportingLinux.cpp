@@ -23,7 +23,7 @@ std::vector<std::pair<uintptr_t, std::string>> CrashReportingLinux::GetThreadFra
 {
     std::cout << "-------------- Inspecting thread " << tid << "\n";
 
-    vector<std::pair<uintptr_t, std::string>> frames;
+    std::vector<std::pair<uintptr_t, std::string>> frames;
 
     if (ptrace(PTRACE_ATTACH, tid, NULL, NULL) == -1)
     {
