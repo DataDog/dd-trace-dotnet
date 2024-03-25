@@ -14,7 +14,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Coverage.Attributes;
-using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Ci.Coverage.Util;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -29,6 +28,7 @@ namespace Datadog.Trace.Coverage.Collector
     {
         public const string ModuleCoverageMetadataNamespace = DatadogTraceConstants.Namespaces.ModuleCoverageMetadata;
         public const string ModuleCoverageMetadataFullName = DatadogTraceConstants.TypeNames.ModuleCoverageMetadata;
+        public const string FileCoverageMetadataFullName = DatadogTraceConstants.TypeNames.FileCoverageMetadata;
         public const string CoverageReporterFullName = DatadogTraceConstants.TypeNames.CoverageReporter;
         private static readonly string? ExcludeFromCodeCoverageAttributeFullName = typeof(ExcludeFromCodeCoverageAttribute).FullName;
         private static readonly string? AvoidCoverageAttributeFullName = typeof(AvoidCoverageAttribute).FullName;
@@ -627,7 +627,7 @@ namespace Datadog.Trace.Coverage.Collector
 
                 // ****************************************************************************************************
                 // Module metadata: Files field
-                var fileCoverageMetadataTypeDefinition = datadogTracerAssembly.MainModule.GetType(typeof(FileCoverageMetadata).FullName);
+                var fileCoverageMetadataTypeDefinition = datadogTracerAssembly.MainModule.GetType(FileCoverageMetadataFullName);
                 var fileCoverageMetadataTypeReference = module.ImportReference(fileCoverageMetadataTypeDefinition);
                 var moduleCoverageMetadataImplFileMetadataField = new FieldReference("Files", new ArrayType(fileCoverageMetadataTypeReference), moduleCoverageMetadataTypeReference);
                 lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));

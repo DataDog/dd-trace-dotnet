@@ -17,6 +17,9 @@
       <!-- Microsoft.Extensions.FileSystemGlobbing 6.0.0 doesn't support netcoreapp2.1 -->
       <!-- Microsoft.Extensions.FileSystemGlobbing 7.0.0 doesn't support net5.0 -->
       <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="5.0.0" />
+
+      <!-- Required for vendored Unsafe code -->
+      <PackageReference Include="InlineIL.Fody" Version="1.7.4" PrivateAssets="All" />
     </ItemGroup>
 
   <ItemGroup>
@@ -24,6 +27,7 @@
     <Compile Include="..\Datadog.Trace\Ci\Configuration\CIVisibilitySettings.Shared.cs" Link="Ci\Configuration\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Attributes\*.cs" Link="Ci\Coverage\Attributes\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Exceptions\*.cs" Link="Ci\Coverage\Exceptions\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\Ci\Coverage\Util\*.cs" Link="Ci\Coverage\Util\%(Filename)%(Extension)" />
 
     <Compile Include="..\Datadog.Trace\Configuration\ConfigurationKeys.cs" Link="%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Configuration\ConfigurationKeys.Logging.cs" Link="%(Filename)%(Extension)" />
@@ -53,6 +57,7 @@
     <Compile Include="..\Datadog.Trace\Vendors\Newtonsoft.Json\**\*.cs" Link="Vendors\Newtonsoft.Json\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Vendors\Serilog\**\*.cs" Link="Vendors\Serilog\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Vendors\Serilog.Sinks.File\**\*.cs" Link="Vendors\Serilog.Sinks.File\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\Vendors\System.Runtime.CompilerServices.Unsafe\**\*.cs" Link="Vendors\System.Runtime.CompilerServices.Unsafe\%(RecursiveDir)%(Filename)%(Extension)" />
 
     <!--Helpers -->
     <Compile Include="..\Datadog.Trace\ExtensionMethods\StringExtensions.cs" Link="ExtensionMethods\%(Filename)%(Extension)" />

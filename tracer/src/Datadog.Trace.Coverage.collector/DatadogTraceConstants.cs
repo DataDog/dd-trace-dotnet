@@ -58,5 +58,11 @@ public static class DatadogTraceConstants
         /// typeof(CoverageReporter&lt;&gt;).FullName
         /// </summary>
         public const string CoverageReporter = "Datadog.Trace.Ci.Coverage.CoverageReporter`1";
+
+        /// <summary>
+        /// The full name of the FileCoverageMetadata type in Datadog.Trace, as returned by
+        /// typeof(FileCoverageMetadata).FullName
+        /// </summary>
+        public const string FileCoverageMetadata = "Datadog.Trace.Ci.Coverage.Metadata.FileCoverageMetadata";
     }
 }

@@ -27,6 +27,7 @@ public class CoverageCollectorTests
 
         DatadogTraceConstants.Namespaces.ModuleCoverageMetadata.Should().Be(typeof(ModuleCoverageMetadata).Namespace);
         DatadogTraceConstants.TypeNames.ModuleCoverageMetadata.Should().Be(typeof(ModuleCoverageMetadata).FullName);
+        DatadogTraceConstants.TypeNames.FileCoverageMetadata.Should().Be(typeof(FileCoverageMetadata).FullName);
         DatadogTraceConstants.TypeNames.CoverageReporter.Should().Be(typeof(CoverageReporter<>).FullName);
     }
 }
