@@ -2424,6 +2424,8 @@ partial class Build
            knownPatterns.Add(new(@".*Profiler call failed with result Unspecified-Failure \(80131351\): pInfo..GetModuleInfo\(moduleId, nullptr, 0, nullptr, nullptr, .assemblyId\)", RegexOptions.Compiled));
            // avoid any issue with CLR events that are not supported before 5.1 or .NET Framework
            knownPatterns.Add(new(@".*Event-based profilers \(Allocation, LockContention\) are not supported for", RegexOptions.Compiled));
+           // There's a race in the profiler where unwinding when the thread is running
+           knownPatterns.Add(new(@".*Failed to walk \d+ stacks for sampled exception", RegexOptions.Compiled));
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
