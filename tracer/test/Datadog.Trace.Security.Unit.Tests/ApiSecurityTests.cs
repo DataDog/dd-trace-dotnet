@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -103,9 +104,9 @@ public class ApiSecurityTests
         var apiSec = new ApiSecurity(
             new SecuritySettings(
                 new CustomSettingsForTests(
-                    new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled, true }, { Configuration.ConfigurationKeys.AppSec.ApiSecuritySampleDelay, 60 } }),
+                    new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled, true }, { Configuration.ConfigurationKeys.AppSec.ApiSecuritySampleDelay, 120 } }),
                 new NullConfigurationTelemetry()));
-        var dic = new Dictionary<string, object> { { "controller", "test" }, { "action", "test2" } };
+        var dic = new Dictionary<string, object> { { "controller", "test" }, { "action", "test" } };
         var tc = new TraceContext(Mock.Of<IDatadogTracer>(), new TraceTagCollection());
         tc.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
         var dt = DateTime.UtcNow;
@@ -115,7 +116,7 @@ public class ApiSecurityTests
         span.SetTag(Tags.HttpStatusCode, "200");
         span.SetTag(Tags.HttpMethod, "GET");
         List<Thread> threads = new();
-        List<bool> results = new();
+        ConcurrentBag<bool> results = new();
         for (var i = 0; i < 20; i++)
         {
             var thread = new Thread(
