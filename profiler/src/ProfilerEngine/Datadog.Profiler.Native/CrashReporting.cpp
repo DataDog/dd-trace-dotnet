@@ -17,8 +17,8 @@ extern "C" void __stdcall ReportCrash(int32_t pid, ResolveManagedMethod resolveC
 #ifdef _WIN32
     std::cout << "CrashReporting::ReportCrash not implemented on Windows" << std::endl;
 #else
-    CrashReportingLinux crashReporting;
-    crashReporting.ReportCrash(pid, resolveCallback);
+    auto crashReporting = CrashReporting::Create();
+    crashReporting->ReportCrash(pid, resolveCallback);
 #endif
 }
 

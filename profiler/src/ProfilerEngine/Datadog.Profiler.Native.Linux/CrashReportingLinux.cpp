@@ -3,12 +3,18 @@
 #include <vector>
 #include <dirent.h>
 #include <string>
+#include <memory>
 
 #include <libunwind.h>
 #include <libunwind-ptrace.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 #include <iostream>
+
+std::unique_ptr<CrashReporting> CrashReporting::Create()
+{
+    return std::make_unique<CrashReportingLinux>();
+}
 
 CrashReportingLinux::CrashReportingLinux()
 {

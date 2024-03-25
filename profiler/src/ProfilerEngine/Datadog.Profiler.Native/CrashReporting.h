@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <vector>
 #include <string>
+#include <memory>
 
 typedef int (*ResolveManagedMethod)(uintptr_t ip, char* buffer, int bufferSize, int* requiredBufferSize);
 
@@ -11,6 +12,8 @@ class CrashReporting
 public:
     CrashReporting();
     virtual ~CrashReporting();
+
+    static std::unique_ptr<CrashReporting> Create();
 
     void ReportCrash(int32_t pid, ResolveManagedMethod resolveCallback);
 
