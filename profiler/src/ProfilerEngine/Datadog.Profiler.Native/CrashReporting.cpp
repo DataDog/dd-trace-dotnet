@@ -10,7 +10,6 @@ extern "C"
 {
 #include "datadog/common.h"
 #include "datadog/profiling.h"
-#include "OsSpecificApi.h"
 }
 
 extern "C" void __stdcall ReportCrash(int32_t pid, ResolveManagedMethod resolveCallback)
