@@ -931,7 +931,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NET462
-                new object[] { "2.6.6" },
+                new object[] { "2.7.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "2.4.2" },
@@ -946,13 +946,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.4.2" },
 #endif
 #if NET6_0
-                new object[] { "2.6.6" },
+                new object[] { "2.7.0" },
 #endif
 #if NET7_0
-                new object[] { "2.6.6" },
+                new object[] { "2.7.0" },
 #endif
 #if NET8_0
-                new object[] { "2.6.6" },
+                new object[] { "2.7.0" },
 #endif
 #endif
             };
