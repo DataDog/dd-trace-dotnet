@@ -8,7 +8,6 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.dd_dotnet;
@@ -67,10 +66,9 @@ internal class CreatedumpCommand : Command
 
         // extern "C" void __stdcall ReportCrash(int32_t pid, ResolveManagedMethod resolveCallback)
         var function = (delegate* unmanaged<int, IntPtr, void>)export;
+        var callback = (delegate* unmanaged<IntPtr, char*, int, int*, int>)&ResolveManagedMethod;
 
-
-        function(pid, );
-
+        function(pid.Value, (IntPtr)callback);
 
         AnsiConsole.WriteLine("Createdump command finished");
     }
