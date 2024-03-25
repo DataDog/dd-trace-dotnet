@@ -32,20 +32,20 @@ std::vector<std::pair<uintptr_t, std::string>> CrashReportingLinux::GetThreadFra
 
     std::vector<std::pair<uintptr_t, std::string>> frames;
 
-    if (ptrace(PTRACE_ATTACH, tid, NULL, NULL) == -1)
-    {
-        std::cout << "Ptrace failed for thread " << tid << "\n";
-        return frames;
-    }
+    // if (ptrace(PTRACE_ATTACH, tid, NULL, NULL) == -1)
+    // {
+    //     std::cout << "Ptrace failed for thread " << tid << "\n";
+    //     return frames;
+    // }
 
     // Wait for the target process to stop
-    int wait_status;
-    waitpid(tid, &wait_status, 0);
-    if (!WIFSTOPPED(wait_status))
-    {
-        fprintf(stderr, "Failed to stop target process\n");
-        return frames;
-    }
+    // int wait_status;
+    // waitpid(tid, &wait_status, 0);
+    // if (!WIFSTOPPED(wait_status))
+    // {
+    //     fprintf(stderr, "Failed to stop target process\n");
+    //     return frames;
+    // }
 
     auto context = _UPT_create(tid);
 
@@ -99,10 +99,10 @@ std::vector<std::pair<uintptr_t, std::string>> CrashReportingLinux::GetThreadFra
         std::cout << symbol << "\n";
     } while (unw_step(&cursor) > 0);
 
-    if (ptrace(PTRACE_DETACH, tid, NULL, NULL) == -1) {
-        perror("ptrace detach");
-        return frames;
-    }
+    // if (ptrace(PTRACE_DETACH, tid, NULL, NULL) == -1) {
+    //     perror("ptrace detach");
+    //     return frames;
+    // }
 
     return frames;
 }
