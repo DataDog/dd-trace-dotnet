@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static string ResolveManagedProfilerDirectory()
         {
-            string tracerFrameworkDirectory = "netstandard2.0";
+            string tracerFrameworkDirectory = "netcoreapp2.1";
 
             var version = Environment.Version;
 

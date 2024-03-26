@@ -51,7 +51,13 @@ namespace Datadog.Trace.Agent.Transports
         public async Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
         {
             var memoryStream = new MemoryStream();
+            // Annoying .NET Core 2.1 doesn't have an overload that just sets leaveopen, so we have to specify everything here
+            // We don't _need_ the #if, but it means if we add newer TFMs we get any new defaults etc if they change
+#if NETCOREAPP3_1_OR_GREATER
             var sw = new StreamWriter(memoryStream, leaveOpen: true);
+#else
+            var sw = new StreamWriter(memoryStream, EncodingHelpers.Utf8NoBom, bufferSize: 1024, leaveOpen: true);
+#endif
             using (var content = new StreamContent(memoryStream))
             {
                 using (JsonWriter writer = new JsonTextWriter(sw) { CloseOutput = true })
