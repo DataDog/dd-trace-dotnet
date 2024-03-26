@@ -131,7 +131,7 @@ internal static class HexConverter
 
     public static unsafe string ToString(ReadOnlySpan<byte> bytes, Casing casing = Casing.Upper)
     {
-#if NETFRAMEWORK || NETSTANDARD2_0
+#if NETFRAMEWORK
 
         Span<char> result;
 

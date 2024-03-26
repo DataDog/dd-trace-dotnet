@@ -17,7 +17,7 @@ internal static class HeadersInjectedCache
 
     public static void SetInjectedHeaders(WebHeaderCollection headers)
     {
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
         Cache.AddOrUpdate(headers, InjectedValue);
 #else
         Cache.GetValue(headers, _ => InjectedValue);

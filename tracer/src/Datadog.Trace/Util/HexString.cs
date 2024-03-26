@@ -9,7 +9,7 @@ using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
-#if NETCOREAPP
+#if NETCOREAPP2_1_OR_GREATER
 using BitConverter = System.BitConverter;
 using MemoryMarshal = System.Runtime.InteropServices.MemoryMarshal;
 #else

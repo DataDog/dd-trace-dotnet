@@ -8,7 +8,7 @@ namespace Datadog.Trace.Coverage.Collector
     internal enum TracerTarget
     {
         Net461,
-        Netstandard20,
+        Netcoreapp21,
         Netcoreapp31,
         Net60
     }
