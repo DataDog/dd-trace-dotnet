@@ -177,7 +177,7 @@ public class SpanMessagePackFormatterTests
                         actualSpanLink.TraceFlags.Should().Be(expectedTraceFlags);
                     }
 
-                    if (expectedSpanlink.Attributes is not null && expectedSpanlink.Attributes.Count > 0)
+                    if (expectedSpanlink.Attributes is { Count: > 0 })
                     {
                         actualSpanLink.Attributes.Should().BeEquivalentTo(expectedSpanlink.Attributes);
                     }

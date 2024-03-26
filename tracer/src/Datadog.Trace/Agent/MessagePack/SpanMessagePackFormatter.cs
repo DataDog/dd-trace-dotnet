@@ -256,10 +256,10 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
 
                 offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
-                // individal key-value pairs - traceid - lower
+                // individual key-value pairs - traceid - lower
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId128.Lower);
-                // individal key-value pairs - traceid - higher
+                // individual key-value pairs - traceid - higher
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdHighBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId128.Upper);
                 // spanid
