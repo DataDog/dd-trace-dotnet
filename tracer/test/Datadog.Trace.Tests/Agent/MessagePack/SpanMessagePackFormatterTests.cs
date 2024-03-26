@@ -141,7 +141,6 @@ public class SpanMessagePackFormatterTests
         byte[] bytes = [];
 
         var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
-        File.WriteAllBytes("/Users/mohammad.islam/DDrepos/MessagePackTools/bits/msgpack-bytes.bin", bytes);
         var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
 
         for (int i = 0; i < result.Length; i++)
