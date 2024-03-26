@@ -133,7 +133,7 @@ public class SpanMessagePackFormatterTests
             new KeyValuePair<string, object>("arbitrary", 56709)
         };
         spans[0].AddSpanLink(spans[1], attributesToAdd);
-        spans[1].AddSpanLink(spans[2]);
+        spans[1].AddSpanLink(spans[2]).AddAttribute("chaining", "adding attribute");
         spans[1].AddSpanLink(spans[0]);
 
         foreach (var span in spans)

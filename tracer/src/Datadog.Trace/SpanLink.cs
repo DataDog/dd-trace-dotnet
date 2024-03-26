@@ -33,7 +33,18 @@ internal class SpanLink
     {
     }
 
-    internal List<KeyValuePair<string, object>>? Attributes { get;  }
+    internal List<KeyValuePair<string, object>>? Attributes { get; set; }
 
     internal SpanContext Context { get;  }
+
+    internal void AddAttribute(string name, object value)
+    {
+        var newAttribute = new KeyValuePair<string, object>(name, value);
+        if (Attributes is null)
+        {
+            Attributes = new List<KeyValuePair<string, object>>();
+        }
+
+        Attributes.Add(newAttribute);
+    }
 }
