@@ -21,11 +21,12 @@ class IManagedThreadList;
 class ProfilerSignalManager;
 class ProfilerSignalManager;
 class IConfiguration;
+class CallstackPool;
 
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* configuration);
+    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* configuration, CallstackPool* pool);
     ~LinuxStackFramesCollector() override;
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;

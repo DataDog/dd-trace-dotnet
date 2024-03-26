@@ -32,6 +32,8 @@ public:
             return false;
         }
 
+        // in the test we do not care about equality of _pool member
+
         for (auto i = 0; i < _count; i++)
         {
             if (_buffer[i] != other._buffer[i])
@@ -54,8 +56,8 @@ public:
     shared::span<std::uintptr_t> Data() const;
     void SetCount(std::size_t count);
 
-    std::size_t size() const;
-    std::size_t capacity() const;
+    std::size_t Size() const;
+    std::size_t Capacity() const;
 
     // iterator
     std::uintptr_t* begin() const;

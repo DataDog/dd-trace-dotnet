@@ -32,7 +32,6 @@ class StackSamplerLoopManager;
 class IThreadsCpuManager;
 class IManagedThreadList;
 class IConfiguration;
-class CallstackPool;
 
 
 typedef enum
@@ -56,8 +55,7 @@ public:
         IManagedThreadList* pCodeHotspotThreadList,
         ICollector<RawWallTimeSample>* pWallTimeCollector,
         ICollector<RawCpuSample>* pCpuTimeCollector,
-        MetricsRegistry& metricsRegistry,
-        CallstackPool* callstackPool
+        MetricsRegistry& metricsRegistry
         );
     ~StackSamplerLoop();
     StackSamplerLoop(StackSamplerLoop const&) = delete;
@@ -99,7 +97,6 @@ private:
     std::shared_ptr<MeanMaxMetric> _walltimeDurationMetric;
     std::shared_ptr<MeanMaxMetric> _cpuDurationMetric;
     bool _isStopped;
-    CallstackPool* _callstackPool;
 
 private:
     void MainLoop();

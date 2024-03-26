@@ -440,6 +440,9 @@
     <ClInclude Include="CallstackPool.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
+    <ClInclude Include="CallstackPoolManager.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -659,6 +662,9 @@
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
     <ClCompile Include="CallstackPool.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="CallstackPoolManager.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
   </ItemGroup>

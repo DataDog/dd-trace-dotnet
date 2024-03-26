@@ -239,6 +239,4 @@ private:
     std::shared_ptr<CounterMetric> _deadlockCountMetric;
 
     bool _isStopped = false;
-
-    CallstackPool* _callstackPool;
 };

@@ -13,11 +13,12 @@
 
 class IConfiguration;
 class CallstackPool;
+class CallstackPool;
 
 class StackFramesCollectorBase
 {
 protected:
-    StackFramesCollectorBase(IConfiguration const * _configuration);
+    StackFramesCollectorBase(IConfiguration const * _configuration, CallstackPool* callstackPool);
 
     bool TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
     bool AddFrame(std::uintptr_t ip);
@@ -46,13 +47,14 @@ public:
     virtual void OnDeadlock();
 
     void RequestAbortCurrentCollection();
-    void PrepareForNextCollection(CallstackPool* callstackPool);
+    void PrepareForNextCollection();
     bool SuspendTargetThread(ManagedThreadInfo* pThreadInfo, bool* pIsTargetThreadSuspended);
     void ResumeTargetThreadIfRequired(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR);
     StackSnapshotResultBuffer* CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR);
 
 protected:
     ManagedThreadInfo* _pCurrentCollectionThreadInfo;
+    CallstackPool* _callstackPool;
 
 private:
     std::unique_ptr<StackSnapshotResultBuffer> _pStackSnapshotResult;

@@ -32,7 +32,10 @@ Callstack::~Callstack()
     }
 }
 
-Callstack::Callstack(Callstack&& other) noexcept
+Callstack::Callstack(Callstack&& other) noexcept :
+    _pool{nullptr},
+    _buffer{},
+    _count{0}
 {
     *this = std::move(other);
 }
@@ -44,9 +47,9 @@ Callstack& Callstack::operator=(Callstack&& other) noexcept
         return *this;
     }
 
-    std::exchange(_pool, other._pool);
-    std::exchange(_buffer, other._buffer);
-    std::exchange(_count, other._count);
+    std::swap(_pool, other._pool);
+    std::swap(_buffer, other._buffer);
+    std::swap(_count, other._count);
 
     return *this;
 }
@@ -70,12 +73,12 @@ void Callstack::SetCount(std::size_t count)
     _count = count;
 }
 
-std::size_t Callstack::size() const
+std::size_t Callstack::Size() const
 {
     return _count;
 }
 
-std::size_t Callstack::capacity() const
+std::size_t Callstack::Capacity() const
 {
     return _buffer.size();
 }

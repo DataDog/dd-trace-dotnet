@@ -28,6 +28,8 @@
 #include <tlhelp32.h>
 #include <windows.h>
 
+class CallstackPool;
+
 namespace OsSpecificApi {
 
 // if a system message was not found for the last error code the message will contain GetLastError between ()
@@ -64,14 +66,14 @@ std::pair<DWORD, std::string> GetLastErrorMessage()
     return std::make_pair(errorCode, message);
 }
 
-std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
+std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration, CallstackPool* callstackPool)
 {
 #ifdef BIT64
     static_assert(8 * sizeof(void*) == 64);
-    return std::make_unique<Windows64BitStackFramesCollector>(pCorProfilerInfo, pConfiguration);
+    return std::make_unique<Windows64BitStackFramesCollector>(pCorProfilerInfo, pConfiguration, callstackPool);
 #else
     assert(8 * sizeof(void*) == 32);
-    return std::make_unique<Windows32BitStackFramesCollector>(pCorProfilerInfo, pConfiguration);
+    return std::make_unique<Windows32BitStackFramesCollector>(pCorProfilerInfo, pConfiguration, callstackPool);
 #endif
 }
 

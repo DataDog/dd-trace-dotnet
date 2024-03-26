@@ -5,40 +5,56 @@
 
 #include "Callstack.h"
 
-#include <memory>
+#include "shared/src/native-src/string.h"
+#include "shared/src/native-src/util.h"
+
 #include <atomic>
+#include <memory>
 
 class CallstackPool
 {
 public:
-    CallstackPool(std::size_t nbPools);
+    CallstackPool(std::size_t nbCallstacks);
+
+    ~CallstackPool() = default;
 
     Callstack Get();
 
+    CallstackPool(CallstackPool const&) = delete;
+    CallstackPool& operator=(CallstackPool const&) = delete;
+
+    CallstackPool(CallstackPool&& other) noexcept;
+    CallstackPool& operator=(CallstackPool&& other) noexcept;
+
 private:
-
-    static constexpr std::uint8_t MaxRetry = 3;
-
-    friend Callstack;
-
-    shared::span<std::uintptr_t> Acquire();
-    void Release(shared::span<std::uintptr_t> buffer);
-
-    constexpr std::size_t GetPoolAlignedPoolSize();
-
-    struct PoolHeader
+    struct CallstackHeader
     {
-        // TODO create an aligned version of this struct
-        std::atomic<std::uint64_t> _lock;
+        std::atomic<std::uint8_t> _lock;
     };
 
-    struct Pool
+    struct CallstackLayout
     {
-        PoolHeader _header;
+        CallstackHeader _header;
         std::uintptr_t _frames[Callstack::MaxFrames];
     };
 
-    std::size_t _nbPools;
-    std::unique_ptr<std::uint8_t[]> _pools;
+    friend Callstack;
+    shared::span<std::uintptr_t> Acquire();
+    void Release(shared::span<std::uintptr_t> buffer);
+
+    template <typename T>
+    static constexpr std::size_t ComputeAlignedSize()
+    {
+        constexpr auto x = sizeof(T);
+        constexpr std::size_t bufferAlignement = 8;
+
+        constexpr auto value = ((x - 1) | (bufferAlignement - 1)) + 1;
+        return value;
+    }
+
+    static constexpr std::uint8_t MaxRetry = 3;
+
+    std::size_t _nbCallstacks;
+    std::unique_ptr<std::uint8_t[]> _callstacks;
     std::atomic<std::uint64_t> _current;
 };

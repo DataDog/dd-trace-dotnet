@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "CallstackPool.h"
 #include "OpSysTools.h"
 #include "ScopeFinalizer.h"
 
@@ -55,9 +56,12 @@ std::pair<DWORD, std::string> GetLastErrorMessage()
 }
 
 
-std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
+std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
+    ICorProfilerInfo4* pCorProfilerInfo,
+    IConfiguration const* const pConfiguration,
+    CallstackPool* callstackPool)
 {
-    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration);
+    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration, callstackPool);
 }
 
 // https://linux.die.net/man/5/proc

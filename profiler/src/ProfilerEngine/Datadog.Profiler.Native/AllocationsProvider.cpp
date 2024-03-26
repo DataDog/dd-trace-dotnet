@@ -20,7 +20,6 @@
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
-
 std::vector<SampleValueType> AllocationsProvider::SampleTypeDefinitions(
     {
         {"alloc-samples", "count"},
@@ -105,8 +104,8 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     std::shared_ptr<ManagedThreadInfo> threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
-    pStackFramesCollector->PrepareForNextCollection(_callstackPool);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, _callstackPool);
+    pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);

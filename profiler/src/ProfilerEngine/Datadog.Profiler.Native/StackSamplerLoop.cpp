@@ -44,8 +44,7 @@ StackSamplerLoop::StackSamplerLoop(
     IManagedThreadList* pCodeHotspotThreadList,
     ICollector<RawWallTimeSample>* pWallTimeCollector,
     ICollector<RawCpuSample>* pCpuTimeCollector,
-    MetricsRegistry& metricsRegistry,
-    CallstackPool* callstackPool)
+    MetricsRegistry& metricsRegistry)
     :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pStackFramesCollector{pStackFramesCollector},
@@ -68,8 +67,7 @@ StackSamplerLoop::StackSamplerLoop(
     _isWalltimeEnabled{pConfiguration->IsWallTimeProfilingEnabled()},
     _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled()},
     _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()},
-    _isStopped{false},
-    _callstackPool{callstackPool}
+    _isStopped{false}
 {
     _nbCores = OsSpecificApi::GetProcessorCount();
     Log::Info("Processor cores = ", _nbCores);
@@ -432,7 +430,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
         // Prepare the collector for the next iteration. Among other things, this will pre-allocate the memory to store
         // the collected frames info. This is because we cannot allocate memory once a thread is suspended:
         // malloc() uses a lock and so if we susped a thread that was alocating, we will deadlock.
-        _pStackFramesCollector->PrepareForNextCollection(_callstackPool);
+        _pStackFramesCollector->PrepareForNextCollection();
 
 
         // block used to ensure that NotifyIterationFinished gets called
@@ -572,7 +570,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
     PROFILING_TYPE profilingType)
 {
     auto callstack = pSnapshotResult->GetCallstack();
-    if (pSnapshotResult == nullptr || callstack.size() == 0)
+    if (pSnapshotResult == nullptr || callstack.Size() == 0)
     {
         return;
     }

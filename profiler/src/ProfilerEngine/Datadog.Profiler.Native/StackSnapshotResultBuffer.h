@@ -133,7 +133,7 @@ inline std::uint64_t StackSnapshotResultBuffer::SetSpanId(std::uint64_t value)
 
 inline std::size_t StackSnapshotResultBuffer::GetFramesCount() const
 {
-    return _callstack.size();
+    return _callstack.Size();
 }
 
 inline void StackSnapshotResultBuffer::SetFramesCount(std::uint16_t count)

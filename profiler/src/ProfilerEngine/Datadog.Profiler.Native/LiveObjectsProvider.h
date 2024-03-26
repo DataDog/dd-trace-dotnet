@@ -41,8 +41,7 @@ public:
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
-        MetricsRegistry& metricsRegistry,
-        CallstackPool* pool);
+        MetricsRegistry& metricsRegistry);
 
 public:
     // Inherited via IService

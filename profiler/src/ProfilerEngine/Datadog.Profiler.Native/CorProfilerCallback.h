@@ -10,7 +10,7 @@
 
 #include "AllocationsProvider.h"
 #include "ApplicationStore.h"
-#include "CallstackPool.h"
+#include "CallstackPoolManager.h"
 #include "EventPipeEventsManager.h"
 #include "ExceptionsProvider.h"
 #include "IAppDomainStore.h"
@@ -265,9 +265,7 @@ private :
     std::unique_ptr<IMetadataProvider> _pMetadataProvider;
     std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
     bool _isETWStarted = false;
-    std::unique_ptr<CallstackPool> _stackSamplerLoopPool;
-    std::unique_ptr<CallstackPool> _allocationsProviderPool;
-    std::unique_ptr<CallstackPool> _contentionProviderPool;
+    std::unique_ptr<CallstackPoolManager> _callstackPoolManager;
 
 private:
     static void ConfigureDebugLog();

@@ -34,8 +34,7 @@ LiveObjectsProvider::LiveObjectsProvider(
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration,
-    MetricsRegistry& metricsRegistry,
-    CallstackPool* pool)
+    MetricsRegistry& metricsRegistry)
     :
     _pCorProfilerInfo(pCorProfilerInfo),
     _isTimestampsAsLabelEnabled(pConfiguration->IsTimestampsAsLabelEnabled())
@@ -51,7 +50,7 @@ LiveObjectsProvider::LiveObjectsProvider(
         pConfiguration,
         nullptr,
         metricsRegistry,
-        pool);
+        nullptr); // safe to pass nullptr for the pool. This provider does not collect callstack
 }
 
 const char* LiveObjectsProvider::GetName()

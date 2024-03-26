@@ -220,8 +220,8 @@ public:
 #ifndef DD_ALPINE
         const auto& expectedCallstack = _workerThread->GetExpectedCallStack();
 
-        const auto expectedNbFrames = expectedCallstack.size();
-        const auto collectedNbFrames = callstack.size();
+        const auto expectedNbFrames = expectedCallstack.Size();
+        const auto collectedNbFrames = callstack.Size();
 
         EXPECT_GE(expectedNbFrames, 2);
         EXPECT_GE(collectedNbFrames, 2);
@@ -308,7 +308,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    CallstackPool p(1);
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
     threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
@@ -316,8 +317,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
 
-    CallstackPool p(1);
-    collector.PrepareForNextCollection(&p);
+    collector.PrepareForNextCollection();
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 
@@ -333,7 +333,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWith
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(false));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    CallstackPool p(1);
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
     threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
@@ -341,8 +342,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWith
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
 
-    CallstackPool p(1);
-    collector.PrepareForNextCollection(&p);
+    collector.PrepareForNextCollection();
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 
@@ -360,7 +360,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCa
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    CallstackPool p(1);
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
     threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
@@ -368,6 +369,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCa
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
 
+    collector.PrepareForNextCollection();
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, E_FAIL);
     EXPECT_EQ(buffer->GetFramesCount(), 0);
@@ -380,13 +382,15 @@ TEST_F(LinuxStackFramesCollectorFixture, MustNotCollectIfUnknownThreadId)
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    CallstackPool p(1);
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
     threadInfo.SetOsInfo(0, (HANDLE)0);
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
+    collector.PrepareForNextCollection();
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
 
     EXPECT_EQ(hr, E_FAIL);
@@ -401,7 +405,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    CallstackPool p(5);
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     // Validate the profiler is working correctly
     auto threadId = (DWORD)GetWorkerThreadId();
@@ -411,8 +416,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
 
-    CallstackPool p(5);
-    collector.PrepareForNextCollection(&p);
+    collector.PrepareForNextCollection();
 
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
@@ -425,7 +429,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
     InstallHandler();
 
     // The profiler must not work
-    collector.PrepareForNextCollection(&p);
+    collector.PrepareForNextCollection();
     ASSERT_DURATION_LE(3s, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, E_FAIL);
 
@@ -434,7 +438,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
 
     // Reset to validate that the profiler will not call the test handler
     ResetCallbackState();
-    collector.PrepareForNextCollection(&p);
+    collector.PrepareForNextCollection();
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 
@@ -467,7 +471,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    CallstackPool p(1);
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
@@ -476,8 +481,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     threadInfo.SetOsInfo((DWORD)threadId, (HANDLE)0);
 
     // validate it's working
-    CallstackPool p(1);
-    collector.PrepareForNextCollection(&p);
+    collector.PrepareForNextCollection();
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
 
     EXPECT_EQ(hr, S_OK);
@@ -511,7 +515,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    CallstackPool p(1);
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
@@ -520,8 +525,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     threadInfo.SetOsInfo((DWORD)threadId, (HANDLE)0);
 
     // validate it's working
-    CallstackPool p(1);
-    collector.PrepareForNextCollection(&p);
+    collector.PrepareForNextCollection();
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
 
     EXPECT_EQ(hr, S_OK);
@@ -555,7 +559,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    CallstackPool p(1);
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
@@ -565,8 +570,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     threadInfo.SetOsInfo((DWORD)threadId, (HANDLE)0);
 
     // validate it's working
-    CallstackPool p(1);
-    collector.PrepareForNextCollection(&p);
+    collector.PrepareForNextCollection();
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
 
     EXPECT_EQ(hr, S_OK);
@@ -597,7 +601,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckNoCrashIfPreviousHandlerWasMarkedA
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    CallstackPool p(1);
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     EXPECT_EQ(sigaction(SIGUSR1, nullptr, &currentAction), 0) << "Unable to get current action.";
     EXPECT_NE(currentAction.sa_handler, SIG_DFL);
@@ -620,7 +625,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckThatProfilerHandlerAndOtherHandler
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    CallstackPool p(1);
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     // 3rd now point to the profiler handler
     InstallHandler(SA_SIGINFO, true);
@@ -632,8 +638,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckThatProfilerHandlerAndOtherHandler
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
-    CallstackPool p(1);
-    collector.PrepareForNextCollection(&p);
+    collector.PrepareForNextCollection();
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
 
     EXPECT_EQ(hr, S_OK);
@@ -659,7 +664,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckNoCrashIfNoPreviousHandlerInstalle
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    CallstackPool p(1);
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     EXPECT_EQ(sigaction(SIGUSR1, nullptr, &currentAction), 0) << "Unable to get current action.";
     EXPECT_NE(currentAction.sa_handler, SIG_DFL);
@@ -679,7 +685,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
     CallstackPool p(2);
-    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     const auto threadId = GetWorkerThreadId();
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
@@ -688,7 +694,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
     StackSnapshotResultBuffer* buffer;
 
     {
-        collector.PrepareForNextCollection(&p);
+        collector.PrepareForNextCollection();
         // validate it's working
         ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, S_OK);
@@ -701,12 +707,12 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
 
     {
         // profiler handler was replaced, so the signal will be lost and we will return after 2s
-        collector.PrepareForNextCollection(&p);
+        collector.PrepareForNextCollection();
         ASSERT_DURATION_LE(3s, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, E_FAIL);
 
         // At this point, the profiler restored its handler, ensure it's working as expected
-        collector.PrepareForNextCollection(&p);
+        collector.PrepareForNextCollection();
         ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, S_OK);
     }
@@ -717,14 +723,14 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
 
     {
         // profiler handler was replaced, so the signal will be lost and we will return after 2s
-        collector.PrepareForNextCollection(&p);
+        collector.PrepareForNextCollection();
         ASSERT_DURATION_LE(3s, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, E_FAIL);
 
         ResetCallbackState();
 
         // At this point, we stop restoring the profiler signal handler and stop profiling
-        collector.PrepareForNextCollection(&p);
+        collector.PrepareForNextCollection();
         ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, E_FAIL);
     }

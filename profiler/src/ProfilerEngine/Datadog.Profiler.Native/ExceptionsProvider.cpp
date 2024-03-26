@@ -29,7 +29,8 @@ ExceptionsProvider::ExceptionsProvider(
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
-    MetricsRegistry& metricsRegistry)
+    MetricsRegistry& metricsRegistry,
+    CallstackPool* callstackPool)
     :
     CollectorBase<RawExceptionSample>("ExceptionsProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo(pCorProfilerInfo),
@@ -42,11 +43,11 @@ ExceptionsProvider::ExceptionsProvider(
     _exceptionClassId(0),
     _loggedMscorlibError(false),
     _sampler(pConfiguration->ExceptionSampleLimit(), pConfiguration->GetUploadInterval(), true),
-    _pConfiguration(pConfiguration)
+    _pConfiguration(pConfiguration),
+    _callstackPool{callstackPool}
 {
     _exceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_exceptions");
     _sampledExceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_exceptions");
-    _callstackPool = std::make_unique<CallstackPool>(500);
 }
 
 bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)
@@ -141,9 +142,9 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     INVOKE(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
     uint32_t hrCollectStack = E_FAIL;
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, _callstackPool);
 
-    pStackFramesCollector->PrepareForNextCollection(_callstackPool.get());
+    pStackFramesCollector->PrepareForNextCollection();
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
 
     static uint64_t failureCount = 0;

@@ -59,11 +59,10 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _totalDeadlockDetectionsCount{0},
     _metricsSender{metricsSender},
     _statisticsReadyToSend{nullptr},
-    _metricsRegistry{metricsRegistry},
-    _callstackPool{pool}
+    _metricsRegistry{metricsRegistry}
 {
     _pCorProfilerInfo->AddRef();
-    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, pConfiguration);
+    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, pConfiguration, pool);
 
     _currentStatistics = std::make_unique<Statistics>();
     _statisticCollectionStartNs = OpSysTools::GetHighPrecisionNanoseconds();
@@ -125,8 +124,7 @@ void StackSamplerLoopManager::RunStackSampling()
         _pCodeHotspotsThreadList,
         _pWallTimeCollector,
         _pCpuTimeCollector,
-        _metricsRegistry,
-        _callstackPool);
+        _metricsRegistry);
 
     _pStackSamplerLoop->Start();
 }

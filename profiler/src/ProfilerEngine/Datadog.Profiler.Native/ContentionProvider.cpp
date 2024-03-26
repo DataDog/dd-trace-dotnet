@@ -118,8 +118,8 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         std::shared_ptr<ManagedThreadInfo> threadInfo;
         CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
-        const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
-        pStackFramesCollector->PrepareForNextCollection(_callstackPool);
+        const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, _callstackPool);
+        pStackFramesCollector->PrepareForNextCollection();
 
         uint32_t hrCollectStack = E_FAIL;
         const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
@@ -156,7 +156,7 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         // We know that we don't have any span ID nor end point details
 
         rawSample.Timestamp = timestamp;
-        auto end_stack = stack.begin() + std::min(stack.size(), static_cast<std::size_t>(rawSample.Stack.capacity()));
+        auto end_stack = stack.begin() + std::min(stack.size(), static_cast<std::size_t>(rawSample.Stack.Capacity()));
         std::copy(stack.begin(), end_stack, rawSample.Stack.begin());
 
         // we need to create a fake IThreadInfo if there is no thread in ManagedThreadList with the same OS thread id

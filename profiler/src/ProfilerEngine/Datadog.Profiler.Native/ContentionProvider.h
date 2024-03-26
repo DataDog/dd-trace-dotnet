@@ -5,7 +5,6 @@
 
 #include <atomic>
 
-#include "CallstackPool.h"
 #include "CollectorBase.h"
 #include "CounterMetric.h"
 #include "GenericSampler.h"
@@ -18,6 +17,7 @@
 
 #include <memory>
 
+class CallstackPool;
 class IConfiguration;
 class IManagedThreadList;
 class IFrameStore;
@@ -25,7 +25,6 @@ class IThreadsCpuManager;
 class IAppDomainStore;
 class IRuntimeIdStore;
 class SampleValueTypeProvider;
-class CallstackPool;
 
 
 class ContentionProvider :
