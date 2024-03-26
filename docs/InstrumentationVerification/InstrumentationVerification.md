@@ -26,11 +26,22 @@ To run a verification, simply:
 
 
 
-1. Add the environment variable `DD_TRACE_WRITE_INSTRUMENTATION_TO_DISK`, set to “true”.
-2. Run or restart the application we are instrumenting. Observe that as we instrument the app, more and more files will appear under [Datadog Logs Folder]/InstrumentationVerification/{ProcessName}_{ProcessID}_{ProcessCreationTime}
-3. Via command line, run the command: 
+1. Verify that the environment variable `DD_WRITE_INSTRUMENTATION_TO_DISK` is set to “true” (it is "false" by default).
+2. Run your application. Observe that as we instrument the app, more and more files will appear under [Datadog Logs Folder]/InstrumentationVerification/{ProcessName}_{ProcessID}_{ProcessCreationTime}
+3. In order to run the analysis:
+    1. To analyze a running process:
+        Via command line, run the command:
+        `dd-trace analyze-instrumentation [pid]`
+        Or:
+        `dd-trace analyze-instrumentation [process name]` (assuming only one instance is running)
+        
+    2. To analyze a process that is no longer running (crashed/terminated):
+        Via command line, run the command: `dd-trace analyze-instrumentation [process name]`
 
-    Datadog.InstrumentedAssemblyVerification.Standalone.exe [Full path of the folder generated in step 2] 
+    3. Analyze a process by providing a path to the specific `InstrumentationVerification` output directory
+        Via command line, run the command: `dd-trace analyze-instrumentation [full path to the instrumented process directory]`
+
+        **Note:** This option can also support offline analysis if you had copies the folder from another machine - but only if `DD_COPY_ORIGINALS_MODULES_TO_DISK` was set to “true” at runtime
 
 
     Once the command has finished executing, you will find new files under the InstrumentationVerification folder:

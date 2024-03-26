@@ -8,10 +8,14 @@
 #include "cor.h"
 #include "corprof.h"
 
-#include "RefCountingObject.h"
+#include "IThreadInfo.h"
+#include "ScopedHandle.h"
 #include "Semaphore.h"
 #include "shared/src/native-src/string.h"
 
+#include <atomic>
+#include <memory>
+#include <utility>
 
 static constexpr int32_t MinFieldAlignRequirement = 8;
 static constexpr int32_t FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
@@ -24,50 +28,51 @@ public:
     std::uint64_t _currentSpanId;
 };
 
-struct ManagedThreadInfo : public RefCountingObject
+struct ManagedThreadInfo : public IThreadInfo
 {
 private:
     ManagedThreadInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle, shared::WSTRING pThreadName);
-    static std::uint32_t GenerateProfilerThreadInfoId(void);
+    static std::uint32_t GenerateProfilerThreadInfoId();
 
 public:
     explicit ManagedThreadInfo(ThreadID clrThreadId);
-    ~ManagedThreadInfo() override = default;
+    ~ManagedThreadInfo() = default;
 
-    inline std::uint32_t GetProfilerThreadInfoId(void) const;
+    inline std::uint32_t GetProfilerThreadInfoId() const;
 
-    inline ThreadID GetClrThreadId(void) const;
+    inline ThreadID GetClrThreadId() const;
 
-    inline DWORD GetOsThreadId(void) const;
-    inline HANDLE GetOsThreadHandle(void) const;
+    inline DWORD GetOsThreadId() const override;
+    inline HANDLE GetOsThreadHandle() const override;
     inline void SetOsInfo(DWORD osThreadId, HANDLE osThreadHandle);
 
-    inline const shared::WSTRING& GetThreadName(void) const;
+    inline const shared::WSTRING& GetThreadName() const override;
     inline void SetThreadName(shared::WSTRING pThreadName);
 
-    inline std::uint64_t GetLastSampleHighPrecisionTimestampNanoseconds(void) const;
+    inline std::uint64_t GetLastSampleHighPrecisionTimestampNanoseconds() const;
     inline std::uint64_t SetLastSampleHighPrecisionTimestampNanoseconds(std::uint64_t value);
-    inline std::uint64_t GetCpuConsumptionMilliseconds(void) const;
-    inline std::uint64_t SetCpuConsumptionMilliseconds(std::uint64_t value);
+    inline std::uint64_t GetCpuConsumptionMilliseconds() const;
+    inline std::uint64_t SetCpuConsumptionMilliseconds(std::uint64_t value, std::int64_t timestamp);
+    inline std::int64_t GetCpuTimestamp() const;
 
     inline void GetLastKnownSampleUnixTimestamp(std::uint64_t* realUnixTimeUtc, std::int64_t* highPrecisionNanosecsAtLastUnixTimeUpdate) const;
     inline void SetLastKnownSampleUnixTimestamp(std::uint64_t realUnixTimeUtc, std::int64_t highPrecisionNanosecsAtThisUnixTimeUpdate);
 
     inline std::uint64_t GetSnapshotsPerformedSuccessCount() const;
     inline std::uint64_t GetSnapshotsPerformedFailureCount() const;
-    inline std::uint64_t IncSnapshotsPerformedCount(const bool isStackSnapshotSuccessful);
+    inline std::uint64_t IncSnapshotsPerformedCount(bool isStackSnapshotSuccessful);
 
     inline void GetOrResetDeadlocksCount(std::uint64_t deadlocksAggregationPeriodIndex,
                                          std::uint64_t* pPrevCount,
                                          std::uint64_t* pNewCount);
-    inline void IncDeadlocksCount(void);
+    inline void IncDeadlocksCount();
     inline void GetDeadlocksCount(std::uint64_t* deadlockDetectionsTotalCount,
                                   std::uint64_t* deadlockDetectionsInAggregationPeriodCount,
                                   std::uint64_t* usedDeadlockDetectionsAggregationPeriodIndex) const;
 
     inline Semaphore& GetStackWalkLock();
 
-    inline bool IsThreadDestroyed(void);
+    inline bool IsThreadDestroyed();
     inline bool IsDestroyed();
     inline void SetThreadDestroyed();
 
@@ -75,6 +80,20 @@ public:
     inline std::uint64_t GetLocalRootSpanId() const;
     inline std::uint64_t GetSpanId() const;
     inline bool CanReadTraceContext() const;
+    inline bool HasTraceContext() const;
+
+    inline std::string GetProfileThreadId() override;
+    inline std::string GetProfileThreadName() override;
+
+#ifdef LINUX
+    inline void SetSharedMemory(volatile int* memoryArea);
+    inline void MarkAsInterrupted();
+#endif
+    inline bool CanBeInterrupted() const;
+
+private:
+    inline void BuildProfileThreadId();
+    inline void BuildProfileThreadName();
 
 private:
     static constexpr std::uint32_t MaxProfilerThreadInfoId = 0xFFFFFF; // = 16,777,215
@@ -83,11 +102,12 @@ private:
     std::uint32_t _profilerThreadInfoId;
     ThreadID _clrThreadId;
     DWORD _osThreadId;
-    HANDLE _osThreadHandle;
+    ScopedHandle _osThreadHandle;
     shared::WSTRING _pThreadName;
 
     std::uint64_t _lastSampleHighPrecisionTimestampNanoseconds;
     std::uint64_t _cpuConsumptionMilliseconds;
+    std::int64_t _timestamp;
     std::uint64_t _lastKnownSampleUnixTimeUtc;
     std::int64_t _highPrecisionNanosecsAtLastUnixTimeUpdate;
 
@@ -101,26 +121,79 @@ private:
     Semaphore _stackWalkLock;
     bool _isThreadDestroyed;
 
+    TraceContextTrackingInfo _traceContextTrackingInfo;
 
-     TraceContextTrackingInfo _traceContextTrackingInfo;
+    //  strings to be used by samples: avoid allocations when rebuilding them over and over again
+    std::string _profileThreadId;
+    std::string _profileThreadName;
+
+    // Linux only
+    // This is pointer to a shared memory area coming from the Datadog.Linux.ApiWrapper library.
+    // This establishes a simple communication channel between the profiler and this library
+    // to know (for now, maybe more later) if the profiler interrupted a thread which was
+    // doing a syscalls.
+    volatile int* _sharedMemoryArea;
 };
 
-std::uint32_t ManagedThreadInfo::GetProfilerThreadInfoId(void) const
+std::string ManagedThreadInfo::GetProfileThreadId()
+{
+    if (_profileThreadId.empty())
+    {
+        BuildProfileThreadId();
+    }
+
+    return _profileThreadId;
+}
+
+std::string ManagedThreadInfo::GetProfileThreadName()
+{
+    if (_profileThreadName.empty())
+    {
+        BuildProfileThreadName();
+    }
+
+    return _profileThreadName;
+}
+
+inline void ManagedThreadInfo::BuildProfileThreadId()
+{
+    std::stringstream builder;
+    builder << "<" << std::dec << _profilerThreadInfoId << "> [#" << _osThreadId << "]";
+    _profileThreadId = builder.str();
+}
+
+inline void ManagedThreadInfo::BuildProfileThreadName()
+{
+    std::stringstream nameBuilder;
+    if (GetThreadName().empty())
+    {
+        nameBuilder << "Managed thread (name unknown)";
+    }
+    else
+    {
+        nameBuilder << shared::ToString(GetThreadName());
+    }
+    nameBuilder << " [#" << _osThreadId << "]";
+
+    _profileThreadName = nameBuilder.str();
+}
+
+std::uint32_t ManagedThreadInfo::GetProfilerThreadInfoId() const
 {
     return _profilerThreadInfoId;
 }
 
-inline ThreadID ManagedThreadInfo::GetClrThreadId(void) const
+inline ThreadID ManagedThreadInfo::GetClrThreadId() const
 {
     return _clrThreadId;
 }
 
-inline DWORD ManagedThreadInfo::GetOsThreadId(void) const
+inline DWORD ManagedThreadInfo::GetOsThreadId() const
 {
     return _osThreadId;
 }
 
-inline HANDLE ManagedThreadInfo::GetOsThreadHandle(void) const
+inline HANDLE ManagedThreadInfo::GetOsThreadHandle() const
 {
     return _osThreadHandle;
 }
@@ -128,10 +201,12 @@ inline HANDLE ManagedThreadInfo::GetOsThreadHandle(void) const
 inline void ManagedThreadInfo::SetOsInfo(DWORD osThreadId, HANDLE osThreadHandle)
 {
     _osThreadId = osThreadId;
-    _osThreadHandle = osThreadHandle;
+    _osThreadHandle = ScopedHandle(osThreadHandle);
+
+    BuildProfileThreadId();
 }
 
-inline const shared::WSTRING& ManagedThreadInfo::GetThreadName(void) const
+inline const shared::WSTRING& ManagedThreadInfo::GetThreadName() const
 {
     return _pThreadName;
 }
@@ -139,9 +214,10 @@ inline const shared::WSTRING& ManagedThreadInfo::GetThreadName(void) const
 inline void ManagedThreadInfo::SetThreadName(shared::WSTRING pThreadName)
 {
     _pThreadName = std::move(pThreadName);
+    BuildProfileThreadName();
 }
 
-inline std::uint64_t ManagedThreadInfo::GetLastSampleHighPrecisionTimestampNanoseconds(void) const
+inline std::uint64_t ManagedThreadInfo::GetLastSampleHighPrecisionTimestampNanoseconds() const
 {
     return _lastSampleHighPrecisionTimestampNanoseconds;
 }
@@ -153,13 +229,20 @@ inline std::uint64_t ManagedThreadInfo::SetLastSampleHighPrecisionTimestampNanos
     return prevValue;
 }
 
-inline std::uint64_t ManagedThreadInfo::GetCpuConsumptionMilliseconds(void) const
+inline std::uint64_t ManagedThreadInfo::GetCpuConsumptionMilliseconds() const
 {
     return _cpuConsumptionMilliseconds;
 }
 
-inline std::uint64_t ManagedThreadInfo::SetCpuConsumptionMilliseconds(std::uint64_t value)
+inline std::int64_t ManagedThreadInfo::GetCpuTimestamp() const
 {
+    return _timestamp;
+}
+
+inline std::uint64_t ManagedThreadInfo::SetCpuConsumptionMilliseconds(std::uint64_t value, std::int64_t timestamp)
+{
+    _timestamp = timestamp;
+
     std::uint64_t prevValue = _cpuConsumptionMilliseconds;
     _cpuConsumptionMilliseconds = value;
     return prevValue;
@@ -222,7 +305,7 @@ inline void ManagedThreadInfo::GetOrResetDeadlocksCount(
     *pNewCount = _deadlockInPeriodCount;
 }
 
-inline void ManagedThreadInfo::IncDeadlocksCount(void)
+inline void ManagedThreadInfo::IncDeadlocksCount()
 {
     _deadlockTotalCount++;
     _deadlockInPeriodCount++;
@@ -254,7 +337,7 @@ inline Semaphore& ManagedThreadInfo::GetStackWalkLock()
 }
 
 // TODO: this does not seem to be needed
-inline bool ManagedThreadInfo::IsThreadDestroyed(void)
+inline bool ManagedThreadInfo::IsThreadDestroyed()
 {
     SemaphoreScope guardedLock(_stackWalkLock);
     return _isThreadDestroyed;
@@ -298,3 +381,37 @@ inline bool ManagedThreadInfo::CanReadTraceContext() const
     std::atomic_thread_fence(std::memory_order_acquire);
     return canReadTraceContext == 0;
 }
+
+inline bool ManagedThreadInfo::HasTraceContext() const
+{
+    if (CanReadTraceContext())
+    {
+        std::uint64_t localRootSpanId = GetLocalRootSpanId();
+        std::uint64_t spanId = GetSpanId();
+
+        return localRootSpanId != 0 && spanId != 0;
+    }
+    return false;
+}
+
+inline bool ManagedThreadInfo::CanBeInterrupted() const
+{
+    return _sharedMemoryArea == nullptr;
+}
+
+#ifdef LINUX
+// This method is called by the signal handler, when the thread has already been interrupted.
+// There is no race and it's safe to call it there.
+inline void ManagedThreadInfo::MarkAsInterrupted()
+{
+    if (_sharedMemoryArea != nullptr)
+    {
+        *_sharedMemoryArea = 1;
+    }
+}
+
+inline void ManagedThreadInfo::SetSharedMemory(volatile int* memoryArea)
+{
+    _sharedMemoryArea = memoryArea;
+}
+#endif

@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         MethodName = MethodName,
         ReturnTypeName = WebRequestCommon.WebResponseTask,
         MinimumVersion = WebRequestCommon.Major4,
-        MaximumVersion = WebRequestCommon.Major6,
+        MaximumVersion = WebRequestCommon.Major8,
         IntegrationName = WebRequestCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -63,13 +63,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         {
             if (state.Scope != null)
             {
+                Tracer tracer = Tracer.Instance;
                 if (returnValue is HttpWebResponse response)
                 {
-                    Tracer tracer = Tracer.Instance;
                     state.Scope.Span.SetHttpStatusCode((int)response.StatusCode, false, tracer.Settings);
+                    state.Scope.Dispose();
                 }
+                else if (exception is WebException { Status: WebExceptionStatus.ProtocolError, Response: HttpWebResponse exceptionResponse })
+                {
+                    // Add the exception tags without setting the Error property
+                    // SetHttpStatusCode will mark the span with an error if the StatusCode is within the configured range
+                    state.Scope.Span.SetExceptionTags(exception);
 
-                state.Scope.DisposeWithException(exception);
+                    state.Scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, false, tracer.Settings);
+
+                    state.Scope.Dispose();
+                }
+                else
+                {
+                    state.Scope.DisposeWithException(exception);
+                }
             }
 
             return returnValue;

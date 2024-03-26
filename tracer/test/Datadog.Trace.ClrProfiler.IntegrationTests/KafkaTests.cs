@@ -3,10 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -18,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection(nameof(KafkaTestsCollection))]
     [Trait("RequiresDockerDependency", "true")]
-    public class KafkaTests : TestHelper
+    public class KafkaTests : TracingIntegrationTest
     {
         private const int ExpectedSuccessProducerWithHandlerSpans = 20;
         private const int ExpectedSuccessProducerWithoutHandlerSpans = 10;
@@ -39,43 +41,57 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("Kafka", output)
         {
             SetServiceVersion("1.0.0");
-            EnableDebugMode();
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.Kafka
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Tags["span.kind"] switch
+            {
+                SpanKinds.Consumer => span.IsKafkaInbound(metadataSchemaVersion),
+                SpanKinds.Producer => span.IsKafkaOutbound(metadataSchemaVersion),
+                _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the Kafka integration: {span.Tags["span.kind"]}", nameof(span)),
+            };
+
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.Kafka), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
             var topic = $"sample-topic-{TestPrefix}-{packageVersion}".Replace('.', '-');
 
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-kafka" : EnvironmentHelper.FullSampleName;
+
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var processResult = RunSampleAndWaitForExit(agent, arguments: topic, packageVersion: packageVersion);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: topic, packageVersion: packageVersion);
 
             var allSpans = agent.WaitForSpans(TotalExpectedSpanCount, timeoutInMilliseconds: 10_000);
             using var assertionScope = new AssertionScope();
             // We use HaveCountGreaterOrEqualTo because _both_ consumers may handle the message
             // Due to manual/autocommit behaviour
             allSpans.Should().HaveCountGreaterOrEqualTo(TotalExpectedSpanCount);
+            ValidateIntegrationSpans(allSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
-            foreach (var span in allSpans)
-            {
-                var result = span.IsKafka();
-                Assert.True(result.Success, result.ToString());
-            }
+            var outboundOperationName = metadataSchemaVersion == "v0" ? "kafka.produce" : "kafka.send";
+            var inboundOperationName = metadataSchemaVersion == "v0" ? "kafka.consume" : "kafka.process";
 
-            var allProducerSpans = allSpans.Where(x => x.Name == "kafka.produce").ToList();
+            var allProducerSpans = allSpans.Where(x => x.Name == outboundOperationName).ToList();
             var successfulProducerSpans = allProducerSpans.Where(x => x.Error == 0).ToList();
             var errorProducerSpans = allProducerSpans.Where(x => x.Error > 0).ToList();
 
-            var allConsumerSpans = allSpans.Where(x => x.Name == "kafka.consume").ToList();
+            var allConsumerSpans = allSpans.Where(x => x.Name == inboundOperationName).ToList();
             var successfulConsumerSpans = allConsumerSpans.Where(x => x.Error == 0).ToList();
             var errorConsumerSpans = allConsumerSpans.Where(x => x.Error > 0).ToList();
 
-            VerifyProducerSpanProperties(successfulProducerSpans, GetSuccessfulResourceName("Produce", topic), ExpectedSuccessProducerSpans + ExpectedTombstoneProducerSpans);
-            VerifyProducerSpanProperties(errorProducerSpans, ErrorProducerResourceName, ExpectedErrorProducerSpans);
+            VerifyProducerSpanProperties(successfulProducerSpans, serviceName: clientSpanServiceName, resourceName: GetSuccessfulResourceName("Produce", topic), ExpectedSuccessProducerSpans + ExpectedTombstoneProducerSpans);
+            VerifyProducerSpanProperties(errorProducerSpans, serviceName: clientSpanServiceName, resourceName: ErrorProducerResourceName, ExpectedErrorProducerSpans);
 
             // Only successful spans with a delivery handler will have an offset
             successfulProducerSpans
@@ -113,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .OnlyHaveUniqueItems()
                                  .And.Subject.ToImmutableHashSet();
 
-            VerifyConsumerSpanProperties(successfulConsumerSpans, GetSuccessfulResourceName("Consume", topic), ExpectedConsumerSpans);
+            VerifyConsumerSpanProperties(successfulConsumerSpans, serviceName: clientSpanServiceName, resourceName: GetSuccessfulResourceName("Consume", topic), ExpectedConsumerSpans);
 
             // every consumer span should be a child of a producer span.
             successfulConsumerSpans
@@ -154,21 +170,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             telemetry.AssertIntegrationEnabled(IntegrationId.Kafka);
         }
 
-        private void VerifyProducerSpanProperties(List<MockSpan> producerSpans, string resourceName, int expectedCount)
+        private void VerifyProducerSpanProperties(List<MockSpan> producerSpans, string serviceName, string resourceName, int expectedCount)
         {
             producerSpans.Should()
                          .HaveCount(expectedCount)
-                         .And.OnlyContain(x => x.Service == "Samples.Kafka-kafka")
+                         .And.OnlyContain(x => x.Service == serviceName)
                          .And.OnlyContain(x => x.Resource == resourceName)
                          .And.OnlyContain(x => x.Metrics.ContainsKey(Tags.Measured) && x.Metrics[Tags.Measured] == 1.0);
         }
 
-        private void VerifyConsumerSpanProperties(List<MockSpan> consumerSpans, string resourceName, int expectedCount)
+        private void VerifyConsumerSpanProperties(List<MockSpan> consumerSpans, string serviceName, string resourceName, int expectedCount)
         {
             // HaveCountGreaterOrEqualTo because same message may be consumed by both
             consumerSpans.Should()
                          .HaveCountGreaterOrEqualTo(expectedCount)
-                         .And.OnlyContain(x => x.Service == "Samples.Kafka-kafka")
+                         .And.OnlyContain(x => x.Service == serviceName)
                          .And.OnlyContain(x => x.Resource == resourceName)
                          .And.OnlyContain(x => x.Metrics.ContainsKey(Tags.Measured) && x.Metrics[Tags.Measured] == 1.0)
                          .And.OnlyContain(x => x.Metrics.ContainsKey(Metrics.MessageQueueTimeMs))

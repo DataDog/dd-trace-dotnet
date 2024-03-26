@@ -12,9 +12,11 @@ namespace Datadog.Trace.TestHelpers
 {
     public class SerializableDictionary : IXunitSerializable, IEnumerable<KeyValuePair<string, string>>
     {
-        public Dictionary<string, string> Values { get; private set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> Values { get; private set; } = new();
 
         public void Add(string key, string value) => Values.Add(key, value);
+
+        public bool TryGetValue(string key, out string value) => Values.TryGetValue(key, out value);
 
         public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => Values.GetEnumerator();
 
@@ -29,5 +31,7 @@ namespace Datadog.Trace.TestHelpers
         {
             info.AddValue(nameof(Values), JsonConvert.SerializeObject(Values));
         }
+
+        public Dictionary<string, string> ToDictionary() => new(Values);
     }
 }

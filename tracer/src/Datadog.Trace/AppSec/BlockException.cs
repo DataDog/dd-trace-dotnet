@@ -3,29 +3,43 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
+using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.AppSec
 {
-    internal class BlockException : Exception
+    internal class BlockException : CallTargetBubbleUpException
     {
-        internal BlockException()
+        public BlockException(IResult result)
+            : this(result, false)
         {
         }
 
-        internal BlockException(string message)
-            : base(message)
+        public BlockException(IResult result, bool reported = false)
         {
+            Result = result;
+            Reported = reported;
         }
 
-        internal BlockException(string message, Exception inner)
-            : base(message, inner)
-        {
-        }
+        public IResult Result { get; }
 
-        internal BlockException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
-            : base(info, context)
+        public bool Reported { get; }
+
+        internal static BlockException? GetBlockException(Exception? exception)
         {
+            while (exception is not null)
+            {
+                if (exception is BlockException b)
+                {
+                    return b;
+                }
+
+                exception = exception.InnerException;
+            }
+
+            return null;
         }
     }
 }

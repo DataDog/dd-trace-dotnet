@@ -1,0 +1,59 @@
+name: 'Build System-test base images'
+description: 'Builds the system-test docker base images'
+
+inputs:
+  artifacts_path:
+    description: 'The location of the assets to use in the current workflow'
+    required: true
+
+  package_version:
+    description: 'The package version of the assets being used'
+    required: true
+
+  lib_waf_version:
+    description: 'The version of the WAF being used'
+    required: true
+
+  waf_rules_version:
+    description: 'The version of the rules being used'
+    required: true
+
+  github_token:
+    description: 'Github token for pushing images to ghcr.io Docker repository'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Copy tooling files to artifacts path
+      shell: bash
+      run: |
+        echo "OUTPUT ARTIFACT PATH: ${{inputs.artifacts_path}}"
+        cp ./tracer/build/_build/docker/system-tests.dockerfile ${{inputs.artifacts_path}}
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login to Docker
+      shell: bash
+      run: docker login -u publisher -p ${{ inputs.github_token }} ghcr.io
+
+    - name: Docker Build linux-x64 and linux-arm64 images
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot
+        platforms: 'linux/amd64,linux/arm64'
+        context: ${{inputs.artifacts_path}}
+        file: ${{inputs.artifacts_path}}/system-tests.dockerfile
+        build-args: |
+          LINUX_AMD64_PACKAGE=datadog-dotnet-apm-${{inputs.package_version}}.tar.gz
+          LINUX_ARM64_PACKAGE=datadog-dotnet-apm-${{inputs.package_version}}.arm64.tar.gz
+          LIBRARY_VERSION=${{inputs.package_version}}
+          LIBDDWAF_VERSION=${{inputs.lib_waf_version}}
+          APPSEC_EVENT_RULES_VERSION=${{inputs.waf_rules_version}}

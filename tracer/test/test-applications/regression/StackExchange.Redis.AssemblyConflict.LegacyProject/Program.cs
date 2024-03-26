@@ -31,12 +31,13 @@ namespace StackExchange.Redis.AssemblyConflict.LegacyProject
             // This would cause a segmentation fault on .net core 2.x
             System.Threading.Thread.Sleep(5000);
 #endif
+            Console.WriteLine("App completed successfully");
         }
 
         private static async Task RunTest()
         {
             // note: STACKEXCHANGE_REDIS_HOST includes a port, despite its name
-            var configuration = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
+            var configuration = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_SINGLE_HOST") ?? "localhost:6389";
 
             ICache redis = new RedisClient(configuration);
             await RunTest(redis);

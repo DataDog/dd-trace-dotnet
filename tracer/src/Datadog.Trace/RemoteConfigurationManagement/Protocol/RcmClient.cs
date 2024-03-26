@@ -10,13 +10,14 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
     internal class RcmClient
     {
-        public RcmClient(string id, ICollection<string> products, RcmClientTracer clientTracer, RcmClientState state)
+        public RcmClient(string id, ICollection<string> products, RcmClientTracer clientTracer, RcmClientState state, byte[] capabilities)
         {
             Id = id;
             Products = products;
             IsTracer = true;
             ClientTracer = clientTracer;
             State = state;
+            Capabilities = capabilities;
         }
 
         [JsonProperty("state")]
@@ -33,5 +34,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 
         [JsonProperty("client_tracer")]
         public RcmClientTracer ClientTracer { get; }
+
+        [JsonProperty("capabilities")]
+        public byte[] Capabilities { get; }
     }
 }

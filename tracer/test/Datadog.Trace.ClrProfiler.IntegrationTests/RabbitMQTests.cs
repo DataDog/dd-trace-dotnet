@@ -6,30 +6,47 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions.Execution;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [UsesVerify]
     [Trait("RequiresDockerDependency", "true")]
-    public class RabbitMQTests : TestHelper
+    public class RabbitMQTests : TracingIntegrationTest
     {
-        private const string ExpectedServiceName = "Samples.RabbitMQ-rabbitmq";
-
         public RabbitMQTests(ITestOutputHelper output)
             : base("RabbitMQ", output)
         {
             SetServiceVersion("1.0.0");
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.RabbitMQ
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Tags["span.kind"] switch
+            {
+                SpanKinds.Consumer => span.IsRabbitMQInbound(metadataSchemaVersion),
+                SpanKinds.Producer => span.IsRabbitMQOutbound(metadataSchemaVersion),
+                SpanKinds.Client => span.IsRabbitMQAdmin(metadataSchemaVersion),
+                _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the RabbitMQ integration: {span.Tags["span.kind"]}", nameof(span)),
+            };
+
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.RabbitMQ), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces(string packageVersion)
+        public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
         {
 #if NET6_0_OR_GREATER
             if (packageVersion?.StartsWith("3.") == true)
@@ -42,183 +59,95 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var expectedSpanCount = 52;
 
-            int basicPublishCount = 0;
-            int basicGetCount = 0;
-            int basicDeliverCount = 0;
-            int exchangeDeclareCount = 0;
-            int queueDeclareCount = 0;
-            int queueBindCount = 0;
-            var distributedParentSpans = new Dictionary<ulong, int>();
-
-            int emptyBasicGetCount = 0;
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-rabbitmq" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
+                using var assertionScope = new AssertionScope();
                 var spans = agent.WaitForSpans(expectedSpanCount); // Do not filter on operation name because they will vary depending on instrumented method
-                Assert.True(spans.Count >= expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");
 
-                var rabbitmqSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
-                var manualSpans = spans.Where(span => !string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
+                var rabbitmqSpans = spans.Where(span => string.Equals(span.GetTag("component"), "RabbitMQ", StringComparison.OrdinalIgnoreCase));
 
-                foreach (var span in rabbitmqSpans)
-                {
-                    var result = span.IsRabbitMQ();
-                    Assert.True(result.Success, result.ToString());
+                ValidateIntegrationSpans(rabbitmqSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                var settings = VerifyHelper.GetSpanVerifierSettings();
 
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
+                // We generate a new queue name for the "default" queue with each run
+                settings.AddScrubber(QueueScrubber.ReplaceRabbitMqQueues);
+                settings.AddSimpleScrubber("out.host: localhost", "out.host: rabbitmq");
+                settings.AddSimpleScrubber("out.host: rabbitmq_arm64", "out.host: rabbitmq");
+                settings.AddSimpleScrubber("peer.service: localhost", "peer.service: rabbitmq");
+                settings.AddSimpleScrubber("peer.service: rabbitmq_arm64", "peer.service: rabbitmq");
 
-                    var command = span.Tags[Tags.AmqpCommand];
+                var filename = $"{nameof(RabbitMQTests)}.{GetPackageVersionSuffix(packageVersion)}";
 
-                    if (command.StartsWith("basic.", StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (string.Equals(command, "basic.publish", StringComparison.OrdinalIgnoreCase))
-                        {
-                            basicPublishCount++;
-                            Assert.Equal(SpanKinds.Producer, span.Tags[Tags.SpanKind]);
-                            Assert.NotNull(span.Tags[Tags.AmqpExchange]);
-                            Assert.NotNull(span.Tags[Tags.AmqpRoutingKey]);
-
-                            Assert.NotNull(span.Tags["message.size"]);
-                            Assert.True(int.TryParse(span.Tags["message.size"], out _));
-
-                            // Enforce that the resource name has the following structure: "basic.publish [<default>|{actual exchangeName}] -> [<all>|<generated>|{actual routingKey}]"
-                            string regexPattern = @"basic\.publish (?<exchangeName>\S*) -> (?<routingKey>\S*)";
-                            var match = Regex.Match(span.Resource, regexPattern);
-                            Assert.True(match.Success);
-
-                            var exchangeName = match.Groups["exchangeName"].Value;
-                            Assert.True(string.Equals(exchangeName, "<default>") || string.Equals(exchangeName, span.Tags[Tags.AmqpExchange]));
-
-                            var routingKey = match.Groups["routingKey"].Value;
-                            Assert.True(string.Equals(routingKey, "<all>") || string.Equals(routingKey, "<generated>") || string.Equals(routingKey, span.Tags[Tags.AmqpRoutingKey]));
-                        }
-                        else if (string.Equals(command, "basic.get", StringComparison.OrdinalIgnoreCase))
-                        {
-                            basicGetCount++;
-
-                            // Successful responses will have the "message.size" tag
-                            // Empty responses will not
-                            if (span.Tags.TryGetValue("message.size", out string messageSize))
-                            {
-                                Assert.NotNull(span.ParentId);
-                                Assert.True(int.TryParse(messageSize, out _));
-
-                                // Add the parent span ID to a dictionary so we can later assert 1:1 mappings
-                                if (distributedParentSpans.TryGetValue(span.ParentId.Value, out int count))
-                                {
-                                    distributedParentSpans[span.ParentId.Value] = count + 1;
-                                }
-                                else
-                                {
-                                    distributedParentSpans[span.ParentId.Value] = 1;
-                                }
-                            }
-                            else
-                            {
-                                emptyBasicGetCount++;
-                            }
-
-                            Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
-                            Assert.NotNull(span.Tags[Tags.AmqpQueue]);
-
-                            // Enforce that the resource name has the following structure: "basic.get [<generated>|{actual queueName}]"
-                            string regexPattern = @"basic\.get (?<queueName>\S*)";
-                            var match = Regex.Match(span.Resource, regexPattern);
-                            Assert.True(match.Success);
-
-                            var queueName = match.Groups["queueName"].Value;
-                            Assert.True(string.Equals(queueName, "<generated>") || string.Equals(queueName, span.Tags[Tags.AmqpQueue]));
-                        }
-                        else if (string.Equals(command, "basic.deliver", StringComparison.OrdinalIgnoreCase))
-                        {
-                            basicDeliverCount++;
-                            Assert.NotNull(span.ParentId);
-
-                            // Add the parent span ID to a dictionary so we can later assert 1:1 mappings
-                            if (distributedParentSpans.TryGetValue(span.ParentId.Value, out int count))
-                            {
-                                distributedParentSpans[span.ParentId.Value] = count + 1;
-                            }
-                            else
-                            {
-                                distributedParentSpans[span.ParentId.Value] = 1;
-                            }
-
-                            Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
-                            // Assert.NotNull(span.Tags[Tags.AmqpQueue]); // Java does this but we're having difficulty doing this. Push to v2?
-                            Assert.NotNull(span.Tags[Tags.AmqpExchange]);
-                            Assert.NotNull(span.Tags[Tags.AmqpRoutingKey]);
-
-                            Assert.NotNull(span.Tags["message.size"]);
-                            Assert.True(int.TryParse(span.Tags["message.size"], out _));
-
-                            // Enforce that the resource name has the following structure: "basic.deliver [<generated>|{actual queueName}]"
-                            string regexPattern = @"basic\.deliver (?<queueName>\S*)";
-                            var match = Regex.Match(span.Resource, regexPattern);
-                            // Assert.True(match.Success); // Enable once we can get the queue name included
-
-                            var queueName = match.Groups["queueName"].Value;
-                            // Assert.True(string.Equals(queueName, "<generated>") || string.Equals(queueName, span.Tags[Tags.AmqpQueue])); // Enable once we can get the queue name included
-                        }
-                        else
-                        {
-                            throw new Xunit.Sdk.XunitException($"amqp.command {command} not recognized.");
-                        }
-                    }
-                    else
-                    {
-                        Assert.Equal(SpanKinds.Client, span.Tags[Tags.SpanKind]);
-                        Assert.Equal(command, span.Resource);
-
-                        if (string.Equals(command, "exchange.declare", StringComparison.OrdinalIgnoreCase))
-                        {
-                            exchangeDeclareCount++;
-                            Assert.NotNull(span.Tags[Tags.AmqpExchange]);
-                        }
-                        else if (string.Equals(command, "queue.declare", StringComparison.OrdinalIgnoreCase))
-                        {
-                            queueDeclareCount++;
-                            Assert.NotNull(span.Tags[Tags.AmqpQueue]);
-                        }
-                        else if (string.Equals(command, "queue.bind", StringComparison.OrdinalIgnoreCase))
-                        {
-                            queueBindCount++;
-                            Assert.NotNull(span.Tags[Tags.AmqpExchange]);
-                            Assert.NotNull(span.Tags[Tags.AmqpQueue]);
-                            Assert.NotNull(span.Tags[Tags.AmqpRoutingKey]);
-                        }
-                        else
-                        {
-                            throw new Xunit.Sdk.XunitException($"amqp.command {command} not recognized.");
-                        }
-                    }
-                }
-
-                foreach (var span in manualSpans)
-                {
-                    Assert.Equal("Samples.RabbitMQ", span.Service);
-                    Assert.Equal("1.0.0", span.Tags[Tags.Version]);
-                    Assert.True(rabbitmqSpans.Count(s => s.TraceId == span.TraceId) > 0);
-                }
+                // Default sorting isn't very reliable, so use our own (adds in name and resource)
+                await VerifyHelper.VerifySpans(
+                                       spans,
+                                       settings,
+                                       s => s
+                                           .OrderBy(x => VerifyHelper.GetRootSpanResourceName(x, spans))
+                                           .ThenBy(x => VerifyHelper.GetSpanDepth(x, spans))
+                                           .ThenBy(x => x.Name)
+                                           .ThenBy(x => x.Resource)
+                                           .ThenBy(x => x.Start)
+                                           .ThenBy(x => x.Duration))
+                                  .UseFileName(filename + $".Schema{metadataSchemaVersion.ToUpper()}")
+                                  .DisableRequireUniquePrefix();
             }
 
-            // Assert that all empty get results are expected
-            Assert.Equal(4, emptyBasicGetCount);
-
-            // Assert that each span that started a distributed trace (basic.publish)
-            // has only one child span (basic.deliver or basic.get)
-            Assert.All(distributedParentSpans, kvp => Assert.Equal(1, kvp.Value));
-
-            Assert.Equal(10, basicPublishCount);
-            Assert.Equal(8, basicGetCount);
-            Assert.Equal(6, basicDeliverCount);
-
-            Assert.Equal(2, exchangeDeclareCount);
-            Assert.Equal(2, queueBindCount);
-            Assert.Equal(8, queueDeclareCount);
             telemetry.AssertIntegrationEnabled(IntegrationId.RabbitMQ);
+        }
+
+        private string GetPackageVersionSuffix(string packageVersion)
+            => packageVersion switch
+            {
+                null or "" => "6_x", // the default version in the csproj
+                _ when new Version(packageVersion) >= new Version("6.0.0") => "6_x",
+                _ when new Version(packageVersion) >= new Version("5.0.0") => "5_x",
+                _ => "3_x",
+            };
+
+        private class QueueScrubber
+        {
+            private static readonly Regex Regex = new(@"amq\.gen\-.*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+            public static void ReplaceRabbitMqQueues(StringBuilder builder)
+            {
+                if (!TryReplaceRabbitMqQueue(builder.ToString(), out var result))
+                {
+                    return;
+                }
+
+                builder.Clear();
+                builder.Append(result);
+            }
+
+            private static bool TryReplaceRabbitMqQueue(string value, out string result)
+            {
+                var queues = Regex.Matches(value);
+                var index = 0;
+                if (queues.Count > 0)
+                {
+                    result = value;
+                    foreach (Match queueMatch in queues)
+                    {
+                        var queue = queueMatch!.Value;
+                        index++;
+                        var convertedQueue = $"AmqQueue_{index}";
+
+                        result = result.Replace(queue, convertedQueue);
+                    }
+
+                    return true;
+                }
+
+                result = null;
+                return false;
+            }
         }
     }
 }

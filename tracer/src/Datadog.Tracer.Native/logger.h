@@ -68,9 +68,9 @@ public:
         Instance->Critical(args...);
     }
 
-    static void EnableDebug()
+    static void EnableDebug(bool enable)
     {
-        Instance->EnableDebug();
+        Instance->EnableDebug(enable);
     }
 
     static bool IsDebugEnabled()

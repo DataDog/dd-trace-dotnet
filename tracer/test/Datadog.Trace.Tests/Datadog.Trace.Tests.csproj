@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,8 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AgileObjects.ReadableExpressions" Version="3.3.0" />
     <PackageReference Include="log4net" Version="2.0.12" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="NLog" Version="4.5.11" />
     <PackageReference Include="Serilog" Version="2.5.0" />
     <PackageReference Include="Serilog.Sinks.Observable" Version="2.0.1" />
@@ -27,11 +29,6 @@
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\..\src\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-
-    <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
@@ -56,7 +53,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Telemetry\telemetry_data.json" />
-    <EmbeddedResource Include="Telemetry\telemetry_data.json" />
+    <None Remove="Telemetry\config_norm_rules.json" />
+    <None Remove="Telemetry\config_prefix_block_list.json" />
+    <EmbeddedResource Include="Telemetry\config_norm_rules.json" />
+    <EmbeddedResource Include="Telemetry\config_prefix_block_list.json" />
+    <None Remove="Telemetry\telemetry_*.json" />
+    <EmbeddedResource Include="Telemetry\telemetry_*.json" />
+    <None Remove="Telemetry\Metrics\*.json" />
+    <EmbeddedResource Include="Telemetry\Metrics\*.json" />
   </ItemGroup>
 </Project>

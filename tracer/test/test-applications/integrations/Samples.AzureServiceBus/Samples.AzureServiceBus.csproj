@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">7.13.0</ApiVersion>
+
+    <!-- System.Runtime.CompilerServices.Unsafe doesn't support netcoreapp2.1-->
+    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/-->
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="$(ApiVersion)" />
+    <PackageReference Include="OpenTelemetry" Version="1.4.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.4.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.4.0" />
+  </ItemGroup>
+
+</Project>

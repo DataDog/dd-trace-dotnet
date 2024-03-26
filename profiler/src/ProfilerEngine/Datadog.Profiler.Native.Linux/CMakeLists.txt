@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Profiler.Native.Linux" VERSION 2.15.0)
+project("Datadog.Profiler.Native.Linux" VERSION 2.50.0)
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
@@ -15,16 +15,20 @@ message(STATUS "Run Clang Undefined-Behavior Sanitizer: " ${RUN_UBSAN})
 # ******************************************************
 
 # Sets compiler options
-add_compile_options(-std=c++17 -fPIC -fms-extensions)
+add_compile_options(-std=c++20 -fPIC -fms-extensions -g)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 
+if (IS_ALPINE)
+    add_compile_options(-DDD_ALPINE)
+endif()
+
 if (RUN_ASAN)
-    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
+    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer -DDD_SANITIZERS)
 endif()
 
 if (RUN_UBSAN)
-    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all)
+    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all -DDD_SANITIZERS)
 endif()
 
 if(ISLINUX)
@@ -79,23 +83,15 @@ add_library(${PROFILER_STATIC_LIB_NAME} STATIC
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
-    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
-    ${GENERATED_OBJ_FILES}
 )
 
 set_target_properties(${PROFILER_STATIC_LIB_NAME} PROPERTIES PREFIX "")
 
 # Define directories includes
 target_include_directories(${PROFILER_STATIC_LIB_NAME}
-        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Datadog.Profiler.Native
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc/rt
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/inc
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/inc
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
-        PUBLIC ${FMT_INCLUDE}
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}
-        PUBLIC ${LIBDATADOG_INCLUDE_DIR}
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Datadog.Profiler.Native.Linux
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Datadog.Profiler.Native
+    PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}
 )
 
 # Define linker libraries
@@ -112,28 +108,37 @@ if (NOT RUN_ASAN AND NOT RUN_UBSAN)
     target_link_libraries(${PROFILER_STATIC_LIB_NAME} -Wl,--no-undefined)
 endif()
 
+target_compile_definitions(${PROFILER_STATIC_LIB_NAME} PUBLIC "-D_GLIBCXX_USE_CXX11_ABI=0")
+
 target_link_libraries(${PROFILER_STATIC_LIB_NAME}
-    fmt-lib
     libunwind-lib
     libdatadog-lib
+    coreclr
+    PPDB
+    spdlog-headers
     -static-libgcc
     -static-libstdc++
     -lstdc++fs
     -pthread
     -ldl
+    -Wl,--build-id
 )
 
-add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt libdatadog-lib libunwind-lib)
+add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)
 
 # ******************************************************
 # Define shared target
 # ******************************************************
+set(dd_profiling_linker_script "${CMAKE_CURRENT_SOURCE_DIR}/datadog_profiling.version")
 
 add_library(${PROFILER_SHARED_LIB_NAME} SHARED
     ../Datadog.Profiler.Native/DllMain.cpp
 )
 
 set_target_properties(${PROFILER_SHARED_LIB_NAME} PROPERTIES PREFIX "")
+set_target_properties(${PROFILER_SHARED_LIB_NAME} PROPERTIES LINK_DEPENDS "${dd_profiling_linker_script}")
+target_link_options(${PROFILER_SHARED_LIB_NAME} PRIVATE
+                    "LINKER:--version-script=${dd_profiling_linker_script}")
 
 # Define linker libraries
 target_link_libraries(${PROFILER_SHARED_LIB_NAME}

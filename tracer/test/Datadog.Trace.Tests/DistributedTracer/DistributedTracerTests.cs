@@ -30,11 +30,11 @@ namespace Datadog.Trace.Tests.DistributedTracer
             ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(distributedTracer.Object);
 
             using var parentScope = Tracer.Instance.StartActive("Parent");
-
             using var scope = (Scope)Tracer.Instance.StartActive("Test");
 
             distributedTracer.Verify(t => t.GetSpanContext(), Times.Exactly(2));
-            scope.Span.TraceId.Should().Be(spanContext.TraceId);
+            scope.Span.TraceId128.Should().Be(spanContext.TraceId128);
+            ((ISpan)scope.Span).TraceId.Should().Be(spanContext.TraceId);
             scope.Span.Context.TraceContext.SamplingPriority.Should().Be(spanContext.SamplingPriority);
         }
 

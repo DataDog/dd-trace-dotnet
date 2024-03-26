@@ -31,8 +31,8 @@ public:
         CORJIT_FLAG_DEBUG_CODE              = 2, // generate "debuggable" code (no code-mangling optimizations)
         CORJIT_FLAG_DEBUG_EnC               = 3, // We are in Edit-n-Continue mode
         CORJIT_FLAG_DEBUG_INFO              = 4, // generate line and local-var info
-        CORJIT_FLAG_MIN_OPT                 = 5, // disable all jit optimizations (not necesarily debuggable code)
-        CORJIT_FLAG_GCPOLL_CALLS            = 6, // Emit calls to JIT_POLLGC for thread suspension.
+        CORJIT_FLAG_MIN_OPT                 = 5, // disable all jit optimizations (not necessarily debuggable code)
+        CORJIT_FLAG_ENABLE_CFG              = 6, // generate control-flow guard checks
         CORJIT_FLAG_MCJIT_BACKGROUND        = 7, // Calling from multicore JIT background thread, do not call JitComplete
 
     #if defined(TARGET_X86)
@@ -44,31 +44,25 @@ public:
 
     #else // !defined(TARGET_X86)
 
-        CORJIT_FLAG_UNUSED1                 = 8,
-        CORJIT_FLAG_UNUSED2                 = 9,
-        CORJIT_FLAG_UNUSED3                 = 10,
-        CORJIT_FLAG_UNUSED4                 = 11,
-        CORJIT_FLAG_UNUSED5                 = 12,
+        CORJIT_FLAG_UNUSED2                 = 8,
+        CORJIT_FLAG_UNUSED3                 = 9,
+        CORJIT_FLAG_UNUSED4                 = 10,
+        CORJIT_FLAG_UNUSED5                 = 11,
+        CORJIT_FLAG_UNUSED6                 = 12,
 
     #endif // !defined(TARGET_X86)
 
         CORJIT_FLAG_OSR                     = 13, // Generate alternate method for On Stack Replacement
 
-        CORJIT_FLAG_UNUSED7                 = 14,
+        CORJIT_FLAG_ALT_JIT                 = 14, // JIT should consider itself an ALT_JIT
         CORJIT_FLAG_UNUSED8                 = 15,
         CORJIT_FLAG_UNUSED9                 = 16,
-
-
-    #if defined(TARGET_X86) || defined(TARGET_AMD64) || defined(TARGET_ARM64)
-        CORJIT_FLAG_FEATURE_SIMD            = 17,
-    #else
         CORJIT_FLAG_UNUSED10                = 17,
-    #endif // !(defined(TARGET_X86) || defined(TARGET_AMD64) || defined(TARGET_ARM64))
 
         CORJIT_FLAG_MAKEFINALCODE           = 18, // Use the final code generator, i.e., not the interpreter.
         CORJIT_FLAG_READYTORUN              = 19, // Use version-resilient code generation
         CORJIT_FLAG_PROF_ENTERLEAVE         = 20, // Instrument prologues/epilogues
-        CORJIT_FLAG_PROF_REJIT_NOPS         = 21, // Insert NOPs to ensure code is re-jitable
+        CORJIT_FLAG_UNUSED11                = 21,
         CORJIT_FLAG_PROF_NO_PINVOKE_INLINE  = 22, // Disables PInvoke inlining
         CORJIT_FLAG_SKIP_VERIFICATION       = 23, // (lazy) skip verification - determined without doing a full resolve. See comment below
         CORJIT_FLAG_PREJIT                  = 24, // jit or prejit is the execution engine.
@@ -79,45 +73,50 @@ public:
         CORJIT_FLAG_BBINSTR                 = 29, // Collect basic block profile information
         CORJIT_FLAG_BBOPT                   = 30, // Optimize method based on profile information
         CORJIT_FLAG_FRAMED                  = 31, // All methods have an EBP frame
-        CORJIT_FLAG_ALIGN_LOOPS             = 32, // add NOPs before loops to align them at 16 byte boundaries
+        CORJIT_FLAG_UNUSED12                = 32,
         CORJIT_FLAG_PUBLISH_SECRET_PARAM    = 33, // JIT must place stub secret param into local 0.  (used by IL stubs)
-        CORJIT_FLAG_GCPOLL_INLINE           = 34, // JIT must inline calls to GCPoll when possible
+        CORJIT_FLAG_UNUSED13                = 34,
         CORJIT_FLAG_SAMPLING_JIT_BACKGROUND = 35, // JIT is being invoked as a result of stack sampling for hot methods in the background
         CORJIT_FLAG_USE_PINVOKE_HELPERS     = 36, // The JIT should use the PINVOKE_{BEGIN,END} helpers instead of emitting inline transitions
         CORJIT_FLAG_REVERSE_PINVOKE         = 37, // The JIT should insert REVERSE_PINVOKE_{ENTER,EXIT} helpers into method prolog/epilog
-        // CORJIT_FLAG_UNUSED               = 38,
+        CORJIT_FLAG_TRACK_TRANSITIONS       = 38, // The JIT should insert the REVERSE_PINVOKE helper variants that track transitions.
         CORJIT_FLAG_TIER0                   = 39, // This is the initial tier for tiered compilation which should generate code as quickly as possible
         CORJIT_FLAG_TIER1                   = 40, // This is the final tier (for now) for tiered compilation which should generate high quality code
 
 #if defined(TARGET_ARM)
         CORJIT_FLAG_RELATIVE_CODE_RELOCS    = 41, // JIT should generate PC-relative address computations instead of EE relocation records
 #else // !defined(TARGET_ARM)
-        CORJIT_FLAG_UNUSED11                = 41,
+        CORJIT_FLAG_UNUSED15                = 41,
 #endif // !defined(TARGET_ARM)
 
         CORJIT_FLAG_NO_INLINING             = 42, // JIT should not inline any called method into this method
 
-        CORJIT_FLAG_UNUSED12                = 43,
-        CORJIT_FLAG_UNUSED13                = 44,
-        CORJIT_FLAG_UNUSED14                = 45,
-        CORJIT_FLAG_UNUSED15                = 46,
-        CORJIT_FLAG_UNUSED16                = 47,
-        CORJIT_FLAG_UNUSED17                = 48,
-        CORJIT_FLAG_UNUSED18                = 49,
-        CORJIT_FLAG_UNUSED19                = 50,
-        CORJIT_FLAG_UNUSED20                = 51,
-        CORJIT_FLAG_UNUSED21                = 52,
-        CORJIT_FLAG_UNUSED22                = 53,
-        CORJIT_FLAG_UNUSED23                = 54,
-        CORJIT_FLAG_UNUSED24                = 55,
-        CORJIT_FLAG_UNUSED25                = 56,
-        CORJIT_FLAG_UNUSED26                = 57,
-        CORJIT_FLAG_UNUSED27                = 58,
-        CORJIT_FLAG_UNUSED28                = 59,
-        CORJIT_FLAG_UNUSED29                = 60,
-        CORJIT_FLAG_UNUSED30                = 61,
-        CORJIT_FLAG_UNUSED31                = 62,
-        CORJIT_FLAG_UNUSED32                = 63
+#if defined(TARGET_ARM)
+        CORJIT_FLAG_SOFTFP_ABI              = 43, // JIT should generate PC-relative address computations instead of EE relocation records
+#else // !defined(TARGET_ARM)
+        CORJIT_FLAG_UNUSED16                = 43,
+#endif // !defined(TARGET_ARM)
+
+        CORJIT_FLAG_UNUSED17                = 44,
+        CORJIT_FLAG_UNUSED18                = 45,
+        CORJIT_FLAG_UNUSED19                = 46,
+        CORJIT_FLAG_UNUSED20                = 47,
+        CORJIT_FLAG_UNUSED21                = 48,
+        CORJIT_FLAG_UNUSED22                = 49,
+        CORJIT_FLAG_UNUSED23                = 50,
+        CORJIT_FLAG_UNUSED24                = 51,
+        CORJIT_FLAG_UNUSED25                = 52,
+        CORJIT_FLAG_UNUSED26                = 53,
+        CORJIT_FLAG_UNUSED27                = 54,
+        CORJIT_FLAG_UNUSED28                = 55,
+        CORJIT_FLAG_UNUSED29                = 56,
+        CORJIT_FLAG_UNUSED30                = 57,
+        CORJIT_FLAG_UNUSED31                = 58,
+        CORJIT_FLAG_UNUSED32                = 59,
+        CORJIT_FLAG_UNUSED33                = 60,
+        CORJIT_FLAG_UNUSED34                = 61,
+        CORJIT_FLAG_UNUSED35                = 62,
+        CORJIT_FLAG_UNUSED36                = 63
     };
 
     CORJIT_FLAGS()
@@ -167,17 +166,17 @@ public:
 
     void Set(CorJitFlag flag)
     {
-        corJitFlags |= 1ULL << (unsigned __int64)flag;
+        corJitFlags |= 1ULL << (uint64_t)flag;
     }
 
     void Clear(CorJitFlag flag)
     {
-        corJitFlags &= ~(1ULL << (unsigned __int64)flag);
+        corJitFlags &= ~(1ULL << (uint64_t)flag);
     }
 
     bool IsSet(CorJitFlag flag) const
     {
-        return (corJitFlags & (1ULL << (unsigned __int64)flag)) != 0;
+        return (corJitFlags & (1ULL << (uint64_t)flag)) != 0;
     }
 
     void Add(const CORJIT_FLAGS& other)
@@ -197,20 +196,20 @@ public:
     }
 
     // DO NOT USE THIS FUNCTION! (except in very restricted special cases)
-    unsigned __int64 GetFlagsRaw()
+    uint64_t GetFlagsRaw()
     {
         return corJitFlags;
     }
 
     // DO NOT USE THIS FUNCTION! (except in very restricted special cases)
-    unsigned __int64 GetInstructionSetFlagsRaw()
+    uint64_t GetInstructionSetFlagsRaw()
     {
         return instructionSetFlags.GetFlagsRaw();
     }
 
 private:
 
-    unsigned __int64 corJitFlags;
+    uint64_t corJitFlags;
     CORINFO_InstructionSetFlags instructionSetFlags;
 };
 

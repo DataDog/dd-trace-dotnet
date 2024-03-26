@@ -1,0 +1,85 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "lastName": {
+                "type": "String",
+                "value": "Run"
+              },
+              "this": {
+                "fields": {
+                  "_privateField": {
+                    "type": "String",
+                    "value": "IRun"
+                  }
+                },
+                "type": "SimpleMethodWithLocalsAndArgsTest",
+                "value": "SimpleMethodWithLocalsAndArgsTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "lastName": {
+                "type": "String",
+                "value": "Run"
+              },
+              "this": {
+                "fields": {
+                  "_privateField": {
+                    "type": "String",
+                    "value": "IRun"
+                  }
+                },
+                "type": "SimpleMethodWithLocalsAndArgsTest",
+                "value": "SimpleMethodWithLocalsAndArgsTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "String",
+                "value": "Run01234567891011121314_Run_IRun"
+              },
+              "biggerName": {
+                "type": "String",
+                "value": "Run01234567891011121314"
+              },
+              "i": {
+                "type": "Int32",
+                "value": "15"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.SimpleMethodWithLocalsAndArgsTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.SimpleMethodWithLocalsAndArgsTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

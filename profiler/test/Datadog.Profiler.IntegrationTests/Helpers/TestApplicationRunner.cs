@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using Xunit;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
@@ -38,7 +39,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             _appName = appName;
             _framework = framework;
-            Environment = new EnvironmentHelper(appName, framework, enableTracer);
+            Environment = new EnvironmentHelper(framework, enableTracer);
             _testBaseOutputDir = Environment.GetTestOutputPath();
             _appAssembly = appAssembly;
             _output = output;
@@ -52,6 +53,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public int TestDurationInSeconds { get; set; } = 10;
 
+        public double TotalTestDurationInMilliseconds { get; set; } = 0;
+
+        public string ProcessOutput { get; set; }
+
         public static string GetApplicationOutputFolderPath(string appName)
         {
             var configurationAndPlatform = $"{EnvironmentHelper.GetConfiguration()}-{EnvironmentHelper.GetPlatform()}";
@@ -61,7 +66,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public void Run(MockDatadogAgent agent)
         {
-            RunTest(agent.Port);
+            RunTest(agent);
             PrintTestInfo();
         }
 
@@ -118,6 +123,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                     return ("dotnet", $"{applicationPath} {arguments}");
                 }
 
+                // By default catchsegv/libsegfault.so reports only SIGSEGV signal.
+                // This environment variable allows us to catch and report signals that may crash the application.
+                Environment.CustomEnvironmentVariables.Add("SEGFAULT_SIGNALS", "all");
+
                 // catchsegv is a tool that catches the segmentation fault and displays useful information: callstack, registers...
                 return ("catchsegv", $"dotnet {applicationPath} {arguments}");
             }
@@ -125,13 +134,18 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return (applicationPath, arguments);
         }
 
-        private void RunTest(int agentPort)
+        private void RunTest(MockDatadogAgent agent)
         {
+            if (!agent.IsReady)
+            {
+                throw new XunitException("Agent was not ready to accept connection from profiler");
+            }
+
             (var executor, var arguments) = BuildTestCommandLine();
 
             using var process = new Process();
 
-            SetEnvironmentVariables(process.StartInfo.EnvironmentVariables, agentPort);
+            SetEnvironmentVariables(process.StartInfo.EnvironmentVariables, agent);
 
             process.StartInfo.FileName = executor;
             process.StartInfo.Arguments = arguments;
@@ -140,6 +154,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.RedirectStandardInput = false;
+            var startTime = DateTime.Now;
             process.Start();
 
             using var processHelper = new ProcessHelper(process);
@@ -148,6 +163,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             var standardOutput = processHelper.StandardOutput;
             var errorOutput = processHelper.ErrorOutput;
+            ProcessOutput = standardOutput;
 
             if (!ranToCompletion)
             {
@@ -173,16 +189,19 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(standardOutput))
+            var endTime = process.ExitTime;
+            TotalTestDurationInMilliseconds = (endTime - startTime).TotalMilliseconds;
+
+            if (standardOutput.Contains("[Error]"))
             {
-                _output.WriteLine($"[TestRunner] Standard output: {standardOutput}");
-                Assert.False(standardOutput.Contains("[Error]"), "An error occured during the test. See the standard output above.");
+                _output.WriteLine($"[TestRunner] Standard output: \n{standardOutput}");
+                throw new XunitException("An error occured during the test. See the standard output above.");
             }
 
-            if (!string.IsNullOrWhiteSpace(errorOutput))
+            if (errorOutput.Contains("[Error]"))
             {
-                _output.WriteLine($"[TestRunner] Error output: {errorOutput}");
-                Assert.False(errorOutput.Contains("[Error]"), "An error occured during the test. See the error output above.");
+                _output.WriteLine($"[TestRunner] Error output: \n{errorOutput}");
+                throw new XunitException("An error occured during the test. See the error output above.");
             }
 
             Assert.True(
@@ -190,9 +209,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 $"Exit code of \"{Path.GetFileName(process.StartInfo?.FileName ?? string.Empty)}\" should be 0 instead of {process.ExitCode} (= 0x{process.ExitCode.ToString("X")})");
         }
 
-        private void SetEnvironmentVariables(StringDictionary environmentVariables, int agentPort)
+        private void SetEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent)
         {
-            Environment.PopulateEnvironmentVariables(environmentVariables, agentPort, _profilingExportsIntervalInSeconds, ServiceName);
+            Environment.PopulateEnvironmentVariables(environmentVariables, agent, _profilingExportsIntervalInSeconds, ServiceName);
         }
     }
 }

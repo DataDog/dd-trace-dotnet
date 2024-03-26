@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Datadog.Trace.Ci.Configuration;
@@ -27,104 +28,76 @@ namespace Datadog.Trace.Coverage.Collector
     {
         private DataCollectorLogger? _logger;
         private DataCollectionEvents? _events;
-        private CIVisibilitySettings? _ciVisibilitySettings;
-        private DateTime _dateTime = DateTime.Now;
-        private string? _tracerHome;
-
-        private static void Copy(string sourceDirectory, string targetDirectory)
-        {
-            var diSource = new DirectoryInfo(sourceDirectory);
-            var diTarget = new DirectoryInfo(targetDirectory);
-
-            CopyAll(diSource, diTarget);
-        }
-
-        private static void CopyAll(DirectoryInfo source, DirectoryInfo target)
-        {
-            var files = source.GetFiles();
-            var subFolders = source.GetDirectories();
-
-            Directory.CreateDirectory(target.FullName);
-
-            // Copy each file into the new directory.
-            foreach (var fi in files)
-            {
-                fi.CopyTo(Path.Combine(target.FullName, fi.Name), true);
-            }
-
-            // Copy each subdirectory using recursion.
-            foreach (var diSourceSubDir in subFolders)
-            {
-                var nextTargetSubDir = target.CreateSubdirectory(diSourceSubDir.Name);
-                CopyAll(diSourceSubDir, nextTargetSubDir);
-            }
-        }
+        private CoverageSettings? _settings;
+        private int _testNumber;
 
         /// <inheritdoc />
         public override void Initialize(XmlElement configurationElement, DataCollectionEvents events, DataCollectionSink dataSink, DataCollectionLogger logger, DataCollectionEnvironmentContext environmentContext)
         {
             _events = events;
             _logger = new DataCollectorLogger(logger, environmentContext.SessionDataCollectionContext);
-
-            try
+            if (Initialize(configurationElement) && events is not null)
             {
-                _ciVisibilitySettings = CIVisibilitySettings.FromDefaultSources();
-
-                // Read the DD_DOTNET_TRACER_HOME environment variable
-                _tracerHome = Util.EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
-                if (string.IsNullOrEmpty(_tracerHome) || !Directory.Exists(_tracerHome))
+                events.SessionStart += OnSessionStart;
+                events.SessionEnd += OnSessionEnd;
+                events.TestHostLaunched += (sender, args) =>
                 {
-                    _logger.Error("Tracer home (DD_DOTNET_TRACER_HOME environment variable) is not defined or folder doesn't exist, coverage has been disabled.");
-
-                    // By not register a handler to SessionStart and SessionEnd the coverage gets disabled (assemblies are not being processed).
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex);
-                _ciVisibilitySettings = null;
-            }
-
-            if (_events is not null)
-            {
-                _events.SessionStart += OnSessionStart;
-                _events.SessionEnd += OnSessionEnd;
+                    _logger?.Debug($"Test host launched with PID: {args.TestHostProcessId} / SessionId: {args.Context?.SessionId?.Id.ToString() ?? "(empty)"}");
+                };
+                events.TestCaseStart += (sender, args) =>
+                {
+                    _logger?.Debug($"Test case start [{Interlocked.Increment(ref _testNumber)}]: {args.TestCaseName}");
+                };
+                events.TestCaseEnd += (sender, args) =>
+                {
+                    _logger?.Debug($"Test case end: {args.TestCaseName} | Status: {args.TestOutcome}");
+                };
             }
         }
 
         private void OnSessionStart(object? sender, SessionStartEventArgs e)
         {
             _logger?.SetContext(e.Context);
-            var testSources = e.GetPropertyValue("TestSources");
-            if (testSources is string testSourceString)
+            try
             {
-                // Process folder
-                var outputFolder = Path.GetDirectoryName(testSourceString);
-                if (outputFolder is not null)
+                var testSources = e.GetPropertyValue("TestSources");
+                if (testSources is string testSourceString)
                 {
-                    BackupFolder(outputFolder);
-                    ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
-                }
-            }
-            else if (testSources is List<string> testSourcesList)
-            {
-                // Process folder
-                foreach (var source in testSourcesList)
-                {
-                    var outputFolder = Path.GetDirectoryName(source);
+                    // Process folder
+                    var outputFolder = Path.GetDirectoryName(testSourceString);
                     if (outputFolder is not null)
                     {
-                        BackupFolder(outputFolder);
                         ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
                     }
                 }
+                else if (testSources is List<string> testSourcesList)
+                {
+                    // Process folder
+                    foreach (var source in testSourcesList)
+                    {
+                        var outputFolder = Path.GetDirectoryName(source);
+                        if (outputFolder is not null)
+                        {
+                            ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
+                        }
+                    }
+                }
+                else
+                {
+                    // Process folder
+                    ProcessFolder(Environment.CurrentDirectory, SearchOption.AllDirectories);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Process folder
-                BackupFolder(Environment.CurrentDirectory);
-                ProcessFolder(Environment.CurrentDirectory, SearchOption.AllDirectories);
+                if (_logger is { } logger)
+                {
+                    logger.Error(ex);
+                }
+                else
+                {
+                    throw;
+                }
             }
         }
 
@@ -133,9 +106,51 @@ namespace Datadog.Trace.Coverage.Collector
             _logger?.SetContext(e.Context);
         }
 
+        private bool Initialize(XmlElement configurationElement)
+        {
+            try
+            {
+                var coverageSettings = new CoverageSettings(configurationElement);
+                if (_logger?.IsDebugEnabled == true)
+                {
+                    foreach (var item in coverageSettings.ExcludeFilters)
+                    {
+                        _logger.Debug($"Exclude filter: {item}");
+                    }
+
+                    foreach (var item in coverageSettings.ExcludeByAttribute)
+                    {
+                        _logger.Debug($"Exclude attribute: {item}");
+                    }
+
+                    foreach (var item in coverageSettings.ExcludeSourceFiles)
+                    {
+                        _logger.Debug($"Exclude source: {item}");
+                    }
+                }
+
+                // Read the DD_DOTNET_TRACER_HOME environment variable
+                if (string.IsNullOrEmpty(coverageSettings.TracerHome) || !Directory.Exists(coverageSettings.TracerHome))
+                {
+                    _logger?.Error("Tracer home (DD_DOTNET_TRACER_HOME environment variable) is not defined or folder doesn't exist, coverage has been disabled.");
+
+                    // By not register a handler to SessionStart and SessionEnd the coverage gets disabled (assemblies are not being processed).
+                    return false;
+                }
+
+                _settings = coverageSettings;
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex);
+            }
+
+            return true;
+        }
+
         private void ProcessFolder(string folder, SearchOption searchOption)
         {
-            if (_tracerHome is null)
+            if (_settings is null)
             {
                 return;
             }
@@ -149,8 +164,10 @@ namespace Datadog.Trace.Coverage.Collector
                 Directory.EnumerateFiles(folder, "*.*", searchOption),
                 file =>
                 {
+                    var path = Path.GetDirectoryName(file)!;
+                    var fileWithoutExtension = Path.GetFileNameWithoutExtension(file);
                     // Skip the Datadog.Trace assembly
-                    if (tracerAssemblyName == Path.GetFileNameWithoutExtension(file))
+                    if (tracerAssemblyName == fileWithoutExtension)
                     {
                         return;
                     }
@@ -158,31 +175,57 @@ namespace Datadog.Trace.Coverage.Collector
                     var extension = Path.GetExtension(file).ToLowerInvariant();
                     if (extension is ".dll" or ".exe" or "")
                     {
-                        try
+                        if (File.Exists(Path.Combine(path, fileWithoutExtension + ".pdb")) || File.Exists(Path.Combine(path, fileWithoutExtension + ".PDB")))
                         {
-                            var asmProcessor = new AssemblyProcessor(file, _tracerHome, _logger, _ciVisibilitySettings);
-                            asmProcessor.Process();
-
-                            lock (processedDirectories)
+                            List<Exception>? exceptions = null;
+                            var remain = 3;
+                            Retry:
+                            if (--remain > 0)
                             {
-                                numAssemblies++;
-                                processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                                try
+                                {
+                                    var asmProcessor = new AssemblyProcessor(file, _settings, _logger);
+                                    asmProcessor.Process();
+                                    Interlocked.Increment(ref numAssemblies);
+                                    if (asmProcessor.HasTracerAssemblyCopied)
+                                    {
+                                        lock (processedDirectories)
+                                        {
+                                            processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                                        }
+                                    }
+                                }
+                                catch (PdbNotFoundException)
+                                {
+                                    // If the PDB file was not found, we skip the assembly without throwing error.
+                                    _logger?.Debug($"{nameof(PdbNotFoundException)} processing file: {file}");
+                                }
+                                catch (BadImageFormatException)
+                                {
+                                    // If the Assembly has not the correct format (eg. native dll / exe)
+                                    // We skip processing the assembly.
+                                    _logger?.Debug($"{nameof(BadImageFormatException)} processing file: {file}");
+                                }
+                                catch (IOException ioException)
+                                {
+                                    // We do retries if we have an IOException.
+                                    // For cases like: `The process cannot access the file 'file path' because
+                                    // it is being used by another process`
+                                    exceptions ??= new List<Exception>();
+                                    exceptions.Add(ioException);
+                                    Thread.Sleep(1000);
+                                    goto Retry;
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger?.Error(ex);
+                                }
                             }
-                        }
-                        catch (PdbNotFoundException)
-                        {
-                            // If the PDB file was not found, we skip the assembly without throwing error.
-                            _logger?.Debug($"{nameof(PdbNotFoundException)} processing file: {file}");
-                        }
-                        catch (BadImageFormatException)
-                        {
-                            // If the Assembly has not the correct format (eg. native dll / exe)
-                            // We skip processing the assembly.
-                            _logger?.Debug($"{nameof(BadImageFormatException)} processing file: {file}");
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger?.Error(ex);
+
+                            if (exceptions?.Count > 0)
+                            {
+                                _logger?.Error(new AggregateException(exceptions));
+                            }
                         }
                     }
                 });
@@ -252,13 +295,6 @@ namespace Datadog.Trace.Coverage.Collector
             }
 
             _logger?.Warning($"Processed {numAssemblies} assemblies in folder: {folder}");
-        }
-
-        private void BackupFolder(string folder)
-        {
-            var destinationFolder = Path.Combine(folder, _dateTime.ToString("yyyyMMddHHmmss"));
-            _logger?.Debug($"Backup folder: {destinationFolder}");
-            Copy(folder, destinationFolder);
         }
 
         /// <inheritdoc />

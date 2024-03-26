@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
-using Nuke.Common;
+using Logger = Serilog.Log;
 
 namespace BenchmarkComparison
 {
@@ -33,7 +33,7 @@ namespace BenchmarkComparison
             }
             catch (Exception ex)
             {
-                Logger.Error($"Exception reading benchmarkdotnet json results '{resultFilePath}': {ex}");
+                Logger.Error(ex, "Exception reading benchmarkdotnet json results '{ResultFilePath}'", resultFilePath);
                 throw;
             }
         }

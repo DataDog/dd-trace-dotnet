@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
 
             try
             {
-                Profiler.SetInstanceForTests(new Profiler(contextTracker.Object, null));
+                Profiler.SetInstanceForTests(new Profiler(contextTracker.Object, new Mock<IProfilerStatus>().Object));
 
                 var tracer = CreateTracer();
 
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
 
         private static Tracer CreateTracer()
         {
-            return new Tracer(new TracerSettings(), Mock.Of<IAgentWriter>(), Mock.Of<ISampler>(), null, null);
+            return new Tracer(new TracerSettings(), Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), null, null);
         }
     }
 }

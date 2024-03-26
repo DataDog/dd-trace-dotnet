@@ -6,10 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Datadog.Profiler.IntegrationTests.Xunit;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
@@ -17,14 +17,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
     {
         private static string _solutionDirectory = null;
         private readonly string _framework;
-        private readonly string _appName;
-        private readonly string _testId;
+        private readonly string _testOutputPath;
 
-        public EnvironmentHelper(string appName, string framework, bool enableTracer)
+        public EnvironmentHelper(string framework, bool enableTracer)
         {
             _framework = framework;
-            _appName = appName;
-            _testId = Guid.NewGuid().ToString("n").Substring(0, 8);
+            _testOutputPath = BuildTestOutputPath(framework);
 
             if (enableTracer)
             {
@@ -76,6 +74,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return Environment.Is64BitProcess ? "x64" : "x86";
         }
 
+        public static bool IsRunningInCi() =>
+            // This environment variable is set in the CI (Github / AzDo)
+            !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("MonitoringHomeDirectory"));
+
         internal static string GetConfiguration()
         {
 #if DEBUG
@@ -83,6 +85,15 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 #else
             return "Release";
 #endif
+        }
+
+        internal static void DisableDefaultProfilers(TestApplicationRunner runner)
+        {
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
         }
 
         internal void EnableTracer()
@@ -135,7 +146,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return loaderConfigFilePath;
         }
 
-        internal void PopulateEnvironmentVariables(StringDictionary environmentVariables, int agentPort, int profilingExportIntervalInSeconds, string serviceName)
+        internal void PopulateEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent, int profilingExportIntervalInSeconds, string serviceName)
         {
             var profilerPath = GetNativeLoaderPath();
 
@@ -164,8 +175,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             environmentVariables["DD_PROFILING_ENABLED"] = "1";
             environmentVariables["DD_TRACE_ENABLED"] = "0";
 
-            environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
-
             environmentVariables["DD_PROFILING_UPLOAD_PERIOD"] = profilingExportIntervalInSeconds.ToString();
             environmentVariables["DD_TRACE_DEBUG"] = "1";
 
@@ -183,6 +192,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 }
             }
 
+            ConfigureTransportVariables(environmentVariables, agent);
+
             foreach (var key in CustomEnvironmentVariables.Keys)
             {
                 environmentVariables[key] = CustomEnvironmentVariables[key];
@@ -191,11 +202,48 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         internal string GetTestOutputPath()
         {
+            return _testOutputPath;
+        }
+
+        private static string BuildTestOutputPath(string framework)
+        {
             // DD_TESTING_OUPUT_DIR is set by the CI
-            var baseTestOutputDir = Environment.GetEnvironmentVariable("DD_TESTING_OUPUT_DIR") ?? Path.GetTempPath();
-            var testOutputPath = Path.Combine(baseTestOutputDir, $"TestApplication_{_appName}{_testId}_{Process.GetCurrentProcess().Id}", _framework);
+            var baseTestOutputDir = Environment.GetEnvironmentVariable("DD_TESTING_OUPUT_DIR") ?? Path.Combine(Path.GetTempPath(), "ProfilerTest");
+
+            var testName = TestContext.Current.TestName ?? "UnknownTestClass.UnknownTestMethod";
+            var testOutputPath = Path.Combine(testName.Split('.'));
+
+            testOutputPath = Path.Combine(baseTestOutputDir, testOutputPath, framework);
+
+            // needed only for local test to ensure that we do not have artifacts from previous runs
+            if (Directory.Exists(testOutputPath))
+            {
+                Directory.Delete(testOutputPath, recursive: true);
+            }
 
             return testOutputPath;
+        }
+
+        private static void ConfigureTransportVariables(StringDictionary environmentVariables, MockDatadogAgent agent)
+        {
+            var envVars = agent switch
+            {
+                MockDatadogAgent.NamedPipeAgent np => new Dictionary<string, string>
+                {
+                    { "DD_TRACE_PIPE_NAME", np.ProfilesPipeName },
+                },
+                MockDatadogAgent.HttpAgent http => new Dictionary<string, string>
+                {
+                    { "DD_TRACE_AGENT_HOSTNAME", "127.0.0.1" },
+                    { "DD_TRACE_AGENT_PORT", http.Port.ToString() },
+                },
+                _ => throw new InvalidOperationException($"Unknown MockDatadogAgent type {agent?.GetType()}")
+            };
+
+            foreach (var envVar in envVars)
+            {
+                environmentVariables[envVar.Key] = envVar.Value;
+            }
         }
 
         private static string GetNativeLoaderGuid()
@@ -212,10 +260,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             return Path.Combine(GetSolutionDirectory(), "profiler", "_build");
         }
-
-        private static bool IsRunningInCi() =>
-            // This environment variable is set in the CI (Github / AzDo)
-            !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("MonitoringHomeDirectory"));
 
         /// <summary>
         /// Find the solution directory from anywhere in the hierarchy.
@@ -321,6 +365,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private void AddTracerEnvironmentVariables()
         {
+            // Temporarily disable tiered compilation
+            CustomEnvironmentVariables["COMPlus_TieredCompilation"] = "0";
+
             CustomEnvironmentVariables["DD_TRACE_ENABLED"] = "1";
             CustomEnvironmentVariables["DD_DOTNET_TRACER_HOME"] = GetMonitoringHome();
         }
@@ -329,8 +376,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             var baseOutputDir = GetTestOutputPath();
             CustomEnvironmentVariables[EnvironmentVariables.ProfilingLogDir] = Path.Combine(baseOutputDir, "logs");
-            // Set tracer log directory too
-            CustomEnvironmentVariables["DD_TRACE_LOG_DIRECTORY"] = Path.Combine(baseOutputDir, "logs");
             CustomEnvironmentVariables[EnvironmentVariables.ProfilingPprofDir] = Path.Combine(baseOutputDir, "pprofs");
         }
 

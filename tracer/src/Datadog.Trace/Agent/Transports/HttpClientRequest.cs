@@ -69,7 +69,7 @@ namespace Datadog.Trace.Agent.Transports
                         var headers = string.Join(", ", _postRequest.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}"));
 
                         var payload = await sr.ReadToEndAsync().ConfigureAwait(false);
-                        Log.Warning("AppSec event not correctly sent to backend {statusCode} by class {className} with response {responseText}, request headers: were {headers}, payload was: {payload}", new object[] { response.StatusCode, nameof(HttpClientRequest), await response.ReadAsStringAsync().ConfigureAwait(false), headers, payload });
+                        Log.Warning("AppSec event not correctly sent to backend {StatusCode} by class {ClassName} with response {ResponseText}, request headers: were {Headers}, payload was: {Payload}", new object[] { response.StatusCode, nameof(HttpClientRequest), await response.ReadAsStringAsync().ConfigureAwait(false), headers, payload });
                     }
 
                     return response;
@@ -77,12 +77,20 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
+        public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
+            => PostAsync(bytes, contentType, null);
+
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
         {
             // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
             using (var content = new ByteArrayContent(bytes.Array, bytes.Offset, bytes.Count))
             {
                 content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+                if (!string.IsNullOrEmpty(contentEncoding))
+                {
+                    content.Headers.ContentEncoding.Add(contentEncoding);
+                }
+
                 _postRequest.Content = content;
 
                 var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
@@ -91,7 +99,31 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        public async Task<IApiResponse> PostAsync(params MultipartFormItem[] items)
+        public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
+        {
+            // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
+            using var content = new PushStreamContent(writeToRequestStream);
+
+            var contentTypeHeader = new MediaTypeHeaderValue(contentType);
+            if (!string.IsNullOrEmpty(multipartBoundary))
+            {
+                contentTypeHeader.Parameters.Add(new NameValueHeaderValue("boundary", multipartBoundary));
+            }
+
+            content.Headers.ContentType = contentTypeHeader;
+
+            if (!string.IsNullOrEmpty(contentEncoding))
+            {
+                content.Headers.ContentEncoding.Add(contentEncoding);
+            }
+
+            _postRequest.Content = content;
+            var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
+
+            return new HttpClientResponse(response);
+        }
+
+        public async Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None)
         {
             if (items is null)
             {
@@ -101,8 +133,6 @@ namespace Datadog.Trace.Agent.Transports
             Log.Debug<int>("Sending multipart form request with {Count} items.", items.Length);
 
             using var formDataContent = new MultipartFormDataContent(boundary: Boundary);
-            _postRequest.Content = formDataContent;
-
             foreach (var item in items)
             {
                 HttpContent content = null;
@@ -132,6 +162,16 @@ namespace Datadog.Trace.Agent.Transports
                 {
                     formDataContent.Add(content, item.Name);
                 }
+            }
+
+            if (multipartCompression == MultipartCompression.GZip)
+            {
+                Log.Debug("Using MultipartCompression.GZip");
+                _postRequest.Content = new GzipCompressedContent(formDataContent);
+            }
+            else
+            {
+                _postRequest.Content = formDataContent;
             }
 
             var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);

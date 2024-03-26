@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         ReturnTypeName = KafkaConstants.ConsumeResultTypeName,
         ParameterTypeNames = new[] { ClrNames.Int32 },
         MinimumVersion = "1.4.0",
-        MaximumVersion = "1.*.*",
+        MaximumVersion = "2.*.*",
         IntegrationName = KafkaConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -64,15 +64,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             {
                 // This sets the span as active and either disposes it immediately
                 // or disposes it on the next call to Consumer.Consume()
+                var tracer = Tracer.Instance;
                 Scope scope = KafkaHelper.CreateConsumerScope(
-                    Tracer.Instance,
+                    tracer,
+                    tracer.TracerManager.DataStreamsManager,
                     instance,
                     consumeResult.Topic,
                     consumeResult.Partition,
                     consumeResult.Offset,
                     consumeResult.Message);
 
-                if (!Tracer.Instance.Settings.KafkaCreateConsumerScopeEnabled)
+                if (!Tracer.Instance.Settings.KafkaCreateConsumerScopeEnabledInternal)
                 {
                     // Close and dispose the scope immediately
                     scope.DisposeWithException(exception);

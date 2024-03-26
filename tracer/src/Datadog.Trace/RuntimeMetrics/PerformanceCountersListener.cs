@@ -19,6 +19,7 @@ namespace Datadog.Trace.RuntimeMetrics
         private const string MemoryCategoryName = ".NET CLR Memory";
         private const string ThreadingCategoryName = ".NET CLR LocksAndThreads";
         private const string GarbageCollectionMetrics = $"{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {MetricsNames.ContentionCount}, {MetricsNames.Gen0CollectionsCount}, {MetricsNames.Gen1CollectionsCount}, {MetricsNames.Gen2CollectionsCount}";
+        internal const string InsufficientPermissionsMessageTemplate = "The process does not have sufficient permissions to read performance counters. Please refer to https://dtdg.co/net-runtime-metrics to learn how to grant those permissions.";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<PerformanceCountersListener>();
 
@@ -109,7 +110,7 @@ namespace Datadog.Trace.RuntimeMetrics
             _previousGen1Count = gen1;
             _previousGen2Count = gen2;
 
-            Log.Debug("Sent the following metrics to the DD agent: {metrics}", GarbageCollectionMetrics);
+            Log.Debug("Sent the following metrics to the DD agent: {Metrics}", GarbageCollectionMetrics);
         }
 
         protected virtual void InitializePerformanceCounters()
@@ -133,7 +134,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 // Catching error UnauthorizedAccessException: Access to the registry key 'Global' is denied.
                 // The 'Global' part seems consistent across localizations
 
-                Log.Error(ex, "The process does not have sufficient permissions to read performance counters. Please refer to https://dtdg.co/net-runtime-metrics to learn how to grant those permissions.");
+                Log.Error(ex, InsufficientPermissionsMessageTemplate);
                 throw;
             }
             catch (Exception ex)

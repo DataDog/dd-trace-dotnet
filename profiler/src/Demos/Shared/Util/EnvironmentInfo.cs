@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -79,6 +80,7 @@ namespace Datadog.Demos.Util
             str.AppendLine($"    Runtime version:         {Environment.Version}");
             str.AppendLine($"    OS version:              {Environment.OSVersion}");
             str.AppendLine($"    Common App Data folder:  {Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)}");
+            str.AppendLine($"    GC Mode:                 {(GCSettings.IsServerGC ? "Server" : "Workstation")} ({GCSettings.LatencyMode})");
             str.AppendLine();
 
             str.AppendLine("    Variables:");
@@ -97,8 +99,13 @@ namespace Datadog.Demos.Util
             str.AppendLine();
             str.AppendLine("        DD_PROFILING_ENABLED:                         " + (Environment.GetEnvironmentVariable("DD_PROFILING_ENABLED") ?? "null"));
             str.AppendLine("        DD_PROFILING_CPU_ENABLED:                     " + (Environment.GetEnvironmentVariable("DD_PROFILING_CPU_ENABLED") ?? "null"));
+            str.AppendLine("        DD_PROFILING_WALLTIME_ENABLED:                " + (Environment.GetEnvironmentVariable("DD_PROFILING_WALLTIME_ENABLED") ?? "null"));
             str.AppendLine("        DD_PROFILING_EXCEPTION_ENABLED:               " + (Environment.GetEnvironmentVariable("DD_PROFILING_EXCEPTION_ENABLED") ?? "null"));
             str.AppendLine("        DD_PROFILING_ALLOCATION_ENABLED:              " + (Environment.GetEnvironmentVariable("DD_PROFILING_ALLOCATION_ENABLED") ?? "null"));
+            str.AppendLine("        DD_PROFILING_LOCK_ENABLED:                    " + (Environment.GetEnvironmentVariable("DD_PROFILING_LOCK_ENABLED") ?? "null"));
+            str.AppendLine("        DD_PROFILING_CONTENTION_ENABLED:              " + (Environment.GetEnvironmentVariable("DD_PROFILING_CONTENTION_ENABLED") ?? "null"));
+            str.AppendLine("        DD_PROFILING_GC_ENABLED:                      " + (Environment.GetEnvironmentVariable("DD_PROFILING_GC_ENABLED") ?? "null"));
+            str.AppendLine("        DD_PROFILING_HEAP_ENABLED:                    " + (Environment.GetEnvironmentVariable("DD_PROFILING_HEAP_ENABLED") ?? "null"));
             str.AppendLine();
             str.AppendLine("        DD_LOADER_REWRITE_MODULE_INITIALIZER_ENABLED: " + (Environment.GetEnvironmentVariable("DD_LOADER_REWRITE_MODULE_INITIALIZER_ENABLED") ?? "null"));
             str.AppendLine("        DD_LOADER_REWRITE_MODULE_ENTRYPOINT_ENABLED:  " + (Environment.GetEnvironmentVariable("DD_LOADER_REWRITE_MODULE_ENTRYPOINT_ENABLED") ?? "null"));

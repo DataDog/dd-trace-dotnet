@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.IO;
+using System.IO.Compression;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,43 +36,38 @@ namespace Datadog.Trace.Agent.Transports
             _request.Headers.Add(name, value);
         }
 
-        public async Task<IApiResponse> GetAsync()
+        public Task<IApiResponse> GetAsync()
         {
-            _request.Method = "GET";
+            ResetRequest(method: "GET", contentType: null, contentEncoding: null);
 
-            try
-            {
-                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
-                return new ApiWebResponse(httpWebResponse);
-            }
-            catch (WebException exception)
-                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
-            {
-                // If the exception is caused by an error status code, swallow the exception and let the caller handle the result
-                return new ApiWebResponse((HttpWebResponse)exception.Response);
-            }
+            return FinishAndGetResponse();
         }
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
+        public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
+            => PostAsync(bytes, contentType, null);
+
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
         {
-            _request.Method = "POST";
-            _request.ContentType = contentType;
+            ResetRequest(method: "POST", contentType, contentEncoding);
+
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
                 await requestStream.WriteAsync(bytes.Array, bytes.Offset, bytes.Count).ConfigureAwait(false);
             }
 
-            try
+            return await FinishAndGetResponse().ConfigureAwait(false);
+        }
+
+        public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
+        {
+            ResetRequest(method: "POST", ContentTypeHelper.GetContentType(contentType, multipartBoundary), contentEncoding);
+
+            using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
-                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
-                return new ApiWebResponse(httpWebResponse);
+                await writeToRequestStream(requestStream).ConfigureAwait(false);
             }
-            catch (WebException exception)
-                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
-            {
-                // If the exception is caused by an error status code, ignore it and let the caller handle the result
-                return new ApiWebResponse((HttpWebResponse)exception.Response);
-            }
+
+            return await FinishAndGetResponse().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -78,8 +75,9 @@ namespace Datadog.Trace.Agent.Transports
         /// WARNING: Name and FileName of each MultipartFormItem instance must be ASCII encoding compatible.
         /// </summary>
         /// <param name="items">Multipart form data items</param>
+        /// <param name="multipartCompression">Multipart compression</param>
         /// <returns>Task with the response</returns>
-        public async Task<IApiResponse> PostAsync(params MultipartFormItem[] items)
+        public async Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None)
         {
             if (items is null)
             {
@@ -88,10 +86,26 @@ namespace Datadog.Trace.Agent.Transports
 
             Log.Debug<int>("Sending multipart form request with {Count} items.", items.Length);
 
-            _request.Method = "POST";
-            _request.ContentType = "multipart/form-data; boundary=" + Boundary;
+            ResetRequest(method: "POST", contentType: "multipart/form-data; boundary=" + Boundary, contentEncoding: multipartCompression == MultipartCompression.GZip ? "gzip" : null);
+            using (var reqStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
+            {
+                if (multipartCompression == MultipartCompression.GZip)
+                {
+                    Log.Debug("Using MultipartCompression.GZip");
+                    using var gzip = new GZipStream(reqStream, CompressionMode.Compress, leaveOpen: true);
+                    await WriteToStreamAsync(items, gzip).ConfigureAwait(false);
+                    await gzip.FlushAsync().ConfigureAwait(false);
+                    Log.Debug("Compressing multipart payload...");
+                }
+                else
+                {
+                    await WriteToStreamAsync(items, reqStream).ConfigureAwait(false);
+                }
+            }
 
-            using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
+            return await FinishAndGetResponse().ConfigureAwait(false);
+
+            async Task WriteToStreamAsync(MultipartFormItem[] multipartItems, Stream requestStream)
             {
                 // Write form request using the boundary
                 var boundaryBytes = _boundarySeparatorInBytes ??= Encoding.ASCII.GetBytes(BoundarySeparator);
@@ -99,7 +113,7 @@ namespace Datadog.Trace.Agent.Transports
 
                 // Write each MultipartFormItem
                 var itemsWritten = 0;
-                foreach (var item in items)
+                foreach (var item in multipartItems)
                 {
                     byte[] headerBytes = null;
 
@@ -164,7 +178,24 @@ namespace Datadog.Trace.Agent.Transports
                     await requestStream.WriteAsync(trailerBytes, 0, trailerBytes.Length).ConfigureAwait(false);
                 }
             }
+        }
 
+        private void ResetRequest(string method, string contentType, string contentEncoding)
+        {
+            _request.Method = method;
+            _request.ContentType = string.IsNullOrEmpty(contentType) ? null : contentType;
+            if (string.IsNullOrEmpty(contentEncoding))
+            {
+                _request.Headers.Remove(HttpRequestHeader.ContentEncoding);
+            }
+            else
+            {
+                _request.Headers.Set(HttpRequestHeader.ContentEncoding, contentEncoding);
+            }
+        }
+
+        private async Task<IApiResponse> FinishAndGetResponse()
+        {
             try
             {
                 var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);

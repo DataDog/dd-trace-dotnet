@@ -3,12 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         AssemblyName = "AWSSDK.SQS",
         TypeName = "Amazon.SQS.AmazonSQSClient",
         MethodName = "ReceiveMessageAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<Amazon.SQS.Model.ReceiveMessageResponse>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.SQS.Model.ReceiveMessageResponse]",
         ParameterTypeNames = new[] { "Amazon.SQS.Model.ReceiveMessageRequest", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
@@ -28,8 +28,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ReceiveMessageAsyncIntegration
     {
-        private const string Operation = "ReceiveMessage";
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -40,17 +38,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TReceiveMessageRequest>(TTarget instance, TReceiveMessageRequest request, CancellationToken cancellationToken)
-            where TReceiveMessageRequest : IAmazonSQSRequestWithQueueUrl, IDuckType
+            where TReceiveMessageRequest : IReceiveMessageRequest
         {
-            if (request.Instance is null)
-            {
-                return CallTargetState.GetDefault();
-            }
-
-            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out AwsSqsTags tags);
-            tags.QueueUrl = request.QueueUrl;
-
-            return new CallTargetState(scope);
+            return AwsSqsHandlerCommon.BeforeReceive(request);
         }
 
         /// <summary>
@@ -63,10 +53,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
+        internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
+            where TResponse : IReceiveMessageResponse
         {
-            state.Scope.DisposeWithException(exception);
-            return response;
+            return AwsSqsHandlerCommon.AfterReceive(response, exception, in state);
         }
     }
 }

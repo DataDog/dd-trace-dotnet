@@ -9,11 +9,13 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
+using System.Threading;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DuckTyping
@@ -294,6 +296,8 @@ namespace Datadog.Trace.DuckTyping
                     // Create Methods
                     CreateReverseProxyMethods(proxyTypeBuilder, typeToDeriveFrom, typeToDelegateTo, instanceField);
 
+                    AddCustomAttributes(proxyTypeBuilder, typeToDelegateTo, dryRun);
+
                     if (dryRun)
                     {
                         // Dry run
@@ -371,10 +375,18 @@ namespace Datadog.Trace.DuckTyping
                 assembly = assembly.Replace(".", "_").Replace("+", "__");
             }
 
-            // Create a valid type name that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
-            string proxyTypeName = $"{assembly}.{typeToDelegateTo.FullName?.Replace(".", "_").Replace("+", "__")}.{typeToDeriveFrom.FullName?.Replace(".", "_").Replace("+", "__")}_{++_typeCount}";
+            // Create a "valid" type name (doesn't always hold) that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
+            // The name we generate here is primarily for debugging purposes (stack traces etc), so we don't try too hard
+            var proxyTypeNameSuffix = $"_{(++_typeCount).ToString(CultureInfo.InvariantCulture)}";
+            var proxyTypeNamePrefix = $"{assembly}.{typeToDelegateTo.FullName?.Replace(".", "_").Replace("+", "__")}.{typeToDeriveFrom.FullName?.Replace(".", "_").Replace("+", "__")}";
 
-            // Create Type
+            // the maximum length for an assembly-qualified type name is 1024, so we need to account for that
+            var maxPrefixSize = 1023 - proxyTypeNameSuffix.Length;
+            var proxyTypeName = (proxyTypeNamePrefix.Length > maxPrefixSize
+                                     ? proxyTypeNamePrefix.Substring(0, maxPrefixSize)
+                                     : proxyTypeNamePrefix)
+                              + proxyTypeNameSuffix;
+
             proxyTypeBuilder = moduleBuilder.DefineType(
                 proxyTypeName,
                 typeAttributes,
@@ -418,7 +430,7 @@ namespace Datadog.Trace.DuckTyping
 
             FieldBuilder instanceField = proxyTypeBuilder.DefineField("_currentInstance", instanceType, FieldAttributes.Private | FieldAttributes.InitOnly);
 
-            PropertyBuilder propInstance = proxyTypeBuilder.DefineProperty("Instance", PropertyAttributes.None, typeof(object), null);
+            PropertyBuilder propInstance = proxyTypeBuilder.DefineProperty(nameof(IDuckType.Instance), PropertyAttributes.None, typeof(object), null);
             MethodBuilder getPropInstance = proxyTypeBuilder.DefineMethod(
                 "get_Instance",
                 MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
@@ -435,7 +447,7 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Ret);
             propInstance.SetGetMethod(getPropInstance);
 
-            PropertyBuilder propType = proxyTypeBuilder.DefineProperty("Type", PropertyAttributes.None, typeof(Type), null);
+            PropertyBuilder propType = proxyTypeBuilder.DefineProperty(nameof(IDuckType.Type), PropertyAttributes.None, typeof(Type), null);
             MethodBuilder getPropType = proxyTypeBuilder.DefineMethod(
                 "get_Type",
                 MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
@@ -447,10 +459,20 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Ret);
             propType.SetGetMethod(getPropType);
 
-            var toStringTargetType = targetType.GetMethod("ToString", Type.EmptyTypes);
+            MethodBuilder getInstanceMethod = proxyTypeBuilder.DefineMethod(
+                nameof(IDuckType.GetInternalDuckTypedInstance),
+                MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot);
+            var getInstanceGenericTypeParameters = getInstanceMethod.DefineGenericParameters("TReturn");
+            getInstanceMethod.SetReturnType(getInstanceGenericTypeParameters[0].MakeByRefType());
+            il = getInstanceMethod.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldflda, instanceField);
+            il.Emit(OpCodes.Ret);
+
+            var toStringTargetType = targetType.GetMethod(nameof(IDuckType.ToString), Type.EmptyTypes);
             if (toStringTargetType is not null)
             {
-                MethodBuilder toStringMethod = proxyTypeBuilder.DefineMethod("ToString", toStringTargetType.Attributes, typeof(string), Type.EmptyTypes);
+                MethodBuilder toStringMethod = proxyTypeBuilder.DefineMethod(nameof(IDuckType.ToString), toStringTargetType.Attributes, typeof(string), Type.EmptyTypes);
                 il = toStringMethod.GetILGenerator();
                 il.Emit(OpCodes.Ldarg_0);
                 if (instanceType.IsValueType)
@@ -478,6 +500,47 @@ namespace Datadog.Trace.DuckTyping
             }
 
             return instanceField;
+        }
+
+        private static void AddCustomAttributes(TypeBuilder? proxyTypeBuilder, Type targetType, bool isDryRun)
+        {
+            foreach (var customAttributeData in targetType.GetCustomAttributesData())
+            {
+                var attributeType = customAttributeData.AttributeType;
+                if (attributeType == typeof(DuckAttribute)
+                 || attributeType == typeof(DuckCopyAttribute)
+                 || attributeType == typeof(DuckFieldAttribute)
+                 || attributeType == typeof(DuckIgnoreAttribute)
+                 || attributeType == typeof(DuckIncludeAttribute)
+                 || attributeType == typeof(DuckReverseMethodAttribute))
+                {
+                    continue;
+                }
+
+                // Don't support named arguments for now
+                if (customAttributeData.NamedArguments?.Count > 0)
+                {
+                    DuckTypeCustomAttributeHasNamedArgumentsException.Throw(targetType, customAttributeData);
+                }
+
+                var args = Array.Empty<object?>();
+                if (customAttributeData.ConstructorArguments.Count > 0)
+                {
+                    args = new object[customAttributeData.ConstructorArguments.Count];
+                    for (var i = 0; i < customAttributeData.ConstructorArguments.Count; i++)
+                    {
+                        var arg = customAttributeData.ConstructorArguments[i];
+                        args[i] = arg.Value;
+                    }
+                }
+
+                var attributeBuilder = new CustomAttributeBuilder(customAttributeData.Constructor, constructorArgs: args);
+
+                if (!isDryRun)
+                {
+                    proxyTypeBuilder?.SetCustomAttribute(attributeBuilder);
+                }
+            }
         }
 
         /// <summary>
@@ -576,18 +639,7 @@ namespace Datadog.Trace.DuckTyping
                 switch (duckAttribute.Kind)
                 {
                     case DuckKind.Property:
-                        PropertyInfo? targetProperty = null;
-                        try
-                        {
-                            targetProperty = targetType.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
-                        }
-                        catch
-                        {
-                            // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
-                            // In this case we make sure we select the indexer we want
-                            targetProperty = targetType.GetProperty(duckAttribute.Name, proxyProperty.PropertyType, proxyProperty.GetIndexParameters().Select(i => i.ParameterType).ToArray());
-                        }
-
+                        PropertyInfo? targetProperty = GetTargetPropertyOrIndex(targetType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty);
                         if (targetProperty is null)
                         {
                             if (proxyProperty.CanRead && proxyProperty.GetMethod is not null)
@@ -595,7 +647,7 @@ namespace Datadog.Trace.DuckTyping
                                 var getMethod = proxyProperty.GetMethod;
                                 if (getMethod.IsAbstract || getMethod.IsVirtual)
                                 {
-                                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name);
+                                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name, targetType);
                                 }
                             }
 
@@ -604,7 +656,7 @@ namespace Datadog.Trace.DuckTyping
                                 var setMethod = proxyProperty.SetMethod;
                                 if (setMethod.IsAbstract || setMethod.IsVirtual)
                                 {
-                                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name);
+                                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name, targetType);
                                 }
                             }
 
@@ -668,10 +720,10 @@ namespace Datadog.Trace.DuckTyping
                         break;
 
                     case DuckKind.Field:
-                        FieldInfo? targetField = targetType.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
+                        FieldInfo? targetField = GetTargetField(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetField is null)
                         {
-                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name);
+                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name, targetType);
                             continue;
                         }
 
@@ -747,21 +799,10 @@ namespace Datadog.Trace.DuckTyping
                     DuckTypeReverseProxyPropertyCannotBeAbstractException.Throw(implementationProperty);
                 }
 
-                PropertyInfo? overriddenProperty = null;
-                try
-                {
-                    overriddenProperty = typeToDeriveFrom.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
-                }
-                catch
-                {
-                    // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
-                    // In this case we make sure we select the indexer we want
-                    overriddenProperty = typeToDeriveFrom.GetProperty(duckAttribute.Name, implementationProperty.PropertyType, implementationProperty.GetIndexParameters().Select(i => i.ParameterType).ToArray());
-                }
-
+                PropertyInfo? overriddenProperty = GetTargetPropertyOrIndex(typeToDeriveFrom, duckAttribute.Name, duckAttribute.BindingFlags, implementationProperty);
                 if (overriddenProperty is null)
                 {
-                    DuckTypePropertyOrFieldNotFoundException.Throw(implementationProperty.Name, duckAttribute.Name);
+                    DuckTypePropertyOrFieldNotFoundException.Throw(implementationProperty.Name, duckAttribute.Name, typeToDeriveFrom);
                     continue;
                 }
 
@@ -819,7 +860,23 @@ namespace Datadog.Trace.DuckTyping
                     }
                 }
 
-                propertiesThatShouldBeImplemented.RemoveAll(prop => duckAttribute.Name == prop.Name);
+                propertiesThatShouldBeImplemented.RemoveAll(prop =>
+                {
+                    if (duckAttribute.Name.IndexOf(',') == -1)
+                    {
+                        return duckAttribute.Name == prop.Name;
+                    }
+
+                    foreach (var name in duckAttribute.Name.Split(','))
+                    {
+                        if (name == prop.Name)
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
             }
 
             if (propertiesThatShouldBeImplemented.Count > 0)
@@ -861,10 +918,10 @@ namespace Datadog.Trace.DuckTyping
                 switch (duckAttribute.Kind)
                 {
                     case DuckKind.Property:
-                        PropertyInfo? targetProperty = targetType.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
+                        PropertyInfo? targetProperty = GetTargetProperty(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetProperty is null)
                         {
-                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name);
+                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);
                             continue;
                         }
 
@@ -893,10 +950,10 @@ namespace Datadog.Trace.DuckTyping
                         break;
 
                     case DuckKind.Field:
-                        FieldInfo? targetField = targetType.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
+                        FieldInfo? targetField = GetTargetField(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetField is null)
                         {
-                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name);
+                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);
                             continue;
                         }
 
@@ -969,14 +1026,7 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Ldarg_0);
             if (UseDirectAccessTo(moduleBuilder, targetType))
             {
-                if (targetType.IsValueType)
-                {
-                    il.Emit(OpCodes.Unbox_Any, targetType);
-                }
-                else
-                {
-                    il.Emit(OpCodes.Castclass, targetType);
-                }
+                il.Emit(targetType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, targetType);
             }
 
             il.Emit(OpCodes.Call, ctor);
@@ -986,7 +1036,8 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Initobj, proxyDefinitionType);
 
             // Start copy properties from the proxy to the structure
-            foreach (FieldInfo finfo in proxyDefinitionType.GetFields())
+            bool containsFields = false;
+            foreach (var finfo in proxyDefinitionType.GetFields())
             {
                 // Skip readonly fields
                 if ((finfo.Attributes & FieldAttributes.InitOnly) != 0)
@@ -1000,13 +1051,13 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
-                PropertyInfo? prop = proxyType.GetProperty(finfo.Name);
-                if (prop?.GetMethod is not null)
+                if (proxyType.GetProperty(finfo.Name) is { GetMethod: { } propGetMethod })
                 {
                     il.Emit(OpCodes.Ldloca_S, structLocal.LocalIndex);
                     il.Emit(OpCodes.Ldloca_S, proxyLocal.LocalIndex);
-                    il.EmitCall(OpCodes.Call, prop.GetMethod, null);
+                    il.EmitCall(OpCodes.Call, propGetMethod, null);
                     il.Emit(OpCodes.Stfld, finfo);
+                    containsFields = true;
                 }
             }
 
@@ -1014,8 +1065,92 @@ namespace Datadog.Trace.DuckTyping
             il.WriteLoadLocal(structLocal.LocalIndex);
             il.Emit(OpCodes.Ret);
 
+            if (!containsFields && proxyDefinitionType.GetProperties().Length != 0)
+            {
+                DuckTypeDuckCopyStructDoesNotContainsAnyField.Throw(proxyDefinitionType);
+            }
+
             Type delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
             return createStructMethod.CreateDelegate(delegateType);
+        }
+
+        private static PropertyInfo? GetTargetPropertyOrIndex(Type targetType, string propertyName, BindingFlags bindingFlags, PropertyInfo proxyPropertyInfo)
+        {
+            if (propertyName.IndexOf(',') == -1)
+            {
+                try
+                {
+                    return targetType.GetProperty(propertyName, bindingFlags);
+                }
+                catch
+                {
+                    // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
+                    // In this case we make sure we select the indexer we want
+                    return targetType.GetProperty(propertyName, proxyPropertyInfo.PropertyType, proxyPropertyInfo.GetIndexParameters().Select(i => i.ParameterType).ToArray());
+                }
+            }
+
+            PropertyInfo? targetProperty = null;
+            foreach (var name in propertyName.Split(','))
+            {
+                try
+                {
+                    targetProperty = targetType.GetProperty(name, bindingFlags);
+                }
+                catch
+                {
+                    // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
+                    // In this case we make sure we select the indexer we want
+                    targetProperty = targetType.GetProperty(name, proxyPropertyInfo.PropertyType, proxyPropertyInfo.GetIndexParameters().Select(i => i.ParameterType).ToArray());
+                }
+
+                if (targetProperty is not null)
+                {
+                    break;
+                }
+            }
+
+            return targetProperty;
+        }
+
+        private static PropertyInfo? GetTargetProperty(Type targetType, string propertyName, BindingFlags bindingFlags)
+        {
+            if (propertyName.IndexOf(',') == -1)
+            {
+                return targetType.GetProperty(propertyName, bindingFlags);
+            }
+
+            PropertyInfo? targetProperty = null;
+            foreach (var name in propertyName.Split(','))
+            {
+                targetProperty = targetType.GetProperty(name, bindingFlags);
+                if (targetProperty is not null)
+                {
+                    break;
+                }
+            }
+
+            return targetProperty;
+        }
+
+        private static FieldInfo? GetTargetField(Type targetType, string fieldName, BindingFlags bindingFlags)
+        {
+            if (fieldName.IndexOf(',') == -1)
+            {
+                return targetType.GetField(fieldName, bindingFlags);
+            }
+
+            FieldInfo? targetField = null;
+            foreach (var name in fieldName.Split(','))
+            {
+                targetField = targetType.GetField(name, bindingFlags);
+                if (targetField is not null)
+                {
+                    break;
+                }
+            }
+
+            return targetField;
         }
 
         /// <summary>
@@ -1148,7 +1283,8 @@ namespace Datadog.Trace.DuckTyping
         /// <typeparam name="T">Type of proxy definition</typeparam>
         public static class CreateCache<T>
         {
-            private static CreateTypeResult _fastPath = default;
+            // Because CreateTypeResult is a struct, it needs to be boxed for safe concurrent access
+            private static StrongBox<CreateTypeResult>? _fastPath;
 
             /// <summary>
             /// Gets the type of T
@@ -1164,19 +1300,16 @@ namespace Datadog.Trace.DuckTyping
             public static CreateTypeResult GetProxy(Type targetType)
             {
                 // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
-                CreateTypeResult fastPath = _fastPath;
-                if (fastPath.TargetType == targetType)
+                var fastPath = Volatile.Read(ref _fastPath);
+
+                if (fastPath?.Value.TargetType == targetType)
                 {
-                    return fastPath;
+                    return fastPath.Value;
                 }
 
                 CreateTypeResult result = GetOrCreateProxyType(Type, targetType);
 
-                fastPath = _fastPath;
-                if (fastPath.TargetType is null)
-                {
-                    _fastPath = result;
-                }
+                _fastPath ??= new(result);
 
                 return result;
             }
@@ -1258,19 +1391,16 @@ namespace Datadog.Trace.DuckTyping
             public static CreateTypeResult GetReverseProxy(Type targetType)
             {
                 // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
-                CreateTypeResult fastPath = _fastPath;
-                if (fastPath.TargetType == targetType)
+                var fastPath = Volatile.Read(ref _fastPath);
+
+                if (fastPath?.Value.TargetType == targetType)
                 {
-                    return fastPath;
+                    return fastPath.Value;
                 }
 
                 CreateTypeResult result = GetOrCreateReverseProxyType(Type, targetType);
 
-                fastPath = _fastPath;
-                if (fastPath.TargetType is null)
-                {
-                    _fastPath = result;
-                }
+                _fastPath ??= new(result);
 
                 return result;
             }

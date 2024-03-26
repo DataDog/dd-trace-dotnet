@@ -58,6 +58,21 @@ namespace Datadog.Trace
         public const string Test = "test";
 
         /// <summary>
+        /// The span type for a Test Suite integration.
+        /// </summary>
+        internal const string TestSuite = "test_suite_end";
+
+        /// <summary>
+        /// The span type for a Test Module integration.
+        /// </summary>
+        internal const string TestModule = "test_module_end";
+
+        /// <summary>
+        /// The span type for a Test Module integration.
+        /// </summary>
+        internal const string TestSession = "test_session_end";
+
+        /// <summary>
         /// The span type for a Benchmark integration.
         /// </summary>
         public const string Benchmark = "benchmark";
@@ -86,5 +101,20 @@ namespace Datadog.Trace
         /// The span type for GRPC integrations
         /// </summary>
         internal const string Grpc = "grpc";
+
+        /// <summary>
+        /// The span type for System integrations
+        /// </summary>
+        internal const string System = "system";
+
+        /// <summary>
+        /// The span type for System integrations
+        /// </summary>
+        internal const string IastVulnerability = "vulnerability";
+
+        /// <summary>
+        /// The span type for DynamoDB integrations
+        /// </summary>
+        internal const string DynamoDb = "dynamodb";
     }
 }

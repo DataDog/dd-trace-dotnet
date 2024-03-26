@@ -30,13 +30,15 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
     internal static class EventIdHash
     {
         /// <summary>
-        /// Compute a 32-bit hash of the provided <paramref name="messageTemplate"/>. The
+        /// Compute a 32-bit hash of the provided <paramref name="messageTemplate"/>.
+        /// and optionally a <paramref name="stackTrace"/>. The
         /// resulting hash value can be uses as an event id in lieu of transmitting the
         /// full template string.
         /// </summary>
         /// <param name="messageTemplate">A message template.</param>
+        /// <param name="stackTrace">An optional stack trace to consider in the calculation.</param>
         /// <returns>A 32-bit hash of the template.</returns>
-        public static uint Compute(string messageTemplate)
+        public static uint Compute(string messageTemplate, string? stackTrace = null)
         {
             if (messageTemplate == null)
             {
@@ -52,6 +54,16 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                     hash += messageTemplate[i];
                     hash += (hash << 10);
                     hash ^= (hash >> 6);
+                }
+
+                if (stackTrace is not null)
+                {
+                    for (var i = 0; i < stackTrace.Length; ++i)
+                    {
+                        hash += stackTrace[i];
+                        hash += (hash << 10);
+                        hash ^= (hash >> 6);
+                    }
                 }
 
                 hash += (hash << 3);

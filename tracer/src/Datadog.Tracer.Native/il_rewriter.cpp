@@ -6,6 +6,8 @@
 
 #include "il_rewriter.h"
 
+#include <algorithm>
+
 #undef IfFailRet
 #define IfFailRet(EXPR)                                                                                                \
     do                                                                                                                 \
@@ -116,7 +118,11 @@ ILRewriter::ILRewriter(ICorProfilerInfo* pICorProfilerInfo, ICorProfilerFunction
     m_pEH(nullptr),
     m_pOffsetToInstr(nullptr),
     m_pOutputBuffer(nullptr),
-    m_pIMethodMalloc(nullptr)
+    m_pIMethodMalloc(nullptr),
+    m_maxStack(0),
+    m_flags(CorILMethod_TinyFormat),
+    m_nEH(0),
+    m_CodeSize(0)
 {
     m_IL.m_pNext = &m_IL;
     m_IL.m_pPrev = &m_IL;
@@ -193,6 +199,11 @@ HRESULT ILRewriter::Import()
 
     IfFailRet(m_pICorProfilerInfo->GetILFunctionBody(m_moduleId, m_tkMethod, &pMethodBytes, nullptr));
 
+    return Import(pMethodBytes);
+}
+
+HRESULT ILRewriter::Import(LPCBYTE pMethodBytes)
+{
     COR_ILMETHOD_DECODER decoder((COR_ILMETHOD*) pMethodBytes);
 
     // Import the header flags
@@ -211,6 +222,11 @@ HRESULT ILRewriter::Import()
 
 HRESULT ILRewriter::ImportIL(LPCBYTE pIL)
 {
+    if (m_pOffsetToInstr != nullptr)
+    {
+        delete[] m_pOffsetToInstr;
+    }
+
     m_pOffsetToInstr = new ILInstr*[m_CodeSize + 1];
     IfNullRet(m_pOffsetToInstr);
 
@@ -606,7 +622,7 @@ again:
 
     unsigned codeSize = offset;
     unsigned totalSize;
-    LPBYTE pBody = NULL;
+    LPBYTE pBody = nullptr;
     if (m_fGenerateTinyHeader)
     {
         // Make sure we can fit in a tiny header
@@ -660,6 +676,17 @@ again:
                                         sizeof(IMAGE_COR_ILMETHOD_SECT_EH_CLAUSE_FAT) * m_nEH);
 
             pCurrent = (BYTE*) (pEH + 1);
+
+            // Quote from ECMA-335, I.12.4.2.5 Overview of exception handling:
+            // "The ordering of the exception clauses in the Exception Handler Table is important. If
+            //      handlers are nested, the most deeply nested try blocks shall come before the try blocks that enclose them."
+            // If we will not follow that, we might face InvalidProgramException.
+            // That's why we order the Exception Clauses right before applying them.
+
+            std::sort(m_pEH, m_pEH + m_nEH, [](EHClause a, EHClause b) {
+                return a.m_pTryBegin->m_offset > b.m_pTryBegin->m_offset &&
+                       a.m_pTryEnd->m_offset < b.m_pTryEnd->m_offset;
+            });
 
             for (unsigned iEH = 0; iEH < m_nEH; iEH++)
             {
@@ -739,4 +766,56 @@ unsigned ILRewriter::GetMaxStackValue()
 bool ILRewriter::IsBranchTarget(ILInstr* pInstr)
 {
     return s_OpCodeFlags[pInstr->m_opcode] & OPCODEFLAGS_BranchTarget;
+}
+
+bool ILRewriter::IsLoadLocalDirectInstruction(unsigned opcode)
+{
+    switch (opcode)
+    {
+        case CEE_LDLOC:
+        case CEE_LDLOC_0:
+        case CEE_LDLOC_1:
+        case CEE_LDLOC_2:
+        case CEE_LDLOC_3:
+        case CEE_LDLOC_S:
+        return true;
+        default:return false;
+    }
+}
+
+uint32_t ILRewriter::GetLocalIndexFromOpcode(const ILInstr* pInstr)
+{
+    // get the index of the local that represent by the opcode or the operand of the instruction
+    const auto localIndex =
+        pInstr->m_pPrev->m_opcode == CEE_LDLOC
+    ? pInstr->m_pPrev->m_Arg16
+    : pInstr->m_pPrev->m_opcode == CEE_LDLOC_S
+    ? pInstr->m_pPrev->m_Arg8
+    : pInstr->m_pPrev->m_opcode - 6 /*6 because all the shortcuts to ldloc is the local index + 6*/;
+
+    return localIndex;
+}
+
+bool ILRewriter::IsLoadConstantInstruction(unsigned opcode)
+{
+    switch (opcode)
+    {
+        case CEE_LDC_I4:
+        case CEE_LDC_I4_0:
+        case CEE_LDC_I4_1:
+        case CEE_LDC_I4_2:
+        case CEE_LDC_I4_3:
+        case CEE_LDC_I4_4:
+        case CEE_LDC_I4_5:
+        case CEE_LDC_I4_6:
+        case CEE_LDC_I4_7:
+        case CEE_LDC_I4_8:
+        case CEE_LDC_I4_M1:
+        case CEE_LDC_I4_S:
+        case CEE_LDC_I8:
+        case CEE_LDC_R4:
+        case CEE_LDC_R8:
+        return true;
+        default:return false;
+    }
 }

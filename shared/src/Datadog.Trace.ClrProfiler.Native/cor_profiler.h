@@ -30,16 +30,16 @@ namespace datadog::shared::nativeloader
         ICorProfilerInfo4* m_info;
         std::shared_ptr<ICorProfilerInfo12> m_writeToDiskCorProfilerInfo;
 
-        void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
-        void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);
+        static void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
+        static void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);
 
     public:
         CorProfiler(IDynamicDispatcher* dispatcher);
         ~CorProfiler();
 
         HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
-        ULONG STDMETHODCALLTYPE AddRef(void) override;
-        ULONG STDMETHODCALLTYPE Release(void) override;
+        ULONG STDMETHODCALLTYPE AddRef() override;
+        ULONG STDMETHODCALLTYPE Release() override;
 
         HRESULT STDMETHODCALLTYPE Initialize(IUnknown* pICorProfilerInfoUnk) override;
         HRESULT STDMETHODCALLTYPE Shutdown() override;

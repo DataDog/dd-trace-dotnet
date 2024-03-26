@@ -5,10 +5,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Numerics;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
@@ -16,7 +17,9 @@ using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
+using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;
 using Xunit;
 
@@ -27,100 +30,132 @@ public class LiveDebuggerTests
     [Fact]
     public async Task DebuggerEnabled_ServicesCalled()
     {
-        var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
-        {
-            { ConfigurationKeys.Debugger.Enabled, "1" },
-        }));
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "1" }, }),
+            NullConfigurationTelemetry.Instance);
 
-        var settings = ImmutableDebuggerSettings.Create(tracerSettings);
         var discoveryService = new DiscoveryServiceMock();
-        var managerMock = new RemoteConfigurationManagerMock();
+        var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
+        var symbolsUploader = new SymbolsUploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
-        var updater = ConfigurationUpdater.Create(settings);
+        var updater = ConfigurationUpdater.Create("env", "version");
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, managerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater);
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         probeStatusPoller.Called.Should().BeTrue();
         debuggerSink.Called.Should().BeTrue();
-        managerMock.Products.ContainsKey(LiveDebugger.Instance.Product.Name).Should().BeTrue();
+        rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeTrue();
     }
 
     [Fact]
     public async Task DebuggerDisabled_ServicesNotCalled()
     {
-        var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
-        {
-            { ConfigurationKeys.Debugger.Enabled, "0" },
-        }));
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "0" }, }),
+            NullConfigurationTelemetry.Instance);
 
-        var settings = ImmutableDebuggerSettings.Create(tracerSettings);
         var discoveryService = new DiscoveryServiceMock();
-        var managerMock = new RemoteConfigurationManagerMock();
+        var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
+        var symbolsUploader = new SymbolsUploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
-        var updater = ConfigurationUpdater.Create(settings);
+        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, managerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater);
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         lineProbeResolver.Called.Should().BeFalse();
         debuggerSink.Called.Should().BeFalse();
         probeStatusPoller.Called.Should().BeFalse();
-        managerMock.Products.ContainsKey(LiveDebugger.Instance.Product.Name).Should().BeFalse();
+        rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeFalse();
     }
 
     private class DiscoveryServiceMock : IDiscoveryService
     {
-        public string ConfigurationEndpoint => nameof(ConfigurationEndpoint);
-
-        public string DebuggerEndpoint => nameof(DebuggerEndpoint);
-
-        public string AgentVersion => nameof(AgentVersion);
-
         internal bool Called { get; private set; }
 
-        public Task<bool> DiscoverAsync()
+        public void SubscribeToChanges(Action<AgentConfiguration> callback)
         {
             Called = true;
-            return Task.FromResult(true);
+            callback(
+                new AgentConfiguration(
+                    configurationEndpoint: "configurationEndpoint",
+                    debuggerEndpoint: "debuggerEndpoint",
+                    symbolDbEndpoint: "symbolDbEndpoint",
+                    agentVersion: "agentVersion",
+                    statsEndpoint: "traceStatsEndpoint",
+                    dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
+                    eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
+                    telemetryProxyEndpoint: "telemetryProxyEndpoint",
+                    tracerFlareEndpoint: "tracerFlareEndpoint",
+                    clientDropP0: false));
         }
+
+        public void RemoveSubscription(Action<AgentConfiguration> callback)
+        {
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 
-    private class RemoteConfigurationManagerMock : IRemoteConfigurationManager
+    private class RcmSubscriptionManagerMock : IRcmSubscriptionManager
     {
-        internal bool Called { get; private set; }
+        public bool HasAnySubscription { get; }
 
-        internal Dictionary<string, Product> Products { get; private set; } = new();
+        public ICollection<string> ProductKeys { get; } = new List<string>();
 
-        public Task StartPollingAsync()
+        public void SubscribeToChanges(ISubscription subscription)
         {
-            Called = true;
-            return Task.CompletedTask;
+            foreach (var productKey in subscription.ProductKeys)
+            {
+                ProductKeys.Add(productKey);
+            }
         }
 
-        public void RegisterProduct(Product product)
+        public void Replace(ISubscription oldSubscription, ISubscription newSubscription)
         {
-            Products.Add(product.Name, product);
+            foreach (var productKey in oldSubscription.ProductKeys)
+            {
+                ProductKeys.Remove(productKey);
+            }
+
+            foreach (var productKey in newSubscription.ProductKeys)
+            {
+                ProductKeys.Add(productKey);
+            }
         }
 
-        public void UnregisterProduct(string productName)
+        public void Unsubscribe(ISubscription subscription)
         {
-            Products.Remove(productName);
+            foreach (var productKey in subscription.ProductKeys)
+            {
+                ProductKeys.Remove(productKey);
+            }
+        }
+
+        public void SetCapability(BigInteger index, bool available)
+        {
+            throw new NotImplementedException();
+        }
+
+        public byte[] GetCapabilities()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse>> callback)
+        {
+            throw new NotImplementedException();
         }
     }
 
     private class LineProbeResolverMock : ILineProbeResolver
     {
         internal bool Called { get; private set; }
-
-        public void OnDomainUnloaded()
-        {
-            Called = true;
-        }
 
         public LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out BoundLineProbeLocation location)
         {
@@ -138,18 +173,30 @@ public class LiveDebuggerTests
             return Task.CompletedTask;
         }
 
-        public void AddSnapshot(string snapshot)
+        public void AddSnapshot(string probeId, string snapshot)
         {
             throw new NotImplementedException();
         }
 
-        public void AddProbeStatus(string probeId, Status status, Exception exception = null, string errorMessage = null)
+        public void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception exception = null, string errorMessage = null)
         {
             throw new NotImplementedException();
         }
 
         public void Dispose()
         {
+        }
+    }
+
+    private class SymbolsUploaderMock : ISymbolsUploader
+    {
+        public void Dispose()
+        {
+        }
+
+        public Task StartExtractingAssemblySymbolsAsync()
+        {
+            return Task.CompletedTask;
         }
     }
 
@@ -162,14 +209,25 @@ public class LiveDebuggerTests
             Called = true;
         }
 
-        public void AddProbes(string[] newProbes)
+        public void AddProbes(FetchProbeStatus[] newProbes)
         {
             Called = true;
         }
 
-        public void RemoveProbes(string[] newProbes)
+        public void RemoveProbes(string[] removeProbes)
         {
             Called = true;
+        }
+
+        public void UpdateProbes(string[] probeIds, FetchProbeStatus[] newProbeStatuses)
+        {
+            Called = true;
+        }
+
+        public string[] GetFetchedProbes(string[] candidateProbeIds)
+        {
+            Called = true;
+            return candidateProbeIds;
         }
 
         public void Dispose()

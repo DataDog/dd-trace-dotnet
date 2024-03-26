@@ -114,7 +114,7 @@ TEST(ConfigurationTest, CheckDefaultLogDirectoryWhenVariableIsNotSet)
     auto configuration = Configuration{};
     auto expectedValue =
 #ifdef _WINDOWS
-        WStr("C:\\ProgramData\\Datadog-APM\\logs\\DotNet");
+        WStr("C:\\ProgramData\\Datadog .NET Tracer\\logs");
 #else
         WStr("/var/log/datadog/dotnet");
 #endif
@@ -353,24 +353,88 @@ TEST(ConfigurationTest, CheckMinimumCoresThresholdWhenVariableIsSet)
     ASSERT_EQ(configuration.MinimumCores(), 0.5);
 }
 
-TEST(ConfigurationTest, CheckContentionProfilingIsDisabledByDefault)
+TEST(ConfigurationTest, CheckExceptionProfilingIsEnabledByDefault)
 {
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
+    ASSERT_THAT(configuration.IsExceptionProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckExceptionProfilingIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ExceptionProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsExceptionProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckExceptionProfilingIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ExceptionProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsExceptionProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckContentionProfilingIsEnabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), true);
 }
 
 TEST(ConfigurationTest, CheckContentionProfilingIsEnabledIfEnvVarSetToTrue)
 {
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ContentionProfilingEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LockContentionProfilingEnabled, WStr("1"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsContentionProfilingEnabled(), true);
 }
 
 TEST(ConfigurationTest, CheckContentionProfilingIsDisabledIfEnvVarSetToFalse)
 {
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ContentionProfilingEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LockContentionProfilingEnabled, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckDeprecatedContentionProfilingIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DeprecatedContentionProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckDeprecatedContentionProfilingIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DeprecatedContentionProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckLockProfilingOverrideContentionEnvVarIfSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar1(EnvironmentVariables::LockContentionProfilingEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::DeprecatedContentionProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckLockProfilingOverrideContentionEnvVarIfSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar1(EnvironmentVariables::LockContentionProfilingEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::DeprecatedContentionProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckContentionSampleLimitIfEnvVarSet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ContentionSampleLimit, WStr("123"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.ContentionSampleLimit(), 123);
+}
+
+TEST(ConfigurationTest, CheckContentionDurationThresholdIfEnvVarSet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ContentionDurationThreshold, WStr("123"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.ContentionDurationThreshold(), 123);
 }
 
 TEST(ConfigurationTest, CheckCpuProfilingIsEnabledByDefault)
@@ -391,4 +455,453 @@ TEST(ConfigurationTest, CheckCpuProfilingIsDisabledIfEnvVarSetToFalse)
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingEnabled, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsCpuProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckCpuWallTimeSamplingRateIfEnvVarSet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuWallTimeSamplingRate, WStr("123"));
+    auto configuration = Configuration{};
+    auto rate = configuration.CpuWallTimeSamplingRate();
+    ASSERT_THAT(rate, std::chrono::nanoseconds(123000000));
+}
+
+TEST(ConfigurationTest, CheckCpuWallTimeSamplingRateIfNotSet)
+{
+    auto configuration = Configuration{};
+    auto rate = configuration.CpuWallTimeSamplingRate();
+    auto count = rate.count();
+    ASSERT_THAT(rate, std::chrono::nanoseconds(9000000));
+}
+
+TEST(ConfigurationTest, CheckCpuWallTimeSamplingRateIfTooSmallValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuWallTimeSamplingRate, WStr("1"));
+    auto configuration = Configuration{};
+    auto rate = configuration.CpuWallTimeSamplingRate();
+    auto count = rate.count();
+    ASSERT_THAT(rate, std::chrono::nanoseconds(5000000));
+}
+
+TEST(ConfigurationTest, CheckAllocationProfilingIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsAllocationProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckAllocationProfilingIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::AllocationProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsAllocationProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckAllocationProfilingIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::AllocationProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsAllocationProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckAllocationSampleLimitIfEnvVarSet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::AllocationSampleLimit, WStr("123"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.AllocationSampleLimit(), 123);
+}
+
+TEST(ConfigurationTest, CheckNamedPipeIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    EXPECT_EQ(configuration.GetNamedPipeName(), std::string());
+}
+
+TEST(ConfigurationTest, CheckNamedPipePathWhenProvided)
+{
+    std::string expectedPath = R"(\\.\mypipe\comeon)";
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::NamedPipeName, shared::ToWSTRING(expectedPath));
+    auto configuration = Configuration{};
+    EXPECT_EQ(configuration.GetNamedPipeName(), expectedPath);
+}
+
+TEST(ConfigurationTest, CheckTimestampAsLabelIsEnabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsTimestampsAsLabelEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckTimestampAsLabelIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::TimestampsAsLabelEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsTimestampsAsLabelEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckTimestampAsLabelIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::TimestampsAsLabelEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsTimestampsAsLabelEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckWallTimeThreadsThresholdIfNoValue)
+{
+    auto configuration = Configuration{};
+    auto threshold = configuration.WalltimeThreadsThreshold();
+    ASSERT_THAT(threshold, 5);
+}
+
+TEST(ConfigurationTest, CheckWallTimeThreadsThresholdIfTooSmallValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::WalltimeThreadsThreshold, WStr("1"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.WalltimeThreadsThreshold();
+    ASSERT_THAT(threshold, 5);
+}
+
+TEST(ConfigurationTest, CheckWallTimeThreadsThresholdIfTooLargeValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::WalltimeThreadsThreshold, WStr("5000"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.WalltimeThreadsThreshold();
+    ASSERT_THAT(threshold, 64);
+}
+
+TEST(ConfigurationTest, CheckWallTimeThreadsThresholdIfCorrectValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::WalltimeThreadsThreshold, WStr("16"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.WalltimeThreadsThreshold();
+    ASSERT_THAT(threshold, 16);
+}
+
+TEST(ConfigurationTest, CheckCpuThreadsThresholdIfNoValue)
+{
+    auto configuration = Configuration{};
+    auto threshold = configuration.CpuThreadsThreshold();
+    ASSERT_THAT(threshold, 64);
+}
+
+TEST(ConfigurationTest, CheckCpuThreadsThresholdIfTooSmallValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuTimeThreadsThreshold, WStr("1"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.CpuThreadsThreshold();
+    ASSERT_THAT(threshold, 5);
+}
+
+TEST(ConfigurationTest, CheckCpuThreadsThresholdIfTooLargeValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuTimeThreadsThreshold, WStr("5000"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.CpuThreadsThreshold();
+    ASSERT_THAT(threshold, 128);
+}
+
+TEST(ConfigurationTest, CheckCpuThreadsThresholdIfCorrectValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuTimeThreadsThreshold, WStr("16"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.CpuThreadsThreshold();
+    ASSERT_THAT(threshold, 16);
+}
+
+TEST(ConfigurationTest, CheckGarbageCollectionProfilingIsEnabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGarbageCollectionProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckGarbageCollectionProfilingIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GCProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGarbageCollectionProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckGarbageCollectionProfilingIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GCProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGarbageCollectionProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckHeapProfilingIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckHeapProfilingIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckHeapProfilingIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckBacktrace2IsUsedByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.UseBacktrace2(), true);
+}
+
+TEST(ConfigurationTest, CheckBacktrace2IsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::UseBacktrace2, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.UseBacktrace2(), false);
+}
+
+TEST(ConfigurationTest, CheckBacktrace2IsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::UseBacktrace2, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.UseBacktrace2(), true);
+}
+
+TEST(ConfigurationTest, CheckDebugInfoIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsDebugInfoEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckDebugInfoIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DebugInfoEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsDebugInfoEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckDebugInfoIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DebugInfoEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsDebugInfoEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckGcThreadsCpuTimeIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckGcThreadsCpuTimeIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GcThreadsCpuTimeEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckGcThreadsCpuTimeIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GcThreadsCpuTimeEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckThreadLifetimeIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsThreadLifetimeEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckThreadLifetimeIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ThreadLifetimeEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsThreadLifetimeEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckThreadLifetimeIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ThreadLifetimeEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsThreadLifetimeEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckGitMetadataIfNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetGitRepositoryUrl(), "");
+    ASSERT_THAT(configuration.GetGitCommitSha(), "");
+}
+
+TEST(ConfigurationTest, CheckGitMetadataIfSet)
+{
+    std::string expectedRepoUrl = "http://dotnet";
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GitRepositoryUrl, shared::ToWSTRING(expectedRepoUrl));
+    std::string expectedCommitSha = "42";
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::GitCommitSha, shared::ToWSTRING(expectedCommitSha));
+
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetGitRepositoryUrl(), expectedRepoUrl);
+    ASSERT_THAT(configuration.GetGitCommitSha(), expectedCommitSha);
+}
+
+TEST(ConfigurationTest, CheckSystemCallsShieldIsEnabledByDefault)
+{
+    auto configuration = Configuration{};
+    auto expectedValue =
+#ifdef LINUX
+        true;
+#else
+        false;
+#endif
+    ASSERT_THAT(configuration.IsSystemCallsShieldEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSystemCallsShieldIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SystemCallsShieldEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    auto expectedValue =
+#ifdef LINUX
+        true;
+#else
+        false; // even other platform it's disabled
+#endif
+    ASSERT_THAT(configuration.IsSystemCallsShieldEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSystemCallsShieldIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SystemCallsShieldEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsSystemCallsShieldEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckCIVisibilityEnabledDefaultValueIfNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsCIVisibilityEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckCIVisibilityEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CIVisibilityEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsCIVisibilityEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckCIVisibilityEnabledIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CIVisibilityEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsCIVisibilityEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckCIVisibilitySpanIdDefaultValueIfNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCIVisibilitySpanId(), 0ull);
+}
+
+TEST(ConfigurationTest, CheckCIVisibilitySpanIdValueIfSet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CIVisibilityEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::InternalCIVisibilitySpanId, WStr("12345678909"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCIVisibilitySpanId(), 12345678909ull);
+}
+
+TEST(ConfigurationTest, CheckCIVisibilitySpanIdValueIfSetTo0)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CIVisibilityEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::InternalCIVisibilitySpanId, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCIVisibilitySpanId(), 0ull);
+}
+
+TEST(ConfigurationTest, CheckEtwIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsEtwEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckEtwIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::EtwEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    auto expectedValue =
+#ifdef LINUX
+        false;
+#else
+        true;
+#endif
+    ASSERT_THAT(configuration.IsEtwEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckEtwIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::EtwEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsEtwEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiDeployedByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsSsiDeployed(), false);
+}
+
+TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarConstainsProfiling)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer,profiling"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsSsiDeployed(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarDoesNotContainProfiling)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsSsiDeployed(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarIsEmpty)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr(""));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsSsiDeployed(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiActivatedByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsSsiActivated(), false);
+}
+
+TEST(ConfigurationTest, CheckSsiIsActivatedIfEnvVarConstainsProfiling)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer,profiling"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsSsiActivated(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsNotActivatedIfEnvVarDoesNotContainProfiling)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsSsiActivated(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsNotActivatedIfEnvVarIsEmpty)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr(""));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsSsiActivated(), expectedValue);
 }

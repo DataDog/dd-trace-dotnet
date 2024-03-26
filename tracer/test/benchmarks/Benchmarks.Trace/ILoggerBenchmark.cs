@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using BenchmarkDotNet.Attributes;
@@ -13,6 +13,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkAgent4]
+    [BenchmarkCategory(Constants.TracerCategory)]
     public class ILoggerBenchmark
     {
         private static readonly Tracer LogInjectionTracer;

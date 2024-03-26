@@ -8,7 +8,28 @@ on:
         required: false
 
 jobs:
+  lib-injection-image-test:
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        lib-injection-connection: ['network','uds']
+        lib-injection-use-admission-controller: [false, true]
+        runtime: ['bullseye-slim','alpine']
+      fail-fast: false
+    uses: ./.github/workflows/lib-injection-test.yml
+    with:
+      commit_id: ${{ github.event.inputs.forced_commit_id || github.sha }}
+      lib_injection_connection: ${{ matrix.lib-injection-connection }}
+      lib_injection_use_admission_controller: ${{ matrix.lib-injection-use-admission-controller }}
+      runtime: ${{ matrix.runtime }}
+    secrets:
+      DOCKER_REGISTRY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   create_draft_release:
+    needs:
+      - lib-injection-image-test
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
@@ -20,9 +41,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set SHA
+        id: set_sha
+        run: |
+          if [ -z "${{ github.event.inputs.forced_commit_id }}" ]; then
+              commitsha="${GITHUB_SHA}"
+          else
+              commitsha="${{ github.event.inputs.forced_commit_id }}"
+          fi
+          echo "Using sha $commitsha"
+          echo "sha=${commitsha}" >> $GITHUB_OUTPUT
+
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '6.0.100'
+          dotnet-version: '8.0.100'
 
       - name: "Configure Git Credentials"
         run: |
@@ -35,10 +67,10 @@ jobs:
 
       - name: "Download build assets from Azure Pipelines"
         id: assets
-        run: ./tracer/build.sh DownloadAzurePipelineAndGitlabArtifacts
+        run: ./tracer/build.sh DownloadReleaseArtifacts
         env:
           TargetBranch: ${{ github.event.ref }}
-          CommitSha: "${{ github.event.inputs.forced_commit_id }}"
+          CommitSha: "${{ steps.set_sha.outputs.sha }}"
 
       - name: "Generate release notes"
         id: release_notes
@@ -75,6 +107,7 @@ jobs:
             ${{steps.assets.outputs.artifacts_path}}/*.zip
             ${{steps.assets.outputs.gitlab_artifacts_path}}/*.msi
             ${{steps.assets.outputs.gitlab_artifacts_path}}/*.zip
+            ${{steps.assets.outputs.sha_path}}
 
       - name: "Publish nuget packages to nuget.org"
         working-directory: ${{steps.assets.outputs.artifacts_path}}

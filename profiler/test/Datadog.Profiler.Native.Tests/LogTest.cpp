@@ -44,7 +44,7 @@ TEST(LoggerTest, EnsureLogFilesAreFoundAtDefaultLocation)
 
     fs::path expectedLogFileFullPath =
 #ifdef _WINDOWS
-        "C:\\ProgramData\\Datadog-APM\\logs\\DotNet\\" + expectedLogFilename;
+        "C:\\ProgramData\\Datadog .NET Tracer\\logs\\" + expectedLogFilename;
 #else
         "/var/log/datadog/dotnet/" + expectedLogFilename;
 #endif

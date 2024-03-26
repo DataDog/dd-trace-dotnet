@@ -2,6 +2,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
+
+#include "IBatchedSamplesProvider.h"
 #include "IConfiguration.h"
 #include "IExporter.h"
 #include "IMetricsSender.h"
@@ -28,6 +30,7 @@ public:
     bool Stop() override;
 
     void Register(ISamplesProvider* samplesProvider) override;
+    void RegisterBatchedProvider(IBatchedSamplesProvider* batchedSamplesProvider) override;
 
     // Public but should only be called privately or from tests
     void Export();
@@ -35,7 +38,7 @@ public:
 private:
     void SamplesWork();
     void ExportWork();
-    void CollectSamples();
+    void CollectSamples(std::forward_list<std::pair<ISamplesProvider*, uint64_t>>& samplesProviders);
     void SendHeartBeatMetric(bool success);
 
     const char* _serviceName = "SamplesCollector";
@@ -48,12 +51,21 @@ private:
     std::chrono::seconds _uploadInterval;
     bool _mustStop;
     IThreadsCpuManager* _pThreadsCpuManager;
-    std::forward_list<ISamplesProvider*> _samplesProviders;
+    std::forward_list<std::pair<ISamplesProvider*, uint64_t>> _samplesProviders;
+    std::forward_list<std::pair<ISamplesProvider*, uint64_t>> _batchedSamplesProviders;
     std::thread _workerThread;
     std::thread _exporterThread;
-    std::mutex _exportLock;
+    std::recursive_mutex _exportLock;
     std::promise<void> _exporterThreadPromise;
     std::promise<void> _workerThreadPromise;
     IMetricsSender* _metricsSender;
     IExporter* _exporter;
+
+    // OPTIM
+    // It safe to have only one cached sample with no synchronization
+    // This field is only used by one thread at a time:
+    // - worker thread responsible to collect and push samples in the profile
+    // - thread executing the Stop: at that time, the worker thread has stopped
+    //   and the thread will be the only one using this field to collect the last samples
+    std::shared_ptr<Sample> _cachedSample;
 };

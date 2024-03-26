@@ -20,8 +20,10 @@
     <Property Id="ARPURLINFOABOUT">https://datadoghq.com/</Property>
     <Property Id="ARPHELPLINK">https://datadoghq.com/support/</Property>
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER"/>
-
-    <Property Id="INSTALLFOLDER">
+    <Property Id="PATHSHORTCUT" Value="1" />
+    <Property Id="DD_DOTNET_LINK" Value="https://docs.datadoghq.com/tracing/troubleshooting/dotnet_diagnostic_tool/" />
+      
+      <Property Id="INSTALLFOLDER">
       <RegistrySearch Id="RegistrySearch" Type="raw" Root="HKLM" Win64="$(var.Win64)" Key="Software\$(var.Company)\$(var.ProductName)" Name="InstallPath"/>
     </Property>
 
@@ -57,6 +59,8 @@
 
       <!-- Only include 64-bit native files in the 64-bit build -->
       <?if $(var.Win64) = yes ?>
+      <ComponentGroupRef Id="dd_dotnet.cmd"/>
+      <ComponentGroupRef Id="dd_dotnet.exe"/>
       <ComponentGroupRef Id="Shared.Files.NativeLoader.64"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Native.64"/>
       <ComponentGroupRef Id="Tracer.Files.Native.64"/>

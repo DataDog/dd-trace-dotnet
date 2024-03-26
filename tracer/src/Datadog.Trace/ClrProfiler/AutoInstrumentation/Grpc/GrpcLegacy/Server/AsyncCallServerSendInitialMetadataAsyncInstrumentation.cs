@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
                 var metadata = headers.DuckCast<IMetadata>();
                 if (metadata.Count > 0)
                 {
-                    span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                    span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
                 }
             }
 

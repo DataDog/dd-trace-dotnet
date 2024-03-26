@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "OpSysTools.h"
+
 #ifdef _WINDOWS
 #include "shared/src/native-src/string.h"
 #include <malloc.h>
@@ -13,16 +14,20 @@
 #pragma comment(lib, "winmm.lib")
 #else
 #include <cstdlib>
-#include <dlfcn.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
 #define _GNU_SOURCE
-#include <errno.h>
 #include "cgroup.h"
+#include <dlfcn.h>
+#include <errno.h>
+#include <link.h>
+#include <sys/auxv.h>
 #endif
+
+#include "ScopeFinalizer.h"
 
 #include <chrono>
 #include <thread>
@@ -36,6 +41,8 @@
 
 std::int64_t OpSysTools::s_nanosecondsPerHighPrecisionTimerTick = 0;
 std::int64_t OpSysTools::s_highPrecisionTimerTicksPerNanosecond = 0;
+uint64_t OpSysTools::s_ticksPerSecond = 0;
+
 
 #ifdef _WINDOWS
 bool OpSysTools::s_isRunTimeLinkingThreadDescriptionDone = false;
@@ -61,7 +68,7 @@ int32_t OpSysTools::GetThreadId()
 #endif
 }
 
-bool OpSysTools::InitHighPrecisionTimer(void)
+bool OpSysTools::InitHighPrecisionTimer()
 {
 #ifdef _WINDOWS
     LARGE_INTEGER ticksPerSecond;
@@ -74,6 +81,10 @@ bool OpSysTools::InitHighPrecisionTimer(void)
         return false;
     }
 
+    s_ticksPerSecond = ticksPerSecond.QuadPart;
+
+    // TODO: BUG - ticksPerSecond is ALWAYS smaller than NanosecondsPerSecond.
+    // so this code is useless: both s_xx will be 0...
     if (NanosecondsPerSecond >= ticksPerSecond.QuadPart)
     {
         s_nanosecondsPerHighPrecisionTimerTick = ticksPerSecond.QuadPart / NanosecondsPerSecond;
@@ -94,7 +105,7 @@ bool OpSysTools::InitHighPrecisionTimer(void)
 #endif
 }
 
-std::int64_t OpSysTools::GetHighPrecisionNanosecondsFallback(void)
+std::int64_t OpSysTools::GetHighPrecisionNanosecondsFallback()
 {
     std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
 
@@ -103,7 +114,7 @@ std::int64_t OpSysTools::GetHighPrecisionNanosecondsFallback(void)
 }
 
 #ifdef _WINDOWS
-void OpSysTools::InitDelegates_GetSetThreadDescription(void)
+void OpSysTools::InitDelegates_GetSetThreadDescription()
 {
     if (s_isRunTimeLinkingThreadDescriptionDone)
     {
@@ -135,7 +146,7 @@ void OpSysTools::InitDelegates_GetSetThreadDescription(void)
     s_isRunTimeLinkingThreadDescriptionDone = true;
 }
 
-OpSysTools::SetThreadDescriptionDelegate_t OpSysTools::GetDelegate_SetThreadDescription(void)
+OpSysTools::SetThreadDescriptionDelegate_t OpSysTools::GetDelegate_SetThreadDescription()
 {
     SetThreadDescriptionDelegate_t setThreadDescriptionDelegate = s_setThreadDescriptionDelegate;
     if (nullptr == setThreadDescriptionDelegate)
@@ -147,7 +158,7 @@ OpSysTools::SetThreadDescriptionDelegate_t OpSysTools::GetDelegate_SetThreadDesc
     return setThreadDescriptionDelegate;
 }
 
-OpSysTools::GetThreadDescriptionDelegate_t OpSysTools::GetDelegate_GetThreadDescription(void)
+OpSysTools::GetThreadDescriptionDelegate_t OpSysTools::GetDelegate_GetThreadDescription()
 {
     GetThreadDescriptionDelegate_t getThreadDescriptionDelegate = s_getThreadDescriptionDelegate;
     if (nullptr == getThreadDescriptionDelegate)
@@ -186,9 +197,9 @@ bool OpSysTools::SetNativeThreadName(std::thread* pNativeThread, const WCHAR* de
 #endif
 }
 
-bool OpSysTools::GetNativeThreadName(HANDLE windowsThreadHandle, WCHAR* pThreadDescrBuff, const std::uint32_t threadDescrBuffSize)
-{
 #ifdef _WINDOWS
+shared::WSTRING OpSysTools::GetNativeThreadName(HANDLE handle)
+{
     // The SetThreadDescription(..) API is only available on recent Windows versions and must be called dynamically.
     // We attempt to link to it at runtime, and if we do not succeed, this operation is a No-Op.
     // https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getthreaddescription#remarks
@@ -196,26 +207,104 @@ bool OpSysTools::GetNativeThreadName(HANDLE windowsThreadHandle, WCHAR* pThreadD
     GetThreadDescriptionDelegate_t getThreadDescriptionDelegate = GetDelegate_GetThreadDescription();
     if (nullptr == getThreadDescriptionDelegate)
     {
-        return false;
+        return {};
     }
 
     PWSTR pThreadDescr = nullptr;
-    HRESULT hr = getThreadDescriptionDelegate(windowsThreadHandle, &pThreadDescr);
-    if (FAILED(hr) || nullptr == pThreadDescr)
+    HRESULT hr = getThreadDescriptionDelegate(handle, &pThreadDescr);
+    if (FAILED(hr))
     {
-        return false;
+        return {};
+    }
+    on_leave
+    {
+        LocalFree(pThreadDescr);
+    };
+
+    return shared::WSTRING(pThreadDescr);
+}
+
+ScopedHandle OpSysTools::GetThreadHandle(DWORD threadId)
+{
+    auto handle = ScopedHandle(::OpenThread(THREAD_QUERY_INFORMATION, FALSE, threadId));
+    if (handle == NULL)
+    {
+        LPVOID msgBuffer;
+        DWORD errorCode = GetLastError();
+
+        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                      NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
+
+        if (msgBuffer != NULL)
+        {
+            Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "': ", (LPTSTR)msgBuffer);
+            LocalFree(msgBuffer);
+        }
+        else
+        {
+            Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "' (error = ", errorCode, ")");
+        }
+    }
+    return handle;
+}
+#else
+shared::WSTRING OpSysTools::GetNativeThreadName(pid_t tid)
+{
+    // TODO refactor this in OsSpecificApi
+    char commPath[64] = "/proc/self/task/";
+
+    // Adjust the base
+    int base = 1000000000;
+    int capacity = 64;
+    while (base > tid)
+    {
+        base /= 10;
     }
 
-    wcsncpy_s(pThreadDescrBuff, threadDescrBuffSize, pThreadDescr, threadDescrBuffSize);
-    *(pThreadDescrBuff + threadDescrBuffSize) = 0;
+    int offset = 16;
+    // Write each number to the string
+    while (base > 0 && offset < 64)
+    {
+        commPath[offset++] = (tid / base) + '0';
+        tid %= base;
+        base /= 10;
+    }
 
-    LocalFree(pThreadDescr);
+    // check in case of misusage
+    if (offset >= capacity || offset + 5 >= capacity)
+    {
+        return WStr("");
+    }
 
-    return true;
-#else
-    return false;
-#endif
+    strncpy(commPath + offset, "/comm", 5);
+
+    auto fd = open(commPath, O_RDONLY);
+    if (fd == -1)
+    {
+        return WStr("");
+    }
+    on_leave
+    {
+        close(fd);
+    };
+
+    char line[16] = {0};
+
+    auto length = read(fd, line, sizeof(line) - 1);
+    if (length <= 0)
+    {
+        return {};
+    }
+
+    std::string threadName;
+    if (line[length - 1] == '\n')
+        threadName = std::string(line, length - 1);
+    else
+        threadName = std::string(line);
+
+    return shared::ToWSTRING(std::move(threadName));
 }
+#endif
 
 bool OpSysTools::GetModuleHandleFromInstructionPointer(void* nativeIP, std::uint64_t* pModuleHandle)
 {
@@ -284,7 +373,7 @@ void* OpSysTools::AlignedMAlloc(size_t alignment, size_t size)
 #endif
 }
 
-void OpSysTools::MemoryBarrierProcessWide(void)
+void OpSysTools::MemoryBarrierProcessWide()
 {
 #ifdef _WINDOWS
     FlushProcessWriteBuffers();
@@ -322,7 +411,7 @@ std::string OpSysTools::GetProcessName()
     return fs::path(pathName).filename().string();
 #elif MACOS
     const int32_t length = 260;
-    char* buffer = new char[length];
+    char buffer[length] = {'\0'};
     proc_name(getpid(), buffer, length);
     return std::string(buffer);
 #else
@@ -333,41 +422,67 @@ std::string OpSysTools::GetProcessName()
 #endif
 }
 
-bool OpSysTools::IsSafeToStartProfiler(double coresThreshold)
+bool OpSysTools::IsSafeToStartProfiler(double coresThreshold, double& cpuLimit)
 {
-#ifdef _WINDOWS
+#if defined(_WINDOWS) || defined(DD_SANITIZERS)
     // Today we do not have any specific check before starting the profiler on Windows.
+    // And also when we compile for sanitizers tests (Address and Undefined behavior sanitizers)
+    cpuLimit = 0;
     return true;
 #else
     // For linux, we check that the wrapper library is loaded and the default `dl_iterate_phdr` is
     // the one provided by our library.
 
-    // We assume that the profiler library is in the same folder as the wrapper library
-    auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
-    auto wrapperLibrary = currentModulePath.parent_path() / "Datadog.Linux.ApiWrapper.x64.so";
-    auto wrapperLibraryPath = wrapperLibrary.string();
+    const std::string wrapperLibraryName = "Datadog.Linux.ApiWrapper.x64.so";
+    const std::string customFnName = "dl_iterate_phdr";
+    auto* dlIteratePhdr = reinterpret_cast<void*>(::dl_iterate_phdr);
 
-    auto* instance = dlopen(wrapperLibraryPath.c_str(), RTLD_LAZY | RTLD_LOCAL);
-    if (instance == nullptr)
+    Dl_info info;
+    auto res = dladdr(dlIteratePhdr, &info);
+    if (res == 0 || info.dli_fname == nullptr)
     {
-        auto errorId = errno;
-        Log::Warn("Library '", wrapperLibraryPath, "' cannot be loaded (", strerror(errorId), "). This means that the profiler/tracer is not correctly installed.");
+        Log::Warn("Profiling is disabled: Unable to check if the library '", wrapperLibraryName, "'",
+                  " is correctly loaded and/or the function '", customFnName, "' is correctly wrapped.",
+                  "Please contact the support for help with the following details:\n",
+                  "Call to dladdr: ", res, "\n",
+                  "info.dli_fname: ", info.dli_fname);
         return false;
     }
 
-    const auto* customFnName = "dl_iterate_phdr";
-    auto customFn = dlsym(instance, customFnName);
+    auto sharedObjectPath = fs::path(info.dli_fname);
 
-    // make sure that the default symbol for the custom function
-    // is at the same address as the one found in our lib
-    if (customFn != dlsym(RTLD_DEFAULT, customFnName))
+    if (sharedObjectPath.filename() != wrapperLibraryName)
     {
-        Log::Warn("Custom function '", customFnName, "' is not the default one. That indicates that the library ",
-              "'", wrapperLibraryPath, "' is not loaded using the LD_PRELOAD environment variable");
+        // We assume that the profiler library is in the same folder as the wrapper library
+        auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
+        auto wrapperLibrary = currentModulePath.parent_path() / wrapperLibraryName;
+        auto wrapperLibraryPath = wrapperLibrary.string();
+
+        // Check if process is running is a secure-execution mode
+        auto at_secure = getauxval(AT_SECURE);
+
+        // Get LD_PRELOAD env var content
+        auto envVarValue = shared::GetEnvironmentValue(WStr("LD_PRELOAD"));
+
+        Log::Warn("Profiling is disabled: It appears the wrapper library '", wrapperLibraryName, "' is not correctly loaded.\n",
+                  "Possible reason(s):\n",
+                  "* The LD_PRELOAD environment variable might not contain the path '", wrapperLibraryPath, "'. Try adding ",
+                  "'", wrapperLibraryPath, "' to LD_PRELOAD environment variable.\n",
+                  "* Your application might be running in a secure execution mode (", std::boolalpha, at_secure != 0, "). Try adding ",
+                  "the path '", wrapperLibraryPath, "' to the /etc/ld.so.preload file (create the file if needed).\n",
+                  "If the issue persists, please contact the support with the following details:\n",
+                  "LD_PRELOAD current value: ", (envVarValue.empty() ? WStr("<empty>") : envVarValue), "\n",
+                  "The process running in a secure execution mode: ", std::boolalpha, at_secure != 0, "\n",
+                  // Reasons for which AT_SECURE is true:
+                  //   User ID != Effective User ID
+                  "Process User ID differs from Effective User ID: ", std::boolalpha, getuid() != geteuid(), "\n",
+                  //   Group ID != Effective Group ID
+                  "Process Group ID differs from Effective Group ID: ", std::boolalpha, getgid() != getegid(), "\n");
+        // TODO check capabilities (for now checking capabilities requires additional packages/libraries)
+        // if at_secure is true, we know that it due to the capabilities
+
         return false;
     }
-
-    double cpuLimit;
 
     if (CGroup::GetCpuLimit(&cpuLimit))
     {
@@ -382,5 +497,14 @@ bool OpSysTools::IsSafeToStartProfiler(double coresThreshold)
 
     return true;
 
+#endif
+}
+
+void OpSysTools::Sleep(std::chrono::nanoseconds duration)
+{
+#ifdef _WINDOWS
+    ::Sleep(static_cast<DWORD>(duration.count() / 1000000));
+#else
+    usleep(duration.count() / 1000);
 #endif
 }

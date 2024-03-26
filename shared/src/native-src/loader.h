@@ -61,7 +61,7 @@ namespace shared
     struct LoaderResourceMonikerIDs
     {
         public:
-            LoaderResourceMonikerIDs(void)
+            LoaderResourceMonikerIDs()
                 : Net45_Datadog_AutoInstrumentation_ManagedLoader_dll(0),
                   NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll(0),
                   Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb(0),
@@ -186,32 +186,32 @@ namespace shared
         HRESULT EmitLoaderCallInMethod(ModuleID moduleId, mdMethodDef methodDef, mdMethodDef loaderMethodDef);
 
         HRESULT EmitLoaderInModule(
-            const ComPtr<IMetaDataImport2> metadataImport,
-            const ComPtr<IMetaDataEmit2> metadataEmit,
+            ComPtr<IMetaDataImport2> metadataImport,
+            ComPtr<IMetaDataEmit2> metadataEmit,
             ModuleID moduleId,
             AppDomainID appDomainId,
             WSTRING assemblyNameString);
 
         HRESULT EmitDDLoadInitializationAssembliesMethod(
-            const ModuleID moduleId,
+            ModuleID moduleId,
             mdTypeDef typeDef,
             WSTRING assemblyName,
             mdMethodDef* pLoaderMethodDef,
             mdMemberRef* pSecuritySafeCriticalCtorMemberRef);
 
         HRESULT GetGetAssemblyAndSymbolsBytesMethodDef(
-            const ComPtr<IMetaDataEmit2> metadataEmit,
+            ComPtr<IMetaDataEmit2> metadataEmit,
             mdTypeDef typeDef,
             mdMethodDef* pGetAssemblyAndSymbolsBytesMethodDef);
 
         HRESULT WriteAssembliesStringArray(
             ILRewriterWrapper& rewriterWrapper,
-            const ComPtr<IMetaDataEmit2> metadataEmit,
+            ComPtr<IMetaDataEmit2> metadataEmit,
             const std::vector<WSTRING>& assemblyStringVector,
             mdTypeRef stringTypeRef);
 
         HRESULT EmitModuleCCtorMethod(
-            const ModuleID moduleId,
+            ModuleID moduleId,
             mdTypeDef typeDef,
             AppDomainID appDomainId,
             mdMethodDef loaderMethodDef);
@@ -245,9 +245,9 @@ namespace shared
                     const std::vector<WSTRING>& iisAssemblyStringNonDefaultAppDomainVector);
 
         static Loader* GetSingletonInstance();
-        static void DeleteSingletonInstance(void);
+        static void DeleteSingletonInstance();
 
-        HRESULT InjectLoaderToModuleInitializer(const ModuleID moduleId);
+        HRESULT InjectLoaderToModuleInitializer(ModuleID moduleId);
         HRESULT HandleJitCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction);
 
         bool GetAssemblyAndSymbolsBytes(void** ppAssemblyArray, int* pAssemblySize, void** ppSymbolsArray, int* pSymbolsSize, WCHAR* pModuleName);

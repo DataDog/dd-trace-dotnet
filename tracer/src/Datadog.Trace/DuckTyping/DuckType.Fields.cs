@@ -32,27 +32,49 @@ namespace Datadog.Trace.DuckTyping
                 proxyMemberReturnType,
                 Type.EmptyTypes);
 
+            var isValueWithType = false;
+            var originalProxyMemberReturnType = proxyMemberReturnType;
+            if (proxyMemberReturnType.IsGenericType && proxyMemberReturnType.GetGenericTypeDefinition() == typeof(ValueWithType<>))
+            {
+                proxyMemberReturnType = proxyMemberReturnType.GenericTypeArguments[0];
+                isValueWithType = true;
+            }
+
             LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator());
             Type returnType = targetField.FieldType;
 
-            // Load the instance
-            if (!targetField.IsStatic)
-            {
-                il.Emit(OpCodes.Ldarg_0);
-                if (instanceField is not null)
-                {
-                    il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
-                }
-            }
-
             // Load the field value to the stack
-            if (UseDirectAccessTo(proxyTypeBuilder, targetType) && targetField.IsPublic)
+            if (UseDirectAccessTo(proxyTypeBuilder, targetType))
             {
+                // Load the instance
+                if (!targetField.IsStatic)
+                {
+                    il.Emit(OpCodes.Ldarg_0);
+                    if (instanceField is not null)
+                    {
+                        il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
+                    }
+                }
+
                 // In case is public is pretty simple
                 il.Emit(targetField.IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, targetField);
             }
             else if (targetField.DeclaringType is not null && proxyTypeBuilder is not null)
             {
+                // Load the instance
+                if (!targetField.IsStatic)
+                {
+                    il.Emit(OpCodes.Ldarg_0);
+                    if (instanceField is not null)
+                    {
+                        il.Emit(OpCodes.Ldfld, instanceField);
+                        if (instanceField.FieldType.IsValueType)
+                        {
+                            il.Emit(OpCodes.Box, instanceField.FieldType);
+                        }
+                    }
+                }
+
                 // If the instance or the field are non public we need to create a Dynamic method to overpass the visibility checks
                 // we can't access non public types so we have to cast to object type (in the instance object and the return type if is needed).
                 string dynMethodName = $"_getNonPublicField_{targetField.DeclaringType.Name}_{targetField.Name}";
@@ -107,6 +129,13 @@ namespace Datadog.Trace.DuckTyping
                 il.WriteTypeConversion(returnType, proxyMemberReturnType);
             }
 
+            if (isValueWithType)
+            {
+                il.Emit(OpCodes.Ldtoken, returnType);
+                il.EmitCall(OpCodes.Call, GetTypeFromHandleMethodInfo, null!);
+                il.EmitCall(OpCodes.Call, originalProxyMemberReturnType.GetMethod("Create", BindingFlags.Static | BindingFlags.Public)!, null!);
+            }
+
             il.Emit(OpCodes.Ret);
             il.Flush();
             if (proxyMethod is not null)
@@ -146,11 +175,25 @@ namespace Datadog.Trace.DuckTyping
                 }
             }
 
+            var isValueWithType = false;
+            var originalproxyMemberReturnType = proxyMemberReturnType;
+            if (proxyMemberReturnType.IsGenericType && proxyMemberReturnType.GetGenericTypeDefinition() == typeof(ValueWithType<>))
+            {
+                proxyMemberReturnType = proxyMemberReturnType.GenericTypeArguments[0];
+                currentValueType = proxyMemberReturnType;
+                isValueWithType = true;
+            }
+
             // Check if the type can be converted of if we need to enable duck chaining
             if (NeedsDuckChaining(targetField.FieldType, proxyMemberReturnType))
             {
                 // Load the argument and convert it to Duck type
                 il.Emit(OpCodes.Ldarg_1);
+                if (isValueWithType)
+                {
+                    il.Emit(OpCodes.Ldfld, originalproxyMemberReturnType.GetField("Value")!);
+                }
+
                 il.WriteTypeConversion(proxyMemberReturnType, typeof(IDuckType));
 
                 // Call IDuckType.Instance property to get the actual value
@@ -162,10 +205,14 @@ namespace Datadog.Trace.DuckTyping
             {
                 // Load the value into the stack
                 il.Emit(OpCodes.Ldarg_1);
+                if (isValueWithType)
+                {
+                    il.Emit(OpCodes.Ldfld, originalproxyMemberReturnType.GetField("Value")!);
+                }
             }
 
             // We set the field value
-            if (UseDirectAccessTo(proxyTypeBuilder, targetType) && targetField.IsPublic)
+            if (UseDirectAccessTo(proxyTypeBuilder, targetType))
             {
                 // If the instance and the field are public then is easy to set.
                 il.WriteTypeConversion(currentValueType, targetField.FieldType);

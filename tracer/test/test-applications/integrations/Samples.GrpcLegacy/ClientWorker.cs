@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,10 +14,20 @@ public class ClientWorker
 {
     private readonly Logger<ClientWorker> _logger;
     private static readonly ErrorType[] ErrorTypes = (ErrorType[])Enum.GetValues(typeof(ErrorType));
+    private static readonly ActivitySource _source = new("Samples.Grpc");
 
     public ClientWorker(Logger<ClientWorker> logger)
     {
         _logger = logger;
+        var activityListener = new ActivityListener
+        {
+            ActivityStarted = activity => Console.WriteLine($"{activity.DisplayName}:{activity.Id} - Started"),
+            ActivityStopped = activity => Console.WriteLine($"{activity.DisplayName}:{activity.Id} - Stopped"),
+            ShouldListenTo = _ => true,
+            Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllData
+        };
+
+        ActivitySource.AddActivityListener(activityListener);
     }
 
     public async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -51,7 +62,6 @@ public class ClientWorker
             _logger.LogInformation("Creating GRPC client");
             var client = new Greeter.GreeterClient(callInvoker);
 
-            SendVerySlowRequest(client);
             await SendVerySlowRequestAsync(client);
             delay = Task.Delay(6_000); // longer than the slow request duration
 
@@ -73,12 +83,13 @@ public class ClientWorker
         // This is kinda horrible, but the "slow requests" don't close until the
         // service has completed, so won't close the span until then
         await delay;
+
         _logger.LogInformation("Stopping application");
     }
 
     private async Task SendUnaryRequestAsync(Greeter.GreeterClient client)
     {
-        using var scope = CreateScope();
+        using var activity = StartActivity();
         _logger.LogInformation("Sending unary async request to self");
         var reply = await client.UnaryAsync(
                         new HelloRequest { Name = "GreeterClient" });
@@ -88,7 +99,7 @@ public class ClientWorker
 
     private void SendUnaryRequest(Greeter.GreeterClient client)
     {
-        using var scope = CreateScope();
+        using var activity = StartActivity();
         _logger.LogInformation("Sending unary request to self");
         var reply = client.Unary(new HelloRequest { Name = "GreeterClient" });
 
@@ -97,7 +108,7 @@ public class ClientWorker
 
     private async Task SendServerStreamingRequest(Greeter.GreeterClient client, CancellationToken ct)
     {
-        using var scope = CreateScope();
+        using var activity = StartActivity();
         _logger.LogInformation("Sending streaming server request to self");
 
         using var messages = client.StreamingFromServer(
@@ -113,7 +124,7 @@ public class ClientWorker
 
     private async Task SendClientStreamingRequest(Greeter.GreeterClient client, CancellationToken ct)
     {
-        using var scope = CreateScope();
+        using var activity = StartActivity();
         _logger.LogInformation("Sending streaming client requests to self");
 
         using var call = client.StreamingFromClient();
@@ -133,7 +144,7 @@ public class ClientWorker
 
     private async Task SendBothStreamingRequest(Greeter.GreeterClient client, CancellationToken ct)
     {
-        using var scope = CreateScope();
+        using var activity = StartActivity();
         _logger.LogInformation("Sending streaming server request to self");
 
         using var call = client.StreamingBothWays();
@@ -163,7 +174,7 @@ public class ClientWorker
     {
         foreach (var errorType in ErrorTypes)
         {
-            using var scope = SampleHelpers.CreateScope($"SendErrors_{errorType}");
+            using var activity = _source.StartActivity($"SendErrors_{errorType}");
             try
             {
                 _logger.LogInformation("Sending err request to self with " + errorType);
@@ -184,7 +195,7 @@ public class ClientWorker
     {
         foreach (var errorType in ErrorTypes)
         {
-            using var scope = SampleHelpers.CreateScope($"SendErrorsAsync_{errorType}");
+            using var activity = _source.StartActivity($"SendErrorsAsync_{errorType}");
             try
             {
                 _logger.LogInformation("Sending err request to self with " + errorType);
@@ -203,7 +214,7 @@ public class ClientWorker
 
     private async Task SendVerySlowRequestAsync(Greeter.GreeterClient client)
     {
-        using var scope = CreateScope();
+        using var activity = StartActivity();
         try
         {
             _logger.LogInformation("Sending very slow request to self");
@@ -211,7 +222,7 @@ public class ClientWorker
 
             throw new Exception("Received reply, when should have exceeded deadline");
         }
-        catch(RpcException ex) when (ex.StatusCode == StatusCode.DeadlineExceeded)
+        catch (RpcException ex) when (ex.StatusCode == StatusCode.DeadlineExceeded)
         {
             _logger.LogInformation("Received deadline exceeded response " + ex.Message);
         }
@@ -219,7 +230,7 @@ public class ClientWorker
 
     private void SendVerySlowRequest(Greeter.GreeterClient client)
     {
-        using var scope = CreateScope();
+        using var activity = StartActivity();
         try
         {
             _logger.LogInformation("Sending very slow request to self");
@@ -233,6 +244,13 @@ public class ClientWorker
         }
     }
 
-    private IDisposable CreateScope([CallerMemberName] string? name = null)
-        => SampleHelpers.CreateScope(name);
+    private IDisposable StartActivity([CallerMemberName] string name = "")
+    {
+        var activity = _source.StartActivity(name);
+
+        return activity is null
+            ? throw new Exception($"Attempted to start a new activity for {name} method, but activity returned was null.")
+            : activity;
+    }
+
 }

@@ -4,7 +4,7 @@
 #include "EnabledProfilers.h"
 #include "IConfiguration.h"
 
-EnabledProfilers::EnabledProfilers(IConfiguration* pConfiguration, bool isListeningToClrEvents)
+EnabledProfilers::EnabledProfilers(IConfiguration* pConfiguration, bool isListeningToClrEvents, bool isHeapProfilingEnabled)
 {
     _enabledProfilers = RuntimeProfiler::None;
 
@@ -31,7 +31,20 @@ EnabledProfilers::EnabledProfilers(IConfiguration* pConfiguration, bool isListen
 
         if (pConfiguration->IsContentionProfilingEnabled())
         {
-            _enabledProfilers |= RuntimeProfiler::Contention;
+            _enabledProfilers |= RuntimeProfiler::LockContention;
+        }
+
+        if (pConfiguration->IsGarbageCollectionProfilingEnabled())
+        {
+            _enabledProfilers |= RuntimeProfiler::GC;
+        }
+
+        if (isHeapProfilingEnabled)
+        {
+            _enabledProfilers |= RuntimeProfiler::Heap;
+
+            // heap profiling requires allocations profiling
+            _enabledProfilers |= RuntimeProfiler::Allocations;
         }
 
         // TODO: add new CLR event driven profilers
@@ -41,4 +54,9 @@ EnabledProfilers::EnabledProfilers(IConfiguration* pConfiguration, bool isListen
 bool EnabledProfilers::IsEnabled(RuntimeProfiler profiler) const
 {
     return ((_enabledProfilers & profiler) == profiler);
+}
+
+void EnabledProfilers::Disable(RuntimeProfiler profiler)
+{
+    _enabledProfilers = _enabledProfilers & ~profiler;
 }

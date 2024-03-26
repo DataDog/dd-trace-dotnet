@@ -1,4 +1,4 @@
-﻿// <copyright file="LoggerFactoryIntegrationCommon.cs" company="Datadog">
+// <copyright file="LoggerFactoryIntegrationCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -60,33 +60,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Error loading logger factory types for " + typeof(TLoggerFactory));
+                Log.Warning(ex, "Error loading logger factory types for {LoggerFactoryType}", typeof(TLoggerFactory));
                 ProviderInterfaces = null;
             }
         }
 
-        internal static void AddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory)
+        internal static bool TryAddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory)
+            => TryAddDirectSubmissionLoggerProvider(loggerFactory, scopeProvider: null);
+
+        internal static bool TryAddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory, IExternalScopeProvider? scopeProvider)
         {
             if (ProviderInterfaces is null)
             {
                 // there was a problem loading the assembly for some reason
-                return;
+                return false;
             }
 
             var provider = new DirectSubmissionLoggerProvider(
                 TracerManager.Instance.DirectLogSubmission.Sink,
-                TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel);
+                TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel,
+                scopeProvider);
 
-            AddDirectSubmissionLoggerProvider(loggerFactory, provider);
+            return TryAddDirectSubmissionLoggerProvider(loggerFactory, provider);
         }
 
         // Internal for testing
-        internal static object? AddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory, DirectSubmissionLoggerProvider provider)
+        internal static bool TryAddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory, DirectSubmissionLoggerProvider provider)
         {
             if (ProviderInterfaces is null)
             {
                 // there was a problem loading the assembly for some reason
-                return null;
+                return false;
             }
 
             var proxy = provider.DuckImplement(ProviderInterfaces);
@@ -95,9 +99,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 var loggerFactoryProxy = loggerFactory.DuckCast<ILoggerFactory>();
                 loggerFactoryProxy.AddProvider(proxy);
                 Log.Information("Direct log submission via ILogger enabled");
+                return true;
             }
 
-            return proxy;
+            return false;
         }
     }
 }

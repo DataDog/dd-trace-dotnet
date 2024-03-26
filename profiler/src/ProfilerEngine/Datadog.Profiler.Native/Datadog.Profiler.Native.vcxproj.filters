@@ -24,9 +24,6 @@
     <Filter Include="Profiler-Driver">
       <UniqueIdentifier>{e228b858-2b52-4ead-871b-b56a96dc652a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="libddprof">
-      <UniqueIdentifier>{db3783ac-ee3e-49d0-95c1-9e9db6df8422}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Walltime">
       <UniqueIdentifier>{f92ac331-c76b-482a-87a6-1ca45c27ed41}</UniqueIdentifier>
     </Filter>
@@ -41,6 +38,18 @@
     </Filter>
     <Filter Include="Contention">
       <UniqueIdentifier>{bb4d04f1-ed7e-48db-b2e0-99b56d4f258a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GarbageCollections">
+      <UniqueIdentifier>{c07c8635-c021-4796-bfac-48f7ee78bf65}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Threads">
+      <UniqueIdentifier>{9343cd1c-a26e-4f7d-a006-85e4612d0813}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ETW">
+      <UniqueIdentifier>{6543675b-3ddb-42a5-8285-c63e2a93ff6a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libdatadog">
+      <UniqueIdentifier>{5152df0e-33a6-4ea0-8ece-19a6d38ca88e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -68,9 +77,6 @@
     <ClInclude Include="DogstatsdService.h">
       <Filter>Metrics</Filter>
     </ClInclude>
-    <ClInclude Include="ManagedThreadInfo.h">
-      <Filter>Profiler-Driver</Filter>
-    </ClInclude>
     <ClInclude Include="ManagedThreadList.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
@@ -86,7 +92,7 @@
     <ClInclude Include="StackSamplerLoopManager.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="StackSnapshotResultReusableBuffer.h">
+    <ClInclude Include="StackSnapshotResultBuffer.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="ThreadCpuInfo.h">
@@ -104,9 +110,6 @@
     <ClInclude Include="OpSysTools.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="RefCountingObject.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
     <ClInclude Include="ScopeFinalizer.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -114,9 +117,6 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="EnvironmentVariables.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="DirectAccessCollection.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="ClrLifetime.h" />
@@ -131,12 +131,6 @@
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="IService.h" />
-    <ClInclude Include="LibddprofExporter.h">
-      <Filter>libddprof</Filter>
-    </ClInclude>
-    <ClInclude Include="FfiHelper.h">
-      <Filter>libddprof</Filter>
-    </ClInclude>
     <ClInclude Include="Configuration.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -189,11 +183,6 @@
     <ClInclude Include="RawSample.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="IApplicationStore.h" />
-    <ClInclude Include="ApplicationStore.h" />
-    <ClInclude Include="RuntimeIdStore.h" />
-    <ClInclude Include="IRuntimeIdStore.h" />
-    <ClInclude Include="ApplicationInfo.h" />
     <ClInclude Include="ExceptionsProvider.h">
       <Filter>Exceptions</Filter>
     </ClInclude>
@@ -203,16 +192,12 @@
     <ClInclude Include="Timer.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="ExceptionSampler.h">
-      <Filter>Exceptions</Filter>
-    </ClInclude>
     <ClInclude Include="AdaptiveSampler.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="ISamplesCollector.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="SamplesCollector.h" />
     <ClInclude Include="cgroup.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -258,12 +243,200 @@
     <ClInclude Include="IContentionListener.h">
       <Filter>Contention</Filter>
     </ClInclude>
+    <ClInclude Include="SamplesCollector.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="GenericSampler.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="GroupSampler.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="IGCSuspensionsListener.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="StopTheWorldGCProvider.h">
+      <Filter>GarbageCollections</Filter>
+    </ClInclude>
+    <ClInclude Include="RawStopTheWorldSample.h">
+      <Filter>GarbageCollections</Filter>
+    </ClInclude>
+    <ClInclude Include="IGarbageCollectionsListener.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="GarbageCollection.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="GarbageCollectionProvider.h">
+      <Filter>GarbageCollections</Filter>
+    </ClInclude>
+    <ClInclude Include="RawGarbageCollectionSample.h">
+      <Filter>GarbageCollections</Filter>
+    </ClInclude>
+    <ClInclude Include="GCBaseRawSample.h">
+      <Filter>GarbageCollections</Filter>
+    </ClInclude>
+    <ClInclude Include="LiveObjectsProvider.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="LiveObjectInfo.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="MetricsRegistry.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="MetricBase.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="MeanMaxMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="ProxyMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="CounterMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="SumMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="SumMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="AllocationsRecorder.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="IAllocationsRecorder.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="IUpscaleProvider.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="ScopedHandle.h" />
+    <ClInclude Include="GCThreadsCpuProvider.h">
+      <Filter>Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="IThreadInfo.h">
+      <Filter>Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="NativeThreadsCpuProviderBase.h">
+      <Filter>Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedThreadInfo.h">
+      <Filter>Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="SampleValueTypeProvider.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="ApplicationInfo.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="ApplicationStore.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="ClrLifetime.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugInfoStore.h">
+      <Filter>SymbolResolution</Filter>
+    </ClInclude>
+    <ClInclude Include="IDebugInfoStore.h">
+      <Filter>SymbolResolution</Filter>
+    </ClInclude>
+    <ClInclude Include="RuntimeIdStore.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="IApplicationStore.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="IBatchedSamplesProvider.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="ISampledAllocationsListener.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="IRuntimeIdStore.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="IClrLifetime.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="IMetadataProvider.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadLifetimeProvider.h">
+      <Filter>Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="IThreadLifetimeListener.h">
+      <Filter>Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="RawThreadLifetimeSample.h">
+      <Filter>Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="TimelineSampleType.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="MetadataProvider.h" />
+    <ClInclude Include="IEtwEventsManager.h">
+      <Filter>ETW</Filter>
+    </ClInclude>
+    <ClInclude Include="EventPipeEventsManager.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Profile.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="Exporter.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="Tags.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="Exception.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="FfiHelper.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="AgentProxy.hpp">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="EncodedProfile.hpp">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="ExporterBuilder.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="ProfileExporter.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="ProfileImpl.hpp">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="Success.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="SuccessImpl.hpp">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="TagsImpl.hpp">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="FileHelper.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="FileSaver.hpp">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameworkThreadInfo.h">
+      <Filter>Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="SampleEnumerator.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="RefCountingObject.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="HResultConverter.cpp">
@@ -287,9 +460,6 @@
     <ClCompile Include="IMetricsSenderFactory.cpp">
       <Filter>Metrics</Filter>
     </ClCompile>
-    <ClCompile Include="ManagedThreadInfo.cpp">
-      <Filter>Profiler-Driver</Filter>
-    </ClCompile>
     <ClCompile Include="ManagedThreadList.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
@@ -302,7 +472,7 @@
     <ClCompile Include="StackSamplerLoopManager.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
-    <ClCompile Include="StackSnapshotResultReusableBuffer.cpp">
+    <ClCompile Include="StackSnapshotResultBuffer.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
     <ClCompile Include="ThreadCpuInfo.cpp">
@@ -311,15 +481,8 @@
     <ClCompile Include="ThreadsCpuManager.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
-    <ClCompile Include="ClrLifetime.cpp" />
     <ClCompile Include="Configuration.cpp">
       <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="LibddprofExporter.cpp">
-      <Filter>libddprof</Filter>
-    </ClCompile>
-    <ClCompile Include="FfiHelper.cpp">
-      <Filter>libddprof</Filter>
     </ClCompile>
     <ClCompile Include="TagsHelper.cpp">
       <Filter>Utils</Filter>
@@ -345,22 +508,11 @@
     <ClCompile Include="RawSample.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
-    <ClCompile Include="ApplicationStore.cpp" />
-    <ClCompile Include="RuntimeIdStore.cpp" />
-    <ClCompile Include="ApplicationInfo.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="RawExceptionSample.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
     <ClCompile Include="ExceptionsProvider.cpp">
       <Filter>Exceptions</Filter>
     </ClCompile>
     <ClCompile Include="AdaptiveSampler.cpp">
       <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="ExceptionSampler.cpp">
-      <Filter>Exceptions</Filter>
     </ClCompile>
     <ClCompile Include="Timer.Linux.cpp">
       <Filter>Utils</Filter>
@@ -388,6 +540,114 @@
     </ClCompile>
     <ClCompile Include="ContentionProvider.cpp">
       <Filter>Contention</Filter>
+    </ClCompile>
+    <ClCompile Include="GenericSampler.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="StopTheWorldGCProvider.cpp">
+      <Filter>GarbageCollections</Filter>
+    </ClCompile>
+    <ClCompile Include="GarbageCollectionProvider.cpp">
+      <Filter>GarbageCollections</Filter>
+    </ClCompile>
+    <ClCompile Include="LiveObjectInfo.cpp">
+      <Filter>Allocations</Filter>
+    </ClCompile>
+    <ClCompile Include="LiveObjectsProvider.cpp">
+      <Filter>Allocations</Filter>
+    </ClCompile>
+    <ClCompile Include="RawGarbageCollectionSample.cpp">
+      <Filter>GarbageCollections</Filter>
+    </ClCompile>
+    <ClCompile Include="MetricsRegistry.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="MeanMaxMetric.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="ProxyMetric.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="CounterMetric.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="SumMetric.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="AllocationsRecorder.cpp">
+      <Filter>Allocations</Filter>
+    </ClCompile>
+    <ClCompile Include="GCThreadsCpuProvider.cpp">
+      <Filter>Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedThreadInfo.cpp">
+      <Filter>Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="SampleValueTypeProvider.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="ApplicationStore.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="ClrLifetime.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugInfoStore.cpp">
+      <Filter>SymbolResolution</Filter>
+    </ClCompile>
+    <ClCompile Include="RuntimeIdStore.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="NativeThreadsCpuProviderBase.cpp">
+      <Filter>Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="RawExceptionSample.cpp">
+      <Filter>Exceptions</Filter>
+    </ClCompile>
+    <ClCompile Include="MetadataProvider.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadLifetimeProvider.cpp">
+      <Filter>Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="RawThreadLifetimeSample.cpp">
+      <Filter>Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="TimelineSampleType.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipeEventsManager.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Profile.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="Exporter.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="Tags.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="Exception.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="FfiHelper.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="ExporterBuilder.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="FileHelper.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="ProfileExporter.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="Success.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameworkThreadInfo.cpp">
+      <Filter>Threads</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

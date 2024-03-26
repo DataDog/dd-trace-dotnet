@@ -2,7 +2,7 @@
 ARG RUNTIME_IMAGE
 
 # Build the ASP.NET Core app using the latest SDK
-FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION as builder
+FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-windowsservercore-ltsc2022 as builder
 
 # Build the smoke test app
 WORKDIR /src
@@ -40,8 +40,13 @@ ENV DD_PROFILING_ENABLED=1 \
     CORECLR_ENABLE_PROFILING=1 \
     CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8} \
     DD_TRACE_LOG_DIRECTORY="C:\logs" \
-    DD_PROFILING_LOG_DIR="C:\logs" \
     ASPNETCORE_URLS=http://localhost:5000
+
+# Set a random env var we should ignore
+ENV SUPER_SECRET_CANARY=MySuperSecretCanary
+
+# see https://github.com/DataDog/dd-trace-dotnet/pull/3579
+ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 
 # Copy the app across
 COPY --from=builder /src/publish /app/.

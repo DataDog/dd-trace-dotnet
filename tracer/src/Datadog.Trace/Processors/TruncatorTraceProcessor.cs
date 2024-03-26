@@ -28,7 +28,7 @@ namespace Datadog.Trace.Processors
         {
             for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
             {
-                trace.Array[i] = Process(trace.Array[i]);
+                trace.Array![i] = Process(trace.Array[i]);
             }
 
             return trace;
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Processors
         {
             if (TraceUtil.TruncateUTF8(ref r, MaxResourceLen))
             {
-                Log.Debug("span.truncate: truncated `Resource` (max {maxResourceLen} chars): {resource}", MaxResourceLen, r);
+                Log.Debug<int, string>("span.truncate: truncated `Resource` (max {MaxResourceLen} chars): {Resource}", MaxResourceLen, r);
             }
 
             return r;

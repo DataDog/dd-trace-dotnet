@@ -31,15 +31,7 @@ namespace Samples.AWS.SQS
                 await GetQueueUrlAsync(sqsClient);
                 await PurgeQueueAsync(sqsClient);
 
-                try
-                {
-                    await RunValidationsWithoutReceiveLoopAsync(sqsClient);
-                }
-                catch
-                {
-                    await DeleteQueueAsync(sqsClient);
-                    return;
-                }
+                await RunValidationsWithoutReceiveLoopAsync(sqsClient);
 
                 var receiveMessageTask = Task.Run(() => ReceiveMessageAndDeleteMessageAsync(sqsClient)); // Run on separate thread
                 var receiveMessageBatchTask = Task.Run(() => ReceiveMessagesAndDeleteMessageBatchAsync(sqsClient)); // Run on separate thread
@@ -116,7 +108,7 @@ namespace Samples.AWS.SQS
                 { "x-datadog-7", new MessageAttributeValue(){ DataType = "String", StringValue = "value7" } },
                 { "x-datadog-8", new MessageAttributeValue(){ DataType = "String", StringValue = "value8" } },
                 { "x-datadog-9", new MessageAttributeValue(){ DataType = "String", StringValue = "value9" } },
-                { "x-datadog-10", new MessageAttributeValue(){ DataType = "String", StringValue = "value10" } },
+                { "dd-pathway-ctx", new MessageAttributeValue(){ DataType = "String", StringValue = "value10" } },
             };
 
             // Send one message, receive it, and parse it for its headers
@@ -257,7 +249,9 @@ namespace Samples.AWS.SQS
             var receiveMessageRequest = new ReceiveMessageRequest();
             receiveMessageRequest.QueueUrl = _singleQueueUrl;
             receiveMessageRequest.MaxNumberOfMessages = 1;
-            receiveMessageRequest.MessageAttributeNames = new List<string> { ".*" };
+            // setting those to null is "legal" and should be handled by the instrumentation
+            receiveMessageRequest.MessageAttributeNames = null;
+            receiveMessageRequest.AttributeNames = null;
 
             var receiveMessageResponse1 = await sqsClient.ReceiveMessageAsync(receiveMessageRequest);
             Console.WriteLine($"ReceiveMessageAsync(ReceiveMessageRequest) HTTP status code: {receiveMessageResponse1.HttpStatusCode}");

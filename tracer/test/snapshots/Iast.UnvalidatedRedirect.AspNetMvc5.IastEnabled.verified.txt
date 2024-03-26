@@ -1,0 +1,84 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet.request,
+    Resource: GET /iast/unvalidatedredirect,
+    Service: sample,
+    Type: web,
+    Tags: {
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
+      http.status_code: 302,
+      http.url: http://localhost:00000/Iast/UnvalidatedRedirect?param=value,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.iast.enabled: 1,
+      _dd.iast.json:
+{
+  "vulnerabilities": [
+    {
+      "type": "UNVALIDATED_REDIRECT",
+      "hash": 403854644,
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "UnvalidatedRedirect"
+      },
+      "evidence": {
+        "valueParts": [
+          {
+            "value": "Redirected?param="
+          },
+          {
+            "value": "value",
+            "source": 0
+          }
+        ]
+      }
+    }
+  ],
+  "sources": [
+    {
+      "origin": "http.request.parameter",
+      "name": "param",
+      "value": "value"
+    }
+  ]
+}
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet-mvc.request,
+    Resource: GET /iast/unvalidatedredirect,
+    Service: sample,
+    Type: web,
+    ParentId: Id_2,
+    Tags: {
+      aspnet.action: unvalidatedredirect,
+      aspnet.controller: iast,
+      aspnet.route: {controller}/{action}/{id},
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 302,
+      http.url: http://localhost:00000/Iast/UnvalidatedRedirect?param=value,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      span.kind: server
+    }
+  }
+]

@@ -17,7 +17,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         }
 
         public IActionResult Index()
-        {
+        {   
             ViewBag.ProfilerAttached = SampleHelpers.IsProfilerAttached();
             ViewBag.TracerAssemblyLocation = SampleHelpers.GetTracerAssemblyLocation();
 
@@ -32,6 +32,12 @@ namespace Samples.Security.AspNetCore5.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        public IActionResult LangHeader()
+        {
+            Response.Headers.Add("content-language", "krypton");
+            return Content("Setting content-language");
         }
     }
 }

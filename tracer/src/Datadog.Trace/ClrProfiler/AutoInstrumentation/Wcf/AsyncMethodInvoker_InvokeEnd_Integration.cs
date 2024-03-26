@@ -3,10 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if NETFRAMEWORK
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
@@ -38,8 +41,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            var scope = Tracer.Instance.InternalActiveScope;
-            scope.DisposeWithException(exception);
+            if (exception is not null)
+            {
+                var operationContext = WcfCommon.GetCurrentOperationContext?.Invoke();
+
+                if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
+                {
+                    var requestContext = operationContextProxy.RequestContext;
+
+                    // Retrieve the scope that we saved during InvokeBegin
+                    if (((IDuckType?)requestContext)?.Instance is object requestContextInstance
+                        && WcfCommon.Scopes.TryGetValue(requestContextInstance, out var scope))
+                    {
+                        // Add the exception but do not dispose the span.
+                        // BeforeSendReplyIntegration is responsible for closing the span.
+                        scope.Span?.SetException(exception);
+                    }
+                }
+            }
+
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }

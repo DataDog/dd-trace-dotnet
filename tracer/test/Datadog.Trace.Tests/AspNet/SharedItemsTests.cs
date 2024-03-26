@@ -9,7 +9,7 @@ using System.Web;
 using Datadog.Trace.AspNet;
 using Xunit;
 
-namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AspNet
+namespace Datadog.Trace.Tests.AspNet
 {
     public class SharedItemsTests
     {

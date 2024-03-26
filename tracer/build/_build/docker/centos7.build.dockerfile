@@ -1,6 +1,9 @@
+# syntax=docker/dockerfile:1.6
+
 FROM centos:7 as base
 
 RUN yum update -y \
+    && yum install -y centos-release-scl \
     && yum install -y git \
       gcc \
       gcc-c++ \
@@ -10,30 +13,46 @@ RUN yum update -y \
       zlib-devel \
       wget \
       libcurl \
-      libcurl-devel
+      libcurl-devel \
+      devtoolset-11 \
+      python3
 
-#install cmake version
+FROM base AS build-cmake
+
+# build cmake version
 RUN wget https://cmake.org/files/v3.13/cmake-3.13.4.tar.gz && \
-    tar zxvf cmake-3.* && \
-    cd cmake-3.* && \
+    tar zxvf cmake-3.13.4.tar.gz
+
+RUN cd cmake-3.13.4 && \
     ./bootstrap --system-curl && \
-    make -j$(nproc) && \
+    make -j$(nproc)
+
+FROM base AS intermediate
+RUN --mount=target=/cmake-3.13.4,from=build-cmake,source=cmake-3.13.4,rw \
+    cd /cmake-3.13.4 && \
     make install && \
     ln -s /usr/local/bin/cmake /usr/bin/cmake
 
-RUN cd .. && \
-    rm -rf cmake-3.*
+FROM intermediate AS build-llvm-clang
 
-# build and install llvm/clang
-RUN git clone --depth 1 --branch release/9.x https://github.com/llvm/llvm-project.git && \
+# build llvm/clang
+RUN source scl_source enable devtoolset-11 && \
+    \
+    # clone llvm/clang repo
+    git clone --depth 1 --branch llvmorg-16.0.6 https://github.com/llvm/llvm-project.git && \
+    \
+    # setup build folder
     cd llvm-project && \
     mkdir build && \
     cd build && \
-    cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" -DCMAKE_BUILD_TYPE=Release -DLLVM_TEMPORARILY_ALLOW_OLD_TOOLCHAIN=1 -G "Unix Makefiles" ../llvm && \
-    make -j$(nproc) && \
-    make install
+    \
+    # build llvm/clang + extra tool
+    cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld" -DCMAKE_BUILD_TYPE=Release -DLLVM_TEMPORARILY_ALLOW_OLD_TOOLCHAIN=1 -G "Unix Makefiles" ../llvm && \
+    make -j$(nproc)
 
-RUN cd ../.. && \
-    rm -rf llvm-project
+FROM intermediate as final
+RUN --mount=target=/llvm-project,from=build-llvm-clang,source=llvm-project,rw \
+    cd /llvm-project/build && \
+    make install
 
 

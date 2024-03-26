@@ -1,15 +1,19 @@
 #include "debugger_rejit_preprocessor.h"
+
+#include "debugger_constants.h"
+#include "debugger_method_rewriter.h"
 #include "debugger_rejit_handler_module_method.h"
 #include "logger.h"
-#include "probes_tracker.h"
+#include "debugger_probes_tracker.h"
 
 namespace debugger
 {
 
 // DebuggerRejitPreprocessor
 
-ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID>& modules,
-    const LineProbeDefinitions& lineProbes, std::vector<MethodIdentifier>& rejitRequests) const
+ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
+    const std::vector<ModuleID>& modules, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
+    std::vector<MethodIdentifier>& rejitRequests)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -38,8 +42,8 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
                                                      metadataInterfaces.GetAddressOf());
         if (FAILED(hr))
         {
-            Logger::Warn("CallTarget_RequestRejitForModule failed to get metadata interface for ", moduleInfo.id,
-                         " ", moduleInfo.assembly.name);
+            Logger::Warn("CallTarget_RequestRejitForModule failed to get metadata interface for ", moduleInfo.id, " ",
+                         moduleInfo.assembly.name);
             break;
         }
 
@@ -48,8 +52,8 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
         assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
         assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
         assemblyMetadata = std::make_unique<AssemblyMetadata>(GetAssemblyImportMetadata(assemblyImport));
-        Logger::Debug("  Assembly Metadata loaded for: ", assemblyMetadata->name, "(",
-                      assemblyMetadata->version.str(), ").");
+        Logger::Debug("  Assembly Metadata loaded for: ", assemblyMetadata->name, "(", assemblyMetadata->version.str(),
+                      ").");
 
         WCHAR moduleName[MAX_PACKAGE_NAME];
         ULONG nSize;
@@ -74,7 +78,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
             const auto caller = GetFunctionInfo(metadataImport, methodDef);
             if (!caller.IsValid())
             {
-                Logger::Warn("    * The caller for the methoddef: ", shared::TokenStr(&methodDef), " is not valid!");
+                Logger::Warn("    * Skipping ", shared::TokenStr(&methodDef), ": the methoddef is not valid!");
                 continue;
             }
 
@@ -84,7 +88,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
             auto hr = functionInfo.method_signature.TryParse();
             if (FAILED(hr))
             {
-                Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(), " cannot be parsed.");
+                Logger::Warn("    * Skipping ", functionInfo.method_signature.str(), ": the method signature cannot be parsed.");
                 continue;
             }
 
@@ -103,20 +107,20 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
                     moduleInfo.assembly.app_domain_id, pCorAssemblyProperty, enable_by_ref_instrumentation,
                     enable_calltarget_state_by_ref);
 
-                Logger::Info("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
+                Logger::Debug("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
                              " AppDomain ", moduleInfo.assembly.app_domain_id, " ",
                              moduleInfo.assembly.app_domain_name);
 
                 moduleHandler->SetModuleMetadata(moduleMetadata);
             }
 
-            RejitHandlerModuleMethodCreatorFunc creator = [=, functionInfo = functionInfo](
-                                                              const mdMethodDef method, RejitHandlerModule* moduleInScope) {
+            RejitHandlerModuleMethodCreatorFunc creator =
+                [=, functionInfo = functionInfo](const mdMethodDef method, RejitHandlerModule* moduleInScope) {
                     return CreateMethod(method, moduleInScope, functionInfo);
-            };
+                };
 
             RejitHandlerModuleMethodUpdaterFunc updater = [=, request = lineProbe](RejitHandlerModuleMethod* method) {
-                return UpdateMethod(method, request);
+                UpdateMethodInternal(method, request);
             };
 
             moduleHandler->CreateMethodIfNotExists(methodDef, creator, updater);
@@ -130,9 +134,9 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
     return rejitCount;
 }
 
-void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(const std::vector<ModuleID>& modulesVector,
-    const LineProbeDefinitions& lineProbes,
-    std::promise<std::vector<MethodIdentifier>>* promise) const
+void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(
+    const std::vector<ModuleID>& modulesVector, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
+    std::promise<std::vector<MethodIdentifier>>* promise)
 {
     std::vector<MethodIdentifier> rejitRequests;
 
@@ -154,14 +158,14 @@ void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(const std::vector<Mo
     Logger::Debug("RejitHandler::EnqueuePreprocessRejitRequests");
 
     std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(lineProbes),
-                                    rejitRequests = rejitRequests, promise = promise]() mutable {
+                                    localRejitRequests = rejitRequests, localPromise = promise]() mutable {
         // Process modules for rejit
-        const auto rejitCount = PreprocessLineProbes(modules, definitions, rejitRequests);
+        const auto rejitCount = PreprocessLineProbes(modules, definitions, localRejitRequests);
 
         // Resolve promise
-        if (promise != nullptr)
+        if (localPromise != nullptr)
         {
-            promise->set_value(rejitRequests);
+            localPromise->set_value(localRejitRequests);
         }
     };
 
@@ -172,10 +176,10 @@ void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(const std::vector<Mo
 void DebuggerRejitPreprocessor::ProcessTypesForRejit(
     std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport,
     ComPtr<IMetaDataEmit2> metadataEmit, ComPtr<IMetaDataAssemblyImport> assemblyImport,
-    ComPtr<IMetaDataAssemblyEmit> assemblyEmit, const MethodProbeDefinition& definition,
+    ComPtr<IMetaDataAssemblyEmit> assemblyEmit, const std::shared_ptr<MethodProbeDefinition>& definition,
     const MethodReference& targetMethod)
 {
-    const auto instrumentationTargetTypeName = definition.target_method.type.name;
+    const auto instrumentationTargetTypeName = definition->target_method.type.name;
 
     // Is full name requested?
     auto nameParts = shared::Split(instrumentationTargetTypeName, '.');
@@ -187,9 +191,9 @@ void DebuggerRejitPreprocessor::ProcessTypesForRejit(
         return;
     }
 
-    // We received a single identifier as the class name. Find every class that has this name, while searching through all namespaces,
-    // and also taking into account the possibility that it's a nested class.
-        const auto asAnyNamespace = shared::ToString(WStr(".") + instrumentationTargetTypeName);
+    // We received a single identifier as the class name. Find every class that has this name, while searching through
+    // all namespaces, and also taking into account the possibility that it's a nested class.
+    const auto asAnyNamespace = shared::ToString(WStr(".") + instrumentationTargetTypeName);
     const auto asNestedType = shared::ToString(WStr("+") + instrumentationTargetTypeName);
 
     // Enumerate the types of the module
@@ -200,62 +204,236 @@ void DebuggerRejitPreprocessor::ProcessTypesForRejit(
         auto typeDef = *typeDefIterator;
         const auto typeInfo = GetTypeInfo(metadataImport, typeDef);
 
-        if (typeInfo.name == instrumentationTargetTypeName || 
+        if (typeInfo.name == instrumentationTargetTypeName ||
             EndsWith(shared::ToString(typeInfo.name), asAnyNamespace) ||
             EndsWith(shared::ToString(typeInfo.name), asNestedType))
         {
             // Now that we found the type, look for the methods within that type we want to instrument
             RejitPreprocessor::ProcessTypeDefForRejit(definition, metadataImport, metadataEmit, assemblyImport,
-                                                    assemblyEmit, moduleInfo, typeDef, rejitRequests);         
+                                                      assemblyEmit, moduleInfo, typeDef, rejitRequests);
         }
     }
 }
 
-const MethodReference& DebuggerRejitPreprocessor::GetTargetMethod(const MethodProbeDefinition& methodProbe)
+const MethodReference&
+DebuggerRejitPreprocessor::GetTargetMethod(const std::shared_ptr<MethodProbeDefinition>& methodProbe)
 {
-    return methodProbe.target_method;
+    return methodProbe->target_method;
 }
 
-const bool DebuggerRejitPreprocessor::GetIsDerived(const MethodProbeDefinition& methodProbe)
+const bool DebuggerRejitPreprocessor::GetIsDerived(const std::shared_ptr<MethodProbeDefinition>& methodProbe)
 {
     return false; // TODO
 }
 
-const bool DebuggerRejitPreprocessor::GetIsExactSignatureMatch(const MethodProbeDefinition& methodProbe)
+const bool DebuggerRejitPreprocessor::GetIsInterface(const std::shared_ptr<MethodProbeDefinition>& methodProbe)
 {
-    return methodProbe.is_exact_signature_match;
+    return false; // TODO
 }
 
-const std::unique_ptr<RejitHandlerModuleMethod> DebuggerRejitPreprocessor::CreateMethod(
-                                        const mdMethodDef methodDef, 
-                                        RejitHandlerModule* module,
-                                        const FunctionInfo& functionInfo, 
-                                        const MethodProbeDefinition& methodProbe)
+const bool
+DebuggerRejitPreprocessor::GetIsExactSignatureMatch(const std::shared_ptr<MethodProbeDefinition>& methodProbe)
 {
-    return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo);
+    return methodProbe->is_exact_signature_match;
+}
+
+const bool DebuggerRejitPreprocessor::GetIsEnabled(const std::shared_ptr<MethodProbeDefinition>& definition)
+{
+    return true;
+}
+const bool DebuggerRejitPreprocessor::SupportsSelectiveEnablement()
+{
+    return false;
+}
+
+
+const std::unique_ptr<RejitHandlerModuleMethod>
+DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
+                                        const FunctionInfo& functionInfo,
+                                        const std::shared_ptr<MethodProbeDefinition>& methodProbe)
+{
+    auto faultTolerantRewriter = std::make_unique<fault_tolerant::FaultTolerantRewriter>(m_corProfiler, std::make_unique<DebuggerMethodRewriter>(m_corProfiler), m_rejit_handler);
+    return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo, std::move(faultTolerantRewriter));
 }
 
 const std::unique_ptr<RejitHandlerModuleMethod>
-DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo) const
+DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
+                                        const FunctionInfo& functionInfo) const
 {
-    return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo);
+    auto faultTolerantRewriter = std::make_unique<fault_tolerant::FaultTolerantRewriter>(m_corProfiler, std::make_unique<DebuggerMethodRewriter>(m_corProfiler), m_rejit_handler);
+    return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo, std::move(faultTolerantRewriter));
 }
 
-void DebuggerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* methodHandler, const MethodProbeDefinition& methodProbe)
+void DebuggerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* methodHandler, const std::shared_ptr<MethodProbeDefinition>& methodProbe)
 {
-    UpdateMethod(methodHandler, std::make_shared<MethodProbeDefinition>(methodProbe));
+    UpdateMethodInternal(methodHandler, methodProbe);
 }
 
-void DebuggerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* methodHandler, const ProbeDefinition_S& probe)
+void DebuggerRejitPreprocessor::UpdateMethodInternal(RejitHandlerModuleMethod* methodHandler, const std::shared_ptr<ProbeDefinition>& probe)
 {
     const auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);
+
+    if (debuggerMethodHandler == nullptr)
+    {
+        Logger::Warn("Tried to place Debugger Probe on a method that have been instrumented already be the Tracer/Ci "
+                     "instrumentation.",
+                     "ProbeId: ", probe->probeId);
+        ProbesMetadataTracker::Instance()->SetErrorProbeStatus(probe->probeId,
+                                                               invalid_probe_method_already_instrumented);
+        return;
+    }
+
     debuggerMethodHandler->AddProbe(probe);
-    ProbesMetadataTracker::Instance()->AddMethodToProbe(probe->probeId,
-        debuggerMethodHandler->GetModule()->GetModuleId(),
-        debuggerMethodHandler->GetMethodDef());
+    ProbesMetadataTracker::Instance()->AddMethodToProbe(
+        probe->probeId, debuggerMethodHandler->GetModule()->GetModuleId(), debuggerMethodHandler->GetMethodDef());
 }
 
-bool DebuggerRejitPreprocessor::ShouldSkipModule(const ModuleInfo& moduleInfo, const MethodProbeDefinition& methodProbe)
+void DebuggerRejitPreprocessor::EnqueueNewMethod(const std::shared_ptr<MethodProbeDefinition>& definition,
+                                                 ComPtr<IMetaDataImport2>& metadataImport,
+                                                 ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo,
+                                                 mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests,
+                                                 unsigned methodDef, const FunctionInfo& functionInfo,
+                                                 RejitHandlerModule* moduleHandler)
+{
+    auto [hr, newMethodDef, newFunctionInfo] = 
+        PickMethodToRejit(metadataImport, metadataEmit, typeDef, methodDef, functionInfo);
+    if (hr != S_OK)
+    {
+        return;
+    }
+
+    RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, newMethodDef, newFunctionInfo, moduleHandler);
+
+    Logger::Debug("    * Enqueue for ReJIT [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
+                     ", AppDomainId=", moduleHandler->GetModuleMetadata()->app_domain_id,
+                     ", Assembly=", moduleHandler->GetModuleMetadata()->assemblyName, ", Type=", newFunctionInfo.type.name,
+                     ", Method=", newFunctionInfo.name, "(", newFunctionInfo.method_signature.NumberOfArguments(), " params), Signature=", newFunctionInfo.signature.str(), "]");
+}
+
+HRESULT DebuggerRejitPreprocessor::GetMoveNextMethodFromKickOffMethod(const ComPtr<IMetaDataImport2>& metadataImport, mdTypeDef typeDef, mdMethodDef methodDef, 
+                                                                      const FunctionInfo& function, mdMethodDef& moveNextMethod, mdTypeDef& nestedAsyncClassOrStruct) 
+{
+    // TODO: We might consider rewriting this code using CustomAttributeParser [AsyncStateMachine(typeof(<X>d__1))]
+
+    moveNextMethod = mdMethodDefNil;
+    nestedAsyncClassOrStruct = mdTypeDefNil;
+    bool hasAsyncAttribute;
+    auto hr = HasAsyncStateMachineAttribute(metadataImport, methodDef, hasAsyncAttribute);
+    IfFailRet(hr);
+
+    if (!hasAsyncAttribute)
+    {
+        return hr;
+    }
+
+    const auto generatedTypeName = ToWSTRING("<") + function.name + ToWSTRING(">");
+    const auto typeDefEnum = EnumTypeDefs(metadataImport);
+    auto typeDefIterator = typeDefEnum.begin();
+    for (; typeDefIterator != typeDefEnum.end(); typeDefIterator = ++typeDefIterator)
+    {
+        nestedAsyncClassOrStruct = *typeDefIterator;
+        const auto typeInfo = GetTypeInfo(metadataImport, nestedAsyncClassOrStruct);
+
+        // search for a state machine compiler generated type
+        if (!StartsWith(shared::ToString(typeInfo.name), ToString(generatedTypeName)))
+        {
+            // not a compiler generated type
+            continue;
+        }
+
+        // check if it is a nested type and the parent is our type
+        mdTypeDef parentType;
+        if (metadataImport->GetNestedClassProps(nestedAsyncClassOrStruct, &parentType) != S_OK || parentType != typeDef)
+        {
+            // not a nested type or it is nested but the parent type is different from what we are looking for
+            continue;
+        }
+
+        bool isImplementStateMAchineInterface;
+        // check if the nested type implement the IAsyncStateMachine interface
+        hr = DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(metadataImport, nestedAsyncClassOrStruct, isImplementStateMAchineInterface);
+        if (FAILED(hr))
+        {
+            Logger::Error("DebuggerRejitPreprocessor::GetMoveNextMethodFromKickOffMethod: failed in call to DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine");
+            return  hr;
+        }
+
+        if (isImplementStateMAchineInterface)
+        {
+            // only one method called "MoveNext" exists in the state machine so no need to include the signature
+            const COR_SIGNATURE* moveNextSig{};
+            hr = metadataImport->FindMethod(nestedAsyncClassOrStruct, WStr("MoveNext"), moveNextSig,
+                                            0, &moveNextMethod);
+            if (FAILED(hr))
+            {
+                Logger::Error("DebuggerRejitPreprocessor::GetMoveNextMethodFromKickOffMethod: failed to call metadataImport->FindMethod for MoveNext method");
+                return  hr;
+            }
+        }
+
+        if (moveNextMethod != mdMethodDefNil)
+        {
+            // we found the correct nested type and MoveNext method
+            break;
+        }
+    }
+    return S_OK;
+}
+
+std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::TransformKickOffToMoveNext(
+                                                    const ComPtr<IMetaDataImport2>& metadataImport, const ComPtr<IMetaDataEmit2>& metadataEmit,
+                                                    mdMethodDef moveNextMethod, mdTypeDef nestedAsyncClassOrStruct)
+{
+    // save the MoveNext method and create a function info for it
+    auto caller = GetFunctionInfo(metadataImport, moveNextMethod);
+    if (!caller.IsValid())
+    {
+        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The methoddef: ",
+                      shared::TokenStr(&moveNextMethod), " is not valid!");
+        return {E_FAIL, mdMethodDefNil, FunctionInfo()};
+    }
+
+    const auto hr = caller.method_signature.TryParse();
+    if (FAILED(hr))
+    {
+        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The method signature: ",
+                      caller.method_signature.str(), " cannot be parsed.");
+        return {hr, mdMethodDefNil, FunctionInfo()};
+    }
+
+    return {S_OK, moveNextMethod, FunctionInfo(caller)};
+}
+
+/**
+ * \brief In certain cases, the method that we have in our hand (methodDef, typeDef and functionInfo) is not what we need to instrument,
+ * e.g. in async method we have the kickoff method but we need to instrument the MoveNext method,
+ * In the future, this may be applicable to other cases (e.g. if the user is trying to instrument an abstract method,
+ * we should actually instrument the methods that override and implement it, etc etc).
+ */
+std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::PickMethodToRejit(const ComPtr<IMetaDataImport2>& metadataImport,
+                                                                                            const ComPtr<IMetaDataEmit2>& metadataEmit,
+                                                                                            mdTypeDef typeDef, mdMethodDef methodDef,
+                                                                                            const FunctionInfo& functionInfo) const
+{
+    mdMethodDef moveNextMethod;
+    mdTypeDef nestedAsyncClassOrStruct;
+    HRESULT hr = GetMoveNextMethodFromKickOffMethod(metadataImport, typeDef, methodDef, functionInfo, moveNextMethod, nestedAsyncClassOrStruct);
+    if (FAILED(hr))
+    {
+        Logger::Error("DebuggerRejitPreprocessor::TransformMethodToRejit: GetMoveNextMethodFromKickOffMethod method failed");
+        return {hr, mdMethodDefNil, FunctionInfo()};
+    }
+
+    if (moveNextMethod == mdMethodDefNil)
+    {
+        Logger::Info("DebuggerRejitPreprocessor::TransformMethodToRejit: MoveNextMethod didn't found. Assuming it's a non-async method");
+        return {S_OK, methodDef, functionInfo};
+    }
+
+    return TransformKickOffToMoveNext(metadataImport, metadataEmit, moveNextMethod, nestedAsyncClassOrStruct);
+}
+
+bool DebuggerRejitPreprocessor::ShouldSkipModule(const ModuleInfo& moduleInfo, const std::shared_ptr<MethodProbeDefinition>& methodProbe)
 {
     return false;
 }

@@ -18,8 +18,8 @@ public:
     ~CorProfilerInfo();
 
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
-    ULONG STDMETHODCALLTYPE AddRef(void) override;
-    ULONG STDMETHODCALLTYPE Release(void) override;
+    ULONG STDMETHODCALLTYPE AddRef() override;
+    ULONG STDMETHODCALLTYPE Release() override;
     HRESULT STDMETHODCALLTYPE GetClassFromObject(ObjectID objectId, ClassID* pClassId) override;
     HRESULT STDMETHODCALLTYPE GetClassFromToken(ModuleID moduleId, mdTypeDef typeDef, ClassID* pClassId) override;
     HRESULT STDMETHODCALLTYPE GetCodeInfo(FunctionID functionId, LPCBYTE* pStart, ULONG* pcSize) override;

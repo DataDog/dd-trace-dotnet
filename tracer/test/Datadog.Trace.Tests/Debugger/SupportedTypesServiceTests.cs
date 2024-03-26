@@ -8,22 +8,23 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using Datadog.Trace.Debugger.Snapshots;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger
 {
     public class SupportedTypesServiceTests
     {
-        private static readonly object[] Objects = { 3, DateTime.Now, TimeSpan.FromSeconds(3), DateTimeOffset.Now, Guid.NewGuid(), "Hello", new int?(5), new DateTime?(DateTime.Now), ConsoleColor.Blue };
+        private static readonly object[] Objects = { 3, DateTime.MinValue, TimeSpan.FromSeconds(3), DateTimeOffset.MinValue, Guid.Empty, "Hello", new int?(5), new DateTime?(DateTime.MinValue), ConsoleColor.Blue };
 
-        public static System.Collections.Generic.IEnumerable<object[]> ObjectsCanCallToStringOn() => Objects.Select(o => new object[] { o });
-
-        [Theory]
-        [MemberData(nameof(ObjectsCanCallToStringOn))]
-        public void TestCanCallToString(object obj)
+        [Fact]
+        public void TestCanCallToString()
         {
-            var type = obj.GetType();
-            Assert.True(SupportedTypesService.IsSafeToCallToString(type), $"Type {type} should be safe to call ToString on");
+            foreach (var obj in Objects)
+            {
+                var type = obj.GetType();
+                Redaction.IsSafeToCallToString(type).Should().BeTrue($"Type {type} should be safe to call ToString on");
+            }
         }
     }
 }

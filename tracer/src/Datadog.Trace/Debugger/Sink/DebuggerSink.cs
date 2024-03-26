@@ -46,7 +46,7 @@ namespace Datadog.Trace.Debugger.Sink
             _cancellationSource = new CancellationTokenSource();
         }
 
-        public static DebuggerSink Create(SnapshotSink snapshotSink, ProbeStatusSink probeStatusSink, ImmutableDebuggerSettings settings, BatchUploader batchUploader)
+        public static DebuggerSink Create(SnapshotSink snapshotSink, ProbeStatusSink probeStatusSink, BatchUploader batchUploader, DebuggerSettings settings)
         {
             var uploadInterval = settings.UploadFlushIntervalMilliseconds;
             var initialInterval =
@@ -126,20 +126,20 @@ namespace Datadog.Trace.Debugger.Sink
 
             if (newInterval != currentInterval)
             {
-                Log.Debug($"Changing flush interval. Remaining available capacity in upload queue {remainingPercent * 100}%, new flush interval {newInterval}ms");
+                Log.Debug<double, int>("Changing flush interval. Remaining available capacity in upload queue {Remaining}%, new flush interval {NewInterval}ms", remainingPercent * 100, newInterval);
             }
 
             return newInterval;
         }
 
-        public void AddSnapshot(string snapshot)
+        public void AddSnapshot(string probeId, string snapshot)
         {
-            _snapshotSink.Add(snapshot);
+            _snapshotSink.Add(probeId, snapshot);
         }
 
-        public void AddProbeStatus(string probeId, Status status, Exception exception = null, string errorMessage = null)
+        public void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception exception = null, string errorMessage = null)
         {
-            _probeStatusSink.AddProbeStatus(probeId, status, exception, errorMessage);
+            _probeStatusSink.AddProbeStatus(probeId, status, probeVersion, exception, errorMessage);
         }
 
         public void Dispose()

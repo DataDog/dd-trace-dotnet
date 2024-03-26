@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if NETFRAMEWORK
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -18,7 +20,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         TypeName = "System.Web.ThreadContext",
         MethodName = "DisassociateFromCurrentThread",
         ReturnTypeName = ClrNames.Void,
-        ParameterTypeNames = new string[0],
         MinimumVersion = "4.0.0",
         MaximumVersion = "4.*.*",
         IntegrationName = IntegrationName)]

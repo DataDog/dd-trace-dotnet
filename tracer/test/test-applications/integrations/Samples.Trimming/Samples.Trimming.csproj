@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net7.0;net6.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!-- Trimming SetUp -->
+  <PropertyGroup>
+    <PublishTrimmed>true</PublishTrimmed>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <NoWarn>IL2007;IL2008;IL2026;IL2104</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <TrimmerRootDescriptor Include="../../../../src/Datadog.Trace.Trimming/build/Datadog.Trace.Trimming.xml"/>
+  </ItemGroup>
+
+</Project>

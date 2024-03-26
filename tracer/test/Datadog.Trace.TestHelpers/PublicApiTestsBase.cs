@@ -13,21 +13,26 @@ using System.Runtime.Versioning;
 using System.Text;
 using Datadog.Trace.Ci.Coverage.Attributes;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using FluentAssertions;
 using PublicApiGenerator;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests
 {
     public abstract class PublicApiTestsBase
     {
         private readonly Assembly _assembly;
-        private readonly string _filePath;
+        private readonly ITestOutputHelper _output;
+        private readonly string _snapshotDirectory;
 
-        public PublicApiTestsBase(Assembly assembly, [CallerFilePath] string filePath = null)
+        public PublicApiTestsBase(Assembly assembly, ITestOutputHelper output)
         {
             _assembly = assembly;
-            _filePath = filePath;
+            _output = output;
+            var projectName = this.GetType().Assembly.GetName().Name!;
+            _snapshotDirectory = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "test", projectName, "Snapshots");
         }
 
         [Fact]
@@ -60,7 +65,7 @@ namespace Datadog.Trace.Tests
 
             var expected = GetExpected(publicApi);
 
-            publicApi.Should().Be(expected, "Public API should match the verified API. Update verified snapshot when the public API changes as appropriate");
+            publicApi.Should().Be(expected, outputDiffOnly: true, "Public API should match the verified API. Update verified snapshot when the public API changes as appropriate");
         }
 
         [Fact]
@@ -84,7 +89,7 @@ namespace Datadog.Trace.Tests
             string frameworkName = EnvironmentTools.GetTracerTargetFrameworkDirectory();
             var expected = GetExpected(referencedAssemblyOutput, frameworkName);
 
-            referencedAssemblyOutput.Should().Be(expected, "Assembly references should match the verified list of assembly references. Update the verified snapshot when the assembly references change");
+            referencedAssemblyOutput.Should().Be(expected, outputDiffOnly: true, "Assembly references should match the verified list of assembly references. Update the verified snapshot when the assembly references change");
         }
 
         [Theory]
@@ -122,11 +127,11 @@ namespace Datadog.Trace.Tests
         {
             // poor-man's VerifyTests.Verify, because Verify has incompatible dependencies with ASP.NET Core
             var assemblyName = _assembly.GetName().Name;
+            _output?.WriteLine($"Building directory for assembly {assemblyName} and snapshot directory {_snapshotDirectory}");
 
-            var snapshotDirectory = Path.Combine(Directory.GetParent(_filePath).FullName, "Snapshots");
             var intermediatePath = targetFramework == null ? methodName : $"{methodName}.{targetFramework}";
-            var receivedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{assemblyName}.{intermediatePath}.received.txt");
-            var verifiedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{assemblyName}.{intermediatePath}.verified.txt");
+            var receivedPath = Path.Combine(_snapshotDirectory, $"PublicApiTests.{assemblyName}.{intermediatePath}.received.txt");
+            var verifiedPath = Path.Combine(_snapshotDirectory, $"PublicApiTests.{assemblyName}.{intermediatePath}.verified.txt");
 
             File.WriteAllText(receivedPath, publicApi);
             return File.Exists(verifiedPath) ? File.ReadAllText(verifiedPath) : string.Empty;

@@ -4,15 +4,17 @@
 // </copyright>
 
 using System;
-using System.Net;
+using System.Collections.Generic;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
@@ -22,56 +24,91 @@ namespace Datadog.Trace.Ci
 {
     internal class CITracerManagerFactory : TracerManagerFactory
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CITracerManagerFactory>();
-        private CIVisibilitySettings _settings;
+        private readonly CIVisibilitySettings _settings;
+        private readonly IDiscoveryService _discoveryService;
+        private readonly bool _enabledEventPlatformProxy;
+        private readonly bool _useLockedManager;
 
-        public CITracerManagerFactory(CIVisibilitySettings settings)
+        public CITracerManagerFactory(CIVisibilitySettings settings, IDiscoveryService discoveryService, bool enabledEventPlatformProxy = false, bool useLockedManager = true)
         {
             _settings = settings;
+            _discoveryService = discoveryService;
+            _enabledEventPlatformProxy = enabledEventPlatformProxy;
+            _useLockedManager = useLockedManager;
         }
 
         protected override TracerManager CreateTracerManagerFrom(
             ImmutableTracerSettings settings,
             IAgentWriter agentWriter,
-            ISampler sampler,
             IScopeManager scopeManager,
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetrics,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
-            string defaultServiceName)
+            IDiscoveryService discoveryService,
+            DataStreamsManager dataStreamsManager,
+            string defaultServiceName,
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            ITraceSampler traceSampler,
+            ISpanSampler spanSampler,
+            IRemoteConfigurationManager remoteConfigurationManager,
+            IDynamicConfigurationManager dynamicConfigurationManager,
+            ITracerFlareManager tracerFlareManager)
         {
-            return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, defaultServiceName);
+            if (_useLockedManager)
+            {
+                return new CITracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);
+            }
+            else
+            {
+                return new CITracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);
+            }
         }
 
-        protected override ISampler GetSampler(ImmutableTracerSettings settings)
+        protected override ITelemetryController CreateTelemetryController(ImmutableTracerSettings settings, IDiscoveryService discoveryService)
+        {
+            return TelemetryFactory.Instance.CreateCiVisibilityTelemetryController(settings, discoveryService, isAgentAvailable: !_settings.Agentless);
+        }
+
+        protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)
+        {
+            return new CIGitMetadataTagsProvider();
+        }
+
+        protected override ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {
             return new CISampler();
         }
 
-        protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler)
+        protected override bool ShouldEnableRemoteConfiguration(ImmutableTracerSettings settings) => false;
+
+        protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
             // Check for agentless scenario
             if (_settings.Agentless)
             {
                 if (!string.IsNullOrEmpty(_settings.ApiKey))
                 {
-                    return new CIAgentlessWriter(_settings, new CIWriterHttpSender(CIVisibility.GetRequestFactory(settings)));
+                    return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(CIVisibility.GetRequestFactory(settings)));
                 }
-                else
-                {
-                    Environment.FailFast("An API key is required in Agentless mode.");
-                    return null;
-                }
-            }
-            else
-            {
-                // With agent scenario:
 
-                // Set the tracer buffer size to the max
-                var traceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
-                return new CIAgentWriter(settings, sampler, traceBufferSize);
+                Environment.FailFast("An API key is required in Agentless mode.");
+                return null;
             }
+
+            // With agent scenario:
+            if (_enabledEventPlatformProxy)
+            {
+                return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(CIVisibility.GetRequestFactory(settings)));
+            }
+
+            // Event platform proxy not found
+            // Set the tracer buffer size to the max
+            var traceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
+            return new ApmAgentWriter(settings, updateSampleRates, discoveryService, traceBufferSize);
         }
+
+        protected override IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
+            => _discoveryService;
     }
 }

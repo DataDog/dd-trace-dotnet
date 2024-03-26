@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -11,7 +12,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    public class FakeCommandTests : TestHelper
+    public class FakeCommandTests : TracingIntegrationTest
     {
         public FakeCommandTests(ITestOutputHelper output)
             : base("FakeDbCommand", output)
@@ -19,9 +20,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsAdoNet(metadataSchemaVersion);
+
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces()
+        public Task SubmitsTracesV0() => RunTest("v0");
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        public Task SubmitsTracesV1() => RunTest("v1");
+
+        private async Task RunTest(string metadataSchemaVersion)
         {
             // ALWAYS: 91 spans
             // - FakeCommand: 21 spans (3 groups * 7 spans)
@@ -35,24 +44,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const int expectedSpanCount = 91;
             const string dbType = "fake";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.FakeDbCommand-fake";
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-{dbType}" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent);
+            using var process = await RunSampleAndWaitForExit(agent);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             foreach (var span in spans)
             {
-                var result = span.IsAdoNet();
-                Assert.True(result.Success, result.ToString());
-
                 Assert.Equal(expectedOperationName, span.Name);
-                Assert.Equal(expectedServiceName, span.Service);
-                Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
             }
 
             telemetry.AssertIntegrationEnabled(IntegrationId.AdoNet);

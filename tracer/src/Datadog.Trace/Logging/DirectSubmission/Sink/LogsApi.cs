@@ -8,6 +8,8 @@ using System;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink
@@ -74,8 +76,10 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
 
                     try
                     {
-                        // TODO: Metrics/Telemetry?
+                        TelemetryFactory.Metrics.RecordCountDirectLogApiRequests();
                         response = await request.PostAsync(logs, MimeType).ConfigureAwait(false);
+
+                        TelemetryFactory.Metrics.RecordCountDirectLogApiResponses(response.GetTelemetryStatusCodeMetricTag());
 
                         if (response.StatusCode is >= 200 and < 300)
                         {
@@ -83,17 +87,9 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                             return true;
                         }
 
-                        shouldRetry = response.StatusCode switch
-                        {
-                            400 => false, // Bad request (likely an issue in the payload formatting)
-                            401 => false, // Unauthorized (likely a missing API Key)
-                            403 => false, // Permission issue (likely using an invalid API Key)
-                            408 => true, // Request Timeout, request should be retried after some time
-                            413 => false, // Payload too large (batch is above 5MB uncompressed)
-                            429 => true, // Too Many Requests, request should be retried after some time
-                            >= 400 and < 500 => false, // generic "client" error, don't retry
-                            _ => true // Something else, probably server error, do retry
-                        };
+                        TelemetryFactory.Metrics.RecordCountDirectLogApiErrors(MetricTags.ApiError.StatusCode);
+
+                        shouldRetry = response.ShouldRetry();
 
                         if (!shouldRetry || isFinalTry)
                         {
@@ -115,6 +111,9 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                 }
                 catch (Exception ex)
                 {
+                    var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
+                    TelemetryFactory.Metrics.RecordCountDirectLogApiErrors(tag);
+
                     exception = ex;
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException)

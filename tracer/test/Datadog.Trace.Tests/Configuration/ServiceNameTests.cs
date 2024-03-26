@@ -4,107 +4,123 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Configuration
 {
     public class ServiceNameTests
     {
-        private const string ApplicationName = "MyApplication";
-        private readonly ServiceNames _serviceNames;
-
-        public ServiceNameTests()
+        private static readonly string[] UnmappedKeys = { "elasticsearch", "postgres", "custom-service" };
+        private static readonly Dictionary<string, string> Mappings = new()
         {
-            _serviceNames = new ServiceNames(new Dictionary<string, string>
+            { "sql-server", "custom-db" },
+            { "http-client", "some-service" },
+            { "mongodb", "my-mongo" },
+        };
+
+        private static readonly string MappingsString = string.Join(",", Mappings.ToList().Select(kvp => $"{kvp.Key}:{kvp.Value}"));
+
+        public static IEnumerable<object[]> GetAllConfigs()
+            => from schemaVersion in new object[] { SchemaVersion.V0, SchemaVersion.V1 }
+               from peerServiceTagsEnabled in new[] { true, false }
+               from removeClientServiceNamesEnabled in new[] { true, false }
+               select new[] { schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled };
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void RetrievesMappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var collection = new NameValueCollection
             {
-                { "sql-server", "custom-db" },
-                { "http-client", "some-service" },
-                { "mongodb", "my-mongo" },
-            });
-        }
+                { ConfigurationKeys.MetadataSchemaVersion, schemaVersionObject.ToString().ToLower() },
+                { ConfigurationKeys.PeerServiceDefaultsEnabled, peerServiceTagsEnabled.ToString() },
+                { ConfigurationKeys.RemoveClientServiceNamesEnabled, removeClientServiceNamesEnabled.ToString() },
+                { ConfigurationKeys.ServiceNameMappings, MappingsString },
+            };
 
-        [Theory]
-        [InlineData("sql-server", "custom-db")]
-        [InlineData("http-client", "some-service")]
-        [InlineData("mongodb", "my-mongo")]
-        public void RetrievesMappedServiceNames(string serviceName, string expected)
-        {
-            var actual = _serviceNames.GetServiceName(ApplicationName, serviceName);
+            var tracer = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collection)));
 
-            Assert.Equal(expected, actual);
-        }
-
-        [Theory]
-        [InlineData("elasticsearch")]
-        [InlineData("postgres")]
-        [InlineData("custom-service")]
-        public void RetrievesUnmappedServiceNames(string serviceName)
-        {
-            var expected = $"{ApplicationName}-{serviceName}";
-
-            var actual = _serviceNames.GetServiceName(ApplicationName, serviceName);
-
-            Assert.Equal(expected, actual);
-        }
-
-        [Theory]
-        [InlineData("elasticsearch")]
-        [InlineData("postgres")]
-        [InlineData("custom-service")]
-        public void DoesNotRequireAnyMappings(string serviceName)
-        {
-            var serviceNames = new ServiceNames(new Dictionary<string, string>());
-            var expected = $"{ApplicationName}-{serviceName}";
-
-            var actual = serviceNames.GetServiceName(ApplicationName, serviceName);
-
-            Assert.Equal(expected, actual);
-        }
-
-        [Fact]
-        public void CanPassNullToConstructor()
-        {
-            var serviceName = "elasticsearch";
-            var expected = $"{ApplicationName}-{serviceName}";
-            var serviceNames = new ServiceNames(null);
-
-            var actual = serviceNames.GetServiceName(ApplicationName, serviceName);
-
-            Assert.Equal(expected, actual);
-        }
-
-        [Fact]
-        public void CanAddMappingsLater()
-        {
-            var serviceName = "elasticsearch";
-            var expected = "custom-name";
-            var serviceNames = new ServiceNames(new Dictionary<string, string>());
-            serviceNames.SetServiceNameMappings(new Dictionary<string, string> { { serviceName, expected } });
-
-            var actual = serviceNames.GetServiceName(ApplicationName, serviceName);
-
-            Assert.Equal(expected, actual);
-        }
-
-        [Fact]
-        public void ReplacesExistingMappings()
-        {
-            var serviceNames = new ServiceNames(new Dictionary<string, string>
+            foreach (var kvp in Mappings)
             {
-                { "sql-server", "custom-db" },
-                { "elasticsearch", "original-service" },
-            });
-            serviceNames.SetServiceNameMappings(new Dictionary<string, string> { { "elasticsearch", "custom-name" } });
+                tracer.CurrentTraceSettings.GetServiceName(tracer, kvp.Key).Should().Be(kvp.Value);
+            }
+        }
 
-            var mongodbActual = serviceNames.GetServiceName(ApplicationName, "mongodb");
-            var elasticActual = serviceNames.GetServiceName(ApplicationName, "elasticsearch");
-            var sqlActual = serviceNames.GetServiceName(ApplicationName, "sql-server");
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void RetrievesUnmappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.MetadataSchemaVersion, schemaVersionObject.ToString().ToLower() },
+                { ConfigurationKeys.PeerServiceDefaultsEnabled, peerServiceTagsEnabled.ToString() },
+                { ConfigurationKeys.RemoveClientServiceNamesEnabled, removeClientServiceNamesEnabled.ToString() },
+                { ConfigurationKeys.ServiceNameMappings, MappingsString },
+            };
 
-            Assert.Equal($"{ApplicationName}-mongodb", mongodbActual);
-            Assert.Equal("custom-name", elasticActual);
-            Assert.Equal($"{ApplicationName}-sql-server", sqlActual);
+            var tracer = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collection)));
+
+            foreach (var key in UnmappedKeys)
+            {
+                var expectedServiceName = schemaVersion switch
+                {
+                    SchemaVersion.V0 when removeClientServiceNamesEnabled == false => $"{tracer.DefaultServiceName}-{key}",
+                    SchemaVersion.V0 when removeClientServiceNamesEnabled == true => tracer.DefaultServiceName,
+                    _ => tracer.DefaultServiceName,
+                };
+
+                tracer.CurrentTraceSettings.GetServiceName(tracer, key).Should().Be(expectedServiceName);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void DoesNotRequireAnyMappings(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.MetadataSchemaVersion, schemaVersionObject.ToString().ToLower() },
+                { ConfigurationKeys.PeerServiceDefaultsEnabled, peerServiceTagsEnabled.ToString() },
+                { ConfigurationKeys.RemoveClientServiceNamesEnabled, removeClientServiceNamesEnabled.ToString() },
+            };
+
+            var tracer = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collection)));
+
+            foreach (var key in UnmappedKeys)
+            {
+                var expectedServiceName = schemaVersion switch
+                {
+                    SchemaVersion.V0 when removeClientServiceNamesEnabled == false => $"{tracer.DefaultServiceName}-{key}",
+                    SchemaVersion.V0 when removeClientServiceNamesEnabled == true => tracer.DefaultServiceName,
+                    _ => tracer.DefaultServiceName,
+                };
+
+                tracer.CurrentTraceSettings.GetServiceName(tracer, key).Should().Be(expectedServiceName);
+            }
+        }
+
+        private class LockedTracer : Tracer
+        {
+            internal LockedTracer(TracerSettings tracerSettings)
+                : base(new LockedTracerManager(tracerSettings))
+            {
+            }
+        }
+
+        private class LockedTracerManager : TracerManager, ILockedTracer
+        {
+            public LockedTracerManager(TracerSettings tracerSettings)
+                : base(new ImmutableTracerSettings(tracerSettings), null, Mock.Of<IScopeManager>(), null, null, null, null, null, null, null, null, null, null, null, null, null)
+            {
+            }
         }
     }
 }

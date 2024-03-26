@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [Collection("LargePayloadTests")]
     public class DefaultTransportLargePayloadTests : LargePayloadTestBase
     {
         public DefaultTransportLargePayloadTests(ITestOutputHelper output)
@@ -17,9 +19,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTraces()
-        {
-            RunTest();
-        }
+        public Task SubmitsTraces() => RunTest();
     }
 }

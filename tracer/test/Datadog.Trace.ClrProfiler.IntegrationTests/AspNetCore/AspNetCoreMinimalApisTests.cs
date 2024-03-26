@@ -45,26 +45,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(Data))]
         public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
         {
+            SetInstrumentationVerification();
+
             await Fixture.TryStartApp(this);
 
             var spans = await Fixture.WaitForSpans(path);
-
-            var aspnetCoreSpans = spans.Where(s => s.Name == "aspnet_core.request");
-            foreach (var aspnetCoreSpan in aspnetCoreSpans)
-            {
-                var result = aspnetCoreSpan.IsAspNetCore();
-                Assert.True(result.Success, result.ToString());
-            }
-
-            var aspnetCoreMvcSpans = spans.Where(s => s.Name == "aspnet_core_mvc.request");
-            foreach (var aspnetCoreMvcSpan in aspnetCoreMvcSpans)
-            {
-                var result = aspnetCoreMvcSpan.IsAspNetCoreMvc();
-                Assert.True(result.Success, result.ToString());
-            }
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.AspNetCoreMinimalApis", isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
@@ -74,6 +64,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             await Verifier.Verify(spans, settings)
                           .UseMethodName("_")
                           .UseTypeName(_testName);
+
+            VerifyInstrumentation(Fixture.Process);
         }
     }
 }

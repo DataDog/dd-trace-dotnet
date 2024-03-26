@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Globalization;
+
 namespace Datadog.Trace.Sampling;
 
 /// <summary>
@@ -72,4 +74,27 @@ internal static class SamplingMechanism
     /// The only available sampling priority is <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
     public const int SpanSamplingRule = 8;
+
+    public static string GetTagValue(int mechanism)
+    {
+        // set the sampling mechanism trace tag
+        // * only set tag if priority is AUTO_KEEP (1) or USER_KEEP (2)
+        // * do not overwrite an existing value
+        // * don't set tag if sampling mechanism is unknown (null)
+        // * the "-" prefix is a left-over separator from a previous iteration of this feature (not a typo or a negative sign)
+
+        return mechanism switch
+        {
+            Default => "-0",
+            AgentRate => "-1",
+            RemoteRateAuto => "-2",
+            TraceSamplingRule => "-3",
+            Manual => "-4",
+            Asm => "-5",
+            RemoteRateUser => "-6",
+            RemoteRateDatadog => "-7",
+            SpanSamplingRule => "-8",
+            _ => $"-{mechanism.ToString(CultureInfo.InvariantCulture)}"
+        };
+    }
 }

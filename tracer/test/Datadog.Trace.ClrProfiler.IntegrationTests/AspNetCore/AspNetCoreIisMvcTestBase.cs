@@ -13,15 +13,14 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [UsesVerify]
-    public abstract class AspNetCoreIisMvcTestBase : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetCoreIisMvcTestBase : TracingIntegrationTest, IClassFixture<IisFixture>
     {
-        private readonly bool _inProcess;
         private readonly bool _enableRouteTemplateResourceNames;
 
         protected AspNetCoreIisMvcTestBase(string sampleName, IisFixture fixture, ITestOutputHelper output, bool inProcess, bool enableRouteTemplateResourceNames)
             : base(sampleName, output)
         {
-            _inProcess = inProcess;
+            InProcess = inProcess;
             _enableRouteTemplateResourceNames = enableRouteTemplateResourceNames;
             SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-503");
 
@@ -31,6 +30,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             Fixture = fixture;
         }
+
+        protected bool InProcess { get; }
 
         protected IisFixture Fixture { get; }
 
@@ -51,10 +52,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "/handled-exception", 500 },
         };
 
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Name switch
+            {
+                "aspnet_core.request" => span.IsAspNetCore(metadataSchemaVersion),
+                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(metadataSchemaVersion),
+                _ => Result.DefaultSuccess,
+            };
+
         protected string GetTestName(string testName)
         {
             return testName
-                 + (_inProcess ? ".InProcess" : ".OutOfProcess")
+                 + (InProcess ? ".InProcess" : ".OutOfProcess")
                  + (_enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
         }
     }

@@ -33,6 +33,8 @@ namespace Samples.HttpMessageHandler
                 Console.WriteLine($"Starting HTTP listener at {url}");
 
                 // send async http requests using HttpClient
+                url += "?key1=value1&token=a0b21ce2-006f-4cc6-95d5-d7b550698482";
+
                 Console.WriteLine();
                 Console.WriteLine("Sending async request with default HttpClient.");
                 using (var client = new HttpClient())

@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class TraceAnnotationsAutomaticOnlyTests : TraceAnnotationsTests
     {
         public TraceAnnotationsAutomaticOnlyTests(ITestOutputHelper output)
-            : base("TraceAnnotations", twoAssembliesLoaded: false, output)
+            : base("TraceAnnotations", twoAssembliesLoaded: false, enableTelemetry: true, output)
         {
         }
     }
@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class TraceAnnotationsVersionMismatchAfterFeatureTests : TraceAnnotationsTests
     {
         public TraceAnnotationsVersionMismatchAfterFeatureTests(ITestOutputHelper output)
-            : base("TraceAnnotations.VersionMismatch.AfterFeature", twoAssembliesLoaded: true, output)
+            : base("TraceAnnotations.VersionMismatch.AfterFeature", twoAssembliesLoaded: true, enableTelemetry: false, output)
         {
         }
     }
@@ -38,19 +38,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class TraceAnnotationsVersionMismatchBeforeFeatureTests : TraceAnnotationsTests
     {
         public TraceAnnotationsVersionMismatchBeforeFeatureTests(ITestOutputHelper output)
-            : base("TraceAnnotations.VersionMismatch.BeforeFeature", twoAssembliesLoaded: true, output)
+            : base("TraceAnnotations.VersionMismatch.BeforeFeature", twoAssembliesLoaded: true, enableTelemetry: false, output)
         {
+#if NET8_0_OR_GREATER
+            // The .NET 8 runtime is more aggressive in optimising structs
+            // so if you reference a version of the .NET tracer prior to this fix:
+            // https://github.com/DataDog/dd-trace-dotnet/pull/4608 you may get
+            // struct tearing issues. Bumping the TraceAnnotations.VersionMismatch.AfterFeature project to a version
+            // with the issue solves the problem.
+            // _However_ Duck-typing is broken on .NET 8 prior to when we added explicit support, so there will never
+            // be an "older" package version we can test with
+            throw new SkipException("Tracer versions before TraceAnnotations was supported do not support .NET 8");
+#endif
         }
     }
 
     public class TraceAnnotationsVersionMismatchNewerNuGetTests : TraceAnnotationsTests
     {
         public TraceAnnotationsVersionMismatchNewerNuGetTests(ITestOutputHelper output)
-#if NETFRAMEWORK
-            : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: true, output)
-#else
-            : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: false, output)
-#endif
+            : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: false, enableTelemetry: false, output)
         {
         }
     }
@@ -61,13 +67,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private static readonly string[] TestTypes = { "Samples.TraceAnnotations.TestType", "Samples.TraceAnnotations.TestTypeGeneric`1", "Samples.TraceAnnotations.TestTypeStruct", "Samples.TraceAnnotations.TestTypeStatic" };
 
         private readonly bool _twoAssembliesLoaded;
+        private readonly bool _enableTelemetry;
 
-        public TraceAnnotationsTests(string sampleAppName, bool twoAssembliesLoaded, ITestOutputHelper output)
+        public TraceAnnotationsTests(string sampleAppName, bool twoAssembliesLoaded, bool enableTelemetry, ITestOutputHelper output)
             : base(sampleAppName, output)
         {
             SetServiceVersion("1.0.0");
 
             _twoAssembliesLoaded = twoAssembliesLoaded;
+            _enableTelemetry = enableTelemetry;
         }
 
         [Trait("Category", "EndToEnd")]
@@ -86,11 +94,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ddTraceMethodsString += ";Samples.TraceAnnotations.ExtensionMethods[ExtensionMethodForTestType,ExtensionMethodForTestTypeGeneric,ExtensionMethodForTestTypeTypeStruct];System.Net.Http.HttpRequestMessage[set_Method]";
 
             SetEnvironmentVariable("DD_TRACE_METHODS", ddTraceMethodsString);
-
-            // Don't bother with telemetry when two assemblies are loaded because we could get unreliable results
-            MockTelemetryAgent<TelemetryData> telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();
+            // Don't bother with telemetry in version mismatch scenarios because older versions may only support V1 telemetry
+            // which we no longer support in our mock telemetry agent
+            // FIXME: Could be fixed with an upgrade to the NuGet package (after .NET 8?)
+            MockTelemetryAgent telemetry = _enableTelemetry ? this.ConfigureTelemetry() : null;
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent))
+            using (await RunSampleAndWaitForExit(agent))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
@@ -143,7 +152,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 (rootSpan.Start + rootSpan.Duration).Should().BeGreaterThan(lastEndTime.Value);
 
                 telemetry?.AssertIntegrationEnabled(IntegrationId.TraceAnnotations);
-                telemetry?.AssertConfiguration(ConfigTelemetryData.TraceMethods);
+                telemetry?.AssertConfiguration("DD_TRACE_METHODS"); // normalised to trace_methods in the backend
 
                 // Run snapshot verification
                 var settings = VerifyHelper.GetSpanVerifierSettings();
@@ -157,16 +166,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void IntegrationDisabled()
+        public async Task IntegrationDisabled()
         {
-            // Don't bother with telemetry when two assemblies are loaded because we could get unreliable results
-            MockTelemetryAgent<TelemetryData> telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();
+            // Don't bother with telemetry in version mismatch scenarios because older versions may only support V1 telemetry
+            // which we no longer support in our mock telemetry agent
+            // FIXME: Could be fixed with an upgrade to the NuGet package (after .NET 8?)
+            MockTelemetryAgent telemetry = _enableTelemetry ? this.ConfigureTelemetry() : null;
             SetEnvironmentVariable("DD_TRACE_METHODS", string.Empty);
             SetEnvironmentVariable("DD_TRACE_ANNOTATIONS_ENABLED", "false");
 
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(1, 2000);
+            using var process = await RunSampleAndWaitForExit(agent);
+            var spans = agent.Spans;
 
             Assert.Empty(spans);
             telemetry?.AssertIntegration(IntegrationId.TraceAnnotations, enabled: false, autoEnabled: false);

@@ -10,20 +10,21 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
     internal class RcmClientState
     {
-        public RcmClientState(int rootVersion, int targetsVersion, List<RcmConfigState> configStates, bool hasError, string error)
+        public RcmClientState(int rootVersion, int targetsVersion, List<RcmConfigState> configStates, bool hasError, string error, string backendClientState)
         {
             RootVersion = rootVersion;
             TargetsVersion = targetsVersion;
             ConfigStates = configStates;
             HasError = hasError;
             Error = error;
+            BackendClientState = backendClientState;
         }
 
         [JsonProperty("root_version")]
         public int RootVersion { get; }
 
         [JsonProperty("targets_version")]
-        public int TargetsVersion { get; }
+        public long TargetsVersion { get; }
 
         [JsonProperty("config_states")]
         public List<RcmConfigState> ConfigStates { get; }
@@ -33,5 +34,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 
         [JsonProperty("error")]
         public string Error { get; }
+
+        [JsonProperty("backend_client_state")]
+        public string BackendClientState { get; }
     }
 }

@@ -43,12 +43,12 @@ namespace Datadog.Trace
         string ServiceName { get; set; }
 
         /// <summary>
-        /// Gets the trace's unique identifier.
+        /// Gets the lower 64 bits of the trace's unique 128-bit identifier.
         /// </summary>
         ulong TraceId { get; }
 
         /// <summary>
-        /// Gets the span's unique identifier.
+        /// Gets the span's unique 64-bit identifier.
         /// </summary>
         ulong SpanId { get; }
 

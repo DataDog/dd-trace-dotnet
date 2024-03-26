@@ -11,11 +11,13 @@ namespace Samples.Telemetry
 {
     internal static class Program
     {
+        private static ActivitySource _source;
         private const string ResponseContent = "PONG";
         private static readonly Encoding Utf8 = Encoding.UTF8;
 
         public static async Task Main(string[] args)
         {
+            _source = new ActivitySource("Samples.Telemetry");
 
             string port = args.FirstOrDefault(arg => arg.StartsWith("Port="))?.Split('=')[1] ?? "9000";
             Console.WriteLine($"Port {port}");
@@ -32,7 +34,7 @@ namespace Samples.Telemetry
                 Console.WriteLine("Sending async request with default HttpClient.");
                 using (var client = new HttpClient())
                 {
-                    using (SampleHelpers.CreateScope("GetAsync"))
+                    using (_source.StartActivity("GetAsync"))
                     {
                         await client.GetAsync(url);
                         Console.WriteLine("Received response for client.GetAsync(String)");

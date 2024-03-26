@@ -37,5 +37,24 @@
         </File>
       </Component>
     </ComponentGroup>
+
+    <?if $(var.Win64) = yes ?>
+    <ComponentGroup Id="dd_dotnet.cmd" Directory="INSTALLFOLDER">
+        <Component>
+            <File Id="dd_dotnet.cmd"
+                Source="$(var.MonitoringHomeDirectory)\dd-dotnet.cmd"
+                Checksum="yes">
+            </File>
+        </Component>
+    </ComponentGroup>
+    <ComponentGroup Id="dd_dotnet.exe" Directory="INSTALLFOLDER.win_x64">
+        <Component>
+            <File Id="dd_dotnet.exe"
+                Source="$(var.MonitoringHomeDirectory)\win-x64\dd-dotnet.exe"
+                Checksum="yes">
+            </File>
+        </Component>
+    </ComponentGroup>
+    <?endif ?>
   </Fragment>
 </Wix>

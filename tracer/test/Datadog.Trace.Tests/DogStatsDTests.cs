@@ -5,18 +5,31 @@
 
 using System;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
+using Datadog.Trace.Vendors.StatsdClient.Transport;
+using FluentAssertions;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests
 {
+    [Collection(nameof(EnvironmentVariablesTestCollection))]
+    [EnvironmentRestorer(
+        ConfigurationKeys.AgentHost,
+        ConfigurationKeys.AgentUri,
+        ConfigurationKeys.AgentPort,
+        ConfigurationKeys.DogStatsdPort,
+        ConfigurationKeys.TracesPipeName,
+        ConfigurationKeys.TracesUnixDomainSocketPath,
+        ConfigurationKeys.MetricsPipeName,
+        ConfigurationKeys.MetricsUnixDomainSocketPath)]
     public class DogStatsDTests
     {
         private readonly ITestOutputHelper _output;
@@ -27,10 +40,10 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void Do_not_send_metrics_when_disabled()
+        public async Task Do_not_send_metrics_when_disabled()
         {
             var statsd = new Mock<IDogStatsd>();
-            var spans = SendSpan(tracerMetricsEnabled: false, statsd.Object);
+            var spans = await SendSpan(tracerMetricsEnabled: false, statsd.Object);
 
             Assert.True(spans.Count == 1, AssertionFailureMessage(1, spans));
 
@@ -39,7 +52,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void Send_metrics_when_enabled()
+        public async Task Send_metrics_when_enabled()
         {
             var statsd = new Mock<IDogStatsd>();
 
@@ -49,7 +62,7 @@ namespace Datadog.Trace.Tests
             statsd.Setup(s => s.Counter(TracerMetricNames.Api.Responses, 1, 1, It.IsAny<string[]>())).Callback(() => requestSuccessful = true);
             statsd.Setup(s => s.Counter(TracerMetricNames.Api.Errors, 1, 1, It.IsAny<string[]>())).Callback(() => requestEncounteredErrors = true);
 
-            var spans = SendSpan(tracerMetricsEnabled: true, statsd.Object);
+            var spans = await SendSpan(tracerMetricsEnabled: true, statsd.Object);
 
             Assert.True(spans.Count == 1, AssertionFailureMessage(1, spans));
 
@@ -97,7 +110,122 @@ namespace Datadog.Trace.Tests
             */
         }
 
-        private static IImmutableList<MockSpan> SendSpan(bool tracerMetricsEnabled, IDogStatsd statsd)
+        [SkippableTheory]
+        [InlineData(null, null, null)] // Should default to udp
+        [InlineData("http://127.0.0.1:1234", null, null)]
+        [InlineData(null, "127.0.0.1", null)]
+        [InlineData(null, "127.0.0.1", "1234")]
+        public void CanCreateDogStatsD_UDP_FromTraceAgentSettings(string agentUri, string agentHost, string port)
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+            var settings = new TracerSettings(new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.AgentUri, agentUri },
+                { ConfigurationKeys.AgentHost, agentHost },
+                { ConfigurationKeys.DogStatsdPort, port },
+            })).Build();
+
+            settings.Exporter.MetricsTransport.Should().Be(TransportType.UDP);
+            var expectedPort = settings.Exporter.DogStatsdPort;
+
+            // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
+            // No guarantees it's actually using the _right_ config here, but it's better than nothing
+            using var agent = MockTracerAgent.Create(_output, useStatsd: true, requestedStatsDPort: expectedPort);
+
+            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient(settings, "test service", null);
+
+            // If there's an error during configuration, we get a no-op instance, so using this as a test
+            dogStatsD.Should()
+                     .NotBeNull()
+                     .And.BeOfType<DogStatsdService>();
+        }
+
+        [SkippableFact]
+        public void CanCreateDogStatsD_NamedPipes_FromTraceAgentSettings()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+            SkipOn.Platform(SkipOn.PlatformValue.Linux);
+
+            using var agent = MockTracerAgent.Create(_output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = true });
+
+            var settings = new TracerSettings(new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.MetricsPipeName, agent.StatsWindowsPipeName },
+            })).Build();
+
+            settings.Exporter.MetricsTransport.Should().Be(TransportType.NamedPipe);
+
+            // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
+            // No guarantees it's actually using the _right_ config here, but it's better than nothing
+            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient(settings, "test service", null);
+
+            // If there's an error during configuration, we get a no-op instance, so using this as a test
+            dogStatsD.Should()
+                     .NotBeNull()
+                     .And.BeOfType<DogStatsdService>();
+        }
+
+#if NETCOREAPP3_1_OR_GREATER
+        [SkippableFact]
+        public void CanCreateDogStatsD_UDS_FromTraceAgentSettings()
+        {
+            // UDP Datagrams over UDP are not supported on Windows
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+            var tracesPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            var metricsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            using var agent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(tracesPath, metricsPath) { UseDogstatsD = true });
+
+            var settings = new TracerSettings(new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.AgentUri, $"unix://{tracesPath}" },
+                { ConfigurationKeys.MetricsUnixDomainSocketPath, $"unix://{metricsPath}" },
+            })).Build();
+
+            settings.Exporter.MetricsTransport.Should().Be(TransportType.UDS);
+
+            // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
+            // No guarantees it's actually using the _right_ config here, but it's better than nothing
+            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient(settings, "test service", null);
+
+            // If there's an error during configuration, we get a no-op instance, so using this as a test
+            dogStatsD.Should()
+                     .NotBeNull()
+                     .And.BeOfType<DogStatsdService>();
+        }
+
+        [SkippableFact]
+        public void CanCreateDogStatsD_UDS_FallsBackToUdp_FromTraceAgentSettings()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+            var tracesPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            using var udsAgent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(tracesPath, null) { UseDogstatsD = false });
+            using var udpAgent = MockTracerAgent.Create(_output, useStatsd: true);
+
+            var settings = new TracerSettings(new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.AgentUri, $"unix://{tracesPath}" },
+            })).Build();
+
+            // If we're not using the "default" UDS path, then we fallback to UDP for stats
+            // Should fallback to the "default" stats location
+            settings.Exporter.MetricsTransport.Should().Be(TransportType.UDP);
+
+            // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
+            // No guarantees it's actually using the _right_ config here, but it's better than nothing
+            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient(settings, "test service", null);
+
+            // If there's an error during configuration, we get a no-op instance, so using this as a test
+            dogStatsD.Should()
+                     .NotBeNull()
+                     .And.BeOfType<DogStatsdService>();
+        }
+#endif
+
+        private static async Task<IImmutableList<MockSpan>> SendSpan(bool tracerMetricsEnabled, IDogStatsd statsd)
         {
             IImmutableList<MockSpan> spans;
             var agentPort = TcpPortProvider.GetOpenPort();
@@ -114,12 +242,12 @@ namespace Datadog.Trace.Tests
                     StartupDiagnosticLogEnabled = false,
                 };
 
-                var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd);
+                await using var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd);
 
                 using (var scope = tracer.StartActive("root"))
                 {
                     scope.Span.ResourceName = "resource";
-                    Thread.Sleep(5);
+                    await Task.Delay(5);
                 }
 
                 spans = agent.WaitForSpans(1);

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if NETFRAMEWORK
 using System;
 using System.ComponentModel;
@@ -19,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         AssemblyName = "System.ServiceModel",
         TypeName = "System.ServiceModel.Dispatcher.TaskMethodInvoker",
         MethodName = "InvokeAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<System.Tuple`2<System.Object, System.Object[]>>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[System.Tuple`2[System.Object, System.Object[]]]",
         ParameterTypeNames = new[] { ClrNames.Object, "System.Object[]" },
         MinimumVersion = "4.0.0",
         MaximumVersion = "4.*.*",
@@ -38,27 +40,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object instanceArg, object[] inputs)
         {
-            // TODO Just use the OperationContext.Current object to get the span information
-            // context.IncomingMessageHeaders contains:
-            //  - Action
-            //  - To
-            //
-            // context.IncomingMessageProperties contains:
-            // - ["httpRequest"] key to find distributed tracing headers
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !Tracer.Instance.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
             {
                 return CallTargetState.GetDefault();
             }
 
-            var operationContext = WcfCommon.GetCurrentOperationContext();
-            if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
-            {
-                return new CallTargetState(WcfCommon.CreateScope(operationContextProxy.RequestContext));
-            }
-            else
-            {
-                return CallTargetState.GetDefault();
-            }
+            return new CallTargetState(Tracer.Instance.ActiveScope as Scope);
         }
 
         /// <summary>
@@ -73,7 +60,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse returnValue, Exception exception, in CallTargetState state)
         {
-            state.Scope.DisposeWithException(exception);
+            if (state.Scope is not null && exception is not null)
+            {
+                // Add the exception but do not dispose the scope.
+                // BeforeSendReplyIntegration is responsible for closing the span.
+                state.Scope.Span?.SetException(exception);
+            }
+
             return returnValue;
         }
     }

@@ -11,10 +11,10 @@ AppDomainInfo::AppDomainInfo()
 {
 }
 
-AppDomainInfo::AppDomainInfo(ProcessID pid, const std::string& name)
+AppDomainInfo::AppDomainInfo(ProcessID pid, std::string name)
     :
     Pid{pid},
-    AppDomainName{name}
+    AppDomainName{std::move(name)}
 {
 }
 

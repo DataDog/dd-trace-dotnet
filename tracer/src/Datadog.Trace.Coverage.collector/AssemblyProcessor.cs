@@ -5,52 +5,81 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Attributes;
+using Datadog.Trace.Ci.Coverage.Metadata;
+using Datadog.Trace.Ci.Coverage.Util;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using CallSite = Mono.Cecil.CallSite;
+using FieldAttributes = Mono.Cecil.FieldAttributes;
+using MethodAttributes = Mono.Cecil.MethodAttributes;
+using TypeAttributes = Mono.Cecil.TypeAttributes;
 
 namespace Datadog.Trace.Coverage.Collector
 {
     internal class AssemblyProcessor
     {
-        private static readonly object PadLock = new();
-        private static readonly CultureInfo USCultureInfo = new("us-US");
-        private static readonly Regex NetCorePattern = new(@".NETCoreApp,Version=v(\d.\d)", RegexOptions.Compiled);
-        private static readonly ConstructorInfo CoveredAssemblyAttributeTypeCtor = typeof(CoveredAssemblyAttribute).GetConstructors()[0];
-        private static readonly MethodInfo ReportTryGetScopeMethodInfo = typeof(CoverageReporter).GetMethod("TryGetScope")!;
-        private static readonly MethodInfo ScopeReportMethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(ulong) })!;
-        private static readonly MethodInfo ScopeReport2MethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(ulong), typeof(ulong) })!;
-        private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
+        private static readonly string? ExcludeFromCodeCoverageAttributeFullName = typeof(ExcludeFromCodeCoverageAttribute).FullName;
+        private static readonly string? AvoidCoverageAttributeFullName = typeof(AvoidCoverageAttribute).FullName;
+        private static readonly string? CoveredAssemblyAttributeFullName = typeof(CoveredAssemblyAttribute).FullName;
+        private static readonly string? InternalsVisibleToAttributeFullName = typeof(InternalsVisibleToAttribute).FullName;
+        private static readonly string? DebuggableAttributeFullName = typeof(DebuggableAttribute).FullName;
 
-        private readonly CIVisibilitySettings? _ciVisibilitySettings;
+        private static readonly object PadLock = new();
+        private static readonly Regex NetCorePattern = new(@".NETCoreApp,Version=v(\d.\d)", RegexOptions.Compiled);
+        private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
+        private static readonly string[] IgnoredAssemblies =
+        {
+            "NUnit3.TestAdapter.dll",
+            "xunit.abstractions.dll",
+            "xunit.assert.dll",
+            "xunit.core.dll",
+            "xunit.execution.dotnet.dll",
+            "xunit.runner.reporters.netcoreapp10.dll",
+            "xunit.runner.utility.netcoreapp10.dll",
+            "xunit.runner.visualstudio.dotnetcore.testadapter.dll",
+            "Xunit.SkippableFact.dll",
+        };
+
+        private readonly CoverageSettings _settings;
         private readonly ICollectorLogger _logger;
-        private readonly string _tracerHome;
         private readonly string _assemblyFilePath;
-        private readonly string _pdbFilePath;
+        private readonly bool _enableJitOptimizations;
+        private readonly CoverageMode _coverageMode;
 
         private byte[]? _strongNameKeyBlob;
 
-        public AssemblyProcessor(string filePath, string tracerHome, ICollectorLogger? logger = null, CIVisibilitySettings? ciVisibilitySettings = null)
+        public AssemblyProcessor(string filePath, CoverageSettings settings, ICollectorLogger? logger = null)
         {
-            _tracerHome = tracerHome;
+            _settings = settings;
             _logger = logger ?? new ConsoleCollectorLogger();
-            _ciVisibilitySettings = ciVisibilitySettings;
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
-            _pdbFilePath = Path.ChangeExtension(filePath, ".pdb");
+            _enableJitOptimizations = settings.CIVisibility.CodeCoverageEnableJitOptimizations;
+            _coverageMode = CoverageMode.LineExecution;
+            if (settings.CIVisibility.CodeCoverageMode is { Length: > 0 } strCodeCoverageMode)
+            {
+                if (Enum.TryParse<CoverageMode>(strCodeCoverageMode, ignoreCase: true, out var coverageMode))
+                {
+                    _coverageMode = coverageMode;
+                }
+            }
 
             if (!File.Exists(_assemblyFilePath))
             {
                 throw new FileNotFoundException($"Assembly not found in path: {_assemblyFilePath}");
             }
 
-            if (!File.Exists(_pdbFilePath))
+            if (!File.Exists(Path.ChangeExtension(filePath, ".pdb")))
             {
                 Ci.Coverage.Exceptions.PdbNotFoundException.Throw();
             }
@@ -58,13 +87,25 @@ namespace Datadog.Trace.Coverage.Collector
 
         public string FilePath => _assemblyFilePath;
 
-        public void Process()
+        public bool HasTracerAssemblyCopied { get; private set; }
+
+        public unsafe void Process()
         {
             try
             {
+                HasTracerAssemblyCopied = false;
                 _logger.Debug($"Processing: {_assemblyFilePath}");
 
-                var customResolver = new CustomResolver(_logger);
+                // Check if the assembly is in the ignored assemblies list.
+                var assemblyFullName = Path.GetFileName(_assemblyFilePath);
+                if (Array.Exists(IgnoredAssemblies, i => assemblyFullName == i))
+                {
+                    return;
+                }
+
+                // Open the assembly
+                var customResolver = new CustomResolver(_logger, _assemblyFilePath);
+                customResolver.AddSearchDirectory(Path.GetDirectoryName(_assemblyFilePath));
                 using var assemblyDefinition = AssemblyDefinition.ReadAssembly(_assemblyFilePath, new ReaderParameters
                 {
                     ReadSymbols = true,
@@ -72,21 +113,52 @@ namespace Datadog.Trace.Coverage.Collector
                     AssemblyResolver = customResolver,
                 });
 
-                var avoidCoverageAttributeFullName = typeof(AvoidCoverageAttribute).FullName;
-                var coveredAssemblyAttributeFullName = typeof(CoveredAssemblyAttribute).FullName;
+                var hasInternalsVisibleAttribute = false;
                 foreach (var cAttr in assemblyDefinition.CustomAttributes)
                 {
                     var attrFullName = cAttr.Constructor.DeclaringType.FullName;
-                    if (attrFullName == avoidCoverageAttributeFullName)
+                    if (attrFullName == AvoidCoverageAttributeFullName || attrFullName == ExcludeFromCodeCoverageAttributeFullName)
                     {
                         _logger.Debug($"Assembly: {FilePath}, ignored.");
                         return;
                     }
 
-                    if (attrFullName == coveredAssemblyAttributeFullName)
+                    if (attrFullName == CoveredAssemblyAttributeFullName)
                     {
                         _logger.Debug($"Assembly: {FilePath}, already have coverage information.");
                         return;
+                    }
+
+                    if (FiltersHelper.FilteredByAttribute(attrFullName, _settings.ExcludeByAttribute))
+                    {
+                        _logger.Debug($"Assembly: {FilePath}, ignored by settings attribute filter.");
+                        return;
+                    }
+
+                    hasInternalsVisibleAttribute |= attrFullName == InternalsVisibleToAttributeFullName;
+
+                    // Enable Jit Optimizations
+                    if (_enableJitOptimizations)
+                    {
+                        // We check for the Debuggable attribute to enable jit optimizations and improve coverage performance.
+                        if (attrFullName == DebuggableAttributeFullName)
+                        {
+                            _logger.Debug($"Modifying the DebuggableAttribute to enable jit optimizations");
+
+                            // If the attribute is using the .ctor: DebuggableAttribute(DebuggableAttribute+DebuggingModes)
+                            // We change it to `Default (1)` to enable jit optimizations.
+                            if (cAttr.ConstructorArguments.Count == 1)
+                            {
+                                cAttr.ConstructorArguments[0] = new CustomAttributeArgument(cAttr.ConstructorArguments[0].Type, 2);
+                            }
+
+                            // If the attribute is using the .ctor: DebuggableAttribute(Boolean, Boolean)
+                            // We change the `isJITOptimizerDisabled` second argument to `false` to enable jit optimizations.
+                            if (cAttr.ConstructorArguments.Count == 2)
+                            {
+                                cAttr.ConstructorArguments[1] = new CustomAttributeArgument(cAttr.ConstructorArguments[1].Type, false);
+                            }
+                        }
                     }
                 }
 
@@ -97,7 +169,7 @@ namespace Datadog.Trace.Coverage.Collector
                 {
                     _logger.Debug($"Assembly: {FilePath} is signed.");
 
-                    var snkFilePath = _ciVisibilitySettings?.CodeCoverageSnkFilePath;
+                    var snkFilePath = _settings.CIVisibility.CodeCoverageSnkFilePath;
                     _logger.Debug($"Assembly: {FilePath} loading .snk file: {snkFilePath}.");
                     if (!string.IsNullOrWhiteSpace(snkFilePath) && File.Exists(snkFilePath))
                     {
@@ -107,312 +179,549 @@ namespace Datadog.Trace.Coverage.Collector
                     }
                     else if (tracerTarget == TracerTarget.Net461)
                     {
-                        _logger.Debug($"Assembly: {FilePath}, is a net461 signed assembly, a .snk file is required ({Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
+                        _logger.Warning($"Assembly: {FilePath}, is a net461 signed assembly, a .snk file is required ({Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
+                        return;
+                    }
+                    else if (hasInternalsVisibleAttribute)
+                    {
+                        _logger.Warning($"Assembly: {FilePath}, is a signed assembly with the InternalsVisibleTo attribute. A .snk file is required ({Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
                         return;
                     }
                 }
 
-                bool isDirty = false;
-                ulong totalMethods = 0;
-                ulong totalInstructions = 0;
+                // We open the exact datadog assembly to be copied to the target, this is because the AssemblyReference lists
+                // differs depends on the target runtime. (netstandard, .NET 5.0 or .NET 4.6.2)
+                using var datadogTracerAssembly = AssemblyDefinition.ReadAssembly(GetDatadogTracer(tracerTarget));
+
+                var isDirty = false;
+                var fileMetadataIndex = 0;
 
                 // Process all modules in the assembly
-                foreach (ModuleDefinition module in assemblyDefinition.Modules)
+                var module = assemblyDefinition.MainModule;
+                _logger.Debug($"Processing module: {module.Name}");
+                if (FiltersHelper.FilteredByAssemblyAndType(module.FileName, null, _settings.ExcludeFilters))
                 {
-                    _logger.Debug($"Processing module: {module.Name}");
+                    _logger.Debug($"Module: {module.FileName}, ignored by settings filter");
+                    return;
+                }
 
-                    // Process all types defined in the module
-                    foreach (TypeDefinition moduleType in module.GetTypes())
+                // Process all types defined in the module
+                var moduleTypes = module.GetTypes().ToList();
+                var fileDictionaryIndex = new Dictionary<string, FileMetadata>();
+
+                var moduleCoverageMetadataTypeDefinition = datadogTracerAssembly.MainModule.GetType(typeof(ModuleCoverageMetadata).FullName);
+                var moduleCoverageMetadataTypeReference = module.ImportReference(moduleCoverageMetadataTypeDefinition);
+
+                var moduleCoverageMetadataImplTypeDef = new TypeDefinition(
+                    typeof(ModuleCoverageMetadata).Namespace + ".Target",
+                    "ModuleCoverage",
+                    TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NotPublic,
+                    moduleCoverageMetadataTypeReference);
+
+                var moduleCoverageMetadataImplCtor = new MethodDefinition(
+                    ".ctor",
+                    MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig | MethodAttributes.RTSpecialName,
+                    module.TypeSystem.Void);
+
+                // Create metadata instructions list
+                var lstMetadataInstructions = new List<Instruction>();
+
+                // Add the .ctor to the metadata type
+                moduleCoverageMetadataImplTypeDef.Methods.Add(moduleCoverageMetadataImplCtor);
+
+                var coverageReporterTypeDefinition = datadogTracerAssembly.MainModule.GetType(typeof(CoverageReporter<>).FullName);
+                var coverageReporterTypeReference = module.ImportReference(coverageReporterTypeDefinition);
+                var reportTypeGenericInstance = new GenericInstanceType(coverageReporterTypeReference);
+                reportTypeGenericInstance.GenericArguments.Add(moduleCoverageMetadataImplTypeDef);
+
+                var reportGetCountersMethod = new MethodReference("GetFileCounter", new PointerType(module.TypeSystem.Void), reportTypeGenericInstance)
+                {
+                    HasThis = false,
+                    Parameters =
                     {
-                        if (moduleType.CustomAttributes.Any(cAttr =>
-                            cAttr.Constructor.DeclaringType.Name == nameof(AvoidCoverageAttribute)))
+                        new ParameterDefinition(module.TypeSystem.Int32) { Name = "fileIndex" }
+                    }
+                };
+
+                // GenericInstanceMethod? arrayEmptyOfIntMethodReference = null;
+                for (var typeIndex = 0; typeIndex < moduleTypes.Count; typeIndex++)
+                {
+                    var moduleType = moduleTypes[typeIndex];
+                    var skipType = false;
+                    foreach (var cAttr in moduleType.CustomAttributes)
+                    {
+                        var attrFullName = cAttr.Constructor.DeclaringType.FullName;
+                        if (attrFullName.Contains("TestSDKAutoGeneratedCode"))
+                        {
+                            // Test SDK adds an empty Type with an empty entrypoint with symbols that never gets executed.
+                            skipType = true;
+                            break;
+                        }
+
+                        if (attrFullName == ExcludeFromCodeCoverageAttributeFullName)
+                        {
+                            _logger.Debug($"Type: {moduleType.FullName}, ignored by: {ExcludeFromCodeCoverageAttributeFullName}");
+                            skipType = true;
+                            break;
+                        }
+
+                        if (FiltersHelper.FilteredByAttribute(attrFullName, _settings.ExcludeByAttribute))
+                        {
+                            _logger.Debug($"Type: {moduleType.FullName}, ignored by settings attribute filter");
+                            skipType = true;
+                            break;
+                        }
+                    }
+
+                    var filteredTargetType = moduleType;
+                    while (filteredTargetType is not null)
+                    {
+                        if (FiltersHelper.FilteredByAssemblyAndType(module.FileName, filteredTargetType.FullName, _settings.ExcludeFilters))
+                        {
+                            _logger.Debug($"Type: {filteredTargetType.FullName}, ignored by settings filter");
+                            skipType = true;
+                            break;
+                        }
+
+                        if (!filteredTargetType.IsNested)
+                        {
+                            break;
+                        }
+
+                        // Nested types are skipped if the declaring type is skipped.
+                        filteredTargetType = filteredTargetType.DeclaringType;
+                    }
+
+                    if (skipType)
+                    {
+                        continue;
+                    }
+
+                    _logger.Debug($"\t{moduleType.FullName}");
+
+                    var moduleTypeMethods = moduleType.Methods;
+
+                    // Process all Methods in the type
+                    for (var methodIndex = 0; methodIndex < moduleTypeMethods.Count; methodIndex++)
+                    {
+                        var moduleTypeMethod = moduleTypeMethods[methodIndex];
+                        var skipMethod = false;
+                        if (moduleTypeMethod.DebugInformation is null || !moduleTypeMethod.DebugInformation.HasSequencePoints)
+                        {
+                            _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}");
+                            continue;
+                        }
+
+                        foreach (var cAttr in moduleTypeMethod.CustomAttributes)
+                        {
+                            var attrFullName = cAttr.Constructor.DeclaringType.FullName;
+                            if (FiltersHelper.FilteredByAttribute(attrFullName, _settings.ExcludeByAttribute))
+                            {
+                                _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, ignored by settings attribute filter");
+                                skipMethod = true;
+                                break;
+                            }
+
+                            if (attrFullName == ExcludeFromCodeCoverageAttributeFullName)
+                            {
+                                _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, ignored by: {ExcludeFromCodeCoverageAttributeFullName}");
+                                skipType = true;
+                                break;
+                            }
+                        }
+
+                        if (skipMethod)
                         {
                             continue;
                         }
 
-                        _logger.Debug($"\t{moduleType.FullName}");
+                        _logger.Debug($"\t\t[YES] {moduleTypeMethod.FullName}.");
 
-                        // Process all Methods in the type
-                        foreach (var moduleTypeMethod in moduleType.Methods)
+                        // Extract body from the method
+                        if (moduleTypeMethod.HasBody)
                         {
-                            if (moduleTypeMethod.CustomAttributes.Any(cAttr =>
-                                cAttr.Constructor.DeclaringType.Name == nameof(AvoidCoverageAttribute)))
+                            /*** This block rewrites the method body code that looks like this:
+                             *
+                             *  public static class MyMathClass
+                             *  {
+                             *      public static int Factorial(int value)
+                             *      {
+                             *          if (value == 1)
+                             *          {
+                             *              return 1;
+                             *          }
+                             *          return value * Factorial(value - 1);
+                             *      }
+                             *  }
+                             *
+                             *** To this:
+                             *
+                             *  using Datadog.Trace.Ci.Coverage;
+                             *
+                             *  public static int Factorial(int value)
+                             *  {
+                             *      var counters = CoverageReporter<ModuleCoverage>.GetCounters(5)
+                             *      _ = counters[5];
+                             *      counters[0]++;
+                             *      counters[1]++;
+                             *      int result;
+                             *      if (value == 1)
+                             *      {
+                             *          counters[2]++;
+                             *          counters[3]++;
+                             *          result = 1;
+                             *      }
+                             *      else
+                             *      {
+                             *          counters[4]++;
+                             *          result = value * Factorial(value - 1);
+                             *      }
+                             *      counters[5]++;
+                             *      return result;
+                             *  }
+                             */
+
+                            var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
+
+                            string? filePath = null;
+                            foreach (var pt in sequencePoints)
+                            {
+                                if (pt.IsHidden || pt.Document is null || string.IsNullOrWhiteSpace(pt.Document.Url))
+                                {
+                                    continue;
+                                }
+
+                                var documentUrl = pt.Document.Url;
+                                if (string.IsNullOrEmpty(documentUrl))
+                                {
+                                    continue;
+                                }
+
+                                if (filePath is null)
+                                {
+                                    filePath = documentUrl;
+                                    break;
+                                }
+                            }
+
+                            if (filePath is null)
                             {
                                 continue;
                             }
 
-                            if (moduleTypeMethod.DebugInformation is null || !moduleTypeMethod.DebugInformation.HasSequencePoints)
+                            if (FiltersHelper.FilteredBySourceFile(filePath, _settings.ExcludeSourceFiles))
                             {
-                                _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}");
+                                _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, ignored by settings source filter");
                                 continue;
                             }
 
-                            _logger.Debug($"\t\t[YES] {moduleTypeMethod.FullName}.");
-
-                            totalMethods++;
-
-                            // Extract body from the method
-                            if (moduleTypeMethod.HasBody)
+                            var methodBody = moduleTypeMethod.Body;
+                            var instructions = methodBody.Instructions;
+                            var instructionsOriginalLength = instructions.Count;
+                            if (instructions.Capacity < instructionsOriginalLength * 2)
                             {
-                                /*** This block rewrites the method body code that looks like this:
-                                 *
-                                 *  public static class MyMathClass
-                                 *  {
-                                 *      public static int Factorial(int value)
-                                 *      {
-                                 *          if (value == 1)
-                                 *          {
-                                 *              return 1;
-                                 *          }
-                                 *          return value * Factorial(value - 1);
-                                 *      }
-                                 *  }
-                                 *
-                                 *** To this:
-                                 *
-                                 *  using Datadog.Trace.Ci.Coverage;
-                                 *
-                                 *  public static int Factorial(int value)
-                                 *  {
-                                 *      if (!CoverageReporter.TryGetScope("/app/MyMathClass.cs", out var scope))
-                                 *      {
-                                 *          if (value == 1)
-                                 *          {
-                                 *              return 1;
-                                 *          }
-                                 *          return value * Factorial(value - 1);
-                                 *      }
-                                 *      scope.Report(1688871335493638uL, 1970363492139032uL);
-                                 *      int result;
-                                 *      if (value == 1)
-                                 *      {
-                                 *          scope.Report(2251838468915210uL, 2533330625560598uL);
-                                 *          result = 1;
-                                 *      }
-                                 *      else
-                                 *      {
-                                 *          scope.Report(3377738376020013uL);
-                                 *          result = value * Factorial(value - 1);
-                                 *      }
-                                 *      scope.Report(3659196172926982uL);
-                                 *      return result;
-                                 *  }
-                                 */
-
-                                var methodBody = moduleTypeMethod.Body;
-                                var instructions = methodBody.Instructions;
-                                var instructionsOriginalLength = instructions.Count;
-                                if (instructions.Capacity < instructionsOriginalLength * 2)
-                                {
-                                    instructions.Capacity = instructionsOriginalLength * 2;
-                                }
-
-                                var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
-                                var sequencePointsOriginalLength = sequencePoints.Count;
-                                string? methodFileName = null;
-                                uint localInstructions = 0;
-
-                                // Step 1 - Clone instructions
-                                for (var i = 0; i < instructionsOriginalLength; i++)
-                                {
-                                    instructions.Add(CloneInstruction(instructions[i]));
-                                }
-
-                                // Step 2 - Fix jumps in cloned instructions
-                                for (var i = 0; i < instructionsOriginalLength; i++)
-                                {
-                                    var currentInstruction = instructions[i];
-
-                                    if (currentInstruction.Operand is Instruction jmpTargetInstruction)
-                                    {
-                                        // Normal jump
-
-                                        // Get index of the jump target
-                                        var jmpTargetInstructionIndex = instructions.IndexOf(jmpTargetInstruction);
-
-                                        // Modify the clone instruction with the cloned jump target
-                                        var clonedInstruction = instructions[i + instructionsOriginalLength];
-                                        RemoveShortOpCodes(clonedInstruction);
-                                        clonedInstruction.Operand = instructions[jmpTargetInstructionIndex + instructionsOriginalLength];
-                                    }
-                                    else if (currentInstruction.Operand is Instruction[] jmpTargetInstructions)
-                                    {
-                                        // Switch jumps
-
-                                        // Create a new array of instructions with the cloned jump targets
-                                        var newJmpTargetInstructions = new Instruction[jmpTargetInstructions.Length];
-                                        for (var j = 0; j < jmpTargetInstructions.Length; j++)
-                                        {
-                                            newJmpTargetInstructions[j] = instructions[instructions.IndexOf(jmpTargetInstructions[j]) + instructionsOriginalLength];
-                                        }
-
-                                        // Modify the clone instruction with the cloned jump target
-                                        var clonedInstruction = instructions[i + instructionsOriginalLength];
-                                        RemoveShortOpCodes(clonedInstruction);
-                                        clonedInstruction.Operand = newJmpTargetInstructions;
-                                    }
-                                }
-
-                                // Step 3 - Clone exception handlers
-                                if (methodBody.HasExceptionHandlers)
-                                {
-                                    var exceptionHandlers = methodBody.ExceptionHandlers;
-                                    var exceptionHandlersOrignalLength = exceptionHandlers.Count;
-
-                                    for (var i = 0; i < exceptionHandlersOrignalLength; i++)
-                                    {
-                                        var currentExceptionHandler = exceptionHandlers[i];
-                                        var clonedExceptionHandler = new ExceptionHandler(currentExceptionHandler.HandlerType);
-                                        clonedExceptionHandler.CatchType = currentExceptionHandler.CatchType;
-
-                                        if (currentExceptionHandler.TryStart is not null)
-                                        {
-                                            clonedExceptionHandler.TryStart = instructions[instructions.IndexOf(currentExceptionHandler.TryStart) + instructionsOriginalLength];
-                                        }
-
-                                        if (currentExceptionHandler.TryEnd is not null)
-                                        {
-                                            clonedExceptionHandler.TryEnd = instructions[instructions.IndexOf(currentExceptionHandler.TryEnd) + instructionsOriginalLength];
-                                        }
-
-                                        if (currentExceptionHandler.HandlerStart is not null)
-                                        {
-                                            clonedExceptionHandler.HandlerStart = instructions[instructions.IndexOf(currentExceptionHandler.HandlerStart) + instructionsOriginalLength];
-                                        }
-
-                                        if (currentExceptionHandler.HandlerEnd is not null)
-                                        {
-                                            clonedExceptionHandler.HandlerEnd = instructions[instructions.IndexOf(currentExceptionHandler.HandlerEnd) + instructionsOriginalLength];
-                                        }
-
-                                        if (currentExceptionHandler.FilterStart is not null)
-                                        {
-                                            clonedExceptionHandler.FilterStart = instructions[instructions.IndexOf(currentExceptionHandler.FilterStart) + instructionsOriginalLength];
-                                        }
-
-                                        methodBody.ExceptionHandlers.Add(clonedExceptionHandler);
-                                    }
-                                }
-
-                                // Step 4 - Clone sequence points
-                                List<Tuple<Instruction, SequencePoint>> clonedInstructionsWithOriginalSequencePoint = new List<Tuple<Instruction, SequencePoint>>();
-                                for (var i = 0; i < sequencePointsOriginalLength; i++)
-                                {
-                                    var currentSequencePoint = sequencePoints[i];
-                                    var currentInstruction = instructions.First(i => i.Offset == currentSequencePoint.Offset);
-                                    var clonedInstruction = instructions[instructions.IndexOf(currentInstruction) + instructionsOriginalLength];
-
-                                    if (!currentSequencePoint.IsHidden)
-                                    {
-                                        totalInstructions++;
-                                        localInstructions++;
-                                        clonedInstructionsWithOriginalSequencePoint.Add(Tuple.Create(clonedInstruction, currentSequencePoint));
-                                    }
-
-                                    var clonedSequencePoint = new SequencePoint(clonedInstruction, currentSequencePoint.Document);
-                                    clonedSequencePoint.StartLine = currentSequencePoint.StartLine;
-                                    clonedSequencePoint.StartColumn = currentSequencePoint.StartColumn;
-                                    clonedSequencePoint.EndLine = currentSequencePoint.EndLine;
-                                    clonedSequencePoint.EndColumn = currentSequencePoint.EndColumn;
-                                    sequencePoints.Add(clonedSequencePoint);
-
-                                    if (string.IsNullOrEmpty(methodFileName))
-                                    {
-                                        methodFileName = currentSequencePoint.Document.Url;
-                                    }
-                                }
-
-                                var clonedInstructions = instructions.Skip(instructionsOriginalLength).ToList();
-                                var clonedInstructionsLength = clonedInstructions.Count;
-
-                                // Step 6 - Modify local var to add the Coverage Scope instance.
-                                var coverageScopeVariable = new VariableDefinition(module.ImportReference(typeof(CoverageScope)));
-                                methodBody.Variables.Add(coverageScopeVariable);
-
-                                // Step 7 - Insert initial condition
-                                if (string.IsNullOrEmpty(methodFileName))
-                                {
-                                    methodFileName = "unknown";
-                                }
-
-                                var tryGetScopeMethodRef = module.ImportReference(ReportTryGetScopeMethodInfo);
-                                instructions.Insert(0, Instruction.Create(OpCodes.Ldstr, methodFileName));
-                                instructions.Insert(1, Instruction.Create(OpCodes.Ldloca, coverageScopeVariable));
-                                instructions.Insert(2, Instruction.Create(OpCodes.Call, tryGetScopeMethodRef));
-                                instructions.Insert(3, Instruction.Create(OpCodes.Brtrue, instructions[instructionsOriginalLength + 3]));
-
-                                // Step 8 - Insert line reporter
-                                var scopeReportMethodRef = module.ImportReference(ScopeReportMethodInfo);
-                                var scopeReport2MethodRef = module.ImportReference(ScopeReport2MethodInfo);
-                                for (var i = 0; i < clonedInstructionsWithOriginalSequencePoint.Count; i++)
-                                {
-                                    var currentItem = clonedInstructionsWithOriginalSequencePoint[i];
-                                    var currentInstruction = currentItem.Item1;
-                                    var currentSequencePoint = currentItem.Item2;
-                                    var currentInstructionRange = GetRangeFromSequencePoint(currentSequencePoint);
-                                    var currentInstructionIndex = instructions.IndexOf(currentInstruction);
-                                    var currentInstructionClone = CloneInstruction(currentInstruction);
-
-                                    if (i < clonedInstructionsWithOriginalSequencePoint.Count - 1)
-                                    {
-                                        var nextItem = clonedInstructionsWithOriginalSequencePoint[i + 1];
-                                        var nextInstruction = nextItem.Item1;
-
-                                        // We check if the next instruction with sequence point is a NOP and is immediatly after the current one.
-                                        // If that is the case we can group two ranges in a single instruction.
-                                        if (instructions.IndexOf(nextInstruction) - 1 == currentInstructionIndex &&
-                                            (currentInstruction.OpCode == OpCodes.Nop || nextInstruction.OpCode == OpCodes.Nop) &&
-                                            !methodBody.ExceptionHandlers.Any(eHandler =>
-                                                eHandler.TryStart == nextInstruction ||
-                                                eHandler.TryEnd == nextInstruction ||
-                                                eHandler.HandlerStart == nextInstruction ||
-                                                eHandler.HandlerEnd == nextInstruction ||
-                                                eHandler.FilterStart == nextInstruction))
-                                        {
-                                            var nextSequencePoint = nextItem.Item2;
-                                            var nextInstructionRange = GetRangeFromSequencePoint(nextSequencePoint);
-                                            var nextInstructionIndex = instructions.IndexOf(nextInstruction);
-
-                                            currentInstruction.OpCode = OpCodes.Ldloca;
-                                            currentInstruction.Operand = coverageScopeVariable;
-                                            instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I8, (long)currentInstructionRange));
-                                            instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldc_I8, (long)nextInstructionRange));
-                                            instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Call, scopeReport2MethodRef));
-                                            instructions.Insert(currentInstructionIndex + 4, currentInstructionClone);
-
-                                            // We process both instructions in a single call.
-                                            i++;
-                                            continue;
-                                        }
-                                    }
-
-                                    currentInstruction.OpCode = OpCodes.Ldloca;
-                                    currentInstruction.Operand = coverageScopeVariable;
-                                    instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I8, (long)currentInstructionRange));
-                                    instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Call, scopeReportMethodRef));
-                                    instructions.Insert(currentInstructionIndex + 3, currentInstructionClone);
-                                }
-
-                                isDirty = true;
+                                instructions.Capacity = instructionsOriginalLength * 2;
                             }
+
+                            // Step 1 - Remove Short OpCodes
+                            foreach (var instruction in instructions)
+                            {
+                                RemoveShortOpCodes(instruction);
+                            }
+
+                            // Step 2 - Clone sequence points
+                            var instructionsWithValidSequencePoints = new List<(Instruction Instruction, SequencePoint? SequencePoint)>();
+                            for (var i = 0; i < sequencePoints.Count; i++)
+                            {
+                                var currentSequencePoint = sequencePoints[i];
+                                if (!currentSequencePoint.IsHidden)
+                                {
+                                    instructionsWithValidSequencePoints.Add((instructions.First(i => i.Offset == currentSequencePoint.Offset), currentSequencePoint));
+                                }
+                            }
+
+                            VariableDefinition? countersVariable = null;
+                            if (instructionsWithValidSequencePoints.Count > 1 || instructions[0] != instructionsWithValidSequencePoints[0].Instruction)
+                            {
+                                // Step 3 - Modify local var to add the Coverage counters instance.
+                                if (_coverageMode == CoverageMode.LineExecution)
+                                {
+                                    countersVariable = new VariableDefinition(new PointerType(module.TypeSystem.Byte));
+                                }
+                                else
+                                {
+                                    countersVariable = new VariableDefinition(new PointerType(module.TypeSystem.Int32));
+                                }
+
+                                methodBody.Variables.Add(countersVariable);
+                            }
+
+                            // Step 4 - Insert the counter retriever
+                            FileMetadata fileMetadata;
+                            if (!fileDictionaryIndex.TryGetValue(filePath, out fileMetadata))
+                            {
+                                fileMetadata = new FileMetadata(fileMetadataIndex++, filePath);
+                                fileDictionaryIndex[filePath] = fileMetadata;
+                            }
+
+                            instructions.Insert(0, Instruction.Create(OpCodes.Ldc_I4, fileMetadata.Index));
+                            instructions.Insert(1, Instruction.Create(OpCodes.Call, reportGetCountersMethod));
+                            if (countersVariable is not null)
+                            {
+                                instructions.Insert(2, Instruction.Create(OpCodes.Stloc, countersVariable));
+                            }
+
+                            // Step 5 - Insert line reporter
+                            for (var i = 0; i < instructionsWithValidSequencePoints.Count; i++)
+                            {
+                                var currentInstructionAndSequencePoint = instructionsWithValidSequencePoints[i];
+                                var currentInstruction = currentInstructionAndSequencePoint.Instruction;
+                                var currentSequencePoint = currentInstructionAndSequencePoint.SequencePoint;
+                                if (currentSequencePoint is null)
+                                {
+                                    // If is null is because we already wrote the line reporter for this instruction in an optimization.
+                                    continue;
+                                }
+
+                                // let's check if the next sequence point is for the same line, so we can optimize the line reporter
+                                if (i + 1 < instructionsWithValidSequencePoints.Count)
+                                {
+                                    var nextSequencePoint = instructionsWithValidSequencePoints[i + 1].SequencePoint;
+                                    if (currentSequencePoint.StartLine == nextSequencePoint?.StartLine)
+                                    {
+                                        // next sequence point is for the same line, so we can skip this one.
+                                        continue;
+                                    }
+                                }
+
+                                var currentInstructionIndex = instructions.IndexOf(currentInstruction);
+                                var currentInstructionClone = CloneInstruction(currentInstruction);
+
+                                if (countersVariable is not null)
+                                {
+                                    currentInstruction.OpCode = OpCodes.Ldloc;
+                                    currentInstruction.Operand = countersVariable;
+                                }
+
+                                var optIdx = currentInstructionIndex;
+                                var indexValue = currentSequencePoint.StartLine - 1;
+                                fileMetadata.Lines.Add(currentSequencePoint.StartLine);
+
+                                switch (_coverageMode)
+                                {
+                                    case CoverageMode.LineCallCount:
+                                        // Increments items in the counters array (to have the number of times a line was executed)
+                                        if (countersVariable is null)
+                                        {
+                                            if (indexValue == 1)
+                                            {
+                                                currentInstruction.OpCode = OpCodes.Ldc_I4_4;
+                                                currentInstruction.Operand = null;
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+                                            else if (indexValue > 1)
+                                            {
+                                                currentInstruction.OpCode = OpCodes.Ldc_I4;
+                                                currentInstruction.Operand = indexValue;
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Conv_I));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Mul));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+
+                                            if (indexValue == 0)
+                                            {
+                                                currentInstruction.OpCode = OpCodes.Dup;
+                                                currentInstruction.Operand = null;
+                                            }
+                                            else
+                                            {
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Dup));
+                                            }
+
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldind_I4));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I4));
+                                        }
+                                        else
+                                        {
+                                            if (indexValue == 1)
+                                            {
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+                                            else if (indexValue > 1)
+                                            {
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4, indexValue));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Conv_I));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_4));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Mul));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Dup));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldind_I4));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I4));
+                                        }
+
+                                        break;
+                                    case CoverageMode.LineExecution:
+                                        // Set 1 to items in the counters pointer (to check if the line was executed or not)
+                                        if (countersVariable is null)
+                                        {
+                                            if (indexValue == 1)
+                                            {
+                                                currentInstruction.OpCode = OpCodes.Ldc_I4_1;
+                                                currentInstruction.Operand = null;
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+                                            else if (indexValue > 1)
+                                            {
+                                                currentInstruction.OpCode = OpCodes.Ldc_I4;
+                                                currentInstruction.Operand = indexValue;
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+
+                                            if (indexValue == 0)
+                                            {
+                                                currentInstruction.OpCode = OpCodes.Ldc_I4_1;
+                                                currentInstruction.Operand = null;
+                                            }
+                                            else
+                                            {
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
+                                            }
+
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I1));
+                                        }
+                                        else
+                                        {
+                                            if (indexValue == 1)
+                                            {
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+                                            else if (indexValue > 1)
+                                            {
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4, indexValue));
+                                                instructions.Insert(++optIdx, Instruction.Create(OpCodes.Add));
+                                            }
+
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Ldc_I4_1));
+                                            instructions.Insert(++optIdx, Instruction.Create(OpCodes.Stind_I1));
+                                        }
+
+                                        break;
+                                }
+
+                                instructions.Insert(++optIdx, currentInstructionClone);
+                            }
+
+                            isDirty = true;
                         }
                     }
+                }
 
-                    // Change attributes to drop native bits
-                    if ((module.Attributes & ModuleAttributes.ILLibrary) == ModuleAttributes.ILLibrary)
+                // ****************************************************************************************************
+                // Module metadata: Files field
+                var fileCoverageMetadataTypeDefinition = datadogTracerAssembly.MainModule.GetType(typeof(FileCoverageMetadata).FullName);
+                var fileCoverageMetadataTypeReference = module.ImportReference(fileCoverageMetadataTypeDefinition);
+                var moduleCoverageMetadataImplFileMetadataField = new FieldReference("Files", new ArrayType(fileCoverageMetadataTypeReference), moduleCoverageMetadataTypeReference);
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, fileDictionaryIndex.Count));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Newarr, fileCoverageMetadataTypeReference));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplFileMetadataField));
+
+                // Going through the fileDictionaryIndex to add the FileMetadata to the Files field
+                var moduleCoverageMetadataImplFileMetadataCtor = new MethodReference(".ctor", module.TypeSystem.Void, fileCoverageMetadataTypeReference)
+                {
+                    HasThis = true,
+                    Parameters =
                     {
-                        module.Architecture = TargetArchitecture.I386;
-                        module.Attributes &= ~ModuleAttributes.ILLibrary;
-                        module.Attributes |= ModuleAttributes.ILOnly;
+                        new ParameterDefinition(module.TypeSystem.String),
+                        new ParameterDefinition(module.TypeSystem.Int32),
+                        new ParameterDefinition(module.TypeSystem.Int32),
+                        new ParameterDefinition(new ArrayType(module.TypeSystem.Byte))
                     }
+                };
+
+                var fileOffset = 0;
+                var fileBitmapBuffer = stackalloc byte[512];
+                foreach (var fileMetadata in fileDictionaryIndex.Values.OrderBy(v => v.Index))
+                {
+                    var maxLine = fileMetadata.MaxLine;
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldfld, moduleCoverageMetadataImplFileMetadataField));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, fileMetadata.Index));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldstr, fileMetadata.FileName));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, fileOffset));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, maxLine));
+
+                    // Create file bitmap
+                    var fileBitmapSize = FileBitmap.GetSize(maxLine);
+                    using var fileBitmap = fileBitmapSize <= 512 ? new FileBitmap(fileBitmapBuffer, fileBitmapSize) : new FileBitmap(new byte[fileBitmapSize]);
+                    foreach (var line in fileMetadata.Lines)
+                    {
+                        fileBitmap.Set(line);
+                    }
+
+                    // Create bitmap array and set the values
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, fileBitmap.Size));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Newarr, module.TypeSystem.Byte));
+                    var arrayItem = 0;
+                    foreach (var bitmapItem in fileBitmap)
+                    {
+                        lstMetadataInstructions.Add(Instruction.Create(OpCodes.Dup));
+                        lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, arrayItem++));
+                        lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)bitmapItem));
+                        lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stelem_I1));
+                    }
+
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Newobj, moduleCoverageMetadataImplFileMetadataCtor));
+                    lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stelem_Any, fileCoverageMetadataTypeReference));
+                    fileOffset += maxLine;
+                }
+
+                var moduleCoverageMetadataImplFileTotalLinesField = new FieldReference("TotalLines", module.TypeSystem.Int32, moduleCoverageMetadataTypeReference);
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)fileOffset));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplFileTotalLinesField));
+
+                var moduleCoverageMetadataImplFileCoverageModeField = new FieldReference("CoverageMode", module.TypeSystem.Int32, moduleCoverageMetadataTypeReference);
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)_coverageMode));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplFileCoverageModeField));
+
+                // ****************************************************************************************************
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ret));
+
+                // Copy metadata instructions to the .ctor
+                foreach (var instruction in lstMetadataInstructions)
+                {
+                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(instruction);
+                }
+
+                module.Types.Add(moduleCoverageMetadataImplTypeDef);
+
+                // Change attributes to drop native bits
+                if ((module.Attributes & ModuleAttributes.ILLibrary) == ModuleAttributes.ILLibrary)
+                {
+                    module.Architecture = TargetArchitecture.I386;
+                    module.Attributes &= ~ModuleAttributes.ILLibrary;
+                    module.Attributes |= ModuleAttributes.ILOnly;
                 }
 
                 // Save assembly if we modify it successfully
                 if (isDirty)
                 {
-                    var coveredAssemblyAttributeTypeCtorRef = assemblyDefinition.MainModule.ImportReference(CoveredAssemblyAttributeTypeCtor);
-                    var coveredAssemblyAttribute = new CustomAttribute(coveredAssemblyAttributeTypeCtorRef);
-                    assemblyDefinition.CustomAttributes.Add(coveredAssemblyAttribute);
+                    var coveredAssemblyAttributeTypeReference = module.ImportReference(datadogTracerAssembly.MainModule.GetType(typeof(CoveredAssemblyAttribute).FullName));
+                    assemblyDefinition.CustomAttributes.Add(new CustomAttribute(new MethodReference(".ctor", module.TypeSystem.Void, coveredAssemblyAttributeTypeReference)
+                    {
+                        HasThis = true
+                    }));
 
                     _logger.Debug($"Saving assembly: {_assemblyFilePath}");
 
@@ -437,44 +746,6 @@ namespace Datadog.Trace.Coverage.Collector
             {
                 Ci.Coverage.Exceptions.PdbNotFoundException.Throw();
             }
-            catch
-            {
-                throw;
-            }
-        }
-
-        private static ulong GetRangeFromSequencePoint(SequencePoint currentSequencePoint)
-        {
-            var startLine = currentSequencePoint.StartLine;
-            var startColumn = currentSequencePoint.StartColumn;
-            var endLine = currentSequencePoint.EndLine;
-            var endColumn = currentSequencePoint.EndColumn;
-
-            if (startLine > ushort.MaxValue || endLine > ushort.MaxValue)
-            {
-                // If the line is greater than ushort.MaxValue we set the range as 0
-                // This will keep the filename being reported and taken in consideration by the ITR
-                // The ITR with range 0 means that any modification in the file is included.
-                startLine = 0;
-                startColumn = 0;
-                endLine = 0;
-                endColumn = 0;
-            }
-
-            if (startColumn > ushort.MaxValue || endColumn > ushort.MaxValue)
-            {
-                // If only the column is greater than ushort.MaxValue we only take in consideration
-                // the line range.
-                startColumn = 0;
-                endColumn = 0;
-            }
-
-            var currentInstructionRange = ((ulong)(ushort)startLine << 48) |
-                                          ((ulong)(ushort)startColumn << 32) |
-                                          ((ulong)(ushort)endLine << 16) |
-                                          ((ulong)(ushort)endColumn);
-
-            return currentInstructionRange;
         }
 
         private static void RemoveShortOpCodes(Instruction instruction)
@@ -519,6 +790,36 @@ namespace Datadog.Trace.Coverage.Collector
             };
         }
 
+        private string GetDatadogTracer(TracerTarget tracerTarget)
+        {
+            // Get the Datadog.Trace path
+
+            if (string.IsNullOrEmpty(_settings.TracerHome))
+            {
+                // If tracer home is empty then we try to load the Datadog.Trace.dll in the current folder.
+                return "Datadog.Trace.dll";
+            }
+
+            var targetFolder = "net461";
+            switch (tracerTarget)
+            {
+                case TracerTarget.Net461:
+                    targetFolder = "net461";
+                    break;
+                case TracerTarget.Netstandard20:
+                    targetFolder = "netstandard2.0";
+                    break;
+                case TracerTarget.Netcoreapp31:
+                    targetFolder = "netcoreapp3.1";
+                    break;
+                case TracerTarget.Net60:
+                    targetFolder = "net6.0";
+                    break;
+            }
+
+            return Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.dll");
+        }
+
         private string CopyRequiredAssemblies(AssemblyDefinition assemblyDefinition, TracerTarget tracerTarget)
         {
             try
@@ -541,8 +842,8 @@ namespace Datadog.Trace.Coverage.Collector
                         break;
                 }
 
-                var datadogTraceDllPath = Path.Combine(_tracerHome, targetFolder, "Datadog.Trace.dll");
-                var datadogTracePdbPath = Path.Combine(_tracerHome, targetFolder, "Datadog.Trace.pdb");
+                var datadogTraceDllPath = Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.dll");
+                var datadogTracePdbPath = Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.pdb");
 
                 // Global lock for copying the Datadog.Trace assembly to the output folder
                 lock (PadLock)
@@ -555,7 +856,7 @@ namespace Datadog.Trace.Coverage.Collector
                     if (!File.Exists(outputAssemblyDllLocation) ||
                         assembly.GetName().Version >= AssemblyName.GetAssemblyName(outputAssemblyDllLocation).Version)
                     {
-                        _logger.Debug($"GetTracerTarget: Writing {outputAssemblyDllLocation} ...");
+                        _logger.Debug($"CopyRequiredAssemblies: Writing ({tracerTarget}) {outputAssemblyDllLocation} ...");
 
                         if (File.Exists(datadogTraceDllPath))
                         {
@@ -568,6 +869,7 @@ namespace Datadog.Trace.Coverage.Collector
                         }
                     }
 
+                    HasTracerAssemblyCopied = true;
                     return outputAssemblyDllLocation;
                 }
             }
@@ -586,6 +888,8 @@ namespace Datadog.Trace.Coverage.Collector
                 if (customAttribute.AttributeType.FullName == "System.Runtime.Versioning.TargetFrameworkAttribute")
                 {
                     var targetValue = (string)customAttribute.ConstructorArguments[0].Value;
+                    _logger.Debug($"GetTracerTarget: TargetValue detected: {targetValue}");
+
                     if (targetValue.Contains(".NETFramework,Version="))
                     {
                         _logger.Debug($"GetTracerTarget: Returning TracerTarget.Net461 from {targetValue}");
@@ -595,9 +899,13 @@ namespace Datadog.Trace.Coverage.Collector
                     var matchTarget = NetCorePattern.Match(targetValue);
                     if (matchTarget.Success)
                     {
+                        _logger.Debug($"GetTracerTarget: NetCoreApp pattern detected.");
                         var versionValue = matchTarget.Groups[1].Value;
-                        if (float.TryParse(versionValue, NumberStyles.AllowDecimalPoint, USCultureInfo, out var version))
+                        _logger.Debug($"GetTracerTarget: Version value {versionValue}");
+                        if (float.TryParse(versionValue, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var version))
                         {
+                            _logger.Debug($"GetTracerTarget: Parse result {version}");
+
                             if (version >= 2.0 && version <= 3.0)
                             {
                                 _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netstandard20 from {targetValue}");
@@ -621,7 +929,7 @@ namespace Datadog.Trace.Coverage.Collector
             }
 
             var coreLibrary = assemblyDefinition.MainModule.TypeSystem.CoreLibrary;
-            _logger.Debug($"GetTracerTarget: Calculating TracerTarget from: {((AssemblyNameReference)coreLibrary).FullName}");
+            _logger.Debug($"GetTracerTarget: Calculating TracerTarget from: {((AssemblyNameReference)coreLibrary).FullName} in {assemblyDefinition.FullName}");
             switch (coreLibrary.Name)
             {
                 case "netstandard" when coreLibrary is AssemblyNameReference coreAsmRef && coreAsmRef.Version.Major == 2:
@@ -640,40 +948,64 @@ namespace Datadog.Trace.Coverage.Collector
             private readonly ICollectorLogger _logger;
             private DefaultAssemblyResolver _defaultResolver;
             private string _tracerAssemblyLocation;
+            private string _assemblyFilePath;
 
-            public CustomResolver(ICollectorLogger logger)
+            public CustomResolver(ICollectorLogger logger, string assemblyFilePath)
             {
                 _tracerAssemblyLocation = string.Empty;
                 _logger = logger;
+                _assemblyFilePath = assemblyFilePath;
                 _defaultResolver = new DefaultAssemblyResolver();
             }
 
-            public override AssemblyDefinition Resolve(AssemblyNameReference name)
+            public override AssemblyDefinition? Resolve(AssemblyNameReference name)
             {
-                AssemblyDefinition assembly;
+                AssemblyDefinition? assembly = null;
                 try
                 {
                     assembly = _defaultResolver.Resolve(name);
                 }
-                catch (AssemblyResolutionException ex)
+                catch (AssemblyResolutionException arEx)
                 {
                     var tracerAssemblyName = TracerAssembly.GetName();
                     if (name.Name == tracerAssemblyName.Name && name.Version == tracerAssemblyName.Version)
                     {
-                        if (!string.IsNullOrEmpty(_tracerAssemblyLocation))
+                        var cAssemblyLocation = !string.IsNullOrEmpty(_tracerAssemblyLocation) ? _tracerAssemblyLocation : TracerAssembly.Location;
+                        try
                         {
-                            assembly = AssemblyDefinition.ReadAssembly(_tracerAssemblyLocation);
+                            assembly = AssemblyDefinition.ReadAssembly(cAssemblyLocation);
                         }
-                        else
+                        catch (Exception innerAssemblyException)
                         {
-                            assembly = AssemblyDefinition.ReadAssembly(TracerAssembly.Location);
+                            _logger.Error(innerAssemblyException, $"Error reading the tracer assembly: {cAssemblyLocation}");
+                            throw;
                         }
                     }
                     else
                     {
-                        _logger.Error(ex, $"Error in the Custom Resolver for: {name.FullName}");
+                        var folder = Path.GetDirectoryName(_assemblyFilePath);
+                        var pathTest = Path.Combine(folder ?? string.Empty, name.Name + ".dll");
+                        _logger.Debug($"Looking for: {pathTest}");
+                        if (File.Exists(pathTest))
+                        {
+                            try
+                            {
+                                return AssemblyDefinition.ReadAssembly(pathTest);
+                            }
+                            catch (Exception innerAssemblyException)
+                            {
+                                _logger.Error(innerAssemblyException, $"Error reading the assembly: {pathTest}");
+                                throw;
+                            }
+                        }
+
+                        _logger.Error(arEx, $"Error in the Custom Resolver processing '{_assemblyFilePath}' for: {name.FullName}");
                         throw;
                     }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, $"Error in the custom resolver when trying to resolve assembly: {name.FullName}");
                 }
 
                 return assembly;
@@ -683,6 +1015,25 @@ namespace Datadog.Trace.Coverage.Collector
             {
                 _tracerAssemblyLocation = assemblyLocation;
             }
+        }
+
+#pragma warning disable SA1201
+        private struct FileMetadata
+        {
+            public FileMetadata(int index, string fileName)
+            {
+                Index = index;
+                FileName = fileName;
+                Lines = new HashSet<int>();
+            }
+
+            public int Index { get; private set; }
+
+            public string FileName { get; }
+
+            public HashSet<int> Lines { get; }
+
+            public int MaxLine => Lines.Max();
         }
     }
 }

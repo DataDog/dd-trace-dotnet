@@ -9,19 +9,13 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class CommonTags : TagsList
     {
-        [Tag(Trace.Tags.Env)]
-        public string Environment { get; set; }
-
-        [Tag(Trace.Tags.Version)]
-        public string Version { get; set; }
-
-        [Metric(Trace.Metrics.SamplingPriority)]
-        public double? SamplingPriority { get; set; }
-
         [Metric(Trace.Metrics.SamplingLimitDecision)]
         public double? SamplingLimitDecision { get; set; }
 
         [Metric(Trace.Metrics.TracesKeepRate)]
         public double? TracesKeepRate { get; set; }
+
+        [Metric(Trace.Metrics.SamplingAgentDecision)]
+        public double? SamplingAgentDecision { get; set; }
     }
 }

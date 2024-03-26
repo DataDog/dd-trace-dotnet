@@ -8,6 +8,7 @@
 using System;
 using System.Globalization;
 using System.Reflection;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ServiceFabric
@@ -30,7 +31,7 @@ namespace Datadog.Trace.ServiceFabric
                 {
                     if (PlatformHelpers.ServiceFabric.IsRunningInServiceFabric())
                     {
-                        Log.Warning("Could not get type {typeName}.", typeName);
+                        Log.Warning("Could not get type {TypeName}.", typeName);
                     }
 
                     return false;
@@ -42,7 +43,7 @@ namespace Datadog.Trace.ServiceFabric
                 {
                     if (PlatformHelpers.ServiceFabric.IsRunningInServiceFabric())
                     {
-                        Log.Warning("Could not get event {eventName}.", fullEventName);
+                        Log.Warning("Could not get event {EventName}.", fullEventName);
                     }
 
                     return false;
@@ -50,12 +51,12 @@ namespace Datadog.Trace.ServiceFabric
 
                 // use null target because event is static
                 eventInfo.AddEventHandler(target: null, eventHandler);
-                Log.Debug("Subscribed to event {eventName}.", fullEventName);
+                Log.Debug("Subscribed to event {EventName}.", fullEventName);
                 return true;
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error adding event handler to {eventName}.", fullEventName);
+                Log.Error(ex, "Error adding event handler to {EventName}.", fullEventName);
                 return false;
             }
         }
@@ -88,21 +89,17 @@ namespace Datadog.Trace.ServiceFabric
             }
         }
 
-        public static string GetSpanName(string spanKind)
-        {
-            return $"{SpanNamePrefix}.{spanKind}";
-        }
-
         public static Span CreateSpan(
             Tracer tracer,
             ISpanContext? context,
-            string spanKind,
+            ServiceRemotingTags tags,
             IServiceRemotingRequestEventArgs? eventArgs,
             IServiceRemotingRequestMessageHeader? messageHeader)
         {
             string? methodName = null;
             string? resourceName = null;
             string? serviceUrl = null;
+            string? remotingServiceName = null;
 
             string serviceFabricServiceName = PlatformHelpers.ServiceFabric.ServiceName;
 
@@ -115,19 +112,18 @@ namespace Datadog.Trace.ServiceFabric
 
                 serviceUrl = eventArgs.ServiceUri?.AbsoluteUri;
                 resourceName = serviceUrl == null ? methodName : $"{serviceUrl}/{methodName}";
+                remotingServiceName = serviceUrl?.StartsWith("fabric:/") == true ? serviceUrl.Substring(8) : null;
             }
 
-            var tags = new ServiceRemotingTags(spanKind)
-            {
-                ApplicationId = PlatformHelpers.ServiceFabric.ApplicationId,
-                ApplicationName = PlatformHelpers.ServiceFabric.ApplicationName,
-                PartitionId = PlatformHelpers.ServiceFabric.PartitionId,
-                NodeId = PlatformHelpers.ServiceFabric.NodeId,
-                NodeName = PlatformHelpers.ServiceFabric.NodeName,
-                ServiceName = serviceFabricServiceName,
-                RemotingUri = serviceUrl,
-                RemotingMethodName = methodName
-            };
+            tags.ApplicationId = PlatformHelpers.ServiceFabric.ApplicationId;
+            tags.ApplicationName = PlatformHelpers.ServiceFabric.ApplicationName;
+            tags.PartitionId = PlatformHelpers.ServiceFabric.PartitionId;
+            tags.NodeId = PlatformHelpers.ServiceFabric.NodeId;
+            tags.NodeName = PlatformHelpers.ServiceFabric.NodeName;
+            tags.ServiceName = serviceFabricServiceName;
+            tags.RemotingUri = serviceUrl;
+            tags.RemotingServiceName = remotingServiceName;
+            tags.RemotingMethodName = methodName;
 
             if (messageHeader != null)
             {
@@ -136,9 +132,9 @@ namespace Datadog.Trace.ServiceFabric
                 tags.RemotingInvocationId = messageHeader.InvocationId;
             }
 
-            Span span = tracer.StartSpan(GetSpanName(spanKind), tags, context);
+            Span span = tracer.StartSpan(GetOperationName(tracer, tags.SpanKind), tags, context);
             span.ResourceName = resourceName;
-            tags.SetAnalyticsSampleRate(ServiceRemotingConstants.IntegrationId, Tracer.Instance.Settings, enabledWithGlobalSetting: false);
+            tags.SetAnalyticsSampleRate(ServiceRemotingConstants.IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(ServiceRemotingConstants.IntegrationId);
 
             return span;
@@ -156,11 +152,11 @@ namespace Datadog.Trace.ServiceFabric
                     return;
                 }
 
-                string expectedSpanName = GetSpanName(spanKind);
+                string expectedSpanName = GetOperationName(Tracer.Instance, spanKind);
 
                 if (expectedSpanName != scope.Span.OperationName)
                 {
-                    Log.Warning("Expected span name {expectedSpanName}, but found {actualSpanName} instead.", expectedSpanName, scope.Span.OperationName);
+                    Log.Warning("Expected span name {ExpectedSpanName}, but found {ActualSpanName} instead.", expectedSpanName, scope.Span.OperationName);
                     return;
                 }
 
@@ -185,6 +181,27 @@ namespace Datadog.Trace.ServiceFabric
             {
                 Log.Error(ex, "Error accessing or finishing active span.");
             }
+        }
+
+        internal static string GetOperationName(Tracer tracer, string spanKind)
+        {
+#if NET6_0_OR_GREATER
+            var requestType = string.Create(null, stackalloc char[128], $"{SpanNamePrefix}.{spanKind}");
+#else
+            var requestType = $"{SpanNamePrefix}.{spanKind}";
+#endif
+
+            if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)
+            {
+                return requestType;
+            }
+
+            return spanKind switch
+            {
+                SpanKinds.Client => tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForRequestType(requestType),
+                SpanKinds.Server => tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForRequestType(requestType),
+                _ => requestType,
+            };
         }
     }
 }

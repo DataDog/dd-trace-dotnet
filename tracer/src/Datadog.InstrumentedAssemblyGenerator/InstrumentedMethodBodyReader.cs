@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -162,7 +162,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
             {
                 Logger.Error($"{caller}: Could not find a matching member. " +
                              $"Seems that token {originalToken} does not exist in (a) the instrumented metadata ({_module.Name}{InstrumentedAssemblyGeneratorConsts.ModuleMembersFileExtension}) nor in (b) the original assembly metadata." +
-                             "It can occur (a) if the defined MethodX \\ MemberRef had some invalid data hence the InstrumentedAssemblyGenerator in the CLR Profiler failed to write it to disk" +
+                             " It can occur (a) if the defined MethodX \\ MemberRef had some invalid data hence the InstrumentedAssemblyGenerator in the CLR Profiler failed to write it to disk" +
                              " or (b) if we failed to parse the member and add it to metadata map.");
             }
         }

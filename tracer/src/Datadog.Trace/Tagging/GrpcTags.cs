@@ -41,19 +41,60 @@ namespace Datadog.Trace.Tagging
         public string StatusCode { get; set; }
     }
 
+    internal partial class GrpcServerTags : GrpcTags
+    {
+        public GrpcServerTags()
+            : base(SpanKinds.Server)
+        {
+        }
+    }
+
     internal partial class GrpcClientTags : GrpcTags
     {
         public GrpcClientTags()
             : base(SpanKinds.Client)
         {
         }
+
+        [Tag(Trace.Tags.OutHost)]
+        public string Host { get; set; }
+
+        [Tag(Trace.Tags.PeerHostname)]
+        public string PeerHostname => Host;
     }
 
-    internal partial class GrpcServerTags : GrpcTags
+    internal partial class GrpcClientV1Tags : GrpcClientTags
     {
-        public GrpcServerTags()
-            : base(SpanKinds.Server)
+        private string _peerServiceOverride = null;
+
+        public GrpcClientV1Tags()
+            : base()
         {
+        }
+
+        // Use a private setter for setting the "peer.service" tag so we avoid
+        // accidentally setting the value ourselves and instead calculate the
+        // value from predefined precursor attributes.
+        // However, this can still be set from ITags.SetTag so the user can
+        // customize the value if they wish.
+        [Tag(Trace.Tags.PeerService)]
+        public string PeerService
+        {
+            get => _peerServiceOverride ?? MethodService ?? Host;
+            private set => _peerServiceOverride = value;
+        }
+
+        [Tag(Trace.Tags.PeerServiceSource)]
+        public string PeerServiceSource
+        {
+            get
+            {
+                return _peerServiceOverride is not null
+                        ? "peer.service"
+                        : MethodService is not null
+                            ? "rpc.service"
+                            : "out.host";
+            }
         }
     }
 }

@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -13,7 +15,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class MicrosoftDataSqlClientTests : TestHelper
+    public class MicrosoftDataSqlClientTests : TracingIntegrationTest
     {
         public MicrosoftDataSqlClientTests(ITestOutputHelper output)
             : base("Microsoft.Data.SqlClient", output)
@@ -21,11 +23,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.MicrosoftDataSqlClient
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
+
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.MicrosoftDataSqlClient), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
             // ALWAYS: 133 spans
             // - SqlCommand: 21 spans (3 groups * 7 spans)
@@ -58,32 +67,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var expectedSpanCount = isVersion4 ? 91 : 147;
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.Microsoft.Data.SqlClient-" + dbType;
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-{dbType}" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
-
-            foreach (var span in spans)
-            {
-                var result = span.IsSqlClient();
-                Assert.True(result.Success, result.ToString());
-
-                Assert.Equal(expectedServiceName, span.Service);
-                Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-            }
-
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
         }
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void IntegrationDisabled()
+        public async Task IntegrationDisabled()
         {
             const int totalSpanCount = 21;
             const string expectedOperationName = "sql-server.query";
@@ -93,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             string packageVersion = PackageVersions.MicrosoftDataSqlClient.First()[0] as string;
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);

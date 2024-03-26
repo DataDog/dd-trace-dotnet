@@ -21,10 +21,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class TransportTests : TestHelper
     {
+        private readonly ITestOutputHelper _output;
+
         // Using Telemetry sample as it's simple
         public TransportTests(ITestOutputHelper output)
             : base("Telemetry", output)
         {
+            _output = output;
         }
 
         public static IEnumerable<object[]> Data =>
@@ -60,14 +63,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
                 catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
                 {
-                    Output.WriteLine($"Error executing test. {attemptsRemaining} attempts remaining. {ex}");
+                    await ReportRetry(_output, attemptsRemaining, ex);
                 }
             }
         }
 
         private async Task RunTest(TracesTransportType transportType)
         {
-            const int expectedSpanCount = 2;
+            const int expectedSpanCount = 1;
 
             if (transportType == TracesTransportType.WindowsNamedPipe && !EnvironmentTools.IsWindows())
             {
@@ -82,9 +85,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-            using (var processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            using (var processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
-                processResult.ExitCode.Should().Be(0);
+                ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
+
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 await VerifyHelper.VerifySpans(spans, VerifyHelper.GetSpanVerifierSettings())

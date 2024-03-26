@@ -35,36 +35,27 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal virtual bool IsApplicable(Type type) => true;
 
+        internal virtual IEnumerable<MemberInfo> GetFieldsAndProps(
+            Type type,
+            object source,
+            CancellationTokenSource cts)
+        {
+            return GetAllFields(type, cts).ToArray();
+        }
+
         /// <summary>
         /// Gets all fields and auto properties e.g. property with a backing field
         /// </summary>
         /// <param name="type">Object type</param>
-        /// <param name="source">Object</param>
-        /// <param name="maximumDepthOfHierarchyToCopy">Max depth of hierarchy</param>
-        /// <param name="maximumNumberOfFieldsToCopy">Max fields</param>
         /// <param name="cts">Cancellation token source</param>
         /// <returns>Collection of fields and auto properties</returns>
-        internal virtual IEnumerable<MemberInfo> GetFieldsAndProps(
-            Type type,
-            object source,
-            int maximumDepthOfHierarchyToCopy,
-            int maximumNumberOfFieldsToCopy,
-            CancellationTokenSource cts)
-        {
-            return GetAllFields(type, maximumDepthOfHierarchyToCopy, cts).Take(maximumNumberOfFieldsToCopy).ToArray();
-        }
-
-        private static IEnumerable<FieldInfo> GetAllFields(Type type, int maximumDepthOfHierarchyToCopy, CancellationTokenSource cts)
+        private static IEnumerable<FieldInfo> GetAllFields(Type type, CancellationTokenSource cts)
         {
             int depth = 0;
-            while (maximumDepthOfHierarchyToCopy == -1 || depth < maximumDepthOfHierarchyToCopy)
+            const int maxBaseClassesToExplore = 10;
+            while (depth < maxBaseClassesToExplore && type != null && type != typeof(object))
             {
                 cts.Token.ThrowIfCancellationRequested();
-
-                if (type == null)
-                {
-                    yield break;
-                }
 
                 foreach (var field in type.GetFields(Flags))
                 {

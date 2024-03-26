@@ -3,16 +3,67 @@
 #include "integration.h"
 #include "logger.h"
 #include "debugger_members.h"
+#include "fault_tolerant_tracker.h"
 
 namespace trace
 {
 
 // RejitPreprocessor
 template <class RejitRequestDefinition>
-RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(std::shared_ptr<RejitHandler> rejit_handler,
+RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(CorProfiler* corProfiler,
+                                                             std::shared_ptr<RejitHandler> rejit_handler,
                                                              std::shared_ptr<RejitWorkOffloader> work_offloader) :
-    m_rejit_handler(std::move(rejit_handler)), m_work_offloader(std::move(work_offloader))
+    m_corProfiler(corProfiler), m_rejit_handler(std::move(rejit_handler)), m_work_offloader(std::move(work_offloader))
 {
+}
+
+template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::EnqueueFaultTolerantMethods(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport, ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo, const mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests, unsigned methodDef, const FunctionInfo& functionInfo, RejitHandlerModule* moduleHandler)
+{
+    if (fault_tolerant::FaultTolerantTracker::Instance()->IsKickoffMethod(moduleInfo.id, methodDef))
+    {
+        const auto originalMethod =
+            fault_tolerant::FaultTolerantTracker::Instance()->GetOriginalMethod(moduleInfo.id, methodDef);
+        RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests,
+                                            originalMethod,
+                                            functionInfo, moduleHandler);
+
+        const auto instrumentedMethod =
+            fault_tolerant::FaultTolerantTracker::Instance()->GetInstrumentedMethod(moduleInfo.id, methodDef);
+        RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef,
+                                            rejitRequests,
+                                            instrumentedMethod,
+                                            functionInfo, moduleHandler);
+    }
+}
+
+template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::EnqueueNewMethod(const RejitRequestDefinition& definition, 
+    ComPtr<IMetaDataImport2>& metadataImport, 
+    ComPtr<IMetaDataEmit2>& metadataEmit, 
+    const ModuleInfo& moduleInfo, 
+    const mdTypeDef typeDef, 
+    std::vector<MethodIdentifier>& rejitRequests, 
+    unsigned methodDef,
+    const FunctionInfo& functionInfo, 
+    RejitHandlerModule* moduleHandler)
+{
+    EnqueueFaultTolerantMethods(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
+                               functionInfo, moduleHandler);
+
+    RejitHandlerModuleMethodCreatorFunc creator = [=, request = definition, fInfo = functionInfo](
+        const mdMethodDef method, RejitHandlerModule* module) {
+        return CreateMethod(method, module, fInfo, request);
+    };
+
+    RejitHandlerModuleMethodUpdaterFunc updater = [=, request = definition](RejitHandlerModuleMethod* method) {
+        return UpdateMethod(method, request);
+    };
+
+    moduleHandler->CreateMethodIfNotExists(methodDef, creator, updater);
+    
+    // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
+    rejitRequests.emplace_back(MethodIdentifier(moduleInfo.id, methodDef));
 }
 
 template <class RejitRequestDefinition>
@@ -24,7 +75,9 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
                                           const mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests)
 {
     auto target_method = GetTargetMethod(definition);
+    auto is_interface = GetIsInterface(definition);
     const bool wildcard_enabled = target_method.method_name == tracemethodintegration_wildcardmethodname;
+    const bool iterate_explicit_interface_methods = is_interface && !wildcard_enabled;
 
     Logger::Debug("  Looking for '", target_method.type.name, ".", target_method.method_name,
                   "(", (target_method.signature_types.size() - 1), " params)' method implementation.");
@@ -43,22 +96,48 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             }
         },
         [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
+    auto enumExplicitInterfaceMethods = Enumerator<mdMethodDef>(
+        [&metadataImport, target_method, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
+            auto method_name = target_method.type.name + WStr(".") + target_method.method_name;
+            return metadataImport->EnumMethodsWithName(ptr, typeDef, method_name.c_str(), arr,
+                                                        max, cnt);
+        },
+        [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
 
     auto corProfilerInfo = m_rejit_handler->GetCorProfilerInfo();
     auto pCorAssemblyProperty = m_rejit_handler->GetCorAssemblyProperty();
     auto enable_by_ref_instrumentation = m_rejit_handler->GetEnableByRefInstrumentation();
     auto enable_calltarget_state_by_ref = m_rejit_handler->GetEnableCallTargetStateByRef();
 
-    auto enumIterator = enumMethods.begin();
-    for (; enumIterator != enumMethods.end(); enumIterator = ++enumIterator)
+    auto enumIterator =
+        iterate_explicit_interface_methods ?
+            enumExplicitInterfaceMethods.begin() : enumMethods.begin();
+    auto iteratorEnd = enumMethods.end();
+    auto explicitMode = iterate_explicit_interface_methods;
+
+    for (; enumIterator != iteratorEnd; enumIterator = ++enumIterator)
     {
+        // When interface methods are being iterated first we go over the explicit interface method search and then
+        // switch to the regular method search, just like the runtime behaves.
+        if (iterate_explicit_interface_methods && !(enumIterator != enumExplicitInterfaceMethods.end()))
+        {
+            enumIterator = enumMethods.begin();
+            explicitMode = false;
+
+            // Immediately exit if the second enumerator has 0 entries
+            if (!(enumIterator != iteratorEnd))
+            {
+                break;
+            }
+        }
+
         auto methodDef = *enumIterator;
 
         // Extract the function info from the mdMethodDef
         const auto caller = GetFunctionInfo(metadataImport, methodDef);
         if (!caller.IsValid())
         {
-            Logger::Warn("    * The caller for the methoddef: ", shared::TokenStr(&methodDef), " is not valid!");
+            Logger::Warn("    * Skipping ", shared::TokenStr(&methodDef), ": the methoddef is not valid!");
             continue;
         }
 
@@ -68,7 +147,8 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
         auto hr = functionInfo.method_signature.TryParse();
         if (FAILED(hr))
         {
-            Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(), " cannot be parsed.");
+            Logger::Warn("    * Skipping ", functionInfo.method_signature.str(),
+                ": the method signature cannot be parsed.");
             continue;
         }
 
@@ -93,8 +173,8 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             // instrumentation target
             if (numOfArgs != target_method.signature_types.size() - 1)
             {
-                Logger::Debug("    * The caller for the methoddef: ", caller.name,
-                              " doesn't have the right number of arguments (", numOfArgs, " arguments).");
+                Logger::Info("    * Skipping ", caller.type.name, ".", caller.name,
+                    ": the methoddef doesn't have the right number of arguments (", numOfArgs, " arguments).");
                 continue;
             }
 
@@ -116,8 +196,8 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             }
             if (argumentsMismatch)
             {
-                Logger::Debug("    * The caller for the methoddef: ", target_method.method_name,
-                              " doesn't have the right type of arguments.");
+                Logger::Info("    * Skipping ", target_method.method_name,
+                    ": the methoddef doesn't have the right type of arguments.");
                 continue;
             }
         }
@@ -139,30 +219,23 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
                                    moduleInfo.assembly.app_domain_id, pCorAssemblyProperty,
                                    enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
 
-            Logger::Info("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
+            Logger::Debug("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
                          " AppDomain ", moduleInfo.assembly.app_domain_id, " ", moduleInfo.assembly.app_domain_name);
 
             moduleHandler->SetModuleMetadata(moduleMetadata);
         }
 
-        RejitHandlerModuleMethodCreatorFunc creator = [=, request = definition, functionInfo = functionInfo](
-                                                          const mdMethodDef method, RejitHandlerModule* module) {
-            return CreateMethod(method, module, functionInfo, request);
-        };
+        Logger::Info("Method enqueued for ReJIT for ", target_method.type.name, ".", target_method.method_name,
+                  "(", (target_method.signature_types.size() - 1), " params).");
+        EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
+                         functionInfo, moduleHandler);
 
-        RejitHandlerModuleMethodUpdaterFunc updater = [=, request = definition](RejitHandlerModuleMethod* method) {
-            return UpdateMethod(method, request);
-        };
-
-        moduleHandler->CreateMethodIfNotExists(methodDef, creator, updater);
-
-        // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
-        rejitRequests.emplace_back(MethodIdentifier(moduleInfo.id, methodDef));
-
-        Logger::Debug("    * Enqueue for ReJIT [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
-                      ", AppDomainId=", moduleHandler->GetModuleMetadata()->app_domain_id,
-                      ", Assembly=", moduleHandler->GetModuleMetadata()->assemblyName, ", Type=", caller.type.name,
-                      ", Method=", caller.name, "(", numOfArgs, " params), Signature=", caller.signature.str(), "]");
+        // If we are in the explicit enumerator and we found the method, we don't look into the normal methods enumerators.
+        if (explicitMode)
+        {
+            Logger::Debug("      Explicit interface implementation found, skipping normal methods search. [", caller.type.name, ".", caller.name, "]");
+            break;
+        }
     }
 }
 
@@ -195,8 +268,19 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
                                                         bool enqueueInSameThread)
 {
     std::vector<MethodIdentifier> rejitRequests {};
-    const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests);
+    const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests, false);
     RequestRejit(rejitRequests, enqueueInSameThread);
+    return rejitCount;
+}
+
+template <class RejitRequestDefinition>
+ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRevertForLoadedModules(
+    const std::vector<ModuleID>& modules, const std::vector<RejitRequestDefinition>& definitions,
+    bool enqueueInSameThread)
+{
+    std::vector<MethodIdentifier> rejitRequests{};
+    const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests, true);
+    RequestRevert(rejitRequests, enqueueInSameThread);
     return rejitCount;
 }
 
@@ -260,7 +344,7 @@ void RejitPreprocessor<RejitRequestDefinition>::RequestRevert(std::vector<Method
 
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests,
-    std::promise<void>* promise)
+    std::shared_ptr<std::promise<void>> promise)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -279,14 +363,14 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<
 
     Logger::Debug("RejitHandler::EnqueueRequestRejit");
 
-    std::function<void()> action = [=, requests = std::move(rejitRequests), promise = promise]() mutable {
+    std::function<void()> action = [=, requests = std::move(rejitRequests), localPromise = promise]() mutable {
         // Process modules for rejit
         RequestRejit(requests, true);
 
         // Resolve promise
-        if (promise != nullptr)
+        if (localPromise != nullptr)
         {
-            promise->set_value();
+            localPromise->set_value();
         }
     };
 
@@ -296,7 +380,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<
 
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevert(std::vector<MethodIdentifier>& revertRequests,
-                                                                    std::promise<void>* promise)
+                                                                    std::shared_ptr<std::promise<void>> promise)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -315,14 +399,14 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevert(std::vector
 
     Logger::Debug("RejitHandler::EnqueueRequestRevert");
 
-    std::function<void()> action = [=, requests = std::move(revertRequests), promise = promise]() mutable {
+    std::function<void()> action = [=, requests = std::move(revertRequests), localPromise = promise]() mutable {
         // Process modules for rejit
         RequestRevert(requests, true);
 
         // Resolve promise
-        if (promise != nullptr)
+        if (localPromise != nullptr)
         {
-            promise->set_value();
+            localPromise->set_value();
         }
     };
 
@@ -333,7 +417,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevert(std::vector
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModules(
     const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
-    std::promise<ULONG>* promise)
+    std::shared_ptr<std::promise<ULONG>> promise)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -353,14 +437,52 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
     Logger::Debug("RejitHandler::EnqueueRequestRejitForLoadedModules");
 
     std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
-                                    promise = promise]() mutable {
+                                    localPromise = promise]() mutable {
         // Process modules for rejit
         const auto rejitCount = RequestRejitForLoadedModules(modules, definitions, true);
 
         // Resolve promise
+        if (localPromise != nullptr)
+        {
+            localPromise->set_value(rejitCount);
+        }
+    };
+
+    // Enqueue
+    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+}
+
+template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevertForLoadedModules(
+    const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
+    std::shared_ptr<std::promise<ULONG>> promise)
+{
+    if (m_rejit_handler->IsShutdownRequested())
+    {
         if (promise != nullptr)
         {
-            promise->set_value(rejitCount);
+            promise->set_value(0);
+        }
+
+        return;
+    }
+
+    if (modulesVector.size() == 0 || definitions.size() == 0)
+    {
+        return;
+    }
+
+    Logger::Debug("RejitHandler::EnqueueRequestRevertForLoadedModules");
+
+    std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
+                                    localPromise = promise]() mutable {
+        // Process modules for rejit
+        const auto rejitCount = RequestRevertForLoadedModules(modules, definitions, true);
+
+        // Resolve promise
+        if (localPromise != nullptr)
+        {
+            localPromise->set_value(rejitCount);
         }
     };
 
@@ -371,7 +493,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
 template <class RejitRequestDefinition>
 ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
     const std::vector<ModuleID>& modules, const std::vector<RejitRequestDefinition>& definitions,
-    std::vector<MethodIdentifier>& rejitRequests)
+    std::vector<MethodIdentifier>& rejitRequests, bool isRevert)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -397,8 +519,22 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
         {
             const auto target_method = GetTargetMethod(definition);
             const auto is_derived = GetIsDerived(definition);
+            const auto is_interface = GetIsInterface(definition);
+            const auto is_enabled = GetIsEnabled(definition);
 
-            if (is_derived)
+            if (SupportsSelectiveEnablement())
+            {
+                if (!isRevert && !is_enabled)
+                {
+                    continue; // Disabled calltarget
+                }
+                else if (isRevert && is_enabled)
+                {
+                    continue; // Enabled calltarget
+                }
+            }
+
+            if (is_derived || is_interface)
             {
                 // Abstract methods handling.
                 if (assemblyMetadata == nullptr)
@@ -458,65 +594,149 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
                     auto typeDef = *typeDefIterator;
                     const auto typeInfo = GetTypeInfo(metadataImport, typeDef);
                     bool rewriteType = false;
-                    auto ancestorTypeInfo = typeInfo.extend_from.get();
 
-                    // Check if the type has ancestors
-                    int maxDepth = 1;
-                    while (ancestorTypeInfo != nullptr && maxDepth > 0)
+                    // Iterate through interfaces that this type directly implements and
+                    // mark the type for instrumentation if the interface type matches and
+                    // the assembly version constraints are met
+                    //
+                    // Note: If this type implements an interface indirectly through a base class,
+                    // then the instrumentation would occur when that base class is processed.
+                    //
+                    // Note: This leaves a gap in instrumentation when the following scenario occurs:
+                    // - ClassA implements InterfaceA (with method Method1)
+                    // - ClassB derives from ClassA
+                    // - ClassB overrides Method1
+                    if (is_interface)
                     {
-                        // Validate the type name we already have
-                        if (ancestorTypeInfo->name == target_method.type.name)
+                        auto interfaceImplEnum = EnumInterfaceImpls(metadataImport, typeDef);
+                        auto interfaceImplIterator = interfaceImplEnum.begin();
+                        for (; interfaceImplIterator != interfaceImplEnum.end();
+                            interfaceImplIterator = ++interfaceImplIterator)
                         {
-                            // Validate assembly data (scopeToken has the assemblyRef of the ancestor type)
-                            if (ancestorTypeInfo->scopeToken != mdTokenNil)
+                            // Get the interface token
+                            auto interfaceImpl = *interfaceImplIterator;
+                            mdToken classToken, interfaceToken;
+                            if (metadataImport->GetInterfaceImplProps(interfaceImpl, &classToken, &interfaceToken) == S_OK)
                             {
-                                const auto tokenType = TypeFromToken(ancestorTypeInfo->scopeToken);
-
-                                if (tokenType == mdtAssemblyRef)
+                                if (classToken == typeDef)
                                 {
-                                    const auto& ancestorAssemblyMetadata =
-                                        GetReferencedAssemblyMetadata(assemblyImport, ancestorTypeInfo->scopeToken);
+                                    // Get the interface type props
+                                    WCHAR type_name[kNameMaxSize]{};
+                                    DWORD type_name_len = 0;
 
-                                    // We check the assembly name and version
-                                    if (ancestorAssemblyMetadata.name == target_method.type.assembly.name &&
-                                        target_method.type.min_version <= ancestorAssemblyMetadata.version &&
-                                        target_method.type.max_version >= ancestorAssemblyMetadata.version)
+                                    const auto interfaceTokenType = TypeFromToken(interfaceToken);
+                                    if (interfaceTokenType == mdtTypeRef)
+                                    {
+                                        mdAssembly assemblyToken;
+                                        if (metadataImport->GetTypeRefProps(interfaceToken, &assemblyToken, type_name, kNameMaxSize, &type_name_len) == S_OK
+                                            && type_name == target_method.type.name)
+                                        {
+                                            // Now we have to validate the assembly version
+                                            const auto tokenType = TypeFromToken(assemblyToken);
+                                            if (tokenType == mdtAssemblyRef)
+                                            {
+                                                const auto& ancestorAssemblyMetadata =
+                                                    GetReferencedAssemblyMetadata(assemblyImport, assemblyToken);
+
+                                                // We check the assembly name and version
+                                                if (ancestorAssemblyMetadata.name == target_method.type.assembly.name &&
+                                                    target_method.type.min_version <=
+                                                        ancestorAssemblyMetadata.version &&
+                                                    target_method.type.max_version >= ancestorAssemblyMetadata.version)
+                                                {
+                                                    rewriteType = true;
+                                                    break;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Logger::Warn("Unknown token type (Not supported)");
+                                            }
+                                        }
+                                    }
+                                    else if (interfaceTokenType == mdtTypeDef)
+                                    {
+                                        DWORD type_flags;
+                                        mdToken type_extends = mdTokenNil;
+                                        if (metadataImport->GetTypeDefProps(interfaceToken, type_name, kNameMaxSize, &type_name_len, &type_flags, &type_extends) == S_OK
+                                            && type_name == target_method.type.name)
+                                        {
+                                            // We check the assembly name and version
+                                            if (assemblyMetadata->name == target_method.type.assembly.name &&
+                                                target_method.type.min_version <= assemblyMetadata->version &&
+                                                target_method.type.max_version >= assemblyMetadata->version)
+                                            {
+                                                rewriteType = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (is_derived)
+                    {
+                        // Check if the type has ancestors
+                        auto ancestorTypeInfo = typeInfo.extend_from.get();
+                        int maxDepth = 1;
+                        while (!rewriteType && ancestorTypeInfo != nullptr && maxDepth > 0)
+                        {
+                            // Validate the type name we already have
+                            if (ancestorTypeInfo->name == target_method.type.name)
+                            {
+                                // Validate assembly data (scopeToken has the assemblyRef of the ancestor type)
+                                if (ancestorTypeInfo->scopeToken != mdTokenNil)
+                                {
+                                    const auto tokenType = TypeFromToken(ancestorTypeInfo->scopeToken);
+
+                                    if (tokenType == mdtAssemblyRef)
+                                    {
+                                        const auto& ancestorAssemblyMetadata =
+                                            GetReferencedAssemblyMetadata(assemblyImport, ancestorTypeInfo->scopeToken);
+
+                                        // We check the assembly name and version
+                                        if (ancestorAssemblyMetadata.name == target_method.type.assembly.name &&
+                                            target_method.type.min_version <= ancestorAssemblyMetadata.version &&
+                                            target_method.type.max_version >= ancestorAssemblyMetadata.version)
+                                        {
+                                            rewriteType = true;
+                                            break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Logger::Warn("Unknown token type (Not supported)");
+                                    }
+                                }
+                                else
+                                {
+                                    // Check module name and version
+                                    if (moduleInfo.assembly.name == target_method.type.assembly.name &&
+                                        target_method.type.min_version <= assemblyMetadata->version &&
+                                        target_method.type.max_version >= assemblyMetadata->version)
                                     {
                                         rewriteType = true;
                                         break;
                                     }
                                 }
-                                else
+                            }
+
+                            // Go up
+                            ancestorTypeInfo = ancestorTypeInfo->extend_from.get();
+                            if (ancestorTypeInfo != nullptr)
+                            {
+                                if (ancestorTypeInfo->name == WStr("System.ValueType") ||
+                                    ancestorTypeInfo->name == WStr("System.Object") ||
+                                    ancestorTypeInfo->name == WStr("System.Enum"))
                                 {
-                                    Logger::Warn("Unknown token type (Not supported)");
+                                    ancestorTypeInfo = nullptr;
                                 }
                             }
-                            else
-                            {
-                                // Check module name and version
-                                if (moduleInfo.assembly.name == target_method.type.assembly.name &&
-                                    target_method.type.min_version <= assemblyMetadata->version &&
-                                    target_method.type.max_version >= assemblyMetadata->version)
-                                {
-                                    rewriteType = true;
-                                    break;
-                                }
-                            }
-                        }
 
-                        // Go up
-                        ancestorTypeInfo = ancestorTypeInfo->extend_from.get();
-                        if (ancestorTypeInfo != nullptr)
-                        {
-                            if (ancestorTypeInfo->name == WStr("System.ValueType") ||
-                                ancestorTypeInfo->name == WStr("System.Object") ||
-                                ancestorTypeInfo->name == WStr("System.Enum"))
-                            {
-                                ancestorTypeInfo = nullptr;
-                            }
+                            maxDepth--;
                         }
-
-                        maxDepth--;
                     }
 
                     if (rewriteType)
@@ -581,7 +801,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
 
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
-    std::promise<std::vector<MethodIdentifier>>* promise)
+    std::shared_ptr<std::promise<std::vector<MethodIdentifier>>> promise)
 {
     std::vector<MethodIdentifier> rejitRequests;
 
@@ -603,16 +823,16 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(c
     Logger::Debug("RejitHandler::EnqueuePreprocessRejitRequests");
 
     std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
-                                    rejitRequests = rejitRequests,
-                                    promise = promise]() mutable {
+                                    localRejitRequests = rejitRequests,
+                                    localPromise = promise]() mutable {
 
         // Process modules for rejit
-        const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests);
+        const auto rejitCount = PreprocessRejitRequests(modules, definitions, localRejitRequests, true);
 
         // Resolve promise
-        if (promise != nullptr)
+        if (localPromise != nullptr)
         {
-            promise->set_value(rejitRequests);
+            localPromise->set_value(localRejitRequests);
         }
     };
 
@@ -638,19 +858,36 @@ const bool TracerRejitPreprocessor::GetIsDerived(const IntegrationDefinition& in
     return integrationDefinition.is_derived;
 }
 
+const bool TracerRejitPreprocessor::GetIsInterface(const IntegrationDefinition& integrationDefinition)
+{
+    return integrationDefinition.is_interface;
+}
+
 const bool TracerRejitPreprocessor::GetIsExactSignatureMatch(const IntegrationDefinition& integrationDefinition)
 {
     return integrationDefinition.is_exact_signature_match;
 }
+
+const bool TracerRejitPreprocessor::GetIsEnabled(const IntegrationDefinition& integrationDefinition)
+{
+    return integrationDefinition.GetEnabled();
+}
+
+const bool TracerRejitPreprocessor::SupportsSelectiveEnablement()
+{
+    return true;
+}
+
 
 const std::unique_ptr<RejitHandlerModuleMethod> TracerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
                                                 const FunctionInfo& functionInfo,
                                                 const IntegrationDefinition& integrationDefinition)
 {
     return std::make_unique<TracerRejitHandlerModuleMethod>(methodDef,
-                                                                       module,
-                                                                       functionInfo,
-                                                                       integrationDefinition);
+                                                            module,
+                                                            functionInfo,
+                                                            integrationDefinition,
+                                                            std::make_unique<TracerMethodRewriter>(m_corProfiler));
 }
 
 bool TracerRejitPreprocessor::ShouldSkipModule(const ModuleInfo& moduleInfo, const IntegrationDefinition& integrationDefinition)
@@ -663,7 +900,7 @@ bool TracerRejitPreprocessor::ShouldSkipModule(const ModuleInfo& moduleInfo, con
            target_method.type.assembly.name != moduleInfo.assembly.name;
 }
 
-template class RejitPreprocessor<debugger::MethodProbeDefinition>;
+template class RejitPreprocessor<std::shared_ptr<debugger::MethodProbeDefinition>>;
 template class RejitPreprocessor<IntegrationDefinition>;
 
 } // namespace trace

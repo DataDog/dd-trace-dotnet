@@ -14,19 +14,16 @@
 System.Exception: Oops, it broke. Specified status code was: 401
 at Samples.AspNetMvc4.Controllers.HomeController.BadRequestWithStatusCode(Int32 statuscode),
       error.type: System.Exception,
-      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
       http.status_code: 500,
-      http.url: http://localhost/Home/BadRequestWithStatusCode?statuscode=401&TransferRequest=true,
+      http.url: http://localhost:00000/Home/BadRequestWithStatusCode?statuscode=401&TransferRequest=true,
       http.useragent: testhelper,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.p.dm: -0
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -58,7 +55,7 @@ at Samples.AspNetMvc4.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
-      http.url: http://localhost/Home/BadRequestWithStatusCode?statuscode=401&TransferRequest=true,
+      http.url: http://localhost:00000/Home/BadRequestWithStatusCode?statuscode=401&TransferRequest=true,
       http.useragent: testhelper,
       language: dotnet,
       span.kind: server,

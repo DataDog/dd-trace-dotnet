@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using System.Threading;
@@ -19,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         AssemblyName = "AWSSDK.SQS",
         TypeName = "Amazon.SQS.AmazonSQSClient",
         MethodName = "CreateQueueAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<Amazon.SQS.Model.CreateQueueResponse>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.SQS.Model.CreateQueueResponse]",
         ParameterTypeNames = new[] { "Amazon.SQS.Model.CreateQueueRequest", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
@@ -47,8 +49,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 return CallTargetState.GetDefault();
             }
 
-            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out AwsSqsTags tags);
-            tags.QueueName = request.QueueName;
+            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out var tags);
+            if (tags is not null && request.QueueName is not null)
+            {
+                tags.QueueName = request.QueueName;
+            }
 
             return new CallTargetState(scope);
         }
@@ -66,7 +71,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
             where TResponse : ICreateQueueResponse
         {
-            if (state.Scope?.Span.Tags is AwsSqsTags tags)
+            if (response.Instance is not null
+                && state.Scope?.Span.Tags is AwsSqsTags tags)
             {
                 tags.QueueUrl = response.QueueUrl;
             }

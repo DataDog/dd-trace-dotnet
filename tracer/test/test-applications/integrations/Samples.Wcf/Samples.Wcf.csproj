@@ -2,10 +2,12 @@
   <PropertyGroup>
     <ApplicationManifest>app1.manifest</ApplicationManifest>
     <!-- override to remove core -->
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFrameworks>net462</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System.Security" />
     <Reference Include="System.ServiceModel" />
+    <ProjectReference Include="..\dependency-libs\ActivitySampleHelper\ActivitySampleHelper.csproj" />
+    <Reference Include="System.ServiceModel.Web" />
   </ItemGroup>
 </Project>

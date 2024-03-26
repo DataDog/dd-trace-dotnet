@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\System.Collections.immutable\System.Collections.Immutable.csproj" />
+    <ProjectReference Include="..\System.Memory\System.Memory.csproj" />
+    <ProjectReference Include="..\System.Private.CoreLib\System.Private.CoreLib.csproj" />
+  </ItemGroup>
+
+</Project>

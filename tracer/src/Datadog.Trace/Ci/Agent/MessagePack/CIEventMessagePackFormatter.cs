@@ -31,9 +31,9 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         public CIEventMessagePackFormatter(TracerSettings tracerSettings)
         {
-            if (!string.IsNullOrEmpty(tracerSettings.Environment))
+            if (!string.IsNullOrEmpty(tracerSettings.EnvironmentInternal))
             {
-                _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.Environment);
+                _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.EnvironmentInternal);
             }
 
             _envelopBytes = GetEnvelopeArraySegment();
@@ -63,7 +63,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             }
             else
             {
-                Log.Error<int>("Error while locking the events buffer with {count} events.", value.Events.Count);
+                Log.Error<int>("Error while locking the events buffer with {Count} events.", value.Events.Count);
                 offset += MessagePackBinary.WriteNil(ref bytes, offset);
             }
 

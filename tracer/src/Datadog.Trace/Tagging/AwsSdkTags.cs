@@ -18,13 +18,23 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.AwsOperationName)]
         public string Operation { get; set; }
 
+#pragma warning disable CS0618
         [Tag(Trace.Tags.AwsRegion)]
+#pragma warning restore CS0618
+        public string AwsRegion => Region;
+
+        [Tag(Trace.Tags.Region)]
         public string Region { get; set; }
 
         [Tag(Trace.Tags.AwsRequestId)]
         public string RequestId { get; set; }
 
+#pragma warning disable CS0618
         [Tag(Trace.Tags.AwsServiceName)]
+#pragma warning restore CS0618
+        public string AwsService => Service;
+
+        [Tag(Trace.Tags.AwsService)]
         public string Service { get; set; }
 
         [Tag(Trace.Tags.HttpMethod)]

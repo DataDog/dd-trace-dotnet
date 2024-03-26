@@ -12,161 +12,126 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.SourceGenerators.Helpers;
+using Datadog.Trace.SourceGenerators.InstrumentationDefinitions;
 using Datadog.Trace.SourceGenerators.InstrumentationDefinitions.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions;
-
 /// <inheritdoc />
 [Generator]
 public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
 {
+    private const string InstrumentedMethodAttribute = "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute";
+    private const string AdoNetInstrumentAttribute = "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute";
+    private const string AdoNetTargetSignatureAttribute = AdoNetInstrumentAttribute + ".AdoNetTargetSignatureAttribute";
+
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Register the attribute source
+        // Get all the [InstrumentMethod] instances on classes
+        IncrementalValuesProvider<Result<EquatableArray<CallTargetDefinitionSource>>> callTargetDefinitions =
+            context.SyntaxProvider.ForAttributeWithMetadataName(
+                InstrumentedMethodAttribute,
+                predicate: static (node, _) => node is ClassDeclarationSyntax,
+                transform: static (ctx, ct) => GetCallTargetDefinitionSources(ctx, ct))
+                   .WithTrackingName(TrackingNames.CallTargetDefinitionSource);
 
-        IncrementalValuesProvider<ClassDeclarationSyntax> classDeclarations =
-            context.SyntaxProvider.CreateSyntaxProvider(
-                        static (node, token) => IsAttributedClass(node, token),
-                        static (syntaxContext, token) => GetPotentialClassesForGeneration(syntaxContext, token))
-                   .Where(static m => m is not null)!;
+        // Get all the `[AdoNetTargetSignature] attributes inside the AdoNetClientInstrumentMethodsAttribute type
+        IncrementalValuesProvider<Result<EquatableArray<(string ClassName, AdoNetSignature Signature)>>> adoNetSignatures =
+            context.SyntaxProvider.ForAttributeWithMetadataName(
+                        AdoNetInstrumentAttribute + "+AdoNetTargetSignatureAttribute", // metadata name uses `+`
+                        predicate: static (node, _) => node is ClassDeclarationSyntax,
+                        transform: static (ctx, ct) => GetAdoNetSignatures(ctx, ct))
+                   .WithTrackingName(TrackingNames.AdoNetSignatures);
 
-        IncrementalValuesProvider<AttributeData> assemblyAttributes =
-            context.CompilationProvider.SelectMany(static (compilation, _) => compilation.Assembly.GetAttributes());
+        // Get all the [AdoNetClientInstrumentMethods]  assembly attributes
+        IncrementalValuesProvider<Result<EquatableArray<AssemblyCallTargetDefinitionSource>>> assemblyCallTargetDefinitions =
+            context.SyntaxProvider.ForAttributeWithMetadataName(
+                        AdoNetInstrumentAttribute,
+                        predicate: static (node, _) => node is CompilationUnitSyntax,
+                        transform: static (ctx, ct) => GetAssemblyCallTargetDefinitionSources(ctx, ct))
+                   .WithTrackingName(TrackingNames.AssemblyCallTargetDefinitionSource);
 
-        IncrementalValuesProvider<AttributeData> adoNetAssemblyAttributes =
-            assemblyAttributes.Where(static a => IsAssemblyAttributeForGeneration(a));
+        // merge the adonet signatures
+        IncrementalValueProvider<ImmutableArray<(string ClassName, AdoNetSignature Signature)>> allSignatures =
+            adoNetSignatures
+               .SelectMany(static (result, _) => result.Value)
+               .Collect();
 
-        IncrementalValueProvider<((Compilation Left, ImmutableArray<ClassDeclarationSyntax> Right) Left, ImmutableArray<AttributeData> Right)> compilationAndClasses =
-            context.CompilationProvider
-                   .Combine(classDeclarations.Collect())
-                   .Combine(adoNetAssemblyAttributes.Collect());
+        IncrementalValuesProvider<Result<CallTargetDefinitionSource?>> adoNetCallTargetDefinitions =
+            assemblyCallTargetDefinitions
+               .SelectMany(static (result, _) => result.Value)
+               .Combine(allSignatures)
+               .Select((tuple, _) => MergeAdoNetAttributes(tuple.Left, tuple.Right))
+               .WithTrackingName(TrackingNames.AdoNetCallTargetDefinitionSource);
 
-        IncrementalValueProvider<(IReadOnlyList<CallTargetDefinitionSource> Definitions, IReadOnlyList<Diagnostic> Diagnostics)> detailsToRender =
-            compilationAndClasses.Select(static (x, ct) => GetDefinitionToWrite(x.Left.Left, x.Left.Right, x.Right, ct));
+        context.ReportDiagnostics(
+            callTargetDefinitions
+               .Where(static m => m.Errors.Count > 0)
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.CallTargetDiagnostics));
 
-        context.RegisterSourceOutput(detailsToRender, static (spc, source) =>
-                                         Execute(source.Definitions, source.Diagnostics, spc));
+        context.ReportDiagnostics(
+            adoNetSignatures
+               .Where(static m => m.Errors.Count > 0)
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.AdoNetDiagnostics));
+
+        context.ReportDiagnostics(
+            assemblyCallTargetDefinitions
+               .Where(static m => m.Errors.Count > 0)
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.AssemblyDiagnostics));
+
+        context.ReportDiagnostics(
+            adoNetCallTargetDefinitions
+               .Where(static m => m.Errors.Count > 0)
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.AdoNetMergeDiagnostics));
+
+        var allCallTargetDefinitions =
+            callTargetDefinitions
+               .SelectMany(static (x, _) => x.Value)
+               .Collect();
+
+        var allAdoNetDefinitions =
+            adoNetCallTargetDefinitions
+               .Where(x => x.Value is not null)
+               .Select((x, _) => x.Value!)
+               .Collect();
+
+        context.RegisterSourceOutput(
+            allCallTargetDefinitions.Combine(allAdoNetDefinitions),
+            static (spc, source) =>
+                Execute(source.Left, source.Right, spc));
     }
 
-    private static bool IsAttributedClass(SyntaxNode node, CancellationToken cancellationToken)
-        => node is ClassDeclarationSyntax c && c.AttributeLists.Count > 0;
-
-    private static ClassDeclarationSyntax? GetPotentialClassesForGeneration(GeneratorSyntaxContext context, CancellationToken cancellationToken)
+    private static Result<EquatableArray<CallTargetDefinitionSource>> GetCallTargetDefinitionSources(
+        GeneratorAttributeSyntaxContext ctx, CancellationToken ct)
     {
-        var classDeclarationSyntax = (ClassDeclarationSyntax)context.Node;
-
-        foreach (AttributeListSyntax attributeListSyntax in classDeclarationSyntax.AttributeLists)
-        {
-            foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
-            {
-                if (attributeSyntax.Name.ToString() is "InstrumentMethod" or "InstrumentMethodAttribute" or "AdoNetTargetSignatureAttribute" or "AdoNetTargetSignature")
-                {
-                    return classDeclarationSyntax;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private static bool IsAssemblyAttributeForGeneration(AttributeData attributeData)
-    {
-        return attributeData.AttributeClass?.ToDisplayString() == Constants.AdoNetInstrumentAttribute;
-    }
-
-    private static (IReadOnlyList<CallTargetDefinitionSource> Definitions, IReadOnlyList<Diagnostic> Diagnostics) GetDefinitionToWrite(
-        Compilation compilation,
-        ImmutableArray<ClassDeclarationSyntax> classes,
-        ImmutableArray<AttributeData> assemblyAttributes,
-        CancellationToken ct)
-    {
-        if (classes.IsDefaultOrEmpty)
-        {
-            // nothing to do yet
-            return (Array.Empty<CallTargetDefinitionSource>(), Array.Empty<Diagnostic>());
-        }
-
-        var (definitions, diagnostics) = GetCallTargetDefinitionSources(
-            compilation,
-            classes.Distinct(),
-            assemblyAttributes,
-            ct);
-
-        return (definitions, diagnostics);
-    }
-
-    private static void Execute(
-        IReadOnlyList<CallTargetDefinitionSource> definitions,
-        IReadOnlyList<Diagnostic> diagnostics,
-        SourceProductionContext context)
-    {
-        if (definitions.Count != 0)
-        {
-            string source = Sources.CreateCallTargetDefinitions(definitions);
-            context.AddSource("InstrumentationDefinitions.g.cs", SourceText.From(source, Encoding.UTF8));
-        }
-
-        foreach (var diagnostic in diagnostics)
-        {
-            context.ReportDiagnostic(diagnostic);
-        }
-    }
-
-    private static (IReadOnlyList<CallTargetDefinitionSource> Definitions, IReadOnlyList<Diagnostic> Diagnostics) GetCallTargetDefinitionSources(
-        Compilation compilation,
-        IEnumerable<ClassDeclarationSyntax> classes,
-        ImmutableArray<AttributeData> assemblyAttributes,
-        CancellationToken cancellationToken)
-    {
-        INamedTypeSymbol? instrumentAttribute = compilation.GetTypeByMetadataName(Constants.InstrumentAttribute);
-        if (instrumentAttribute is null)
+        INamedTypeSymbol? classSymbol = ctx.TargetSymbol as INamedTypeSymbol;
+        if (classSymbol is null)
         {
             // nothing to do if this type isn't available
-            return (Array.Empty<CallTargetDefinitionSource>(), Array.Empty<Diagnostic>());
+            return new Result<EquatableArray<CallTargetDefinitionSource>>(default, default);
         }
 
-        INamedTypeSymbol? adoNetSignatureAttribute = compilation.GetTypeByMetadataName(Constants.AdoNetTargetSignatureSymbolName);
-        if (adoNetSignatureAttribute is null && !assemblyAttributes.IsDefaultOrEmpty)
+        ct.ThrowIfCancellationRequested();
+
+        List<DiagnosticInfo>? diagnostics = null;
+        List<CallTargetDefinitionSource>? results = null;
+
+        // Process InstrumentMethodAttribute first
+        // Iterate over the GeneratorAttributeSyntaxContext.Attributes property which is pre-populated with the targeted attributes
+        foreach (AttributeData attributeData in ctx.Attributes)
         {
-            // nothing to do if this type isn't available
-            return (Array.Empty<CallTargetDefinitionSource>(), Array.Empty<Diagnostic>());
-        }
-
-        INamedTypeSymbol? adoNetInstrumentationAttribute = compilation.GetTypeByMetadataName(Constants.AdoNetInstrumentAttribute);
-        if (adoNetInstrumentationAttribute is null && !assemblyAttributes.IsDefaultOrEmpty)
-        {
-            // nothing to do if this type isn't available
-            return (Array.Empty<CallTargetDefinitionSource>(), Array.Empty<Diagnostic>());
-        }
-
-        var results = new List<CallTargetDefinitionSource>();
-        var signatures = assemblyAttributes.IsDefaultOrEmpty ? null : new Dictionary<string, AdoNetSignature>();
-        List<Diagnostic>? diagnostics = null;
-
-        foreach (ClassDeclarationSyntax classDec in classes)
-        {
-            // stop if we're asked to
-            cancellationToken.ThrowIfCancellationRequested();
-
-            SemanticModel sm = compilation.GetSemanticModel(classDec.SyntaxTree);
-            INamedTypeSymbol? classSymbol = sm.GetDeclaredSymbol(classDec, cancellationToken) as INamedTypeSymbol;
-            Debug.Assert(classSymbol is not null, "Instrumented class is not present");
-            var boundAttributes = classSymbol!.GetAttributes();
-
-            // Process InstrumentMethodAttribute first
-            foreach (AttributeData attributeData in boundAttributes)
+            if ((attributeData.AttributeClass?.Name == "InstrumentMethodAttribute" ||
+                 attributeData.AttributeClass?.Name == "InstrumentMethod")
+             && attributeData.AttributeClass.ToDisplayString() == InstrumentedMethodAttribute)
             {
                 var hasMisconfiguredInput = false;
-
-                if (!instrumentAttribute.Equals(attributeData.AttributeClass, SymbolEqualityComparer.Default))
-                {
-                    continue;
-                }
-
                 string? assemblyName = null;
                 string[]? assemblyNames = null;
                 string? integrationName = null;
@@ -178,7 +143,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 string? maximumVersion = null;
                 string[]? parameterTypeNames = null;
                 string? callTargetType = null;
-                int? integrationType = null;
+                int? integrationKind = null;
                 var instrumentationCategory = InstrumentationCategory.Tracing;
 
                 foreach (KeyValuePair<string, TypedConstant> namedArgument in attributeData.NamedArguments)
@@ -224,8 +189,8 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                         case nameof(Constants.InstrumentAttributeProperties.CallTargetType):
                             callTargetType = (namedArgument.Value.Value as INamedTypeSymbol)?.ToDisplayString();
                             break;
-                        case nameof(Constants.InstrumentAttributeProperties.CallTargetIntegrationType):
-                            integrationType = namedArgument.Value.Value as int?;
+                        case nameof(Constants.InstrumentAttributeProperties.CallTargetIntegrationKind):
+                            integrationKind = namedArgument.Value.Value as int?;
                             break;
                         case nameof(Constants.InstrumentAttributeProperties.InstrumentationCategory):
                             instrumentationCategory = (InstrumentationCategory)(namedArgument.Value.Value as int?).GetValueOrDefault();
@@ -249,7 +214,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 if (assemblyNames is null or { Length: 0 } && assemblyName is null)
                 {
                     hasMisconfiguredInput = true;
-                    diagnostics ??= new List<Diagnostic>();
+                    diagnostics ??= new();
                     diagnostics.Add(
                         MissingRequiredPropertyDiagnostic.Create(
                             attributeData.ApplicationSyntaxReference?.GetSyntax(),
@@ -260,7 +225,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 if (typeNames is null or { Length: 0 } && typeName is null)
                 {
                     hasMisconfiguredInput = true;
-                    diagnostics ??= new List<Diagnostic>();
+                    diagnostics ??= new();
                     diagnostics.Add(
                         MissingRequiredPropertyDiagnostic.Create(
                             attributeData.ApplicationSyntaxReference?.GetSyntax(),
@@ -271,7 +236,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 if (integrationName is null)
                 {
                     hasMisconfiguredInput = true;
-                    diagnostics ??= new List<Diagnostic>();
+                    diagnostics ??= new();
                     diagnostics.Add(
                         MissingRequiredPropertyDiagnostic.Create(
                             attributeData.ApplicationSyntaxReference?.GetSyntax(),
@@ -281,7 +246,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 if (methodName is null)
                 {
                     hasMisconfiguredInput = true;
-                    diagnostics ??= new List<Diagnostic>();
+                    diagnostics ??= new();
                     diagnostics.Add(
                         MissingRequiredPropertyDiagnostic.Create(
                             attributeData.ApplicationSyntaxReference?.GetSyntax(),
@@ -291,7 +256,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 if (returnTypeName is null)
                 {
                     hasMisconfiguredInput = true;
-                    diagnostics ??= new List<Diagnostic>();
+                    diagnostics ??= new();
                     diagnostics.Add(
                         MissingRequiredPropertyDiagnostic.Create(
                             attributeData.ApplicationSyntaxReference?.GetSyntax(),
@@ -303,7 +268,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 if (minimumVersion is null)
                 {
                     hasMisconfiguredInput = true;
-                    diagnostics ??= new List<Diagnostic>();
+                    diagnostics ??= new();
                     diagnostics.Add(
                         MissingRequiredPropertyDiagnostic.Create(
                             attributeData.ApplicationSyntaxReference?.GetSyntax(),
@@ -312,7 +277,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 else if (!TryGetVersion(minimumVersion, ushort.MinValue, out minVersion))
                 {
                     hasMisconfiguredInput = true;
-                    diagnostics ??= new List<Diagnostic>();
+                    diagnostics ??= new();
                     diagnostics.Add(
                         InvalidVersionFormatDiagnostic.Create(
                             attributeData.ApplicationSyntaxReference?.GetSyntax(),
@@ -322,7 +287,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 if (maximumVersion is null)
                 {
                     hasMisconfiguredInput = true;
-                    diagnostics ??= new List<Diagnostic>();
+                    diagnostics ??= new();
                     diagnostics.Add(
                         MissingRequiredPropertyDiagnostic.Create(
                             attributeData.ApplicationSyntaxReference?.GetSyntax(),
@@ -331,7 +296,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 else if (!TryGetVersion(maximumVersion, ushort.MaxValue, out maxVersion))
                 {
                     hasMisconfiguredInput = true;
-                    diagnostics ??= new List<Diagnostic>();
+                    diagnostics ??= new();
                     diagnostics.Add(
                         InvalidVersionFormatDiagnostic.Create(
                             attributeData.ApplicationSyntaxReference?.GetSyntax(),
@@ -347,6 +312,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 {
                     foreach (var type in typeNames ?? new[] { typeName })
                     {
+                        results ??= new();
                         results.Add(
                             new CallTargetDefinitionSource(
                                 integrationName: integrationName!,
@@ -358,137 +324,162 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                                 minimumVersion: minVersion,
                                 maximumVersion: maxVersion,
                                 instrumentationTypeName: callTargetType ?? classSymbol.ToDisplayString(),
-                                integrationType: integrationType ?? 0,
+                                integrationKind: integrationKind ?? 0,
                                 isAdoNetIntegration: false,
                                 instrumentationCategory: instrumentationCategory));
                     }
                 }
             }
+        }
 
-            // no need to extract signature attribute details, as we don't have any assembly attributes to use them
-            if (assemblyAttributes.IsDefaultOrEmpty)
+        var errors = diagnostics is { Count: > 0 }
+                         ? new EquatableArray<DiagnosticInfo>(diagnostics.ToArray())
+                         : default;
+
+        return new Result<EquatableArray<CallTargetDefinitionSource>>(results is null ? default : new(results.ToArray()), errors);
+    }
+
+    private static Result<EquatableArray<(string ClassName, AdoNetSignature Signature)>> GetAdoNetSignatures(
+        GeneratorAttributeSyntaxContext ctx, CancellationToken ct)
+    {
+        INamedTypeSymbol? classSymbol = ctx.TargetSymbol as INamedTypeSymbol;
+        if (classSymbol is null)
+        {
+            // nothing to do if this type isn't available
+            return new Result<EquatableArray<(string ClassName, AdoNetSignature Signature)>>(default, default);
+        }
+
+        ct.ThrowIfCancellationRequested();
+
+        List<DiagnosticInfo>? diagnostics = null;
+        List<(string ClassName, AdoNetSignature Signature)>? results = null;
+
+        // Process AdoNetSignatureAttribute next
+        // Iterate over the GeneratorAttributeSyntaxContext.Attributes property which is pre-populated with the targeted attributes
+        foreach (AttributeData attributeData in ctx.Attributes)
+        {
+            var hasMisconfiguredInput = false;
+
+            string? methodName = null;
+            string? returnTypeName = null;
+            string[]? parameterTypeNames = null;
+            int? integrationKind = null;
+            int? returnType = null;
+            string? callTargetType = null;
+
+            foreach (KeyValuePair<string, TypedConstant> namedArgument in attributeData.NamedArguments)
+            {
+                if (namedArgument.Value.Kind == TypedConstantKind.Error)
+                {
+                    hasMisconfiguredInput = true;
+                    break;
+                }
+
+                switch (namedArgument.Key)
+                {
+                    case nameof(Constants.AdoNetSignatureAttributeProperties.MethodName):
+                        methodName = namedArgument.Value.Value?.ToString();
+                        break;
+                    case nameof(Constants.AdoNetSignatureAttributeProperties.ReturnTypeName):
+                        returnTypeName = namedArgument.Value.Value?.ToString();
+                        break;
+                    case nameof(Constants.AdoNetSignatureAttributeProperties.ParameterTypeNames):
+                        parameterTypeNames = GetStringArray(namedArgument.Value.Values);
+                        break;
+                    case nameof(Constants.AdoNetSignatureAttributeProperties.CallTargetType):
+                        callTargetType = (namedArgument.Value.Value as INamedTypeSymbol)?.ToDisplayString();
+                        break;
+                    case nameof(Constants.AdoNetSignatureAttributeProperties.CallTargetIntegrationKind):
+                        integrationKind = namedArgument.Value.Value as int?;
+                        break;
+                    case nameof(Constants.AdoNetSignatureAttributeProperties.ReturnType):
+                        returnType = namedArgument.Value.Value as int?;
+                        break;
+                    default:
+                        hasMisconfiguredInput = true;
+                        break;
+                }
+
+                if (hasMisconfiguredInput)
+                {
+                    break;
+                }
+            }
+
+            if (hasMisconfiguredInput)
             {
                 continue;
             }
 
-            // Process AdoNetSignatureAttribute next
-            foreach (AttributeData attributeData in boundAttributes)
+            if (methodName is null)
             {
-                var hasMisconfiguredInput = false;
+                hasMisconfiguredInput = true;
+                diagnostics ??= new();
+                diagnostics.Add(
+                    MissingRequiredPropertyDiagnostic.Create(
+                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        Constants.AdoNetSignatureAttributeProperties.MethodName));
+            }
 
-                if (!adoNetSignatureAttribute!.Equals(attributeData.AttributeClass, SymbolEqualityComparer.Default))
-                {
-                    continue;
-                }
+            if (callTargetType is null)
+            {
+                hasMisconfiguredInput = true;
+                diagnostics ??= new();
+                diagnostics.Add(
+                    MissingRequiredPropertyDiagnostic.Create(
+                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        Constants.AdoNetSignatureAttributeProperties.CallTargetType));
+            }
 
-                string? methodName = null;
-                string? returnTypeName = null;
-                string[]? parameterTypeNames = null;
-                int? integrationType = null;
-                int? returnType = null;
-                string? callTargetType = null;
+            if (returnType is 0 && returnTypeName is null)
+            {
+                hasMisconfiguredInput = true;
+                diagnostics ??= new();
+                diagnostics.Add(
+                    MissingRequiredPropertyDiagnostic.Create(
+                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        Constants.AdoNetSignatureAttributeProperties.ReturnTypeName,
+                        Constants.AdoNetSignatureAttributeProperties.ReturnType));
+            }
 
-                foreach (KeyValuePair<string, TypedConstant> namedArgument in attributeData.NamedArguments)
-                {
-                    if (namedArgument.Value.Kind == TypedConstantKind.Error)
-                    {
-                        hasMisconfiguredInput = true;
-                        break;
-                    }
+            if (hasMisconfiguredInput)
+            {
+                continue;
+            }
 
-                    switch (namedArgument.Key)
-                    {
-                        case nameof(Constants.AdoNetSignatureAttributeProperties.MethodName):
-                            methodName = namedArgument.Value.Value?.ToString();
-                            break;
-                        case nameof(Constants.AdoNetSignatureAttributeProperties.ReturnTypeName):
-                            returnTypeName = namedArgument.Value.Value?.ToString();
-                            break;
-                        case nameof(Constants.AdoNetSignatureAttributeProperties.ParameterTypeNames):
-                            parameterTypeNames = GetStringArray(namedArgument.Value.Values);
-                            break;
-                        case nameof(Constants.AdoNetSignatureAttributeProperties.CallTargetType):
-                            callTargetType = (namedArgument.Value.Value as INamedTypeSymbol)?.ToDisplayString();
-                            break;
-                        case nameof(Constants.AdoNetSignatureAttributeProperties.CallTargetIntegrationType):
-                            integrationType = namedArgument.Value.Value as int?;
-                            break;
-                        case nameof(Constants.AdoNetSignatureAttributeProperties.ReturnType):
-                            returnType = namedArgument.Value.Value as int?;
-                            break;
-                        default:
-                            hasMisconfiguredInput = true;
-                            break;
-                    }
-
-                    if (hasMisconfiguredInput)
-                    {
-                        break;
-                    }
-                }
-
-                if (hasMisconfiguredInput)
-                {
-                    continue;
-                }
-
-                if (methodName is null)
-                {
-                    hasMisconfiguredInput = true;
-                    diagnostics ??= new List<Diagnostic>();
-                    diagnostics.Add(
-                        MissingRequiredPropertyDiagnostic.Create(
-                            attributeData.ApplicationSyntaxReference?.GetSyntax(),
-                            Constants.AdoNetSignatureAttributeProperties.MethodName));
-                }
-
-                if (callTargetType is null)
-                {
-                    hasMisconfiguredInput = true;
-                    diagnostics ??= new List<Diagnostic>();
-                    diagnostics.Add(
-                        MissingRequiredPropertyDiagnostic.Create(
-                            attributeData.ApplicationSyntaxReference?.GetSyntax(),
-                            Constants.AdoNetSignatureAttributeProperties.CallTargetType));
-                }
-
-                if (returnType is 0 && returnTypeName is null)
-                {
-                    hasMisconfiguredInput = true;
-                    diagnostics ??= new List<Diagnostic>();
-                    diagnostics.Add(
-                        MissingRequiredPropertyDiagnostic.Create(
-                            attributeData.ApplicationSyntaxReference?.GetSyntax(),
-                            Constants.AdoNetSignatureAttributeProperties.ReturnTypeName,
-                            Constants.AdoNetSignatureAttributeProperties.ReturnType));
-                }
-
-                if (hasMisconfiguredInput)
-                {
-                    continue;
-                }
-
-                signatures!.Add(
+            results ??= new();
+            results!.Add(
+                (
                     classSymbol.ToDisplayString(),
                     new AdoNetSignature(
                         targetMethodName: methodName!,
                         targetReturnType: returnTypeName,
                         targetParameterTypes: parameterTypeNames ?? Array.Empty<string>(),
                         instrumentationTypeName: callTargetType!.ToString(),
-                        callTargetIntegrationType: integrationType ?? 0,
-                        returnType: returnType ?? 0));
-            }
+                        callTargetIntegrationKind: integrationKind ?? 0,
+                        returnType: returnType ?? 0)));
         }
 
+        var errors = diagnostics is { Count: > 0 }
+                         ? new EquatableArray<DiagnosticInfo>(diagnostics.ToArray())
+                         : default;
+
+        return new Result<EquatableArray<(string, AdoNetSignature)>>(results is null ? default : new(results.ToArray()), errors);
+    }
+
+    private static Result<EquatableArray<AssemblyCallTargetDefinitionSource>> GetAssemblyCallTargetDefinitionSources(
+        GeneratorAttributeSyntaxContext ctx, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        List<DiagnosticInfo>? diagnostics = null;
+        List<AssemblyCallTargetDefinitionSource>? results = null;
+
         // Now build the adonet references
-        foreach (AttributeData attributeData in assemblyAttributes)
+        // Iterate over the GeneratorAttributeSyntaxContext.Attributes property which is pre-populated with the targeted attributes
+        foreach (AttributeData attributeData in ctx.Attributes)
         {
             var hasMisconfiguredInput = false;
-
-            if (!adoNetInstrumentationAttribute!.Equals(attributeData.AttributeClass, SymbolEqualityComparer.Default))
-            {
-                continue;
-            }
 
             string? assemblyName = null;
             string? integrationName = null;
@@ -549,33 +540,35 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 continue;
             }
 
+            var syntaxNode = attributeData.ApplicationSyntaxReference?.GetSyntax();
+
             if (string.IsNullOrEmpty(assemblyName))
             {
                 hasMisconfiguredInput = true;
-                diagnostics ??= new List<Diagnostic>();
+                diagnostics ??= new();
                 diagnostics.Add(
                     MissingRequiredPropertyDiagnostic.Create(
-                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        syntaxNode,
                         Constants.AdoNetInstrumentAttributeProperties.AssemblyName));
             }
 
             if (string.IsNullOrEmpty(typeName))
             {
                 hasMisconfiguredInput = true;
-                diagnostics ??= new List<Diagnostic>();
+                diagnostics ??= new();
                 diagnostics.Add(
                     MissingRequiredPropertyDiagnostic.Create(
-                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        syntaxNode,
                         Constants.AdoNetInstrumentAttributeProperties.TypeName));
             }
 
             if (integrationName is null)
             {
                 hasMisconfiguredInput = true;
-                diagnostics ??= new List<Diagnostic>();
+                diagnostics ??= new();
                 diagnostics.Add(
                     MissingRequiredPropertyDiagnostic.Create(
-                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        syntaxNode,
                         Constants.AdoNetInstrumentAttributeProperties.IntegrationName));
             }
 
@@ -584,68 +577,68 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
             if (minimumVersion is null)
             {
                 hasMisconfiguredInput = true;
-                diagnostics ??= new List<Diagnostic>();
+                diagnostics ??= new();
                 diagnostics.Add(
                     MissingRequiredPropertyDiagnostic.Create(
-                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        syntaxNode,
                         Constants.AdoNetInstrumentAttributeProperties.MinimumVersion));
             }
             else if (!TryGetVersion(minimumVersion, ushort.MinValue, out minVersion))
             {
                 hasMisconfiguredInput = true;
-                diagnostics ??= new List<Diagnostic>();
+                diagnostics ??= new();
                 diagnostics.Add(
                     InvalidVersionFormatDiagnostic.Create(
-                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        syntaxNode,
                         Constants.AdoNetInstrumentAttributeProperties.MinimumVersion));
             }
 
             if (maximumVersion is null)
             {
                 hasMisconfiguredInput = true;
-                diagnostics ??= new List<Diagnostic>();
+                diagnostics ??= new();
                 diagnostics.Add(
                     MissingRequiredPropertyDiagnostic.Create(
-                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        syntaxNode,
                         Constants.AdoNetInstrumentAttributeProperties.MaximumVersion));
             }
             else if (!TryGetVersion(maximumVersion, ushort.MaxValue, out maxVersion))
             {
                 hasMisconfiguredInput = true;
-                diagnostics ??= new List<Diagnostic>();
+                diagnostics ??= new();
                 diagnostics.Add(
                     InvalidVersionFormatDiagnostic.Create(
-                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        syntaxNode,
                         Constants.AdoNetInstrumentAttributeProperties.MaximumVersion));
             }
 
             if (dataReaderTypeName is null)
             {
                 hasMisconfiguredInput = true;
-                diagnostics ??= new List<Diagnostic>();
+                diagnostics ??= new();
                 diagnostics.Add(
                     MissingRequiredPropertyDiagnostic.Create(
-                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        syntaxNode,
                         Constants.AdoNetInstrumentAttributeProperties.DataReaderType));
             }
 
             if (dataReaderTaskTypeName is null)
             {
                 hasMisconfiguredInput = true;
-                diagnostics ??= new List<Diagnostic>();
+                diagnostics ??= new();
                 diagnostics.Add(
                     MissingRequiredPropertyDiagnostic.Create(
-                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        syntaxNode,
                         Constants.AdoNetInstrumentAttributeProperties.DataReaderTaskType));
             }
 
             if (signatureAttributeTypes is null or { Length: 0 })
             {
                 hasMisconfiguredInput = true;
-                diagnostics ??= new List<Diagnostic>();
+                diagnostics ??= new();
                 diagnostics.Add(
                     MissingRequiredPropertyDiagnostic.Create(
-                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        syntaxNode,
                         Constants.AdoNetInstrumentAttributeProperties.TargetMethodAttributes));
             }
 
@@ -656,41 +649,88 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
 
             foreach (var signatureAttributeName in signatureAttributeTypes!)
             {
-                if (!signatures!.TryGetValue(signatureAttributeName, out var signatureAttribute))
-                {
-                    diagnostics ??= new List<Diagnostic>();
-                    diagnostics.Add(
-                        UnknownAdoNetSignatureNameDiagnostic.Create(
-                            attributeData.ApplicationSyntaxReference?.GetSyntax(),
-                            signatureAttributeName));
-                    continue;
-                }
-
-                var returnTypeName = signatureAttribute.ReturnType switch
-                {
-                    1 => dataReaderTypeName,
-                    2 => dataReaderTaskTypeName,
-                    _ => signatureAttribute.TargetReturnType
-                };
-
+                results ??= new();
                 results.Add(
-                    new CallTargetDefinitionSource(
+                    new AssemblyCallTargetDefinitionSource(
+                        signatureAttributeName: signatureAttributeName,
                         integrationName: integrationName!,
                         assemblyName: assemblyName!,
                         targetTypeName: typeName!,
-                        targetMethodName: signatureAttribute.TargetMethodName,
-                        targetReturnType: returnTypeName!,
-                        targetParameterTypes: signatureAttribute.TargetParameterTypes,
                         minimumVersion: minVersion,
                         maximumVersion: maxVersion,
-                        instrumentationTypeName: signatureAttribute.InstrumentationTypeName,
-                        integrationType: signatureAttribute.CallTargetIntegrationType,
                         isAdoNetIntegration: true,
-                        instrumentationCategory: InstrumentationCategory.Tracing));
+                        instrumentationCategory: InstrumentationCategory.Tracing,
+                        location: LocationInfo.CreateFrom(syntaxNode),
+                        dataReaderTypeName,
+                        dataReaderTaskTypeName));
             }
         }
 
-        return (results, diagnostics as IReadOnlyList<Diagnostic> ?? Array.Empty<Diagnostic>());
+        var errors = diagnostics is { Count: > 0 }
+                         ? new EquatableArray<DiagnosticInfo>(diagnostics.ToArray())
+                         : default;
+
+        return new Result<EquatableArray<AssemblyCallTargetDefinitionSource>>(results is null ? default : new(results.ToArray()), errors);
+    }
+
+    private static Result<CallTargetDefinitionSource?> MergeAdoNetAttributes(
+        AssemblyCallTargetDefinitionSource attribute, ImmutableArray<(string ClassName, AdoNetSignature Signature)> signatures)
+    {
+        foreach (var signature in signatures)
+        {
+            if (signature.ClassName == attribute.SignatureAttributeName)
+            {
+                // found it
+
+                var returnTypeName = signature.Signature.ReturnType switch
+                {
+                    1 => attribute.DataReaderTypeName,
+                    2 => attribute.DataReaderTaskTypeName,
+                    _ => signature.Signature.TargetReturnType
+                };
+
+                var callTargetSource =
+                    new CallTargetDefinitionSource(
+                        integrationName: attribute.IntegrationName!,
+                        assemblyName: attribute.AssemblyName!,
+                        targetTypeName: attribute.TargetTypeName!,
+                        targetMethodName: signature.Signature.TargetMethodName,
+                        targetReturnType: returnTypeName!,
+                        targetParameterTypes: signature.Signature.TargetParameterTypes.AsArray() ?? [],
+                        minimumVersion: attribute.MinimumVersion,
+                        maximumVersion: attribute.MaximumVersion,
+                        instrumentationTypeName: signature.Signature.InstrumentationTypeName,
+                        integrationKind: signature.Signature.CallTargetIntegrationKind,
+                        isAdoNetIntegration: true,
+                        instrumentationCategory: InstrumentationCategory.Tracing);
+
+                return new Result<CallTargetDefinitionSource?>(callTargetSource, default);
+            }
+        }
+
+        var diagnostic = UnknownAdoNetSignatureNameDiagnostic.Create(
+            attribute.Location,
+            attribute.SignatureAttributeName);
+
+        return new Result<CallTargetDefinitionSource?>(null, new([diagnostic]));
+    }
+
+    private static void Execute(
+        ImmutableArray<CallTargetDefinitionSource> definitions,
+        ImmutableArray<CallTargetDefinitionSource> adoNetDefinitions,
+        SourceProductionContext context)
+    {
+        if (definitions.IsDefaultOrEmpty && adoNetDefinitions.IsDefaultOrEmpty)
+        {
+            return;
+        }
+
+        var allDefinitions = definitions.IsDefaultOrEmpty
+                                 ? adoNetDefinitions
+                                 : (adoNetDefinitions.IsDefaultOrEmpty ? definitions : definitions.AddRange(adoNetDefinitions));
+
+        string source = Sources.CreateCallTargetDefinitions(allDefinitions);
+        context.AddSource("InstrumentationDefinitions.g.cs", SourceText.From(source, Encoding.UTF8));
     }
 
     private static bool TryGetVersion(string version, ushort defaultValue, out (ushort Major, ushort Minor, ushort Patch) parsedVersion)
@@ -746,6 +786,11 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
             return null;
         }
 
+        if (maybeParamValues.Value.IsDefaultOrEmpty)
+        {
+            return null;
+        }
+
         var paramValues = maybeParamValues.Value;
         var values = new string[paramValues.Length];
         for (int i = 0; i < paramValues.Length; i++)
@@ -759,6 +804,11 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
     private static string[]? GetTypeArray(ImmutableArray<TypedConstant>? maybeParamValues)
     {
         if (!maybeParamValues.HasValue)
+        {
+            return null;
+        }
+
+        if (maybeParamValues.Value.IsDefaultOrEmpty)
         {
             return null;
         }

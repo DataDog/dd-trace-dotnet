@@ -8,13 +8,23 @@
 #include "IRuntimeIdStore.h"
 #include "RawCpuSample.h"
 
+
+std::vector<SampleValueType> CpuTimeProvider::SampleTypeDefinitions(
+    {
+        {"cpu", "nanoseconds"}
+    }
+    );
+
+
 CpuTimeProvider::CpuTimeProvider(
+    SampleValueTypeProvider& valueTypeProvider,
     IThreadsCpuManager* pThreadsCpuManager,
     IFrameStore* pFrameStore,
     IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore
+    IRuntimeIdStore* pRuntimeIdStore,
+    IConfiguration* pConfiguration
     )
     :
-    CollectorBase<RawCpuSample>("CpuTimeProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
+    CollectorBase<RawCpuSample>("CpuTimeProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
 {
 }

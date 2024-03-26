@@ -26,9 +26,11 @@ namespace Datadog.Trace.Propagators
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
         private readonly IContextInjector[] _injectors;
         private readonly IContextExtractor[] _extractors;
+        private readonly bool _propagationExtractFirstOnly;
 
-        internal SpanContextPropagator(IEnumerable<IContextInjector>? injectors, IEnumerable<IContextExtractor>? extractors)
+        internal SpanContextPropagator(IEnumerable<IContextInjector>? injectors, IEnumerable<IContextExtractor>? extractors, bool propagationExtractFirsValue)
         {
+            _propagationExtractFirstOnly = propagationExtractFirsValue;
             _injectors = injectors?.ToArray() ?? Array.Empty<IContextInjector>();
             _extractors = extractors?.ToArray() ?? Array.Empty<IContextExtractor>();
         }
@@ -49,18 +51,24 @@ namespace Datadog.Trace.Propagators
                         return _instance;
                     }
 
-                    var distributedContextPropagator = (IContextExtractor)new DistributedContextExtractor();
-                    var datadogPropagator = new DatadogContextPropagator();
-                    _instance ??= new SpanContextPropagator(new[] { datadogPropagator }, new[] { distributedContextPropagator, datadogPropagator });
+                    _instance = new SpanContextPropagator(
+                        new IContextInjector[] { DatadogContextPropagator.Instance },
+                        new IContextExtractor[]
+                        {
+                            DistributedContextExtractor.Instance,
+                            DatadogContextPropagator.Instance
+                        },
+                        false);
+
                     return _instance;
                 }
             }
 
             internal set
             {
-                if (value is null)
+                if (value == null!)
                 {
-                    ThrowHelper.ThrowArgumentNullException("value");
+                    ThrowHelper.ThrowArgumentNullException(nameof(value));
                 }
 
                 lock (GlobalLock)
@@ -93,9 +101,9 @@ namespace Datadog.Trace.Propagators
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
         public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
         {
-            if (context is null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
-            if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
-            if (setter is null) { ThrowHelper.ThrowArgumentNullException(nameof(setter)); }
+            if (context == null!) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
+            if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+            if (setter == null!) { ThrowHelper.ThrowArgumentNullException(nameof(setter)); }
 
             Inject(context, carrier, new ActionSetter<TCarrier>(setter));
         }
@@ -103,8 +111,8 @@ namespace Datadog.Trace.Propagators
         internal void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
-            if (context is null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
-            if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+            if (context == null!) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
+            if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
             for (var i = 0; i < _injectors.Length; i++)
             {
@@ -133,8 +141,8 @@ namespace Datadog.Trace.Propagators
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="carrier"/>.</returns>
         public SpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
-            if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
-            if (getter is null) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
+            if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+            if (getter == null!) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
 
             return Extract(carrier, new FuncGetter<TCarrier>(getter));
         }
@@ -144,15 +152,33 @@ namespace Datadog.Trace.Propagators
         {
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
+            SpanContext? localSpanContext = null;
+
             for (var i = 0; i < _extractors.Length; i++)
             {
                 if (_extractors[i].TryExtract(carrier, carrierGetter, out var spanContext))
                 {
-                    return spanContext;
+                    if (_propagationExtractFirstOnly)
+                    {
+                        return spanContext;
+                    }
+
+                    if (localSpanContext is not null && spanContext is not null)
+                    {
+                        if (localSpanContext.RawTraceId == spanContext.RawTraceId)
+                        {
+                            localSpanContext.AdditionalW3CTraceState += spanContext.AdditionalW3CTraceState;
+                        }
+                    }
+
+                    if (localSpanContext is null)
+                    {
+                        localSpanContext = spanContext;
+                    }
                 }
             }
 
-            return null;
+            return localSpanContext;
         }
 
         /// <summary>
@@ -170,14 +196,30 @@ namespace Datadog.Trace.Propagators
             return Extract(serializedSpanContext, default(ReadOnlyDictionaryGetter));
         }
 
-        public IEnumerable<KeyValuePair<string, string?>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
-            where T : IHeadersCollection
+        public void AddHeadersToSpanAsTags<THeaders>(ISpan span, THeaders headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
+            where THeaders : IHeadersCollection
         {
-            return ExtractHeaderTags(headers, headerToTagMap, defaultTagPrefix, string.Empty);
+            var processor = new SpanTagHeaderTagProcessor(span);
+            ExtractHeaderTags(ref processor, headers, headerToTagMap, defaultTagPrefix, string.Empty);
         }
 
-        public IEnumerable<KeyValuePair<string, string?>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix, string useragent)
-            where T : IHeadersCollection
+        public void AddHeadersToSpanAsTags<THeaders>(ISpan span, THeaders headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix, string useragent)
+            where THeaders : IHeadersCollection
+        {
+            var processor = new SpanTagHeaderTagProcessor(span);
+            ExtractHeaderTags(ref processor, headers, headerToTagMap, defaultTagPrefix, useragent);
+        }
+
+        internal void ExtractHeaderTags<THeaders, TProcessor>(ref TProcessor processor, THeaders headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
+            where THeaders : IHeadersCollection
+            where TProcessor : struct, IHeaderTagProcessor
+        {
+            ExtractHeaderTags(ref processor, headers, headerToTagMap, defaultTagPrefix, string.Empty);
+        }
+
+        internal void ExtractHeaderTags<THeaders, TProcessor>(ref TProcessor processor, THeaders headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix, string useragent)
+            where THeaders : IHeadersCollection
+            where TProcessor : struct, IHeaderTagProcessor
         {
             foreach (var headerNameToTagName in headerToTagMap)
             {
@@ -203,7 +245,7 @@ namespace Datadog.Trace.Propagators
                 // Tag name is normalized during Tracer instantiation so use as-is
                 if (!string.IsNullOrWhiteSpace(providedTagName))
                 {
-                    yield return new KeyValuePair<string, string?>(providedTagName!, headerValue);
+                    processor.ProcessTag(providedTagName!, headerValue);
                 }
                 else
                 {
@@ -222,9 +264,31 @@ namespace Datadog.Trace.Propagators
 
                     if (tagNameResult != null)
                     {
-                        yield return new KeyValuePair<string, string?>(tagNameResult, headerValue);
+                        processor.ProcessTag(tagNameResult, headerValue);
                     }
                 }
+            }
+        }
+
+#pragma warning disable SA1201
+        public interface IHeaderTagProcessor
+#pragma warning restore SA1201
+        {
+            void ProcessTag(string key, string? value);
+        }
+
+        public readonly struct SpanTagHeaderTagProcessor : IHeaderTagProcessor
+        {
+            private readonly ISpan _span;
+
+            public SpanTagHeaderTagProcessor(ISpan span)
+            {
+                _span = span;
+            }
+
+            public void ProcessTag(string key, string? value)
+            {
+                _span.SetTag(key, value);
             }
         }
 

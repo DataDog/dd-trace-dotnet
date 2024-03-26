@@ -63,6 +63,24 @@ scenarios:
         serverPort: 5000
         path: /hello
 
+  profiler_walltime:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_PROFILING_ENABLED: 1
+        COMPlus_EnableDiagnostics: 1
+        DD_PROFILING_WALLTIME_ENABLED: 1
+        DD_PROFILING_CPU_ENABLED: 0
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello
+
   profiler_exceptions:
     application:
       job: server
@@ -87,6 +105,7 @@ scenarios:
         COR_ENABLE_PROFILING: 1
         CORECLR_ENABLE_PROFILING: 1
         DD_PROFILING_ENABLED: 1
+        DD_PROFILING_WALLTIME_ENABLED: 0
         DD_PROFILING_CPU_ENABLED: 1
         COMPlus_EnableDiagnostics: 1
     load:

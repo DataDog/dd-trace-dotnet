@@ -3,20 +3,26 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+
 namespace Datadog.Trace
 {
     /// <summary>
     /// Standard span tags used by integrations.
     /// </summary>
-    public static class Tags
+    public static partial class Tags
     {
         /// <summary>
-        /// The environment of the profiled service.
+        /// The environment of the instrumented service. Its value is usually constant for the lifetime of a process,
+        /// but can technically change for each trace if the user sets it manually.
+        /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.Environment"/>.
         /// </summary>
         public const string Env = "env";
 
         /// <summary>
-        /// The version of the profiled service.
+        /// The version of the instrumented service. Its value is usually constant for the lifetime of a process,
+        /// but can technically change for each trace if the user sets it manually.
+        /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.ServiceVersion"/>.
         /// </summary>
         public const string Version = "version";
 
@@ -58,26 +64,6 @@ namespace Datadog.Trace
         public const string HttpStatusCode = "http.status_code";
 
         /// <summary>
-        /// The end point requested
-        /// </summary>
-        internal const string HttpEndpoint = "http.endpoint";
-
-        /// <summary>
-        /// Only when span.kind: server. The matched route(path template).
-        /// </summary>
-        internal const string HttpRoute = "http.route";
-
-        /// <summary>
-        /// Only when span.kind: server. The user agent header received with the request.
-        /// </summary>
-        internal const string HttpUserAgent = "http.useragent";
-
-        /// <summary>
-        /// The IP address of the original client behind all proxies, if known (e.g. from X-Forwarded-For).
-        /// </summary>
-        internal const string HttpClientIp = "http.client_ip";
-
-        /// <summary>
         /// The error message of an exception
         /// </summary>
         public const string ErrorMsg = "error.msg";
@@ -116,6 +102,106 @@ namespace Datadog.Trace
         /// The number of rows returned by a query
         /// </summary>
         public const string SqlRows = "sql.rows";
+
+        /// <summary>
+        /// The service name of a remote service.
+        /// </summary>
+        public const string PeerService = "peer.service";
+
+        /// <summary>
+        /// The orignal peer service name before remapping
+        /// </summary>
+        internal const string PeerServiceRemappedFrom = "peer.service.remapped_from";
+
+        /// <summary>
+        /// The name of the attribute that determined the peer.service tag value. Expected values are:
+        /// <ul>
+        ///   <li>{source_attribute} when the tag was set to a default value, using a defined precursor attribute</li>
+        ///   <li>peer.service when the tag was set by the user</li>
+        /// </ul>
+        /// </summary>
+        internal const string PeerServiceSource = "_dd.peer.service.source";
+
+        /// <summary>
+        /// The hostname of a outgoing server connection.
+        /// </summary>
+        public const string OutHost = "out.host";
+
+        /// <summary>
+        /// Remote hostname.
+        /// </summary>
+        public const string PeerHostname = "peer.hostname";
+
+        /// <summary>
+        /// The port of a outgoing server connection.
+        /// </summary>
+        public const string OutPort = "out.port";
+
+        /// <summary>
+        /// The size of the message.
+        /// </summary>
+        public const string MessageSize = "message.size";
+
+        /// <summary>
+        /// The sampling priority for the entire trace.
+        /// </summary>
+        public const string SamplingPriority = "sampling.priority";
+
+        /// <summary>
+        /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserKeep"/>.
+        /// </summary>
+        public const string ManualKeep = "manual.keep";
+
+        /// <summary>
+        /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserReject"/>.
+        /// </summary>
+        public const string ManualDrop = "manual.drop";
+
+        /// <summary>
+        /// Language tag, applied to all spans that are .NET runtime (e.g. ASP.NET).
+        /// This tag is added during MessagePack serialization. It's value is always "dotnet".
+        /// </summary>
+        public const string Language = "language";
+
+        /// <summary>
+        /// Pseudo-tag used to expose the complete trace id as a hex string.
+        /// The string will have length 16 for 64-bit trace ids and length 32 for 128-bit trace ids.
+        /// </summary>
+        internal const string TraceId = "trace.id";
+
+        /// <summary>
+        /// The git commit hash of the instrumented service. Its value is usually constant for the lifetime of a process,
+        /// but can technically change for each trace if the user sets it manually.
+        /// This tag is added during MessagePack serialization using the value from <see cref="Datadog.Trace.Agent.MessagePack.TraceChunkModel.GitCommitSha"/>.
+        /// </summary>
+        internal const string GitCommitSha = "_dd.git.commit.sha";
+
+        /// <summary>
+        /// The git repository URL of the instrumented service. Its value is usually constant for the lifetime of a process,
+        /// but can technically change for each trace if the user sets it manually.
+        /// This tag is added during MessagePack serialization using the value from <see cref="Datadog.Trace.Agent.MessagePack.TraceChunkModel.GitRepositoryUrl"/>.
+        /// </summary>
+        internal const string GitRepositoryUrl = "_dd.git.repository_url";
+
+        /// <summary>
+        /// The end point requested
+        /// </summary>
+        internal const string HttpEndpoint = "http.endpoint";
+
+        /// <summary>
+        /// Only when span.kind: server. The matched route(path template).
+        /// </summary>
+        internal const string HttpRoute = "http.route";
+
+        /// <summary>
+        /// Only when span.kind: server. The user agent header received with the request.
+        /// </summary>
+        internal const string HttpUserAgent = "http.useragent";
+
+        /// <summary>
+        /// The IP address of the original client behind all proxies, if known (e.g. from X-Forwarded-For).
+        /// </summary>
+        internal const string HttpClientIp = "http.client_ip";
 
         /// <summary>
         /// The ASP.NET routing template.
@@ -168,16 +254,6 @@ namespace Datadog.Trace
         internal const string AspNetCoreEndpoint = "aspnet_core.endpoint";
 
         /// <summary>
-        /// The hostname of a outgoing server connection.
-        /// </summary>
-        public const string OutHost = "out.host";
-
-        /// <summary>
-        /// The port of a outgoing server connection.
-        /// </summary>
-        public const string OutPort = "out.port";
-
-        /// <summary>
         /// The raw command sent to Redis.
         /// </summary>
         internal const string RedisRawCommand = "redis.raw_command";
@@ -208,6 +284,26 @@ namespace Datadog.Trace
         internal const string GraphQLSource = "graphql.source";
 
         /// <summary>
+        /// The message source name.
+        /// </summary>
+        internal const string MessagingSourceName = "messaging.source.name";
+
+        /// <summary>
+        /// The message destination name.
+        /// </summary>
+        internal const string MessagingDestinationName = "messaging.destination.name";
+
+        /// <summary>
+        /// The message destination name, using legacy naming.
+        /// </summary>
+        internal const string LegacyMessageBusDestination = "message_bus.destination";
+
+        /// <summary>
+        /// The messaging operation.
+        /// </summary>
+        internal const string MessagingOperation = "messaging.operation";
+
+        /// <summary>
         /// The AMQP method.
         /// </summary>
         internal const string AmqpCommand = "amqp.command";
@@ -233,6 +329,11 @@ namespace Datadog.Trace
         internal const string AmqpDeliveryMode = "amqp.delivery_mode";
 
         /// <summary>
+        /// The bootstrap servers as defined in producer or consumer config
+        /// </summary>
+        internal const string KafkaBootstrapServers = "messaging.kafka.bootstrap.servers";
+
+        /// <summary>
         /// The partition associated with a record
         /// </summary>
         internal const string KafkaPartition = "kafka.partition";
@@ -253,11 +354,6 @@ namespace Datadog.Trace
         internal const string KafkaTombstone = "kafka.tombstone";
 
         /// <summary>
-        /// The size of the message.
-        /// </summary>
-        public const string MessageSize = "message.size";
-
-        /// <summary>
         /// The agent that instrumented the associated AWS SDK span.
         /// </summary>
         internal const string AwsAgentName = "aws.agent";
@@ -270,7 +366,13 @@ namespace Datadog.Trace
         /// <summary>
         /// The region associated with the AWS SDK span.
         /// </summary>
+        [Obsolete("AwsRegion is a duplicate. Use Region instead.")]
         internal const string AwsRegion = "aws.region";
+
+        /// <summary>
+        /// The region associated with the span.
+        /// </summary>
+        internal const string Region = "region";
 
         /// <summary>
         /// The request ID associated with the AWS SDK span.
@@ -280,12 +382,40 @@ namespace Datadog.Trace
         /// <summary>
         /// The service associated with the AWS SDK span.
         /// </summary>
+        [Obsolete("AwsServiceName is a duplicate. Use AwsService instead.")]
         internal const string AwsServiceName = "aws.service";
+
+        /// <summary>
+        /// The AWS service associated with the AWS SDK span.
+        /// </summary>
+        internal const string AwsService = "aws_service";
 
         /// <summary>
         /// The queue name associated with the AWS SDK span.
         /// </summary>
+        [Obsolete("AwsTopicName is a duplicate. Use TopicName instead.")]
+        internal const string AwsTopicName = "aws.topic.name";
+
+        /// <summary>
+        /// The topic name associated with the AWS SDK SNS span.
+        /// </summary>
+        internal const string TopicName = "topicname";
+
+        /// <summary>
+        /// The queue name associated with the AWS SDK SQS span.
+        /// </summary>
+        [Obsolete("AwsQueueName is a duplicate. Use QueueName instead.")]
         internal const string AwsQueueName = "aws.queue.name";
+
+        /// <summary>
+        /// The queue name associated with the span.
+        /// </summary>
+        internal const string QueueName = "queuename";
+
+        /// <summary>
+        /// The topic arn associated with the AWS SDK span.
+        /// </summary>
+        internal const string AwsTopicArn = "aws.topic.arn";
 
         /// <summary>
         /// The queue URL associated with the AWS SDK span.
@@ -293,29 +423,19 @@ namespace Datadog.Trace
         internal const string AwsQueueUrl = "aws.queue.url";
 
         /// <summary>
-        /// The sampling priority for the entire trace.
+        /// The stream name associated with the AWS SDK Kinesis span.
         /// </summary>
-        public const string SamplingPriority = "sampling.priority";
+        internal const string StreamName = "streamname";
 
         /// <summary>
-        /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserKeep"/>.
+        /// The table name associated with the AWS SDK DynamoDB span.
         /// </summary>
-        public const string ManualKeep = "manual.keep";
-
-        /// <summary>
-        /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserReject"/>.
-        /// </summary>
-        public const string ManualDrop = "manual.drop";
+        internal const string TableName = "tablename";
 
         /// <summary>
         /// Configures Trace Analytics.
         /// </summary>
         internal const string Analytics = "_dd1.sr.eausr";
-
-        /// <summary>
-        /// Language tag, applied to root spans that are .NET runtime (e.g., ASP.NET)
-        /// </summary>
-        public const string Language = "language";
 
         /// <summary>
         /// The runtime family tag, it will be placed on the service entry span, the first span opened for a
@@ -401,7 +521,8 @@ namespace Datadog.Trace
         internal const string AzureFunctionBindingSource = "aas.function.binding";
 
         /// <summary>
-        /// Configures the origin of the trace
+        /// Configures the origin of the trace. This tag is added during MessagePack serialization
+        /// using the value from <see cref="TraceContext.Origin"/>.
         /// </summary>
         internal const string Origin = "_dd.origin";
 
@@ -478,6 +599,16 @@ namespace Datadog.Trace
         internal const string ActorIp = "actor.ip";
 
         /// <summary>
+        /// Should contain the vulnerability json
+        /// </summary>
+        internal const string IastJson = "_dd.iast.json";
+
+        /// <summary>
+        /// Indicates at the end of a request if IAST analisys has been performned
+        /// </summary>
+        internal const string IastEnabled = "_dd.iast.enabled";
+
+        /// <summary>
         /// The ip as reported by the framework.
         /// </summary>
         internal const string NetworkClientIp = "network.client.ip";
@@ -498,9 +629,14 @@ namespace Datadog.Trace
 
         internal const string AerospikeUserKey = "aerospike.userkey";
 
+        internal const string CouchbaseSeedNodes = "db.couchbase.seed.nodes";
         internal const string CouchbaseOperationCode = "couchbase.operation.code";
         internal const string CouchbaseOperationBucket = "couchbase.operation.bucket";
         internal const string CouchbaseOperationKey = "couchbase.operation.key";
+
+        internal const string RpcMethod = "rpc.method";
+        internal const string RpcService = "rpc.service";
+        internal const string RpcSystem = "rpc.system";
 
         internal const string GrpcMethodKind = "grpc.method.kind";
         internal const string GrpcMethodPath = "grpc.method.path";
@@ -509,7 +645,39 @@ namespace Datadog.Trace
         internal const string GrpcMethodName = "grpc.method.name";
         internal const string GrpcStatusCode = "grpc.status.code";
 
+        // general Service Fabric
+        internal const string ServiceFabricApplicationId = "service-fabric.application-id";
+        internal const string ServiceFabricApplicationName = "service-fabric.application-name";
+        internal const string ServiceFabricPartitionId = "service-fabric.partition-id";
+        internal const string ServiceFabricNodeId = "service-fabric.node-id";
+        internal const string ServiceFabricNodeName = "service-fabric.node-name";
+        internal const string ServiceFabricServiceName = "service-fabric.service-name";
+
+        // Service Remoting
+        internal const string ServiceRemotingUri = "service-fabric.service-remoting.uri";
+        internal const string ServiceRemotingServiceName = "service-fabric.service-remoting.service";
+        internal const string ServiceRemotingMethodName = "service-fabric.service-remoting.method-name";
+        internal const string ServiceRemotingMethodId = "service-fabric.service-remoting.method-id";
+        internal const string ServiceRemotingInterfaceId = "service-fabric.service-remoting.interface-id";
+        internal const string ServiceRemotingInvocationId = "service-fabric.service-remoting.invocation-id";
+
+        internal const string ProcessEnvironmentVariables = "cmd.environment_variables";
+        internal const string ProcessComponent = "cmd.component";
+        internal const string ProcessCommandExec = "cmd.exec";
+        internal const string ProcessCommandShell = "cmd.shell";
+        internal const string ProcessTruncated = "cmd.truncated";
+
         internal const string TagPropagationError = "_dd.propagation_error";
+
+        /// <summary>
+        /// Marks a span as injected when DBM comment has the traceParent on it
+        /// </summary>
+        internal const string DbmTraceInjected = "_dd.dbm_trace_injected";
+
+        /// <summary>
+        /// Holds the original value for Service when Service is overriden after span creation
+        /// </summary>
+        internal const string BaseService = "_dd.base_service";
 
         internal static class User
         {
@@ -523,7 +691,21 @@ namespace Datadog.Trace
 
         internal static class Propagated
         {
+            /// <summary>
+            /// Tag used to propagate the sampling mechanism used to make a sampling decision.
+            /// See <see cref="Datadog.Trace.Sampling.SamplingMechanism"/>.
+            /// </summary>
+            /// <remarks>
+            /// This tag was originally meant to carry the name of the service that made the sampling decision,
+            /// hence its name: "decision maker".
+            /// </remarks>
             internal const string DecisionMaker = "_dd.p.dm";
+
+            /// <summary>
+            /// Tag used to propagate the higher-order 64 bits of a 128-bit trace id encoded as a
+            /// lower-case hexadecimal string with no zero-padding or `0x` prefix.
+            /// </summary>
+            internal const string TraceIdUpper = "_dd.p.tid";
         }
     }
 }

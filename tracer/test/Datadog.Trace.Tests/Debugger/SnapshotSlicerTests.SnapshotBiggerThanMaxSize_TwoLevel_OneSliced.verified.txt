@@ -1,0 +1,26 @@
+{
+  entry: {},
+  return: {
+    locals: {
+      local0: {
+        fields: {
+          Class: {
+            isNull: true,
+            type: VeryComplexClass
+          },
+          ComplexClass: {
+            fields: {
+              SimpleClass: {
+                pruned: true
+              }
+            },
+            type: ComplexClass,
+            value: ComplexClass
+          }
+        },
+        type: VeryComplexClass,
+        value: VeryComplexClass
+      }
+    }
+  }
+}

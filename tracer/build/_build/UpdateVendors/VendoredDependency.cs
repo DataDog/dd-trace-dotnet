@@ -44,16 +44,16 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "MessagePack",
-                version: "1.9.3",
-                downloadUrl: "https://github.com/neuecc/MessagePack-CSharp/archive/v1.9.3.zip",
-                pathToSrc: new[] { "MessagePack-CSharp-1.9.3", "src", "MessagePack" },
+                version: "1.9.11",
+                downloadUrl: "https://github.com/neuecc/MessagePack-CSharp/archive/refs/tags/v1.9.11.zip",
+                pathToSrc: new[] { "MessagePack-CSharp-1.9.11", "src", "MessagePack" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "MessagePack"));
 
             Add(
                 libraryName: "Newtonsoft.Json",
-                version: "13.0.1",
-                downloadUrl: "https://github.com/JamesNK/Newtonsoft.Json/archive/13.0.1.zip",
-                pathToSrc: new[] { "Newtonsoft.Json-13.0.1", "src", "Newtonsoft.Json" },
+                version: "13.0.2",
+                downloadUrl: "https://github.com/JamesNK/Newtonsoft.Json/archive/13.0.2.zip",
+                pathToSrc: new[] { "Newtonsoft.Json-13.0.2", "src", "Newtonsoft.Json" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Newtonsoft.Json", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma),
                 relativePathsToExclude: new[] { "Utilities/NullableAttributes.cs" });
 
@@ -64,7 +64,6 @@ namespace UpdateVendors
                 pathToSrc: new[] { "dnlib-3.4.0", "src" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "dnlib"));
 
-
             Add(
                 libraryName: "Datadog.Sketches",
                 version: "1.0.0",
@@ -74,14 +73,56 @@ namespace UpdateVendors
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Datadog.Sketches", AddNullableDirectiveTransform));
 
             Add(
-                libraryName: "IndieSystem.Text.RegularExpressions",
-                version: "0.6",
-                downloadUrl: "https://github.com/robertpi/IndieRegex/archive/refs/tags/v0.6.zip",
-                pathToSrc: new[] { "IndieRegex-0.6", "src" },
-                // Perform standard CS file transform with additional '#nullable enable' directive at the beginning of the files, since the vendored project was built with <Nullable>enable</Nullable>
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "IndieSystem.Text.RegularExpressions",
-                    AddIfNetcoreapp31OrGreater, AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma),
-                relativePathsToExclude: new[] { "additional/HashCode.cs", "SR.resx" });
+                libraryName: "System.Collections.Immutable",
+                version: "7.0.0",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
+                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Collections.Immutable" },
+                transform: filePath =>
+                {
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Collections.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+                });
+
+            Add(
+                libraryName: "System.Memory",
+                version: "4.5.5",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
+                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Memory" },
+                transform: filePath =>
+                {
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+                });
+
+            Add(
+                libraryName: "System.Private.CoreLib",
+                version: "1.0.0",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
+                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Private.CoreLib" },
+                transform: filePath =>
+                {
+                    
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Diagnostics", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "FxResources", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+                });
+
+            Add(
+                libraryName: "System.Reflection.Metadata",
+                version: "7.0.2",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
+                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Reflection.Metadata" },
+                transform: filePath =>
+                {
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Reflection.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Collections.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+                });
+
+            Add(
+                libraryName: "System.Runtime.CompilerServices.Unsafe",
+                version: "1.0.0",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
+                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Runtime.CompilerServices.Unsafe" },
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma));
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -199,13 +240,52 @@ namespace UpdateVendors
                             }
                         }
 
+                        // Special MessagePack processing
+                        if (originalNamespace.StartsWith("MessagePack"))
+                        {
+                            var fileName = Path.GetFileNameWithoutExtension(filePath);
+                            if (fileName == "StandardClassLibraryFormatter")
+                            {
+                                builder.Replace("    public sealed class ValueTaskFormatter<T>", "#if NETCOREAPP\n    public sealed class ValueTaskFormatter<T>");
+                                builder.Replace("    }\n\n#endif\n}", "    }\n#endif\n\n#endif\n}");
+                            }
+                            else if (fileName == "ValueTupleFormatter")
+                            {
+                                builder.Replace("#if NETSTANDARD || NETFRAMEWORK", "#if NETSTANDARD || NETCOREAPP");
+                            }
+                            else if (fileName == "DynamicAssembly")
+                            {
+                                builder.Replace("#if NETSTANDARD || NETFRAMEWORK", "#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP");
+                            }
+                            else if (fileName == "LZ4Codec.Helper")
+                            {
+                                builder.Replace("#if NETSTANDARD || NETFRAMEWORK", "#if ENABLE_UNSAFE_MSGPACK");
+                            }
+                            else if (fileName == "StandardResolver")
+                            {
+                                builder.Replace("#if !(NETSTANDARD || NETFRAMEWORK)", "#if !(NETSTANDARD || NETFRAMEWORK || NETCOREAPP)");
+                            }
+                            else if (fileName == "DynamicGenericResolver")
+                            {
+                                builder.Replace("                // ValueTask", "#if NETCOREAPP\n                // ValueTask");
+                                builder.Replace("                // ValueTuple", "#if NETCOREAPP\n                // ValueTuple");
+                                builder.Replace("                // Tuple", "#endif\n                // Tuple");
+                                builder.Replace("                // ArraySegement", "#endif\n                // ArraySegment");
+                                builder.Replace("GetTypeInfo().IsConstructedGenericType()", "IsConstructedGenericType");
+                            }
+
+                            builder.Replace("#if NETSTANDARD || NETFRAMEWORK\n        [System.Runtime.CompilerServices.MethodImpl", "#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP\n        [System.Runtime.CompilerServices.MethodImpl");
+                        }
+
                         // Debugger.Break() is a dangerous method that may crash the process. We don't
                         // want to take any risk of calling it, ever, so replace it with a noop.
                         builder.Replace("Debugger.Break();", "{}");
 
+                        string datadogVendoredNamespace = originalNamespace.StartsWith("System") ? "Datadog.Trace.VendoredMicrosoftCode." : "Datadog.Trace.Vendors.";
+
                         // Prevent namespace conflicts
-                        builder.Replace($"using {originalNamespace}", $"using Datadog.Trace.Vendors.{originalNamespace}");
-                        builder.Replace($"namespace {originalNamespace}", $"namespace Datadog.Trace.Vendors.{originalNamespace}");
+                        builder.Replace($"using {originalNamespace}", $"using {datadogVendoredNamespace}{originalNamespace}");
+                        builder.Replace($"namespace {originalNamespace}", $"namespace {datadogVendoredNamespace}{originalNamespace}");
                         builder.Replace($"[CLSCompliant(false)]", $"// [CLSCompliant(false)]");
 
                         // Fix namespace conflicts in `using alias` directives. For example, transform:
@@ -216,8 +296,7 @@ namespace UpdateVendors
                             Regex.Replace(
                                 builder.ToString(),
                                 @$"using\s+(\S+)\s+=\s+{Regex.Escape(originalNamespace)}.(.*);",
-                                match => $"using {match.Groups[1].Value} = Datadog.Trace.Vendors.{originalNamespace}.{match.Groups[2].Value};");
-
+                                match => $"using {match.Groups[1].Value} = {datadogVendoredNamespace}{originalNamespace}.{match.Groups[2].Value};");
 
 
                         // Don't expose anything we don't intend to

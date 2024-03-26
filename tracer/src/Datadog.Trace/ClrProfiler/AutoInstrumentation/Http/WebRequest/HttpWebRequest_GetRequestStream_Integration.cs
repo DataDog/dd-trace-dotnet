@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         MethodName = MethodName,
         ReturnTypeName = ClrNames.Stream,
         MinimumVersion = WebRequestCommon.Major4,
-        MaximumVersion = WebRequestCommon.Major6,
+        MaximumVersion = WebRequestCommon.Major8,
         IntegrationName = WebRequestCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -50,7 +50,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                 if (tracer.Settings.IsIntegrationEnabled(WebRequestCommon.IntegrationId))
                 {
-                    var span = ScopeFactory.CreateInactiveOutboundHttpSpan(tracer, request.Method, request.RequestUri, WebRequestCommon.IntegrationId, out _, traceId: null, spanId: null, startTime: null, addToTraceContext: false);
+                    var span = ScopeFactory.CreateInactiveOutboundHttpSpan(
+                        tracer,
+                        request.Method,
+                        request.RequestUri,
+                        WebRequestCommon.IntegrationId,
+                        out _,
+                        traceId: TraceId.Zero,
+                        spanId: 0,
+                        startTime: null,
+                        addToTraceContext: false);
 
                     if (span?.Context != null)
                     {
@@ -58,7 +67,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         // The expected sequence of calls is GetRequestStream -> GetResponse. Headers can't be modified after calling GetRequestStream.
                         // At the same time, we don't want to set an active scope now, because it's possible that GetResponse will never be called.
                         // Instead, we generate a spancontext and inject it in the headers. GetResponse will fetch them and create an active scope with the right id.
+                        // Additionally, add the request headers to a cache to indicate that distributed tracing headers were
+                        // added by us, not the application
                         SpanContextPropagator.Instance.Inject(span.Context, request.Headers.Wrap());
+                        HeadersInjectedCache.SetInjectedHeaders(request.Headers);
                     }
                 }
             }

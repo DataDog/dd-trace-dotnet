@@ -1,20 +1,43 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿  <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
+    <DebugType>None</DebugType>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MessagePack" Version="1.9.11" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.RazorPages" Version="2.1.1" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="7.0.5" />
+    <PackageReference Include="MongoDB.Driver" Version="2.8.0" />
+    <PackageReference Include="Moq" Version="4.16.0" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.5" />
+    <PackageReference Include="SQLitePCLRaw.core" Version="2.1.5" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
+    <PackageReference Include="System.DirectoryServices" Version="5.0.0" />
+    <PackageReference Include="System.DirectoryServices.Protocols" Version="5.0.0" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="5.0.0" />
   </ItemGroup>
 
   <!--Files shared with AspNetCore5 -->
   <ItemGroup>
     <Compile Include="..\Samples.Security.AspNetCore5\Controllers\**\*.*" Link="Controllers\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\Samples.Security.AspNetCore5\Data\**\*.cs" Link="Controllers\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Samples.Security.AspNetCore5\Data\**\*.cs" Link="Data\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Samples.Security.AspNetCore5\Models\**\*.*" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Samples.Security.AspNetCore5\IdentityStores\**\*.*" Link="IdentityStores\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\..\src\Datadog.Trace.Annotations\TraceAttribute.cs" Link="TraceAttribute.cs" />
+    <Compile Include="..\Samples.Security.AspNetCore5\Extensions.cs" Link="%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="..\Samples.Security.AspNetCore5\Data\**\*.db-*" Link="Data\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="..\Samples.Security.AspNetCore5\Data\**\*.db" Link="Data\%(RecursiveDir)%(Filename)%(Extension)" />
     <Content Include="..\Samples.Security.AspNetCore5\Views\**\*.*" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Update="appsettings.Development.json">
+      <DependentUpon>appsettings.json</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 </Project>

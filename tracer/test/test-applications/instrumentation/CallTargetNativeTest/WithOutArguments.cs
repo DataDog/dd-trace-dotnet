@@ -4,7 +4,7 @@ namespace CallTargetNativeTest;
 
 partial class Program
 {
-    private static void WithOutArguments()
+    private static void WithOutArguments(bool checkInstrumented = true)
     {
         var wOutArg = new WithOutArguments();
         Console.WriteLine($"{typeof(WithOutArguments).FullName}.VoidMethod");
@@ -17,7 +17,7 @@ partial class Program
             {
                 throw new Exception("Error modifying string value.");
             }
-        });
+        }, checkInstrumented);
         RunMethod(() =>
         {
             string strValue;
@@ -34,7 +34,7 @@ partial class Program
             {
                 throw new Exception("Error modifying int value.");
             }
-        });
+        }, checkInstrumented);
     }
 
     private static void ParentWithOutArguments()

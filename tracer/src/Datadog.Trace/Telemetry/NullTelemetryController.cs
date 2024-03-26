@@ -4,10 +4,8 @@
 // </copyright>
 
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry
 {
@@ -27,11 +25,7 @@ namespace Datadog.Trace.Telemetry
         {
         }
 
-        public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName, AzureAppServices appServicesMetadata)
-        {
-        }
-
-        public void RecordSecuritySettings(SecuritySettings settings)
+        public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName)
         {
         }
 
@@ -39,12 +33,11 @@ namespace Datadog.Trace.Telemetry
         {
         }
 
-        public Task DisposeAsync(bool sendAppClosingTelemetry)
+        public void Start()
         {
-            return Task.CompletedTask;
         }
 
-        public void Start()
+        public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error)
         {
         }
 
@@ -52,5 +45,7 @@ namespace Datadog.Trace.Telemetry
         {
             return Task.CompletedTask;
         }
+
+        public Task DumpTelemetry(string filePath) => Task.CompletedTask;
     }
 }

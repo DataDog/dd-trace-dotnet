@@ -19,11 +19,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         internal static void AddHeaderTagsFromHttpResponse(System.Web.HttpContext httpContext, Scope scope)
         {
-            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders && !Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty())
+            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders && !Tracer.Instance.Settings.HeaderTagsInternal.IsNullOrEmpty())
             {
                 try
                 {
-                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
                 catch (PlatformNotSupportedException ex)
                 {

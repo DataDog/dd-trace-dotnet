@@ -58,6 +58,7 @@ namespace Samples.ServiceStackRedis
             Console.WriteLine($"Testing ServiceStack.Redis: {prefix}");
 
             // clear
+            redis.ChangeDb(2);
             redis.Set($"{prefix}INCR", 0);
 
             RunCommands(new TupleList<string, Func<object>>

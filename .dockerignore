@@ -2,7 +2,7 @@ tracer/test/
 tracer/deploy/
 
 .circleci/
-.git/
+
 .github/
 **/.vs/
 **/.vscode/

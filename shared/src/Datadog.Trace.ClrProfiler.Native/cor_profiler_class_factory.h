@@ -21,8 +21,8 @@ public:
     CorProfilerClassFactory(datadog::shared::nativeloader::IDynamicDispatcher* dispatcher);
     virtual ~CorProfilerClassFactory();
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
-    ULONG STDMETHODCALLTYPE AddRef(void) override;
-    ULONG STDMETHODCALLTYPE Release(void) override;
+    ULONG STDMETHODCALLTYPE AddRef() override;
+    ULONG STDMETHODCALLTYPE Release() override;
     HRESULT STDMETHODCALLTYPE CreateInstance(IUnknown* pUnkOuter, REFIID riid, void** ppvObject) override;
     HRESULT STDMETHODCALLTYPE LockServer(BOOL fLock) override;
 };

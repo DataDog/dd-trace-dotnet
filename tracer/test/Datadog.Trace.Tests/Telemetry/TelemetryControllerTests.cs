@@ -1,4 +1,4 @@
-// <copyright file="TelemetryControllerTests.cs" company="Datadog">
+﻿// <copyright file="TelemetryControllerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,180 +6,407 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Collectors;
+using Datadog.Trace.Telemetry.Transports;
+using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
 
-namespace Datadog.Trace.Tests.Telemetry
+namespace Datadog.Trace.Tests.Telemetry;
+
+public class TelemetryControllerTests
 {
-    public class TelemetryControllerTests : IDisposable
+    private readonly TimeSpan _flushInterval = TimeSpan.FromMilliseconds(100);
+    // private readonly TimeSpan _heartbeatInterval = TimeSpan.FromMilliseconds(10_000); // We don't need them for most tests
+    private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(60_000); // definitely should receive telemetry by now
+
+    [Fact]
+    public async Task TelemetryControllerShouldSendTelemetry()
     {
-        private static readonly AzureAppServices EmptyAasMetadata = new(new Dictionary<string, string>());
-        private readonly TimeSpan _refreshInterval = TimeSpan.FromMilliseconds(100);
-        private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(60_000); // definitely should receive telemetry by now
-        private readonly TestTelemetryTransport _transport;
-        private readonly TelemetryController _controller;
+        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
 
-        public TelemetryControllerTests()
+        var controller = new TelemetryController(
+            new ConfigurationTelemetry(),
+            new DependencyTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
+            transportManager,
+            _flushInterval);
+
+        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.Start();
+
+        var data = await WaitForRequestStarted(transport, _timeout);
+        await controller.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task TelemetryControllerRecordsConfigurationFromTracerSettings()
+    {
+        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+
+        var collector = new ConfigurationTelemetry();
+        var controller = new TelemetryController(
+            collector,
+            new DependencyTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
+            transportManager,
+            _flushInterval);
+
+        var settings = new ImmutableTracerSettings(new TracerSettings());
+        controller.RecordTracerSettings(settings, "DefaultServiceName");
+
+        // Just basic check that we have the same number of config values
+        var configCount = settings.Telemetry.Should()
+                                  .BeOfType<ConfigurationTelemetry>()
+                                  .Which
+                                  .GetQueueForTesting()
+                                  .Count
+                                  .Should()
+                                  .NotBe(0)
+                                  .And.Subject;
+
+        collector.GetQueueForTesting().Count.Should().Be(configCount);
+        await controller.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task TelemetryControllerCanBeDisposedTwice()
+    {
+        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+
+        var controller = new TelemetryController(
+            new ConfigurationTelemetry(),
+            new DependencyTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
+            transportManager,
+            _flushInterval);
+
+        await controller.DisposeAsync();
+        await controller.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task TelemetrySendsHeartbeatAlongWithData()
+    {
+        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+
+        var controller = new TelemetryController(
+            new ConfigurationTelemetry(),
+            new DependencyTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
+            transportManager,
+            _flushInterval);
+
+        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.Start();
+
+        var requiredHeartbeats = 10;
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(_flushInterval.TotalSeconds * 1000);
+        while (DateTimeOffset.UtcNow < deadline)
         {
-            _transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-            _controller = new TelemetryController(
-                new ConfigurationTelemetryCollector(),
-                new DependencyTelemetryCollector(),
-                new IntegrationTelemetryCollector(),
-                _transport,
-                _refreshInterval);
+            var heartBeatCount = transport.GetData().Count(x => ContainsMessage(x, TelemetryRequestTypes.AppHeartbeat));
+            if (heartBeatCount >= requiredHeartbeats)
+            {
+                break;
+            }
+
+            await Task.Delay(_flushInterval);
         }
 
-        public void Dispose() => _controller?.DisposeAsync();
+        transport.GetData()
+                 .Where(x => ContainsMessage(x, TelemetryRequestTypes.AppHeartbeat))
+                 .Should()
+                 .HaveCountGreaterOrEqualTo(requiredHeartbeats);
 
-        [Fact]
-        public async Task TelemetryControllerShouldSendTelemetry()
+        await controller.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task TelemetryControllerAddsAllAssembliesToCollector()
+    {
+        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+
+        var currentAssemblyNames = AppDomain.CurrentDomain
+                                            .GetAssemblies()
+                                            .Where(x => !x.IsDynamic)
+                                            .Select(x => x.GetName())
+                                            .Select(name => new { name.Name, Version = name.Version.ToString() });
+
+        // creating a new controller so we have the same list of assemblies
+        var controller = new TelemetryController(
+            new ConfigurationTelemetry(),
+            new DependencyTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
+            transportManager,
+            _flushInterval);
+
+        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.Start();
+
+        var allData = await WaitForRequestStarted(transport, _timeout);
+        var dependencies = allData
+                          .Where(x => ContainsMessage(x, TelemetryRequestTypes.AppDependenciesLoaded))
+                          .Select(x => GetPayload(x, TelemetryRequestTypes.AppDependenciesLoaded).Payload)
+                          .Cast<AppDependenciesLoadedPayload>()
+                          .SelectMany(x => x.Dependencies)
+                          .ToList();
+
+        // should contain all the assemblies
+        using var a = new AssertionScope();
+        foreach (var assemblyName in currentAssemblyNames)
         {
-            _controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
-            _controller.Start();
-
-            var data = await WaitForRequestStarted(_transport, _timeout);
-        }
-
-        [Fact]
-        public async Task TelemetryControllerCanBeDisposedTwice()
-        {
-            await _controller.DisposeAsync();
-            await _controller.DisposeAsync();
-        }
-
-        [Fact]
-        public async Task TelemetryControllerDisposesOnTwoFatalErrorsFromTelemetry()
-        {
-            var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.FatalError); // fail to push telemetry
-            var controller = new TelemetryController(
-                new ConfigurationTelemetryCollector(),
-                new DependencyTelemetryCollector(),
-                new IntegrationTelemetryCollector(),
-                transport,
-                _refreshInterval);
-
-            controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
-            controller.Start();
-
-            (await WaitForFatalError(controller)).Should().BeTrue("controller should be disposed on failed push");
-
-            var previousDataCount = transport.GetData();
-
-            previousDataCount
+            dependencies
                .Should()
-               .OnlyContain(x => x.RequestType == TelemetryRequestTypes.AppStarted, "Fatal error should mean we try to send app-started twice");
-
-            controller.IntegrationRunning(IntegrationId.Kafka);
-
-            // Shouldn't receive any more data,
-            await Task.Delay(3_000);
-            transport.GetData().Count.Should().Be(previousDataCount.Count, "Should not send more data after disposal");
+               .Contain(
+                    x => x.Name.Equals(assemblyName.Name, StringComparison.OrdinalIgnoreCase)
+                      && x.Version.Equals(assemblyName.Version, StringComparison.OrdinalIgnoreCase));
         }
 
-        [Fact]
-        public async Task TelemetryControllerAddsAllAssembliesToCollector()
+        await controller.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task TelemetryControllerDumpsAllTelemetryToFile()
+    {
+        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+
+        var controller = new TelemetryController(
+            new ConfigurationTelemetry(),
+            new DependencyTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
+            transportManager,
+            _flushInterval);
+
+        // before the controller is started, nothing should be written when we try to dump telemetry
+        var tempFile = Path.GetTempFileName();
+        await controller.DumpTelemetry(tempFile);
+        File.ReadAllText(tempFile).Should().BeNullOrEmpty();
+
+        // after starting telemetry
+        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.Start();
+
+        await WaitForRequestStarted(transport, _timeout);
+
+        // dump the data
+        await controller.DumpTelemetry(tempFile);
+        var rawData = File.ReadAllText(tempFile)
+                             .Should()
+                             .NotBeNullOrEmpty()
+                             .And.Subject;
+
+        // this should always be a batch
+        var dump1 = Deserialize(rawData);
+
+        // Should contain integrations and deps, but not product (as no extra products enabled)
+        var (integrations, deps, products) = GetPayloads(dump1);
+        integrations.Should().NotBeNullOrEmpty();
+        deps.Should().NotBeNullOrEmpty();
+        products.Should().BeNull();
+
+        // wait for another one
+        await WaitFor(transport, _timeout, TelemetryRequestTypes.AppHeartbeat);
+
+        // Dumped data should be basically the same, except it has a timestamp and seqID in it, so can't directly compare
+        File.Delete(tempFile);
+        await controller.DumpTelemetry(tempFile);
+        var dump2 = Deserialize(File.ReadAllText(tempFile));
+
+        // Ignore timestamp and seq when comparing the data, but otherwise should be identical to first one
+        dump2.Should()
+             .BeEquivalentTo(
+                  new
+                  {
+                      // json.SeqId,
+                      // json.TracerTime,
+                      dump1.RequestType,
+                      dump1.Payload,
+                      dump1.Application,
+                      dump1.Host,
+                      dump1.ApiVersion,
+                      dump1.RuntimeId,
+                      dump1.NamingSchemaVersion
+                  });
+
+        // record a change in telemetry
+        controller.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
+
+        // should have changed
+        File.Delete(tempFile);
+        await controller.DumpTelemetry(tempFile);
+        var dump3 = Deserialize(File.ReadAllText(tempFile));
+        // metadata should be the same, but payload should be different
+        dump3.Should()
+             .BeEquivalentTo(
+                  new
+                  {
+                      // json.SeqId,
+                      // json.TracerTime,
+                      dump1.RequestType,
+                      // json.Payload,
+                      dump1.Application,
+                      dump1.Host,
+                      dump1.ApiVersion,
+                      dump1.RuntimeId,
+                      dump1.NamingSchemaVersion
+                  });
+
+        // dump3 contains product change data too
+        (integrations, deps, products) = GetPayloads(dump3);
+        integrations.Should().NotBeNullOrEmpty();
+        deps.Should().NotBeNullOrEmpty();
+        products.Should().NotBeNull();
+
+        // clean up
+        File.Delete(tempFile);
+        await controller.DisposeAsync();
+    }
+
+    private static (ICollection<IntegrationTelemetryData> Integrations, ICollection<DependencyTelemetryData> Dependencies, ProductsData Products) GetPayloads(TelemetryData data)
+    {
+        var messageBatch = data.Payload.Should()
+                               .BeOfType<MessageBatchPayload>().Subject;
+
+        var integrations = messageBatch
+                          .Select(x => x.Payload)
+                          .OfType<AppIntegrationsChangedPayload>()
+                          .FirstOrDefault()
+                         ?.Integrations;
+
+        var dependencies = messageBatch
+                          .Select(x => x.Payload)
+                          .OfType<AppDependenciesLoadedPayload>()
+                          .FirstOrDefault()
+                         ?.Dependencies;
+
+        var products = messageBatch
+                      .Select(x => x.Payload)
+                      .OfType<AppProductChangePayload>()
+                      .FirstOrDefault()
+                     ?.Products;
+
+        return (integrations, dependencies, products);
+    }
+
+    private static TelemetryData Deserialize(string rawData)
+    {
+        MockTelemetryAgent.TelemetryConverter.V2Serializers.TryGetValue(TelemetryRequestTypes.MessageBatch, out var serializer)
+                          .Should()
+                          .BeTrue();
+        var tr = new StringReader(rawData);
+        using var jsonTextReader = new JsonTextReader(tr);
+        return serializer.Deserialize<TelemetryData>(jsonTextReader);
+    }
+
+    private Task<List<TelemetryData>> WaitForRequestStarted(TestTelemetryTransport transport, TimeSpan timeout)
+        => WaitFor(transport, timeout, TelemetryRequestTypes.AppStarted);
+
+    private async Task<List<TelemetryData>> WaitFor(TestTelemetryTransport transport, TimeSpan timeout, string requestType)
+    {
+        var deadline = DateTimeOffset.UtcNow.Add(timeout);
+        // The Task.Delay happens to give back control after the deadline so the test can fail randomly
+        // So I add a notion of number of tries
+        var nbTries = 0;
+        while (DateTimeOffset.UtcNow < deadline || nbTries < 3)
         {
-            var currentAssemblyNames = AppDomain.CurrentDomain
-                                                .GetAssemblies()
-                                                .Where(x => !x.IsDynamic)
-                                                .Select(x => x.GetName())
-                                                .Select(name => new { name.Name, Version = name.Version.ToString() });
+            nbTries++;
+            var data = transport.GetData();
 
-            // creating a new controller so we have the same list of assemblies
-            var controller = new TelemetryController(
-                new ConfigurationTelemetryCollector(),
-                new DependencyTelemetryCollector(),
-                new IntegrationTelemetryCollector(),
-                _transport,
-                _refreshInterval);
-
-            controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
-            controller.Start();
-
-            var allData = await WaitForRequestStarted(_transport, _timeout);
-            var payload = allData
-                         .Where(x => x.RequestType == TelemetryRequestTypes.AppStarted)
-                         .OrderByDescending(x => x.SeqId)
-                         .First()
-                         .Payload as AppStartedPayload;
-
-            payload.Should().NotBeNull();
-
-            // should contain all the assemblies
-            using var a = new AssertionScope();
-            foreach (var assemblyName in currentAssemblyNames)
+            if (data.Any(x => ContainsMessage(x, requestType)))
             {
-                payload.Dependencies
-                       .Should()
-                       .ContainEquivalentOf(assemblyName);
+                return data;
             }
+
+            await Task.Delay(_flushInterval);
         }
 
-        private async Task<List<TelemetryData>> WaitForRequestStarted(TestTelemetryTransport transport, TimeSpan timeout)
+        throw new TimeoutException($"Transport did not receive required data before the timeout {timeout.TotalMilliseconds}ms");
+    }
+
+    private bool ContainsMessage(TelemetryData data, string requestType)
+        => GetPayload(data, requestType).Found;
+
+    private (bool Found, IPayload Payload) GetPayload(TelemetryData data, string requestType) =>
+        data.RequestType switch
         {
-            var deadline = DateTimeOffset.UtcNow.Add(timeout);
-            while (DateTimeOffset.UtcNow < deadline)
+            { } t when t == requestType => (true, data.Payload),
+            TelemetryRequestTypes.MessageBatch => data.Payload switch
             {
-                var data = transport.GetData();
-                if (data.Any(x => x.RequestType == TelemetryRequestTypes.AppStarted))
-                {
-                    return data;
-                }
+                MessageBatchPayload batch => batch
+                                            .FirstOrDefault(p => p.RequestType == requestType)
+                                                 is { } msg
+                                                 ? (true, msg.Payload)
+                                                 : (false, null),
+                _ => (false, null),
+            },
+            _ => (false, null),
+        };
 
-                await Task.Delay(_refreshInterval);
-            }
+    internal class TestTelemetryTransport : ITelemetryTransport
+    {
+        private readonly ConcurrentStack<TelemetryData> _data = new();
+        private readonly TelemetryPushResult _pushResult;
 
-            throw new TimeoutException($"Transport did not receive required data before the timeout {timeout.TotalMilliseconds}ms");
-        }
-
-        private async Task<bool> WaitForFatalError(TelemetryController controller)
+        public TestTelemetryTransport(TelemetryPushResult pushResult)
         {
-            var deadline = DateTimeOffset.UtcNow.Add(_timeout);
-            while (DateTimeOffset.UtcNow < deadline)
-            {
-                if (controller.FatalError)
-                {
-                    // was disposed
-                    return true;
-                }
-
-                await Task.Delay(_refreshInterval);
-            }
-
-            return false;
+            _pushResult = pushResult;
         }
 
-        internal class TestTelemetryTransport : ITelemetryTransport
+        public List<TelemetryData> GetData()
         {
-            private readonly ConcurrentStack<TelemetryData> _data = new();
-            private readonly TelemetryPushResult _pushResult;
-
-            public TestTelemetryTransport(TelemetryPushResult pushResult)
-            {
-                _pushResult = pushResult;
-            }
-
-            public List<TelemetryData> GetData()
-            {
-                return _data.ToList();
-            }
-
-            public Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
-            {
-                _data.Push(data);
-                return Task.FromResult(_pushResult);
-            }
+            return _data.ToList();
         }
+
+        public Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
+        {
+            _data.Push(data);
+            return Task.FromResult(_pushResult);
+        }
+
+        public string GetTransportInfo() => nameof(TestTelemetryTransport);
+    }
+
+    internal class SlowTelemetryTransport : ITelemetryTransport
+    {
+        private readonly TimeSpan _delay;
+        private int _requests = 0;
+
+        public SlowTelemetryTransport(TimeSpan delay)
+        {
+            _delay = delay;
+        }
+
+        public int Requests => Volatile.Read(ref _requests);
+
+        public async Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
+        {
+            Interlocked.Increment(ref _requests);
+            await Task.Delay(_delay);
+            return TelemetryPushResult.Success;
+        }
+
+        public string GetTransportInfo() => nameof(SlowTelemetryTransport);
     }
 }

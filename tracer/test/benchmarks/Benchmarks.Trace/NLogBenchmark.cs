@@ -3,7 +3,6 @@ using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
@@ -12,6 +11,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkAgent3]
+    [BenchmarkCategory(Constants.TracerCategory)]
     public class NLogBenchmark
     {
         private static readonly Tracer LogInjectionTracer;
@@ -62,11 +62,11 @@ namespace Benchmarks.Trace
                     // None of the arguments are used directly
                     // First arg is a marker type, so needs to be an NLog type
                     // Remainder can be any object
-                    var callTargetState = LoggerImplWriteIntegration.OnMethodBegin(Logger, typeof(NLog.Logger), Logger, Logger, Logger);
+                    var callTargetState = LoggerImplWriteIntegrationV5.OnMethodBegin(Logger, typeof(NLog.Logger), Logger, Logger, Logger);
 
                     Logger.Info("Hello");
 
-                    LoggerImplWriteIntegration.OnMethodEnd(Logger, exception: null, callTargetState);
+                    LoggerImplWriteIntegrationV5.OnMethodEnd(Logger, exception: null, callTargetState);
                 }
             }
         }

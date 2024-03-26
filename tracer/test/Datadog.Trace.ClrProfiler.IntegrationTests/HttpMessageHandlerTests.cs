@@ -3,13 +3,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
 using Xunit.Abstractions;
@@ -17,7 +21,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [CollectionDefinition(nameof(HttpMessageHandlerTests), DisableParallelization = true)]
-    public class HttpMessageHandlerTests : TestHelper
+    public class HttpMessageHandlerTests : TracingIntegrationTest
     {
         public HttpMessageHandlerTests(ITestOutputHelper output)
             : base("HttpMessageHandler", output)
@@ -29,10 +33,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         internal static IEnumerable<InstrumentationOptions> InstrumentationOptionsValues =>
             new List<InstrumentationOptions>
             {
-                new InstrumentationOptions(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: false),
-                new InstrumentationOptions(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: true),
-                new InstrumentationOptions(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: false),
-                new InstrumentationOptions(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: true),
+                new(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: false),
+                new(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: true),
+                new(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: false),
+                new(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: true),
             };
 
         public static IEnumerable<object[]> IntegrationConfig() =>
@@ -40,63 +44,144 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             from socketHandlerEnabled in new[] { true, false }
             select new object[] { instrumentationOptions, socketHandlerEnabled };
 
+        public static IEnumerable<object[]> IntegrationConfigWithObfuscation() =>
+            from instrumentationOptions in InstrumentationOptionsValues
+            from socketHandlerEnabled in new[] { true, false }
+            from queryStringEnabled in new[] { true, false }
+            from queryStringSizeAndExpectation in new[] { new KeyValuePair<int?, string>(null, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(200, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(2, "?k") }
+            from metadataSchemaVersion in new[] { "v0", "v1" }
+            from traceId128Enabled in new[] { true, false }
+            select new object[]
+                   {
+                       instrumentationOptions,
+                       socketHandlerEnabled,
+                       queryStringEnabled,
+                       queryStringSizeAndExpectation.Key,
+                       queryStringSizeAndExpectation.Value,
+                       metadataSchemaVersion,
+                       traceId128Enabled
+                   };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsHttpMessageHandler(metadataSchemaVersion);
+
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        [MemberData(nameof(IntegrationConfig))]
-        public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
+        [MemberData(nameof(IntegrationConfigWithObfuscation))]
+        public async Task HttpClient_SubmitsTraces(
+            InstrumentationOptions instrumentation,
+            bool socketsHandlerEnabled,
+            bool queryStringCaptureEnabled,
+            int? queryStringSize,
+            string expectedQueryString,
+            string metadataSchemaVersion,
+            bool traceId128Enabled)
         {
-            SetInstrumentationVerification();
-            ConfigureInstrumentation(instrumentation, enableSocketsHandler);
-
-            var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation);
-            var expectedSyncCount = CalculateExpectedSyncSpans(instrumentation);
-
-            var expectedSpanCount = expectedAsyncCount + expectedSyncCount;
-
-            const string expectedOperationName = "http.request";
-            const string expectedServiceName = "Samples.HttpMessageHandler-http-client";
-
-            int httpPort = TcpPortProvider.GetOpenPort();
-            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-
-            using var telemetry = this.ConfigureTelemetry();
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            try
             {
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.Equal(expectedSpanCount, spans.Count);
+                SetInstrumentationVerification();
+                ConfigureInstrumentation(instrumentation, socketsHandlerEnabled);
+                SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING", queryStringCaptureEnabled ? "true" : "false");
+                SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED", traceId128Enabled ? "true" : "false");
+                SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
-                foreach (var span in spans)
+                if (queryStringSize.HasValue)
                 {
-                    var result = span.IsHttpMessageHandler();
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.Equal("HttpMessageHandler", span.Tags[Tags.InstrumentationName]);
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-
-                    if (span.Tags[Tags.HttpStatusCode] == "502")
-                    {
-                        Assert.Equal(1, span.Error);
-                    }
+                    SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE", queryStringSize.ToString());
                 }
 
-                var firstSpan = spans.First();
-                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation);
+                var expectedSyncCount = CalculateExpectedSyncSpans(instrumentation);
 
-                Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
-                Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
+                var expectedSpanCount = expectedAsyncCount + expectedSyncCount;
 
-                using var scope = new AssertionScope();
-                telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
-                // ignore for now auto enabled for simplicity
-                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
-                VerifyInstrumentation(processResult.Process);
+                int httpPort = TcpPortProvider.GetOpenPort();
+                Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+
+                // metadata schema version
+                var isExternalSpan = metadataSchemaVersion == "v0";
+                var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-http-client" : EnvironmentHelper.FullSampleName;
+
+                using var telemetry = this.ConfigureTelemetry();
+                using (var agent = EnvironmentHelper.GetMockAgent())
+                using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+                {
+                    agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
+                    var spans = agent.WaitForSpans(expectedSpanCount);
+                    Assert.Equal(expectedSpanCount, spans.Count);
+                    ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+
+                    foreach (var span in spans)
+                    {
+                        if (span.Tags[Tags.HttpStatusCode] == "502")
+                        {
+                            Assert.Equal(1, span.Error);
+                        }
+
+                        if (span.Tags.TryGetValue(Tags.HttpUrl, out var url))
+                        {
+                            if (queryStringCaptureEnabled)
+                            {
+                                url.Should().EndWith(expectedQueryString);
+                            }
+                            else
+                            {
+                                new Uri(url).Query.Should().BeNullOrEmpty();
+                            }
+                        }
+                    }
+
+                    // parse http headers from stdout
+                    var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                    var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                    var propagatedTags = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.PropagatedTags);
+
+                    var firstSpan = spans.First();
+                    Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
+                    Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
+
+                    var traceTags = TagPropagation.ParseHeader(propagatedTags);
+                    var traceIdUpperTagFromHeader = traceTags.GetTag(Tags.Propagated.TraceIdUpper);
+                    var traceIdUpperTagFromSpan = firstSpan.GetTag(Tags.Propagated.TraceIdUpper);
+
+                    if (traceId128Enabled)
+                    {
+                        // assert that "_dd.p.tid" was added to the "x-datadog-tags" header (horizontal propagation)
+                        // note this assumes Datadog propagation headers are enabled (which is the default).
+                        Assert.NotNull(traceIdUpperTagFromHeader);
+
+                        // not all spans will have this tag, but if it is present,
+                        // it should match the value in the "x-datadog-tags" header
+                        if (traceIdUpperTagFromSpan != null)
+                        {
+                            Assert.Equal(traceIdUpperTagFromHeader, traceIdUpperTagFromSpan);
+                        }
+                    }
+                    else
+                    {
+                        // assert that "_dd.p.tid" was NOT added
+                        Assert.Null(traceIdUpperTagFromHeader);
+                        Assert.Null(traceIdUpperTagFromSpan);
+                    }
+
+                    using var scope = new AssertionScope();
+                    telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+                    // ignore for now auto enabled for simplicity
+                    telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
+                    telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
+                    telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
+                    VerifyInstrumentation(processResult.Process);
+                }
+            }
+            catch (ExitCodeException)
+            {
+                if (EnvironmentHelper.IsCoreClr() && EnvironmentHelper.GetTargetFramework() == "netcoreapp2.1")
+                {
+                    throw new SkipException("Exit code exception. This test is flaky on netcoreapp 2.1 so skipping it.");
+                }
+
+                throw;
             }
         }
 
@@ -105,37 +190,47 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(IntegrationConfig))]
-        public void TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
+        public async Task TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
-            SetInstrumentationVerification();
-            ConfigureInstrumentation(instrumentation, enableSocketsHandler);
-
-            const string expectedOperationName = "http.request";
-
-            using var telemetry = this.ConfigureTelemetry();
-            int httpPort = TcpPortProvider.GetOpenPort();
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
+            try
             {
-                var spans = agent.WaitForSpans(1, 2000, operationName: expectedOperationName);
-                Assert.Equal(0, spans.Count);
+                SetInstrumentationVerification();
+                ConfigureInstrumentation(instrumentation, enableSocketsHandler);
 
-                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-                var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+                using var telemetry = this.ConfigureTelemetry();
+                int httpPort = TcpPortProvider.GetOpenPort();
 
-                Assert.Null(traceId);
-                Assert.Null(parentSpanId);
-                Assert.Equal("false", tracingEnabled);
+                using (var agent = EnvironmentHelper.GetMockAgent())
+                using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
+                {
+                    var spans = agent.Spans.Where(s => s.Type == SpanTypes.Http);
+                    Assert.Empty(spans);
 
-                using var scope = new AssertionScope();
-                // ignore auto enabled for simplicity
-                telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
-                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
-                VerifyInstrumentation(processResult.Process);
+                    var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                    var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                    var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+
+                    Assert.Null(traceId);
+                    Assert.Null(parentSpanId);
+                    Assert.Equal("false", tracingEnabled);
+
+                    using var scope = new AssertionScope();
+                    // ignore auto enabled for simplicity
+                    telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
+                    telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
+                    telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
+                    telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
+                    VerifyInstrumentation(processResult.Process);
+                }
+            }
+            catch (ExitCodeException)
+            {
+                if (EnvironmentHelper.IsCoreClr() && EnvironmentHelper.GetTargetFramework() == "netcoreapp2.1")
+                {
+                    throw new SkipException("Exit code exception. This test is flaky on netcoreapp 2.1 so skipping it.");
+                }
+
+                throw;
             }
         }
 

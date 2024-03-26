@@ -10,6 +10,7 @@
 #include "dllmain.h"
 #include "environment_variables.h"
 #include "environment_variables_util.h"
+#include "fault_tolerant_tracker.h"
 #include "il_rewriter.h"
 #include "il_rewriter_wrapper.h"
 #include "integration.h"
@@ -22,15 +23,19 @@
 
 #include "../../../shared/src/native-src/pal.h"
 
+#include "iast/dataflow.h"
+
 #ifdef MACOS
 #include <mach-o/dyld.h>
 #include <mach-o/getsect.h>
 #endif
 
+using namespace std::chrono_literals;
+
 namespace trace
 {
 
-CorProfiler* profiler = nullptr;
+    CorProfiler* profiler = nullptr;
 
 //
 // ICorProfilerCallback methods
@@ -42,7 +47,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     // check if debug mode is enabled
     if (IsDebugEnabled())
     {
-        Logger::EnableDebug();
+        Logger::EnableDebug(true);
     }
 
     CorProfilerBase::Initialize(cor_profiler_info_unknown);
@@ -53,7 +58,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         if (IsAzureAppServices() && (NeedsAgentInAAS() || NeedsDogstatsdInAAS()))
         {
             // In AAS, the profiler is used to load other processes, so we bypass this check. If the tracer is disabled, the managed loader won't initialize instrumentation
-            Logger::Info("DATADOG TRACER DIAGNOSTICS - In AAS, automatic tracing is disabled but keeping the profiler up to start child processes.");
+            Logger::Info(
+                "DATADOG TRACER DIAGNOSTICS - In AAS, automatic tracing is disabled but keeping the profiler up to start child processes.");
         }
         else
         {
@@ -62,9 +68,33 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
     }
 
-#if defined(ARM64) || defined(ARM)
+    const auto process_name = shared::GetCurrentProcessName();
+    Logger::Info("ProcessName: ", process_name);
+
+    const auto process_command_line = shared::GetCurrentProcessCommandLine();
+    Logger::Info("Process CommandLine: ", process_command_line);
+
+    // CI visibility checks
+    if (!process_command_line.empty())
+    {
+        bool is_ci_visibility_enabled = false;
+        if (shared::TryParseBooleanEnvironmentValue(shared::GetEnvironmentValue(environment::ci_visibility_enabled),
+                                                    is_ci_visibility_enabled) &&
+            is_ci_visibility_enabled)
+        {
+            if ((process_name == WStr("dotnet") || process_name == WStr("dotnet.exe")) && process_command_line.
+                find(WStr("testhost")) == WSTRING::npos)
+            {
+                Logger::Info("The Tracer Profiler has been disabled because the process is running in CI Visibility "
+                    "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost'");
+                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+            }
+        }
+    }
+
+#if !defined(_WIN32) && (defined(ARM64) || defined(ARM))
     //
-    // In ARM64 and ARM, complete ReJIT support is only available from .NET 5.0
+    // In ARM64 and ARM, complete ReJIT support is only available from .NET 5.0 (on .NET Core)
     //
     ICorProfilerInfo12* info12;
     HRESULT hrInfo12 = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo12), (void**) &info12);
@@ -88,28 +118,37 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    const auto& process_name = shared::GetCurrentProcessName();
-    Logger::Info("ProcessName: ", process_name);
-
     const auto& include_process_names = shared::GetEnvironmentValues(environment::include_process_names);
 
-    // if there is a process inclusion list, attach profiler only if this
+    // if there is a process inclusion list, attach clrprofiler only if this
     // process's name is on the list
     if (!include_process_names.empty() && !shared::Contains(include_process_names, process_name))
     {
-        Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name, " not found in ",
+        Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name, " not found in ",
                      environment::include_process_names, ".");
         return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
     }
 
-    const auto& exclude_process_names = shared::GetEnvironmentValues(environment::exclude_process_names);
-
-    // attach profiler only if this process's name is NOT on the list
-    if (!exclude_process_names.empty() && shared::Contains(exclude_process_names, process_name))
+    // if we were on the explicit include list, don't check the block list
+    if (include_process_names.empty())
     {
-        Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name, " found in ",
-                     environment::exclude_process_names, ".");
-        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+        // attach clrprofiler only if this process's name is NOT on the blocklists
+        const auto& exclude_process_names = shared::GetEnvironmentValues(environment::exclude_process_names);
+        if (!exclude_process_names.empty() && shared::Contains(exclude_process_names, process_name))
+        {
+            Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name, " found in ",
+                         environment::exclude_process_names, ".");
+            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+        }
+
+        for (auto&& exclude_assembly : default_exclude_assemblies)
+        {
+            if (process_name == exclude_assembly)
+            {
+                Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name," found in default exclude list");
+                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+            }
+        }
     }
 
     Logger::Info("Environment variables:");
@@ -185,18 +224,48 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     runtime_information_ = GetRuntimeInformation(this->info_);
     if (info8 == nullptr && runtime_information_.is_core())
     {
-        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Profiler disabled: .NET Core 2.0 or greater runtime is required for .NET Core automatic instrumentation.");
+        Logger::Warn(
+            "DATADOG TRACER DIAGNOSTICS - Profiler disabled: .NET Core 2.0 or greater runtime is required for .NET Core automatic instrumentation.");
         return E_FAIL;
+    }
+
+    WSTRING runtimeType = runtime_information_.is_core()
+                              ? (runtime_information_.major_version > 4 ? WStr(".NET") : WStr(".NET Core"))
+                              : WStr(".NET Framework");
+    Logger::Info("Runtime Information: ", runtimeType, " ", runtime_information_.major_version, ".",
+                 runtime_information_.minor_version, ".", runtime_information_.build_version);
+
+    // Check if we have to disable tiered compilation (due to https://github.com/dotnet/runtime/issues/77973)
+    // see https://github.com/DataDog/dd-trace-dotnet/pull/3579 for more details
+    bool disableTieredCompilation = false;
+    bool internal_workaround_77973_enabled = false;
+    shared::TryParseBooleanEnvironmentValue(shared::GetEnvironmentValue(environment::internal_workaround_77973_enabled),
+                                            internal_workaround_77973_enabled);
+    if (internal_workaround_77973_enabled)
+    {
+        if (runtime_information_.major_version == 5 ||
+            (runtime_information_.major_version == 6 && runtime_information_.minor_version == 0 && runtime_information_.
+             build_version <= 12) ||
+            (runtime_information_.major_version == 7 && runtime_information_.minor_version == 0 && runtime_information_.
+             build_version <= 1))
+        {
+            Logger::Info("Tiered Compilation was disabled due to https://github.com/dotnet/runtime/issues/77973. This action can be disabled by setting the environment variable DD_INTERNAL_WORKAROUND_77973_ENABLED=false");
+            disableTieredCompilation = true;
+        }
     }
 
     auto pInfo = info10 != nullptr ? info10 : this->info_;
     auto work_offloader = std::make_shared<RejitWorkOffloader>(pInfo);
 
-    rejit_handler = info10 != nullptr ? std::make_shared<RejitHandler>(info10, work_offloader)
-                                      : std::make_shared<RejitHandler>(this->info_, work_offloader);
-    tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(rejit_handler, work_offloader);
+    rejit_handler = info10 != nullptr
+                        ? std::make_shared<RejitHandler>(info10, work_offloader)
+                        : std::make_shared<RejitHandler>(this->info_, work_offloader);
+    tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(this, rejit_handler, work_offloader);
 
-    debugger_instrumentation_requester = std::make_unique<debugger::DebuggerProbesInstrumentationRequester>(rejit_handler, work_offloader);
+    fault_tolerant_method_duplicator = std::make_shared<fault_tolerant::FaultTolerantMethodDuplicator>(this, rejit_handler, work_offloader);
+
+    debugger_instrumentation_requester = std::make_unique<debugger::DebuggerProbesInstrumentationRequester>(
+        this, rejit_handler, work_offloader, fault_tolerant_method_duplicator);
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                        COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |
@@ -209,7 +278,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
     else
     {
-        Logger::Info("JIT Inlining is enabled.");
+        Logger::Debug("JIT Inlining is enabled.");
     }
 
     if (DisableOptimizations())
@@ -220,7 +289,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     if (IsNGENEnabled())
     {
-        Logger::Info("NGEN is enabled.");
+        Logger::Debug("NGEN is enabled.");
         event_mask |= COR_PRF_MONITOR_CACHE_SEARCHES;
     }
     else
@@ -229,8 +298,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         event_mask |= COR_PRF_DISABLE_ALL_NGEN_IMAGES;
     }
 
-    // set event mask to subscribe to events and disable NGEN images
-    hr = this->info_->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
+    DWORD high_event_mask = COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES;
+    if (disableTieredCompilation)
+    {
+        high_event_mask |= COR_PRF_HIGH_DISABLE_TIERED_COMPILATION;
+    }
+
+    // set event mask to subscribe to events
+    hr = this->info_->SetEventMask2(event_mask, high_event_mask);
     if (FAILED(hr))
     {
         Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: unable to set event mask.");
@@ -260,6 +335,31 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     {
         Logger::Error("Profiler filepath: cannot be calculated.");
         return E_FAIL;
+    }
+
+    // iast stuff
+    
+    bool isRaspEnabled = IsRaspEnabled();
+    bool isIastEnabled = IsIastEnabled();
+
+    Logger::Info(isIastEnabled ? "IAST Callsite instrumentation is enabled."
+                               : "IAST Callsite instrumentation is disabled.");
+
+    Logger::Info(isRaspEnabled ? "RASP Callsite instrumentation is enabled."
+                               : "RASP Callsite instrumentation is disabled.");
+
+    if (isIastEnabled || isRaspEnabled)
+    {
+        _dataflow = new iast::Dataflow(info_);
+        if (FAILED(_dataflow->Init()))
+        {
+            Logger::Error("Callsite Dataflow failed to initialize");
+            DEL(_dataflow);
+        }
+    }
+    else
+    {
+        Logger::Info("Callsite instrumentation is disabled.");
     }
 
     // we're in!
@@ -351,7 +451,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         {
             Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version, " matched profiler version v",
                          expected_version);
-            managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
+            managed_profiler_loaded_app_domains.insert({assembly_info.app_domain_id, assembly_metadata.version});
+
+            // Load defaults values if the version are the same as expected
+            if (assembly_metadata.version == expected_assembly_reference.version)
+            {
+                EnableByRefInstrumentation();
+                EnableCallTargetStateByRef();
+                auto traceAnnotationIntegrationId = WSTRING(WStr("9C6EB897BD4946D0BB492E062FB0AE67"));
+                auto traceAnnotationType = WSTRING(
+                    WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration"));
+                AddTraceAttributeInstrumentation(traceAnnotationIntegrationId.data(),
+                                                 expected_assembly_reference.str().data(), traceAnnotationType.data());
+            }
 
             if (runtime_information_.is_desktop() && corlib_module_loaded)
             {
@@ -378,7 +490,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
 }
 
-void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& nativemethods_type_name, const shared::WSTRING& library_path)
+void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
+                                       const shared::WSTRING& rewrite_reason,
+                                       const shared::WSTRING& nativemethods_type_name,
+                                       const shared::WSTRING& library_path)
 {
     HRESULT hr;
     const auto& metadata_import = module_metadata.metadata_import;
@@ -395,11 +510,11 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
 
         if (!fs::exists(native_profiler_file))
         {
-            Logger::Warn("Unable to rewrite PInvokes. Native library not found: ", native_profiler_file);
+            Logger::Warn("Unable to rewrite PInvokes for ", rewrite_reason, ". Native library not found: ", native_profiler_file);
             return;
         }
 
-        Logger::Info("Rewriting PInvokes to native: ", native_profiler_file);
+        Logger::Info("Rewriting PInvokes to native for ", rewrite_reason, ": ", native_profiler_file);
 
         // Define the actual profiler file path as a ModuleRef
         mdModuleRef profiler_ref;
@@ -409,7 +524,9 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
             // Enumerate all methods inside the native methods type with the PInvokes
             Enumerator<mdMethodDef> enumMethods = Enumerator<mdMethodDef>(
                 [metadata_import, nativeMethodsTypeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt)
-                    -> HRESULT { return metadata_import->EnumMethods(ptr, nativeMethodsTypeDef, arr, max, cnt); },
+                -> HRESULT {
+                    return metadata_import->EnumMethods(ptr, nativeMethodsTypeDef, arr, max, cnt);
+                },
                 [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
 
             EnumeratorIterator<mdMethodDef> enumIterator = enumMethods.begin();
@@ -418,7 +535,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
                 auto methodDef = *enumIterator;
 
                 const auto& caller = GetFunctionInfo(module_metadata.metadata_import, methodDef);
-                Logger::Info("Rewriting PInvoke method: ", caller.name);
+                Logger::Debug("Rewriting PInvoke method: ", caller.name);
 
                 // Get the current PInvoke map to extract the flags and the entrypoint name
                 DWORD pdwMappingFlags;
@@ -434,12 +551,13 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
                     if (SUCCEEDED(hr))
                     {
                         // Define a new PInvoke map with the new ModuleRef of the actual profiler file path
-                        hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags, shared::WSTRING(importName).c_str(),
+                        hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
+                                                             shared::WSTRING(importName).c_str(),
                                                              profiler_ref);
                         if (FAILED(hr))
                         {
                             Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path "
-                                         "failed, trying to restore the previous one.");
+                                "failed, trying to restore the previous one.");
                             hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
                                                                  shared::WSTRING(importName).c_str(), importModule);
                             if (FAILED(hr))
@@ -489,15 +607,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
-
+    auto modules = module_ids.Get();
+    
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_ || rejit_handler == nullptr)
     {
         return S_OK;
     }
 
-    auto hr = TryRejitModule(module_id);
+    auto hr = TryRejitModule(module_id, modules.Ref());
 
     // Push integration definitions from past modules that were unable to be added
     auto rejit_size = rejit_module_method_pairs.size();
@@ -519,7 +637,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             for (const auto& methodReference : methodReferences)
             {
                 integration_definitions_.push_back(
-                    IntegrationDefinition(methodReference, *trace_annotation_integration_type.get(), false, false));
+                    IntegrationDefinition(methodReference, *trace_annotation_integration_type.get(), false, false,
+                                          false));
             }
 
             rejit_module_method_pairs.pop_front();
@@ -528,9 +647,34 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
         if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
         {
-            const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(rejitModuleIds, integration_definitions_);
-            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(rejitModuleIds, integration_definitions_,
+                                                                                promise);
+
+            // wait and get the value from the future<ULONG>            
+            const auto status = future.wait_for(100ms);
+
+            if (status != std::future_status::timeout)
+            {
+                const auto& numReJITs = future.get();
+                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);    
+            }
+            else
+            {
+                Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
+            }
         }
+    }
+
+    if (debugger_instrumentation_requester != nullptr)
+    {
+        debugger_instrumentation_requester->ModuleLoadFinished(module_id);
+    }
+
+    if (_dataflow != nullptr)
+    {
+        _dataflow->ModuleLoaded(module_id);
     }
 
     return hr;
@@ -570,7 +714,7 @@ std::string GetNativeLoaderFilePath()
     return native_loader_file_path.string();
 }
 
-HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
+HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules)
 {
     const auto& module_info = GetModuleInfo(this->info_, module_id);
     if (!module_info.IsValid())
@@ -614,7 +758,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
         hr = assembly_import->GetAssemblyProps(assembly_metadata.assembly_token, &corAssemblyProperty.ppbPublicKey,
                                                &corAssemblyProperty.pcbPublicKey, &corAssemblyProperty.pulHashAlgId,
-                                               NULL, 0, NULL, &corAssemblyProperty.pMetaData,
+                                               nullptr, 0, nullptr, &corAssemblyProperty.pMetaData,
                                                &corAssemblyProperty.assemblyFlags);
 
         if (FAILED(hr))
@@ -734,32 +878,42 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit, module_info.assembly.name,
                            module_info.assembly.app_domain_id, &corAssemblyProperty, enable_by_ref_instrumentation,
                            enable_calltarget_state_by_ref);
-
         const auto& assemblyImport = GetAssemblyImportMetadata(assembly_import);
+
         const auto& assemblyVersion = assemblyImport.version.str();
 
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion, " - Fix PInvoke maps");
+        managedProfilerModuleId_ = module_id;
 #ifdef _WIN32
-        RewritingPInvokeMaps(module_metadata, windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, appsec_windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, debugger_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("windows"), windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_windows_nativemethods_type);
 #else
-        RewritingPInvokeMaps(module_metadata, nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, appsec_nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, debugger_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("non-windows"), nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_nonwindows_nativemethods_type);
 #endif // _WIN32
+
+        mdTypeDef bubbleUpTypeDef;
+        call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata, &bubbleUpTypeDef);
+        if(call_target_bubble_up_exception_available)
+        {
+            call_target_bubble_up_exception_function_available = EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(module_metadata, bubbleUpTypeDef);
+        }
 
         auto native_loader_library_path = GetNativeLoaderFilePath();
         if (fs::exists(native_loader_library_path))
         {
             auto native_loader_file_path = shared::ToWSTRING(native_loader_library_path);
-            RewritingPInvokeMaps(module_metadata, native_loader_nativemethods_type, native_loader_file_path);
+            RewritingPInvokeMaps(module_metadata, WStr("native loader"), native_loader_nativemethods_type, native_loader_file_path);
         }
 
         if (ShouldRewriteProfilerMaps())
         {
             auto profiler_library_path = shared::GetEnvironmentValue(WStr("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
-            RewritingPInvokeMaps(module_metadata, profiler_nativemethods_type, profiler_library_path);
+            RewritingPInvokeMaps(module_metadata, WStr("continuous profiler"), profiler_nativemethods_type, profiler_library_path);
         }
 
         if (IsVersionCompatibilityEnabled())
@@ -772,7 +926,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             // No need to rewrite if the target assembly matches the expected version
             if (assemblyImport.version != managed_profiler_assembly_reference->version)
             {
-                if (runtime_information_.is_core() && assemblyImport.version > managed_profiler_assembly_reference->version)
+                if (runtime_information_.is_core() && assemblyImport.version > managed_profiler_assembly_reference->
+                    version)
                 {
                     Logger::Debug("Skipping version conflict fix for ", assemblyVersion,
                                   " because running on .NET Core with a higher version than expected");
@@ -782,16 +937,19 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                     RewriteForDistributedTracing(module_metadata, module_id);
                 }
             }
-            else
-            {
-                Logger::Debug("Skipping version conflict fix for ", assemblyVersion,
-                              " because the version matches the expected one");
-            }
         }
+        else
+        {
+            Logger::Debug("Skipping version conflict fix for ", assemblyVersion,
+                          " because the version matches the expected one");
+        }
+
+        // Rewrite methods for exposing the native tracer version to managed for telemetry purposes
+        RewriteForTelemetry(module_metadata, module_id);
     }
     else
     {
-        module_ids_.push_back(module_id);
+        modules.push_back(module_id);
 
         bool searchForTraceAttribute = trace_annotations_enabled;
         if (searchForTraceAttribute)
@@ -834,7 +992,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             if (SUCCEEDED(hr))
             {
                 foundType = true;
-                Logger::Debug("ModuleLoadFinished found the TypeDef for ", traceattribute_typename, " defined in Module ", module_info.assembly.name);
+                Logger::Debug("ModuleLoadFinished found the TypeDef for ", traceattribute_typename,
+                              " defined in Module ", module_info.assembly.name);
             }
             else
             {
@@ -857,12 +1016,11 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
                     hr = metadata_import->GetTypeRefProps(typeRef, &parent_token, type_name, kNameMaxSize,
                                                           &type_name_len);
-
                     if (TypeNameMatchesTraceAttribute(type_name, type_name_len))
                     {
                         foundType = true;
                         Logger::Debug("ModuleLoadFinished found the TypeRef for ", traceattribute_typename,
-                                     " defined in Module ", module_info.assembly.name);
+                                      " defined in Module ", module_info.assembly.name);
                         break;
                     }
 
@@ -959,8 +1117,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                                 const auto caller = GetFunctionInfo(metadata_import, methodDef);
                                 if (!caller.IsValid())
                                 {
-                                    Logger::Warn("    * The caller for the methoddef: ",
-                                                 shared::TokenStr(&parent_token), " is not valid!");
+                                    Logger::Warn("    * Skipping ", shared::TokenStr(&parent_token),
+                                        ": the methoddef is not valid!");
                                     customAttributesIterator = ++customAttributesIterator;
                                     continue;
                                 }
@@ -971,8 +1129,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                                 auto hr = functionInfo.method_signature.TryParse();
                                 if (FAILED(hr))
                                 {
-                                    Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(),
-                                                 " cannot be parsed.");
+                                    Logger::Warn("    * Skipping ", functionInfo.method_signature.str(),
+                                                 ": the method signature cannot be parsed.");
                                     customAttributesIterator = ++customAttributesIterator;
                                     continue;
                                 }
@@ -993,9 +1151,11 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
                 if (trace_annotation_integration_type == nullptr)
                 {
-                    Logger::Debug("ModuleLoadFinished pushing [Trace] methods to rejit_module_method_pairs for a later ReJIT, ModuleId=", module_id,
-                                 ", ModuleName=", module_info.assembly.name,
-                                 ", methodReferences.size()=", methodReferences.size());
+                    Logger::Debug(
+                        "ModuleLoadFinished pushing [Trace] methods to rejit_module_method_pairs for a later ReJIT, ModuleId=",
+                        module_id,
+                        ", ModuleName=", module_info.assembly.name,
+                        ", methodReferences.size()=", methodReferences.size());
 
                     if (methodReferences.size() > 0)
                     {
@@ -1005,8 +1165,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                 else
                 {
                     Logger::Debug("ModuleLoadFinished including [Trace] methods for ReJIT, ModuleId=", module_id,
-                                 ", ModuleName=", module_info.assembly.name,
-                                 ", methodReferences.size()=", methodReferences.size());
+                                  ", ModuleName=", module_info.assembly.name,
+                                  ", methodReferences.size()=", methodReferences.size());
 
                     integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
 
@@ -1014,7 +1174,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                     for (const auto& methodReference : methodReferences)
                     {
                         integration_definitions_.push_back(IntegrationDefinition(
-                            methodReference, *trace_annotation_integration_type.get(), false, false));
+                            methodReference, *trace_annotation_integration_type.get(), false, false, false));
                     }
                 }
             }
@@ -1023,22 +1183,37 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
         if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
         {
-            const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_);
-            Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
-        }
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_,
+                                                                                promise);
 
-        if (debugger_instrumentation_requester != nullptr)
-        {
-            const auto& probes = debugger_instrumentation_requester->GetProbes();
-            if (!probes.empty())
+            // wait and get the value from the future<ULONG>
+            const auto status = future.wait_for(100ms);
+
+            if (status != std::future_status::timeout)
             {
-                const auto numReJITs = debugger_instrumentation_requester->RequestRejitForLoadedModule(module_id);
-                 Logger::Debug("[Debugger] Total number of ReJIT Requested: ", numReJITs);
+                const auto& numReJITs = future.get();
+            Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
+            }
+            else
+            {
+                Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
             }
         }
     }
 
     return S_OK;
+}
+
+bool CorProfiler::IsCallTargetBubbleUpExceptionTypeAvailable() const
+{
+    return call_target_bubble_up_exception_available;
+}
+
+bool CorProfiler::IsCallTargetBubbleUpFunctionAvailable() const
+{
+    return call_target_bubble_up_exception_function_available;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
@@ -1052,7 +1227,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 
     // take this lock so we block until the
     // module metadata is not longer being used
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
+    auto scopedModules = module_ids.Get();
+    auto& modules = scopedModules.Ref();
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
@@ -1064,6 +1240,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
     {
         rejit_handler->RemoveModule(module_id);
     }
+
+    if (_dataflow != nullptr)
+    {
+        _dataflow->ModuleUnloaded(module_id);
+    }
+
+    auto new_end = std::remove(modules.begin(), modules.end(), module_id);
+    modules.erase(new_end, modules.end());
 
     const auto& moduleInfo = GetModuleInfo(this->info_, module_id);
     if (!moduleInfo.IsValid())
@@ -1084,10 +1268,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         const auto appDomainId = moduleInfo.assembly.app_domain_id;
 
         // remove appdomain id from managed_profiler_loaded_app_domains set
-        if (managed_profiler_loaded_app_domains.find(appDomainId) != managed_profiler_loaded_app_domains.end())
-        {
-            managed_profiler_loaded_app_domains.erase(appDomainId);
-        }
+        managed_profiler_loaded_app_domains.erase(appDomainId);
     }
 
     return S_OK;
@@ -1099,24 +1280,29 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     {
         return S_OK;
     }
-    
+
     is_attached_.store(false);
 
     CorProfilerBase::Shutdown();
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
+    auto modules = module_ids.Get();
+
+    DEL(_dataflow)
 
     if (rejit_handler != nullptr)
     {
         rejit_handler->Shutdown();
         rejit_handler = nullptr;
     }
+
+    auto definitions = definitions_ids.Get();
+
     Logger::Info("Exiting...");
-    Logger::Debug("   ModuleIds: ", module_ids_.size());
+    Logger::Debug("   ModuleIds: ", modules->size());
     Logger::Debug("   IntegrationDefinitions: ", integration_definitions_.size());
-    Logger::Debug("   DefinitionsIds: ", definitions_ids_.size());
+    Logger::Debug("   DefinitionsIds: ", definitions->size());
     Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
     Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
     Logger::Info("Stats: ", Stats::Instance()->ToString());
@@ -1133,6 +1319,39 @@ void CorProfiler::DisableTracerCLRProfiler()
     Shutdown();
 }
 
+void CorProfiler::UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
+{
+    const WSTRING debugVarName = WStr("DD_TRACE_DEBUG");
+
+    for (int i = 0; i < length; i++)
+    {
+        if (WSTRING(keys[i]) == debugVarName)
+        {
+            if (values[i] == nullptr || *values[i] == WStr('\0'))
+            {
+                continue;
+            }
+
+            WSTRING value(values[i]);
+
+            if (IsTrue(value))
+            {
+                Logger::EnableDebug(true);
+                Logger::Info("Debug logging has been turned on by remote configuration");
+            }
+            else if (IsFalse(value))
+            {
+                Logger::EnableDebug(false);
+                Logger::Info("Debug logging has been turned off by remote configuration");
+            }
+            else
+            {
+                Logger::Warn("Received an invalid value for DD_TRACE_DEBUG: ", value);
+            }
+        }
+    }
+}
+
 HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
 {
     if (!is_attached_)
@@ -1144,7 +1363,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
+    auto modules = module_ids.Get();
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
@@ -1174,7 +1393,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
+    auto modules = module_ids.Get();
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
@@ -1194,9 +1413,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     // we have to check if the Id is in the module_ids_ vector.
     // In case is True we create a local ModuleMetadata to inject the loader.
-    if (!shared::Contains(module_ids_, module_id))
+    if (!shared::Contains(modules.Ref(), module_id))
     {
-        debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
+        if (debugger_instrumentation_requester != nullptr)
+        {
+            debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
+        }
+
         return S_OK;
     }
 
@@ -1210,7 +1433,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     {
         // Loader was already injected in a calltarget scenario, we don't need to do anything else here
 
-        debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
+        if (_dataflow != nullptr)
+        {
+            _dataflow->JITCompilationStarted(module_id, function_token);
+        }
+
+        if (debugger_instrumentation_requester != nullptr)
+        {
+            debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
+        }
 
         return S_OK;
     }
@@ -1245,13 +1476,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                       " name=", caller.type.name, ".", caller.name, "()");
     }
 
-    // In NETFx, NInject creates a temporary appdomain where the tracer can be laoded
+    // In NETFx, NInject creates a temporary appdomain where the tracer can be loaded
     // If Runtime metrics are enabled, we can encounter a CannotUnloadAppDomainException
     // certainly because we are initializing perf counters at that time.
     // As there are no use case where we would like to load the tracer in that appdomain, just don't
     if (module_info.assembly.app_domain_name == WStr("NinjectModuleLoader") && !runtime_information_.is_core())
     {
-        Logger::Info("JITCompilationStarted: NInjectModuleLoader appdomain deteceted. Not registering startup hook.");
+        Logger::Info("JITCompilationStarted: NInjectModuleLoader appdomain detected. Not registering startup hook.");
         return S_OK;
     }
 
@@ -1271,7 +1502,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                                       caller.name == WStr("InvokePreStartInitMethods");
     }
     else if (module_metadata->assemblyName == WStr("System") ||
-             module_metadata->assemblyName == WStr("System.Net.Http"))
+             module_metadata->assemblyName == WStr("System.Net.Http") ||
+             module_metadata->assemblyName == WStr("System.Linq")) // Avoid instrumenting System.Linq which is used as part of the async state machine
     {
         valid_startup_hook_callsite = false;
     }
@@ -1281,6 +1513,45 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     // Datadog.Trace.dll and its dependencies on disk.
     if (valid_startup_hook_callsite && !has_loader_injected_in_appdomain)
     {
+        // *********************************************************************
+        // Checking if the caller is inside of the <Module> type
+        // *********************************************************************
+
+        // The <Module> typeDef is always the first entry in the typeDef table.
+        // The CLR profiling api can return mdTypeDefNil for the <Module> type, so we skip that as well.
+        constexpr auto moduleTypeDef = mdTypeDefNil + (BYTE)1;
+
+        if (caller.type.id == mdTypeDefNil || caller.type.id == moduleTypeDef)
+        {
+            Logger::Debug("JITCompilationStarted: Startup hook skipped from <Module>.", caller.name, "()");
+            return S_OK;
+        }
+
+        // Look at the type parents in case we are in a nested type
+        auto pType = caller.type.parent_type;
+        while (pType != nullptr)
+        {
+            if (pType->id == mdTypeDefNil || pType->id == moduleTypeDef)
+            {
+                Logger::Debug("JITCompilationStarted: Startup hook skipped from a type with <Module> as a parent. ", caller.type.name, ".", caller.name, "()");
+                return S_OK;
+            }
+                
+            pType = pType->parent_type;
+        }
+
+        // *********************************************************************
+        // Checking if the caller is inside of the <CrtImplementationDetails> type
+        // *********************************************************************
+
+        if (caller.type.name.find(WStr("<CrtImplementationDetails>")) != shared::WSTRING::npos)
+        {
+            Logger::Debug("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".", caller.name, "()");
+            return S_OK;
+        }
+
+        // *********************************************************************
+
         bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded &&
                                        module_metadata->app_domain_id == corlib_app_domain_id;
         Logger::Info("JITCompilationStarted: Startup hook registered in function_id=", function_id,
@@ -1317,19 +1588,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
 HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID appDomainId, HRESULT hrStatus)
 {
-    if (!is_attached_)
-    {
-        return S_OK;
-    }
-
     // take this lock so we block until the
     // module metadata is not longer being used
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
+    auto modules = module_ids.Get();
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
     {
         return S_OK;
+    }
+
+    if (_dataflow != nullptr)
+    {
+        _dataflow->AppDomainShutdown(appDomainId);
     }
 
     // remove appdomain metadata from map
@@ -1346,7 +1617,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
     {
         return S_OK;
     }
-    
+
     auto _ = trace::Stats::Instance()->JITInliningMeasure();
 
     if (rejit_handler == nullptr)
@@ -1356,7 +1627,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
 
     ModuleID calleeModuleId;
     mdToken calleFunctionToken = mdTokenNil;
-    auto hr = this->info_->GetFunctionInfo(calleeId, NULL, &calleeModuleId, &calleFunctionToken);
+    auto hr = this->info_->GetFunctionInfo(calleeId, nullptr, &calleeModuleId, &calleFunctionToken);
 
     *pfShouldInline = true;
 
@@ -1366,8 +1637,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
         return S_OK;
     }
 
-    if (is_attached_ && rejit_handler != nullptr &&
-        rejit_handler->HasModuleAndMethod(calleeModuleId, calleFunctionToken))
+    if (is_attached_ &&
+            (
+                (rejit_handler != nullptr && rejit_handler->HasModuleAndMethod(calleeModuleId, calleFunctionToken)) ||
+                (_dataflow != nullptr && !_dataflow->IsInlineEnabled(calleeModuleId, calleFunctionToken))
+            )
+       )
     {
         Logger::Debug("*** JITInlining: Inlining disabled for [ModuleId=", calleeModuleId,
                       ", MethodDef=", shared::TokenStr(&calleFunctionToken), "]");
@@ -1389,7 +1664,19 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
     if (size > 0)
     {
-        InternalAddInstrumentation(id, items, size, false);
+        InternalAddInstrumentation(id, items, size, false, false, true);
+    }
+}
+
+void CorProfiler::RemoveCallTargetDefinitions(WCHAR* id, CallTargetDefinition* items, int size)
+{
+    shared::WSTRING definitionsId = shared::WSTRING(id);
+    Logger::Info("RemoveCallTargetDefinitions: received id: ", definitionsId, " from managed side with ", size,
+                 " integrations.");
+
+    if (size > 0)
+    {
+        InternalAddInstrumentation(id, items, size, false, false, false);
     }
 }
 
@@ -1424,18 +1711,38 @@ void CorProfiler::AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* it
 
     if (size > 0)
     {
-        InternalAddInstrumentation(id, items, size, true);
+        InternalAddInstrumentation(id, items, size, true, false);
     }
 }
 
-void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived)
+void CorProfiler::AddInterfaceInstrumentations(WCHAR* id, CallTargetDefinition* items, int size)
+{
+    auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+    shared::WSTRING definitionsId = shared::WSTRING(id);
+    Logger::Info("AddInterfaceInstrumentations: received id: ", definitionsId, " from managed side with ", size,
+                 " integrations.");
+
+    if (size > 0)
+    {
+        InternalAddInstrumentation(id, items, size, false, true);
+    }
+}
+
+void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived,
+                                             bool isInterface, bool enable)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
-    std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
+    auto definitions = definitions_ids.Get();
 
-    if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
+    auto defsIdFound = definitions->find(definitionsId) != definitions->end();
+    if (enable && defsIdFound)
     {
         Logger::Info("InitializeProfiler: Id already processed.");
+        return;
+    }
+    if (!enable && !defsIdFound)
+    {
+        Logger::Info("UninitializeProfiler: Id not processed.");
         return;
     }
 
@@ -1473,7 +1780,10 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                 MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
                 TypeReference(integrationAssembly, integrationType, {}, {}),
                 isDerived,
-                true);
+                isInterface,
+                true,
+                -1,
+                enable ? -1 : 0);
 
             if (Logger::IsDebugEnabled())
             {
@@ -1485,21 +1795,140 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             integrationDefinitions.push_back(integration);
         }
 
-        std::scoped_lock<std::mutex> moduleLock(module_ids_lock_);
+        auto modules = module_ids.Get();
 
-        definitions_ids_.emplace(definitionsId);
-
-        Logger::Info("Total number of modules to analyze: ", module_ids_.size());
-        if (rejit_handler != nullptr)
+        if (enable)
         {
-            std::promise<ULONG> promise;
-            std::future<ULONG> future = promise.get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(module_ids_, integrationDefinitions, &promise);
-
-            // wait and get the value from the future<int>
-            const auto& numReJITs = future.get();
-            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+            definitions->emplace(definitionsId);
         }
+        else
+        {
+            definitions->erase(definitionsId);
+        }
+
+        if (enable)
+        {
+            integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
+            for (const auto& integration : integrationDefinitions)
+            {
+                integration_definitions_.push_back(integration);
+            }
+
+            Logger::Info("Total number of modules to analyze: ", modules->size());
+            if (rejit_handler != nullptr)
+            {
+                auto promise = std::make_shared<std::promise<ULONG>>();
+                std::future<ULONG> future = promise->get_future();
+                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(),
+                    integrationDefinitions, promise);
+
+                // wait and get the value from the future<int>
+                const auto& numReJITs = future.get();
+                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+            }
+        }
+        else
+        {
+            // remove the call target definitions
+            std::vector<IntegrationDefinition> integration_definitions = integration_definitions_;
+            integration_definitions_.clear();
+            for (auto& integration : integration_definitions)
+            {
+                if (std::find(integrationDefinitions.begin(), integrationDefinitions.end(), integration) ==
+                    integrationDefinitions.end())
+                {
+                    integration_definitions_.push_back(integration);
+                }
+            }
+
+            Logger::Info("Total number of modules to analyze: ", modules->size());
+            if (rejit_handler != nullptr)
+            {
+                auto promise = std::make_shared<std::promise<ULONG>>();
+                std::future<ULONG> future = promise->get_future();
+                tracer_integration_preprocessor->EnqueueRequestRevertForLoadedModules(modules.Ref(),
+                    integrationDefinitions, promise);
+
+                // wait and get the value from the future<int>
+                const auto& numReJITs = future.get();
+                Logger::Debug("Total number of Revert Requested: ", numReJITs);
+            }
+        }
+
+        Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
+    }
+}
+
+long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories)
+{
+    long numReJITs = 0;
+    long enabledTargets = 0;
+    shared::WSTRING definitionsId = shared::WSTRING(id);
+    auto definitions = definitions_ids.Get();
+
+    auto defsIdFound = definitions->find(definitionsId) != definitions->end();
+    if (defsIdFound)
+    {
+        Logger::Info("RegisterCallTargetDefinitions: Id already processed.");
+        return 0;
+    }
+    definitions->emplace(definitionsId);
+
+    if (items != nullptr && rejit_handler != nullptr)
+    {
+        std::vector<IntegrationDefinition> integrationDefinitions;
+
+        for (int i = 0; i < size; i++)
+        {
+            const auto& current = items[i];
+
+            const shared::WSTRING& targetAssembly = shared::WSTRING(current.targetAssembly);
+            const shared::WSTRING& targetType = shared::WSTRING(current.targetType);
+            const shared::WSTRING& targetMethod = shared::WSTRING(current.targetMethod);
+
+            const shared::WSTRING& integrationAssembly = shared::WSTRING(current.integrationAssembly);
+            const shared::WSTRING& integrationType = shared::WSTRING(current.integrationType);
+
+            std::vector<shared::WSTRING> signatureTypes;
+            for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
+            {
+                const auto& currentSignature = current.signatureTypes[sIdx];
+                if (currentSignature != nullptr)
+                {
+                    signatureTypes.push_back(shared::WSTRING(currentSignature));
+                }
+            }
+
+            const Version& minVersion = Version(current.targetMinimumMajor, current.targetMinimumMinor, current.targetMinimumPatch, 0);
+            const Version& maxVersion = Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0);
+
+            const auto& integration = IntegrationDefinition(
+                MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
+                TypeReference(integrationAssembly, integrationType, {}, {}), current.GetIsDerived(),
+                current.GetIsInterface(), true, current.categories, enabledCategories);
+
+            if (integration.GetEnabled())
+            {
+                enabledTargets++;
+            }
+
+            if (Logger::IsDebugEnabled())
+            {
+                std::string kind = current.GetIsDerived() ? "DERIVED" : "DEFAULT";
+                if (current.GetIsInterface())
+                {
+                    kind += " INTERFACE";
+                }
+                Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
+                              signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
+                              integrationAssembly, " | ", integrationType, " | kind: ", kind, " | categories: ", current.categories,
+                              integration.GetEnabled() ? " ENABLED " : " DISABLED ", "]");
+            }
+
+            integrationDefinitions.push_back(integration);
+        }
+
+        auto modules = module_ids.Get();
 
         integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
         for (const auto& integration : integrationDefinitions)
@@ -1507,23 +1936,120 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             integration_definitions_.push_back(integration);
         }
 
-        Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
+        Logger::Info("Total number of modules to analyze: ", modules->size());
+        if (rejit_handler != nullptr)
+        {
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions, promise);
+
+            // wait and get the value from the future<int>
+            numReJITs = future.get();
+            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+        }
+
+        Logger::Info("RegisterCallTargetDefinitions: Added ", size, " call targets (enabled: ", enabledTargets,
+                      ", enabled categories: ", enabledCategories ,") ");
     }
+
+    return enabledTargets;
 }
+long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
+{
+    long numReJITs = 0;
+    if (rejit_handler != nullptr)
+    {
+        auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+        Logger::Info("EnableCallTargetDefinitions: enabledCategories: ", enabledCategories, " from managed side.");
+
+        std::vector<IntegrationDefinition> affectedDefinitions;
+        for (auto& integration : integration_definitions_)
+        {
+            if (!integration.GetEnabled() && integration.SetEnabled(true, enabledCategories))
+            {
+                affectedDefinitions.push_back(integration);
+            }
+        }
+
+        if (affectedDefinitions.size() > 0)
+        {
+            auto modules = module_ids.Get();
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions,
+                                                                                 promise);
+
+            // wait and get the value from the future<int>
+            numReJITs = future.get();
+        }
+        Logger::Debug("  Total number of ReJIT Requested: ", numReJITs);
+    }
+    return numReJITs;
+}
+long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
+{
+    long numReverts = 0;
+    if (rejit_handler != nullptr)
+    {
+        auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+        Logger::Info("DisableCallTargetDefinitions: enabledCategories: ", disabledCategories, " from managed side.");
+
+        std::vector<IntegrationDefinition> affectedDefinitions;
+        for (auto& integration : integration_definitions_)
+        {
+            if (integration.GetEnabled() && !integration.SetEnabled(false, disabledCategories))
+            {
+                affectedDefinitions.push_back(integration);
+            }
+        }
+
+        if (affectedDefinitions.size() > 0)
+        {
+            auto modules = module_ids.Get();
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRevertForLoadedModules(modules.Ref(), affectedDefinitions,
+                                                                                  promise);
+
+            // wait and get the value from the future<int>
+            numReverts = future.get();
+        }
+        Logger::Debug("  Total number of Reverts Requested: ", numReverts);
+    }
+    return numReverts;
+}
+
+int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
+{
+    auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+
+    if (_dataflow != nullptr)
+    {
+        Logger::Info("Registering Callsite Aspects.");
+        _dataflow->LoadAspects(aspects, aspectsLength);
+        return aspectsLength;
+    }
+    else
+    {
+        Logger::Info("Callsite instrumentation is disabled.");
+    }
+    return 0;
+}
+
 
 void CorProfiler::AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,
                                                    WCHAR* integration_type_name_ptr)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
-    std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
+    auto definitions = definitions_ids.Get();
 
-    if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
+    if (definitions->find(definitionsId) != definitions->end())
     {
         Logger::Info("AddTraceAttributeInstrumentation: Id already processed.");
         return;
     }
 
-    definitions_ids_.emplace(definitionsId);
+    definitions->emplace(definitionsId);
     shared::WSTRING integration_assembly_name = shared::WSTRING(integration_assembly_name_ptr);
     shared::WSTRING integration_type_name = shared::WSTRING(integration_type_name_ptr);
     trace_annotation_integration_type =
@@ -1533,13 +2059,14 @@ void CorProfiler::AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration
                  integration_type_name);
 }
 
-void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr, WCHAR* integration_type_name_ptr,
+void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr,
+                                         WCHAR* integration_type_name_ptr,
                                          WCHAR* configuration_string_ptr)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
-    std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
+    auto definitions = definitions_ids.Get();
 
-    if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
+    if (definitions->find(definitionsId) != definitions->end())
     {
         Logger::Info("InitializeTraceMethods: Id already processed.");
         return;
@@ -1552,7 +2079,7 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
     if (trace_annotation_integration_type == nullptr)
     {
         Logger::Warn("InitializeTraceMethods: Integration type was not initialized. AddTraceAttributeInstrumentation "
-                     "must be called first");
+            "must be called first");
         return;
     }
     else if (trace_annotation_integration_type.get()->assembly.str() != integration_assembly_name ||
@@ -1568,32 +2095,37 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
 
     // TODO we do a handful of string splits here. We could probably do this with indexOf operations instead, but I'm gonna
     // first make sure this works
-    definitions_ids_.emplace(definitionsId);
+    definitions->emplace(definitionsId);
     if (rejit_handler != nullptr)
     {
         if (trace_annotation_integration_type == nullptr)
         {
-            Logger::Warn("InitializeTraceMethods: Integration type was not initialized. AddTraceAttributeInstrumentation must be called first");
+            Logger::Warn(
+                "InitializeTraceMethods: Integration type was not initialized. AddTraceAttributeInstrumentation must be called first");
         }
         else if (trace_annotation_integration_type.get()->assembly.str() != integration_assembly_name
-            || trace_annotation_integration_type.get()->name != integration_type_name)
+                 || trace_annotation_integration_type.get()->name != integration_type_name)
         {
             Logger::Warn("InitializeTraceMethods: Integration type was initialized to assembly=",
-                         trace_annotation_integration_type.get()->assembly.str(), ", type=", trace_annotation_integration_type.get()->name,
-                         ". InitializeTraceMethods was invoked with assembly=", integration_assembly_name , ", type=", integration_type_name, ". Exiting InitializeTraceMethods.");
+                         trace_annotation_integration_type.get()->assembly.str(), ", type=",
+                         trace_annotation_integration_type.get()->name,
+                         ". InitializeTraceMethods was invoked with assembly=", integration_assembly_name, ", type=",
+                         integration_type_name, ". Exiting InitializeTraceMethods.");
         }
         else if (configuration_string.size() > 0)
         {
-            std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(*trace_annotation_integration_type.get(), configuration_string);
-            std::scoped_lock<std::mutex> moduleLock(module_ids_lock_);
+            std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
+                *trace_annotation_integration_type.get(), configuration_string);
+            auto modules = module_ids.Get();
 
-            Logger::Debug("InitializeTraceMethods: Total number of modules to analyze: ", module_ids_.size());
+            Logger::Debug("InitializeTraceMethods: Total number of modules to analyze: ", modules->size());
             if (rejit_handler != nullptr)
             {
-                std::promise<ULONG> promise;
-                std::future<ULONG> future = promise.get_future();
-                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(module_ids_, integrationDefinitions,
-                                                                                    &promise);
+                auto promise = std::make_shared<std::promise<ULONG>>();
+                std::future<ULONG> future = promise->get_future();
+                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
+                    modules.Ref(), integrationDefinitions,
+                    promise);
 
                 // wait and get the value from the future<int>
                 const auto& numReJITs = future.get();
@@ -1612,16 +2144,45 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
 }
 
 void CorProfiler::InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
-                            debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
-                            debugger::DebuggerRemoveProbesDefinition* removeProbes, int revertProbesLength) const
+                                   debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
+                                   debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
+                                   debugger::DebuggerRemoveProbesDefinition* removeProbes, int revertProbesLength) const
 {
-    debugger_instrumentation_requester->InstrumentProbes(methodProbes, methodProbesLength, lineProbes, lineProbesLength,
-                                                  removeProbes, revertProbesLength);
+    if (debugger_instrumentation_requester != nullptr)
+    {
+        debugger_instrumentation_requester->InstrumentProbes(methodProbes, methodProbesLength, lineProbes,
+                                                             lineProbesLength, spanProbes, spanProbesLength, removeProbes, revertProbesLength);
+    }
 }
 
 int CorProfiler::GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses)
 {
-    return debugger_instrumentation_requester->GetProbesStatuses(probeIds, probeIdsLength, probeStatuses);
+    if (debugger_instrumentation_requester != nullptr)
+    {
+        return debugger_instrumentation_requester->GetProbesStatuses(probeIds, probeIdsLength, probeStatuses);
+    }
+
+    return 0;
+}
+
+//
+// Fault-Tolerant Instrumentation methods
+//
+void CorProfiler::ReportSuccessfulInstrumentation(ModuleID moduleId, int methodToken, const WCHAR* instrumentationId,
+    int products)
+{
+    const auto instrumentationIdString = shared::WSTRING(instrumentationId);
+    const auto instrumentingProducts = static_cast<InstrumentingProducts>(products);
+    const auto methodId = static_cast<mdMethodDef>(methodToken);
+    fault_tolerant::FaultTolerantTracker::Instance()->AddSuccessfulInstrumentationId(moduleId, methodId, instrumentationIdString, instrumentingProducts, rejit_handler);
+}
+
+bool CorProfiler::ShouldHeal(ModuleID moduleId, int methodToken, const WCHAR* instrumentationId, int products)
+{
+    const auto instrumentationIdString = shared::WSTRING(instrumentationId);
+    const auto instrumentingProducts = static_cast<InstrumentingProducts>(products);
+    const auto methodId = static_cast<mdMethodDef>(methodToken);
+    return fault_tolerant::FaultTolerantTracker::Instance()->ShouldHeal(moduleId, methodId, instrumentationIdString, instrumentingProducts, rejit_handler);
 }
 
 //
@@ -1849,18 +2410,17 @@ HRESULT CorProfiler::EmitDistributedTracerTargetMethod(const ModuleMetadata& mod
         return hr;
     }
 
-
     constexpr COR_SIGNATURE signature[] = {
         IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
         0,                             // Number of parameters
-        ELEMENT_TYPE_OBJECT,             // Return type
+        ELEMENT_TYPE_OBJECT,           // Return type
     };
 
     mdMethodDef targetMethodDef;
 
     hr = module_metadata.metadata_emit->DefineMethod(
         distributedTracerTypeDef, distributed_tracer_target_method_name.c_str(), mdStatic | mdPublic,
-                                                     signature, sizeof(signature), 0, 0, &targetMethodDef);
+        signature, sizeof(signature), 0, 0, &targetMethodDef);
 
     if (FAILED(hr))
     {
@@ -1907,41 +2467,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
 {
     HRESULT hr = S_OK;
 
-    if (IsDebugEnabled())
-    {
-        Logger::Info("pcbPublicKey: ", managed_profiler_assembly_property.pcbPublicKey);
-        Logger::Info("ppbPublicKey: ", shared::HexStr(managed_profiler_assembly_property.ppbPublicKey,
-                                                      managed_profiler_assembly_property.pcbPublicKey));
-        Logger::Info("pcbPublicKey: ");
-        const auto ppbPublicKey = (BYTE*) managed_profiler_assembly_property.ppbPublicKey;
-        for (ULONG i = 0; i < managed_profiler_assembly_property.pcbPublicKey; i++)
-        {
-            Logger::Info(" -> ", (int) ppbPublicKey[i]);
-        }
-        Logger::Info("szName: ", managed_profiler_assembly_property.szName);
-
-        Logger::Info("Metadata.cbLocale: ", managed_profiler_assembly_property.pMetaData.cbLocale);
-        Logger::Info("Metadata.szLocale: ", managed_profiler_assembly_property.pMetaData.szLocale);
-
-        if (managed_profiler_assembly_property.pMetaData.rOS != nullptr)
-        {
-            Logger::Info("Metadata.rOS.dwOSMajorVersion: ",
-                         managed_profiler_assembly_property.pMetaData.rOS->dwOSMajorVersion);
-            Logger::Info("Metadata.rOS.dwOSMinorVersion: ",
-                         managed_profiler_assembly_property.pMetaData.rOS->dwOSMinorVersion);
-            Logger::Info("Metadata.rOS.dwOSPlatformId: ",
-                         managed_profiler_assembly_property.pMetaData.rOS->dwOSPlatformId);
-        }
-
-        Logger::Info("Metadata.usBuildNumber: ", managed_profiler_assembly_property.pMetaData.usBuildNumber);
-        Logger::Info("Metadata.usMajorVersion: ", managed_profiler_assembly_property.pMetaData.usMajorVersion);
-        Logger::Info("Metadata.usMinorVersion: ", managed_profiler_assembly_property.pMetaData.usMinorVersion);
-        Logger::Info("Metadata.usRevisionNumber: ", managed_profiler_assembly_property.pMetaData.usRevisionNumber);
-
-        Logger::Info("pulHashAlgId: ", managed_profiler_assembly_property.pulHashAlgId);
-        Logger::Info("sizeof(pulHashAlgId): ", sizeof(managed_profiler_assembly_property.pulHashAlgId));
-        Logger::Info("assemblyFlags: ", managed_profiler_assembly_property.assemblyFlags);
-    }
+    LogManagedProfilerAssemblyDetails();
 
     //
     // *** Get DistributedTracer TypeDef
@@ -2014,7 +2540,8 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     };
 
     mdMemberRef targetMemberRef;
-    hr = module_metadata.metadata_emit->DefineMemberRef(distributedTracerTypeRef, distributed_tracer_target_method_name.c_str(), targetSignature,
+    hr = module_metadata.metadata_emit->DefineMemberRef(distributedTracerTypeRef,
+                                                        distributed_tracer_target_method_name.c_str(), targetSignature,
                                                         sizeof(targetSignature), &targetMemberRef);
     if (FAILED(hr))
     {
@@ -2045,6 +2572,78 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     {
         Logger::Info(GetILCodes("After -> GetDistributedTracer. ", &getterRewriter,
                                 GetFunctionInfo(module_metadata.metadata_import, getDistributedTraceMethodDef),
+                                module_metadata.metadata_import));
+    }
+
+    return hr;
+}
+
+HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, ModuleID module_id)
+{
+    HRESULT hr = S_OK;
+
+    LogManagedProfilerAssemblyDetails();
+
+    //
+    // *** Get Instrumentation TypeDef
+    //
+    mdTypeDef instrumentationTypeDef;
+    hr = module_metadata.metadata_import->FindTypeDefByName(instrumentation_type_name.c_str(),
+                                                            mdTokenNil, &instrumentationTypeDef);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error rewriting for Telemetry on getting Instrumentation TypeDef");
+        return hr;
+    }
+
+    //
+    // *** GetNativeTracerVersion MethodDef ***
+    //
+    constexpr COR_SIGNATURE getNativeTracerVersion[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_STRING};
+    mdMethodDef getNativeTracerVersionMethodDef;
+    hr = module_metadata.metadata_import->FindMethod(instrumentationTypeDef, WStr("GetNativeTracerVersion"),
+                                                     getNativeTracerVersion, 3, &getNativeTracerVersionMethodDef);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error rewriting for Telemetry on getting GetNativeTracerVersion MethodDef");
+        return hr;
+    }
+
+    // Define NativeTracerVersion as a string
+    mdString nativeTracerVersionToken;
+    const auto nativeTracerVersion = ToWSTRING(PROFILER_VERSION);
+    hr = module_metadata.metadata_emit->DefineUserString(
+        nativeTracerVersion.c_str(), static_cast<ULONG>(nativeTracerVersion.length()), &nativeTracerVersionToken);
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error rewriting for Telemetry on DefineUserString for NativeProfilerVersion");
+        return hr;
+    }
+
+    ILRewriter methodRewriter(this->info_, nullptr, module_id, getNativeTracerVersionMethodDef);
+    methodRewriter.InitializeTiny();
+
+    // Modify first instruction from ldstr "None" to ldstr PROFILER_VERSION
+    ILRewriterWrapper wrapper(&methodRewriter);
+    wrapper.SetILPosition(methodRewriter.GetILList()->m_pNext);
+    wrapper.LoadStr(nativeTracerVersionToken);
+    wrapper.Return();
+
+    hr = methodRewriter.Export();
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error rewriting Instrumentation.GetNativeTracerVersion() => PROFILER_VERSION");
+        return hr;
+    }
+
+    Logger::Info("Rewriting Instrumentation.GetNativeTracerVersion() => PROFILER_VERSION");
+
+    if (IsDumpILRewriteEnabled())
+    {
+        Logger::Info(GetILCodes("After -> Instrumentation.GetNativeTracerVersion(). ", &methodRewriter,
+                                GetFunctionInfo(module_metadata.metadata_import, getNativeTracerVersionMethodDef),
                                 module_metadata.metadata_import));
     }
 
@@ -2116,16 +2715,35 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                                     const ComPtr<IMetaDataImport2>& metadata_import)
 {
     std::stringstream orig_sstream;
-    orig_sstream << title;
-    orig_sstream << shared::ToString(caller.type.name);
+    orig_sstream << title << std::endl << std::endl;
+    orig_sstream << "Name: " << shared::ToString(caller.type.name);
     orig_sstream << ".";
     orig_sstream << shared::ToString(caller.name);
-    orig_sstream << " => (max_stack: ";
-    orig_sstream << rewriter->GetMaxStackValue();
-    orig_sstream << ")" << std::endl;
+    const auto callerNumOfArgs = caller.signature.NumberOfArguments();
+    if (callerNumOfArgs > 0)
+    {
+        orig_sstream << "(";
+        orig_sstream << callerNumOfArgs;
+        if (callerNumOfArgs == 1)
+        {
+            orig_sstream << " argument";
+        }
+        else
+        {
+            orig_sstream << " arguments";
+        }
+        orig_sstream << ")";
+    }
+    else
+    {
+        orig_sstream << "()";
+    }
+    orig_sstream << std::endl << "Signature: " << ToString(caller.signature.str()) << std::endl;
+    orig_sstream << "Max Stack: ";
+    orig_sstream << rewriter->GetMaxStackValue() << std::endl;
 
-    const auto& ehCount = rewriter->GetEHCount();
-    const auto& ehPtr = rewriter->GetEHPointer();
+    const auto ehCount = rewriter->GetEHCount();
+    const auto ehPtr = rewriter->GetEHPointer();
     int indent = 1;
 
     PCCOR_SIGNATURE originalSignature = nullptr;
@@ -2138,14 +2756,13 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize);
         if (SUCCEEDED(hr))
         {
-            orig_sstream << std::endl
-                         << ". Local Var Signature: "
-                         << shared::ToString(shared::HexStr(originalSignature, originalSignatureSize))
-                         << std::endl;
+            orig_sstream << "Local Var Signature: "
+                << shared::ToString(shared::HexStr(originalSignature, originalSignatureSize))
+                << std::endl;
         }
     }
 
-    orig_sstream << std::endl;
+    orig_sstream << "{" << std::endl;
     for (ILInstr* cInstr = rewriter->GetILList()->m_pNext; cInstr != rewriter->GetILList(); cInstr = cInstr->m_pNext)
     {
 
@@ -2158,29 +2775,19 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                 {
                     if (currentEH.m_pTryBegin == cInstr)
                     {
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << ".try {" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "try" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
                         indent++;
                     }
                     if (currentEH.m_pTryEnd == cInstr)
                     {
                         indent--;
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << "}" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "}" << std::endl;
                     }
                     if (currentEH.m_pHandlerBegin == cInstr)
                     {
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << ".finally {" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "finally" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
                         indent++;
                     }
                 }
@@ -2192,29 +2799,58 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                 {
                     if (currentEH.m_pTryBegin == cInstr)
                     {
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << ".try {" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "try" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
                         indent++;
                     }
                     if (currentEH.m_pTryEnd == cInstr)
                     {
                         indent--;
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << "}" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "}" << std::endl;
                     }
                     if (currentEH.m_pHandlerBegin == cInstr)
                     {
-                        if (indent > 0)
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "catch";
+                        if (currentEH.m_ClassToken != mdTokenNil)
                         {
-                            orig_sstream << indent_values[indent];
+                            const auto typeInfo = GetTypeInfo(metadata_import, (mdToken) currentEH.m_ClassToken);
+                            orig_sstream << " (" << shared::ToString(typeInfo.name) << " [0x" << std::hex << currentEH.
+                                m_ClassToken << "])";
                         }
-                        orig_sstream << ".catch {" << std::endl;
+                        orig_sstream << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
+                        indent++;
+                    }
+                }
+            }
+            for (unsigned int i = 0; i < ehCount; i++)
+            {
+                const auto& currentEH = ehPtr[i];
+                if (currentEH.m_Flags == COR_ILEXCEPTION_CLAUSE_FILTER)
+                {
+                    if (currentEH.m_pTryBegin == cInstr)
+                    {
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "try" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
+                        indent++;
+                    }
+                    if (currentEH.m_pTryEnd == cInstr)
+                    {
+                        indent--;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "}" << std::endl;
+                    }
+                    if (currentEH.m_pFilter == cInstr)
+                    {
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "filter" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
+                        indent++;
+                    }
+                    if (currentEH.m_pHandlerBegin == cInstr)
+                    {
+                        indent--;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "}" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "catch" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
                         indent++;
                     }
                 }
@@ -2236,23 +2872,35 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             orig_sstream << "0x";
             orig_sstream << std::setfill('0') << std::setw(2) << std::hex << cInstr->m_opcode;
         }
-        if (cInstr->m_pTarget != NULL)
+        if (cInstr->m_pTarget != nullptr)
         {
             orig_sstream << "  ";
-            orig_sstream << cInstr->m_pTarget;
 
+            bool augmented = false;
             if (cInstr->m_opcode == CEE_CALL || cInstr->m_opcode == CEE_CALLVIRT || cInstr->m_opcode == CEE_NEWOBJ)
             {
                 const auto memberInfo = GetFunctionInfo(metadata_import, (mdMemberRef) cInstr->m_Arg32);
-                orig_sstream << "  | ";
+                augmented = true;
+                if (memberInfo.signature.IsInstanceMethod())
+                {
+                    orig_sstream << "instance ";
+                }
                 orig_sstream << shared::ToString(memberInfo.type.name);
                 orig_sstream << ".";
                 orig_sstream << shared::ToString(memberInfo.name);
-                if (memberInfo.signature.NumberOfArguments() > 0)
+                const auto numOfArgs = memberInfo.signature.NumberOfArguments();
+                if (numOfArgs > 0)
                 {
                     orig_sstream << "(";
-                    orig_sstream << memberInfo.signature.NumberOfArguments();
-                    orig_sstream << " argument{s}";
+                    orig_sstream << numOfArgs;
+                    if (numOfArgs == 1)
+                    {
+                        orig_sstream << " argument";
+                    }
+                    else
+                    {
+                        orig_sstream << " arguments";
+                    }
                     orig_sstream << ")";
                 }
                 else
@@ -2262,10 +2910,10 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             }
             else if (cInstr->m_opcode == CEE_CASTCLASS || cInstr->m_opcode == CEE_BOX ||
                      cInstr->m_opcode == CEE_UNBOX_ANY || cInstr->m_opcode == CEE_NEWARR ||
-                     cInstr->m_opcode == CEE_INITOBJ)
+                     cInstr->m_opcode == CEE_INITOBJ || cInstr->m_opcode == CEE_ISINST)
             {
                 const auto typeInfo = GetTypeInfo(metadata_import, (mdTypeRef) cInstr->m_Arg32);
-                orig_sstream << "  | ";
+                augmented = true;
                 orig_sstream << shared::ToString(typeInfo.name);
             }
             else if (cInstr->m_opcode == CEE_LDSTR)
@@ -2273,18 +2921,37 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                 WCHAR szString[1024];
                 ULONG szStringLength;
                 auto hr = metadata_import->GetUserString((mdString) cInstr->m_Arg32, szString, 1024,
-                                                                         &szStringLength);
+                                                         &szStringLength);
                 if (SUCCEEDED(hr))
                 {
-                    orig_sstream << "  | \"";
+                    augmented = true;
+                    orig_sstream << "\"";
                     orig_sstream << shared::ToString(shared::WSTRING(szString, szStringLength));
                     orig_sstream << "\"";
                 }
             }
+
+            if (augmented)
+            {
+                orig_sstream << " [";
+                orig_sstream << cInstr->m_pTarget;
+                orig_sstream << "]";
+            }
+            else
+            {
+                orig_sstream << cInstr->m_pTarget;
+            }
         }
         else if (cInstr->m_Arg64 != 0)
         {
-            orig_sstream << " ";
+            orig_sstream << "  ";
+            orig_sstream << cInstr->m_Arg64;
+        }
+        else if (cInstr->m_opcode == CEE_STLOC || cInstr->m_opcode == CEE_STLOC_S ||
+                 cInstr->m_opcode == CEE_LDLOC || cInstr->m_opcode == CEE_LDLOC_S ||
+                 cInstr->m_opcode == CEE_LDLOCA || cInstr->m_opcode == CEE_LDLOCA_S)
+        {
+            orig_sstream << "  ";
             orig_sstream << cInstr->m_Arg64;
         }
         orig_sstream << std::endl;
@@ -2297,23 +2964,42 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                 if (currentEH.m_pHandlerEnd == cInstr)
                 {
                     indent--;
-                    if (indent > 0)
-                    {
-                        orig_sstream << indent_values[indent];
-                    }
-                    orig_sstream << "}" << std::endl;
+                    orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "}" << std::endl;
                 }
             }
         }
     }
+    orig_sstream << "}" << std::endl;
     return orig_sstream.str();
+}
+
+bool CorProfiler::EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata, mdTypeDef* typeDef)
+{
+    // *** Ensure Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException available
+    const auto bubble_up_type_name = calltargetbubbleexception_tracer_type_name.c_str();
+    const auto found_call_target_bubble_up_exception_type = module_metadata.metadata_import->FindTypeDefByName(bubble_up_type_name, mdTokenNil, typeDef);
+    Logger::Debug("CallTargetBubbleUpException type available test, hresult is: ", found_call_target_bubble_up_exception_type);
+    return SUCCEEDED(found_call_target_bubble_up_exception_type);
+}
+
+bool CorProfiler::EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const ModuleMetadata& module_metadata, mdTypeDef typeDef)
+{
+    const auto bubble_up_function_name = calltargetbubbleexception_tracer_function_name.c_str();
+
+    mdMethodDef methodDef = mdTokenNil;
+    const auto found_call_target_bubble_up_exception_function = module_metadata.metadata_import->FindMethod(typeDef, bubble_up_function_name, 0, 0, &methodDef);
+
+    auto res = SUCCEEDED(found_call_target_bubble_up_exception_function);
+    Logger::Debug("CallTargetBubbleUpException.IsCallTargetBubbleUpException method found: ", res);
+    return res;
 }
 
 //
 // Startup methods
 //
 HRESULT CorProfiler::RunILStartupHook(const ComPtr<IMetaDataEmit2>& metadata_emit, const ModuleID module_id,
-                                      const mdToken function_token, const FunctionInfo& caller, const ModuleMetadata& module_metadata)
+                                      const mdToken function_token, const FunctionInfo& caller,
+                                      const ModuleMetadata& module_metadata)
 {
     mdMethodDef ret_method_token;
     auto hr = GenerateVoidILStartupMethod(module_id, &ret_method_token);
@@ -2367,6 +3053,12 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     const auto& assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
     const auto& assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
+    // ****************************************************************************************************************
+    // Assembly Refs
+    // ****************************************************************************************************************
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Define an AssemblyRef for CorLib
     mdAssemblyRef corlib_ref;
     hr = GetCorLibAssemblyRef(assembly_emit, corAssemblyProperty, &corlib_ref);
 
@@ -2376,18 +3068,250 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
+    // ****************************************************************************************************************
+    // Type Refs
+    // ****************************************************************************************************************
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Define a TypeRef for System.Object
     mdTypeRef object_type_ref;
     hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Object"), &object_type_ref);
     if (FAILED(hr))
     {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
+        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName::System.Object failed");
         return hr;
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get a TypeRef for System.Threading.Interlocked
+    mdTypeRef interlocked_type_ref;
+    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Threading.Interlocked"), &interlocked_type_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName::System.Threading.Interlocked failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get a TypeRef for System.Byte
+    mdTypeRef byte_type_ref;
+    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Byte"), &byte_type_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName::System.Byte failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get a TypeRef for System.Runtime.InteropServices.Marshal
+    mdTypeRef marshal_type_ref;
+    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Runtime.InteropServices.Marshal"),
+                                            &marshal_type_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName::System.Runtime.InteropServices.Marshal failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get a TypeRef for System.Reflection.Assembly
+    mdTypeRef system_reflection_assembly_type_ref;
+    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Reflection.Assembly"),
+                                            &system_reflection_assembly_type_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName::System.Reflection.Assembly failed");
+        return hr;
+    }
+
+    mdTypeRef system_appdomain_type_ref = mdTypeRefNil;
+    if (runtime_information_.is_desktop())
+    {
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Get a TypeRef for System.AppDomain
+        hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.AppDomain"), &system_appdomain_type_ref);
+        if (FAILED(hr))
+        {
+            Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName::System.AppDomain failed");
+            return hr;
+        }
+    }
+
+    // ****************************************************************************************************************
+    // Member Refs
+    // ****************************************************************************************************************
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Create method signature for System.Threading.Interlocked::CompareExchange(int32&, int32, int32)
+    mdMemberRef interlocked_compare_member_ref;
+    COR_SIGNATURE interlocked_compare_exchange_signature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT,
+                                                              3,
+                                                              ELEMENT_TYPE_I4,
+                                                              ELEMENT_TYPE_BYREF,
+                                                              ELEMENT_TYPE_I4,
+                                                              ELEMENT_TYPE_I4,
+                                                              ELEMENT_TYPE_I4};
+    hr = metadata_emit->DefineMemberRef(
+        interlocked_type_ref, WStr("CompareExchange"), interlocked_compare_exchange_signature,
+        sizeof(interlocked_compare_exchange_signature), &interlocked_compare_member_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef::CompareExchange failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get a MemberRef for System.Runtime.InteropServices.Marshal.Copy(IntPtr, Byte[], int, int)
+    mdMemberRef marshal_copy_member_ref;
+    COR_SIGNATURE marshal_copy_signature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
+                                              4,                             // Number of parameters
+                                              ELEMENT_TYPE_VOID,             // Return type
+                                              ELEMENT_TYPE_I,                // List of parameter types
+                                              ELEMENT_TYPE_SZARRAY,
+                                              ELEMENT_TYPE_U1,
+                                              ELEMENT_TYPE_I4,
+                                              ELEMENT_TYPE_I4};
+    hr = metadata_emit->DefineMemberRef(marshal_type_ref, WStr("Copy"), marshal_copy_signature,
+                                        sizeof(marshal_copy_signature), &marshal_copy_member_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Create method signature for System.Reflection.Assembly.Load(byte[], byte[])
+    mdMemberRef appdomain_load_member_ref;
+    COR_SIGNATURE appdomain_load_signature_start[] = {
+        IMAGE_CEE_CS_CALLCONV_DEFAULT, 2,
+        ELEMENT_TYPE_CLASS // ret = System.Reflection.Assembly
+            // insert compressed token for System.Reflection.Assembly TypeRef here
+    };
+    COR_SIGNATURE appdomain_load_signature_end[] = {ELEMENT_TYPE_SZARRAY, ELEMENT_TYPE_U1, ELEMENT_TYPE_SZARRAY,
+                                                    ELEMENT_TYPE_U1};
+    ULONG start_length = sizeof(appdomain_load_signature_start);
+    ULONG end_length = sizeof(appdomain_load_signature_end);
+    
+    BYTE system_reflection_assembly_type_ref_compressed_token[4];
+    ULONG token_length =
+        CorSigCompressToken(system_reflection_assembly_type_ref, system_reflection_assembly_type_ref_compressed_token);
+
+    const auto appdomain_load_signature_length = start_length + token_length + end_length;
+    COR_SIGNATURE appdomain_load_signature[250];
+    memcpy(appdomain_load_signature, appdomain_load_signature_start, start_length);
+    memcpy(&appdomain_load_signature[start_length], system_reflection_assembly_type_ref_compressed_token, token_length);
+    memcpy(&appdomain_load_signature[start_length + token_length], appdomain_load_signature_end, end_length);
+
+    hr = metadata_emit->DefineMemberRef(system_reflection_assembly_type_ref, WStr("Load"), appdomain_load_signature,
+                                        appdomain_load_signature_length, &appdomain_load_member_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Create method signature for Assembly.CreateInstance(string)
+    mdMemberRef assembly_create_instance_member_ref;
+    COR_SIGNATURE assembly_create_instance_signature[] = {IMAGE_CEE_CS_CALLCONV_HASTHIS, 1,
+                                                          ELEMENT_TYPE_OBJECT, // ret = System.Object
+                                                          ELEMENT_TYPE_STRING};
+
+    hr = metadata_emit->DefineMemberRef(system_reflection_assembly_type_ref, WStr("CreateInstance"),
+                                        assembly_create_instance_signature, sizeof(assembly_create_instance_signature),
+                                        &assembly_create_instance_member_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Create method member ref for AppDomain tokens
+    mdMemberRef appdomain_get_currentdomain_member_ref = mdMemberRefNil;
+    mdMemberRef appdomain_get_isfullytrusted_member_ref = mdMemberRefNil;
+    mdMemberRef appdomain_get_ishomogenous_member_ref = mdMemberRefNil;
+    if (system_appdomain_type_ref != mdTypeRefNil)
+    {
+        // Get a mdMemberRef for System.AppDomain.get_CurrentDomain()
+        COR_SIGNATURE appdomain_get_currentdomain_signature_start[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_CLASS};
+        ULONG appdomain_get_currentdomain_signature_start_length = sizeof(appdomain_get_currentdomain_signature_start);
+
+        BYTE system_appdomain_type_ref_compressed_token[4];
+        ULONG system_appdomain_type_ref_compressed_token_length = CorSigCompressToken(system_appdomain_type_ref, system_appdomain_type_ref_compressed_token);
+
+        const auto appdomain_get_currentdomain_signature_length = appdomain_get_currentdomain_signature_start_length + system_appdomain_type_ref_compressed_token_length;
+        COR_SIGNATURE appdomain_get_currentdomain_signature[250];
+        memcpy(appdomain_get_currentdomain_signature, appdomain_get_currentdomain_signature_start, appdomain_get_currentdomain_signature_start_length);
+        memcpy(&appdomain_get_currentdomain_signature[appdomain_get_currentdomain_signature_start_length], system_appdomain_type_ref_compressed_token, system_appdomain_type_ref_compressed_token_length);
+
+        hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref, WStr("get_CurrentDomain"), appdomain_get_currentdomain_signature,
+                                            appdomain_get_currentdomain_signature_length, &appdomain_get_currentdomain_member_ref);
+        if (FAILED(hr))
+        {
+            Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+            return hr;
+        }
+
+        // Get a mdMemberRef for System.AppDomain.get_IsFullyTrusted()
+        COR_SIGNATURE appdomain_get_isfullytrusted_signature[] = {IMAGE_CEE_CS_CALLCONV_HASTHIS, 0, ELEMENT_TYPE_BOOLEAN};
+        hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref, WStr("get_IsFullyTrusted"),
+                                            appdomain_get_isfullytrusted_signature, sizeof(appdomain_get_isfullytrusted_signature),
+                                            &appdomain_get_isfullytrusted_member_ref);
+        if (FAILED(hr))
+        {
+            Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for get_IsFullyTrusted");
+            return hr;
+        }
+
+        // Get a mdMemberRef for System.AppDomain.get_IsHomogenous()
+        COR_SIGNATURE appdomain_get_ishomogenous_signature[] = {IMAGE_CEE_CS_CALLCONV_HASTHIS, 0,
+                                                                  ELEMENT_TYPE_BOOLEAN};
+        hr = metadata_emit->DefineMemberRef(
+            system_appdomain_type_ref, WStr("get_IsHomogenous"), appdomain_get_ishomogenous_signature,
+            sizeof(appdomain_get_ishomogenous_signature), &appdomain_get_ishomogenous_member_ref);
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for get_IsHomogenous");
+            return hr;
+        }
+    }
+
+    // ****************************************************************************************************************
+    // String Defs
+    // ****************************************************************************************************************
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Create a string representing "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"
+    // Create OS-specific implementations because on Windows, creating the string via
+    // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"_W.c_str() does not create the
+    // proper string for CreateInstance to successfully call
+
+#ifdef _WIN32
+    LPCWSTR load_helper_str = L"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
+    auto load_helper_str_size = wcslen(load_helper_str);
+#else
+    char16_t load_helper_str[] = u"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
+    auto load_helper_str_size = std::char_traits<char16_t>::length(load_helper_str);
+#endif
+
+    mdString load_helper_token;
+    hr = metadata_emit->DefineUserString(load_helper_str, (ULONG) load_helper_str_size, &load_helper_token);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineUserString failed");
+        return hr;
+    }
+
+    // ****************************************************************************************************************
+    // Type Defs
+    // ****************************************************************************************************************
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Define a new TypeDef __DDVoidMethodType__ that extends System.Object
     mdTypeDef new_type_def;
-    hr = metadata_emit->DefineTypeDef(WStr("__DDVoidMethodType__"), tdAbstract | tdSealed, object_type_ref, NULL,
+    hr = metadata_emit->DefineTypeDef(WStr("__DDVoidMethodType__"), tdAbstract | tdSealed, object_type_ref, nullptr,
                                       &new_type_def);
     if (FAILED(hr))
     {
@@ -2395,43 +3319,11 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-    // Define a new static method __DDVoidMethodCall__ on the new type that has a void return type and takes no
-    // arguments
-    BYTE initialize_signature[] = {
-        IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
-        0,                             // Number of parameters
-        ELEMENT_TYPE_VOID,             // Return type
-    };
-    hr = metadata_emit->DefineMethod(new_type_def, WStr("__DDVoidMethodCall__"), mdStatic, initialize_signature,
-                                     sizeof(initialize_signature), 0, 0, ret_method_token);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMethod failed");
-        return hr;
-    }
+    // ****************************************************************************************************************
+    // Field Defs
+    // ****************************************************************************************************************
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Define IsAlreadyLoaded() method
-    //
-
-    //
-    // Define a new static method IsAlreadyLoaded on the new type that has a bool return type and takes no arguments;
-    //
-    mdMethodDef alreadyLoadedMethodToken;
-    BYTE already_loaded_signature[] = {
-        IMAGE_CEE_CS_CALLCONV_DEFAULT,
-        0,
-        ELEMENT_TYPE_BOOLEAN,
-    };
-    hr = metadata_emit->DefineMethod(new_type_def, WStr("IsAlreadyLoaded"), mdStatic | mdPrivate,
-                                     already_loaded_signature, sizeof(already_loaded_signature), 0, 0,
-                                     &alreadyLoadedMethodToken);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMethod IsAlreadyLoaded failed");
-        return hr;
-    }
-
     // Define a new static int field _isAssemblyLoaded on the new type.
     mdFieldDef isAssemblyLoadedFieldToken = mdFieldDefNil;
     BYTE field_signature[] = {IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_I4};
@@ -2443,93 +3335,11 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-    // Get a TypeRef for System.Threading.Interlocked
-    mdTypeRef interlocked_type_ref;
-    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Threading.Interlocked"), &interlocked_type_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName interlocked_type_ref failed");
-        return hr;
-    }
+    // ****************************************************************************************************************
+    // Method Defs
+    // ****************************************************************************************************************
 
-    // Create method signature for System.Threading.Interlocked::CompareExchange(int32&, int32, int32)
-    COR_SIGNATURE interlocked_compare_exchange_signature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT,
-                                                              3,
-                                                              ELEMENT_TYPE_I4,
-                                                              ELEMENT_TYPE_BYREF,
-                                                              ELEMENT_TYPE_I4,
-                                                              ELEMENT_TYPE_I4,
-                                                              ELEMENT_TYPE_I4};
-
-    mdMemberRef interlocked_compare_member_ref;
-    hr = metadata_emit->DefineMemberRef(
-        interlocked_type_ref, WStr("CompareExchange"), interlocked_compare_exchange_signature,
-        sizeof(interlocked_compare_exchange_signature), &interlocked_compare_member_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef CompareExchange failed");
-        return hr;
-    }
-
-    /////////////////////////////////////////////
-    // Add IL instructions into the IsAlreadyLoaded method
-    //
-    //  static int _isAssemblyLoaded = 0;
-    //
-    //  public static bool IsAlreadyLoaded() {
-    //      return Interlocked.CompareExchange(ref _isAssemblyLoaded, 1, 0) == 1;
-    //  }
-    //
-    ILRewriter rewriter_already_loaded(this->info_, nullptr, module_id, alreadyLoadedMethodToken);
-    rewriter_already_loaded.InitializeTiny();
-
-    ILInstr* pALFirstInstr = rewriter_already_loaded.GetILList()->m_pNext;
-    ILInstr* pALNewInstr = NULL;
-
-    // ldsflda _isAssemblyLoaded : Load the address of the "_isAssemblyLoaded" static var
-    pALNewInstr = rewriter_already_loaded.NewILInstr();
-    pALNewInstr->m_opcode = CEE_LDSFLDA;
-    pALNewInstr->m_Arg32 = isAssemblyLoadedFieldToken;
-    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
-    // ldc.i4.1 : Load the constant 1 (int) to the stack
-    pALNewInstr = rewriter_already_loaded.NewILInstr();
-    pALNewInstr->m_opcode = CEE_LDC_I4_1;
-    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
-    // ldc.i4.0 : Load the constant 0 (int) to the stack
-    pALNewInstr = rewriter_already_loaded.NewILInstr();
-    pALNewInstr->m_opcode = CEE_LDC_I4_0;
-    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
-    // call int Interlocked.CompareExchange(ref int, int, int) method
-    pALNewInstr = rewriter_already_loaded.NewILInstr();
-    pALNewInstr->m_opcode = CEE_CALL;
-    pALNewInstr->m_Arg32 = interlocked_compare_member_ref;
-    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
-    // ldc.i4.1 : Load the constant 1 (int) to the stack
-    pALNewInstr = rewriter_already_loaded.NewILInstr();
-    pALNewInstr->m_opcode = CEE_LDC_I4_1;
-    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
-    // ceq : Compare equality from two values from the stack
-    pALNewInstr = rewriter_already_loaded.NewILInstr();
-    pALNewInstr->m_opcode = CEE_CEQ;
-    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
-    // ret : Return the value of the comparison
-    pALNewInstr = rewriter_already_loaded.NewILInstr();
-    pALNewInstr->m_opcode = CEE_RET;
-    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
-    hr = rewriter_already_loaded.Export();
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: Call to ILRewriter.Export() failed for ModuleID=", module_id);
-        return hr;
-    }
-
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Define a method on the managed side that will PInvoke into the profiler method:
     // C++: void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int*
     // symbolsSize) C#: static extern void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out
@@ -2583,127 +3393,27 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-    // Get a TypeRef for System.Byte
-    mdTypeRef byte_type_ref;
-    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Byte"), &byte_type_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
-        return hr;
-    }
-
-    // Get a TypeRef for System.Runtime.InteropServices.Marshal
-    mdTypeRef marshal_type_ref;
-    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Runtime.InteropServices.Marshal"),
-                                            &marshal_type_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
-        return hr;
-    }
-
-    // Get a MemberRef for System.Runtime.InteropServices.Marshal.Copy(IntPtr, Byte[], int, int)
-    mdMemberRef marshal_copy_member_ref;
-    COR_SIGNATURE marshal_copy_signature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
-                                              4,                             // Number of parameters
-                                              ELEMENT_TYPE_VOID,             // Return type
-                                              ELEMENT_TYPE_I,                // List of parameter types
-                                              ELEMENT_TYPE_SZARRAY,
-                                              ELEMENT_TYPE_U1,
-                                              ELEMENT_TYPE_I4,
-                                              ELEMENT_TYPE_I4};
-    hr = metadata_emit->DefineMemberRef(marshal_type_ref, WStr("Copy"), marshal_copy_signature,
-                                        sizeof(marshal_copy_signature), &marshal_copy_member_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
-        return hr;
-    }
-
-    // Get a TypeRef for System.Reflection.Assembly
-    mdTypeRef system_reflection_assembly_type_ref;
-    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Reflection.Assembly"),
-                                            &system_reflection_assembly_type_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
-        return hr;
-    }
-
-    // Get a MemberRef for System.Object.ToString()
-    mdTypeRef system_object_type_ref;
-    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Object"), &system_object_type_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
-        return hr;
-    }
-
-    // Create method signature for System.Reflection.Assembly.Load(byte[], byte[])
-    COR_SIGNATURE appdomain_load_signature_start[] = {
-        IMAGE_CEE_CS_CALLCONV_DEFAULT, 2,
-        ELEMENT_TYPE_CLASS // ret = System.Reflection.Assembly
-        // insert compressed token for System.Reflection.Assembly TypeRef here
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Define a new static method __DDVoidMethodCall__ on the new type that has a void return type and takes no
+    // arguments
+    BYTE initialize_signature[] = {
+        IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
+        0,                             // Number of parameters
+        ELEMENT_TYPE_VOID,             // Return type
     };
-    COR_SIGNATURE appdomain_load_signature_end[] = {ELEMENT_TYPE_SZARRAY, ELEMENT_TYPE_U1, ELEMENT_TYPE_SZARRAY,
-                                                    ELEMENT_TYPE_U1};
-    ULONG start_length = sizeof(appdomain_load_signature_start);
-    ULONG end_length = sizeof(appdomain_load_signature_end);
-
-    BYTE system_reflection_assembly_type_ref_compressed_token[4];
-    ULONG token_length =
-        CorSigCompressToken(system_reflection_assembly_type_ref, system_reflection_assembly_type_ref_compressed_token);
-
-    const auto appdomain_load_signature_length = start_length + token_length + end_length;
-    COR_SIGNATURE appdomain_load_signature[250];
-    memcpy(appdomain_load_signature, appdomain_load_signature_start, start_length);
-    memcpy(&appdomain_load_signature[start_length], system_reflection_assembly_type_ref_compressed_token, token_length);
-    memcpy(&appdomain_load_signature[start_length + token_length], appdomain_load_signature_end, end_length);
-
-    mdMemberRef appdomain_load_member_ref;
-    hr = metadata_emit->DefineMemberRef(system_reflection_assembly_type_ref, WStr("Load"), appdomain_load_signature,
-                                        appdomain_load_signature_length, &appdomain_load_member_ref);
+    hr = metadata_emit->DefineMethod(new_type_def, WStr("__DDVoidMethodCall__"), mdStatic, initialize_signature,
+                                     sizeof(initialize_signature), 0, 0, ret_method_token);
     if (FAILED(hr))
     {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMethod failed");
         return hr;
     }
 
-    // Create method signature for Assembly.CreateInstance(string)
-    COR_SIGNATURE assembly_create_instance_signature[] = {IMAGE_CEE_CS_CALLCONV_HASTHIS, 1,
-                                                          ELEMENT_TYPE_OBJECT, // ret = System.Object
-                                                          ELEMENT_TYPE_STRING};
+    // ****************************************************************************************************************
+    // Locals signature
+    // ****************************************************************************************************************
 
-    mdMemberRef assembly_create_instance_member_ref;
-    hr = metadata_emit->DefineMemberRef(system_reflection_assembly_type_ref, WStr("CreateInstance"),
-                                        assembly_create_instance_signature, sizeof(assembly_create_instance_signature),
-                                        &assembly_create_instance_member_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
-        return hr;
-    }
-
-    // Create a string representing "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"
-    // Create OS-specific implementations because on Windows, creating the string via
-    // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"_W.c_str() does not create the
-    // proper string for CreateInstance to successfully call
-#ifdef _WIN32
-    LPCWSTR load_helper_str = L"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
-    auto load_helper_str_size = wcslen(load_helper_str);
-#else
-    char16_t load_helper_str[] = u"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
-    auto load_helper_str_size = std::char_traits<char16_t>::length(load_helper_str);
-#endif
-
-    mdString load_helper_token;
-    hr = metadata_emit->DefineUserString(load_helper_str, (ULONG) load_helper_str_size, &load_helper_token);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineUserString failed");
-        return hr;
-    }
-
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Generate a locals signature defined in the following way:
     //   [0] System.IntPtr ("assemblyPtr" - address of assembly bytes)
     //   [1] System.Int32  ("assemblySize" - size of assembly bytes)
@@ -2711,11 +3421,10 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     //   [3] System.Int32  ("symbolsSize" - size of symbols bytes)
     //   [4] System.Byte[] ("assemblyBytes" - managed byte array for assembly)
     //   [5] System.Byte[] ("symbolsBytes" - managed byte array for symbols)
-    //   [6] class System.Reflection.Assembly ("loadedAssembly" - assembly instance to save loaded assembly)
     mdSignature locals_signature_token;
-    COR_SIGNATURE locals_signature[15] = {
+    COR_SIGNATURE locals_signature[] = {
         IMAGE_CEE_CS_CALLCONV_LOCAL_SIG, // Calling convention
-        7,                               // Number of variables
+        6,                               // Number of variables
         ELEMENT_TYPE_I,                  // List of variable types
         ELEMENT_TYPE_I4,
         ELEMENT_TYPE_I,
@@ -2724,10 +3433,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         ELEMENT_TYPE_U1,
         ELEMENT_TYPE_SZARRAY,
         ELEMENT_TYPE_U1,
-        ELEMENT_TYPE_CLASS
-        // insert compressed token for System.Reflection.Assembly TypeRef here
     };
-    CorSigCompressToken(system_reflection_assembly_type_ref, &locals_signature[11]);
     hr = metadata_emit->GetTokenFromSig(locals_signature, sizeof(locals_signature), &locals_signature_token);
     if (FAILED(hr))
     {
@@ -2735,222 +3441,155 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
+    // ****************************************************************************************************************
+    // IL instructions
+    // ****************************************************************************************************************
+
     /////////////////////////////////////////////
     // Add IL instructions into the void method
     ILRewriter rewriter_void(this->info_, nullptr, module_id, *ret_method_token);
     rewriter_void.InitializeTiny();
     rewriter_void.SetTkLocalVarSig(locals_signature_token);
-
-    ILInstr* pFirstInstr = rewriter_void.GetILList()->m_pNext;
-    ILInstr* pNewInstr = NULL;
+    ILRewriterWrapper rewriterWrapper_void(&rewriter_void);
+    rewriterWrapper_void.SetILPosition(rewriter_void.GetILList()->m_pNext);
 
     // Step 0) Check if the assembly was already loaded
 
-    // call bool IsAlreadyLoaded()
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALL;
-    pNewInstr->m_Arg32 = alreadyLoadedMethodToken;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    // ldsflda _isAssemblyLoaded : Load the address of the "_isAssemblyLoaded" static var
+    rewriterWrapper_void.LoadFieldAddress(isAssemblyLoadedFieldToken, true);
+    // ldc.i4.1 : Load the constant 1 (int) to the stack
+    rewriterWrapper_void.LoadInt32(1);
+    // ldc.i4.0 : Load the constant 0 (int) to the stack
+    rewriterWrapper_void.LoadInt32(0);
+    // call int Interlocked.CompareExchange(ref int, int, int) method
+    rewriterWrapper_void.CallMember(interlocked_compare_member_ref, false);
+    // ldc.i4.1 : Load the constant 1 (int) to the stack
+    rewriterWrapper_void.LoadInt32(1);
+    // ceq : Compare equality from two values from the stack
+    rewriterWrapper_void.CreateInstr(CEE_CEQ);
     // check if the return of the method call is true or false
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_BRFALSE_S;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-    ILInstr* pBranchFalseInstr = pNewInstr;
-
+    ILInstr* pIsNotAlreadyLoadedBranch = rewriterWrapper_void.CreateInstr(CEE_BRFALSE_S);
     // return if IsAlreadyLoaded is true
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_RET;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    rewriterWrapper_void.Return();
 
-    // Step 1) Call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr,
+    ILInstr* pIsFullyTrustedBranch = nullptr;
+    ILInstr* pIsHomogenousBranch = nullptr;
+
+    if (appdomain_get_currentdomain_member_ref != mdMemberRefNil
+        && appdomain_get_isfullytrusted_member_ref != mdMemberRefNil
+        && appdomain_get_ishomogenous_member_ref != mdMemberRefNil)
+    {
+        // Step 1) Check if the assembly is loaded in a fully trusted domain.
+
+        // call System.AppDomain.get_CurrentDomain() and set the false branch target for IsAlreadyLoaded()
+        pIsNotAlreadyLoadedBranch->m_pTarget = rewriterWrapper_void.CallMember(appdomain_get_currentdomain_member_ref, false);
+
+        // callvirt System.AppDomain.get_Homogenous()
+        rewriterWrapper_void.CallMember(appdomain_get_ishomogenous_member_ref, true);
+
+        // check if the return of the method call is true or false
+        pIsHomogenousBranch = rewriterWrapper_void.CreateInstr(CEE_BRTRUE_S);
+        // return if IsHomogenous is false
+        rewriterWrapper_void.Return();
+
+        // call System.AppDomain.get_CurrentDomain()
+        pIsHomogenousBranch->m_pTarget = rewriterWrapper_void.CallMember(appdomain_get_currentdomain_member_ref, false);
+
+        // callvirt System.AppDomain.get_IsFullyTrusted()
+        rewriterWrapper_void.CallMember(appdomain_get_isfullytrusted_member_ref, true);
+        // check if the return of the method call is true or false
+        pIsFullyTrustedBranch = rewriterWrapper_void.CreateInstr(CEE_BRTRUE_S);
+        // return if IsFullyTrusted is false
+        rewriterWrapper_void.Return();
+    }
+
+    // Step 2) Call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr,
     // out int symbolsSize)
 
     // ldloca.s 0 : Load the address of the "assemblyPtr" variable (locals index 0)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOCA_S;
-    pNewInstr->m_Arg32 = 0;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    // Set the false branch target
-    pBranchFalseInstr->m_pTarget = pNewInstr;
+    if (pIsFullyTrustedBranch != nullptr)
+    {
+        // Set the true branch target for AppDomain.CurrentDomain.IsFullyTrusted
+        pIsFullyTrustedBranch->m_pTarget = rewriterWrapper_void.LoadLocalAddress(0);
+    }
+    else
+    {
+        // Set the false branch target for IsAlreadyLoaded()
+        pIsNotAlreadyLoadedBranch->m_pTarget = rewriterWrapper_void.LoadLocalAddress(0);
+    }
 
     // ldloca.s 1 : Load the address of the "assemblySize" variable (locals index 1)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOCA_S;
-    pNewInstr->m_Arg32 = 1;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadLocalAddress(1);
     // ldloca.s 2 : Load the address of the "symbolsPtr" variable (locals index 2)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOCA_S;
-    pNewInstr->m_Arg32 = 2;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadLocalAddress(2);
     // ldloca.s 3 : Load the address of the "symbolsSize" variable (locals index 3)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOCA_S;
-    pNewInstr->m_Arg32 = 3;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    rewriterWrapper_void.LoadLocalAddress(3);
+    // call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
+    rewriterWrapper_void.CallMember(pinvoke_method_def, false);
 
-    // call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int
-    // symbolsSize)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALL;
-    pNewInstr->m_Arg32 = pinvoke_method_def;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    // Step 2) Call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length) to populate the
+    // Step 3) Call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length) to populate the
     // managed assembly bytes
 
     // ldloc.1 : Load the "assemblySize" variable (locals index 1)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_1;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadLocal(1);
     // newarr System.Byte : Create a new Byte[] to hold a managed copy of the assembly data
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_NEWARR;
-    pNewInstr->m_Arg32 = byte_type_ref;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.CreateInstr(CEE_NEWARR)->m_Arg32 = byte_type_ref;
     // stloc.s 4 : Assign the Byte[] to the "assemblyBytes" variable (locals index 4)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_STLOC_S;
-    pNewInstr->m_Arg8 = 4;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    rewriterWrapper_void.StLocal(4);
 
     // ldloc.0 : Load the "assemblyPtr" variable (locals index 0)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_0;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadLocal(0);
     // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 4)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_S;
-    pNewInstr->m_Arg8 = 4;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadLocal(4);
     // ldc.i4.0 : Load the integer 0 for the Marshal.Copy startIndex parameter
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDC_I4_0;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadInt32(0);
     // ldloc.1 : Load the "assemblySize" variable (locals index 1) for the Marshal.Copy length parameter
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_1;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadLocal(1);
     // call Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALL;
-    pNewInstr->m_Arg32 = marshal_copy_member_ref;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    rewriterWrapper_void.CallMember(marshal_copy_member_ref, false);
 
-    // Step 3) Call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length) to populate the
+    // Step 4) Call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length) to populate the
     // symbols bytes
 
     // ldloc.3 : Load the "symbolsSize" variable (locals index 3)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_3;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadLocal(3);
     // newarr System.Byte : Create a new Byte[] to hold a managed copy of the symbols data
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_NEWARR;
-    pNewInstr->m_Arg32 = byte_type_ref;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.CreateInstr(CEE_NEWARR)->m_Arg32 = byte_type_ref;
     // stloc.s 5 : Assign the Byte[] to the "symbolsBytes" variable (locals index 5)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_STLOC_S;
-    pNewInstr->m_Arg8 = 5;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    rewriterWrapper_void.StLocal(5);
 
     // ldloc.2 : Load the "symbolsPtr" variables (locals index 2)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_2;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadLocal(2);
     // ldloc.s 5 : Load the "symbolsBytes" variable (locals index 5)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_S;
-    pNewInstr->m_Arg8 = 5;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadLocal(5);
     // ldc.i4.0 : Load the integer 0 for the Marshal.Copy startIndex parameter
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDC_I4_0;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadInt32(0);
     // ldloc.3 : Load the "symbolsSize" variable (locals index 3) for the Marshal.Copy length parameter
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_3;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadLocal(3);
     // call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALL;
-    pNewInstr->m_Arg32 = marshal_copy_member_ref;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    rewriterWrapper_void.CallMember(marshal_copy_member_ref, false);
 
-    // Step 4) Call System.Reflection.Assembly System.Reflection.Assembly.Load(byte[], byte[]))
+    // Step 5) Call System.Reflection.Assembly System.Reflection.Assembly.Load(byte[], byte[]))
 
     // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 4) for the first byte[] parameter of
     // AppDomain.Load(byte[], byte[])
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_S;
-    pNewInstr->m_Arg8 = 4;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadLocal(4);
     // ldloc.s 5 : Load the "symbolsBytes" variable (locals index 5) for the second byte[] parameter of
     // AppDomain.Load(byte[], byte[])
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_S;
-    pNewInstr->m_Arg8 = 5;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadLocal(5);
     // call System.Reflection.Assembly System.Reflection.Assembly.Load(uint8[], uint8[])
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALL;
-    pNewInstr->m_Arg32 = appdomain_load_member_ref;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    rewriterWrapper_void.CallMember(appdomain_load_member_ref, false);
 
-    // stloc.s 6 : Assign the System.Reflection.Assembly object to the "loadedAssembly" variable (locals index 6)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_STLOC_S;
-    pNewInstr->m_Arg8 = 6;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    // Step 4) Call instance method Assembly.CreateInstance("Datadog.Trace.ClrProfiler.Managed.Loader.Startup")
-
-    // ldloc.s 6 : Load the "loadedAssembly" variable (locals index 6) to call Assembly.CreateInstance
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_S;
-    pNewInstr->m_Arg8 = 6;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    // Step 6) Call instance method Assembly.CreateInstance("Datadog.Trace.ClrProfiler.Managed.Loader.Startup")
 
     // ldstr "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDSTR;
-    pNewInstr->m_Arg32 = load_helper_token;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.LoadStr(load_helper_token);
     // callvirt System.Object System.Reflection.Assembly.CreateInstance(string)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALLVIRT;
-    pNewInstr->m_Arg32 = assembly_create_instance_member_ref;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.CallMember(assembly_create_instance_member_ref, true);
     // pop the returned object
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_POP;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterWrapper_void.Pop();
     // return
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_RET;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    rewriterWrapper_void.Return();
 
     if (IsDumpILRewriteEnabled())
     {
@@ -3040,10 +3679,10 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(const ModuleID module_id, const mdT
 
     // Get AppDomain.SetData
     COR_SIGNATURE appdomain_set_data_signature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT |
-                                                        IMAGE_CEE_CS_CALLCONV_HASTHIS, // Calling convention
-                                                    2,                                 // Number of parameters
-                                                    ELEMENT_TYPE_VOID,                 // Return type
-                                                    ELEMENT_TYPE_STRING,               // List of parameter types
+                                                    IMAGE_CEE_CS_CALLCONV_HASTHIS, // Calling convention
+                                                    2,                             // Number of parameters
+                                                    ELEMENT_TYPE_VOID,             // Return type
+                                                    ELEMENT_TYPE_STRING,           // List of parameter types
                                                     ELEMENT_TYPE_OBJECT};
     mdMemberRef appdomain_set_data_member_ref;
     hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref, WStr("SetData"), appdomain_set_data_signature,
@@ -3075,8 +3714,8 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(const ModuleID module_id, const mdT
     // Get first instruction and set the rewriter to that location
     ILInstr* pInstr = rewriter.GetILList()->m_pNext;
     rewriter_wrapper.SetILPosition(pInstr);
-    ILInstr* pCurrentInstr = NULL;
-    ILInstr* pNewInstr = NULL;
+    ILInstr* pCurrentInstr = nullptr;
+    ILInstr* pNewInstr = nullptr;
 
     //////////////////////////////////////////////////
     // At the beginning of the method, call
@@ -3152,7 +3791,7 @@ extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_p
 #endif
 
 void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
-                                             int* symbolsSize) const
+                                             int* symbolsSize) 
 {
 #ifdef _WIN32
     HINSTANCE hInstance = DllHandle;
@@ -3259,14 +3898,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(FunctionID funct
 HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId,
                                                   HRESULT hrStatus)
 {
+    Logger::Warn("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId, ", methodId: ", methodId,
+                 ", hrStatus: ", hrStatus, "]");
+
     if (!is_attached_)
     {
-        Logger::Warn("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId, ", methodId: ", methodId,
-                     ", hrStatus: ", hrStatus, "]");
         return S_OK;
     }
 
-    return debugger_instrumentation_requester->NotifyReJITError(moduleId, methodId, functionId, hrStatus);
+    if (debugger_instrumentation_requester != nullptr)
+    {
+        return debugger_instrumentation_requester->NotifyReJITError(moduleId, methodId, functionId, hrStatus);
+    }
+
+    return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction)
@@ -3284,7 +3929,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
+    auto modulesOpt = module_ids.TryGet();
+
+    if (!modulesOpt.has_value())
+    {
+        Logger::Error(
+            "JITCachedFunctionSearchStarted: Failed on exception while tried to acquire the lock for the module_ids collection for functionId ",
+            functionId);
+        return S_OK;
+    }
+
+    auto& modules = modulesOpt.value();
 
     // Extract Module metadata
     ModuleID module_id;
@@ -3294,7 +3949,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     if (FAILED(hr))
     {
         Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ",
-                     functionId);
+                        functionId);
         return S_OK;
     }
 
@@ -3305,8 +3960,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         rejit_handler->AddNGenInlinerModule(module_id);
     }
 
+    // Check for Dataflow call site instrumentation
+    if (_dataflow != nullptr && !_dataflow->IsInlineEnabled(module_id, function_token))
+    {
+        // The function has been instrumented by Dataflow
+        // so we reject the NGEN image
+        *pbUseCachedFunction = false;
+        return S_OK;
+    }
+
     // Verify that we have the metadata for this module
-    if (!shared::Contains(module_ids_, module_id))
+    if (!shared::Contains(modules.Ref(), module_id))
     {
         // we haven't stored a ModuleMetadata for this module,
         // so there's nothing to do here, we accept the NGEN image.
@@ -3323,7 +3987,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     if (!has_loader_injected_in_appdomain)
     {
         Logger::Debug("Disabling NGEN due to missing loader.");
-        // The loader is missing in this AppDomain, we skip the NGEN image to allow the JITCompilationStart inject it.
+        // The loader is missing in this AppDomain, we skip the NGEN image to allow the JITCompilationStart inject
+        // it.
         *pbUseCachedFunction = false;
         return S_OK;
     }

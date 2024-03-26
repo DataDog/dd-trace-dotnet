@@ -48,7 +48,7 @@
            You should use mutator operators  &=, |= ... instead of the
            non-mutators whenever possible to avoid creating a temps
 
-           Specifically did NOT supply automatic coersions to
+           Specifically did NOT supply automatic coercions to
            and from short types so that the programmer is aware of
            when code was being injected on their behalf.  The upshot of this
            is that you have to use the  BitVector() toUnsigned() to convert
@@ -198,7 +198,7 @@ public:
         }
     }
 
-    // Note that that is set difference, not subtration
+    // Note that this is set difference, not subtration
     void operator -=(const BitVector& arg)
     {
         WRAPPER_NO_CONTRACT;

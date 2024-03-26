@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
@@ -66,7 +67,90 @@ namespace BuggyBits.Models
             var allProducts = new List<Product>();
             for (int i = 0; i < 10000; i++)
             {
-                allProducts.Add(new Product { ProductName = "Product" + i, Description = "Description for product" + i, Price = "$100" });
+                allProducts.Add(GetProduct(i));
+            }
+
+            return allProducts;
+        }
+
+        public void ApplyDiscount(Product product)
+        {
+            // apply a 25% discount if price is less than $200
+
+            // Sub-optimal: use exception to check format and handle error
+            try
+            {
+                var price = double.Parse(product.Price, System.Globalization.NumberStyles.AllowDecimalPoint, System.Globalization.CultureInfo.InvariantCulture);
+                if (price < 200)
+                {
+                    product.Price = (price * 0.75).ToString();
+                }
+            }
+            catch (System.FormatException)
+            {
+                throw new PriceException(product.Price, "Invalid price number");
+            }
+        }
+
+        public List<Product> GetProductsOnSale()
+        {
+            var allProducts = new List<Product>(10000);
+            for (int i = 0; i < 10000; i++)
+            {
+                var product = GetProduct(i);
+                try
+                {
+                    ApplyDiscount(product);
+                    allProducts.Add(product);
+                }
+                catch (PriceException)
+                {
+                    // TODO: log
+
+                    continue;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("[Error] Ooops we did not catch this one " + e.GetType().ToString());
+                }
+            }
+
+            return allProducts;
+        }
+
+        public bool TryApplyDiscount(Product product)
+        {
+            // apply a 25% discount if price is less than $200
+
+            // Fix: use TryParse
+            double price;
+            if (double.TryParse(product.Price, System.Globalization.NumberStyles.AllowDecimalPoint, System.Globalization.CultureInfo.InvariantCulture, out price))
+            {
+                if (price < 200)
+                {
+                    product.Price = (price * 0.75).ToString();
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public List<Product> GetProductsOnSaleEx()
+        {
+            var allProducts = new List<Product>(10000);
+            for (int i = 0; i < 10000; i++)
+            {
+                var product = GetProduct(i);
+                if (TryApplyDiscount(product))
+                {
+                    allProducts.Add(product);
+                }
+                else
+                {
+                    // TODO: log
+                }
             }
 
             return allProducts;
@@ -141,6 +225,43 @@ namespace BuggyBits.Models
             return products;
         }
 
+        public IEnumerable<Product> GetAllProductsInParallelWithLock(string rootPath)
+        {
+            // Note: moving to asynchronous is much slower so reduce the number of product to return
+            const int productCount = 2000;
+            var path = GetProductInfoRoot(rootPath);
+            var products = new List<Product>(productCount);
+            object listLock = new object();
+
+            // https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/how-to-write-a-parallel-for-loop-with-thread-local-variables
+            Parallel.For(
+                0,
+                productCount,
+                new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount * 2 },
+                (id) => // download each product and store them in a common list protected by a lock
+                {
+                    // don't create too many spans
+                    var product = GetProduct(id);
+                    lock (listLock)
+                    {
+                        products.Add(product);
+                        Thread.Sleep(1);
+                    }
+                });
+
+            // note that products have to be sorted
+            products.Sort((p1, p2) =>
+            {
+                var prefixLength = "product".Length;
+                var sId1 = p1.ProductName.AsSpan(prefixLength, p1.ProductName.Length - prefixLength);
+                var sId2 = p2.ProductName.AsSpan(prefixLength, p2.ProductName.Length - prefixLength);
+                int.TryParse(sId1, out var id1);
+                int.TryParse(sId2, out var id2);
+                return id1 - id2;
+            });
+            return products;
+        }
+
         public async Task<Product> GetProductAsync(string path, int index)
         {
             var uri = $"{path}/{index}";
@@ -168,7 +289,14 @@ namespace BuggyBits.Models
 
         public Product GetProduct(int index)
         {
-            return new Product { ProductName = "Product" + index, Description = "Description for product" + index, Price = "$100" };
+            if (index % 2 == 0)
+            {
+                return new Product { ProductName = "Product" + index, Description = "Description for product" + index, Price = "119,99" };
+            }
+            else
+            {
+                return new Product { ProductName = "Product" + index, Description = "Description for product" + index, Price = "99" };
+            }
         }
 
         public List<Link> GetAllLinks()
@@ -190,6 +318,27 @@ namespace BuggyBits.Models
         private string GetProductInfoRoot(string rootPath)
         {
             return $"{rootPath}/Products/Info";
+        }
+
+        public class PriceException : Exception
+        {
+            public PriceException(string price, string message)
+                : base(message)
+            {
+                Price = price;
+            }
+
+            public PriceException(string message)
+                : base(message)
+            {
+            }
+
+            public PriceException(string message, Exception inner)
+                : base(message, inner)
+            {
+            }
+
+            public string Price { get; private set; }
         }
     }
 }

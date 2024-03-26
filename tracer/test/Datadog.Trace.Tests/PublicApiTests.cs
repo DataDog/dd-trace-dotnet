@@ -10,13 +10,14 @@ using System;
 using System.Reflection;
 using Datadog.Trace.Annotations;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.PublicApiTests
 {
     public class DatadogTraceTests : PublicApiTestsBase
     {
-        public DatadogTraceTests()
-            : base(typeof(Tracer).Assembly)
+        public DatadogTraceTests(ITestOutputHelper output)
+            : base(typeof(Tracer).Assembly, output)
         {
         }
 
@@ -32,8 +33,8 @@ namespace Datadog.Trace.Tests.PublicApiTests
 
     public class DatadogTraceAnnotationsTests : PublicApiTestsBase
     {
-        public DatadogTraceAnnotationsTests()
-            : base(typeof(TraceAttribute).Assembly)
+        public DatadogTraceAnnotationsTests(ITestOutputHelper output)
+            : base(typeof(TraceAttribute).Assembly, output)
         {
         }
     }

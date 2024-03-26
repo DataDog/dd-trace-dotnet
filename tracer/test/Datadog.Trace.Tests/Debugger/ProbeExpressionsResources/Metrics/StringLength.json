@@ -1,0 +1,8 @@
+{
+    "dsl": "The collection has {len(ref String)} items",
+    "len": [
+        {
+            "ref": "String"
+        }
+    ]
+}

@@ -5,71 +5,92 @@
 
 #nullable enable
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Debugger
 {
     internal class DebuggerSettings
     {
-        private const int DefaultMaxDepthToSerialize = 1;
-        private const int DefaultSerializationTimeThreshold = 150;
+        public const string DebuggerMetricPrefix = "dynamic.instrumentation.metric.probe";
+        public const int DefaultMaxDepthToSerialize = 3;
+        public const int DefaultMaxSerializationTimeInMilliseconds = 200;
+        public const int DefaultMaxNumberOfItemsInCollectionToCopy = 100;
+        public const int DefaultMaxNumberOfFieldsToCopy = 20;
+
         private const int DefaultUploadBatchSize = 100;
-        private const int DefaultDiagnosticsIntervalSeconds = 3600;
+        public const int DefaultSymbolBatchSizeInBytes = 100000;
+        private const int DefaultDiagnosticsIntervalSeconds = 60 * 60; // 1 hour
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
 
-        public DebuggerSettings()
-            : this(configurationSource: null)
+        public DebuggerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
+            source ??= NullConfigurationSource.Instance;
+            var config = new ConfigurationBuilder(source, telemetry);
+
+            Enabled = config.WithKeys(ConfigurationKeys.Debugger.Enabled).AsBool(false);
+
+            MaximumDepthOfMembersToCopy = config
+                                         .WithKeys(ConfigurationKeys.Debugger.MaxDepthToSerialize)
+                                         .AsInt32(DefaultMaxDepthToSerialize, maxDepth => maxDepth > 0)
+                                         .Value;
+
+            MaxSerializationTimeInMilliseconds = config
+                                                .WithKeys(ConfigurationKeys.Debugger.MaxTimeToSerialize)
+                                                .AsInt32(
+                                                     DefaultMaxSerializationTimeInMilliseconds,
+                                                     serializationTimeThreshold => serializationTimeThreshold > 0)
+                                                .Value;
+
+            UploadBatchSize = config
+                             .WithKeys(ConfigurationKeys.Debugger.UploadBatchSize)
+                             .AsInt32(DefaultUploadBatchSize, batchSize => batchSize > 0)
+                             .Value;
+
+            SymbolDatabaseBatchSizeInBytes = config
+                                         .WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseBatchSizeInBytes)
+                                         .AsInt32(DefaultSymbolBatchSizeInBytes, batchSize => batchSize > 0)
+                                         .Value;
+
+            var includeLibraries = config
+                                     .WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseIncludes)
+                                     .AsString()?
+                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                      Enumerable.Empty<string>();
+
+            SymbolDatabaseIncludes = new HashSet<string>(includeLibraries, StringComparer.OrdinalIgnoreCase);
+
+            SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(false);
+
+            DiagnosticsIntervalSeconds = config
+                                        .WithKeys(ConfigurationKeys.Debugger.DiagnosticsInterval)
+                                        .AsInt32(DefaultDiagnosticsIntervalSeconds, interval => interval > 0)
+                                        .Value;
+
+            UploadFlushIntervalMilliseconds = config
+                                             .WithKeys(ConfigurationKeys.Debugger.UploadFlushInterval)
+                                             .AsInt32(DefaultUploadFlushIntervalMilliseconds, flushInterval => flushInterval >= 0)
+                                             .Value;
+
+            var redactedIdentifiers = config
+                                 .WithKeys(ConfigurationKeys.Debugger.RedactedIdentifiers)
+                                 .AsString()?
+                                 .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                  Enumerable.Empty<string>();
+
+            RedactedIdentifiers = new HashSet<string>(redactedIdentifiers, StringComparer.OrdinalIgnoreCase);
+
+            var redactedTypes = config
+                                     .WithKeys(ConfigurationKeys.Debugger.RedactedTypes)
+                                     .AsString()?
+                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                      Enumerable.Empty<string>();
+
+            RedactedTypes = new HashSet<string>(redactedTypes, StringComparer.OrdinalIgnoreCase);
         }
-
-        public DebuggerSettings(IConfigurationSource? configurationSource)
-        {
-            if (Uri.TryCreate(ConfigurationKeys.Debugger.SnapshotUrl?.TrimEnd('/'), UriKind.Absolute, out var snapshotUri))
-            {
-                SnapshotUri = snapshotUri;
-            }
-
-            ServiceVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
-            Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
-
-            Enabled = configurationSource?.GetBool(ConfigurationKeys.Debugger.Enabled) ?? false;
-
-            var maxDepth = configurationSource?.GetInt32(ConfigurationKeys.Debugger.MaxDepthToSerialize);
-            MaximumDepthOfMembersToCopy =
-                maxDepth is null or <= 0
-                    ? DefaultMaxDepthToSerialize
-                    : maxDepth.Value;
-
-            var serializationTimeThreshold = configurationSource?.GetInt32(ConfigurationKeys.Debugger.MaxTimeToSerialize);
-            MaxSerializationTimeInMilliseconds =
-                serializationTimeThreshold is null or <= 0
-                    ? DefaultSerializationTimeThreshold
-                    : serializationTimeThreshold.Value;
-
-            var batchSize = configurationSource?.GetInt32(ConfigurationKeys.Debugger.UploadBatchSize);
-            UploadBatchSize =
-                batchSize is null or <= 0
-                    ? DefaultUploadBatchSize
-                    : batchSize.Value;
-
-            var interval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.DiagnosticsInterval);
-            DiagnosticsIntervalSeconds =
-                interval is null or <= 0
-                    ? DefaultDiagnosticsIntervalSeconds
-                    : interval.Value;
-
-            var flushInterval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.UploadFlushInterval);
-            UploadFlushIntervalMilliseconds =
-                flushInterval is null or < 0
-                    ? DefaultUploadFlushIntervalMilliseconds
-                    : flushInterval.Value;
-        }
-
-        public string? ServiceVersion { get; }
-
-        public Uri? SnapshotUri { get; }
-
-        public string? Environment { get; }
 
         public bool Enabled { get; }
 
@@ -79,18 +100,28 @@ namespace Datadog.Trace.Debugger
 
         public int UploadBatchSize { get; }
 
+        public int SymbolDatabaseBatchSizeInBytes { get; }
+
+        public bool SymbolDatabaseUploadEnabled { get; }
+
+        public HashSet<string> SymbolDatabaseIncludes { get; }
+
         public int DiagnosticsIntervalSeconds { get; }
 
         public int UploadFlushIntervalMilliseconds { get; }
 
-        public static DebuggerSettings FromSource(IConfigurationSource source)
+        public HashSet<string> RedactedIdentifiers { get; }
+
+        public HashSet<string> RedactedTypes { get; }
+
+        public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
-            return new DebuggerSettings(source);
+            return new DebuggerSettings(source, telemetry);
         }
 
         public static DebuggerSettings FromDefaultSource()
         {
-            return FromSource(GlobalSettings.CreateDefaultConfigurationSource());
+            return FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ActivitySampleHelper;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
@@ -12,6 +13,7 @@ namespace Samples.MongoDB
 {
     public static class Program
     {
+        private static readonly ActivitySourceHelper _sampleHelpers = new("Samples.MongoDB");
         private static string Host()
         {
             return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
@@ -21,6 +23,17 @@ namespace Samples.MongoDB
         {
             Console.WriteLine($"Profiler attached: {SampleHelpers.IsProfilerAttached()}");
             Console.WriteLine($"Platform: {(Environment.Is64BitProcess ? "x64" : "x32")}");
+
+            // Create binary data (e.g., byte array)
+            // Further details about binary types: https://studio3t.com/knowledge-base/articles/mongodb-best-practices-uuid-data/#binary-subtypes-0x03-and-0x04
+            var guidByteArray = Guid.Parse("6F88CE3F-BEBE-41F6-8E72-BB168A05E07A").ToByteArray();
+            var genericBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.Binary);
+            
+            var uuidLegacyBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.UuidLegacy, GuidRepresentation.CSharpLegacy);
+            // We'd like to test with the following two, but you're only allowed one type of UUID
+            // in a collection in some versions of mongo
+            // var uuidStandardBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.UuidStandard);
+            var largeTagValue = string.Join(" ", Enumerable.Repeat("Test", 1000));
 
             var newDocument = new BsonDocument
             {
@@ -37,7 +50,7 @@ namespace Samples.MongoDB
             };
 
 
-            using (var mainScope = SampleHelpers.CreateScope("Main()"))
+            using (var mainScope = _sampleHelpers.CreateScope("Main()"))
             {
                 var connectionString = $"mongodb://{Host()}:27017";
                 var client = new MongoClient(connectionString);
@@ -47,6 +60,15 @@ namespace Samples.MongoDB
                 Run(collection, newDocument);
                 RunAsync(collection, newDocument).Wait();
 
+                // Running large BsonDocument query
+                // Adding Binary data and long string value to BsonDocument
+                newDocument.Add("genericBinary", genericBinary);
+                newDocument.Add("uuidLegacyBinary", uuidLegacyBinary);
+                newDocument.Add("largeKey",  largeTagValue);
+                
+                Run(collection, newDocument);
+                collection.FindSync(newDocument).FirstOrDefault();
+                
 #if MONGODB_2_2 && !MONGODB_2_15
                 WireProtocolExecuteIntegrationTest(client);
 #endif
@@ -58,7 +80,7 @@ namespace Samples.MongoDB
         {
             var allFilter = new BsonDocument();
 
-            using (var syncScope = SampleHelpers.CreateScope("sync-calls"))
+            using (var syncScope = _sampleHelpers.CreateScope("sync-calls"))
             {
 #if MONGODB_2_2
                 collection.DeleteMany(allFilter);
@@ -101,7 +123,7 @@ namespace Samples.MongoDB
         {
             var allFilter = new BsonDocument();
 
-            using (var asyncScope = SampleHelpers.CreateScope("async-calls"))
+            using (var asyncScope = _sampleHelpers.CreateScope("async-calls"))
             {
                 await collection.DeleteManyAsync(allFilter);
                 await collection.InsertOneAsync(newDocument);
@@ -123,14 +145,14 @@ namespace Samples.MongoDB
 
         public static void WireProtocolExecuteIntegrationTest(MongoClient client)
         {
-            using (var syncScope = SampleHelpers.CreateScope("sync-calls-execute"))
+            using (var syncScope = _sampleHelpers.CreateScope("sync-calls-execute"))
             {
                 var server = client.Cluster.SelectServer(new ServerSelector(), CancellationToken.None);
                 var channel = server.GetChannel(CancellationToken.None);
                 channel.KillCursors(new long[] { 0, 1, 2 }, new global::MongoDB.Driver.Core.WireProtocol.Messages.Encoders.MessageEncoderSettings(), CancellationToken.None);
             }
 
-            using (var asyncScope = SampleHelpers.CreateScope("async-calls-execute"))
+            using (var asyncScope = _sampleHelpers.CreateScope("async-calls-execute"))
             {
                 var server = client.Cluster.SelectServer(new ServerSelector(), CancellationToken.None);
                 var channel = server.GetChannel(CancellationToken.None);

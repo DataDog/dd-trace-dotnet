@@ -12,6 +12,9 @@
     <Filter Include="Resource Files">
       <UniqueIdentifier>{e7a15145-7ff8-4108-be2b-c248925402aa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ETW">
+      <UniqueIdentifier>{49c9eaba-b1d6-4bb8-9faa-466465babc12}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -32,6 +35,36 @@
     <ClInclude Include="SystemTime.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="WindowsThreadInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ETW\EtwEventsHandler.h">
+      <Filter>ETW</Filter>
+    </ClInclude>
+    <ClInclude Include="ETW\INamedPipeHandler.h">
+      <Filter>ETW</Filter>
+    </ClInclude>
+    <ClInclude Include="ETW\IpcClient.h">
+      <Filter>ETW</Filter>
+    </ClInclude>
+    <ClInclude Include="ETW\IpcServer.h">
+      <Filter>ETW</Filter>
+    </ClInclude>
+    <ClInclude Include="ETW\Protocol.h">
+      <Filter>ETW</Filter>
+    </ClInclude>
+    <ClInclude Include="EtwEventsManager.h">
+      <Filter>ETW</Filter>
+    </ClInclude>
+    <ClInclude Include="SecurityDescriptorHelpers.h">
+      <Filter>ETW</Filter>
+    </ClInclude>
+    <ClInclude Include="ETW\IIpcLogger.h">
+      <Filter>ETW</Filter>
+    </ClInclude>
+    <ClInclude Include="ETW\ProfilerLogger.h">
+      <Filter>ETW</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Windows32BitStackFramesCollector.cpp">
@@ -51,6 +84,27 @@
     </ClCompile>
     <ClCompile Include="SystemTime.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowsThreadInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ETW\EtwEventsHandler.cpp">
+      <Filter>ETW</Filter>
+    </ClCompile>
+    <ClCompile Include="ETW\IpcClient.cpp">
+      <Filter>ETW</Filter>
+    </ClCompile>
+    <ClCompile Include="ETW\IpcServer.cpp">
+      <Filter>ETW</Filter>
+    </ClCompile>
+    <ClCompile Include="EtwEventsManager.cpp">
+      <Filter>ETW</Filter>
+    </ClCompile>
+    <ClCompile Include="SecurityDescriptorHelpers.cpp">
+      <Filter>ETW</Filter>
+    </ClCompile>
+    <ClCompile Include="ETW\ProfilerLogger.cpp">
+      <Filter>ETW</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

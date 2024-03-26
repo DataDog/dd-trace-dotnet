@@ -28,11 +28,11 @@ namespace Datadog.InstrumentedAssemblyVerification
         private const string CoreLibAssemblyNetCore = "System.Private.CoreLib.dll";
         private const string CoreLibAssemblyNetFramework = "mscorlib.dll";
         private readonly string _assemblyLocation;
-        private List<string> _methods;
+        private readonly List<(string type, string method)> _methods;
         private readonly Verifier _verifier;
         private readonly InstrumentationVerificationLogger _logger;
 
-        public ILVerifyVerification(string assemblyLocation, List<string> methods, InstrumentationVerificationLogger logger)
+        public ILVerifyVerification(string assemblyLocation, List<(string type, string method)> methods, InstrumentationVerificationLogger logger)
         {
             _logger = logger;
             _assemblyLocation = assemblyLocation;
@@ -99,7 +99,7 @@ namespace Datadog.InstrumentedAssemblyVerification
             verifiedMethodCounter = 0;
             string moduleName = Path.GetFileName(path);
             MetadataReader metadataReader = peReader.GetMetadataReader();
-            var methodsWithoutParameters = _methods.Select(m => m.Substring(0, m.IndexOf('('))).ToList();
+            var methodsWithoutParameters = _methods.Select(m => m.method.Substring(0, m.method.IndexOf('('))).ToList();
             foreach (var methodHandle in metadataReader.MethodDefinitions)
             {
                 string methodName = null;

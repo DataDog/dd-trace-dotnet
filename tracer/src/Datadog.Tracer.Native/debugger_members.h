@@ -41,6 +41,15 @@ typedef struct _DebuggerLineProbeDefinition
     
 } DebuggerLineProbeDefinition;
 
+typedef struct _DebuggerMethodSpanProbeDefinition
+{
+    WCHAR* probeId;
+    WCHAR* targetType;
+    WCHAR* targetMethod;
+    WCHAR** targetParameterTypes;
+    USHORT targetParameterTypesLength;
+} DebuggerMethodSpanProbeDefinition;
+
 typedef struct _DebuggerRemoveProbesDefinition
 {
     WCHAR* probeId;
@@ -125,6 +134,28 @@ struct LineProbeDefinition : public ProbeDefinition
 
 typedef std::vector<std::shared_ptr<LineProbeDefinition>> LineProbeDefinitions;
 
+struct SpanProbeOnMethodDefinition : public MethodProbeDefinition
+{
+    SpanProbeOnMethodDefinition(shared::WSTRING probeId, trace::MethodReference&& targetMethod,
+                                bool is_exact_signature_match) :
+        MethodProbeDefinition(std::move(probeId), std::move(targetMethod), is_exact_signature_match)
+    {
+    }
+
+    SpanProbeOnMethodDefinition(const SpanProbeOnMethodDefinition& other) :
+        MethodProbeDefinition(other)
+    {
+    }
+
+    inline bool operator==(const SpanProbeOnMethodDefinition& other) const
+    {
+        return probeId == other.probeId && target_method == other.target_method &&
+               is_exact_signature_match == other.is_exact_signature_match;
+    }
+};
+
+typedef std::vector<std::shared_ptr<SpanProbeOnMethodDefinition>> SpanProbeOnMethodDefinitions;
+
 enum class ProbeStatus
 {
     RECEIVED,
@@ -134,23 +165,37 @@ enum class ProbeStatus
      * \brief Preceding with underscore because ERROR is a widely used preprocessor constant.
      */
     // ReSharper disable once CppInconsistentNaming
-    _ERROR  // NOLINT(clang-diagnostic-reserved-identifier, bugprone-reserved-identifier)
+    _ERROR,  // NOLINT(clang-diagnostic-reserved-identifier, bugprone-reserved-identifier)
+    INSTRUMENTED
 };
 
 struct ProbeMetadata
 {
-    shared::WSTRING probeId;
-    std::set<trace::MethodIdentifier> methods;
-    ProbeStatus status;
+    WSTRING probeId;
+    WSTRING errorMessage;
+    std::unordered_map<trace::MethodIdentifier, int> methodIndexMap;
+    ProbeStatus status = ProbeStatus::RECEIVED;
 
     ProbeMetadata() = default;
     ProbeMetadata(const ProbeMetadata& other) = default;
     ProbeMetadata(ProbeMetadata&& other) = default;
 
-    ProbeMetadata(shared::WSTRING probeId, std::set<trace::MethodIdentifier>&& methods, ProbeStatus initialStatus) : probeId(probeId), methods(std::move(methods)), status(initialStatus)
+    ProbeMetadata(const WSTRING& probeId, std::unordered_map<trace::MethodIdentifier, int>&& methodIndexMap, ProbeStatus initialStatus) :
+        probeId(probeId),
+        methodIndexMap(std::move(methodIndexMap)),
+        status(initialStatus)
     {
     }
-    
+
+    ProbeMetadata(const WSTRING& probeId, const WSTRING& errorMessage,
+                  std::unordered_map<trace::MethodIdentifier, int>&& methodIndexMap,
+                  ProbeStatus initialStatus) :
+        probeId(probeId),
+        errorMessage(errorMessage),
+        methodIndexMap(std::move(methodIndexMap)),
+        status(initialStatus)
+    {
+    }
 
     inline bool operator==(const ProbeMetadata& other) const
     {
@@ -169,6 +214,7 @@ typedef struct _ProbeStatusesRequest
 typedef struct _DebuggerProbeStatus
 {
     const WCHAR* probeId;
+    const WCHAR* errorMessage;
     ProbeStatus status;
 } DebuggerProbeStatus;
 

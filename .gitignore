@@ -63,6 +63,7 @@ bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+.nuke/temp/
 
 # Visual Studio 2015 cache/options directory
 .vs/
@@ -142,6 +143,14 @@ $tf/
 _ReSharper*/
 *.[Rr]e[Ss]harper
 *.DotSettings.user
+
+# NCrunch is a .NET Unit test runner
+# NCrunch
+*.ncrunch*.user
+_NCrunch_*
+*.crunch.xml
+nCrunchTemp_*
+
 
 # JustCode is a .NET coding add-in
 .JustCode
@@ -322,8 +331,7 @@ BenchmarkDotNet.Artifacts/
 tracer/deploy/linux/
 tracer/deploy/AzureAppServices/
 !tracer/build/artifacts
-tracer/src/Datadog.Monitoring.Distribution/home
-!tracer/src/Datadog.Monitoring.Distribution/home/**/*.txt
+tracer/src/Datadog.Trace.Bundle/home
 build_data
 
 # native tracer build files
@@ -346,12 +354,31 @@ shared/src/Datadog.Trace.ClrProfiler.Native/CMakeCache.txt
 shared/src/Datadog.Trace.ClrProfiler.Native/cmake_install.cmake
 shared/src/Datadog.Trace.ClrProfiler.Native/cmake-build-debug/
 !shared/src/Datadog.Trace.ClrProfiler.Native/lib/**
+cmake-build-debug/*
 
 #profiler build files
 profiler/_build/
 
+# global build folder
+obj/*
+obj_arm64/*
+obj_x86_64/*
+
+# cmake build files
 .ionide/
 /devenv.bat
+CMakeCache.txt
+Makefile
+_deps/
+CMakeFiles/
+lib/
+libdatadog-*/
+*-prefix/
+cmake-build-debug/
+
+#jetbrains cache folder
+.cache/jb
 
 #debugger test artifacts
 tracer/test/test-applications/debugger/Samples.Probes/probes_definition.json
+

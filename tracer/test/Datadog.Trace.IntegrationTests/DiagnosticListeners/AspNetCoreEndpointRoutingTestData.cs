@@ -227,7 +227,11 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { Tags.AspNetCoreAction, null },
             { Tags.AspNetCoreArea, null },
             { Tags.AspNetCorePage, null },
+#if NET7_0_OR_GREATER
+            { Tags.AspNetCoreEndpoint, "HTTP: GET /echo/{value:int?}" },
+#else
             { Tags.AspNetCoreEndpoint, "/echo/{value:int?} HTTP: GET" },
+#endif
         };
 
         private static SerializableDictionary ThrowsTags() => new()
@@ -237,7 +241,11 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { Tags.AspNetCoreAction, null },
             { Tags.AspNetCoreArea, null },
             { Tags.AspNetCorePage, null },
+#if NET7_0_OR_GREATER
+            { Tags.AspNetCoreEndpoint, "HTTP: GET /throws" },
+#else
             { Tags.AspNetCoreEndpoint, "/throws HTTP: GET" },
+#endif
         };
 
         private static SerializableDictionary ApiIndexParentTags() => new()

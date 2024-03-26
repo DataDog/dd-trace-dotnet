@@ -50,6 +50,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
+            ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
+            Assert.Same(obscureObject, originalObject);
+
             // *
             Assert.Equal("10", duckInterface.PublicStaticReadonlyReferenceTypeField);
             Assert.Equal("10", duckAbstract.PublicStaticReadonlyReferenceTypeField);
@@ -80,6 +83,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
+            ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
+            Assert.Same(obscureObject, originalObject);
+
             Assert.Equal("20", duckInterface.PublicStaticReferenceTypeField);
             Assert.Equal("20", duckAbstract.PublicStaticReferenceTypeField);
             Assert.Equal("20", duckVirtual.PublicStaticReferenceTypeField);
@@ -99,6 +105,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
             Assert.Equal("60", duckAbstract.PublicStaticReferenceTypeField);
             Assert.Equal("60", duckVirtual.PublicStaticReferenceTypeField);
 
+            duckInterface.PublicStaticReferenceTypeField = "20";
             // *
 
             Assert.Equal("21", duckInterface.InternalStaticReferenceTypeField);
@@ -120,6 +127,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
             Assert.Equal("60", duckAbstract.InternalStaticReferenceTypeField);
             Assert.Equal("60", duckVirtual.InternalStaticReferenceTypeField);
 
+            duckInterface.InternalStaticReferenceTypeField = "21";
             // *
 
             Assert.Equal("22", duckInterface.ProtectedStaticReferenceTypeField);
@@ -141,6 +149,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
             Assert.Equal("60", duckAbstract.ProtectedStaticReferenceTypeField);
             Assert.Equal("60", duckVirtual.ProtectedStaticReferenceTypeField);
 
+            duckInterface.ProtectedStaticReferenceTypeField = "22";
             // *
 
             Assert.Equal("23", duckInterface.PrivateStaticReferenceTypeField);
@@ -161,6 +170,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
             Assert.Equal("60", duckInterface.PrivateStaticReferenceTypeField);
             Assert.Equal("60", duckAbstract.PrivateStaticReferenceTypeField);
             Assert.Equal("60", duckVirtual.PrivateStaticReferenceTypeField);
+
+            duckInterface.PrivateStaticReferenceTypeField = "23";
         }
 
         [Theory]
@@ -171,6 +182,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
             var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
+
+            ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
+            Assert.Same(obscureObject, originalObject);
 
             // *
             Assert.Equal("30", duckInterface.PublicReadonlyReferenceTypeField);
@@ -202,9 +216,20 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
+            ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
+            Assert.Same(obscureObject, originalObject);
+
             Assert.Equal("40", duckInterface.PublicReferenceTypeField);
             Assert.Equal("40", duckAbstract.PublicReferenceTypeField);
             Assert.Equal("40", duckVirtual.PublicReferenceTypeField);
+
+            duckInterface.PublicReferenceTypeFieldWithType = ValueWithType<string>.Create("40", typeof(string));
+            Assert.Equal("40", duckInterface.PublicReferenceTypeFieldWithType.Value);
+            Assert.Equal(typeof(string), duckInterface.PublicReferenceTypeFieldWithType.Type);
+            Assert.Equal("40", duckAbstract.PublicReferenceTypeFieldWithType.Value);
+            Assert.Equal(typeof(string), duckAbstract.PublicReferenceTypeFieldWithType.Type);
+            Assert.Equal("40", duckVirtual.PublicReferenceTypeFieldWithType.Value);
+            Assert.Equal(typeof(string), duckVirtual.PublicReferenceTypeFieldWithType.Type);
 
             duckInterface.PublicReferenceTypeField = "42";
             Assert.Equal("42", duckInterface.PublicReferenceTypeField);
@@ -221,6 +246,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
             Assert.Equal("60", duckAbstract.PublicReferenceTypeField);
             Assert.Equal("60", duckVirtual.PublicReferenceTypeField);
 
+            duckInterface.PublicReferenceTypeField = "40";
             // *
 
             Assert.Equal("41", duckInterface.InternalReferenceTypeField);
@@ -242,6 +268,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
             Assert.Equal("60", duckAbstract.InternalReferenceTypeField);
             Assert.Equal("60", duckVirtual.InternalReferenceTypeField);
 
+            duckInterface.InternalReferenceTypeField = "41";
             // *
 
             Assert.Equal("42", duckInterface.ProtectedReferenceTypeField);
@@ -263,6 +290,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
             Assert.Equal("60", duckAbstract.ProtectedReferenceTypeField);
             Assert.Equal("60", duckVirtual.ProtectedReferenceTypeField);
 
+            duckInterface.ProtectedReferenceTypeField = "42";
             // *
 
             Assert.Equal("43", duckInterface.PrivateReferenceTypeField);
@@ -283,6 +311,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
             Assert.Equal("60", duckInterface.PrivateReferenceTypeField);
             Assert.Equal("60", duckAbstract.PrivateReferenceTypeField);
             Assert.Equal("60", duckVirtual.PrivateReferenceTypeField);
+
+            duckInterface.PrivateReferenceTypeField = "43";
         }
     }
 }

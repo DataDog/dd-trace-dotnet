@@ -167,9 +167,7 @@ namespace Samples.Elasticsearch
                 () => elastic.Indices.DeleteAlias(new DeleteAliasRequest("test_index_1", "test_index_3")),
                 () => elastic.Indices.DeleteAlias(new DeleteAliasRequest("test_index_1", "test_index_2")),
                 () => elastic.Indices.Create("test_index_4"),
-#if (!DEFAULT_SAMPLES)
                 () => elastic.Indices.Split("test_index_1", "test_index_4"),
-#endif
                 () => elastic.Indices.Delete("test_index_4"),
                 () => elastic.Indices.Close("test_index_1"),
                 () => elastic.Indices.Open("test_index_1"),
@@ -219,9 +217,7 @@ namespace Samples.Elasticsearch
                 () => elastic.Indices.DeleteAliasAsync(new DeleteAliasRequest("test_index_1", "test_index_3")),
                 () => elastic.Indices.DeleteAliasAsync(new DeleteAliasRequest("test_index_1", "test_index_2")),
                 () => elastic.Indices.CreateAsync("test_index_4"),
-#if (!DEFAULT_SAMPLES)
                 () => elastic.Indices.SplitAsync("test_index_1", "test_index_4"),
-#endif
                 () => elastic.Indices.DeleteAsync("test_index_4"),
                 () => elastic.Indices.CloseAsync("test_index_1"),
                 () => elastic.Indices.OpenAsync("test_index_1"),
@@ -306,10 +302,8 @@ namespace Samples.Elasticsearch
                 () => elastic.MachineLearning.GetJobStats(new GetJobStatsRequest()),
                 () => elastic.MachineLearning.GetModelSnapshots(new GetModelSnapshotsRequest("test_job")),
                 () => elastic.MachineLearning.FlushJob(new FlushJobRequest("test_job")),
-#if (!DEFAULT_SAMPLES)
                 () => elastic.MachineLearning.GetOverallBuckets(new GetOverallBucketsRequest("test_job")),
                 () => elastic.MachineLearning.ForecastJob(new ForecastJobRequest("test_job")),
-#endif
                 () => elastic.MachineLearning.GetAnomalyRecords(new GetAnomalyRecordsRequest("test_job")),
                 () => elastic.MachineLearning.GetBuckets(new GetBucketsRequest("test_job")),
                 () => elastic.MachineLearning.GetCategories(new GetCategoriesRequest("test_job")),
@@ -330,10 +324,8 @@ namespace Samples.Elasticsearch
                 () => elastic.MachineLearning.GetJobStatsAsync(new GetJobStatsRequest()),
                 () => elastic.MachineLearning.GetModelSnapshotsAsync(new GetModelSnapshotsRequest("test_job")),
                 () => elastic.MachineLearning.FlushJobAsync(new FlushJobRequest("test_job")),
-#if (!DEFAULT_SAMPLES)
                 () => elastic.MachineLearning.GetOverallBucketsAsync(new GetOverallBucketsRequest("test_job")),
                 () => elastic.MachineLearning.ForecastJobAsync(new ForecastJobRequest("test_job")),
-#endif
                 () => elastic.MachineLearning.GetAnomalyRecordsAsync(new GetAnomalyRecordsRequest("test_job")),
                 () => elastic.MachineLearning.GetBucketsAsync(new GetBucketsRequest("test_job")),
                 () => elastic.MachineLearning.GetCategoriesAsync(new GetCategoriesRequest("test_job")),

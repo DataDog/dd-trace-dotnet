@@ -6,7 +6,6 @@
 using System.IO;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Datadog.Profiler.SmokeTests;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -27,12 +26,13 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         [TestAppFact("Samples.BuggyBits")]
         public void EnsureProfilerIsDeactivatedIfNoWrapperLibrary(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
 
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", string.Empty);
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
             runner.Run(agent);
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
@@ -46,12 +46,12 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         [TestAppFact("Samples.BuggyBits")]
         public void EnsureProfilerIsDeactivatedIfWrongPathToWrapperLibrary(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
 
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", "/mnt/does_not_exist/Datadog.Linux.Wrapper.x64.so");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
@@ -65,12 +65,12 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         [TestAppFact("Samples.BuggyBits")]
         public void EnsureAppDoesNotCrashIfProfilerDeactivateAndTracerActivated(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
 
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", string.Empty);
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)

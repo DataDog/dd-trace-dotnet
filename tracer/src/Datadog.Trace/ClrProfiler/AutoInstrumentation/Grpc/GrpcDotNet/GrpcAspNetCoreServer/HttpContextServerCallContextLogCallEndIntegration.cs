@@ -49,12 +49,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
 
                 if (callContext.RequestHeaders is { Count: > 0 } requestMetadata)
                 {
-                    span.SetHeaderTags(new MetadataHeadersCollection(requestMetadata), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
+                    span.SetHeaderTags(new MetadataHeadersCollection(requestMetadata), tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
                 }
 
                 if (callContext.ResponseTrailers is { Count: > 0 } responseMetadata)
                 {
-                    span.SetHeaderTags(new MetadataHeadersCollection(responseMetadata), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                    span.SetHeaderTags(new MetadataHeadersCollection(responseMetadata), tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
                 }
             }
 

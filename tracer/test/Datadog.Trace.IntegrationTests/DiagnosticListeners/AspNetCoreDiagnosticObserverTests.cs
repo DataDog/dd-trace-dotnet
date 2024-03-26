@@ -238,7 +238,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         }
 #endif
 
-#if NET6_0
+#if NET6_0_OR_GREATER
         [SkippableTheory]
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForWebApplicationBuilder_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
@@ -542,15 +542,13 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         {
             var settings = new TracerSettings(configSource);
             var agentWriter = writer ?? new Mock<IAgentWriter>().Object;
-            var samplerMock = new Mock<ISampler>();
+            var samplerMock = new Mock<ITraceSampler>();
 
             return new Tracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         private class AgentWriterStub : IAgentWriter
         {
-            public bool CanDropP0s => false;
-
             public List<ArraySegment<Span>> Traces { get; } = new();
 
             public Task FlushAndCloseAsync() => Task.CompletedTask;
@@ -559,7 +557,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
             public Task<bool> Ping() => Task.FromResult(true);
 
-            public void WriteTrace(ArraySegment<Span> trace, bool shouldSerializeSpans) => Traces.Add(trace);
+            public void WriteTrace(ArraySegment<Span> trace) => Traces.Add(trace);
         }
     }
 }

@@ -14,9 +14,9 @@
         "http.method": "GET",
         "http.status_code": "200",
         "http.url": "http://localhost:5000/api/values",
+        "out.host": "localhost",
         "runtime-id": "b34b2bed-9444-4597-87f6-b8202b03b1b8",
-        "span.kind": "client",
-        "_dd.p.dm": "-0"
+        "span.kind": "client"
       },
       "metrics": {
         "_dd.agent_psr": 1.0,
@@ -37,7 +37,7 @@
       "parent_id": 1,
       "type": "web",
       "meta": {
-        "_dd.appsec.waf.version": "1.3.0",
+        "_dd.appsec.waf.version": "1.16.0",
         "_dd.runtime_family": "dotnet",
         "aspnet_core.route": "api/values",
         "component": "aspnet_core",
@@ -50,13 +50,12 @@
         "language": "dotnet",
         "network.client.ip": "127.0.0.1",
         "runtime-id": "b34b2bed-9444-4597-87f6-b8202b03b1b8",
-        "span.kind": "server",
-        "_dd.p.dm": "-0"
+        "span.kind": "server"
       },
       "metrics": {
         "_dd.appsec.enabled": 1.0,
         "_dd.appsec.event_rules.error_count": 0.0,
-        "_dd.appsec.event_rules.loaded": 126.0,
+        "_dd.appsec.event_rules.loaded": 153.0,
         "_dd.top_level": 1.0,
         "_dd.tracer_kr": 0.0,
         "_sampling_priority_v1": 2.0,
@@ -79,7 +78,8 @@
         "aspnet_core.route": "api/values",
         "component": "aspnet_core",
         "language": "dotnet",
-        "span.kind": "server"
+        "span.kind": "server",
+        "_dd.p.dm": "-0"
       },
       "duration": 36127600,
       "start": 1652287240907666400

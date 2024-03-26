@@ -71,7 +71,7 @@ namespace shared
 
     WSTRING Trim(const WSTRING& str)
     {
-        return Trim(str, WStr(" \t"));
+        return Trim(str, WStr(" \f\n\r\t\v"));
     }
 
     std::string Trim(const std::string& str)
@@ -121,6 +121,21 @@ namespace shared
         return false;
     }
 
+    bool EnvironmentExist(const WSTRING& name)
+    {
+#ifdef _WIN32
+        auto len = ::GetEnvironmentVariable((LPWSTR)name.data(), (LPWSTR)nullptr, 0);
+        if (len > 0)
+        {
+            return true;
+        }
+
+        return (::GetLastError() != ERROR_ENVVAR_NOT_FOUND);
+#else
+        auto cstr = std::getenv(ToString(name).c_str());
+        return (cstr != nullptr);
+#endif
+    }
 
     WSTRING GetEnvironmentValue(const WSTRING& name)
     {
@@ -209,7 +224,16 @@ namespace shared
 #ifdef _WIN32
         return SetEnvironmentVariable(::shared::Trim(name).c_str(), value.c_str());
 #else
-        return setenv(::shared::ToString(name).c_str(), ::shared::ToString(value).c_str(), 1) == 1;
+        return setenv(::shared::ToString(name).c_str(), ::shared::ToString(value).c_str(), 1) == 0;
+#endif
+    }
+
+    bool UnsetEnvironmentValue(const ::shared::WSTRING& name)
+    {
+#ifdef _WIN32
+        return ::SetEnvironmentVariable(name.c_str(), nullptr);
+#else
+        return unsetenv(::shared::ToString(name).c_str()) == 0;
 #endif
     }
 
@@ -269,7 +293,7 @@ namespace shared
         return GenerateUuidV4();
 #endif
     }
-	
+
 	bool WStringStartWithCaseInsensitive(const WSTRING& longer, const WSTRING& shorter)
     {
         if (shorter.length() > longer.length()) return false;

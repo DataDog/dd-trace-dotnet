@@ -9,6 +9,8 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
@@ -25,29 +27,38 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         internal static void DisableIntegration() => _disableIntegration = true;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void LogException(Exception exception, string message = null)
+        internal static void LogException(Exception exception)
         {
             // ReSharper disable twice ExplicitCallerInfoArgument
-            Log.Error(exception, message ?? exception?.Message);
+            Log.Error(exception, "Exception occurred when calling the CallTarget integration continuation.");
             if (exception is DuckTypeException or TargetInvocationException { InnerException: DuckTypeException })
             {
-                Log.Warning($"DuckTypeException has been detected, the integration <{typeof(TIntegration)}, {typeof(TTarget)}> will be disabled.");
-                if (_integrationId.Value is not null)
+                Log.Warning("DuckTypeException has been detected, the integration <{TIntegration}, {TTarget}> will be disabled.", typeof(TIntegration), typeof(TTarget));
+                if (_integrationId.Value is { } integrationId)
                 {
-                    Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(_integrationId.Value.Value, nameof(DuckTypeException));
+                    TelemetryFactory.Metrics.RecordCountSharedIntegrationsError(integrationId.GetMetricTag(), MetricTags.InstrumentationError.DuckTyping);
+                    Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(DuckTypeException));
                 }
 
                 _disableIntegration = true;
             }
             else if (exception is CallTargetInvokerException)
             {
-                Log.Warning($"CallTargetInvokerException has been detected, the integration <{typeof(TIntegration)}, {typeof(TTarget)}> will be disabled.");
-                if (_integrationId.Value is not null)
+                Log.Warning("CallTargetInvokerException has been detected, the integration <{TIntegration}, {TTarget}> will be disabled.", typeof(TIntegration), typeof(TTarget));
+                if (_integrationId.Value is { } integrationId)
                 {
-                    Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(_integrationId.Value.Value, nameof(CallTargetInvokerException));
+                    TelemetryFactory.Metrics.RecordCountSharedIntegrationsError(integrationId.GetMetricTag(), MetricTags.InstrumentationError.Invoker);
+                    Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(CallTargetInvokerException));
                 }
 
                 _disableIntegration = true;
+            }
+            else
+            {
+                if (_integrationId.Value is { } integrationId)
+                {
+                    TelemetryFactory.Metrics.RecordCountSharedIntegrationsError(integrationId.GetMetricTag(), MetricTags.InstrumentationError.Execution);
+                }
             }
         }
 

@@ -6,12 +6,16 @@
 #if !NETFRAMEWORK
 
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Iast;
+using Microsoft.AspNetCore.Http;
 
-namespace Datadog.Trace.ClrProfiler.AspNetCore
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     /// <summary>
     /// setModel calltarget instrumentation
@@ -23,9 +27,9 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
     MinimumVersion = "2.0.0.0",
-    MaximumVersion = "6.*.*.*.*",
+    MaximumVersion = "8.*.*.*.*",
     IntegrationName = IntegrationName,
-    InstrumentationCategory = InstrumentationCategory.AppSec)]
+    InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
     [InstrumentMethod(
     AssemblyName = "Microsoft.AspNetCore.Mvc.Core",
     TypeName = "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext",
@@ -33,10 +37,10 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
     MinimumVersion = "2.0.0.0",
-    MaximumVersion = "6.*.*.*.*",
+    MaximumVersion = "8.*.*.*.*",
     IntegrationName = IntegrationName,
-    CallTargetIntegrationType = IntegrationType.Derived,
-    InstrumentationCategory = InstrumentationCategory.AppSec)]
+    CallTargetIntegrationKind = CallTargetKind.Derived,
+    InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
 
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -49,8 +53,9 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
 
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, in CallTargetState state)
         {
-            var security = AppSec.Security.Instance;
-            if (security.Settings.Enabled)
+            var iast = Iast.Iast.Instance;
+            var security = Security.Instance;
+            if (security.Enabled || iast.Settings.Enabled)
             {
                 if (instance.TryDuckCast<DefaultModelBindingContext>(out var defaultModelBindingContext))
                 {
@@ -60,7 +65,17 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
 
                         if (defaultModelBindingContext.BindingSource.Id == "Body")
                         {
-                            security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
+                            object bodyExtracted = null;
+
+                            if (security.Enabled)
+                            {
+                                bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, false);
+                            }
+
+                            if (iast.Settings.Enabled)
+                            {
+                                span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, bodyExtracted);
+                            }
                         }
                         else
                         {
@@ -69,9 +84,19 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
                                 var provider = defaultModelBindingContext.ValueProvider[i];
                                 if (provider.TryDuckCast(out BindingSourceValueProvider prov))
                                 {
-                                    if (prov.BindingSource.Id == "Form" || prov.BindingSource.Id == "Body")
+                                    if (prov.BindingSource.Id is "Form" or "Body")
                                     {
-                                        security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
+                                        object bodyExtracted = null;
+                                        if (security.Enabled)
+                                        {
+                                            bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, false);
+                                        }
+
+                                        if (iast.Settings.Enabled)
+                                        {
+                                            span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, bodyExtracted);
+                                        }
+
                                         break;
                                     }
                                 }

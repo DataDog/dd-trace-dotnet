@@ -141,6 +141,8 @@ namespace Datadog.Trace.Util
 
             int lastIndex = startIndex + segmentLength;
             var containsNumber = false;
+            var containsHex = false;
+            var containsComma = false;
 
             for (int index = startIndex; index < lastIndex && index < absolutePath.Length; index++)
             {
@@ -153,6 +155,7 @@ namespace Datadog.Trace.Util
                         continue;
                     case >= 'a' and <= 'f':
                     case >= 'A' and <= 'F':
+                        containsHex = true;
                         if (segmentLength < 16)
                         {
                             // don't be too aggressive replacing
@@ -162,11 +165,19 @@ namespace Datadog.Trace.Util
                         }
 
                         continue;
+                    case ',':
+                        containsComma = true;
+                        continue;
                     case '-':
                         continue;
                     default:
                         return false;
                 }
+            }
+
+            if (containsComma && containsHex)
+            {
+                return false;
             }
 
             return containsNumber;

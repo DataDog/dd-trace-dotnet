@@ -8,17 +8,14 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/Health,
+      http.url: http://localhost:00000/Health,
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.p.dm: -0
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
@@ -37,17 +34,14 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/Health,
+      http.url: http://localhost:00000/Health,
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.p.dm: -0
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
@@ -66,17 +60,14 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/Health,
+      http.url: http://localhost:00000/Health,
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.p.dm: -0
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
@@ -95,17 +86,14 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/Health,
+      http.url: http://localhost:00000/Health,
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.p.dm: -0
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
@@ -124,17 +112,14 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/Health,
+      http.url: http://localhost:00000/Health,
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.p.dm: -0
+      span.kind: server
     },
     Metrics: {
       process_id: 0,

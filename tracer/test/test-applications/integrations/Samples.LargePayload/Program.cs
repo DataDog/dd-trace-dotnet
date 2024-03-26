@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using CommandLine;
-using Datadog.Trace;
 
 namespace Samples.LargePayload
 {
@@ -40,19 +39,19 @@ namespace Samples.LargePayload
                            var traceTask = Task.Run(
                                           () =>
                                           {
-                                              using (var traceScope = Tracer.Instance.StartActive("very-big-trace"))
+                                              using (var traceScope = SampleHelpers.CreateScope("very-big-trace"))
                                               {
-                                                  traceScope.Span.SetTag("fill", Guid.NewGuid().ToString());
-                                                  traceScope.Span.SetTag("stuff", traceFiller);
+                                                  SampleHelpers.TrySetTag(traceScope, "fill", Guid.NewGuid().ToString());
+                                                  SampleHelpers.TrySetTag(traceScope, "stuff", traceFiller);
 
                                                   var spansRemaining = spansPerTrace;
 
                                                   while (spansRemaining-- > 0)
                                                   {
-                                                      using (var spanScope = Tracer.Instance.StartActive("nest"))
+                                                      using (var spanScope = SampleHelpers.CreateScope("nest"))
                                                       {
-                                                          spanScope.Span.SetTag("fill", Guid.NewGuid().ToString());
-                                                          spanScope.Span.SetTag("stuff", traceFiller);
+                                                          SampleHelpers.TrySetTag(spanScope, "fill", Guid.NewGuid().ToString());
+                                                          SampleHelpers.TrySetTag(spanScope, "stuff", traceFiller);
                                                       }
                                                   }
                                               }
@@ -67,7 +66,7 @@ namespace Samples.LargePayload
 
                        Console.WriteLine("Test complete, waiting for spans to flush.");
 
-                       Tracer.Instance.ForceFlushAsync().Wait(); // Just make sure everything flushes
+                       SampleHelpers.ForceTracerFlushAsync().Wait(); // Just make sure everything flushes
 
                        Console.WriteLine("Complete.");
 

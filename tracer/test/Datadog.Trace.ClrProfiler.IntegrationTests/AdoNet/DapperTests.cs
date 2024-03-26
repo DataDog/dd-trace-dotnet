@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -10,7 +11,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class DapperTests : TestHelper
+    public class DapperTests : TracingIntegrationTest
     {
         public DapperTests(ITestOutputHelper output)
             : base("Dapper", output)
@@ -18,59 +19,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
+        // Assert Npgsql because the Dapper application uses Postgres for the actual client
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsNpgsql(metadataSchemaVersion);
+
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces()
+        public Task SubmitsTracesV0() => RunTest("v0");
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        public Task SubmitsTracesV1() => RunTest("v1");
+
+        private async Task RunTest(string metadataSchemaVersion)
         {
             const int expectedSpanCount = 17;
             const string dbType = "postgres";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.Dapper-" + dbType;
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-{dbType}" : EnvironmentHelper.FullSampleName;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent))
+            using (await RunSampleAndWaitForExit(agent))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 Assert.Equal(expectedSpanCount, spans.Count);
-
-                foreach (var span in spans)
-                {
-                    // Assert Npgsql because the Dapper application uses Postgres for the actual client
-                    var result = span.IsNpgsql();
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.Equal(expectedOperationName, span.Name);
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                }
-            }
-        }
-
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithNetStandard()
-        {
-            const int expectedSpanCount = 17;
-            const string dbType = "postgres";
-            const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.Dapper-" + dbType;
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent))
-            {
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.Equal(expectedSpanCount, spans.Count);
-
-                foreach (var span in spans)
-                {
-                    // Assert Npgsql because the Dapper application uses Postgres for the actual client
-                    var result = span.IsNpgsql();
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.Equal(expectedOperationName, span.Name);
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                }
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             }
         }
     }

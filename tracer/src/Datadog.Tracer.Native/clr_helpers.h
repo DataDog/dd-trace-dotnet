@@ -41,6 +41,8 @@ const auto SystemTypeName = WStr("System.Type");
 const auto GetTypeFromHandleMethodName = WStr("GetTypeFromHandle");
 const auto RuntimeTypeHandleTypeName = WStr("System.RuntimeTypeHandle");
 const auto RuntimeMethodHandleTypeName = WStr("System.RuntimeMethodHandle");
+const shared::WSTRING IAsyncStateMachineName = WStr("System.Runtime.CompilerServices.IAsyncStateMachine");
+
 
 template <typename T>
 class EnumeratorIterator;
@@ -176,6 +178,26 @@ static Enumerator<mdAssemblyRef> EnumAssemblyRefs(const ComPtr<IMetaDataAssembly
         [assembly_import](HCORENUM ptr) -> void { assembly_import->CloseEnum(ptr); });
 }
 
+static Enumerator<mdTypeSpec> EnumTypeSpecs(const ComPtr<IMetaDataImport2>& metadata_import)
+{
+    return Enumerator<mdTypeSpec>(
+        [metadata_import](HCORENUM* ptr, mdTypeSpec arr[], ULONG max, ULONG* cnt) -> HRESULT {
+            return metadata_import->EnumTypeSpecs(ptr, arr, max, cnt);
+        },
+        [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
+}
+
+
+static Enumerator<mdInterfaceImpl> EnumInterfaceImpls(const ComPtr<IMetaDataImport2>& metadata_import, const mdTypeDef typeDef)
+{
+    return Enumerator<mdInterfaceImpl>(
+        [metadata_import, typeDef](HCORENUM* ptr, mdInterfaceImpl arr[], ULONG max, ULONG* cnt)
+            -> HRESULT {
+            return metadata_import->EnumInterfaceImpls(ptr, typeDef, arr, max, cnt);
+        },
+        [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
+}
+
 struct RuntimeInformation
 {
     COR_PRF_RUNTIME_TYPE runtime_type;
@@ -231,8 +253,8 @@ struct AssemblyInfo
     {
     }
 
-    AssemblyInfo(AssemblyID id, shared::WSTRING name, ModuleID manifest_module_id, AppDomainID app_domain_id,
-                 shared::WSTRING app_domain_name) :
+    AssemblyInfo(AssemblyID id, const shared::WSTRING& name, ModuleID manifest_module_id, AppDomainID app_domain_id,
+                 const shared::WSTRING& app_domain_name) :
         id(id),
         name(name),
         manifest_module_id(manifest_module_id),
@@ -258,7 +280,7 @@ struct AssemblyMetadata
     {
     }
 
-    AssemblyMetadata(ModuleID module_id, shared::WSTRING name, mdAssembly assembly_token, USHORT major, USHORT minor,
+    AssemblyMetadata(ModuleID module_id, const shared::WSTRING& name, mdAssembly assembly_token, USHORT major, USHORT minor,
                      USHORT build, USHORT revision) :
         module_id(module_id),
         name(name),
@@ -291,7 +313,7 @@ struct AssemblyProperty
     {
     }
 
-    AssemblyProperty(shared::WSTRING szName, void* ppbPublicKey, ULONG pcbPublicKey, ULONG pulHashAlgId, DWORD assemblyFlags) :
+    AssemblyProperty(const shared::WSTRING& szName, void* ppbPublicKey, ULONG pcbPublicKey, ULONG pulHashAlgId, DWORD assemblyFlags) :
         szName(szName),
         ppbPublicKey(ppbPublicKey),
         pcbPublicKey(pcbPublicKey),
@@ -322,7 +344,7 @@ struct ModuleInfo
     ModuleInfo() : id(0), path(shared::EmptyWStr), assembly({}), flags(0)
     {
     }
-    ModuleInfo(ModuleID id, shared::WSTRING path, AssemblyInfo assembly, DWORD flags) :
+    ModuleInfo(ModuleID id, const shared::WSTRING& path, const AssemblyInfo& assembly, DWORD flags) :
         id(id), path(path), assembly(assembly), flags(flags)
     {
     }
@@ -362,6 +384,8 @@ struct TypeInfo
     std::shared_ptr<TypeInfo> extend_from;
     const bool valueType;
     const bool isGeneric;
+    const bool isAbstract;
+    const bool isSealed;
     std::shared_ptr<TypeInfo> parent_type;
     const mdToken scopeToken;
 
@@ -373,12 +397,14 @@ struct TypeInfo
         extend_from(nullptr),
         valueType(false),
         isGeneric(false),
+        isAbstract(false),
+        isSealed(false),
         parent_type(nullptr),
         scopeToken(0)
     {
     }
-    TypeInfo(mdToken id, shared::WSTRING name, mdTypeSpec type_spec, ULONG32 token_type, std::shared_ptr<TypeInfo> extend_from,
-             bool valueType, bool isGeneric, std::shared_ptr<TypeInfo> parent_type, mdToken scopeToken) :
+    TypeInfo(mdToken id, const shared::WSTRING& name, mdTypeSpec type_spec, ULONG32 token_type, std::shared_ptr<TypeInfo> extend_from,
+             bool valueType, bool isGeneric, bool isAbstract, bool isSealed, std::shared_ptr<TypeInfo> parent_type, mdToken scopeToken) :
         id(id),
         name(name),
         type_spec(type_spec),
@@ -386,6 +412,8 @@ struct TypeInfo
         extend_from(extend_from),
         valueType(valueType),
         isGeneric(isGeneric),
+        isAbstract(isAbstract),
+        isSealed(isSealed),
         parent_type(parent_type),
         scopeToken(scopeToken)
     {
@@ -394,6 +422,11 @@ struct TypeInfo
     bool IsValid() const
     {
         return id != 0;
+    }
+
+    bool IsStaticClass() const
+    {
+        return isAbstract && isSealed;
     }
 };
 
@@ -431,10 +464,8 @@ public:
     FunctionMethodSignature() : pbBase(nullptr), len(0)
     {
     }
-    FunctionMethodSignature(PCCOR_SIGNATURE pb, unsigned cbBuffer)
+    FunctionMethodSignature(PCCOR_SIGNATURE pb, unsigned cbBuffer) : pbBase(pb), len(cbBuffer)
     {
-        pbBase = pb;
-        len = cbBuffer;
     };
     ULONG NumberOfTypeArguments() const
     {
@@ -468,6 +499,11 @@ public:
     bool IsEmpty() const
     {
         return len == 0;
+    }
+
+    std::tuple<PCCOR_SIGNATURE, unsigned> GetFunctionSignatureAndLength()
+    {
+        return {pbBase, len};
     }
 };
 
@@ -525,9 +561,9 @@ struct FunctionInfo
     {
     }
 
-    FunctionInfo(mdToken id, shared::WSTRING name, TypeInfo type, MethodSignature signature,
-                 MethodSignature function_spec_signature, mdToken method_def_id,
-                 FunctionMethodSignature method_signature) :
+    FunctionInfo(mdToken id, const shared::WSTRING& name, const TypeInfo& type, const MethodSignature& signature,
+                 const MethodSignature& function_spec_signature, mdToken method_def_id,
+                 const FunctionMethodSignature& method_signature) :
         id(id),
         name(name),
         type(type),
@@ -539,8 +575,8 @@ struct FunctionInfo
     {
     }
 
-    FunctionInfo(mdToken id, shared::WSTRING name, TypeInfo type, MethodSignature signature,
-                 FunctionMethodSignature method_signature) :
+    FunctionInfo(mdToken id, const shared::WSTRING& name, const TypeInfo& type, const MethodSignature& signature,
+                 const FunctionMethodSignature& method_signature) :
         id(id),
         name(name),
         type(type),
@@ -550,11 +586,31 @@ struct FunctionInfo
         method_signature(method_signature)
     {
     }
-
+    
     bool IsValid() const
     {
         return id != 0;
     }
+};
+
+struct GenericTypeProps
+{
+private:
+    PCCOR_SIGNATURE pbBase;
+    ULONG len;
+
+public:
+    unsigned char SpecElementType = 0; // Element type of the TypeSpec. e.g GENERICINST, VAR, MVAR, SZARRAY etc.
+    mdToken OpenTypeToken = mdTokenNil; // Token of the open generic type, can be TypeDef or TypeRef. In any case except CLASS or VALUETYPE, this will be mdTokenNil.
+    unsigned char GenericElementType = 0; // Element type of the generic type, can be any valid element type. e.g. OBJECT, CLASS, VALUETYPE etc.
+    unsigned ParamsCount = 0; // Number of generic type args. e.g. GenericClass<T,V> params count will be 2.
+    unsigned IndexOfFirstParam = 0; // Index (the offset in signature) of the first generic parameter type.
+    unsigned ParamPosition = 0; // For VAR and MVAR will be the number in the generic type parameters.
+    std::vector<std::tuple<PCCOR_SIGNATURE, ULONG, unsigned char>> ParamsSignature; // Collection of tuple(signature, length) for each generic parameter type.
+    
+    GenericTypeProps(PCCOR_SIGNATURE pb, ULONG len) : pbBase(pb), len(len){}
+
+    HRESULT TryParse();
 };
 
 RuntimeInformation GetRuntimeInformation(ICorProfilerInfo4* info);
@@ -578,8 +634,22 @@ mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_im
 HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit, AssemblyProperty& corAssemblyProperty,
                              mdAssemblyRef* corlib_ref);
 
-bool FindTypeDefByName(const shared::WSTRING instrumentationTargetMethodTypeName, const shared::WSTRING assemblyName,
+bool FindTypeDefByName(const shared::WSTRING& instrumentationTargetMethodTypeName, const shared::WSTRING& assemblyName,
                        const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef);
+
+HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataImport, mdMethodDef methodDefToken, bool& hasAsyncAttribute);
+HRESULT IsByRefLike(const ComPtr<IMetaDataImport2>& metadataImport, mdTypeDef typeDefToken, bool& hasByRefLikeAttribute);
+HRESULT ResolveTypeInternal(ICorProfilerInfo4* info, const std::vector<ModuleID>& loadedModules,
+                            const std::vector<WCHAR>& refTypeName,
+                            mdToken parentToken, const shared::WSTRING& resolutionScopeName,
+                            mdTypeDef& resolvedTypeDefToken, ComPtr<IMetaDataImport2>& resolvedTypeDefMetadataImport);
+HRESULT ResolveType(ICorProfilerInfo4* info, const ComPtr<IMetaDataImport2>& metadata_import,
+                    const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+                    mdTypeRef typeRefToken, mdTypeDef& resolvedTypeDefToken,
+                    ComPtr<IMetaDataImport2>& resolvedMetadataImport);
+shared::WSTRING GetStringValueFromBlob(PCCOR_SIGNATURE& signature);
+
+void LogManagedProfilerAssemblyDetails();
 } // namespace trace
 
 #endif // DD_CLR_PROFILER_CLR_HELPERS_H_

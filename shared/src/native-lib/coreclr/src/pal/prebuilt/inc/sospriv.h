@@ -6,7 +6,7 @@
  /* File created by MIDL compiler version 8.01.0622 */
 /* at Mon Jan 18 19:14:07 2038
  */
-/* Compiler settings for C:/git/runtime/src/coreclr/src/inc/sospriv.idl:
+/* Compiler settings for C:/git/runtime/src/coreclr/inc/sospriv.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.01.0622
     protocol : dce , ms_ext, c_ext, robust
     error checks: allocation ref bounds_check enum stub_data
@@ -2675,7 +2675,7 @@ EXTERN_C const IID IID_ISOSDacInterface8;
 /* interface __MIDL_itf_sospriv_0000_0012 */
 /* [local] */ 
 
-#define SOS_BREAKING_CHANGE_VERSION 1
+#define SOS_BREAKING_CHANGE_VERSION 3
 
 
 extern RPC_IF_HANDLE __MIDL_itf_sospriv_0000_0012_v0_0_c_ifspec;
@@ -2895,6 +2895,181 @@ EXTERN_C const IID IID_ISOSDacInterface10;
 
 
 #endif  /* __ISOSDacInterface10_INTERFACE_DEFINED__ */
+
+#ifndef __ISOSDacInterface11_INTERFACE_DEFINED__
+#define __ISOSDacInterface11_INTERFACE_DEFINED__
+
+/* interface ISOSDacInterface11 */
+/* [uuid][local][object] */ 
+
+
+EXTERN_C const IID IID_ISOSDacInterface11;
+
+#if defined(__cplusplus) && !defined(CINTERFACE)
+    
+    MIDL_INTERFACE("96BA1DB9-14CD-4492-8065-1CAAECF6E5CF")
+    ISOSDacInterface11 : public IUnknown
+    {
+    public:
+        virtual HRESULT STDMETHODCALLTYPE IsTrackedType( 
+            CLRDATA_ADDRESS objAddr,
+            BOOL *isTrackedType,
+            BOOL *hasTaggedMemory) = 0;
+        
+        virtual HRESULT STDMETHODCALLTYPE GetTaggedMemory( 
+            CLRDATA_ADDRESS objAddr,
+            CLRDATA_ADDRESS *taggedMemory,
+            size_t *taggedMemorySizeInBytes) = 0;
+        
+    };
+    
+    
+#else  /* C style interface */
+
+    typedef struct ISOSDacInterface11Vtbl
+    {
+        BEGIN_INTERFACE
+        
+        HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
+            ISOSDacInterface11 * This,
+            /* [in] */ REFIID riid,
+            /* [annotation][iid_is][out] */ 
+            _COM_Outptr_  void **ppvObject);
+        
+        ULONG ( STDMETHODCALLTYPE *AddRef )( 
+            ISOSDacInterface11 * This);
+        
+        ULONG ( STDMETHODCALLTYPE *Release )( 
+            ISOSDacInterface11 * This);
+        
+        HRESULT ( STDMETHODCALLTYPE *IsTrackedType )( 
+            ISOSDacInterface11 * This,
+            CLRDATA_ADDRESS objAddr,
+            BOOL *isTrackedType,
+            BOOL *hasTaggedMemory);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetTaggedMemory )( 
+            ISOSDacInterface11 * This,
+            CLRDATA_ADDRESS objAddr,
+            CLRDATA_ADDRESS *taggedMemory,
+            size_t *taggedMemorySizeInBytes);
+        
+        END_INTERFACE
+    } ISOSDacInterface11Vtbl;
+
+    interface ISOSDacInterface11
+    {
+        CONST_VTBL struct ISOSDacInterface11Vtbl *lpVtbl;
+    };
+
+    
+
+#ifdef COBJMACROS
+
+
+#define ISOSDacInterface11_QueryInterface(This,riid,ppvObject) \
+    ( (This)->lpVtbl -> QueryInterface(This,riid,ppvObject) ) 
+
+#define ISOSDacInterface11_AddRef(This) \
+    ( (This)->lpVtbl -> AddRef(This) ) 
+
+#define ISOSDacInterface11_Release(This) \
+    ( (This)->lpVtbl -> Release(This) ) 
+
+
+#define ISOSDacInterface11_IsTrackedType(This,objAddr,isTrackedType,hasTaggedMemory) \
+    ( (This)->lpVtbl -> IsTrackedType(This,objAddr,isTrackedType,hasTaggedMemory) ) 
+
+#define ISOSDacInterface11_GetTaggedMemory(This,objAddr,taggedMemory,taggedMemorySizeInBytes) \
+    ( (This)->lpVtbl -> GetTaggedMemory(This,objAddr,taggedMemory,taggedMemorySizeInBytes) ) 
+
+#endif /* COBJMACROS */
+
+
+#endif  /* C style interface */
+
+#endif  /* __ISOSDacInterface11_INTERFACE_DEFINED__ */
+
+#ifndef __ISOSDacInterface12_INTERFACE_DEFINED__
+#define __ISOSDacInterface12_INTERFACE_DEFINED__
+
+/* interface ISOSDacInterface12 */
+/* [uuid][local][object] */ 
+
+
+EXTERN_C const IID IID_ISOSDacInterface12;
+
+#if defined(__cplusplus) && !defined(CINTERFACE)
+    
+    MIDL_INTERFACE("1b93bacc-8ca4-432d-943a-3e6e7ec0b0a3")
+    ISOSDacInterface12 : public IUnknown
+    {
+    public:
+        virtual HRESULT STDMETHODCALLTYPE GetGlobalAllocationContext( 
+            CLRDATA_ADDRESS *allocPtr,
+            CLRDATA_ADDRESS *allocLimit) = 0;
+        
+    };
+    
+    
+#else 	/* C style interface */
+
+    typedef struct ISOSDacInterface12Vtbl
+    {
+        BEGIN_INTERFACE
+        
+        HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
+            ISOSDacInterface12 * This,
+            /* [in] */ REFIID riid,
+            /* [annotation][iid_is][out] */ 
+            _COM_Outptr_  void **ppvObject);
+        
+        ULONG ( STDMETHODCALLTYPE *AddRef )( 
+            ISOSDacInterface12 * This);
+        
+        ULONG ( STDMETHODCALLTYPE *Release )( 
+            ISOSDacInterface12 * This);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetGlobalAllocationContext )( 
+            ISOSDacInterface12 * This,
+            CLRDATA_ADDRESS *allocPtr,
+            CLRDATA_ADDRESS *allocLimit);
+        
+        END_INTERFACE
+    } ISOSDacInterface12Vtbl;
+
+    interface ISOSDacInterface12
+    {
+        CONST_VTBL struct ISOSDacInterface12Vtbl *lpVtbl;
+    };
+
+    
+
+#ifdef COBJMACROS
+
+
+#define ISOSDacInterface12_QueryInterface(This,riid,ppvObject)	\
+    ( (This)->lpVtbl -> QueryInterface(This,riid,ppvObject) ) 
+
+#define ISOSDacInterface12_AddRef(This)	\
+    ( (This)->lpVtbl -> AddRef(This) ) 
+
+#define ISOSDacInterface12_Release(This)	\
+    ( (This)->lpVtbl -> Release(This) ) 
+
+
+#define ISOSDacInterface12_GetGlobalAllocationContext(This,allocPtr,allocLimit)	\
+    ( (This)->lpVtbl -> GetGlobalAllocationContext(This,allocPtr,allocLimit) ) 
+
+#endif /* COBJMACROS */
+
+
+#endif 	/* C style interface */
+
+
+
+
+#endif 	/* __ISOSDacInterface12_INTERFACE_DEFINED__ */
 
 
 /* Additional Prototypes for ALL interfaces */

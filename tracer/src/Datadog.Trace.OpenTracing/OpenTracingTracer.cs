@@ -6,6 +6,9 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using OpenTracing;
 using OpenTracing.Propagation;
 
@@ -17,15 +20,27 @@ namespace Datadog.Trace.OpenTracing
 
         private readonly Dictionary<string, ICodec> _codecs;
 
+        [PublicApi]
         public OpenTracingTracer(IDatadogOpenTracingTracer datadogTracer)
-            : this(datadogTracer, new global::OpenTracing.Util.AsyncLocalScopeManager())
+            : this(datadogTracer, CreateDefaultScopeManager(), datadogTracer.DefaultServiceName)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.OpenTracingTracer_Ctor_DatadogTracer);
         }
 
+        [PublicApi]
         public OpenTracingTracer(IDatadogOpenTracingTracer datadogTracer, global::OpenTracing.IScopeManager scopeManager)
+            : this(datadogTracer, scopeManager, datadogTracer.DefaultServiceName)
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.OpenTracingTracer_Ctor_DatadogTracer_ScopeManager);
+        }
+
+        internal OpenTracingTracer(
+            IDatadogOpenTracingTracer datadogTracer,
+            global::OpenTracing.IScopeManager scopeManager,
+            string defaultServiceName)
         {
             DatadogTracer = datadogTracer;
-            DefaultServiceName = datadogTracer.DefaultServiceName;
+            DefaultServiceName = defaultServiceName;
             ScopeManager = scopeManager;
             _codecs = new Dictionary<string, ICodec>
             {
@@ -74,5 +89,8 @@ namespace Datadog.Trace.OpenTracing
                 throw new NotSupportedException($"Tracer.Inject is not implemented for {format} by Datadog.Trace");
             }
         }
+
+        internal static global::OpenTracing.IScopeManager CreateDefaultScopeManager()
+            => new global::OpenTracing.Util.AsyncLocalScopeManager();
     }
 }

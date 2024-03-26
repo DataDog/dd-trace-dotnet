@@ -3,22 +3,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Datadog.Trace.Tests.PlatformHelpers
 {
-    [Collection(nameof(AzureAppServicesTestCollection))]
-    [AzureAppServicesRestorer]
     public class AzureAppServicesTests
     {
         internal static readonly string DeploymentId = "AzureExampleSiteName";
@@ -27,14 +22,6 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         private const string AppServiceType = "app";
         private const string FunctionKind = "functionapp";
         private const string FunctionType = "function";
-
-        private static readonly List<string> EnvVars = new List<string>()
-        {
-            AzureAppServices.AzureAppServicesContextKey,
-            AzureAppServices.WebsiteOwnerNameKey,
-            AzureAppServices.ResourceGroupKey,
-            AzureAppServices.SiteNameKey
-        };
 
         private static readonly string SubscriptionId = "8c500027-5f00-400e-8f00-60000000000f";
         private static readonly string PlanResourceGroup = "apm-dotnet";
@@ -48,8 +35,8 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         [Fact]
         public void AzureContext_AzureAppService_Default()
         {
-            var vars = GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
-            var metadata = new AzureAppServices(vars);
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
+            var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
             Assert.Equal(expected: AzureContext.AzureAppService, actual: metadata.AzureContext);
             Assert.Equal(expected: AppServiceKind, actual: metadata.SiteKind);
             Assert.Equal(expected: AppServiceType, actual: metadata.SiteType);
@@ -58,7 +45,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         [Fact]
         public void AzureContext_AzureFunction_WhenFunctionVariablesPresent()
         {
-            var vars = GetMockVariables(
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(
                 SubscriptionId,
                 DeploymentId,
                 PlanResourceGroup,
@@ -66,7 +53,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
                 functionsVersion: FunctionsVersion,
                 functionsRuntime: FunctionsRuntime);
 
-            var metadata = new AzureAppServices(vars);
+            var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
             Assert.Equal(expected: AzureContext.AzureFunctions, actual: metadata.AzureContext);
             Assert.Equal(expected: FunctionKind, actual: metadata.SiteKind);
             Assert.Equal(expected: FunctionType, actual: metadata.SiteType);
@@ -75,8 +62,8 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         [Fact]
         public void ResourceId_Created_WhenAllRequirementsExist()
         {
-            var vars = GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
-            var metadata = new AzureAppServices(vars);
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
+            var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
             var resourceId = metadata.ResourceId;
             Assert.Equal(expected: ExpectedResourceId, actual: resourceId);
         }
@@ -84,50 +71,49 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         [Fact]
         public void IsRelevant_True_WhenVariableSetTrue()
         {
-            var vars = GetMockVariables(null, null, null, null);
-            var metadata = new AzureAppServices(vars);
-            Assert.True(metadata.IsRelevant);
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, null, null, null);
+            var settings = new TracerSettings(vars);
+            Assert.True(settings.IsRunningInAzureAppService);
         }
 
         [Fact]
         public void OperatingSystem_Set()
         {
-            var vars = GetMockVariables(null, null, null, null);
-            var metadata = new AzureAppServices(vars);
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, null, null, null);
+            var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
             Assert.Equal(expected: "windows", actual: metadata.OperatingSystem);
         }
 
         [Fact]
         public void InstanceId_Set()
         {
-            var vars = GetMockVariables(null, null, null, null);
-            var metadata = new AzureAppServices(vars);
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, null, null, null);
+            var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
             Assert.Equal(expected: "instance_id", actual: metadata.InstanceId);
         }
 
         [Fact]
         public void InstanceName_Set()
         {
-            var vars = GetMockVariables(null, null, null, null);
-            var metadata = new AzureAppServices(vars);
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, null, null, null);
+            var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
             Assert.Equal(expected: "instance_name", actual: metadata.InstanceName);
         }
 
         [Fact]
         public void Runtime_Set()
         {
-            var vars = GetMockVariables(null, null, null, null);
-            var metadata = new AzureAppServices(vars);
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, null, null, null);
+            var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
             Assert.True(metadata.Runtime?.Length > 0);
         }
 
         [Fact]
         public void IsRelevant_False_WhenVariableDoesNotExist()
         {
-            var vars = GetMockVariables(null, null, null, null);
-            vars.Remove(AzureAppServices.AzureAppServicesContextKey);
-            var metadata = new AzureAppServices(vars);
-            Assert.False(metadata.IsRelevant);
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, null, null, null, addContextKey: false);
+            var metadata = new TracerSettings(vars);
+            Assert.False(metadata.IsRunningInAzureAppService);
         }
 
         [Theory]
@@ -141,8 +127,8 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         public void ResourceId_IsNull_WhenAnyRequirementsMissing(string subscriptionId, string deploymentId, string siteResourceGroup)
         {
             // plan resource group actually doesn't matter for the resource id we build
-            var vars = GetMockVariables(subscriptionId, deploymentId, "some-resource-group", siteResourceGroup);
-            var metadata = new AzureAppServices(vars);
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(subscriptionId, deploymentId, "some-resource-group", siteResourceGroup);
+            var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
             Assert.Null(metadata.ResourceId);
         }
 
@@ -159,8 +145,8 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         public void DebugModeEnabled_Tests(string ddTraceDebug, bool expectation)
         {
             // plan resource group actually doesn't matter for the resource id we build
-            var vars = GetMockVariables("subscription", "deploymentId", "some-resource-group", "siteResourceGroup", ddTraceDebug: ddTraceDebug);
-            var metadata = new AzureAppServices(vars);
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues("subscription", "deploymentId", "some-resource-group", "siteResourceGroup", ddTraceDebug: ddTraceDebug);
+            var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
             Assert.Equal(actual: metadata.DebugModeEnabled, expected: expectation);
         }
 
@@ -177,8 +163,8 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         public void CustomMetricsEnabled_Tests(string customMetrics, bool expectation)
         {
             // plan resource group actually doesn't matter for the resource id we build
-            var vars = GetMockVariables("subscription", "deploymentId", "some-resource-group", "siteResourceGroup", enableCustomMetrics: customMetrics);
-            var metadata = new AzureAppServices(vars);
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues("subscription", "deploymentId", "some-resource-group", "siteResourceGroup", enableCustomMetrics: customMetrics);
+            var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
             Assert.Equal(actual: metadata.NeedsDogStatsD, expected: expectation);
         }
 
@@ -195,17 +181,18 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         public void CustomTracingEnabled_Tests(string customTracing, bool expectation)
         {
             // plan resource group actually doesn't matter for the resource id we build
-            var vars = GetMockVariables("subscription", "deploymentId", "some-resource-group", "siteResourceGroup", enableCustomTracing: customTracing);
-            var metadata = new AzureAppServices(vars);
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues("subscription", "deploymentId", "some-resource-group", "siteResourceGroup", enableCustomTracing: customTracing);
+            var metadata = new ImmutableAzureAppServiceSettings(vars, NullConfigurationTelemetry.Instance);
             Assert.Equal(actual: metadata.CustomTracingEnabled, expected: expectation);
         }
 
         [Fact]
-        public void PopulatesOneSpanPerChunk()
+        public async Task DoNotTagSpans()
         {
-            var vars = GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
-            AzureAppServices.Metadata = new AzureAppServices(vars);
-            var tracer = TracerHelper.Create();
+            // AAS Tags are handled at serialization now. So no tags should be set on spans
+            var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
+            var settings = new TracerSettings(vars);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var spans = new List<ISpan>();
             var iterations = 5;
             var remaining = iterations;
@@ -235,67 +222,17 @@ namespace Datadog.Trace.Tests.PlatformHelpers
 
             Assert.NotEmpty(spans);
 
-            var spansWithTag =
-                spans.Where(s => s.GetTag(Tags.AzureAppServicesResourceId) == ExpectedResourceId).ToList();
-
-            // We should have one span decorated per traceId
-            spansWithTag.Should().HaveCount(iterations);
-            spansWithTag.Select(span => span.TraceId).Should().OnlyHaveUniqueItems();
-        }
-
-        private IDictionary GetMockVariables(
-            string subscriptionId,
-            string deploymentId,
-            string planResourceGroup,
-            string siteResourceGroup,
-            string ddTraceDebug = null,
-            string functionsVersion = null,
-            string functionsRuntime = null,
-            string enableCustomTracing = null,
-            string enableCustomMetrics = null)
-        {
-            var vars = Environment.GetEnvironmentVariables();
-
-            if (vars.Contains(AzureAppServices.InstanceNameKey))
-            {
-                // This is the COMPUTERNAME key which we'll remove for consistent testing
-                vars.Remove(AzureAppServices.InstanceNameKey);
-            }
-
-            if (vars.Contains(ConfigurationKeys.DebugEnabled))
-            {
-                vars.Remove(ConfigurationKeys.DebugEnabled);
-            }
-
-            if (!vars.Contains(ConfigurationKeys.ApiKey))
-            {
-                // This is a needed configuration for the AAS extension
-                vars.Add(ConfigurationKeys.ApiKey, "1");
-            }
-
-            vars.Add(AzureAppServices.AzureAppServicesContextKey, "1");
-            vars.Add(AzureAppServices.WebsiteOwnerNameKey, $"{subscriptionId}+{planResourceGroup}-EastUSwebspace");
-            vars.Add(AzureAppServices.ResourceGroupKey, siteResourceGroup);
-            vars.Add(AzureAppServices.SiteNameKey, deploymentId);
-            vars.Add(AzureAppServices.OperatingSystemKey, "windows");
-            vars.Add(AzureAppServices.InstanceIdKey, "instance_id");
-            vars.Add(AzureAppServices.InstanceNameKey, "instance_name");
-            vars.Add(ConfigurationKeys.DebugEnabled, ddTraceDebug);
-
-            if (functionsVersion != null)
-            {
-                vars.Add(AzureAppServices.FunctionsExtensionVersionKey, functionsVersion);
-            }
-
-            if (functionsRuntime != null)
-            {
-                vars.Add(AzureAppServices.FunctionsWorkerRuntimeKey, functionsRuntime);
-            }
-
-            vars.Add(AzureAppServices.AasEnableCustomTracing, enableCustomTracing ?? "false");
-            vars.Add(AzureAppServices.AasEnableCustomMetrics, enableCustomMetrics ?? "false");
-
-            return vars;
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteName) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteKind) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteType) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceGroup) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSubscriptionId) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceId) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceId) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceName) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesOperatingSystem) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesRuntime) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesExtensionVersion) != null);
         }
     }
 }

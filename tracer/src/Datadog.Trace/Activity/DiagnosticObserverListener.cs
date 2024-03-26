@@ -82,7 +82,7 @@ namespace Datadog.Trace.Activity
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error calling OnShouldListenToDelegate");
             }
         }
 
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Activity
         {
             if (shouldListen)
             {
-                ((IObservable<KeyValuePair<string, object>>)source.Instance).Subscribe(new DiagnosticSourceEventListener(source.Name));
+                ((IObservable<KeyValuePair<string, object>>?)source.Instance)?.Subscribe(new DiagnosticSourceEventListener(source.Name));
             }
         }
     }

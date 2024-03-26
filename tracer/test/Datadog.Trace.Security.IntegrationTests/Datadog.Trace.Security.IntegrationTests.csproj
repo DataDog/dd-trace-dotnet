@@ -18,15 +18,39 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-    <PackageReference Include="libddwaf" Version="1.3.0" GeneratePathProperty="true" />
+    <PackageReference Include="libddwaf" Version="1.8.2" GeneratePathProperty="true" />
 
-    <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
 
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <None Update="Data\app.db-shm">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Update="Data\app.db-wal">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Update="Data\app.db">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Update="ApiSecurity\ruleset-with-block.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0' OR $(TargetFramework.StartsWith('net4'))">
+    <PackageReference Include="System.DirectoryServices" Version="7.0.1" />
+    <PackageReference Include="System.DirectoryServices.Protocols" Version="7.0.0" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net5.0'">
+    <PackageReference Include="System.DirectoryServices" Version="6.0.0" />
+    <PackageReference Include="System.DirectoryServices.Protocols" Version="6.0.0" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
@@ -36,6 +60,9 @@
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <PackageReference Include="System.DirectoryServices" Version="5.0.0" />
+    <PackageReference Include="System.DirectoryServices.Protocols" Version="5.0.0" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -52,6 +79,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="remote-rules.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="ruleset.3.0.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -10,6 +10,7 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Git;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Target = Nuke.Common.Target;
+using Logger = Serilog.Log;
 
 partial class Build
 {
@@ -20,6 +21,12 @@ partial class Build
 
     [Parameter("Indicates name of exploration test to run. If not specified, will run all tests sequentially.")]
     readonly ExplorationTestName? ExplorationTestName;
+
+    [Parameter("Indicates if the Fault-Tolerant Instrumentation should be turned on.")]
+    readonly bool EnableFaultTolerantInstrumentation;
+
+    [Parameter("Indicates if the Dynamic Instrumentation product should be disabled.")]
+    readonly bool DisableDynamicInstrumentationProduct;
 
     [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.",
                List = false)]
@@ -56,19 +63,19 @@ partial class Build
 
     void SetUpExplorationTest_Debugger()
     {
-        Logger.Info($"Set up exploration test for debugger.");
+        Logger.Information($"Set up exploration test for debugger.");
         //TODO TBD
     }
 
     void SetUpExplorationTest_ContinuousProfiler()
     {
-        Logger.Info($"Prepare environment variables for continuous profiler.");
+        Logger.Information($"Prepare environment variables for continuous profiler.");
         //TODO TBD
     }
 
     void SetUpExplorationTest_Tracer()
     {
-        Logger.Info($"Prepare environment variables for tracer.");
+        Logger.Information($"Prepare environment variables for tracer.");
         //TODO TBD
     }
 
@@ -76,14 +83,14 @@ partial class Build
     {
         if (ExplorationTestName.HasValue)
         {
-            Logger.Info($"Provided exploration test name is {ExplorationTestName}.");
+            Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
 
             var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
             GitCloneAndBuild(testDescription);
         }
         else
         {
-            Logger.Info($"Exploration test name is not provided. Running all of them.");
+            Logger.Information($"Exploration test name is not provided. Running all of them.");
 
             foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
             {
@@ -117,7 +124,9 @@ partial class Build
             x => x
                 .SetProjectFile(projectPath)
                 .SetConfiguration(BuildConfiguration)
-                .SetProcessArgumentConfigurator(arguments => arguments.Add("-consoleLoggerParameters:ErrorsOnly"))
+                .SetProcessArgumentConfigurator(arguments => arguments
+                                                            .Add("-consoleLoggerParameters:ErrorsOnly")
+                                                            .Add("-property:NuGetAudit=false"))
                 .When(Framework != null, settings => settings.SetFramework(Framework))
         );
     }
@@ -174,14 +183,14 @@ partial class Build
     {
         if (ExplorationTestName.HasValue)
         {
-            Logger.Info($"Provided exploration test name is {ExplorationTestName}.");
+            Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
 
             var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
             RunUnitTest(testDescription, envVariables);
         }
         else
         {
-            Logger.Info($"Exploration test name is not provided. Running all.");
+            Logger.Information($"Exploration test name is not provided. Running all.");
 
             foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
             {
@@ -192,29 +201,59 @@ partial class Build
 
     void RunUnitTest(ExplorationTestDescription testDescription, Dictionary<string, string> envVariables)
     {
-        Logger.Info($"Running exploration test {testDescription.Name}.");
+        if (!testDescription.ShouldRun)
+        {
+            Logger.Information($"Skipping the exploration test {testDescription.Name}.");
+            return;
+        }
+
+        Logger.Information($"Running exploration test {testDescription.Name}.");
 
         if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
         {
             throw new InvalidOperationException($"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
         }
 
-        DotNetTest(
-            x =>
+        if (testDescription.EnvironmentVariables != null)
+        {
+            foreach (var (key, value) in testDescription.EnvironmentVariables)
             {
-                x = x
-                   .SetProjectFile(testDescription.GetTestTargetPath(ExplorationTestsDirectory, Framework, BuildConfiguration))
-                   .EnableNoRestore()
-                   .EnableNoBuild()
-                   .SetConfiguration(BuildConfiguration)
-                   .When(Framework != null, settings => settings.SetFramework(Framework))
-                   .SetProcessEnvironmentVariables(envVariables)
-                   .SetIgnoreFilter(testDescription.TestsToIgnore)
-                   .WithMemoryDumpAfter(1)
-                    ;
+                // Use TryAdd to avoid overriding the environment variables set by the caller
+                envVariables.TryAdd(key, value);
+            }
+        }
 
-                return x;
-            });
+        if (Framework == null)
+        {
+            foreach (var targetFramework in testDescription.SupportedFrameworks)
+            {
+                Test(targetFramework);
+            }
+        }
+        else
+        {
+            Test(Framework);
+        }
+
+        void Test(TargetFramework targetFramework)
+        {
+            DotNetTest(
+                x =>
+                {
+                    x = x
+                       .SetProjectFile(testDescription.GetTestTargetPath(ExplorationTestsDirectory, targetFramework, BuildConfiguration))
+                       .EnableNoRestore()
+                       .EnableNoBuild()
+                       .SetConfiguration(BuildConfiguration)
+                       .SetFramework(targetFramework)
+                       .SetProcessEnvironmentVariables(envVariables)
+                       .SetIgnoreFilter(testDescription.TestsToIgnore)
+                       .WithMemoryDumpAfter(100)
+                        ;
+
+                    return x;
+                });
+        }
     }
 
     void RunExplorationTestAssertions()
@@ -237,19 +276,19 @@ partial class Build
 
     void RunExplorationTestAssertions_Debugger()
     {
-        Logger.Info($"Running assertions tests for debugger.");
+        Logger.Information($"Running assertions tests for debugger.");
         //TODO TBD
     }
 
     void RunExplorationTestAssertions_ContinuousProfiler()
     {
-        Logger.Info($"Running assertions tests for profiler.");
+        Logger.Information($"Running assertions tests for profiler.");
         //TODO TBD
     }
 
     void RunExplorationTestAssertions_Tracer()
     {
-        Logger.Info($"Running assertions tests for tracer.");
+        Logger.Information($"Running assertions tests for tracer.");
         //TODO TBD
     }
 }
@@ -278,6 +317,8 @@ class ExplorationTestDescription
     public bool IsTestedByVSTest { get; set; }
     public string[] TestsToIgnore { get; set; }
 
+    public bool ShouldRun { get; set; } = true;
+
     public string GetTestTargetPath(AbsolutePath explorationTestsDirectory, TargetFramework framework, Configuration buildConfiguration)
     {
         var projectPath = $"{explorationTestsDirectory}/{Name}/{PathToUnitTestProject}";
@@ -297,6 +338,7 @@ class ExplorationTestDescription
 
     public TargetFramework[] SupportedFrameworks { get; set; }
     public OSPlatform[] SupportedOSPlatforms { get; set; }
+    public (string key, string value)[] EnvironmentVariables { get; set; }
 
     public bool IsFrameworkSupported(TargetFramework targetFramework)
     {
@@ -333,6 +375,7 @@ class ExplorationTestDescription
                 IsGitSubmodulesRequired = true,
                 PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
                 SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
+                ShouldRun = false // Dictates that this exploration test should not take part in the CI
             },
             ExplorationTestName.cake => new ExplorationTestDescription()
             {
@@ -342,6 +385,8 @@ class ExplorationTestDescription
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "src/Cake.Common.Tests",
                 SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0 },
+                // Workaround for https://github.com/dotnet/runtime/issues/95653
+                EnvironmentVariables = new[] { ("DD_CLR_ENABLE_INLINING", "0") },
             },
             ExplorationTestName.swashbuckle => new ExplorationTestDescription()
             {
@@ -351,6 +396,8 @@ class ExplorationTestDescription
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "test/Swashbuckle.AspNetCore.SwaggerGen.Test",
                 SupportedFrameworks = new[] { TargetFramework.NET6_0 },
+                // Workaround for https://github.com/dotnet/runtime/issues/95653
+                EnvironmentVariables = new[] { ("DD_CLR_ENABLE_INLINING", "0") },
             },
             ExplorationTestName.paket => new ExplorationTestDescription()
             {
@@ -359,8 +406,9 @@ class ExplorationTestDescription
                 GitRepositoryTag = "6.2.1",
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "tests/Paket.Tests",
-                TestsToIgnore = new[] { "Loading assembly metadata works" },
+                TestsToIgnore = new[] { "Loading assembly metadata works", "task priorization works" /* fails on timing */, "should normalize home path", "should parse config with home path in cache" },
                 SupportedFrameworks = new[] { TargetFramework.NET461 },
+                ShouldRun = false // Dictates that this exploration test should not take part in the CI
             },
             ExplorationTestName.RestSharp => new ExplorationTestDescription()
             {
@@ -370,6 +418,8 @@ class ExplorationTestDescription
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "test/RestSharp.Tests",
                 SupportedFrameworks = new[] { TargetFramework.NET6_0 },
+                // Workaround for https://github.com/dotnet/runtime/issues/95653
+                EnvironmentVariables = new[] { ("DD_CLR_ENABLE_INLINING", "0") },
             },
             ExplorationTestName.serilog => new ExplorationTestDescription()
             {
@@ -399,6 +449,8 @@ class ExplorationTestDescription
                 PathToUnitTestProject = "src/UnitTests",
                 SupportedFrameworks = new[] { TargetFramework.NET6_0 },
                 SupportedOSPlatforms = new[] { OSPlatform.Windows },
+                // Workaround for https://github.com/dotnet/runtime/issues/95653
+                EnvironmentVariables = new[] { ("DD_CLR_ENABLE_INLINING", "0") },
             },
             //ExplorationTestName.ilspy => new ExplorationTestDescription()
             //{

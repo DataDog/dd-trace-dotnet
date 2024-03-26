@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
@@ -15,11 +17,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <summary>
         /// Gets the Action header
         /// </summary>
-        string Action { get; }
+        string? Action { get; }
 
         /// <summary>
         /// Gets the To header
         /// </summary>
-        Uri To { get; }
+        Uri? To { get; }
+
+        /// <summary>
+        /// Gets a given header
+        /// </summary>
+        T? GetHeader<T>(string? name, string? ns);
+
+        /// <summary>
+        /// Finds a given header
+        /// </summary>
+        int FindHeader(string? name, string? ns);
     }
 }

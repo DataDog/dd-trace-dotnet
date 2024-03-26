@@ -5,23 +5,34 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Telemetry.Transports
 {
     internal class TelemetryTransportFactory
     {
-        public static ITelemetryTransport Create(
-            TelemetrySettings telemetrySettings,
-            ImmutableExporterSettings exporterSettings)
+        public static TelemetryTransports Create(TelemetrySettings telemetrySettings, ImmutableExporterSettings exporterSettings)
         {
-            var requestFactory = telemetrySettings switch
-            {
-                { Agentless: { } a } => TelemetryTransportStrategy.GetDirectIntakeFactory(a.AgentlessUri, a.ApiKey),
-                _ => TelemetryTransportStrategy.GetAgentIntakeFactory(exporterSettings),
-            };
+            var agentProxy = telemetrySettings is { AgentProxyEnabled: true }
+                                 ? GetAgentFactory(exporterSettings, telemetrySettings.DebugEnabled)
+                                 : null;
 
-            return new JsonTelemetryTransport(requestFactory);
+            var agentless = telemetrySettings is { Agentless: { } a }
+                                ? GetAgentlessFactory(a, telemetrySettings.DebugEnabled)
+                                : null;
+
+            return new TelemetryTransports(agentProxy, agentless);
         }
+
+        private static ITelemetryTransport GetAgentFactory(ImmutableExporterSettings exporterSettings, bool debugEnabled)
+            => new AgentTelemetryTransport(
+                TelemetryTransportStrategy.GetAgentIntakeFactory(exporterSettings),
+                debugEnabled: debugEnabled);
+
+        private static ITelemetryTransport GetAgentlessFactory(TelemetrySettings.AgentlessSettings agentlessSettings, bool debugEnabled)
+            => new AgentlessTelemetryTransport(
+                TelemetryTransportStrategy.GetDirectIntakeFactory(agentlessSettings),
+                debugEnabled: debugEnabled);
     }
 }

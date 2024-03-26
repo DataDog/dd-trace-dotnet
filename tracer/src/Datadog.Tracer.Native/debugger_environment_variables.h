@@ -14,6 +14,12 @@ namespace environment
     // is applied to every jit compiled method. Only useful for testing purposes. Default is false.
     const WSTRING internal_instrument_all_enabled = WStr("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL");
 
+    // Determines if the Dynamic Instrumentation (aka live debugger) is enabled.
+    const WSTRING debugger_enabled = WStr("DD_DYNAMIC_INSTRUMENTATION_ENABLED");
+
+    // Determines if the Exception Debugging product is enabled.
+    const WSTRING exception_debugging_enabled = WStr("DD_EXCEPTION_DEBUGGING_ENABLED");
+
 } // namespace environment
 } // namespace debugger
 

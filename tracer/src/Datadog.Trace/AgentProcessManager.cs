@@ -9,9 +9,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -66,9 +66,18 @@ namespace Datadog.Trace
                     return;
                 }
 
-                var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty)?.ToBoolean() ?? true;
+                // This is run from the loader, so no point recording telemetry as we're not going to send it anyway
+                var azureAppServiceSettings = new ImmutableAzureAppServiceSettings(GlobalConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
+                if (azureAppServiceSettings.IsUnsafeToTrace)
+                {
+                    Log.Error("The Azure Site Extension doesn't have the required parameters to work. The API_KEY is likely missing. The trace_agent and dogstatsd process will not be started. Check your app configuration and restart the app service to try again.");
+                    return;
+                }
 
-                if (AzureAppServices.Metadata.CustomTracingEnabled || automaticTraceEnabled)
+                var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty)?.ToBoolean() ?? true;
+                var automaticProfilingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)?.ToBoolean() ?? false;
+
+                if (azureAppServiceSettings.CustomTracingEnabled || automaticTraceEnabled || automaticProfilingEnabled)
                 {
                     if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
                     {
@@ -84,7 +93,7 @@ namespace Datadog.Trace
                     }
                 }
 
-                if (AzureAppServices.Metadata.NeedsDogStatsD || automaticTraceEnabled)
+                if (azureAppServiceSettings.NeedsDogStatsD || automaticTraceEnabled)
                 {
                     if (string.IsNullOrWhiteSpace(DogStatsDMetadata.ProcessPath))
                     {
@@ -103,7 +112,7 @@ namespace Datadog.Trace
                 if (Processes.Count > 0)
                 {
                     Log.Debug("Starting {Count} child processes from process {ProcessName}, AppDomain {AppDomain}.", Processes.Count, DomainMetadata.Instance.ProcessName, DomainMetadata.Instance.AppDomainName);
-                    StartProcesses();
+                    StartProcesses(azureAppServiceSettings);
                 }
             }
             catch (Exception ex)
@@ -112,9 +121,9 @@ namespace Datadog.Trace
             }
         }
 
-        private static void StartProcesses()
+        private static void StartProcesses(ImmutableAzureAppServiceSettings azureAppServiceSettings)
         {
-            if (AzureAppServices.Metadata.DebugModeEnabled)
+            if (azureAppServiceSettings.DebugModeEnabled)
             {
                 const string ddLogLevelKey = "DD_LOG_LEVEL";
                 if (EnvironmentHelpers.GetEnvironmentVariable(ddLogLevelKey) == null)
@@ -342,7 +351,7 @@ namespace Datadog.Trace
                         return true;
                     }
 
-                    Log.Debug("Program [{Process}] is no longer running", ProcessPath);
+                    Log.Information("Program [{Process}] is no longer running", ProcessPath);
 
                     return false;
                 }
@@ -363,7 +372,14 @@ namespace Datadog.Trace
 
             private bool NamedPipeIsBound()
             {
-                return File.Exists($"\\\\.\\pipe\\{PipeName}");
+                var namedPipe = $"\\\\.\\pipe\\{PipeName}";
+                var namedPipeIsBound = File.Exists(namedPipe);
+                if (!namedPipeIsBound)
+                {
+                    Log.Debug("NamedPipe  [{NamedPipe}] is not present.", namedPipe);
+                }
+
+                return namedPipeIsBound;
             }
         }
     }

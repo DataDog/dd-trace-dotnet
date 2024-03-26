@@ -18,15 +18,15 @@ namespace Datadog.Trace.Tests.Debugger
     {
         private readonly TimeLord _timeLord;
         private readonly ProbeStatusSink _sink;
-        private readonly ImmutableDebuggerSettings _settings;
+        private readonly DebuggerSettings _settings;
 
         public ProbeStatusSinkTests()
         {
             _timeLord = new TimeLord();
             Clock.SetForCurrentThread(_timeLord);
 
-            _settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromDefaultSource());
-            _sink = ProbeStatusSink.Create(_settings, nameof(ProbeStatusSinkTests));
+            _settings = DebuggerSettings.FromDefaultSource();
+            _sink = ProbeStatusSink.Create(nameof(ProbeStatusSinkTests), _settings);
         }
 
         [Fact]
@@ -150,7 +150,7 @@ namespace Datadog.Trace.Tests.Debugger
             probes.Should().Equal(new[]
             {
                 new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.RECEIVED),
-                new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.ERROR, exception)
+                new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.ERROR, exception: exception)
             });
         }
 
@@ -169,7 +169,7 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.RECEIVED),
                 new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.INSTALLED),
-                new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.ERROR, exception)
+                new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.ERROR, exception: exception)
             });
         }
 
@@ -223,7 +223,7 @@ namespace Datadog.Trace.Tests.Debugger
             _timeLord.TravelTo(_timeLord.UtcNow.AddSeconds(_settings.DiagnosticsIntervalSeconds));
             _sink.GetDiagnostics().Should().Equal(new[]
             {
-                new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.ERROR, exception)
+                new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.ERROR, exception: exception)
             });
         }
 
@@ -242,7 +242,7 @@ namespace Datadog.Trace.Tests.Debugger
             _sink.AddError(probeId, exception);
             _sink.GetDiagnostics().Should().Equal(new[]
             {
-                new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.ERROR, exception)
+                new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.ERROR, exception: exception)
             });
         }
     }

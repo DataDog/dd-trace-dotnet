@@ -19,20 +19,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
         public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken, IntegrationId integrationId, IntegrationId? implementationIntegrationId)
             where TRequest : IHttpRequestMessage
         {
-            var tracer = Tracer.Instance;
-            if (requestMessage.Instance is not null && IsTracingEnabled(requestMessage.Headers, implementationIntegrationId))
+            if (requestMessage.Instance is null)
             {
-                Scope scope = ScopeFactory.CreateOutboundHttpScope(tracer, requestMessage.Method.Method, requestMessage.RequestUri, integrationId, out HttpTags tags);
-                if (scope != null)
-                {
-                    tags.HttpClientHandlerType = instance.GetType().FullName;
+                return CallTargetState.GetDefault();
+            }
 
-                    // add distributed tracing headers to the HTTP request
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, new HttpHeadersCollection(requestMessage.Headers));
+            var tracer = Tracer.Instance;
+            var headers = requestMessage.Headers;
+            if (IsTracingEnabled(headers, implementationIntegrationId) &&
+                ScopeFactory.CreateOutboundHttpScope(tracer, requestMessage.Method.Method, requestMessage.RequestUri, integrationId, out var tags) is { } scope)
+            {
+                tags.HttpClientHandlerType = instance.GetType().FullName;
 
-                    tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(implementationIntegrationId ?? integrationId);
-                    return new CallTargetState(scope);
-                }
+                // add distributed tracing headers to the HTTP request
+                SpanContextPropagator.Instance.Inject(scope.Span.Context, new HttpHeadersCollection(headers));
+
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(implementationIntegrationId ?? integrationId);
+                return new CallTargetState(scope);
             }
 
             return CallTargetState.GetDefault();

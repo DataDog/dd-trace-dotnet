@@ -13,6 +13,9 @@
     <Filter Include="Helpers">
       <UniqueIdentifier>{300fa0f9-3712-4092-bb4a-382f97cb0c58}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External Sources">
+      <UniqueIdentifier>{ecc1aba4-974c-43eb-99cb-8a79be4132ea}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -36,7 +39,7 @@
     <ClCompile Include="ProfilerMockedInterface.cpp">
       <Filter>Helpers</Filter>
     </ClCompile>
-    <ClCompile Include="LibddprofExporterTest.cpp">
+    <ClCompile Include="ProfileExporterTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="ConfigurationTest.cpp">
@@ -55,9 +58,6 @@
     </ClCompile>
     <ClCompile Include="AppDomainStoreHelper.cpp">
       <Filter>Helpers</Filter>
-    </ClCompile>
-    <ClCompile Include="SamplesProviderTest.cpp">
-      <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="LogTest.cpp">
       <Filter>Tests</Filter>
@@ -80,7 +80,7 @@
     <ClCompile Include="ManagedThreadListTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="StackSnapshotResultReusableBufferTest.cpp">
+    <ClCompile Include="StackSnapshotResultBufferTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="RuntimeIdTest.cpp">
@@ -99,6 +99,62 @@
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="RuntimeInfoHelper.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="LinuxStackFramesCollectorTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="ProfilerSignalManagerTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="MetricsRegistryTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="OsSpecificApiTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="SampleValueTypeProviderTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\OsSpecificApi.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SystemTime.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows32BitStackFramesCollector.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows64BitStackFramesCollector.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\WindowsThreadInfo.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="EnabledProfilersTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\EtwEventsManager.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="ProfileTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="TagsTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="ExporterTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="ErrorCodeTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\EtwEventsHandler.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\ProfilerLogger.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.cpp" />
+    <ClCompile Include="FakeSamples.cpp">
       <Filter>Helpers</Filter>
     </ClCompile>
   </ItemGroup>
@@ -125,6 +181,10 @@
       <Filter>Helpers</Filter>
     </ClInclude>
     <ClInclude Include="RuntimeInfoHelper.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.h" />
+    <ClInclude Include="FakeSamples.h">
       <Filter>Helpers</Filter>
     </ClInclude>
   </ItemGroup>

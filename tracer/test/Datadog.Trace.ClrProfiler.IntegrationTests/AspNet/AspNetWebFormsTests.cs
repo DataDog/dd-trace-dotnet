@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET461
+#if NETFRAMEWORK
 
 using System;
 using System.Linq;
@@ -17,7 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
-    public class AspNetWebFormsTests : TestHelper, IClassFixture<IisFixture>
+    public class AspNetWebFormsTests : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
 
@@ -30,8 +30,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/account/login?shutdown=1";
-            _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Name switch
+            {
+                "aspnet.request" => span.IsAspNet(metadataSchemaVersion),
+                "aspnet-mvc.request" => span.IsAspNetMvc(metadataSchemaVersion),
+                _ => Result.DefaultSuccess,
+            };
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
@@ -79,20 +86,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                    .ToList();
 
             Assert.True(allSpans.Count > 0, "Expected there to be spans.");
-
-            var aspnetSpans = allSpans.Where(s => s.Name == "aspnet.request");
-            foreach (var aspnetSpan in aspnetSpans)
-            {
-                var result = aspnetSpan.IsAspNet();
-                Assert.True(result.Success, result.ToString());
-            }
-
-            var aspnetMvcSpans = allSpans.Where(s => s.Name == "aspnet-mvc.request");
-            foreach (var aspnetMvcSpan in aspnetMvcSpans)
-            {
-                var result = aspnetMvcSpan.IsAspNetMvc();
-                Assert.True(result.Success, result.ToString());
-            }
+            ValidateIntegrationSpans(allSpans, metadataSchemaVersion: "v0", expectedServiceName: "sample", isExternalSpan: false);
 
             var elasticSpans = allSpans
                              .Where(s => s.Type == "elasticsearch")
@@ -107,6 +101,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Equal("elasticsearch", span.Type);
             }
         }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 }
 

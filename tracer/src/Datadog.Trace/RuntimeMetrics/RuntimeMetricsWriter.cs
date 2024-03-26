@@ -5,21 +5,32 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.RuntimeMetrics
 {
     internal class RuntimeMetricsWriter : IDisposable
     {
+#if NETSTANDARD
+        // In < .NET Core 3.1 we don't send CommittedMemory, so we report differently on < .NET Core 3.1
+        private const string ProcessMetrics = $"{MetricsNames.ThreadsCount}, {MetricsNames.CpuUserTime}, {MetricsNames.CpuSystemTime}, {MetricsNames.CpuPercentage}";
+#else
         private const string ProcessMetrics = $"{MetricsNames.ThreadsCount}, {MetricsNames.CommittedMemory}, {MetricsNames.CpuUserTime}, {MetricsNames.CpuSystemTime}, {MetricsNames.CpuPercentage}";
+#endif
+
+        private static readonly Version Windows81Version = new(6, 3, 9600);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RuntimeMetricsWriter>();
-        private static readonly Func<IDogStatsd, TimeSpan, IRuntimeMetricsListener> InitializeListenerFunc = InitializeListener;
+        private static readonly Func<IDogStatsd, TimeSpan, bool, IRuntimeMetricsListener> InitializeListenerFunc = InitializeListener;
+
+        private static int _pssConsecutiveFailures;
+
+        private readonly Process _process;
 
         private readonly TimeSpan _delay;
 
@@ -29,18 +40,23 @@ namespace Datadog.Trace.RuntimeMetrics
         private readonly IRuntimeMetricsListener _listener;
 
         private readonly bool _enableProcessMetrics;
+#if NETSTANDARD
+        // In .NET Core <3.1 on non-Windows, Process.PrivateMemorySize64 returns 0, so we disable this.
+        // https://github.com/dotnet/runtime/issues/23284
+        private readonly bool _enableProcessMemory = false;
+#endif
 
         private readonly ConcurrentDictionary<string, int> _exceptionCounts = new ConcurrentDictionary<string, int>();
 
         private TimeSpan _previousUserCpu;
         private TimeSpan _previousSystemCpu;
 
-        public RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay)
-            : this(statsd, delay, InitializeListenerFunc)
+        public RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext)
+            : this(statsd, delay, inAzureAppServiceContext, InitializeListenerFunc)
         {
         }
 
-        internal RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, Func<IDogStatsd, TimeSpan, IRuntimeMetricsListener> initializeListener)
+        internal RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext, Func<IDogStatsd, TimeSpan, bool, IRuntimeMetricsListener> initializeListener)
         {
             _delay = delay;
             _statsd = statsd;
@@ -57,12 +73,27 @@ namespace Datadog.Trace.RuntimeMetrics
 
             try
             {
-                ProcessHelpers.GetCurrentProcessRuntimeMetrics(out var userCpu, out var systemCpu, out _, out _);
+                _process = GetCurrentProcess();
+
+                GetCurrentProcessMetrics(out var userCpu, out var systemCpu, out _, out _);
 
                 _previousUserCpu = userCpu;
                 _previousSystemCpu = systemCpu;
 
                 _enableProcessMetrics = true;
+#if NETSTANDARD
+                // In .NET Core <3.1 on non-Windows, Process.PrivateMemorySize64 returns 0, so we disable this.
+                // https://github.com/dotnet/runtime/issues/23284
+                _enableProcessMemory = FrameworkDescription.Instance switch
+                {
+                    { } x when x.IsWindows() => true, // Works on Windows
+                    { } x when !x.IsCoreClr() => true, // Works on .NET Framework
+                    _ when Environment.Version is { Major: >= 5 } => true, // Works on .NET 5 and above
+                    _ when Environment.Version is { Major: 3, Minor: > 0 } => true, // 3.1 works
+                    _ when Environment.Version is { Major: 3, Minor: 0 } => false, // 3.0 is broken on linux
+                    _ => false, // everything else (i.e. <.NET Core 3.0) is broken
+                };
+#endif
             }
             catch (Exception ex)
             {
@@ -72,7 +103,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             try
             {
-                _listener = initializeListener(statsd, delay);
+                _listener = initializeListener(statsd, delay, inAzureAppServiceContext);
             }
             catch (Exception ex)
             {
@@ -101,7 +132,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
                 if (_enableProcessMetrics)
                 {
-                    ProcessHelpers.GetCurrentProcessRuntimeMetrics(out var newUserCpu, out var newSystemCpu, out var threadCount, out var memoryUsage);
+                    GetCurrentProcessMetrics(out var newUserCpu, out var newSystemCpu, out var threadCount, out var memoryUsage);
 
                     var userCpu = newUserCpu - _previousUserCpu;
                     var systemCpu = newSystemCpu - _previousSystemCpu;
@@ -116,7 +147,15 @@ namespace Datadog.Trace.RuntimeMetrics
 
                     _statsd.Gauge(MetricsNames.ThreadsCount, threadCount);
 
+#if NETSTANDARD
+                    if (_enableProcessMemory)
+                    {
+                        _statsd.Gauge(MetricsNames.CommittedMemory, memoryUsage);
+                        Log.Debug("Sent the following metrics to the DD agent: {Metrics}", MetricsNames.CommittedMemory);
+                    }
+#else
                     _statsd.Gauge(MetricsNames.CommittedMemory, memoryUsage);
+#endif
 
                     // Get CPU time in milliseconds per second
                     _statsd.Gauge(MetricsNames.CpuUserTime, userCpu.TotalMilliseconds / _delay.TotalSeconds);
@@ -124,7 +163,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
                     _statsd.Gauge(MetricsNames.CpuPercentage, Math.Round(totalCpu.TotalMilliseconds * 100 / maximumCpu, 1, MidpointRounding.AwayFromZero));
 
-                    Log.Debug("Sent the following metrics to the DD agent: {metrics}", ProcessMetrics);
+                    Log.Debug("Sent the following metrics to the DD agent: {Metrics}", ProcessMetrics);
                 }
 
                 if (!_exceptionCounts.IsEmpty)
@@ -138,11 +177,11 @@ namespace Datadog.Trace.RuntimeMetrics
                     // Having an exact exception count is probably not worth the overhead required to fix it
                     _exceptionCounts.Clear();
 
-                    Log.Debug("Sent the following metrics to the DD agent: {metrics}", MetricsNames.ExceptionsCount);
+                    Log.Debug("Sent the following metrics to the DD agent: {Metrics}", MetricsNames.ExceptionsCount);
                 }
                 else
                 {
-                    Log.Debug("Did not send the following metrics to the DD agent: {metrics}", MetricsNames.ExceptionsCount);
+                    Log.Debug("Did not send the following metrics to the DD agent: {Metrics}", MetricsNames.ExceptionsCount);
                 }
             }
             catch (Exception ex)
@@ -151,15 +190,40 @@ namespace Datadog.Trace.RuntimeMetrics
             }
         }
 
-        private static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd, TimeSpan delay)
+        private static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext)
         {
 #if NETCOREAPP
             return new RuntimeEventListener(statsd, delay);
 #elif NETFRAMEWORK
-            return AzureAppServices.Metadata.IsRelevant ? new AzureAppServicePerformanceCounters(statsd) : new PerformanceCountersListener(statsd);
+
+            try
+            {
+                return new MemoryMappedCounters(statsd);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error while initializing memory-mapped counters. Falling back to performance counters.");
+                return inAzureAppServiceContext ? new AzureAppServicePerformanceCounters(statsd) : new PerformanceCountersListener(statsd);
+            }
 #else
             return null;
 #endif
+        }
+
+        /// <summary>
+        /// Wrapper around <see cref="Process.GetCurrentProcess"/>
+        ///
+        /// On .NET Framework the <see cref="Process"/> class is guarded by a
+        /// LinkDemand for FullTrust, so partial trust callers will throw an exception.
+        /// This exception is thrown when the caller method is being JIT compiled, NOT
+        /// when Process.GetCurrentProcess is called, so this wrapper method allows
+        /// us to catch the exception.
+        /// </summary>
+        /// <returns>Returns the name of the current process</returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static Process GetCurrentProcess()
+        {
+            return Process.GetCurrentProcess();
         }
 
         private void FirstChanceException(object sender, FirstChanceExceptionEventArgs e)
@@ -167,6 +231,37 @@ namespace Datadog.Trace.RuntimeMetrics
             var name = e.Exception.GetType().Name;
 
             _exceptionCounts.AddOrUpdate(name, 1, (_, count) => count + 1);
+        }
+
+        private void GetCurrentProcessMetrics(out TimeSpan userProcessorTime, out TimeSpan systemCpuTime, out int threadCount, out long privateMemorySize)
+        {
+            if (_pssConsecutiveFailures < 3 && Environment.OSVersion.Platform == PlatformID.Win32NT && Environment.OSVersion.Version > Windows81Version)
+            {
+                try
+                {
+                    ProcessSnapshotRuntimeInformation.GetCurrentProcessMetrics(out userProcessorTime, out systemCpuTime, out threadCount, out privateMemorySize);
+                    _pssConsecutiveFailures = 0;
+                }
+                catch
+                {
+                    var consecutiveFailures = Interlocked.Increment(ref _pssConsecutiveFailures);
+
+                    if (consecutiveFailures >= 3)
+                    {
+                        Log.Error("Pss failed 3 times in a row, falling back to the Process API");
+                    }
+
+                    throw;
+                }
+
+                return;
+            }
+
+            _process.Refresh();
+            userProcessorTime = _process.UserProcessorTime;
+            systemCpuTime = _process.PrivilegedProcessorTime;
+            threadCount = _process.Threads.Count;
+            privateMemorySize = _process.PrivateMemorySize64;
         }
     }
 }

@@ -4,6 +4,7 @@
 
 variables:
   commit_hash: 0
+  enable_metrics: 0
 
 jobs:
   server:
@@ -42,7 +43,6 @@ scenarios:
         COR_ENABLE_PROFILING: 1
         CORECLR_ENABLE_PROFILING: 1
         DD_APPSEC_ENABLED: true
-        DD_APPSEC_BLOCKING_ENABLED: true
         DD_APPSEC_KEEP_TRACES: false
     load:
       job: bombardier
@@ -59,7 +59,6 @@ scenarios:
         COR_ENABLE_PROFILING: 1
         CORECLR_ENABLE_PROFILING: 1
         DD_APPSEC_ENABLED: true
-        DD_APPSEC_BLOCKING_ENABLED: false
         DD_APPSEC_KEEP_TRACES: false
     load:
       job: bombardier
@@ -68,3 +67,92 @@ scenarios:
         duration: 240
         serverPort: 5000
         path: /hello?[$slice]=arg
+
+  appsec_attack_blocking:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_APPSEC_ENABLED: true
+        DD_APPSEC_KEEP_TRACES: false
+        DD_APPSEC_RULES: ../../../../Datadog.Trace.Security.IntegrationTests/ruleset.3.0.json
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello
+
+  appsec_iast_enabled_default:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_APPSEC_ENABLED: false
+        DD_IAST_ENABLED: true
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello        
+        
+  appsec_iast_enabled_full:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_APPSEC_ENABLED: false
+        DD_IAST_ENABLED: true
+        DD_IAST_DEDUPLICATION_ENABLED: true
+        DD_IAST_REQUEST_SAMPLING: 100
+        DD_IAST_VULNERABILITIES_PER_REQUEST: 100
+        DD_IAST_MAX_CONCURRENT_REQUESTS: 100
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello
+
+  appsec_iast_disabled_vulnerability:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_APPSEC_ENABLED: false
+        DD_IAST_ENABLED: false
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello/getfiles?filter=*&relativepath=.
+        
+  appsec_iast_enabled_vulnerability:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_APPSEC_ENABLED: false
+        DD_IAST_ENABLED: true
+        DD_IAST_DEDUPLICATION_ENABLED: true
+        DD_IAST_REQUEST_SAMPLING: 100
+        DD_IAST_VULNERABILITIES_PER_REQUEST: 100
+        DD_IAST_MAX_CONCURRENT_REQUESTS: 100
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello/getfiles?filter=*&relativepath=.

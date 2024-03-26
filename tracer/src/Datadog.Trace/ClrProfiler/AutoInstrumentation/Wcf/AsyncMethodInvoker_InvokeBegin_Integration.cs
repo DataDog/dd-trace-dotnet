@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if NETFRAMEWORK
 using System;
 using System.ComponentModel;
@@ -27,39 +29,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class AsyncMethodInvoker_InvokeBegin_Integration
     {
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="instanceArg">RequestContext instance</param>
-        /// <param name="inputs">Input arguments</param>
-        /// <param name="callback">Callback argument</param>
-        /// <param name="state">State argument</param>
-        /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object instanceArg, object[] inputs, AsyncCallback callback, object state)
+        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            // TODO Just use the OperationContext.Current object to get the span information
-            // context.IncomingMessageHeaders contains:
-            //  - Action
-            //  - To
-            //
-            // context.IncomingMessageProperties contains:
-            // - ["httpRequest"] key to find distributed tracing headers
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !Tracer.Instance.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
+            if (exception is not null)
             {
-                return CallTargetState.GetDefault();
+                var operationContext = WcfCommon.GetCurrentOperationContext?.Invoke();
+
+                if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
+                {
+                    var requestContext = operationContextProxy.RequestContext;
+
+                    // Retrieve the scope that we saved during InvokeBegin
+                    if (((IDuckType?)requestContext)?.Instance is object requestContextInstance
+                        && WcfCommon.Scopes.TryGetValue(requestContextInstance, out var scope))
+                    {
+                        // Add the exception but do not dispose the span.
+                        // BeforeSendReplyIntegration is responsible for closing the span.
+                        scope.Span?.SetException(exception);
+                    }
+                }
             }
 
-            var operationContext = WcfCommon.GetCurrentOperationContext();
-            if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
-            {
-                return new CallTargetState(WcfCommon.CreateScope(operationContextProxy.RequestContext));
-            }
-            else
-            {
-                return CallTargetState.GetDefault();
-            }
+            return new CallTargetReturn<TReturn>(returnValue);
         }
     }
 }

@@ -9,6 +9,7 @@
 
 namespace trace
 {
+class CorProfiler;
 class RejitHandler;
 class RejitWorkOffloader;
 class RejitHandlerModuleMethod;
@@ -22,13 +23,14 @@ template <class RejitRequestDefinition>
 class RejitPreprocessor
 {
 protected:
+    CorProfiler* m_corProfiler;
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
     std::shared_ptr<RejitWorkOffloader> m_work_offloader = nullptr;
 
     void ProcessTypeDefForRejit(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
                             ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
                             ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo,
-                            const mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests);
+                            mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests);
 
     virtual void ProcessTypesForRejit(std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo,
                           ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit,
@@ -38,8 +40,12 @@ protected:
 
     virtual const MethodReference& GetTargetMethod(const RejitRequestDefinition& definition) = 0;
     virtual const bool GetIsDerived(const RejitRequestDefinition& definition) = 0;
+    virtual const bool GetIsInterface(const RejitRequestDefinition& definition) = 0;
     virtual const bool GetIsExactSignatureMatch(const RejitRequestDefinition& definition) = 0;
-    virtual const std::unique_ptr<RejitHandlerModuleMethod> CreateMethod(const mdMethodDef methodDef,
+    virtual const bool GetIsEnabled(const RejitRequestDefinition& definition) = 0;
+    virtual const bool SupportsSelectiveEnablement() = 0;
+
+    virtual const std::unique_ptr<RejitHandlerModuleMethod> CreateMethod(mdMethodDef methodDef,
                                                                          RejitHandlerModule* module,
                                                                          const FunctionInfo& functionInfo,
                                                                          const RejitRequestDefinition& definition) = 0;
@@ -47,30 +53,49 @@ protected:
 
     virtual void UpdateMethod(RejitHandlerModuleMethod* method, const RejitRequestDefinition& definition);
 
+    virtual void EnqueueNewMethod(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
+                          ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo, mdTypeDef typeDef,
+                          std::vector<MethodIdentifier>& rejitRequests, unsigned methodDef,
+                          const FunctionInfo& functionInfo, RejitHandlerModule* moduleHandler);
+
+    ULONG PreprocessRejitRequests(const std::vector<ModuleID>& modules,
+                                  const std::vector<RejitRequestDefinition>& definitions,
+                                  std::vector<MethodIdentifier>& rejitRequests, bool isRevert);
+
 public:
-    RejitPreprocessor(std::shared_ptr<RejitHandler> rejit_handler, std::shared_ptr<RejitWorkOffloader> work_offloader);
+    RejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler, std::shared_ptr<RejitWorkOffloader> work_offloader);
+
+    void EnqueueFaultTolerantMethods(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
+                                    ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo,
+                                    mdTypeDef typeDef,
+                                    std::vector<MethodIdentifier>& rejitRequests, unsigned methodDef,
+                                    const FunctionInfo& functionInfo, RejitHandlerModule* moduleHandler);
 
     ULONG RequestRejitForLoadedModules(const std::vector<ModuleID>& modules,
                                        const std::vector<RejitRequestDefinition>& requests,
                                        bool enqueueInSameThread = false);
 
+    ULONG RequestRevertForLoadedModules(const std::vector<ModuleID>& modules,
+                                       const std::vector<RejitRequestDefinition>& requests,
+                                       bool enqueueInSameThread = false);
+
     void EnqueueRequestRejitForLoadedModules(const std::vector<ModuleID>& modulesVector,
                                              const std::vector<RejitRequestDefinition>& requests,
-                                             std::promise<ULONG>* promise);
+                                             std::shared_ptr<std::promise<ULONG>> promise);
 
-    ULONG PreprocessRejitRequests(const std::vector<ModuleID>& modules,
-                                  const std::vector<RejitRequestDefinition>& definitions,
-                                  std::vector<MethodIdentifier>& rejitRequests);
+    void EnqueueRequestRevertForLoadedModules(const std::vector<ModuleID>& modulesVector,
+                                             const std::vector<RejitRequestDefinition>& requests,
+                                             std::shared_ptr<std::promise<ULONG>> promise);
 
     void EnqueuePreprocessRejitRequests(const std::vector<ModuleID>& modules,
                                   const std::vector<RejitRequestDefinition>& definitions,
-                                  std::promise<std::vector<MethodIdentifier>>* promise);
+                                  std::shared_ptr<std::promise<std::vector<MethodIdentifier>>> promise);
 
     void RequestRejit(std::vector<MethodIdentifier>& rejitRequests, bool enqueueInSameThread = false);
     void RequestRevert(std::vector<MethodIdentifier>& revertRequests, bool enqueueInSameThread = false);
 
-    void EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests, std::promise<void>* promise);
-    void EnqueueRequestRevert(std::vector<MethodIdentifier>& revertRequests, std::promise<void>* promise);
+    void EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests, std::shared_ptr<std::promise<void>> promise);
+    void EnqueueRequestRevert(std::vector<MethodIdentifier>& revertRequests, std::shared_ptr<std::promise<void>> promise);
 };
 
 /// <summary>
@@ -82,11 +107,15 @@ public:
     using RejitPreprocessor::RejitPreprocessor;
 
 protected:
-    virtual const MethodReference& GetTargetMethod(const IntegrationDefinition& integrationDefinition) final;
-    virtual const bool GetIsDerived(const IntegrationDefinition& definition) final;
-    virtual const bool GetIsExactSignatureMatch(const IntegrationDefinition& definition) final;
-    virtual const std::unique_ptr<RejitHandlerModuleMethod>
-    CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
+    const MethodReference& GetTargetMethod(const IntegrationDefinition& integrationDefinition) final;
+    const bool GetIsDerived(const IntegrationDefinition& definition) final;
+    const bool GetIsInterface(const IntegrationDefinition& definition) final;
+    const bool GetIsExactSignatureMatch(const IntegrationDefinition& definition) final;
+    const bool GetIsEnabled(const IntegrationDefinition& definition) final;
+    const bool SupportsSelectiveEnablement() final;
+
+    const std::unique_ptr<RejitHandlerModuleMethod>
+    CreateMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
                  const IntegrationDefinition& integrationDefinition) final;
     bool ShouldSkipModule(const ModuleInfo& moduleInfo, const IntegrationDefinition& integrationDefinition) final;
 };

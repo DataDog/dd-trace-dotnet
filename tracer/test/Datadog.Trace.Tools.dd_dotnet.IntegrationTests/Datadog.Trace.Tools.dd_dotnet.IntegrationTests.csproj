@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+    <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
+    <NoWarn>SA1300;NU1901;NU1902;NU1903;NU1904</NoWarn>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="applicationHost.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="applicationHost.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.Trace.Tools.dd_dotnet\Datadog.Trace.Tools.dd_dotnet.csproj" />
+    <PackageReference Include="StrongNamer" Version="0.2.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
+    <!-- Note, not referencing coverlet.collector because it has file locking issues -->
+    <!-- Somebody should look into that... -->
+    <PackageReference Remove="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Verify.Xunit" Version="14.13.1" />
+  </ItemGroup>
+
+</Project>

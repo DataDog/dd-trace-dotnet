@@ -4,71 +4,21 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Samples.Computer01
 {
-    public class PiComputation
+    public class PiComputation : ScenarioBase
     {
-        private const int SleepDurationMs = 0;
-
-        private ManualResetEvent _stopEvent;
-        private List<Task> _activeTasks;
-
-        public void Start()
+        public override void OnProcess()
         {
-            if (_stopEvent != null)
+            if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
             {
-                throw new InvalidOperationException("Already running...");
+                Thread.CurrentThread.Name = "PiComputation-" + Thread.CurrentThread.ManagedThreadId;
             }
-
-            _stopEvent = new ManualResetEvent(false);
-            _activeTasks = new List<Task>
-            {
-                Task.Factory.StartNew(
-                    () =>
-                    {
-                        if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
-                        {
-                            Thread.CurrentThread.Name = "PiComputation-" + Thread.CurrentThread.ManagedThreadId;
-                        }
-
-                        while (!_stopEvent.WaitOne(SleepDurationMs))
-                        {
-                            DoPiComputation();
-                        }
-                    },
-                    TaskCreationOptions.LongRunning),
-            };
-        }
-
-        public void Stop()
-        {
-            if (_stopEvent == null)
-            {
-                throw new InvalidOperationException("Not running...");
-            }
-
-            _stopEvent.Set();
-
-            Task.WhenAll(_activeTasks).Wait();
-
-            _stopEvent.Dispose();
-            _stopEvent = null;
-            _activeTasks = null;
-        }
-
-        public void Run()
-        {
-            _stopEvent = new ManualResetEvent(false);
 
             DoPiComputation();
-
-            _stopEvent.Dispose();
-            _stopEvent = null;
         }
 
         private void DoPiComputation()
@@ -86,7 +36,7 @@ namespace Samples.Computer01
             int currentIteration = 0;
             while (
                 (currentIteration < maxIteration) &&
-                !_stopEvent.WaitOne(SleepDurationMs))
+                !IsEventSet())
             {
                 numerator = -numerator;
                 denominator += 2;

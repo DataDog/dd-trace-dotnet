@@ -3,12 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
@@ -17,20 +17,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "RabbitMQ.Client",
-        TypeName = "RabbitMQ.Client.Events.EventingBasicConsumer",
+        TypeName = "RabbitMQ.Client.IBasicConsumer",
         MethodName = "HandleBasicDeliver",
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, RabbitMQConstants.IBasicPropertiesTypeName, ClrNames.Ignore },
         MinimumVersion = "3.6.9",
         MaximumVersion = "6.*.*",
-        IntegrationName = RabbitMQConstants.IntegrationName)]
+        IntegrationName = RabbitMQConstants.IntegrationName,
+        CallTargetIntegrationKind = CallTargetKind.Interface)]
+    [InstrumentMethod(
+        AssemblyName = "RabbitMQ.Client",
+        TypeName = "RabbitMQ.Client.DefaultBasicConsumer",
+        MethodName = "HandleBasicDeliver",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, RabbitMQConstants.IBasicPropertiesTypeName, ClrNames.Ignore },
+        MinimumVersion = "3.6.9",
+        MaximumVersion = "6.*.*",
+        IntegrationName = RabbitMQConstants.IntegrationName,
+        CallTargetIntegrationKind = CallTargetKind.Derived)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class BasicDeliverIntegration
     {
-        private const string Command = "basic.deliver";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BasicDeliverIntegration));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -46,32 +54,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="basicProperties">The message properties.</param>
         /// <param name="body">The message body.</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, TBasicProperties basicProperties, TBody body)
+        internal static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string? consumerTag, ulong deliveryTag, bool redelivered, string? exchange, string? routingKey, TBasicProperties basicProperties, TBody body)
             where TBasicProperties : IBasicProperties
-            where TBody : IBody // ReadOnlyMemory<byte> body in 6.0.0
+            where TBody : IBody, IDuckType // ReadOnlyMemory<byte> body in 6.0.0
         {
-            SpanContext propagatedContext = null;
-
-            // try to extract propagated context values from headers
-            if (basicProperties?.Headers != null)
-            {
-                try
-                {
-                    propagatedContext = SpanContextPropagator.Instance.Extract(basicProperties.Headers, default(ContextPropagation));
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting propagated headers.");
-                }
-            }
-
-            var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out RabbitMQTags tags, Command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey);
-            if (tags != null)
-            {
-                tags.MessageSize = body?.Length.ToString() ?? "0";
-            }
-
-            return new CallTargetState(scope);
+            return RabbitMQIntegration.BasicDeliver_OnMethodBegin(instance, redelivered, exchange, routingKey, basicProperties, body);
         }
 
         /// <summary>

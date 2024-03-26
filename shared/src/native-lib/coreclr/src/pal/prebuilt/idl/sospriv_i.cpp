@@ -8,7 +8,7 @@
  /* File created by MIDL compiler version 8.01.0622 */
 /* at Mon Jan 18 19:14:07 2038
  */
-/* Compiler settings for C:/ssd/runtime/src/coreclr/src/inc/sospriv.idl:
+/* Compiler settings for C:/ssd/runtime/src/coreclr/inc/sospriv.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.01.0622 
     protocol : dce , ms_ext, c_ext, robust
     error checks: allocation ref bounds_check enum stub_data 
@@ -107,6 +107,12 @@ MIDL_DEFINE_GUID(IID, IID_ISOSDacInterface9,0x4eca42d8,0x7e7b,0x4c8a,0xa1,0x16,0
 
 
 MIDL_DEFINE_GUID(IID, IID_ISOSDacInterface10,0x90B8FCC3,0x7251,0x4B0A,0xAE,0x3D,0x5C,0x13,0xA6,0x7E,0xC9,0xAA);
+
+
+MIDL_DEFINE_GUID(IID, IID_ISOSDacInterface11,0x96BA1DB9,0x14CD,0x4492,0x80,0x65,0x1C,0xAA,0xEC,0xF6,0xE5,0xCF);
+
+
+MIDL_DEFINE_GUID(IID, IID_ISOSDacInterface12,0x1b93bacc,0x8ca4,0x432d,0x94,0x3a,0x3e,0x6e,0x7e,0xc0,0xb0,0xa3);
 
 
 #undef MIDL_DEFINE_GUID

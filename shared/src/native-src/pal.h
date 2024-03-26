@@ -14,25 +14,79 @@
 #endif
 
 #if MACOS
+#include <crt_externs.h>
 #include <libproc.h>
 #endif
 
-#include "dd_filesystem.hpp"
+#include <type_traits>
+
 #include "../../../shared/src/native-src/string.h" // NOLINT
 #include "../../../shared/src/native-src/util.h"
+#include "dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
 namespace shared
 {
 
+template <class T, typename = void>
+struct has_deprecated_log_folder : std::false_type
+{
+};
+
+template <typename T>
+struct has_deprecated_log_folder<T, decltype(T::logging_environment::deprecated_log_directory, void())> : std::true_type
+{
+};
+
 template <class TLoggerPolicy>
-inline shared::WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix)
+inline fs::path GetDefaultLogDir()
+{
+    bool isAas = false;
+    TryParseBooleanEnvironmentValue(GetEnvironmentValue(WStr("DD_AZURE_APP_SERVICES")), isAas);
+
+    if (isAas)
+    {
+#ifdef _WIN32
+        return WStr(R"(C:\home\LogFiles\datadog\)");
+#else
+        return WStr("/home/LogFiles/datadog/");
+#endif
+    }
+
+#ifdef _WIN32
+    fs::path program_data_path;
+    program_data_path = GetEnvironmentValue(WStr("PROGRAMDATA"));
+
+    if (program_data_path.empty())
+    {
+        program_data_path = WStr(R"(C:\ProgramData)");
+    }
+
+    // TODO: Since profiler, tracer, native loader output to the same folder, we
+    // can remove the template variable below
+    return program_data_path / TLoggerPolicy::folder_path;
+#else
+    return ToWSTRING("/var/log/datadog/dotnet/");
+#endif
+}
+
+template <class TLoggerPolicy>
+inline fs::path GetDatadogLogFilePath(const std::string& file_name_suffix)
 {
     const auto file_name = TLoggerPolicy::file_name + file_name_suffix + ".log";
 
-    WSTRING directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_directory);
+    WSTRING directory;
 
-    if (directory.length() > 0)
+    if constexpr (has_deprecated_log_folder<TLoggerPolicy>::value)
+    {
+        // check for deprecated env var first
+        directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::deprecated_log_directory);
+        if (directory.empty()) directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_directory);
+    }
+    else
+        directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_directory);
+
+    if (!directory.empty())
     {
         return directory +
 #ifdef _WIN32
@@ -45,25 +99,12 @@ inline shared::WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix
 
     WSTRING path = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_path);
 
-    if (path.length() > 0)
+    if (!path.empty())
     {
         return path;
     }
 
-#ifdef _WIN32
-    fs::path program_data_path;
-    program_data_path = GetEnvironmentValue(WStr("PROGRAMDATA"));
-
-    if (program_data_path.empty())
-    {
-        program_data_path = WStr(R"(C:\ProgramData)");
-    }
-
-    // on Windows WSTRING == wstring
-    return (program_data_path / TLoggerPolicy::folder_path / file_name).wstring();
-#else
-    return ToWSTRING("/var/log/datadog/dotnet/" + file_name);
-#endif
+    return GetDefaultLogDir<TLoggerPolicy>() / file_name;
 }
 
 inline WSTRING GetCurrentProcessName()
@@ -86,6 +127,48 @@ inline WSTRING GetCurrentProcessName()
     std::getline(comm, name);
     return ToWSTRING(name);
 #endif
+}
+
+inline WSTRING GetCurrentProcessCommandLine()
+{
+#ifdef _WIN32
+    return WSTRING(GetCommandLine());
+#elif MACOS
+    std::string name;
+    int argCount = *_NSGetArgc();
+    char** arguments = *_NSGetArgv();
+    for (int i = 0; i < argCount; i++)
+    {
+        char* currentArg = arguments[i];
+        name = name + " " + std::string(currentArg);
+    }
+    return Trim(ToWSTRING(name));
+#else
+    std::string cmdline;
+    char buf[1024];
+    size_t len;
+    FILE* fp = fopen("/proc/self/cmdline", "rb");
+    if (fp)
+    {
+        while ((len = fread(buf, 1, sizeof(buf), fp)) > 0)
+        {
+            cmdline.append(buf, len);
+        }
+    }
+
+    std::string name;
+    std::stringstream tokens(cmdline);
+    std::string tmp;
+    while (getline(tokens, tmp, '\0'))
+    {
+        name = name + " " + tmp;
+    }
+    fclose(fp);
+
+    return Trim(ToWSTRING(name));
+#endif
+
+    return EmptyWStr;
 }
 
 inline int GetPID()

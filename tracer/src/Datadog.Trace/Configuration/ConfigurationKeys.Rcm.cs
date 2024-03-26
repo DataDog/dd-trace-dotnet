@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.Configuration
@@ -12,19 +13,15 @@ namespace Datadog.Trace.Configuration
         internal static class Rcm
         {
             /// <summary>
-            /// Configuration key for RCM poll interval (in milliseconds).
-            /// Default value is 5000 ms
-            /// Maximum value is 5000 ms
+            /// Configuration key for RCM poll interval (in seconds).
+            /// Default value is 5 s
+            /// Maximum value is 5 s
             /// </summary>
             /// <seealso cref="RemoteConfigurationSettings.PollInterval"/>
-            public const string PollInterval = "DD_INTERNAL_RCM_POLL_INTERVAL";
+            public const string PollInterval = "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS";
 
-            /// <summary>
-            /// Configuration key for RCM configuration file full path on the disk.
-            /// For internal usage only.
-            /// </summary>
-            /// <seealso cref="RemoteConfigurationSettings.FilePath"/>
-            public const string FilePath = "DD_INTERNAL_RCM_FILE";
+            [Obsolete("Use PollInterval instead")]
+            public const string PollIntervalInternal = "DD_INTERNAL_RCM_POLL_INTERVAL";
         }
     }
 }

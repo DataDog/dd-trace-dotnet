@@ -80,8 +80,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         /// <typeparam name="TOperation">Type of the operation</typeparam>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TOperation>(TTarget instance, TOperation operation)
+            where TTarget : IIOService
         {
-            return CouchbaseCommon.CommonOnMethodBegin(operation);
+            var normalizedSeedNodes = CouchbaseCommon.GetNormalizedSeedNodesFromClientConfiguration(instance.ConnectionPool.Configuration.ClientConfiguration);
+            return CouchbaseCommon.CommonOnMethodBegin(operation, normalizedSeedNodes);
         }
 
         /// <summary>

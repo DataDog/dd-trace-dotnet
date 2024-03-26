@@ -13,7 +13,7 @@
 #include "corhlpr.h"
 #include "fstring.h"
 
-#if defined(_MSC_VER) && defined(TARGET_X86)
+#if defined(_MSC_VER) && defined(HOST_X86)
 #pragma optimize("y", on)		// If routines don't get inlined, don't pay the EBP frame penalty
 #endif
 
@@ -546,6 +546,22 @@ public:
         (*this)[ix] = value;
     }
 
+    // NOTHROW: Resizes if necessary.
+    BOOL PushNoThrow(const T & value)
+    {
+        // Resize if necessary - nothow.
+        if (m_curSize + 1 >= CQuickArray<T>::Size()) {
+            if (ReSizeNoThrow((m_curSize + 1) * 2) != NOERROR)
+                return FALSE;
+        }
+
+        // Append element to end of array.
+        _ASSERTE(m_curSize + 1 < CQuickArray<T>::Size());
+        SIZE_T ix = m_curSize++;
+        (*this)[ix] = value;
+        return TRUE;
+    }
+
     T Pop()
     {
         _ASSERTE(m_curSize > 0);
@@ -589,7 +605,7 @@ public:
         HRESULT  hr     = S_OK;
         mdToken  rid    = RidFromToken(token);
         SIZE_T   index  = rid / 8;
-        BYTE     bit    = (1 << (rid % 8));
+        BYTE     bit    = (BYTE)(1 << (rid % 8));
 
         if (index >= buffer.Size())
         {
@@ -607,7 +623,7 @@ public:
     {
         mdToken rid   = RidFromToken(token);
         SIZE_T  index = rid / 8;
-        BYTE    bit   = (1 << (rid % 8));
+        BYTE    bit   = (BYTE)(1 << (rid % 8));
 
         return ((index < buffer.Size()) && (buffer[index] & bit));
     }
@@ -727,7 +743,7 @@ CorSigUncompressPointer_EndPtr(
     // make it easier to catch invalid signatures in trusted code (e.g. IL stubs, NGEN images, etc.)
     if (pData + sizeof(void *) > pDataEnd)
     {   // Not enough data in the buffer
-        _ASSERTE(!"This signature is invalid. Note that caller should check that it is not comming from untrusted source!");
+        _ASSERTE(!"This signature is invalid. Note that caller should check that it is not coming from untrusted source!");
         return META_E_BAD_SIGNATURE;
     }
     *ppvPointerOut = *(void * UNALIGNED *)pData;
@@ -759,7 +775,7 @@ CorSigUncompressToken_EndPtr(
     }
     DWORD dwDataSize = (DWORD)cbDataSize;
 
-    ULONG cbTokenOutLength;
+    uint32_t cbTokenOutLength;
     IfFailRet(CorSigUncompressToken(
         pData,
         dwDataSize,

@@ -1,0 +1,30 @@
+[
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "31d232fd-e292-63a1-cfc5-f0e71d98afd1",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
+        "status": "INSTALLED"
+      }
+    },
+    "message": "Installed probe 31d232fd-e292-63a1-cfc5-f0e71d98afd1.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "f23aa325-ec46-b774-3f32-a89b9879ce7d",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
+        "status": "INSTALLED"
+      }
+    },
+    "message": "Installed probe f23aa325-ec46-b774-3f32-a89b9879ce7d.",
+    "service": "probes"
+  }
+]

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -34,23 +35,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
+        // exclude loadFromConfig from v1.x as it's not available
         public static IEnumerable<object[]> GetTestData()
-        {
-            foreach (var item in PackageVersions.Serilog)
-            {
-                yield return item.Concat(false);
-                yield return item.Concat(true);
-            }
-        }
+            => from packageVersion in PackageVersions.Serilog.SelectMany(x => x).Select(x => (string)x)
+               from enableLogShipping in new[] { true, false }
+               from loadFromConfig in new[] { true, false }
+               where !loadFromConfig // only include loadFromConfig when >= 2.12.0 (early versions of the config package are buggy)
+                  || (!string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version("2.12.0"))
+               select new object[] { packageVersion, enableLogShipping, loadFromConfig };
 
         [SkippableTheory]
         [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void InjectsLogsWhenEnabled(string packageVersion, bool enableLogShipping)
+        public async Task InjectsLogsWhenEnabled(string packageVersion, bool enableLogShipping, bool loadFromConfig)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
+            SetSerilogConfiguration(loadFromConfig);
             SetInstrumentationVerification();
             using var logsIntake = new MockLogsIntake();
             if (enableLogShipping)
@@ -62,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedCorrelatedSpanCount = 1;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
@@ -78,9 +80,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void DoesNotInjectLogsWhenDisabled(string packageVersion, bool enableLogShipping)
+        public async Task DoesNotInjectLogsWhenDisabled(string packageVersion, bool enableLogShipping, bool loadFromConfig)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
+            SetSerilogConfiguration(loadFromConfig);
             SetInstrumentationVerification();
             using var logsIntake = new MockLogsIntake();
             if (enableLogShipping)
@@ -92,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedCorrelatedSpanCount = 0;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
@@ -104,24 +107,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.Serilog), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void DirectlyShipsLogs(string packageVersion)
+        public async Task DirectlyShipsLogs(string packageVersion, bool enableLogShipping, bool loadFromConfig)
         {
+            if (!enableLogShipping)
+            {
+                // invalid config, just easier than creating another test data configuration
+                return;
+            }
+
             var hostName = "integration_serilog_tests";
             using var logsIntake = new MockLogsIntake();
 
             SetInstrumentationVerification();
+            SetSerilogConfiguration(loadFromConfig);
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
+            SetEnvironmentVariable("INCLUDE_CROSS_DOMAIN_CALL", "false");
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.Serilog), hostName);
 
-            var agentPort = TcpPortProvider.GetOpenPort();
-            using var agent = MockTracerAgent.Create(Output, agentPort);
-            using var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var telemetry = this.ConfigureTelemetry();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
 
-            Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
+            ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
             var logs = logsIntake.Logs;
 
@@ -140,11 +151,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             logs
                .Where(x => !x.Message.Contains(ExcludeMessagePrefix))
                .Should()
-               .NotBeEmpty()
+               .HaveCount(1)
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.TraceId))
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.SpanId));
             VerifyInstrumentation(processResult.Process);
+            telemetry.AssertIntegrationEnabled(IntegrationId.Serilog);
         }
+
+        private void SetSerilogConfiguration(bool loadFromConfig)
+            => SetEnvironmentVariable("SERILOG_CONFIGURE_FROM_APPSETTINGS", loadFromConfig ? "1" : "0");
 
         private LogFileTest[] GetLogFiles(string packageVersion, bool logsInjectionEnabled)
         {

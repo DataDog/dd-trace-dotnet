@@ -109,6 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 var logFilePath = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion), test.FileName);
+
                 Output.WriteLine($"Loading logs from {logFilePath}");
                 var logs = GetLogFileContents(logFilePath);
                 logs.Should().NotBeNullOrEmpty();

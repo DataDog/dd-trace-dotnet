@@ -11,6 +11,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkAgent4]
+    [BenchmarkCategory(Constants.TracerCategory)]
     public class RedisBenchmark
     {
         private static readonly RedisNativeClient Client = new RedisNativeClient();
@@ -47,6 +48,7 @@ namespace ServiceStack.Redis
 {
     internal class RedisNativeClient
     {
+        public long Db { get; } = 2;
         public string Host { get; } = "Host";
         public int Port { get; } = 80;
 

@@ -5,7 +5,6 @@
 
 using System;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace
 {
@@ -15,14 +14,14 @@ namespace Datadog.Trace
     /// </summary>
     internal interface IDatadogTracer
     {
-        bool CanDropP0s { get; }
-
         string DefaultServiceName { get; }
 
-        ISampler Sampler { get; }
+        IGitMetadataTagsProvider GitMetadataTagsProvider { get; }
 
         ImmutableTracerSettings Settings { get; }
 
-        void Write(ArraySegment<Span> span, bool shouldSerializeSpans);
+        PerTraceSettings PerTraceSettings { get; }
+
+        void Write(ArraySegment<Span> span);
     }
 }

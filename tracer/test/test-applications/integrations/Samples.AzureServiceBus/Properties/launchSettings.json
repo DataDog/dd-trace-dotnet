@@ -1,0 +1,38 @@
+{
+  "profiles": {
+    "WithDatadog": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_SERVICE": "Samples.AzureServiceBus",
+        "DD_VERSION": "1.0.0",
+
+        "COR_ENABLE_PROFILING": "1",
+        "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+        "COR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+
+        "CORECLR_ENABLE_PROFILING": "1",
+        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+
+        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
+        "DD_TRACE_OTEL_ENABLED": "true",
+        "DD_DATA_STREAMS_ENABLED": "true",
+        "DD_RUNTIME_METRICS_ENABLED": "true"
+      },
+      "nativeDebugging": false
+    },
+    "NoDatadog": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_ENV": "",
+        "DD_SERVICE": "",
+        "DD_VERSION": "",
+
+        "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+        "OTEL_EXPORTER_OTLP_ENABLED": "true",
+        "OTEL_ASB_ENABLED": "true",
+      },
+      "nativeDebugging": false
+    }
+  }
+}

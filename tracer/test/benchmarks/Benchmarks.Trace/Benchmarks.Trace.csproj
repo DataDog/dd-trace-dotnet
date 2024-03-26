@@ -2,21 +2,23 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
+    <TargetFrameworks>net8.0;net7.0;net6.0;netcoreapp3.1;net472</TargetFrameworks>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
 
     <!-- benchmarkdotnet only support numberic values, not "latest"-->
-    <LangVersion>9</LangVersion>
+    <LangVersion>11</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <!-- Strong name signature -->
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
-    <NoWarn>1591</NoWarn>
+    <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
+    <NoWarn>1591;NU1901;NU1902;NU1903;NU1904</NoWarn>
 
      <!-- Tell Visual Studio to not create a new launchSettings.json file, even though we have AspNetCore assets -->
     <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,19 +30,29 @@
     <Compile Remove="DuckTyping\ObscureObject.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\..\..\src\Datadog.Trace\AppSec\Waf\rule-set.json">
+    <Content Include="..\..\..\src\Datadog.Trace\AppSec\Waf\ConfigFiles\rule-set.json">
       <Link>rule-set.json</Link>
+    </Content>
+    <Content Update="Asm\rule-set.1.10.0.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
-    <PackageReference Include="JetBrains.Profiler.Api" Version="1.1.7" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.5" />
+    <PackageReference Include="JetBrains.Profiler.SelfApi" Version="2.4.2" />
     <PackageReference Include="log4net" Version="2.0.12" />
-    <PackageReference Include="NLog" Version="4.7.9" />
+    <PackageReference Include="NLog" Version="5.2.0" />
     <PackageReference Include="Serilog" Version="2.10.0" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.18" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="7.0.0" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <!-- System.Diagnostics.DiagnosticSource doesn't support netcoreapp3.1-->
+    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/ -->
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Datadog.Trace.BenchmarkDotNet\Datadog.Trace.BenchmarkDotNet.csproj" />
@@ -57,6 +69,10 @@
 
   <ItemGroup>
     <None Remove="microbenchmarks\.gitignore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Datadog.Trace.Security.Unit.Tests\IAST\CustomSettingsForTests.cs" Link="Iast\CustomSettingsForTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -3,10 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
@@ -16,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     [InstrumentMethod(
         AssemblyNames = new string[] { "StackExchange.Redis", "StackExchange.Redis.StrongName" },
         MethodName = "ExecuteSync",
-        ReturnTypeName = "T",
+        ReturnTypeName = "!!0",
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" },
         MinimumVersion = "1.0.0",
         MaximumVersion = "2.*.*",
@@ -43,12 +46,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TMessage, TProcessor, TServerEndPoint>(TTarget instance, TMessage message, TProcessor resultProcessor, TServerEndPoint serverEndPoint)
             where TTarget : IRedisBase
-            where TMessage : IMessageData
+            where TMessage : IMessageData, IDuckType
         {
-            string rawCommand = message.CommandAndKey ?? "COMMAND";
-            StackExchangeRedisHelper.HostAndPort hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Multiplexer.Configuration);
+            if (message.Instance is null)
+            {
+                return CallTargetState.GetDefault();
+            }
 
-            Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, IntegrationName, hostAndPort.Host, hostAndPort.Port, rawCommand);
+            string rawCommand = message.CommandAndKey ?? "COMMAND";
+            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Multiplexer.Configuration);
+
+            var scope = RedisHelper.CreateScope(
+                Tracer.Instance,
+                IntegrationId,
+                IntegrationName,
+                hostAndPort.Host,
+                hostAndPort.Port,
+                rawCommand,
+                StackExchangeRedisHelper.GetDb(message.Db));
+
             if (scope is not null)
             {
                 return new CallTargetState(scope);

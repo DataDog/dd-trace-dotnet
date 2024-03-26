@@ -6,14 +6,17 @@
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
 #include "Configuration.h"
-#include "IExporter.h"
-#include "ISamplesProvider.h"
-#include "IMetricsSender.h"
-#include "Sample.h"
-#include "TagsHelper.h"
 #include "IApplicationStore.h"
+#include "IExporter.h"
+#include "IMetricsSender.h"
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
+#include "ISamplesProvider.h"
+#include "Sample.h"
+#include "SamplesEnumerator.h"
+#include "TagsHelper.h"
+
+#include <memory>
 
 class MockConfiguration : public IConfiguration
 {
@@ -44,26 +47,55 @@ public:
     MOCK_METHOD(bool, IsAllocationProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, IsContentionProfilingEnabled, (), (const override));
     MOCK_METHOD(double, MinimumCores, (), (const override));
+    MOCK_METHOD(int32_t, AllocationSampleLimit, (), (const override));
+    MOCK_METHOD(int32_t, ContentionSampleLimit, (), (const override));
+    MOCK_METHOD(int32_t, ContentionDurationThreshold, (), (const override));
+    MOCK_METHOD(std::chrono::nanoseconds, CpuWallTimeSamplingRate, (), (const override));
+    MOCK_METHOD(std::string const&, GetNamedPipeName, (), (const override));
+    MOCK_METHOD(bool, IsTimestampsAsLabelEnabled, (), (const override));
+    MOCK_METHOD(int32_t, WalltimeThreadsThreshold, (), (const override));
+    MOCK_METHOD(int32_t, CpuThreadsThreshold, (), (const override));
+    MOCK_METHOD(int32_t, CodeHotspotsThreadsThreshold, (), (const override));
+    MOCK_METHOD(bool, IsGarbageCollectionProfilingEnabled, (), (const override));
+    MOCK_METHOD(bool, IsHeapProfilingEnabled, (), (const override));
+    MOCK_METHOD(bool, UseBacktrace2, (), (const override));
+    MOCK_METHOD(bool, IsAllocationRecorderEnabled, (), (const override));
+    MOCK_METHOD(bool, IsDebugInfoEnabled, (), (const override));
+    MOCK_METHOD(bool, IsGcThreadsCpuTimeEnabled, (), (const override));
+    MOCK_METHOD(bool, IsThreadLifetimeEnabled, (), (const override));
+    MOCK_METHOD(std::string const&, GetGitRepositoryUrl, (), (const override));
+    MOCK_METHOD(std::string const&, GetGitCommitSha, (), (const override));
+    MOCK_METHOD(bool, IsInternalMetricsEnabled, (), (const override));
+    MOCK_METHOD(bool, IsSystemCallsShieldEnabled, (), (const override));
+    MOCK_METHOD(bool, IsCIVisibilityEnabled, (), (const override));
+    MOCK_METHOD(std::uint64_t, GetCIVisibilitySpanId, (), (const override));
+    MOCK_METHOD(bool, IsEtwEnabled, (), (const override));
+    MOCK_METHOD(bool, IsSsiDeployed, (), (const override));
+    MOCK_METHOD(bool, IsSsiActivated, (), (const override));
 };
 
 class MockExporter : public IExporter
 {
 public:
-    MOCK_METHOD(void, Add, (Sample const& sample), (override));
+    MOCK_METHOD(void, Add, (std::shared_ptr<Sample> const& sample), (override));
     MOCK_METHOD(bool, Export, (), (override));
     MOCK_METHOD(void, SetEndpoint, (const std::string& runtimeId, uint64_t traceId, const std::string& endpoint), (override));
+    MOCK_METHOD(void, RegisterUpscaleProvider, (IUpscaleProvider * provider), (override));
+    MOCK_METHOD(void, RegisterProcessSamplesProvider, (ISamplesProvider * provider), (override));
 };
 
 class MockSamplesCollector : public ISamplesCollector
 {
 public:
-    MOCK_METHOD(void, Register, (ISamplesProvider * sampleProvider), (override));
+    MOCK_METHOD(void, Register, (ISamplesProvider* sampleProvider), (override));
+    MOCK_METHOD(void, RegisterBatchedProvider, (IBatchedSamplesProvider* sampleProvider), (override));
 };
 
 class MockSampleProvider : public ISamplesProvider
 {
 public:
-    MOCK_METHOD(std::list<Sample>, GetSamples, (), (override));
+    MOCK_METHOD(std::unique_ptr<SamplesEnumerator>, GetSamples, (), (override));
+    MOCK_METHOD(const char*, GetName, (), (override));
 };
 
 class MockMetricsSender : public IMetricsSender
@@ -102,6 +134,7 @@ class MockApplicationStore : public IApplicationStore
 public:
     MOCK_METHOD(ApplicationInfo, GetApplicationInfo, (const std::string& runtimeId), (override));
     MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&), (override));
+    MOCK_METHOD(void, SetGitMetadata, (std::string, std::string, std::string), (override));
     MOCK_METHOD(const char*, GetName, (), (override));
     MOCK_METHOD(bool, Start, (), (override));
     MOCK_METHOD(bool, Stop, (), (override));
@@ -111,6 +144,13 @@ class MockRuntimeIdStore : public IRuntimeIdStore
 {
 public:
     MOCK_METHOD(const char*, GetId, (AppDomainID appDomainId), (override));
+};
+
+class MockProcessSamplesProvider : public ISamplesProvider
+{
+public:
+    MOCK_METHOD(std::unique_ptr<SamplesEnumerator>, GetSamples, (), (override));
+    MOCK_METHOD(const char*, GetName, (), (override));
 };
 
 template <typename T, typename U, typename... Args>
@@ -128,24 +168,6 @@ std::tuple<std::shared_ptr<ISamplesProvider>, MockSampleProvider&> CreateSamples
 std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
 std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamplesCollector();
 
-template <typename T>
-Sample CreateSample(std::string_view runtimeId, const T& callstack, std::initializer_list<std::pair<std::string, std::string>> labels, std::int64_t value)
-{
-    Sample sample{runtimeId};
-
-    for (auto frame = callstack.begin(); frame != callstack.end(); ++frame)
-    {
-        sample.AddFrame(frame->first, frame->second);
-    }
-
-    for (auto const& [name, value] : labels)
-    {
-        sample.AddLabel({name, value});
-    }
-
-    sample.SetValue(value);
-
-    return sample;
-}
+std::shared_ptr<Sample> CreateSample(std::string_view runtimeId, const std::vector<std::pair<std::string, std::string>>& callstack, const std::vector<std::pair<std::string, std::string>>& labels, std::int64_t value);
 
 std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth);

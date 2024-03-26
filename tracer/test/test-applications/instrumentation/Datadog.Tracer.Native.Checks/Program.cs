@@ -6,7 +6,6 @@ namespace Datadog.Trace.ClrProfiler.Native.Checks
     {
         static void Main(string[] args)
         {
-
         }
     }
 }

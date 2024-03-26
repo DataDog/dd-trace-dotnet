@@ -13,13 +13,12 @@ namespace Datadog.Trace.Agent.Transports
     internal class HttpStreamResponse : IApiResponse
     {
         private readonly HttpHeaders _headers;
-        private string _responseCache;
 
         public HttpStreamResponse(int statusCode, long contentLength, Encoding encoding, Stream responseStream, HttpHeaders headers)
         {
             StatusCode = statusCode;
             ContentLength = contentLength;
-            Encoding = encoding;
+            ContentEncoding = encoding;
             ResponseStream = responseStream;
             _headers = headers;
         }
@@ -28,7 +27,7 @@ namespace Datadog.Trace.Agent.Transports
 
         public long ContentLength { get; }
 
-        public Encoding Encoding { get; }
+        public Encoding ContentEncoding { get; }
 
         public Stream ResponseStream { get; }
 
@@ -38,17 +37,9 @@ namespace Datadog.Trace.Agent.Transports
 
         public string GetHeader(string headerName) => _headers.GetValue(headerName);
 
-        public async Task<string> ReadAsStringAsync()
+        public Task<Stream> GetStreamAsync()
         {
-            if (_responseCache == null)
-            {
-                using (var reader = new StreamReader(ResponseStream, Encoding, detectEncodingFromByteOrderMarks: false, (int)ContentLength, leaveOpen: true))
-                {
-                    _responseCache = await reader.ReadToEndAsync().ConfigureAwait(false);
-                }
-            }
-
-            return _responseCache;
+            return Task.FromResult(ResponseStream);
         }
     }
 }

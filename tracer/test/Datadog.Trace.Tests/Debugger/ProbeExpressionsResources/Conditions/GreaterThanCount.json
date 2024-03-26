@@ -1,0 +1,13 @@
+{
+  "dsl": "len(ref CollectionLocal) > 2",
+  "gt": [
+    {
+      "len": [
+        {
+          "ref": "CollectionLocal"
+        }
+      ]
+    },
+    2
+  ]
+}

@@ -21,7 +21,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
         TypeName = "log4net.Appender.AppenderCollection",
         MethodName = "ToArray",
         ReturnTypeName = "log4net.Appender.IAppender[]",
-        ParameterTypeNames = new string[0],
         MinimumVersion = "1.0.0",
         MaximumVersion = "1.*.*",
         IntegrationName = nameof(IntegrationId.Log4Net))]
@@ -49,11 +48,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
                 return new CallTargetReturn<TResponse>(response);
             }
 
-            var updatedResponse = Log4NetCommon<TResponse>.AddAppenderToResponse(response, DirectSubmissionLog4NetLegacyAppender.Instance);
-            if (!_logWritten)
+            if (Log4NetCommon<TResponse>.TryAddAppenderToResponse(response, DirectSubmissionLog4NetLegacyAppender.Instance, out var updatedResponse))
             {
-                _logWritten = true;
-                Log.Information("Direct log submission via Log4Net Legacy enabled");
+                if (!_logWritten)
+                {
+                    _logWritten = true;
+                    TracerManager.Instance.Telemetry.IntegrationGeneratedSpan(IntegrationId.Log4Net);
+                    Log.Information("Direct log submission via Log4Net Legacy enabled");
+                }
             }
 
             return new CallTargetReturn<TResponse>(updatedResponse);

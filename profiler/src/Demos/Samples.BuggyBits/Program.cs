@@ -2,23 +2,35 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
-
 using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Demos.Util;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+
+// Those attributes are required to validate the git repository url and commit sha propagation from
+// the tracer to the profiler.
+// See Datadog.Profiler.IntegrationTests.GitMetadata.CheckGitMetataFromEnvironmentVariablesFromBinary
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "http://github.com/DataDog/dd-trace-dotnet")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1234567890ABCDEF")]
 
 namespace BuggyBits
 {
     public enum Scenario
     {
-        StringConcat,
-        StringBuilder,
-        Parallel,
-        Async,
+        None = 0,
+        StringConcat = 1,      // using += / String.Concat
+        StringBuilder = 2,     // using StringBuilder
+        Parallel = 4,          // using parallel code
+        Async = 8,             // using async code
+        FormatExceptions = 16, // generating FormatExceptions for prices
+        ParallelLock = 32,     // using parallel code with lock
+        MemoryLeak = 64, // keep a controller in memory due to instance callback passed to a cache
+        EndpointsCount = 128, // Specific test with '.' in endpoint name
+        Spin = 256 // Requests that take a long time
     }
 
     public class Program
@@ -29,7 +41,9 @@ namespace BuggyBits
 
             WriteLine("Starting at " + DateTime.UtcNow);
 
-            ParseCommandLine(args, out var timeout, out var iterations, out var scenario);
+            EnvironmentInfo.PrintDescriptionToConsole();
+
+            ParseCommandLine(args, out var timeout, out var iterations, out var scenario, out var nbIdleThreads);
 
             using (var host = CreateHostBuilder(args).Build())
             {
@@ -48,7 +62,7 @@ namespace BuggyBits
                 WriteLine($"Listening to {rootUrl}");
 
                 var cts = new CancellationTokenSource();
-                using (var selfInvoker = new SelfInvoker(cts.Token, scenario))
+                using (var selfInvoker = new SelfInvoker(cts.Token, scenario, nbIdleThreads))
                 {
                     await host.StartAsync();
 
@@ -116,12 +130,13 @@ namespace BuggyBits
                     webBuilder.UseStartup<Startup>();
                 });
 
-        private static void ParseCommandLine(string[] args, out TimeSpan timeout, out int iterations, out Scenario scenario)
+        private static void ParseCommandLine(string[] args, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads)
         {
             // by default, need interactive action to exit and string.Concat scenario
             timeout = TimeSpan.MinValue;
             iterations = 0;
             scenario = Scenario.StringConcat;
+            nbIdleThreads = 0;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -166,6 +181,21 @@ namespace BuggyBits
                 {
                     timeout = Timeout.InfiniteTimeSpan;
                 }
+                else
+                if ("--with-idle-threads".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    var nbThreadsArgument = i + 1;
+                    if (nbThreadsArgument >= args.Length || !int.TryParse(args[nbThreadsArgument], out nbIdleThreads))
+                    {
+                        throw new InvalidOperationException($"Invalid or missing count after --with-idle-threads");
+                    }
+                }
+            }
+
+            // sanity checks
+            if ((scenario == 0) && (iterations > 0))
+            {
+                throw new InvalidOperationException("It is not possible to iterate on scenario 0");
             }
         }
 

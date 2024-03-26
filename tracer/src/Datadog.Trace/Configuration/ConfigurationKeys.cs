@@ -2,8 +2,10 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration
 {
@@ -40,6 +42,25 @@ namespace Datadog.Trace.Configuration
         public const string ServiceVersion = "DD_VERSION";
 
         /// <summary>
+        /// Configuration key for the application's git repo URL. Sets the "_dd.git.repository_url" tag on every <see cref="Span"/>.
+        /// </summary>
+        /// <seealso cref="TracerSettings.GitRepositoryUrl"/>
+        public const string GitRepositoryUrl = "DD_GIT_REPOSITORY_URL";
+
+        /// <summary>
+        /// Configuration key for the application's git commit hash. Sets the "_dd.git.commit.sha" tag on every <see cref="Span"/>.
+        /// </summary>
+        /// <seealso cref="TracerSettings.GitCommitSha"/>
+        public const string GitCommitSha = "DD_GIT_COMMIT_SHA";
+
+        /// <summary>
+        /// Configuration key for enabling the tagging of every telemetry event with git metadata.
+        /// Default is value is true (enabled).
+        /// </summary>
+        /// <seealso cref="TracerSettings.GitMetadataEnabled"/>
+        public const string GitMetadataEnabled = "DD_TRACE_GIT_METADATA_ENABLED";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the Tracer.
         /// Default is value is true (enabled).
         /// </summary>
@@ -51,6 +72,18 @@ namespace Datadog.Trace.Configuration
         /// Default is value is false (disabled).
         /// </summary>
         public const string DebugEnabled = "DD_TRACE_DEBUG";
+
+        /// <summary>
+        /// Configuration key for enabling or disabling the Tracer's debugger mode.
+        /// Default is value is false (disabled).
+        /// </summary>
+        public const string WaitForDebuggerAttach = "DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH";
+
+        /// <summary>
+        /// Configuration key for enabling or disabling the Tracer's native debugger mode.
+        /// Default is value is false (disabled).
+        /// </summary>
+        public const string WaitForNativeDebuggerAttach = "DD_INTERNAL_WAIT_FOR_NATIVE_DEBUGGER_ATTACH";
 
         /// <summary>
         /// Configuration key for a list of integrations to disable. All other integrations remain enabled.
@@ -128,12 +161,6 @@ namespace Datadog.Trace.Configuration
         public const string TraceRateLimit = "DD_TRACE_RATE_LIMIT";
 
         /// <summary>
-        /// Configuration key for enabling or disabling the diagnostic log at startup
-        /// </summary>
-        /// <seealso cref="TracerSettings.StartupDiagnosticLogEnabled"/>
-        public const string StartupDiagnosticLogEnabled = "DD_TRACE_STARTUP_LOGS";
-
-        /// <summary>
         /// Configuration key for setting custom sampling rules based on regular expressions.
         /// Semi-colon separated list of sampling rules.
         /// The rule is matched in order of specification. The first match in a list is used.
@@ -164,9 +191,49 @@ namespace Datadog.Trace.Configuration
         public const string CustomSamplingRules = "DD_TRACE_SAMPLING_RULES";
 
         /// <summary>
+        /// Configuration key for setting the format of <see cref="CustomSamplingRules"/>.
+        /// Valid values are <c>regex</c> or <c>glob</c>.
+        /// If the value is not recognized, trace sampling rules are disabled.
+        /// </summary>
+        public const string CustomSamplingRulesFormat = "DD_TRACE_SAMPLING_RULES_FORMAT";
+
+        /// <summary>
+        /// Configuration key for setting custom <em>span</em> sampling rules based on glob patterns.
+        /// Comma separated list of span sampling rules.
+        /// The rule is matched in order of specification. The first match in a list is used.
+        /// The supported glob pattern characters are '*' and '?'.
+        /// A '*' matches any contiguous substring.
+        /// A '?' matches exactly one character.
+        ///
+        /// Per entry:
+        ///     The item "service" is a glob pattern string, to match on the service name.
+        ///         Optional and defaults to '*'.
+        ///     The item "name" is a glob pattern string, to match on the operation name.
+        ///         Optional and defaults to '*'.
+        ///     The item "sample_rate" is a float and is the probability of keeping a matched span.
+        ///         Optional and defaults to 1.0 (keep all).
+        ///     The item "max_per_second" is a float and is the maximum number of spans that can be kept per second for the rule.
+        ///         Optional and defaults to unlimited.
+        ///
+        /// Examples:
+        /// Match all spans that have a service name of "cart" and an operation name of "checkout" with a kept limit of 1000 per second.
+        ///     "[{"service": "cart", "name": "checkout", "max_per_second": 1000}]"
+        ///
+        /// Match 50% of spans that have a service name of "cart" and an operation name of "checkout" with a kept limit of 1000 per second.
+        ///     "[{"service": "cart", "name": "checkout", "sample_rate": 0.5, "max_per_second": 1000}]"
+        ///
+        /// Match all spans that start with "cart" without any limits and any operation name.
+        ///     "[{"service": "cart*"}]"
+        /// </summary>
+        /// <seealso cref="TracerSettings.SpanSamplingRules"/>
+        public const string SpanSamplingRules = "DD_SPAN_SAMPLING_RULES";
+
+        /// <summary>
         /// Configuration key for setting the global rate for the sampler.
         /// </summary>
         public const string GlobalSamplingRate = "DD_TRACE_SAMPLE_RATE";
+
+        public const string RareSamplerEnabled = "DD_APM_ENABLE_RARE_SAMPLER";
 
         /// <summary>
         /// Configuration key for enabling or disabling internal metrics sent to DogStatsD.
@@ -179,36 +246,6 @@ namespace Datadog.Trace.Configuration
         /// Default value is <c>false</c> (disabled).
         /// </summary>
         public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
-
-        /// <summary>
-        /// Configuration key for setting the approximate maximum size,
-        /// in bytes, for Tracer log files.
-        /// Default value is 10 MB.
-        /// </summary>
-        public const string MaxLogFileSize = "DD_MAX_LOGFILE_SIZE";
-
-        /// <summary>
-        /// Configuration key for setting the number of seconds between,
-        /// identical log messages, for Tracer log files.
-        /// Default value is 60s. Setting to 0 disables rate limiting.
-        /// </summary>
-        public const string LogRateLimit = "DD_TRACE_LOGGING_RATE";
-
-        /// <summary>
-        /// Configuration key for setting the path to the .NET Tracer native log file.
-        /// This also determines the output folder of the .NET Tracer managed log files.
-        /// Overridden by <see cref="LogDirectory"/> if present.
-        /// </summary>
-        [Obsolete(DeprecationMessages.LogPath)]
-        public const string ProfilerLogPath = "DD_TRACE_LOG_PATH";
-
-        /// <summary>
-        /// Configuration key for setting the directory of the .NET Tracer logs.
-        /// Overrides the value in <see cref="ProfilerLogPath"/> if present.
-        /// Default value is "%ProgramData%"\Datadog .NET Tracer\logs\" on Windows
-        /// or "/var/log/datadog/dotnet/" on Linux.
-        /// </summary>
-        public const string LogDirectory = "DD_TRACE_LOG_DIRECTORY";
 
         /// <summary>
         /// Configuration key for when a standalone instance of the Trace Agent needs to be started.
@@ -274,10 +311,10 @@ namespace Datadog.Trace.Configuration
         public const string IpHeader = "DD_TRACE_CLIENT_IP_HEADER";
 
         /// <summary>
-        /// Configuration key indicating if the header should not be collected. The default for DD_TRACE_CLIENT_IP_HEADER_DISABLED is false.
+        /// Configuration key indicating if the header should be collected. The default for DD_TRACE_CLIENT_IP_ENABLED is false.
         /// </summary>
-        /// <seealso cref="TracerSettings.IpHeaderDisabled"/>
-        public const string IpHeaderDisabled = "DD_TRACE_CLIENT_IP_HEADER_DISABLED";
+        /// <seealso cref="TracerSettings.IpHeaderEnabled"/>
+        public const string IpHeaderEnabled = "DD_TRACE_CLIENT_IP_ENABLED";
 
         /// <summary>
         /// Configuration key to enable or disable the creation of a span context on exiting a successful Kafka
@@ -306,14 +343,34 @@ namespace Datadog.Trace.Configuration
         public const string StatsComputationInterval = "_DD_TRACE_STATS_COMPUTATION_INTERVAL";
 
         /// <summary>
-        /// Configuration key for setting the propagation style injection.
+        /// Configuration key for setting the header injection propagation style.
+        /// If <see cref="PropagationStyle"/> is also defined, this value overrides the header injection styles.
         /// </summary>
-        public const string PropagationStyleInject = "DD_PROPAGATION_STYLE_INJECT";
+        /// <seealso cref="Datadog.Trace.Propagators.ContextPropagationHeaderStyle"/>
+        /// <seealso cref="TracerSettings.PropagationStyleInject"/>
+        public const string PropagationStyleInject = "DD_TRACE_PROPAGATION_STYLE_INJECT";
 
         /// <summary>
-        /// Configuration key for setting the propagation style extraction.
+        /// Configuration key for setting the header extraction propagation style.
+        /// If <see cref="PropagationStyle"/> is also defined, this value overrides the header extraction styles.
         /// </summary>
-        public const string PropagationStyleExtract = "DD_PROPAGATION_STYLE_EXTRACT";
+        /// <seealso cref="Datadog.Trace.Propagators.ContextPropagationHeaderStyle"/>
+        /// <seealso cref="TracerSettings.PropagationStyleExtract"/>
+        public const string PropagationStyleExtract = "DD_TRACE_PROPAGATION_STYLE_EXTRACT";
+
+        /// <summary>
+        /// Configuration key for setting the propagation style for both header injection and extraction.
+        /// If <see cref="PropagationStyleInject"/> or <see cref="PropagationStyleExtract"/> are also defined,
+        /// they will override any header injections or extraction styled defined here, respectively.
+        /// </summary>
+        public const string PropagationStyle = "DD_TRACE_PROPAGATION_STYLE";
+
+        /// <summary>
+        /// Configuration key to configure if propagation should only extract the first header once a configure
+        /// propagator extracts a valid trace context.
+        /// </summary>
+        /// <seealso cref="TracerSettings.PropagationExtractFirstOnly"/>
+        public const string PropagationExtractFirstOnly = "DD_TRACE_PROPAGATION_EXTRACT_FIRST";
 
         /// <summary>
         /// Configuration key for enabling automatic instrumentation on specified methods.
@@ -323,7 +380,8 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for specifying a custom regex to obfuscate query strings.
-        /// Default value is in TracerSettings
+        /// Default value is in TracerSettingsConstants
+        ///  WARNING: This regex cause crashes under netcoreapp2.1 / linux / arm64, dont use on manual instrumentation in this environment
         /// </summary>
         /// <seealso cref="TracerSettings.ObfuscationQueryStringRegex"/>
         public const string ObfuscationQueryStringRegex = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP";
@@ -336,11 +394,54 @@ namespace Datadog.Trace.Configuration
         public const string ObfuscationQueryStringRegexTimeout = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT";
 
         /// <summary>
+        /// Configuration key for setting the max size of the querystring to report, before obfuscation
+        /// Default value is 5000, 0 means that we don't limit the size.
+        /// </summary>
+        /// <seealso cref="TracerSettings.QueryStringReportingSize"/>
+        public const string QueryStringReportingSize = "DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE";
+
+        /// <summary>
         /// Configuration key for enabling/disabling reporting query string
         /// Default value is true
         /// </summary>
         /// <seealso cref="TracerSettings.QueryStringReportingEnabled"/>
         public const string QueryStringReportingEnabled = "DD_HTTP_SERVER_TAG_QUERY_STRING";
+
+        /// <summary>
+        /// Configuration key for setting DBM propagation mode
+        /// Default value is disabled, expected values are either: disabled, service or full
+        /// </summary>
+        /// <seealso cref="TracerSettings.DbmPropagationMode"/>
+        public const string DbmPropagationMode = "DD_DBM_PROPAGATION_MODE";
+
+        /// <summary>
+        /// Configuration key for setting the schema version for service naming and span attributes
+        /// Accepted values are: "v1", "v0"
+        /// Default value is "v0"
+        /// </summary>
+        public const string MetadataSchemaVersion = "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA";
+
+        /// <summary>
+        /// Configuration key for automatically populating the peer.service tag
+        /// from predefined precursor attributes when the span attribute schema is v0.
+        /// This is ignored when the span attribute schema is v1 or later.
+        /// Default value is false
+        /// </summary>
+        public const string PeerServiceDefaultsEnabled = "DD_TRACE_PEER_SERVICE_DEFAULTS_ENABLED";
+
+        /// <summary>
+        /// Configuration key for a map of services to rename.
+        /// </summary>
+        /// <seealso cref="TracerSettings.PeerServiceNameMappings"/>
+        public const string PeerServiceNameMappings = "DD_TRACE_PEER_SERVICE_MAPPING";
+
+        /// <summary>
+        /// Configuration key for unifying client service names when the span
+        /// attribute schema is v0. This is ignored when the span attribute
+        /// schema is v1 or later.
+        /// Default value is false
+        /// </summary>
+        public const string RemoveClientServiceNamesEnabled = "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED";
 
         /// <summary>
         /// String constants for CI Visibility configuration keys.
@@ -372,7 +473,6 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key for enabling or disabling Code Coverage in CI Visibility.
-            /// Default value is false (disabled).
             /// </summary>
             public const string CodeCoverage = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLED";
 
@@ -382,10 +482,51 @@ namespace Datadog.Trace.Configuration
             public const string CodeCoverageSnkFile = "DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH";
 
             /// <summary>
+            /// Configuration key for enabling or disabling jit optimizations in the Code Coverage
+            /// </summary>
+            public const string CodeCoverageEnableJitOptimizations = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLE_JIT_OPTIMIZATIONS";
+
+            /// <summary>
+            /// Configuration key for selecting the code coverage mode LineExecution or LineCallCount
+            /// </summary>
+            public const string CodeCoverageMode = "DD_CIVISIBILITY_CODE_COVERAGE_MODE";
+
+            /// <summary>
+            /// Configuration key for setting the code coverage jsons destination path.
+            /// </summary>
+            public const string CodeCoveragePath = "DD_CIVISIBILITY_CODE_COVERAGE_PATH";
+
+            /// <summary>
             /// Configuration key for enabling or disabling Uploading Git Metadata in CI Visibility
             /// Default Value is false (disabled)
             /// </summary>
             public const string GitUploadEnabled = "DD_CIVISIBILITY_GIT_UPLOAD_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Intelligent Test Runner test skipping feature in CI Visibility
+            /// </summary>
+            public const string TestsSkippingEnabled = "DD_CIVISIBILITY_TESTSSKIPPING_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Intelligent Test Runner in CI Visibility
+            /// Default Value is false (disabled)
+            /// </summary>
+            public const string IntelligentTestRunnerEnabled = "DD_CIVISIBILITY_ITR_ENABLED";
+
+            /// <summary>
+            /// Configuration key for forcing Agent's EVP Proxy
+            /// </summary>
+            public const string ForceAgentsEvpProxy = "DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY";
+
+            /// <summary>
+            /// Configuration key for setting the external code coverage file path
+            /// </summary>
+            public const string ExternalCodeCoveragePath = "DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Datadog.Trace GAC installation
+            /// </summary>
+            public const string InstallDatadogTraceInGac = "DD_CIVISIBILITY_GAC_INSTALL_ENABLED";
         }
 
         /// <summary>
@@ -462,16 +603,68 @@ namespace Datadog.Trace.Configuration
             public const string DelayWcfInstrumentationEnabled = "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED";
 
             /// <summary>
+            /// Configuration key to enable or disable improved template-based resource names
+            /// when using WCF Web HTTP. Requires <see cref="DelayWcfInstrumentationEnabled"/> be set
+            /// to true. Disabled by default
+            /// </summary>
+            /// <seealso cref="TracerSettings.WcfWebHttpResourceNamesEnabled"/>
+            public const string WcfWebHttpResourceNamesEnabled = "DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED";
+
+            /// <summary>
+            /// Feature flag to enable obfuscating the <c>LocalPath</c> of a WCF request that goes
+            /// into the <c>resourceName</c> of a span.
+            /// <para>Note: that this only applies when the WCF action is an empty string.</para>
+            /// </summary>
+            /// <seealso cref="TracerSettings.WcfObfuscationEnabled"/>
+            public const string WcfObfuscationEnabled = "DD_TRACE_WCF_RESOURCE_OBFUSCATION_ENABLED";
+
+            /// <summary>
             /// Enables a fix around header tags normalization.
             /// We used to normalize periods even if a tag was provided for a header, whereas we should not.
-            /// This flag defaults to true and is here in case customers need retrocompatibility only
+            /// This flag defaults to true and is here only in case customers need backwards compatibility.
             /// </summary>
             public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
 
             /// <summary>
-            /// Enables experimental support for activity listener
+            /// Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
             /// </summary>
-            public const string ActivityListenerEnabled = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
+            public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";
+
+            /// <summary>
+            /// Enables the use of the <see cref="ISpan.OperationName"/> being set to the legacy value of:
+            /// <c>$"{Activity.Source.Name}.{Activity.Kind}"</c> when instrumenting OpenTelemetry Spans and Activities.
+            /// This will override the default mapping that is used to create an operation name based on
+            /// <c>Activity.Kind</c> and various tags on the <c>Activity</c>.
+            /// <para>
+            /// This flag defaults to <see langword="false"/> and is intended to allow previous beta customers
+            /// of the .NET Tracer's OpenTelemetry instrumentation (and System.Diagnostics)
+            /// to have an easier migration path.
+            /// </para>
+            /// </summary>
+            public const string OpenTelemetryLegacyOperationNameEnabled = "DD_TRACE_OTEL_LEGACY_OPERATION_NAME_ENABLED";
+
+            /// <summary>
+            /// Enables generating 128-bit trace ids instead of 64-bit trace ids.
+            /// Note that a 128-bit trace id may be received from an upstream service or from
+            /// an Activity even if we are not generating them ourselves.
+            /// Default value is <c>false</c> (disabled).
+            /// </summary>
+            public const string TraceId128BitGenerationEnabled = "DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED";
+
+            /// <summary>
+            /// Enables injecting 128-bit trace ids into logs as a hexadecimal string.
+            /// If disabled, 128-bit trace ids will be truncated to the lower 64 bits,
+            /// and all trace ids will be injected as decimal strings
+            /// Default value is <c>false</c> (disabled).
+            /// </summary>
+            public const string TraceId128BitLoggingEnabled = "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED";
+
+            /// <summary>
+            /// Configuration key to enabling or disabling the collection of shell commands executions.
+            /// Default value is <c>false</c> (disabled). Will change in the future to <c>true</c>
+            /// when an obfuscation mechanism will be implemented in the agent.
+            /// </summary>
+            internal const string CommandsCollectionEnabled = "DD_TRACE_COMMANDS_COLLECTION_ENABLED";
         }
 
         internal static class Telemetry
@@ -484,10 +677,17 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key for sending telemetry direct to telemetry intake. If enabled, and
-            /// <see cref="ConfigurationKeys.ApiKey"/> is set, sends telemetry direct to intake. Otherwise, sends
-            /// telemetry to Agent. Enabled by default if <see cref="ConfigurationKeys.ApiKey"/> is available.
+            /// <see cref="ConfigurationKeys.ApiKey"/> is set, sends telemetry direct to intake if agent is not
+            /// available. Enabled by default if <see cref="ConfigurationKeys.ApiKey"/> is available.
             /// </summary>
             public const string AgentlessEnabled = "DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for sending telemetry via agent proxy. If enabled, sends telemetry
+            /// via agent proxy. Enabled by default. If disabled, or agent is not available, telemetry
+            /// is sent to agentless endpoint, based on <see cref="AgentlessEnabled"/> setting.
+            /// </summary>
+            public const string AgentProxyEnabled = "DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED";
 
             /// <summary>
             /// Configuration key for the telemetry URL where the Tracer sends telemetry. Only applies when agentless
@@ -495,6 +695,37 @@ namespace Datadog.Trace.Configuration
             /// <see cref="ExporterSettings.AgentUri"/> instead)
             /// </summary>
             public const string Uri = "DD_INSTRUMENTATION_TELEMETRY_URL";
+
+            /// <summary>
+            /// Configuration key for how often telemetry should be sent, in seconds. Must be between 1 and 3600.
+            /// For testing purposes. Defaults to 60
+            /// <see cref="TelemetrySettings.HeartbeatInterval"/>
+            /// </summary>
+            public const string HeartbeatIntervalSeconds = "DD_TELEMETRY_HEARTBEAT_INTERVAL";
+
+            /// <summary>
+            /// Configuration key for whether dependency data is sent via telemetry.
+            /// Required for some ASM features. Default value is <c>true</c> (enabled).
+            /// <see cref="TelemetrySettings.DependencyCollectionEnabled"/>
+            /// </summary>
+            public const string DependencyCollectionEnabled = "DD_TELEMETRY_DEPENDENCY_COLLECTION_ENABLED";
+
+            /// <summary>
+            /// Configuration key for whether telemetry metrics should be sent.
+            /// <see cref="TelemetrySettings.MetricsEnabled"/>
+            /// </summary>
+            public const string MetricsEnabled = "DD_TELEMETRY_METRICS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for whether to enable debug mode of telemetry.
+            /// <see cref="TelemetrySettings.DebugEnabled"/>
+            /// </summary>
+            public const string DebugEnabled = "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED";
+
+            /// <summary>
+            /// Configuration key for whether to enable redacted error log collection.
+            /// </summary>
+            public const string TelemetryLogsEnabled = "DD_TELEMETRY_LOG_COLLECTION_ENABLED";
         }
 
         internal static class TagPropagation
@@ -507,6 +738,15 @@ namespace Datadog.Trace.Configuration
             /// This value is not used when extracting an incoming propagation header from an upstream service.
             /// </remarks>
             public const string HeaderMaxLength = "DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH";
+        }
+
+        internal static class DataStreamsMonitoring
+        {
+            /// <summary>
+            /// Enables data streams monitoring support
+            /// </summary>
+            /// <see cref="TracerSettings.IsDataStreamsMonitoringEnabled"/>
+            public const string Enabled = "DD_DATA_STREAMS_ENABLED";
         }
     }
 }

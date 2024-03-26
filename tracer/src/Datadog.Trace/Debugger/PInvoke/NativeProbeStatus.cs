@@ -13,6 +13,7 @@ namespace Datadog.Trace.Debugger.PInvoke
     internal struct NativeProbeStatus
     {
         public IntPtr ProbeId;
+        public IntPtr ErrorMessage;
         public Status Status;
     }
 }

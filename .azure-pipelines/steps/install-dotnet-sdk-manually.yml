@@ -1,0 +1,50 @@
+# Powershell only - installs SDK "manually" using dotnet-install.ps1 script
+# instead of using UseDotNet task, because UseDotNet complains about stupid
+# stuff like "oh, we won't always cache this, I'm going to flood your build with warnings"
+parameters:
+  - name: sdkVersion
+    type: string
+    default: ''
+
+  - name: channel
+    type: string
+    default: ''
+
+  - name: is64bit
+    type: boolean
+    default: true
+
+steps:
+  - powershell: |
+      $channel = "${{ parameters.channel }}"
+      $sdkVersion = "${{ parameters.sdkVersion }}"
+
+      echo "Downloading dotnet-install.ps1"
+      Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile dotnet-install.ps1
+
+      if( "${{ parameters.is64bit }}" -eq "true") {
+        $path = "$HOME\AppData\Local\Microsoft\dotnet"
+        $arch = "x64"
+
+        echo "Manually prepending to path"
+        echo "##vso[task.prependpath]$path"
+      } else {
+        $path = "$HOME\AppData\Local\Microsoft\dotnet_32"
+        $arch = "x86"
+
+        echo "Manually exporting path to DOTNET_EXE_32"
+        echo "##vso[task.setvariable variable=DOTNET_EXE_32]$path\dotnet.exe"
+      }
+
+      echo "Installing dotnet ($arch) to $path"
+
+      if($sdkVersion) {
+        ./dotnet-install.ps1 -Version $sdkVersion -Architecture $arch -NoPath:$True -InstallDir $path
+      } else {
+        ./dotnet-install.ps1 -Channel $channel -Architecture $arch -NoPath:$True -InstallDir $path
+      }
+
+      rm ./dotnet-install.ps1
+      echo "Install complete"
+    displayName: Install dotnet core sdk ${{ parameters.sdkVersion }} (64bit:${{ parameters.is64bit }} ${{ parameters.sdkVersion }})
+    retryCountOnTaskFailure: 5

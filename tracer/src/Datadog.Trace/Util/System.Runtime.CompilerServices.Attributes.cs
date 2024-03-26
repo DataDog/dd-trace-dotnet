@@ -1,4 +1,4 @@
-﻿// <copyright file="System.Runtime.CompilerServices.Attributes.cs" company="Datadog">
+// <copyright file="System.Runtime.CompilerServices.Attributes.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,6 +15,11 @@
 namespace System.Runtime.CompilerServices;
 
 #if !NET5_0_OR_GREATER
+
+internal static class IsExternalInit
+{
+}
+
 /// <summary>
 /// Used to indicate to the compiler that the <c>.locals init</c>
 /// flag should not be set in method headers.
@@ -42,4 +47,5 @@ namespace System.Runtime.CompilerServices;
 internal sealed class SkipLocalsInitAttribute : Attribute
 {
 }
+
 #endif

@@ -3,63 +3,142 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.AppSec
 {
     internal class SecuritySettings
     {
+        public const string UserTrackingExtendedMode = "extended";
+        public const string UserTrackingSafeMode = "safe";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecuritySettings>();
 
-        public SecuritySettings(IConfigurationSource source)
+        public SecuritySettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
-            BlockedHtmlTemplate = source?.GetString(ConfigurationKeys.AppSec.HtmlBlockedTemplate) ?? SecurityConstants.BlockedHtmlTemplate;
-            BlockedJsonTemplate = source?.GetString(ConfigurationKeys.AppSec.HtmlBlockedTemplate) ?? SecurityConstants.BlockedJsonTemplate;
+            source ??= NullConfigurationSource.Instance;
+            var config = new ConfigurationBuilder(source, telemetry);
+            BlockedHtmlTemplate = config
+                                 .WithKeys(ConfigurationKeys.AppSec.HtmlBlockedTemplate)
+                                 .AsRedactedString(SecurityConstants.BlockedHtmlTemplate); // Redacted because it's huge
+
+            BlockedJsonTemplate = config
+                                 .WithKeys(ConfigurationKeys.AppSec.JsonBlockedTemplate)
+                                 .AsString(SecurityConstants.BlockedJsonTemplate);
+
+            bool isEnabledSet = true;
+
+            bool GetEnabledDefaultValue()
+            {
+                isEnabledSet = false;
+                return false;
+            }
+
             // both should default to false
-            Enabled = source?.GetBool(ConfigurationKeys.AppSec.Enabled) ?? false;
-            Rules = source?.GetString(ConfigurationKeys.AppSec.Rules);
-            CustomIpHeader = source?.GetString(ConfigurationKeys.AppSec.CustomIpHeader);
-            var extraHeaders = source?.GetString(ConfigurationKeys.AppSec.ExtraHeaders);
-            ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders.Split(',') : Array.Empty<string>();
-            KeepTraces = source?.GetBool(ConfigurationKeys.AppSec.KeepTraces) ?? true;
+            var enabledEnvVar = config
+                               .WithKeys(ConfigurationKeys.AppSec.Enabled)
+                               .AsBool(GetEnabledDefaultValue, null);
+
+            Enabled = enabledEnvVar.Value;
+            CanBeToggled = !isEnabledSet;
+
+            Rules = config.WithKeys(ConfigurationKeys.AppSec.Rules).AsString();
+            CustomIpHeader = config.WithKeys(ConfigurationKeys.AppSec.CustomIpHeader).AsString();
+            var extraHeaders = config.WithKeys(ConfigurationKeys.AppSec.ExtraHeaders).AsString();
+            ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders!.Split(',') : Array.Empty<string>();
+            KeepTraces = config.WithKeys(ConfigurationKeys.AppSec.KeepTraces).AsBool(true);
 
             // empty or junk values to default to 100, any number is valid, with zero or less meaning limit off
-            TraceRateLimit = source?.GetInt32(ConfigurationKeys.AppSec.TraceRateLimit) ?? 100;
+            TraceRateLimit = config.WithKeys(ConfigurationKeys.AppSec.TraceRateLimit).AsInt32(100);
 
-            var wafTimeoutString = source?.GetString(ConfigurationKeys.AppSec.WafTimeout);
-            const int defaultWafTimeout = 100_000;
-            if (string.IsNullOrWhiteSpace(wafTimeoutString))
-            {
-                WafTimeoutMicroSeconds = defaultWafTimeout;
-            }
-            else
-            {
-                // Default timeout of 100 ms, only extreme conditions should cause timeout
-                var wafTimeout = ParseWafTimeout(wafTimeoutString);
-                if (wafTimeout <= 0)
-                {
-                    Log.Warning("Ignoring '{WafTimeoutKey}' of '{wafTimeoutString}' because it was zero or less", ConfigurationKeys.AppSec.WafTimeout, wafTimeoutString);
-                    wafTimeout = defaultWafTimeout;
-                }
+            WafTimeoutMicroSeconds = (ulong)config
+                                           .WithKeys(ConfigurationKeys.AppSec.WafTimeout)
+                                           .GetAs<int>(
+                                                getDefaultValue: () => 100_000, // Default timeout of 100 ms, only extreme conditions should cause timeout
+                                                converter: ParseWafTimeout,
+                                                validator: wafTimeout => wafTimeout > 0);
 
-                WafTimeoutMicroSeconds = (ulong)wafTimeout;
-            }
+            ObfuscationParameterKeyRegex = config
+                                          .WithKeys(ConfigurationKeys.AppSec.ObfuscationParameterKeyRegex)
+                                          .AsString(SecurityConstants.ObfuscationParameterKeyRegexDefault, x => !string.IsNullOrWhiteSpace(x));
 
-            var obfuscationParameterKeyRegex = source?.GetString(ConfigurationKeys.AppSec.ObfuscationParameterKeyRegex);
-            ObfuscationParameterKeyRegex = string.IsNullOrWhiteSpace(obfuscationParameterKeyRegex) ? SecurityConstants.ObfuscationParameterKeyRegexDefault : obfuscationParameterKeyRegex;
+            ObfuscationParameterValueRegex = config
+                                            .WithKeys(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex)
+                                            .AsString(SecurityConstants.ObfuscationParameterValueRegexDefault, x => !string.IsNullOrWhiteSpace(x));
 
-            var obfuscationParameterValueRegex = source?.GetString(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex);
-            ObfuscationParameterValueRegex = string.IsNullOrWhiteSpace(obfuscationParameterValueRegex) ? SecurityConstants.ObfuscationParameterValueRegexDefault : obfuscationParameterValueRegex;
+            UserEventsAutomatedTracking = config
+                                         .WithKeys(ConfigurationKeys.AppSec.UserEventsAutomatedTracking)
+                                         .AsString(
+                                              UserTrackingSafeMode,
+                                              val =>
+                                                  val.Equals("disabled", StringComparison.OrdinalIgnoreCase)
+                                               || val.Equals(UserTrackingSafeMode, StringComparison.OrdinalIgnoreCase)
+                                               || val.Equals(UserTrackingExtendedMode, StringComparison.OrdinalIgnoreCase))
+                                         .ToLowerInvariant();
+
+            ApiSecuritySampling = config
+                                 .WithKeys(ConfigurationKeys.AppSec.ApiSecurityRequestSampleRate)
+                                 .AsDouble(defaultValue: 0.1, validator: val => val is <= 1 and >= 0)
+                                 .Value;
+
+            ApiSecurityMaxConcurrentRequests = config
+                                              .WithKeys(ConfigurationKeys.AppSec.ApiSecurityMaxConcurrentRequests)
+                                              .AsInt32(defaultValue: 1, validator: val => val >= 1)
+                                              .Value;
+
+            ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled)
+                                       .AsBool(false);
+            UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
+                                     .AsBool(false);
+
+            // For now, RASP is disabled by default.
+            RaspEnabled = config.WithKeys(ConfigurationKeys.AppSec.RaspEnabled)
+                                     .AsBool(false) && Enabled;
+
+            StackTraceEnabled = config.WithKeys(ConfigurationKeys.AppSec.StackTraceEnabled)
+                         .AsBool(true);
+
+            MaxStackTraces = config
+                                  .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)
+                                  .AsInt32(defaultValue: 2, validator: val => val >= 0)
+                                  .Value;
+
+            MaxStackTraceDepth = config
+                                  .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
+                                  .AsInt32(defaultValue: 32, validator: val => val >= 0)
+                                  .Value;
         }
 
-        public bool Enabled { get; set; }
+        public double ApiSecuritySampling { get; }
 
-        public string CustomIpHeader { get; }
+        public int ApiSecurityMaxConcurrentRequests { get; }
+
+        public bool Enabled { get; }
+
+        public bool UseUnsafeEncoder { get; }
+
+        public bool CanBeToggled { get; }
+
+        public string? CustomIpHeader { get; }
+
+        // RASP related variables
+
+        public bool RaspEnabled { get; }
+
+        public bool StackTraceEnabled { get; }
+
+        public int MaxStackTraces { get; }
+
+        public int MaxStackTraceDepth { get; }
 
         /// <summary>
         /// Gets keys indicating the optional custom appsec headers the user wants to send.
@@ -70,7 +149,7 @@ namespace Datadog.Trace.AppSec
         /// Gets the path to a user-defined WAF Rules file.
         /// Default is null, meaning uses embedded rule set
         /// </summary>
-        public string Rules { get; }
+        public string? Rules { get; }
 
         /// <summary>
         /// Gets a value indicating whether traces should be mark traces with manual keep below trace rate limit
@@ -104,18 +183,33 @@ namespace Datadog.Trace.AppSec
         public string BlockedHtmlTemplate { get; }
 
         /// <summary>
+        /// Gets the automatic tracking of user events mode. Values can be disabled, safe or extended.
+        /// </summary>
+        public string UserEventsAutomatedTracking { get; }
+
+        /// <summary>
         /// Gets the response template for Json content. This template is used in combination with the status code to craft and send a response upon blocking the request.
         /// </summary>
         public string BlockedJsonTemplate { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether or not api security is enabled, defaults to false.
+        /// </summary>
+        public bool ApiSecurityEnabled { get; }
+
         public static SecuritySettings FromDefaultSources()
         {
-            var source = GlobalSettings.CreateDefaultConfigurationSource();
-            return new SecuritySettings(source);
+            return new SecuritySettings(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
         }
 
-        private static int ParseWafTimeout(string wafTimeoutString)
+        private static ParsingResult<int> ParseWafTimeout(string wafTimeoutString)
         {
+            if (string.IsNullOrWhiteSpace(wafTimeoutString))
+            {
+                Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", ConfigurationKeys.AppSec.WafTimeout, wafTimeoutString);
+                return ParsingResult<int>.Failure();
+            }
+
             var numberStyles = NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite | NumberStyles.Any;
             if (int.TryParse(wafTimeoutString, numberStyles, CultureInfo.InvariantCulture, out var result))
             {
@@ -125,7 +219,7 @@ namespace Datadog.Trace.AppSec
             wafTimeoutString = wafTimeoutString.Trim();
 
             int multipler = 1;
-            string intPart = null;
+            string? intPart = null;
 
             if (wafTimeoutString.EndsWith("ms"))
             {
@@ -145,7 +239,7 @@ namespace Datadog.Trace.AppSec
 
             if (intPart == null)
             {
-                return -1;
+                return ParsingResult<int>.Failure();
             }
 
             if (int.TryParse(intPart, numberStyles, CultureInfo.InvariantCulture, out result))
@@ -153,7 +247,7 @@ namespace Datadog.Trace.AppSec
                 return result * multipler;
             }
 
-            return -1;
+            return ParsingResult<int>.Failure();
         }
     }
 }

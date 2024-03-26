@@ -4,44 +4,22 @@
 // </copyright>
 
 using System;
-using System.Reflection;
-using System.Reflection.Emit;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 {
     internal static class CachedMetadataHelper<TMarkerType>
     {
-        private static Func<object> _activator;
+        private static readonly ActivatorHelper MetadataActivator;
 
         static CachedMetadataHelper()
         {
-            CreateActivator(typeof(TMarkerType));
-        }
-
-        private static void CreateActivator(Type markerType)
-        {
-            var metadataType = markerType.Assembly.GetType("Grpc.Core.Metadata");
-
-            ConstructorInfo ctor = metadataType.GetConstructor(System.Type.EmptyTypes);
-
-            DynamicMethod createHeadersMethod = new DynamicMethod(
-                $"GrpcCoreCachedMetadataHelper",
-                metadataType,
-                null,
-                typeof(DuckType).Module,
-                true);
-
-            ILGenerator il = createHeadersMethod.GetILGenerator();
-            il.Emit(OpCodes.Newobj, ctor);
-            il.Emit(OpCodes.Ret);
-
-            _activator = (Func<object>)createHeadersMethod.CreateDelegate(typeof(Func<object>));
+            MetadataActivator = new ActivatorHelper(typeof(TMarkerType).Assembly.GetType("Grpc.Core.Metadata"));
         }
 
         /// <summary>
         /// Creates a Grpc.Core.Metadata object
         /// </summary>
-        public static object CreateMetadata() => _activator();
+        public static object CreateMetadata() => MetadataActivator.CreateInstance();
     }
 }

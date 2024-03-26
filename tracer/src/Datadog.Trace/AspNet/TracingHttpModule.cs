@@ -11,10 +11,14 @@ using System.ComponentModel;
 using System.Linq;
 using System.Web;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
@@ -73,9 +77,34 @@ namespace Datadog.Trace.AspNet
         {
         }
 
+        internal static void AddHeaderTagsFromHttpResponse(HttpContext httpContext, Scope scope)
+        {
+            if (!Tracer.Instance.Settings.HeaderTagsInternal.IsNullOrEmpty() &&
+                httpContext != null &&
+                HttpRuntime.UsingIntegratedPipeline &&
+                _canReadHttpResponseHeaders)
+            {
+                try
+                {
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                }
+                catch (PlatformNotSupportedException ex)
+                {
+                    // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
+                    Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
+                    _canReadHttpResponseHeaders = false;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error extracting HTTP headers to create header tags.");
+                }
+            }
+        }
+
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
             Scope scope = null;
+            bool shouldDisposeScope = true;
             try
             {
                 var tracer = Tracer.Instance;
@@ -101,17 +130,15 @@ namespace Datadog.Trace.AspNet
                 }
 
                 HttpRequest httpRequest = httpContext.Request;
+                NameValueHeadersCollection? headers = null;
                 SpanContext propagatedContext = null;
-                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
-
                 if (tracer.InternalActiveScope == null)
                 {
                     try
                     {
                         // extract propagated http headers
-                        var headers = httpRequest.Headers.Wrap();
-                        propagatedContext = SpanContextPropagator.Instance.Extract(headers);
-                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                        headers = httpRequest.Headers.Wrap();
+                        propagatedContext = SpanContextPropagator.Instance.Extract(headers.Value);
                     }
                     catch (Exception ex)
                     {
@@ -122,12 +149,17 @@ namespace Datadog.Trace.AspNet
                 string host = httpRequest.Headers.Get("Host");
                 var userAgent = httpRequest.Headers.Get(HttpHeaderNames.UserAgent);
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
-                string url = httpContext.Request.GetUrl(tracer.TracerManager.QueryStringManager);
+                string url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
                 var tags = new WebTags();
                 scope = tracer.StartActiveInternal(_requestOperationName, propagatedContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
-                scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags, tagsFromHeaders);
-                if (!tracer.Settings.IpHeaderDisabled)
+                scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags);
+                if (headers is not null)
+                {
+                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                }
+
+                if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)
                 {
                     Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => httpRequest.Headers[key], tracer.Settings.IpHeader, tags);
                 }
@@ -143,37 +175,57 @@ namespace Datadog.Trace.AspNet
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
-
-                var security = Security.Instance;
-                if (security.Settings.Enabled)
-                {
-                    if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
-                    {
-                        var formData = new Dictionary<string, object>();
-                        foreach (string key in httpRequest.Form.Keys)
-                        {
-                            formData.Add(key, httpRequest.Form[key]);
-                        }
-
-                        security.InstrumentationGateway.RaiseBodyAvailable(httpContext, scope.Span, formData);
-                    }
-                }
+                shouldDisposeScope = false;
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+
+                var security = Security.Instance;
+                if (security.Enabled)
+                {
+                    SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
+                    var securityCoordinator = new SecurityCoordinator(security, httpContext, scope.Span);
+
+                    // request args
+                    var args = securityCoordinator.GetBasicRequestArgsForWaf();
+
+                    // body args
+                    if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    {
+                        var bodyArgs = securityCoordinator.GetBodyFromRequest();
+                        args.Add(AddressesConstants.RequestBody, bodyArgs);
+                    }
+
+                    securityCoordinator.CheckAndBlock(args, true);
+                }
+
+                var iastInstance = Iast.Iast.Instance;
+                if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
+                {
+                    var traceContext = scope.Span?.Context?.TraceContext;
+                    traceContext?.EnableIastInRequest();
+                    traceContext?.IastRequestContext?.AddRequestData(httpRequest);
+                }
             }
             catch (Exception ex)
             {
-                // Dispose here, as the scope won't be in context items and won't get disposed on request end in that case...
-                scope?.Dispose();
+                if (shouldDisposeScope)
+                {
+                    // Dispose here, as the scope won't be in context items and won't get disposed on request end in that case...
+                    scope?.Dispose();
+                }
+
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
             }
         }
 
         private void OnEndRequest(object sender, EventArgs eventArgs)
         {
+            var securityContextCleaned = false;
+
             try
             {
-                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+                var tracer = Tracer.Instance;
+                if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled
                     return;
@@ -184,6 +236,71 @@ namespace Datadog.Trace.AspNet
                 {
                     try
                     {
+                        var rootScope = scope.Root;
+                        var rootSpan = rootScope.Span;
+
+                        // the security needs to come before collecting the response code,
+                        // since blocking will change the response code
+                        var security = Security.Instance;
+                        if (security.Enabled)
+                        {
+                            var securityCoordinator = new SecurityCoordinator(security, app.Context, rootSpan);
+                            if (!securityCoordinator.IsBlocked)
+                            {
+                                var args = securityCoordinator.GetBasicRequestArgsForWaf();
+                                args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
+
+                                if (HttpRuntime.UsingIntegratedPipeline &&
+                                    _canReadHttpResponseHeaders)
+                                {
+                                    // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
+                                    try
+                                    {
+                                        args.Add(AddressesConstants.ResponseHeaderNoCookies, securityCoordinator.GetResponseHeadersForWaf());
+                                    }
+                                    catch (PlatformNotSupportedException ex)
+                                    {
+                                        // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
+                                        Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
+                                        _canReadHttpResponseHeaders = false;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Log.Error(ex, "Error extracting HTTP headers to create header tags.");
+                                    }
+                                }
+
+                                securityCoordinator.CheckAndBlock(args);
+                            }
+
+                            securityCoordinator.AddResponseHeadersToSpanAndCleanup();
+                            securityContextCleaned = true;
+                        }
+
+                        if (Iast.Iast.Instance.Settings.Enabled && IastModule.AddRequestVulnerabilitiesAllowed())
+                        {
+                            if (rootSpan is not null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
+                            {
+                                try
+                                {
+                                    ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode, app.Context.Request.Url.Scheme);
+                                    InsecureAuthAnalyzer.AnalyzeInsecureAuth(app.Context.Request.Headers, IntegrationId, app.Context.Response.StatusCode);
+                                }
+                                catch (PlatformNotSupportedException ex)
+                                {
+                                    // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
+                                    Log.Error(ex, "Unable to access response headers when analyzing headers. Disabling for the rest of the application lifetime.");
+                                    _canReadHttpResponseHeaders = false;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log.Error(ex, "Error analyzing HTTP response headers");
+                                }
+                            }
+
+                            CookieAnalyzer.AnalyzeCookies(app.Context.Response.Cookies, IntegrationId);
+                        }
+
                         // HttpServerUtility.TransferRequest presents an issue: The IIS request pipeline is run a second time
                         // from the same incoming HTTP request, but the HttpContext and HttpRequest objects from the two pipeline
                         // requests are completely isolated. Fortunately, the second request (somehow) maintains the original
@@ -196,17 +313,22 @@ namespace Datadog.Trace.AspNet
                         //
                         // Note: HttpServerUtility.TransferRequest cannot be invoked more than once, so we'll have at most two nested (in-process)
                         // aspnet.request spans at any given time: https://referencesource.microsoft.com/#System.Web/Hosting/IIS7WorkerRequest.cs,2400
-                        var rootScope = scope.Root;
-                        var rootSpan = rootScope.Span;
-
                         if (!rootSpan.HasHttpStatusCode())
                         {
-                            rootSpan.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                            var response = app.Context.Response;
+                            var status = response.StatusCode;
+                            if (status == 500 && !response.IsClientConnected && app.Context.Error is null)
+                            {
+                                // rare case when client disconnects - IIS returns a 400 but reports a 500
+                                status = 400;
+                            }
+
+                            rootSpan.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
                             AddHeaderTagsFromHttpResponse(app.Context, rootScope);
 
                             if (scope.Span != rootSpan)
                             {
-                                scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                                scope.Span.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
                                 AddHeaderTagsFromHttpResponse(app.Context, scope);
                             }
                         }
@@ -221,27 +343,10 @@ namespace Datadog.Trace.AspNet
                             string path = UriHelpers.GetCleanUriPath(app.Request.Url, app.Request.ApplicationPath);
                             scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
                         }
-
-                        var security = Security.Instance;
-                        if (security.Settings.Enabled)
-                        {
-                            var httpContext = (sender as HttpApplication)?.Context;
-
-                            if (httpContext == null)
-                            {
-                                return;
-                            }
-
-                            // raise path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
-                            security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, scope.Span, httpContext.Request.RequestContext.RouteData.Values, eraseExistingAddress: false);
-                            security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span);
-                            security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, scope.Span);
-                        }
-
-                        scope.Dispose();
                     }
                     finally
                     {
+                        scope.Dispose();
                         // Clear the context to make sure another TracingHttpModule doesn't try to close the same scope
                         TryClearContext(app.Context);
                     }
@@ -250,6 +355,16 @@ namespace Datadog.Trace.AspNet
             catch (Exception ex)
             {
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+            }
+            finally
+            {
+                // security might have been disabled in the meantime but contexts would still be open
+                // and this integration may be disabled but others might have opened a context
+                if (!securityContextCleaned && sender is HttpApplication app)
+                {
+                    var securityTransport = new SecurityCoordinator.HttpTransport(app.Context);
+                    securityTransport.DisposeAdditiveContext();
+                }
             }
         }
 
@@ -303,27 +418,6 @@ namespace Datadog.Trace.AspNet
             catch (Exception ex)
             {
                 Log.Error(ex, "Error while clearing the HttpContext");
-            }
-        }
-
-        private void AddHeaderTagsFromHttpResponse(System.Web.HttpContext httpContext, Scope scope)
-        {
-            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders && !Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty())
-            {
-                try
-                {
-                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-                }
-                catch (PlatformNotSupportedException ex)
-                {
-                    // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
-                    Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
-                    _canReadHttpResponseHeaders = false;
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting HTTP headers to create header tags.");
-                }
             }
         }
     }

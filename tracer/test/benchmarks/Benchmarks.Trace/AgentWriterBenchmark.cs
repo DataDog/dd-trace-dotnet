@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
@@ -13,6 +14,8 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkAgent1]
+    [BenchmarkCategory(Constants.TracerCategory)]
+
     public class AgentWriterBenchmark
     {
         private const int SpanCount = 1000;
@@ -35,7 +38,7 @@ namespace Benchmarks.Trace
 
             for (int i = 0; i < SpanCount; i++)
             {
-                enrichedSpans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriorityValues.UserReject, "Benchmark", null), now);
+                enrichedSpans[i] = new Span(new SpanContext((TraceId)i, (ulong)i, SamplingPriorityValues.UserReject, serviceName: "Benchmark", origin: null), now);
                 enrichedSpans[i].SetTag(Tags.Env, "Benchmark");
                 enrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
@@ -52,7 +55,7 @@ namespace Benchmarks.Trace
         [Benchmark]
         public Task WriteAndFlushEnrichedTraces()
         {
-            AgentWriter.WriteTrace(EnrichedSpans, true);
+            AgentWriter.WriteTrace(EnrichedSpans);
             return AgentWriter.FlushTracesAsync();
         }
 
@@ -109,11 +112,24 @@ namespace Benchmarks.Trace
                 return Task.FromResult<IApiResponse>(new FakeApiResponse());
             }
 
-            public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
+            public Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
+                => PostAsync(traces, contentType, null);
+
+            public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType, string contentEncoding)
             {
                 using (var requestStream = Stream.Null)
                 {
                     await requestStream.WriteAsync(traces.Array, traces.Offset, traces.Count).ConfigureAwait(false);
+                }
+
+                return new FakeApiResponse();
+            }
+
+            public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
+            {
+                using (var requestStream = Stream.Null)
+                {
+                    await writeToRequestStream(requestStream).ConfigureAwait(false);
                 }
 
                 return new FakeApiResponse();
@@ -126,7 +142,14 @@ namespace Benchmarks.Trace
 
             public long ContentLength => 0;
 
+            public Encoding ContentEncoding => Encoding.UTF8;
+
             public string GetHeader(string headerName) => string.Empty;
+
+            public Task<Stream> GetStreamAsync()
+            {
+                throw new NotImplementedException();
+            }
 
             public Task<string> ReadAsStringAsync()
             {

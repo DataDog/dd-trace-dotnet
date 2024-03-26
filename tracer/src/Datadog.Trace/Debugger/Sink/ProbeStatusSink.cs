@@ -22,7 +22,11 @@ namespace Datadog.Trace.Debugger.Sink
 
         private BoundedConcurrentQueue<ProbeStatus> _queue;
 
-        private ProbeStatusSink(string serviceName, int batchSize, TimeSpan interval)
+        protected ProbeStatusSink()
+        {
+        }
+
+        protected ProbeStatusSink(string serviceName, int batchSize, TimeSpan interval)
         {
             _serviceName = serviceName;
             _batchSize = batchSize;
@@ -32,43 +36,47 @@ namespace Datadog.Trace.Debugger.Sink
             _queue = new BoundedConcurrentQueue<ProbeStatus>(QueueLimit);
         }
 
-        public static ProbeStatusSink Create(ImmutableDebuggerSettings settings, string serviceName)
+        public static ProbeStatusSink Create(string serviceName, DebuggerSettings settings)
         {
             return new ProbeStatusSink(serviceName, settings.UploadBatchSize, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
         }
 
-        internal void AddReceived(string probeId)
+        internal virtual void AddReceived(string probeId)
         {
             AddProbeStatus(probeId, Status.RECEIVED);
         }
 
-        internal void AddInstalled(string probeId)
+        internal virtual void AddInstalled(string probeId)
         {
             AddProbeStatus(probeId, Status.INSTALLED);
         }
 
-        internal void AddBlocked(string probeId)
+        internal virtual void AddBlocked(string probeId)
         {
             AddProbeStatus(probeId, Status.BLOCKED);
         }
 
-        internal void AddError(string probeId, Exception e)
+        internal virtual void AddError(string probeId, Exception e)
         {
-            AddProbeStatus(probeId, Status.ERROR, e);
+            AddProbeStatus(probeId, Status.ERROR, exception: e);
         }
 
-        public void AddProbeStatus(string probeId, Status status, Exception exception = null, string errorMessage = null)
+        public virtual void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception exception = null, string errorMessage = null)
         {
             var shouldSkip =
                 _diagnostics.TryGetValue(probeId, out var current) &&
-                !ShouldOverwrite(current.Message.DebuggerDiagnostics.Diagnostics.Status, status);
+                !ShouldOverwrite(
+                    oldStatus: current.Message.DebuggerDiagnostics.Diagnostics.Status,
+                    newStatus: status,
+                    oldVersion: current.Message.DebuggerDiagnostics.Diagnostics.ProbeVersion,
+                    newVersion: probeVersion);
 
             if (shouldSkip)
             {
                 return;
             }
 
-            var next = new ProbeStatus(_serviceName, probeId, status, exception, errorMessage);
+            var next = new ProbeStatus(_serviceName, probeId, status, probeVersion, exception, errorMessage);
             var timedMessage = new TimedMessage
             {
                 LastEmit = Clock.UtcNow,
@@ -78,9 +86,9 @@ namespace Datadog.Trace.Debugger.Sink
             _diagnostics.AddOrUpdate(probeId, timedMessage, (_, _) => (timedMessage));
             Enqueue(next);
 
-            bool ShouldOverwrite(Status currentStatus, Status nextStatus)
+            bool ShouldOverwrite(Status oldStatus, Status newStatus, int oldVersion, int newVersion)
             {
-                return nextStatus == Status.ERROR || currentStatus != nextStatus;
+                return newStatus == Status.ERROR || oldStatus != newStatus || oldVersion < newVersion;
             }
         }
 
@@ -115,12 +123,12 @@ namespace Datadog.Trace.Debugger.Sink
             return queue;
         }
 
-        public void Remove(string probeId)
+        public virtual void Remove(string probeId)
         {
             _diagnostics.TryRemove(probeId, out _);
         }
 
-        public List<ProbeStatus> GetDiagnostics()
+        public virtual List<ProbeStatus> GetDiagnostics()
         {
             var now = Clock.UtcNow;
             foreach (var timedMessage in _diagnostics.Values)

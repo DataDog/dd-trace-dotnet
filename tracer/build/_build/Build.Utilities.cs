@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Net.Http;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Threading.Tasks;
 using Amazon.SimpleSystemsManagement.Model;
+using DiffMatchPatch;
 using GenerateSpanDocumentation;
 using GeneratePackageVersions;
 using Honeypot;
@@ -26,6 +29,7 @@ using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Target = Nuke.Common.Target;
+using Logger = Serilog.Log;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -43,6 +47,15 @@ partial class Build
 
     [Parameter("Additional environment variables, in the format KEY1=Value1 Key2=Value2 to use when running the IIS Sample")]
     readonly string[] ExtraEnvVars;
+
+    [Parameter("Force ARM64 build in Windows")]
+    readonly bool ForceARM64BuildInWindows;
+
+    [Parameter("Don't update package versions for packages with the following names")]
+    readonly string[] ExcludePackages;
+
+    [Parameter("Only update package versions for packages with the following names")]
+    readonly string[] IncludePackages;
 
     [LazyLocalExecutable(@"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\gacutil.exe")]
     readonly Lazy<Tool> GacUtil;
@@ -84,6 +97,37 @@ partial class Build
             }
         });
 
+    Target RunInstrumentationGenerator => _ => _
+       .Description("Runs the AutoInstrumentation Generator")
+       .Executes(() =>
+       {
+           var autoInstGenProj =
+               SourceDirectory / "Datadog.AutoInstrumentation.Generator" / "Datadog.AutoInstrumentation.Generator.csproj";
+
+           // We make sure the autoinstrumentation generator builds so we can fail the task if not.
+           DotNetRestore(s => s
+                             .SetDotnetPath(TargetPlatform)
+                             .SetProjectFile(autoInstGenProj)
+                             .SetNoWarnDotNetCore3());
+
+           DotNetBuild(s => s
+                           .SetDotnetPath(TargetPlatform)
+                           .SetFramework(TargetFramework.NET7_0)
+                           .SetProjectFile(autoInstGenProj)
+                           .SetConfiguration(Configuration.Release)
+                           .SetNoWarnDotNetCore3());
+
+           // We need to run the generator this way to avoid nuke waiting until the process finishes.
+           var dotnetRunSettings = new DotNetRunSettings()
+                                  .SetDotnetPath(TargetPlatform)
+                                  .SetNoBuild(true)
+                                  .SetFramework(TargetFramework.NET7_0)
+                                  .EnableNoLaunchProfile()
+                                  .SetProjectFile(autoInstGenProj)
+                                  .SetConfiguration(Configuration.Release);
+           ProcessTasks.StartProcess(dotnetRunSettings);
+       });
+
     Target BuildIisSampleApp => _ => _
         .Description("Rebuilds an IIS sample app")
         .Requires(() => SampleName)
@@ -107,7 +151,7 @@ partial class Build
             AddTracerEnvironmentVariables(envVars);
             AddExtraEnvVariables(envVars, ExtraEnvVars);
 
-            Logger.Info($"Running sample '{SampleName}' in IIS Express");
+            Logger.Information($"Running sample '{SampleName}' in IIS Express");
             IisExpress.Value(
                 arguments: $"/config:\"{IisExpressApplicationConfig}\" /site:{SampleName} /appPool:Clr4IntegratedAppPool",
                 environmentVariables: envVars);
@@ -121,17 +165,19 @@ partial class Build
 
             var envVars = new Dictionary<string, string> { { "ASPNETCORE_URLS", "http://*:5003" } };
             AddTracerEnvironmentVariables(envVars);
+            //we're not supplying a dll file so process will be independent and wont be hosted by dotnet
+            envVars.Add("DD_PROFILER_EXCLUDE_PROCESSES", "dotnet.exe");
             AddExtraEnvVariables(envVars, ExtraEnvVars);
 
             string project = Solution.GetProject(SampleName)?.Path;
             if (project is not null)
             {
-                Logger.Info($"Running sample '{SampleName}'");
+                Logger.Information($"Running sample '{SampleName}'");
             }
             else if (System.IO.File.Exists(SampleName))
             {
                 project = SampleName;
-                Logger.Info($"Running project '{SampleName}'");
+                Logger.Information($"Running project '{SampleName}'");
             }
             else
             {
@@ -163,10 +209,37 @@ partial class Build
        .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedTracer)
        .Executes(async () =>
        {
-           var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
+           if (IncludePackages is not null)
+           {
+               Logger.Information("Including only NuGet packages matching {PackageNames}", string.Join(", ", IncludePackages));
+           }
+           if (ExcludePackages is not null)
+           {
+               Logger.Information("Excluding NuGet packages matching {PackageNames}", string.Join(", ", ExcludePackages));
+           }
 
-           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir);
-           await versionGenerator.GenerateVersions(Solution);
+           if (IncludePackages is not null && ExcludePackages is not null)
+           {
+               throw new ArgumentException("You cannot specify IncludePackages AND ExcludePackages");
+           }
+
+           var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
+           var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
+           var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotProj);
+           var excludedFromUpdates = ((IncludePackages, ExcludePackages) switch
+                                         {
+                                             (_, { } exclude) => currentDependencies.Where(x => ExcludePackages.Contains(x.NugetName, StringComparer.OrdinalIgnoreCase)),
+                                             ({ } include, _) => currentDependencies.Where(x => !IncludePackages.Contains(x.NugetName, StringComparer.OrdinalIgnoreCase)),
+                                             _ => Enumerable.Empty<(string NugetName, Version LatestTestedVersion)>()
+                                         }).ToDictionary(x => x.NugetName, x => x.LatestTestedVersion, StringComparer.OrdinalIgnoreCase);
+
+           foreach (var dep in excludedFromUpdates)
+           {
+               Logger.Information("Excluding package {NugetName} from update. Fixing at {Version}", dep.Key, dep.Value);
+           }
+
+           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, excludedFromUpdates);
+           var testedVersions = await versionGenerator.GenerateVersions(Solution);
 
            var assemblies = MonitoringHomeDirectory
                            .GlobFiles("**/Datadog.Trace.dll")
@@ -174,20 +247,27 @@ partial class Build
                            .ToList();
 
            var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies);
+           var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(integrations, testedVersions);
 
-           var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
-           await DependabotFileManager.UpdateIntegrations(dependabotProj, integrations);
+           await DependabotFileManager.UpdateIntegrations(dependabotProj, distinctIntegrations);
+
+           var outputPath = TracerDirectory / "build" / "supported_versions.json";
+           await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
        });
     
     Target GenerateSpanDocumentation => _ => _
         .Description("Regenerate documentation from our code models")
         .Executes(() =>
         {
-            var rulesFilePath = TestsDirectory / "Datadog.Trace.TestHelpers" / "SpanMetadataRules.cs";
-            var rulesOutput = RootDirectory / "docs" / "span_metadata.md";
+            var schemaVersions = new[] { "v0", "v1" };
+            foreach (var schemaVersion in schemaVersions)
+            {
+                var rulesFilePath = TestsDirectory / "Datadog.Trace.TestHelpers" / $"SpanMetadata{schemaVersion.ToUpper()}Rules.cs";
+                var rulesOutput = RootDirectory / "docs" / "span_attribute_schema" / $"{schemaVersion}.md";
 
-            var generator = new SpanDocumentationGenerator(rulesFilePath, rulesOutput);
-            generator.Run();
+                var generator = new SpanDocumentationGenerator(rulesFilePath, rulesOutput);
+                generator.Run();
+            }
         });
 
     Target UpdateVendoredCode => _ => _
@@ -223,9 +303,69 @@ partial class Build
             new SetAllVersions.Source(TracerDirectory, NewVersion, NewIsPrerelease.Value!).Run();
         });
 
+    Target AnalyzePipelineCriticalPath => _ => _
+       .Description("Perform critical path analysis on the consolidated pipeline stages")
+       .Executes(async () =>
+        {
+            await CriticalPathAnalysis.CriticalPathAnalyzer.AnalyzeCriticalPath(RootDirectory);
+        });
+
     Target UpdateSnapshots => _ => _
         .Description("Updates verified snapshots files with received ones")
         .Executes(ReplaceReceivedFilesInSnapshots);
+
+    Target PrintSnapshotsDiff  => _ => _
+      .Description("Prints snapshots differences from the current tests")
+      .AssuredAfterFailure()
+      .Executes(() =>
+      {
+          var snapshotsDirectory = TestsDirectory / "snapshots";
+          var files = snapshotsDirectory.GlobFiles("*.received.*");
+
+          foreach (var source in files)
+          {
+              var fileName = Path.GetFileNameWithoutExtension(source);
+
+              Logger.Information("Difference found in " + fileName);
+              var dmp = new diff_match_patch();
+              var diff = dmp.diff_main(File.ReadAllText(source.ToString().Replace("received", "verified")), File.ReadAllText(source));
+              dmp.diff_cleanupSemantic(diff);
+
+              foreach (var t in diff)
+              {
+                  if (t.operation != Operation.EQUAL)
+                  {
+                      var str = DiffToString(t);
+                      if (str.Contains(value: '\n'))
+                      {
+                          // if the diff is multiline, start with a newline so that all changes are aligned
+                          // otherwise it's easy to miss the first line of the diff
+                          str = "\n" + str;
+                      }
+
+                      Logger.Information(str);
+                  }
+              }
+          }
+
+          string DiffToString(Diff diff)
+          {
+              if (diff.operation == Operation.EQUAL)
+              {
+                  return string.Empty;
+              }
+
+              var symbol = diff.operation switch
+              {
+                  Operation.DELETE => '-',
+                  Operation.INSERT => '+',
+                  _ => throw new Exception("Unknown value of the Option enum.")
+              };
+              // put the symbol at the beginning of each line to make diff clearer when whole blocks of text are missing
+              var lines = diff.text.TrimEnd(trimChar: '\n').Split(Environment.NewLine);
+              return string.Join(Environment.NewLine, lines.Select(l => symbol + l));
+          }
+      });
 
     Target UpdateSnapshotsFromBuild => _ => _
       .Description("Updates verified snapshots downloading them from the CI given a build id")
@@ -249,6 +389,7 @@ partial class Build
                              project: AzureDevopsProjectId,
                              buildId: buildNumber);
 
+            var listTasks = new List<Task>();
             foreach(var artifact in artifacts)
             {
                 if (!artifact.Name.Contains("snapshots"))
@@ -259,17 +400,22 @@ partial class Build
                 var extractLocation = Path.Combine((AbsolutePath)Path.GetTempPath(), artifact.Name);
                 var snapshotsDirectory = TestsDirectory / "snapshots";
 
-                await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
+                listTasks.Add(Task.Run(async () =>
+                {
+                    await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
 
-                CopyDirectoryRecursively(
-                    source: extractLocation,
-                    target: snapshotsDirectory,
-                    DirectoryExistsPolicy.Merge,
-                    FileExistsPolicy.Skip,
-                    excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
+                    CopyDirectoryRecursively(
+                        source: extractLocation,
+                        target: snapshotsDirectory,
+                        DirectoryExistsPolicy.Merge,
+                        FileExistsPolicy.Skip,
+                        excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
 
-                DeleteDirectory(extractLocation);
+                    DeleteDirectory(extractLocation);
+                }));
             }
+
+            Task.WaitAll(listTasks.ToArray());
 
             ReplaceReceivedFilesInSnapshots();
       });
@@ -285,13 +431,13 @@ partial class Build
             var fileName = Path.GetFileNameWithoutExtension(source);
             if (!fileName.EndsWith("received"))
             {
-                Logger.Warn($"Skipping file '{source}' as filename did not end with 'received'");
+                Logger.Warning($"Skipping file '{source}' as filename did not end with 'received'");
                 continue;
             }
 
             if (fileName.Contains("VersionMismatchNewerNugetTests"))
             {
-                Logger.Warn("Updated snapshots contain a version mismatch test. You may need to upgrade your code in the Azure public feed.");
+                Logger.Warning("Updated snapshots contain a version mismatch test. You may need to upgrade your code in the Azure public feed.");
             }
 
             var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);
@@ -299,4 +445,63 @@ partial class Build
             MoveFile(source, dest, FileExistsPolicy.Overwrite, createDirectories: true);
         }
     }
+
+    private async Task<bool> IsDebugRun()
+    {
+        var forceDebugRun = Environment.GetEnvironmentVariable("ForceDebugRun");
+        if (!string.IsNullOrEmpty(forceDebugRun)
+         && (forceDebugRun == "1" || (bool.TryParse(forceDebugRun, out var force) && force)))
+        {
+            return true;
+        }
+
+        var buildId = Environment.GetEnvironmentVariable("BUILD_BUILDID");
+        if (string.IsNullOrEmpty(buildId))
+        {
+            // not in CI
+            return false;
+        }
+
+        try
+        {
+            var azDoApi = $"https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds/{buildId}";
+            using var client = new HttpClient();
+            using var stream = await client.GetStreamAsync(azDoApi);
+            using var json = await JsonDocument.ParseAsync(stream);
+            var triggerInfo = json.RootElement.GetProperty("triggerInfo");
+            if (triggerInfo.TryGetProperty("scheduleName", out var scheduleNameElement))
+            {
+                var scheduleName = scheduleNameElement.ToString();
+                return scheduleName == "Daily Debug Run";
+            }
+            else
+            {
+                // scheduleName not found - this will happen on PRs etc
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Error calling Azdo API to check for debug run");
+            return false;
+        }
+    } 
+
+    private static MSBuildTargetPlatform GetDefaultTargetPlatform()
+    {
+        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+        {
+            return ARM64TargetPlatform;
+        }
+
+        if (RuntimeInformation.OSArchitecture == Architecture.X86)
+        {
+            return MSBuildTargetPlatform.x86;
+        }
+
+        return MSBuildTargetPlatform.x64;
+    }
+
+    private static MSBuildTargetPlatform ARM64TargetPlatform = (MSBuildTargetPlatform)"ARM64";
+    private static MSBuildTargetPlatform ARM64ECTargetPlatform = (MSBuildTargetPlatform)"ARM64EC";
 }

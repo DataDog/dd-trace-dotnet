@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -16,7 +17,7 @@ namespace Datadog.Trace.Tests.Util.Http;
 
 public class HttpExceptionExtensions
 {
-    public static TheoryData<Exception> SocketExceptions { get; } = new()
+    public static List<Exception> SocketExceptions { get; } = new()
     {
         new SocketException(),
         new WebException("msg", new SocketException()),
@@ -26,7 +27,7 @@ public class HttpExceptionExtensions
 #endif
     };
 
-    public static TheoryData<Exception> NonSocketExceptions { get; } = new()
+    public static List<Exception> NonSocketExceptions { get; } = new()
     {
         null,
         new WebSocketException(),
@@ -34,17 +35,21 @@ public class HttpExceptionExtensions
         new IOException(),
     };
 
-    [Theory]
-    [MemberData(nameof(SocketExceptions))]
-    public void IsSocketException_True(Exception exception)
+    [Fact]
+    public void IsSocketException_True()
     {
-        exception.IsSocketException().Should().BeTrue();
+        foreach (var exception in SocketExceptions)
+        {
+            exception.IsSocketException().Should().BeTrue($"{exception.GetType()} should count as SocketException");
+        }
     }
 
-    [Theory]
-    [MemberData(nameof(NonSocketExceptions))]
-    public void IsSocketException_False(Exception exception)
+    [Fact]
+    public void IsSocketException_False()
     {
-        exception.IsSocketException().Should().BeFalse();
+        foreach (var exception in NonSocketExceptions)
+        {
+            exception.IsSocketException().Should().BeFalse($"{exception?.GetType()} should not count as SocketException");
+        }
     }
 }

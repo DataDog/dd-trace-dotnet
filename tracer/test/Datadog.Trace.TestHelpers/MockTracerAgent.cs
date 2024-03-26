@@ -9,9 +9,11 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.IO;
+using System.IO.Compression;
 using System.IO.Pipes;
 using System.Linq;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -20,10 +22,13 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using FluentAssertions;
+using HttpMultipartParser;
 using MessagePack; // use nuget MessagePack to deserialize
 using Xunit.Abstractions;
 
@@ -47,6 +52,8 @@ namespace Datadog.Trace.TestHelpers
 
         public event EventHandler<EventArgs<string>> MetricsReceived;
 
+        public event EventHandler<EventArgs<EvpProxyPayload>> EventPlatformProxyPayloadReceived;
+
         public string ListenerInfo { get; protected set; }
 
         public TestTransports TransportType { get; }
@@ -54,6 +61,8 @@ namespace Datadog.Trace.TestHelpers
         public string Version { get; set; }
 
         public bool TelemetryEnabled { get; }
+
+        public Dictionary<MockTracerResponseType, MockTracerResponse> CustomResponses { get; } = new();
 
         /// <summary>
         /// Gets the filters used to filter out spans we don't want to look at for a test.
@@ -66,36 +75,46 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<MockClientStatsPayload> Stats { get; private set; } = ImmutableList<MockClientStatsPayload>.Empty;
 
-        public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+        public IImmutableList<MockDataStreamsPayload> DataStreams { get; private set; } = ImmutableList<MockDataStreamsPayload>.Empty;
 
-        public List<string> Snapshots { get; private set; } = new();
+        public IImmutableList<NameValueCollection> TraceRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
-        public List<string> ProbesStatuses { get; private set; } = new();
+        public IImmutableList<(Dictionary<string, string> Headers, MultipartFormDataParser Form)> TracerFlareRequests { get; private set; } = ImmutableList<(Dictionary<string, string> Headers, MultipartFormDataParser Form)>.Empty;
+
+        public IImmutableList<string> Snapshots { get; private set; } = ImmutableList<string>.Empty;
+
+        public IImmutableList<string> ProbesStatuses { get; private set; } = ImmutableList<string>.Empty;
 
         public ConcurrentQueue<string> StatsdRequests { get; } = new();
 
         /// <summary>
-        /// Gets the <see cref="Datadog.Trace.Telemetry.TelemetryData"/> requests received by the telemetry endpoint
+        /// Gets the wrapped <see cref="TelemetryData"/> requests received by the telemetry endpoint
         /// </summary>
         public ConcurrentStack<object> Telemetry { get; } = new();
 
         public ITestOutputHelper Output { get; set; }
 
+        public AgentConfiguration Configuration { get; set; }
+
         public IImmutableList<NameValueCollection> TelemetryRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+
+        public IImmutableList<NameValueCollection> DataStreamsRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+
+        public ConcurrentQueue<string> RemoteConfigRequests { get; } = new();
 
         /// <summary>
         /// Gets or sets a value indicating whether to skip deserialization of traces.
         /// </summary>
         public bool ShouldDeserializeTraces { get; set; } = true;
 
-        public static TcpUdpAgent Create(ITestOutputHelper output, int port = 8126, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false)
-            => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry) { Output = output };
+        public static TcpUdpAgent Create(ITestOutputHelper output, int? port = null, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false, AgentConfiguration agentConfiguration = null)
+            => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry) { Output = output, Configuration = agentConfiguration ?? new() };
 
 #if NETCOREAPP3_1_OR_GREATER
-        public static UdsAgent Create(ITestOutputHelper output, UnixDomainSocketConfig config) => new UdsAgent(config) { Output = output };
+        public static UdsAgent Create(ITestOutputHelper output, UnixDomainSocketConfig config, AgentConfiguration agentConfiguration = null) => new UdsAgent(config) { Output = output, Configuration = agentConfiguration ?? new() };
 #endif
 
-        public static NamedPipeAgent Create(ITestOutputHelper output, WindowsPipesConfig config) => new NamedPipeAgent(config) { Output = output };
+        public static NamedPipeAgent Create(ITestOutputHelper output, WindowsPipesConfig config, AgentConfiguration agentConfiguration = null) => new NamedPipeAgent(config) { Output = output, Configuration = agentConfiguration ?? new() };
 
         /// <summary>
         /// Wait for the given number of spans to appear.
@@ -105,13 +124,15 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="operationName">The integration we're testing</param>
         /// <param name="minDateTime">Minimum time to check for spans from</param>
         /// <param name="returnAllOperations">When true, returns every span regardless of operation name</param>
+        /// <param name="assertExpectedCount">When true, asserts that the number of spans to return matches the count</param>
         /// <returns>The list of spans.</returns>
         public IImmutableList<MockSpan> WaitForSpans(
             int count,
             int timeoutInMilliseconds = 20000,
             string operationName = null,
             DateTimeOffset? minDateTime = null,
-            bool returnAllOperations = false)
+            bool returnAllOperations = false,
+            bool assertExpectedCount = true)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
             var minimumOffset = (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds();
@@ -122,7 +143,26 @@ namespace Datadog.Trace.TestHelpers
             {
                 relevantSpans =
                     Spans
-                       .Where(s => SpanFilters.All(shouldReturn => shouldReturn(s)) && s.Start > minimumOffset)
+                       .Where(s =>
+                        {
+                            if (!SpanFilters.All(shouldReturn => shouldReturn(s)))
+                            {
+                                return false;
+                            }
+
+                            if (s.Start < minimumOffset)
+                            {
+                                // if the Start of the span is before the expected
+                                // we check if is caused by the precision of the TraceClock optimization.
+                                // So, if the difference is greater than 16 milliseconds (max accuracy error) we discard the span
+                                if (minimumOffset - s.Start > 16000000)
+                                {
+                                    return false;
+                                }
+                            }
+
+                            return true;
+                        })
                        .ToImmutableList();
 
                 if (relevantSpans.Count(s => operationName == null || s.Name == operationName) >= count)
@@ -133,7 +173,12 @@ namespace Datadog.Trace.TestHelpers
                 Thread.Sleep(500);
             }
 
-            foreach (var headers in RequestHeaders)
+            if (assertExpectedCount)
+            {
+                relevantSpans.Should().HaveCountGreaterThanOrEqualTo(count, "because we want to ensure that we don't timeout while waiting for spans from the mock tracer agent");
+            }
+
+            foreach (var headers in TraceRequestHeaders)
             {
                 // This is the place to check against headers we expect
                 AssertHeader(
@@ -192,18 +237,21 @@ namespace Datadog.Trace.TestHelpers
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
 
-            object latest = default;
             while (DateTime.UtcNow < deadline)
             {
-                if (Telemetry.TryPeek(out latest) && hasExpectedValues(latest))
+                var current = Telemetry;
+                foreach (var telemetry in current)
                 {
-                    break;
+                    if (hasExpectedValues(telemetry))
+                    {
+                        return telemetry;
+                    }
                 }
 
                 Thread.Sleep(sleepTime);
             }
 
-            return latest;
+            return null;
         }
 
         public IImmutableList<MockClientStatsPayload> WaitForStats(
@@ -227,6 +275,50 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return stats;
+        }
+
+        public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
+            int timeoutInMilliseconds,
+            Func<IImmutableList<MockDataStreamsPayload>, bool> waitFunc)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+
+            IImmutableList<MockDataStreamsPayload> stats = ImmutableList<MockDataStreamsPayload>.Empty;
+
+            while (DateTime.UtcNow < deadline)
+            {
+                stats = DataStreams;
+
+                if (waitFunc(stats))
+                {
+                    break;
+                }
+
+                Thread.Sleep(500);
+            }
+
+            return stats;
+        }
+
+        public IImmutableList<MockDataStreamsPayload> WaitForDataStreamsPoints(
+            int statsCount,
+            int timeoutInMilliseconds = 20000)
+        {
+            return WaitForDataStreams(
+                timeoutInMilliseconds,
+                (stats) =>
+                {
+                    return stats.Sum(s => s.Stats.Sum(bucket => bucket.Stats.Length)) >= statsCount;
+                });
+        }
+
+        public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
+            int payloadCount,
+            int timeoutInMilliseconds = 20000)
+        {
+            return WaitForDataStreams(
+                timeoutInMilliseconds,
+                (stats) => stats.Count == payloadCount);
         }
 
         /// <summary>
@@ -276,7 +368,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void ClearSnapshots()
         {
-            Snapshots.Clear();
+            Snapshots = Snapshots.Clear();
         }
 
         /// <summary>
@@ -284,8 +376,9 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         /// <param name="statusCount">The expected number of probe statuses when more than one status is expected (e.g. multiple line probes in method).</param>
         /// <param name="timeout">The timeout</param>
+        /// <param name="expectedFailedStatuses">determines if we expect to see probe status failure</param>
         /// <returns>The list of probe statuses.</returns>
-        public async Task<string[]> WaitForProbesStatuses(int statusCount, TimeSpan? timeout = null)
+        public async Task<string[]> WaitForProbesStatuses(int statusCount, TimeSpan? timeout = null, int expectedFailedStatuses = 0)
         {
             using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
 
@@ -293,6 +386,16 @@ namespace Datadog.Trace.TestHelpers
             while (!isFound && !cancellationSource.IsCancellationRequested)
             {
                 isFound = ProbesStatuses.Count == statusCount;
+
+                // If we expect failed probe statuses, then we try to reach the batch that contains it.
+                // Due to complex race conditions, this requirement is not easily achieved thus what we do is
+                // basically let this function spin until a batch with "Error installing probe" arrives, or we timeout and fail.
+                if (isFound &&
+                    expectedFailedStatuses != ProbesStatuses.Count(probeStatus => probeStatus.Contains("Error installing probe")))
+                {
+                    ClearProbeStatuses();
+                    isFound = false;
+                }
 
                 if (!isFound)
                 {
@@ -302,7 +405,8 @@ namespace Datadog.Trace.TestHelpers
 
             if (!isFound)
             {
-                throw new InvalidOperationException($"Probes Status count not found. Expected {statusCount}, actual {ProbesStatuses.Count}");
+                throw new InvalidOperationException($"Probes Status count not found. Expected {statusCount}, actual {ProbesStatuses.Count}. " +
+                                                    $"Expected failed statuses count is {expectedFailedStatuses}, actual failures:  {ProbesStatuses.Count(probeStatus => probeStatus.Contains("Error installing probe"))} failed");
             }
 
             return ProbesStatuses.ToArray();
@@ -310,7 +414,30 @@ namespace Datadog.Trace.TestHelpers
 
         public void ClearProbeStatuses()
         {
-            ProbesStatuses.Clear();
+            ProbesStatuses = ProbesStatuses.Clear();
+        }
+
+        public async Task<string[]> WaitForStatsdRequests(int statsdRequestsCount, TimeSpan? timeout = null)
+        {
+            using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
+
+            var isFound = false;
+            while (!isFound && !cancellationSource.IsCancellationRequested)
+            {
+                isFound = StatsdRequests.Count >= statsdRequestsCount;
+
+                if (!isFound)
+                {
+                    await Task.Delay(100, cancellationSource.Token);
+                }
+            }
+
+            if (!isFound)
+            {
+                throw new InvalidOperationException($"Stats requested count not found. Expected {statsdRequestsCount}, actual {ProbesStatuses.Count}");
+            }
+
+            return StatsdRequests.ToArray();
         }
 
         public virtual void Dispose()
@@ -350,32 +477,64 @@ namespace Datadog.Trace.TestHelpers
             MetricsReceived?.Invoke(this, new EventArgs<string>(stats));
         }
 
-        private protected string HandleHttpRequest(MockHttpParser.MockHttpRequest request)
+        private protected MockTracerResponse HandleHttpRequest(MockHttpParser.MockHttpRequest request)
         {
+            string response = null;
+            var responseType = MockTracerResponseType.Unknown;
+
             if (TelemetryEnabled && request.PathAndQuery.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint))
             {
                 HandlePotentialTelemetryData(request);
-                return "{}";
+                responseType = MockTracerResponseType.Telemetry;
             }
             else if (request.PathAndQuery.EndsWith("/info"))
             {
-                return $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}";
+                response = JsonConvert.SerializeObject(Configuration);
+                responseType = MockTracerResponseType.Info;
             }
             else if (request.PathAndQuery.StartsWith("/debugger/v1/input"))
             {
                 HandlePotentialDebuggerData(request);
-                return "{}";
+                responseType = MockTracerResponseType.Debugger;
             }
             else if (request.PathAndQuery.StartsWith("/v0.6/stats"))
             {
                 HandlePotentialStatsData(request);
-                return "{}";
+                responseType = MockTracerResponseType.Stats;
+            }
+            else if (request.PathAndQuery.StartsWith("/v0.7/config"))
+            {
+                HandlePotentialRemoteConfig(request);
+                responseType = MockTracerResponseType.RemoteConfig;
+            }
+            else if (request.PathAndQuery.StartsWith("/v0.1/pipeline_stats"))
+            {
+                HandlePotentialDataStreams(request);
+                responseType = MockTracerResponseType.DataStreams;
+            }
+            else if (request.PathAndQuery.StartsWith("/evp_proxy/v2/") || request.PathAndQuery.StartsWith("/evp_proxy/v4/"))
+            {
+                if (HandleEvpProxyPayload(request) is { } customResponse)
+                {
+                    return customResponse;
+                }
+
+                responseType = MockTracerResponseType.EvpProxy;
+            }
+            else if (request.PathAndQuery.StartsWith("/tracer_flare/v1"))
+            {
+                HandleTracerFlarePayload(request);
+                responseType = MockTracerResponseType.TracerFlare;
             }
             else
             {
                 HandlePotentialTraces(request);
-                return "{}";
+                responseType = MockTracerResponseType.Traces;
             }
+
+            return CustomResponses.TryGetValue(responseType, out var custom)
+                       ? custom // custom response, use that
+                       : new MockTracerResponse(response ?? "{}");
         }
 
         private void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
@@ -401,7 +560,7 @@ namespace Datadog.Trace.TestHelpers
                             headerCollection.Add(header.Name, header.Value);
                         }
 
-                        RequestHeaders = RequestHeaders.Add(headerCollection);
+                        TraceRequestHeaders = TraceRequestHeaders.Add(headerCollection);
                     }
                 }
                 catch (Exception ex)
@@ -426,10 +585,13 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
+                    var apiVersion = request.Headers.GetValue(TelemetryConstants.ApiVersionHeader);
+                    var requestType = request.Headers.GetValue(TelemetryConstants.RequestTypeHeader);
+
                     var body = ReadStreamBody(request);
                     using var stream = new MemoryStream(body);
 
-                    var telemetry = MockTelemetryAgent<TelemetryData>.DeserializeResponse(stream);
+                    var telemetry = MockTelemetryAgent.DeserializeResponse(stream, apiVersion, requestType);
                     Telemetry.Push(telemetry);
 
                     lock (this)
@@ -519,6 +681,182 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        private void HandlePotentialRemoteConfig(MockHttpParser.MockHttpRequest request)
+        {
+            if (request.ContentLength >= 1)
+            {
+                try
+                {
+                    var body = ReadStreamBody(request);
+                    var rc = Encoding.UTF8.GetString(body);
+                    RemoteConfigRequests.Enqueue(rc);
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+        }
+
+        private void HandlePotentialDataStreams(MockHttpParser.MockHttpRequest request)
+        {
+            if (ShouldDeserializeTraces && request.ContentLength >= 1)
+            {
+                try
+                {
+                    var body = ReadStreamBody(request);
+                    if (request.Headers.GetValue("Content-Encoding") == "gzip")
+                    {
+                        using var compressed = new MemoryStream(body);
+                        using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
+                        using var decompressed = new MemoryStream();
+                        gzip.CopyTo(decompressed);
+                        gzip.Flush();
+                        body = decompressed.GetBuffer();
+                    }
+
+                    var dataStreamsPayload = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(body);
+                    var headerCollection = new NameValueCollection();
+                    foreach (var header in request.Headers)
+                    {
+                        headerCollection.Add(header.Name, header.Value);
+                    }
+
+                    lock (this)
+                    {
+                        DataStreams = DataStreams.Add(dataStreamsPayload);
+                        DataStreamsRequestHeaders = DataStreamsRequestHeaders.Add(headerCollection);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+        }
+
+        private MockTracerResponse HandleEvpProxyPayload(MockHttpParser.MockHttpRequest request)
+        {
+            if (ShouldDeserializeTraces && request.ContentLength >= 1)
+            {
+                try
+                {
+                    var body = ReadStreamBody(request);
+                    var headerCollection = new NameValueCollection();
+                    foreach (var header in request.Headers)
+                    {
+                        headerCollection.Add(header.Name, header.Value);
+                    }
+
+                    if (headerCollection["Content-Encoding"] == "gzip")
+                    {
+                        var bodyMs = new MemoryStream(body);
+                        var uncompressedStream = new MemoryStream();
+                        using (var gzipStream = new GZipStream(bodyMs, CompressionMode.Decompress))
+                        {
+                            gzipStream.CopyTo(uncompressedStream);
+                        }
+
+                        body = uncompressedStream.ToArray();
+                    }
+
+                    var bodyAsJson = headerCollection["Content-Type"] switch
+                    {
+                        "application/msgpack" => MessagePackSerializer.ToJson(body),
+                        "application/json" => Encoding.UTF8.GetString(body),
+                        _ => Encoding.UTF8.GetString(body), // e.g. multipart form data, currently we don't do anything with this so meh
+                    };
+
+                    var evpProxyPayload = new EvpProxyPayload(request.PathAndQuery, headerCollection, bodyAsJson);
+                    EventPlatformProxyPayloadReceived?.Invoke(this, new EventArgs<EvpProxyPayload>(evpProxyPayload));
+                    return evpProxyPayload.Response;
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return null;
+                    }
+
+                    throw;
+                }
+            }
+
+            return null;
+        }
+
+        private void HandleTracerFlarePayload(MockHttpParser.MockHttpRequest request)
+        {
+            // we don't send content length header in the request, so just deserialize into bytes
+            if (ShouldDeserializeTraces)
+            {
+                try
+                {
+                    var headerCollection = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var header in request.Headers)
+                    {
+                        headerCollection.Add(header.Name, header.Value);
+                    }
+
+                    var contentTypeHeader = headerCollection["Content-Type"];
+                    var contentType = MediaTypeHeaderValue.Parse(contentTypeHeader);
+                    if (contentType.MediaType != "multipart/form-data")
+                    {
+                        throw new Exception($"Unexpected media type: {contentType.MediaType} in header {contentTypeHeader}");
+                    }
+
+                    var boundary = contentType
+                                  .Parameters
+                                  .FirstOrDefault(x => string.Equals(x.Name, "boundary", StringComparison.Ordinal));
+
+                    if (boundary is null)
+                    {
+                        throw new Exception("Content-Type is missing boundary in header " + contentTypeHeader);
+                    }
+
+                    var encoding = contentType.CharSet ?? "utf-8";
+
+                    var formData = MultipartFormDataParser.Parse(request.Body.Stream, boundary.Value, Encoding.GetEncoding(encoding));
+                    TracerFlareRequests = TracerFlareRequests.Add((headerCollection, formData));
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+        }
+
         private void AssertHeader(
             NameValueCollection headers,
             string headerKey,
@@ -537,7 +875,15 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private byte[] GetResponseBytes(string body)
+        private string GetStatusString(int status) => status switch
+        {
+            200 => "200 OK",
+            404 => "404 Not Found",
+            500 => "500 Internal Server Error",
+            _ => status.ToString(),
+        };
+
+        private byte[] GetResponseBytes(string body, int status)
         {
             if (string.IsNullOrEmpty(body))
             {
@@ -548,7 +894,8 @@ namespace Datadog.Trace.TestHelpers
 
             var sb = new StringBuilder();
             sb
-               .Append("HTTP/1.1 200 OK")
+               .Append("HTTP/1.1 ")
+               .Append(GetStatusString(status))
                .Append(DatadogHttpValues.CrLf)
                .Append("Date: ")
                .Append(DateTime.UtcNow.ToString("ddd, dd MMM yyyy H:mm::ss K"))
@@ -585,23 +932,22 @@ namespace Datadog.Trace.TestHelpers
         {
             if (request.ContentLength is null)
             {
-                return new byte[0];
+                return Array.Empty<byte>();
             }
 
             var i = 0;
             var body = new byte[request.ContentLength.Value];
 
-            while (request.Body.Stream.CanRead && i < request.ContentLength)
+            while (i < request.ContentLength)
             {
-                var nextByte = request.Body.Stream.ReadByte();
+                var read = request.Body.Stream.Read(body, i, body.Length - i);
 
-                if (nextByte == -1)
+                i += read;
+
+                if (read == 0 || read == body.Length)
                 {
                     break;
                 }
-
-                body[i] = (byte)nextByte;
-                i++;
             }
 
             if (i < request.ContentLength)
@@ -635,8 +981,39 @@ namespace Datadog.Trace.TestHelpers
 
             // We override the previous Probes Statuses as the debugger-agent is always emitting complete set of probes statuses, so we can
             // solely rely on that.
-            ProbesStatuses = probeStatuses.Values.ToList();
-            Snapshots.AddRange(snapshots);
+            ProbesStatuses = probeStatuses.Values.ToImmutableArray();
+            Snapshots = Snapshots.AddRange(snapshots);
+        }
+
+        public class EvpProxyPayload
+        {
+            public EvpProxyPayload(string pathAndQuery, NameValueCollection headers, string bodyInJson)
+            {
+                PathAndQuery = pathAndQuery;
+                Headers = headers;
+                BodyInJson = bodyInJson;
+                Response = null;
+            }
+
+            public string PathAndQuery { get; }
+
+            public NameValueCollection Headers { get; }
+
+            public string BodyInJson { get; }
+
+            public MockTracerResponse Response { get; set; }
+        }
+
+        public class AgentConfiguration
+        {
+            [JsonProperty("endpoints")]
+            public string[] Endpoints { get; set; } = DiscoveryService.AllSupportedEndpoints.Select(s => s.StartsWith("/") ? s : "/" + s).ToArray();
+
+            [JsonProperty("client_drop_p0s")]
+            public bool ClientDropP0s { get; set; } = true;
+
+            [JsonProperty("version")]
+            public string AgentVersion { get; set; }
         }
 
         public class TcpUdpAgent : MockTracerAgent
@@ -646,13 +1023,14 @@ namespace Datadog.Trace.TestHelpers
             private readonly Task _tracesListenerTask;
             private readonly Task _statsdTask;
 
-            public TcpUdpAgent(int port, int retries, bool useStatsd, bool doNotBindPorts, int? requestedStatsDPort, bool useTelemetry)
+            public TcpUdpAgent(int? port, int retries, bool useStatsd, bool doNotBindPorts, int? requestedStatsDPort, bool useTelemetry)
                 : base(useTelemetry, TestTransports.Tcp)
             {
+                port ??= TcpPortProvider.GetOpenPort();
                 if (doNotBindPorts)
                 {
                     // This is for any tests that want to use a specific port but never actually bind
-                    Port = port;
+                    Port = port.Value;
                     return;
                 }
 
@@ -689,7 +1067,7 @@ namespace Datadog.Trace.TestHelpers
                         }
                     }
 
-                    _statsdTask = Task.Run(HandleStatsdRequests);
+                    _statsdTask = Task.Factory.StartNew(HandleStatsdRequests, TaskCreationOptions.LongRunning);
 
                     listeners.Add($"Stats at port {StatsdPort}");
                 }
@@ -714,11 +1092,11 @@ namespace Datadog.Trace.TestHelpers
                         listener.Start();
 
                         // successfully listening
-                        Port = port;
+                        Port = port.Value;
                         _listener = listener;
 
                         listeners.Add($"Traces at port {Port}");
-                        _tracesListenerTask = Task.Run(HandleHttpRequests);
+                        _tracesListenerTask = Task.Factory.StartNew(HandleHttpRequests, TaskCreationOptions.LongRunning);
 
                         return;
                     }
@@ -773,21 +1151,32 @@ namespace Datadog.Trace.TestHelpers
                                 ctx.Response.AddHeader("Datadog-Agent-Version", Version);
                             }
 
-                            var response = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
-                            var buffer = Encoding.UTF8.GetBytes(response);
-                            ctx.Response.ContentType = "application/json";
-                            ctx.Response.ContentLength64 = buffer.LongLength;
-                            ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                            var mockTracerResponse = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
+
+                            if (!mockTracerResponse.SendResponse)
+                            {
+                                ctx.Response.Abort(); // close without sending to avoid getting blocked for 15 seconds
+                            }
+
+                            if (mockTracerResponse.SendResponse)
+                            {
+                                var buffer = Encoding.UTF8.GetBytes(mockTracerResponse.Response);
+
+                                if (ctx.Response.StatusCode == 200)
+                                {
+                                    ctx.Response.StatusCode = mockTracerResponse.StatusCode;
+                                }
+
+                                ctx.Response.ContentType = "application/json";
+                                ctx.Response.ContentLength64 = buffer.LongLength;
+                                ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                                ctx.Response.Close();
+                            }
                         }
                         catch (Exception ex)
                         {
-                            Output?.WriteLine("[HandleHttpRequests]Error processing web request" + ex);
-                        }
-                        finally
-                        {
-                            // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
-                            // (Setting content-length avoids that)
-
+                            Output?.WriteLine($"[HandleHttpRequests]Error processing web request to {ctx.Request.Url}: {ex}");
+                            ctx.Response.StatusCode = 500;
                             ctx.Response.Close();
                         }
                     }
@@ -841,8 +1230,6 @@ namespace Datadog.Trace.TestHelpers
         {
             private readonly PipeServer _statsPipeServer;
             private readonly PipeServer _tracesPipeServer;
-            private readonly Task _statsdTask;
-            private readonly Task _tracesListenerTask;
 
             public NamedPipeAgent(WindowsPipesConfig config)
                 : base(config.UseTelemetry, TestTransports.WindowsNamedPipe)
@@ -867,7 +1254,7 @@ namespace Datadog.Trace.TestHelpers
                         ex => Exceptions.Add(ex),
                         x => Output?.WriteLine(x));
 
-                    _statsdTask = Task.Run(_statsPipeServer.Start);
+                    _statsPipeServer.Start();
                 }
 
                 if (File.Exists(config.Traces))
@@ -885,7 +1272,7 @@ namespace Datadog.Trace.TestHelpers
                     ex => Exceptions.Add(ex),
                     x => Output?.WriteLine(x));
 
-                _tracesListenerTask = Task.Run(_tracesPipeServer.Start);
+                _tracesPipeServer.Start();
             }
 
             public string TracesWindowsPipeName { get; }
@@ -901,30 +1288,25 @@ namespace Datadog.Trace.TestHelpers
 
             private async Task HandleNamedPipeStats(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
             {
-                // A somewhat large, arbitrary amount, but Runtime metrics sends a lot
-                // Will throw if we exceed that but YOLO
-                var bytesReceived = new byte[0x10_000];
-                var byteCount = 0;
-                int bytesRead;
-                do
-                {
-                    bytesRead = await namedPipeServerStream.ReadAsync(bytesReceived, byteCount, count: 500, cancellationToken);
-                    byteCount += bytesRead;
-                }
-                while (bytesRead > 0);
+                using var reader = new StreamReader(namedPipeServerStream);
 
-                var stats = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);
-                OnMetricsReceived(stats);
-                StatsdRequests.Enqueue(stats);
+                while (await reader.ReadLineAsync() is { } request)
+                {
+                    OnMetricsReceived(request);
+                    StatsdRequests.Enqueue(request);
+                }
             }
 
             private async Task HandleNamedPipeTraces(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
             {
                 var request = await MockHttpParser.ReadRequest(namedPipeServerStream);
-                var response = HandleHttpRequest(request);
+                var mockTracerResponse = HandleHttpRequest(request);
 
-                var responseBytes = GetResponseBytes(body: response);
-                await namedPipeServerStream.WriteAsync(responseBytes, offset: 0, count: responseBytes.Length);
+                if (mockTracerResponse.SendResponse)
+                {
+                    var responseBytes = GetResponseBytes(body: mockTracerResponse.Response, status: mockTracerResponse.StatusCode);
+                    await namedPipeServerStream.WriteAsync(responseBytes, offset: 0, count: responseBytes.Length);
+                }
             }
 
             internal class PipeServer : IDisposable
@@ -955,7 +1337,7 @@ namespace Datadog.Trace.TestHelpers
                     _log = log;
                 }
 
-                public Task Start()
+                public void Start()
                 {
                     for (var i = 0; i < ConcurrentInstanceCount; i++)
                     {
@@ -965,8 +1347,6 @@ namespace Datadog.Trace.TestHelpers
                         _tasks.Add(startPipe);
                         mutex.Wait(5_000);
                     }
-
-                    return Task.CompletedTask;
                 }
 
                 public void Dispose()
@@ -1062,7 +1442,7 @@ namespace Datadog.Trace.TestHelpers
 
                     _udsStatsSocket.Bind(_statsEndpoint);
                     // NOTE: Connectionless protocols don't use Listen()
-                    _statsdTask = Task.Run(HandleUdsStats);
+                    _statsdTask = Task.Factory.StartNew(HandleUdsStats, TaskCreationOptions.LongRunning);
                 }
 
                 _tracesEndpoint = new UnixDomainSocketEndPoint(config.Traces);
@@ -1076,7 +1456,7 @@ namespace Datadog.Trace.TestHelpers
                 _udsTracesSocket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
                 _udsTracesSocket.Bind(_tracesEndpoint);
                 _udsTracesSocket.Listen(1000);
-                _tracesListenerTask = Task.Run(HandleUdsTraces);
+                _tracesListenerTask = Task.Factory.StartNew(HandleUdsTraces, TaskCreationOptions.LongRunning);
             }
 
             public string TracesUdsPath { get; }
@@ -1121,6 +1501,25 @@ namespace Datadog.Trace.TestHelpers
                     {
                         return;
                     }
+                    catch (SocketException ex)
+                    {
+                        var message = ex.Message.ToLowerInvariant();
+                        if (message.Contains("interrupted"))
+                        {
+                            // Accept call is likely interrupted by a dispose
+                            // Swallow the exception and let the test finish
+                            return;
+                        }
+
+                        if (message.Contains("broken") || message.Contains("forcibly closed") || message.Contains("invalid argument"))
+                        {
+                            // The application was likely shut down
+                            // Swallow the exception and let the test finish
+                            return;
+                        }
+
+                        throw;
+                    }
                     catch (Exception ex)
                     {
                         Exceptions.Add(ex);
@@ -1138,11 +1537,13 @@ namespace Datadog.Trace.TestHelpers
                         using var stream = new NetworkStream(handler);
 
                         var request = await MockHttpParser.ReadRequest(stream);
-                        var response = HandleHttpRequest(request);
+                        var mockTracerResponse = HandleHttpRequest(request);
 
-                        await stream.WriteAsync(GetResponseBytes(body: response));
-
-                        handler.Shutdown(SocketShutdown.Both);
+                        if (mockTracerResponse.SendResponse)
+                        {
+                            await stream.WriteAsync(GetResponseBytes(body: mockTracerResponse.Response, status: mockTracerResponse.StatusCode));
+                            handler.Shutdown(SocketShutdown.Both);
+                        }
                     }
                     catch (SocketException ex)
                     {

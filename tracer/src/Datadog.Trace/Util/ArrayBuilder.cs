@@ -20,7 +20,7 @@ namespace Datadog.Trace.Util
             _count = 0;
         }
 
-        public int Count => _count;
+        public readonly int Count => _count;
 
         public void Add(T item)
         {
@@ -29,7 +29,7 @@ namespace Datadog.Trace.Util
             _count++;
         }
 
-        public ArraySegment<T> GetArray() => new(_array ?? Array.Empty<T>(), 0, _count);
+        public readonly ArraySegment<T> GetArray() => new(_array ?? Array.Empty<T>(), 0, _count);
 
         private void GrowIfNeeded()
         {

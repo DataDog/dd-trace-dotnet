@@ -2,17 +2,29 @@ labels:
   - name: "area:ci-visibility"
     title: "^\\[?(?i)civisibility"
 
+  - name: "area:ci-visibility"
+    title: "^\\[?(?i)(ci visibility)"
+
   - name: "area:serverless"
     title: "^\\[?(?i)serverless"
 
   - name: "area:asm"
     title: "^\\[?(?i)ASM"
+  
+  - name: "area:remote-config"
+    title: "^\\[?(?i)(RCM|remote config)"
 
   - name: "area:profiler"
     title: "^\\[?(?i)profiler"
 
   - name: "area:debugger"
     title: "^\\[?(?i)debugger"
+
+  - name: "area:debugger"
+    title: "^\\[?(?i)(dynamic instrumentation)"
+
+  - name: "area:builds"
+    title: "^\\[?(?i)build"
 
   - name: "area:profiler"
     allFilesIn: "profiler\/.*"

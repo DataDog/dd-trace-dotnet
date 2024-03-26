@@ -3,36 +3,43 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Runtime.InteropServices;
+#nullable enable
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf
 {
     internal class Result : IResult
     {
-        private readonly WafNative wafNative;
-        private readonly DDWAF_RET_CODE returnCode;
-        private DdwafResultStruct returnStruct;
-        private bool disposed;
-
-        public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, WafNative wafNative, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
+        public Result(DdwafResultStruct returnStruct, WafReturnCode returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
         {
-            this.returnStruct = returnStruct;
-            this.returnCode = returnCode;
-            this.wafNative = wafNative;
+            ReturnCode = returnCode;
+            Actions = returnStruct.Actions.DecodeStringArray();
+            ShouldReportSecurityResult = returnCode >= WafReturnCode.Match;
+            Derivatives = returnStruct.Derivatives.DecodeMap();
+            ShouldReportSchema = Derivatives is { Count: > 0 };
+            if (ShouldReportSecurityResult)
+            {
+                Data = returnStruct.Events.DecodeObjectArray();
+            }
+
+            ShouldBlock = Actions.Contains("block");
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
+            Timeout = returnStruct.Timeout;
         }
 
-        ~Result()
-        {
-            Dispose(false);
-        }
+        public WafReturnCode ReturnCode { get; }
 
-        public ReturnCode ReturnCode => Encoder.DecodeReturnCode(returnCode);
+        public bool ShouldReportSchema { get; }
 
-        public string Data => Marshal.PtrToStringAnsi(returnStruct.Data);
+        public IReadOnlyCollection<object>? Data { get; }
+
+        public List<string> Actions { get; }
+
+        public Dictionary<string, object?> Derivatives { get; }
 
         /// <summary>
         /// Gets the total runtime in microseconds
@@ -44,22 +51,10 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         public ulong AggregatedTotalRuntimeWithBindings { get; }
 
-        public void Dispose(bool disposing)
-        {
-            if (disposed)
-            {
-                return;
-            }
+        public bool ShouldBlock { get; }
 
-            disposed = true;
+        public bool ShouldReportSecurityResult { get; }
 
-            wafNative.ResultFree(ref returnStruct);
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+        public bool Timeout { get; }
     }
 }

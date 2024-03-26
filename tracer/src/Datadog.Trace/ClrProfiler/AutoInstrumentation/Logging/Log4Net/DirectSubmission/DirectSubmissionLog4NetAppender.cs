@@ -8,6 +8,8 @@ using System.Threading;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission
 {
@@ -18,11 +20,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
     {
         private static DirectSubmissionLog4NetAppender _instance = null!;
 
-        private readonly IDatadogSink _sink;
+        private readonly IDirectSubmissionLogSink _sink;
         private readonly DirectSubmissionLogLevel _minimumLevel;
 
         // internal for testing
-        internal DirectSubmissionLog4NetAppender(IDatadogSink sink, DirectSubmissionLogLevel minimumLevel)
+        internal DirectSubmissionLog4NetAppender(IDirectSubmissionLogSink sink, DirectSubmissionLogLevel minimumLevel)
         {
             _sink = sink;
             _minimumLevel = minimumLevel;
@@ -64,7 +66,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
                 return;
             }
 
-            var log = new Log4NetDatadogLogEvent(logEvent, logEvent.TimeStampUtc);
+            var log = new Log4NetDirectSubmissionLogEvent(logEvent, logEvent.TimeStampUtc);
+            TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.Log4Net);
             _sink.EnqueueLog(log);
         }
 

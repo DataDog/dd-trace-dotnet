@@ -3,51 +3,41 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
-using Spectre.Console.Cli;
+using System.CommandLine;
 
 namespace Datadog.Trace.Tools.Runner
 {
-    internal class LegacySettings : CommandSettings
+    internal class LegacySettings
     {
-        [CommandArgument(0, "[command]")]
-        [Description("Command to be wrapped by the cli tool.")]
-        public string[] Command { get; set; }
+        public LegacySettings(Command command)
+        {
+            command.AddOption(EnvironmentOption);
+            command.AddOption(ServiceOption);
+            command.AddOption(VersionOption);
+            command.AddOption(AgentUrlOption);
+            command.AddOption(TracerHomeFolderOption);
+            command.AddOption(SetEnvironmentVariablesOption);
+            command.AddOption(EnableCIVisibilityModeOption);
+            command.AddOption(EnvironmentValuesOption);
+            command.AddOption(CrankImportFileOption);
+        }
 
-        [CommandOption("--dd-env")]
-        [Description("Sets the environment name for the unified service tagging.")]
-        public string Environment { get; set; }
+        public Option<string> EnvironmentOption { get; } = new("--dd-env", "Sets the environment name for the unified service tagging.");
 
-        [CommandOption("--dd-service")]
-        [Description("Sets the service name for the unified service tagging.")]
-        public string Service { get; set; }
+        public Option<string> ServiceOption { get; } = new("--dd-service", "Sets the service name for the unified service tagging.");
 
-        [CommandOption("--dd-version")]
-        [Description("Sets the version name for the unified service tagging.")]
-        public string Version { get; set; }
+        public Option<string> VersionOption { get; } = new("--dd-version", "Sets the version name for the unified service tagging.");
 
-        [CommandOption("--agent-url")]
-        [Description("Datadog trace agent url.")]
-        public string AgentUrl { get; set; }
+        public Option<string> AgentUrlOption { get; } = new("--agent-url", "Datadog trace agent url.");
 
-        [CommandOption("--tracer-home")]
-        [Description("Sets the tracer home folder path.")]
-        public string TracerHomeFolder { get; set; }
+        public Option<string> TracerHomeFolderOption { get; } = new("--tracer-home", "Sets the tracer home folder path.");
 
-        [CommandOption("--set-ci")]
-        [Description("Setup the clr profiler environment variables for the CI job and exit. (only supported in Azure Pipelines)")]
-        public bool SetEnvironmentVariables { get; set; }
+        public Option<bool> SetEnvironmentVariablesOption { get; } = new("--set-ci", "Setup the clr profiler environment variables for the CI job and exit. (only supported in Azure Pipelines)");
 
-        [CommandOption("--ci-visibility")]
-        [Description("Run the command in CI Visibility Mode")]
-        public bool EnableCIVisibilityMode { get; set; }
+        public Option<bool> EnableCIVisibilityModeOption { get; } = new("--ci-visibility", "Run the command in CI Visibility Mode.");
 
-        [CommandOption("--env-vars")]
-        [Description("Sets environment variables to the target command.")]
-        public string EnvironmentValues { get; set; }
+        public Option<string> EnvironmentValuesOption { get; } = new("--env-vars", "Sets environment variables to the target command.");
 
-        [CommandOption("--crank-import")]
-        [Description("Import crank Json results file.")]
-        public string CrankImportFile { get; set; }
+        public Option<string> CrankImportFileOption { get; } = new("--crank-import", "Import crank Json results file.");
     }
 }

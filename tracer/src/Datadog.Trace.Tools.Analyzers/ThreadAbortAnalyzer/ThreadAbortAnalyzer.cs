@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer
         /// <summary>
         /// The diagnostic ID displayed in error messages
         /// </summary>
-        public const string DiagnosticId = "ThreadAbortAnalyzer";
+        public const string DiagnosticId = "DD0001";
 
 #pragma warning disable RS2008 // Enable analyzer release tracking for the analyzer project
         private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(

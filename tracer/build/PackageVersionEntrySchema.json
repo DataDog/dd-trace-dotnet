@@ -50,7 +50,7 @@
                   "description": "Target frameworks that should not be used in the selected version range",
                   "items": [
                     {
-                      "enum": ["net461", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0"],
+                      "enum": ["net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0"],
                       "uniqueItems": true
                     }
                   ]
@@ -60,7 +60,7 @@
                   "description": "Only use the specified target frameworks in the selected version range",
                   "items": [
                     {
-                      "enum": ["net461", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0"],
+                      "enum": ["net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0"],
                       "uniqueItems": true
                     }
                   ]

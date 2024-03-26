@@ -19,6 +19,93 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersionsLatestMajors
     {
+      public static IEnumerable<object[]> AwsDynamoDb =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET462
+                new object[] { "3.7.302" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "3.7.302" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "3.7.302" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "3.7.302" },
+#endif
+#if NET5_0
+                new object[] { "3.7.302" },
+#endif
+#if NET6_0
+                new object[] { "3.7.302" },
+#endif
+#if NET7_0
+                new object[] { "3.7.302" },
+#endif
+#if NET8_0
+                new object[] { "3.7.302" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> AwsKinesis =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET462
+                new object[] { "3.7.301.52" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "3.7.301.52" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "3.7.301.52" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "3.7.301.52" },
+#endif
+#if NET5_0
+                new object[] { "3.7.301.52" },
+#endif
+#if NET6_0
+                new object[] { "3.7.301.52" },
+#endif
+#if NET7_0
+                new object[] { "3.7.301.52" },
+#endif
+#if NET8_0
+                new object[] { "3.7.301.52" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> AwsLambda =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET6_0
+                new object[] { "1.10.0" },
+#endif
+#if NET7_0
+                new object[] { "1.10.0" },
+#endif
+#if NET8_0
+                new object[] { "1.10.0" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> AwsSqs =>
 
             new List<object[]>
@@ -26,23 +113,63 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "3.7.2.80" },
+#if NET462
+                new object[] { "3.7.300.59" },
 #endif
 #if NETCOREAPP2_1
-                new object[] { "3.7.2.80" },
+                new object[] { "3.7.300.59" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "3.7.2.80" },
+                new object[] { "3.7.300.59" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "3.7.2.80" },
+                new object[] { "3.7.300.59" },
 #endif
 #if NET5_0
-                new object[] { "3.7.2.80" },
+                new object[] { "3.7.300.59" },
 #endif
 #if NET6_0
-                new object[] { "3.7.2.80" },
+                new object[] { "3.7.300.59" },
+#endif
+#if NET7_0
+                new object[] { "3.7.300.59" },
+#endif
+#if NET8_0
+                new object[] { "3.7.300.59" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> AwsSns =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET462
+                new object[] { "3.7.301.7" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "3.7.301.7" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "3.7.301.7" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "3.7.301.7" },
+#endif
+#if NET5_0
+                new object[] { "3.7.301.7" },
+#endif
+#if NET6_0
+                new object[] { "3.7.301.7" },
+#endif
+#if NET7_0
+                new object[] { "3.7.301.7" },
+#endif
+#if NET8_0
+                new object[] { "3.7.301.7" },
 #endif
 #endif
             };
@@ -54,23 +181,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "2.17.0" },
+#if NET462
+                new object[] { "2.24.0" },
 #endif
 #if NETCOREAPP2_1
-                new object[] { "2.17.0" },
+                new object[] { "2.24.0" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "2.17.0" },
+                new object[] { "2.24.0" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "2.17.0" },
+                new object[] { "2.24.0" },
 #endif
 #if NET5_0
-                new object[] { "2.17.0" },
+                new object[] { "2.24.0" },
 #endif
 #if NET6_0
-                new object[] { "2.17.0" },
+                new object[] { "2.24.0" },
+#endif
+#if NET7_0
+                new object[] { "2.24.0" },
+#endif
+#if NET8_0
+                new object[] { "2.24.0" },
 #endif
 #endif
             };
@@ -82,23 +215,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "7.17.4" },
+#if NET462
+                new object[] { "7.17.5" },
 #endif
 #if NETCOREAPP2_1
-                new object[] { "7.17.4" },
+                new object[] { "7.17.5" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "7.17.4" },
+                new object[] { "7.17.5" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "7.17.4" },
+                new object[] { "7.17.5" },
 #endif
 #if NET5_0
-                new object[] { "7.17.4" },
+                new object[] { "7.17.5" },
 #endif
 #if NET6_0
-                new object[] { "7.17.4" },
+                new object[] { "7.17.5" },
+#endif
+#if NET7_0
+                new object[] { "7.17.5" },
+#endif
+#if NET8_0
+                new object[] { "7.17.5" },
 #endif
 #endif
             };
@@ -110,7 +249,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "6.8.11" },
 #endif
 #if NETCOREAPP2_1
@@ -126,6 +265,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.8.11" },
 #endif
 #if NET6_0
+                new object[] { "6.8.11" },
+#endif
+#if NET7_0
+                new object[] { "6.8.11" },
+#endif
+#if NET8_0
                 new object[] { "6.8.11" },
 #endif
 #endif
@@ -138,7 +283,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "5.6.6" },
 #endif
 #if NETCOREAPP2_1
@@ -154,6 +299,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.6.6" },
 #endif
 #if NET6_0
+                new object[] { "5.6.6" },
+#endif
+#if NET7_0
+                new object[] { "5.6.6" },
+#endif
+#if NET8_0
                 new object[] { "5.6.6" },
 #endif
 #endif
@@ -168,15 +319,81 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETCOREAPP3_1
                 new object[] { "4.8.0" },
-                new object[] { "5.3.3" },
+                new object[] { "5.4.0" },
 #endif
 #if NET5_0
                 new object[] { "4.8.0" },
-                new object[] { "5.3.3" },
+                new object[] { "5.4.0" },
 #endif
 #if NET6_0
                 new object[] { "4.8.0" },
-                new object[] { "5.3.3" },
+                new object[] { "5.4.0" },
+#endif
+#if NET7_0
+                new object[] { "4.8.0" },
+                new object[] { "5.4.0" },
+#endif
+#if NET8_0
+                new object[] { "4.8.0" },
+                new object[] { "5.4.0" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> GraphQL7 =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETCOREAPP3_1
+                new object[] { "7.8.0" },
+#endif
+#if NET5_0
+                new object[] { "7.8.0" },
+#endif
+#if NET6_0
+                new object[] { "7.8.0" },
+#endif
+#if NET7_0
+                new object[] { "7.8.0" },
+#endif
+#if NET8_0
+                new object[] { "7.8.0" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> HotChocolate =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETCOREAPP3_1
+                new object[] { "11.3.8" },
+                new object[] { "12.21.0" },
+#endif
+#if NET5_0
+                new object[] { "11.3.8" },
+                new object[] { "12.21.0" },
+#endif
+#if NET6_0
+                new object[] { "11.3.8" },
+                new object[] { "12.22.2" },
+                new object[] { "13.9.0" },
+#endif
+#if NET7_0
+                new object[] { "11.3.8" },
+                new object[] { "12.22.2" },
+                new object[] { "13.9.0" },
+#endif
+#if NET8_0
+                new object[] { "11.3.8" },
+                new object[] { "12.22.2" },
+                new object[] { "13.9.0" },
 #endif
 #endif
             };
@@ -188,33 +405,55 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "4.1.12" },
-                new object[] { "5.0.14" },
-                new object[] { "6.0.5" },
+                new object[] { "5.0.17" },
+                new object[] { "6.0.10" },
+                new object[] { "7.0.6" },
+                new object[] { "8.0.2" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "4.1.12" },
-                new object[] { "5.0.14" },
+                new object[] { "5.0.17" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "4.1.12" },
-                new object[] { "5.0.14" },
+                new object[] { "5.0.17" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "4.1.12" },
-                new object[] { "5.0.14" },
-                new object[] { "6.0.5" },
+                new object[] { "5.0.17" },
+                new object[] { "6.0.10" },
+                new object[] { "7.0.6" },
+                new object[] { "8.0.2" },
 #endif
 #if NET5_0
                 new object[] { "4.1.12" },
-                new object[] { "5.0.14" },
-                new object[] { "6.0.5" },
+                new object[] { "5.0.17" },
+                new object[] { "6.0.10" },
+                new object[] { "7.0.6" },
+                new object[] { "8.0.2" },
 #endif
 #if NET6_0
                 new object[] { "4.1.12" },
-                new object[] { "5.0.14" },
-                new object[] { "6.0.5" },
+                new object[] { "5.0.17" },
+                new object[] { "6.0.10" },
+                new object[] { "7.0.6" },
+                new object[] { "8.0.2" },
+#endif
+#if NET7_0
+                new object[] { "4.1.12" },
+                new object[] { "5.0.17" },
+                new object[] { "6.0.10" },
+                new object[] { "7.0.6" },
+                new object[] { "8.0.2" },
+#endif
+#if NET8_0
+                new object[] { "4.1.12" },
+                new object[] { "5.0.17" },
+                new object[] { "6.0.10" },
+                new object[] { "7.0.6" },
+                new object[] { "8.0.2" },
 #endif
 #endif
             };
@@ -226,41 +465,111 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "3.6.9" },
                 new object[] { "4.1.3" },
                 new object[] { "5.2.0" },
-                new object[] { "6.4.0" },
+                new object[] { "6.8.1" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "3.6.9" },
                 new object[] { "4.1.3" },
                 new object[] { "5.2.0" },
-                new object[] { "6.4.0" },
+                new object[] { "6.8.1" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "3.6.9" },
                 new object[] { "4.1.3" },
                 new object[] { "5.2.0" },
-                new object[] { "6.4.0" },
+                new object[] { "6.8.1" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "3.6.9" },
                 new object[] { "4.1.3" },
                 new object[] { "5.2.0" },
-                new object[] { "6.4.0" },
+                new object[] { "6.8.1" },
 #endif
 #if NET5_0
                 new object[] { "3.6.9" },
                 new object[] { "4.1.3" },
                 new object[] { "5.2.0" },
-                new object[] { "6.4.0" },
+                new object[] { "6.8.1" },
 #endif
 #if NET6_0
                 new object[] { "3.6.9" },
                 new object[] { "4.1.3" },
                 new object[] { "5.2.0" },
-                new object[] { "6.4.0" },
+                new object[] { "6.8.1" },
+#endif
+#if NET7_0
+                new object[] { "3.6.9" },
+                new object[] { "4.1.3" },
+                new object[] { "5.2.0" },
+                new object[] { "6.8.1" },
+#endif
+#if NET8_0
+                new object[] { "3.6.9" },
+                new object[] { "4.1.3" },
+                new object[] { "5.2.0" },
+                new object[] { "6.8.1" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> DataStreamsRabbitMQ =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET462
+                new object[] { "3.6.9" },
+                new object[] { "4.1.3" },
+                new object[] { "5.2.0" },
+                new object[] { "6.8.1" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "3.6.9" },
+                new object[] { "4.1.3" },
+                new object[] { "5.2.0" },
+                new object[] { "6.8.1" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "3.6.9" },
+                new object[] { "4.1.3" },
+                new object[] { "5.2.0" },
+                new object[] { "6.8.1" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "3.6.9" },
+                new object[] { "4.1.3" },
+                new object[] { "5.2.0" },
+                new object[] { "6.8.1" },
+#endif
+#if NET5_0
+                new object[] { "3.6.9" },
+                new object[] { "4.1.3" },
+                new object[] { "5.2.0" },
+                new object[] { "6.8.1" },
+#endif
+#if NET6_0
+                new object[] { "3.6.9" },
+                new object[] { "4.1.3" },
+                new object[] { "5.2.0" },
+                new object[] { "6.8.1" },
+#endif
+#if NET7_0
+                new object[] { "3.6.9" },
+                new object[] { "4.1.3" },
+                new object[] { "5.2.0" },
+                new object[] { "6.8.1" },
+#endif
+#if NET8_0
+                new object[] { "3.6.9" },
+                new object[] { "4.1.3" },
+                new object[] { "5.2.0" },
+                new object[] { "6.8.1" },
 #endif
 #endif
             };
@@ -272,23 +581,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "4.8.3" },
+#if NET462
+                new object[] { "4.8.6" },
 #endif
 #if NETCOREAPP2_1
-                new object[] { "4.8.3" },
+                new object[] { "4.8.6" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "4.8.3" },
+                new object[] { "4.8.6" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "4.8.3" },
+                new object[] { "4.8.6" },
 #endif
 #if NET5_0
-                new object[] { "4.8.3" },
+                new object[] { "4.8.6" },
 #endif
 #if NET6_0
-                new object[] { "4.8.3" },
+                new object[] { "4.8.6" },
+#endif
+#if NET7_0
+                new object[] { "4.8.6" },
+#endif
+#if NET8_0
+                new object[] { "4.8.6" },
 #endif
 #endif
             };
@@ -300,41 +615,61 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "1.1.4" },
-                new object[] { "2.1.4" },
-                new object[] { "3.1.0" },
-                new object[] { "4.1.0" },
+                new object[] { "2.1.7" },
+                new object[] { "3.1.5" },
+                new object[] { "4.1.1" },
+                new object[] { "5.2.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "1.1.4" },
-                new object[] { "2.1.4" },
-                new object[] { "3.1.0" },
-                new object[] { "4.1.0" },
+                new object[] { "2.1.7" },
+                new object[] { "3.1.5" },
+                new object[] { "4.1.1" },
+                new object[] { "5.0.2" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "1.1.4" },
-                new object[] { "2.1.4" },
-                new object[] { "3.1.0" },
-                new object[] { "4.1.0" },
+                new object[] { "2.1.7" },
+                new object[] { "3.1.5" },
+                new object[] { "4.1.1" },
+                new object[] { "5.0.2" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "1.1.4" },
-                new object[] { "2.1.4" },
-                new object[] { "3.1.0" },
-                new object[] { "4.1.0" },
+                new object[] { "2.1.7" },
+                new object[] { "3.1.5" },
+                new object[] { "4.1.1" },
+                new object[] { "5.2.0" },
 #endif
 #if NET5_0
                 new object[] { "1.1.4" },
-                new object[] { "2.1.4" },
-                new object[] { "3.1.0" },
-                new object[] { "4.1.0" },
+                new object[] { "2.1.7" },
+                new object[] { "3.1.5" },
+                new object[] { "4.1.1" },
+                new object[] { "5.2.0" },
 #endif
 #if NET6_0
                 new object[] { "1.1.4" },
-                new object[] { "2.1.4" },
-                new object[] { "3.1.0" },
-                new object[] { "4.1.0" },
+                new object[] { "2.1.7" },
+                new object[] { "3.1.5" },
+                new object[] { "4.1.1" },
+                new object[] { "5.2.0" },
+#endif
+#if NET7_0
+                new object[] { "1.1.4" },
+                new object[] { "2.1.7" },
+                new object[] { "3.1.5" },
+                new object[] { "4.1.1" },
+                new object[] { "5.2.0" },
+#endif
+#if NET8_0
+                new object[] { "1.1.4" },
+                new object[] { "2.1.7" },
+                new object[] { "3.1.5" },
+                new object[] { "4.1.1" },
+                new object[] { "5.2.0" },
 #endif
 #endif
             };
@@ -346,9 +681,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "1.2.6" },
-                new object[] { "2.6.48" },
+                new object[] { "2.7.33" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "1.2.6" },
@@ -356,19 +691,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
 #if NETCOREAPP3_0
                 new object[] { "1.2.6" },
-                new object[] { "2.6.48" },
+                new object[] { "2.6.122" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "1.2.6" },
-                new object[] { "2.6.48" },
+                new object[] { "2.7.33" },
 #endif
 #if NET5_0
                 new object[] { "1.2.6" },
-                new object[] { "2.6.48" },
+                new object[] { "2.7.33" },
 #endif
 #if NET6_0
                 new object[] { "1.2.6" },
-                new object[] { "2.6.48" },
+                new object[] { "2.7.33" },
+#endif
+#if NET7_0
+                new object[] { "1.2.6" },
+                new object[] { "2.7.33" },
+#endif
+#if NET8_0
+                new object[] { "1.2.6" },
+                new object[] { "2.7.33" },
 #endif
 #endif
             };
@@ -380,10 +723,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "4.5.14" },
                 new object[] { "5.14.0" },
-                new object[] { "6.1.0" },
+                new object[] { "6.11.0" },
+                new object[] { "8.2.2" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "5.14.0" },
@@ -395,15 +739,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
 #if NETCOREAPP3_1
                 new object[] { "5.14.0" },
-                new object[] { "6.1.0" },
+                new object[] { "6.11.0" },
+                new object[] { "8.2.2" },
 #endif
 #if NET5_0
                 new object[] { "5.14.0" },
-                new object[] { "6.1.0" },
+                new object[] { "6.11.0" },
+                new object[] { "8.2.2" },
 #endif
 #if NET6_0
                 new object[] { "5.14.0" },
-                new object[] { "6.1.0" },
+                new object[] { "6.11.0" },
+                new object[] { "8.2.2" },
+#endif
+#if NET7_0
+                new object[] { "5.14.0" },
+                new object[] { "6.11.0" },
+                new object[] { "8.2.2" },
+#endif
+#if NET8_0
+                new object[] { "5.14.0" },
+                new object[] { "6.11.0" },
+                new object[] { "8.2.2" },
 #endif
 #endif
             };
@@ -415,29 +772,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "6.10.9" },
-                new object[] { "8.0.29" },
+                new object[] { "8.3.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "6.10.9" },
-                new object[] { "8.0.29" },
+                new object[] { "8.0.32.1" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "6.10.9" },
-                new object[] { "8.0.29" },
+                new object[] { "8.0.32.1" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "6.10.9" },
-                new object[] { "8.0.29" },
+                new object[] { "8.3.0" },
 #endif
 #if NET5_0
                 new object[] { "6.10.9" },
-                new object[] { "8.0.29" },
+                new object[] { "8.3.0" },
 #endif
 #if NET6_0
                 new object[] { "6.10.9" },
-                new object[] { "8.0.29" },
+                new object[] { "8.3.0" },
+#endif
+#if NET7_0
+                new object[] { "6.10.9" },
+                new object[] { "8.3.0" },
+#endif
+#if NET8_0
+                new object[] { "6.10.9" },
+                new object[] { "8.3.0" },
 #endif
 #endif
             };
@@ -449,35 +814,45 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
-                new object[] { "2.1.11" },
+                new object[] { "2.3.6" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
-                new object[] { "2.1.11" },
+                new object[] { "2.3.6" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
-                new object[] { "2.1.11" },
+                new object[] { "2.3.6" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
-                new object[] { "2.1.11" },
+                new object[] { "2.3.6" },
 #endif
 #if NET5_0
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
-                new object[] { "2.1.11" },
+                new object[] { "2.3.6" },
 #endif
 #if NET6_0
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
-                new object[] { "2.1.11" },
+                new object[] { "2.3.6" },
+#endif
+#if NET7_0
+                new object[] { "0.69.10" },
+                new object[] { "1.3.14" },
+                new object[] { "2.3.6" },
+#endif
+#if NET8_0
+                new object[] { "0.69.10" },
+                new object[] { "1.3.14" },
+                new object[] { "2.3.6" },
 #endif
 #endif
             };
@@ -489,41 +864,61 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "2.2.6" },
-                new object[] { "3.1.27" },
+                new object[] { "3.1.32" },
                 new object[] { "5.0.17" },
-                new object[] { "6.0.7" },
-#endif
-#if NETCOREAPP2_1
-                new object[] { "2.2.6" },
-                new object[] { "3.1.27" },
-                new object[] { "5.0.17" },
-                new object[] { "6.0.7" },
+                new object[] { "6.0.28" },
+                new object[] { "7.0.17" },
+                new object[] { "8.0.3" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "2.2.6" },
-                new object[] { "3.1.27" },
+                new object[] { "3.1.31" },
                 new object[] { "5.0.17" },
-                new object[] { "6.0.7" },
+                new object[] { "6.0.28" },
+                new object[] { "7.0.17" },
+                new object[] { "8.0.3" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "2.2.6" },
-                new object[] { "3.1.27" },
+                new object[] { "3.1.32" },
                 new object[] { "5.0.17" },
-                new object[] { "6.0.7" },
+                new object[] { "6.0.28" },
+                new object[] { "7.0.17" },
+                new object[] { "8.0.3" },
 #endif
 #if NET5_0
                 new object[] { "2.2.6" },
-                new object[] { "3.1.27" },
+                new object[] { "3.1.32" },
                 new object[] { "5.0.17" },
-                new object[] { "6.0.7" },
+                new object[] { "6.0.28" },
+                new object[] { "7.0.17" },
+                new object[] { "8.0.3" },
 #endif
 #if NET6_0
                 new object[] { "2.2.6" },
-                new object[] { "3.1.27" },
+                new object[] { "3.1.32" },
                 new object[] { "5.0.17" },
-                new object[] { "6.0.7" },
+                new object[] { "6.0.28" },
+                new object[] { "7.0.17" },
+                new object[] { "8.0.3" },
+#endif
+#if NET7_0
+                new object[] { "2.2.6" },
+                new object[] { "3.1.32" },
+                new object[] { "5.0.17" },
+                new object[] { "6.0.28" },
+                new object[] { "7.0.17" },
+                new object[] { "8.0.3" },
+#endif
+#if NET8_0
+                new object[] { "2.2.6" },
+                new object[] { "3.1.32" },
+                new object[] { "5.0.17" },
+                new object[] { "6.0.28" },
+                new object[] { "7.0.17" },
+                new object[] { "8.0.3" },
 #endif
 #endif
             };
@@ -535,23 +930,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "2.4.1" },
+#if NET462
+                new object[] { "2.7.0" },
 #endif
 #if NETCOREAPP2_1
-                new object[] { "2.4.1" },
+                new object[] { "2.4.2" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "2.4.1" },
+                new object[] { "2.4.2" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "2.4.1" },
+                new object[] { "2.4.2" },
 #endif
 #if NET5_0
-                new object[] { "2.4.1" },
+                new object[] { "2.4.2" },
 #endif
 #if NET6_0
-                new object[] { "2.4.1" },
+                new object[] { "2.7.0" },
+#endif
+#if NET7_0
+                new object[] { "2.7.0" },
+#endif
+#if NET8_0
+                new object[] { "2.7.0" },
 #endif
 #endif
             };
@@ -563,23 +964,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "3.13.3" },
+#if NET462
+                new object[] { "3.14.0" },
+                new object[] { "4.1.0" },
 #endif
 #if NETCOREAPP2_1
-                new object[] { "3.13.3" },
+                new object[] { "3.14.0" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "3.13.3" },
+                new object[] { "3.14.0" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "3.13.3" },
+                new object[] { "3.14.0" },
 #endif
 #if NET5_0
-                new object[] { "3.13.3" },
+                new object[] { "3.14.0" },
 #endif
 #if NET6_0
-                new object[] { "3.13.3" },
+                new object[] { "3.14.0" },
+                new object[] { "4.1.0" },
+#endif
+#if NET7_0
+                new object[] { "3.14.0" },
+                new object[] { "4.1.0" },
+#endif
+#if NET8_0
+                new object[] { "3.14.0" },
+                new object[] { "4.1.0" },
 #endif
 #endif
             };
@@ -591,23 +1002,79 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
 #endif
 #if NET5_0
                 new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
 #endif
 #if NET6_0
                 new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
+#endif
+#if NET7_0
+                new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
+#endif
+#if NET8_0
+                new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> MSTest2 =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET462
+                new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
+#endif
+#if NET5_0
+                new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
+#endif
+#if NET6_0
+                new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
+#endif
+#if NET7_0
+                new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
+#endif
+#if NET8_0
+                new object[] { "2.2.10" },
+                new object[] { "3.2.2" },
 #endif
 #endif
             };
@@ -619,23 +1086,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "1.9.0" },
+#if NET462
+                new object[] { "1.9.3" },
+                new object[] { "2.3.0" },
 #endif
 #if NETCOREAPP2_1
-                new object[] { "1.9.0" },
+                new object[] { "1.9.3" },
+                new object[] { "2.3.0" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "1.9.0" },
+                new object[] { "1.9.3" },
+                new object[] { "2.3.0" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "1.9.0" },
+                new object[] { "1.9.3" },
+                new object[] { "2.3.0" },
 #endif
 #if NET5_0
-                new object[] { "1.9.0" },
+                new object[] { "1.9.3" },
+                new object[] { "2.3.0" },
 #endif
 #if NET6_0
-                new object[] { "1.9.0" },
+                new object[] { "1.9.3" },
+                new object[] { "2.3.0" },
+#endif
+#if NET7_0
+                new object[] { "1.9.3" },
+                new object[] { "2.3.0" },
+#endif
+#if NET8_0
+                new object[] { "1.9.3" },
+                new object[] { "2.3.0" },
 #endif
 #endif
             };
@@ -647,8 +1128,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "3.29.0" },
+#if NET462
+                new object[] { "3.38.1" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "3.28.0" },
@@ -657,13 +1138,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.28.0" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "3.29.0" },
+                new object[] { "3.38.1" },
 #endif
 #if NET5_0
-                new object[] { "3.29.0" },
+                new object[] { "3.38.1" },
 #endif
 #if NET6_0
-                new object[] { "3.29.0" },
+                new object[] { "3.38.1" },
+#endif
+#if NET7_0
+                new object[] { "3.38.1" },
+#endif
+#if NET8_0
+                new object[] { "3.38.1" },
 #endif
 #endif
             };
@@ -675,24 +1162,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "1.5.14" },
-                new object[] { "2.11.0" },
+                new object[] { "2.12.0" },
+                new object[] { "3.1.1" },
 #endif
 #if NETCOREAPP2_1
-                new object[] { "2.11.0" },
+                new object[] { "2.12.0" },
+                new object[] { "3.0.1" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "2.11.0" },
+                new object[] { "2.12.0" },
+                new object[] { "3.0.1" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "2.11.0" },
+                new object[] { "2.12.0" },
+                new object[] { "3.1.1" },
 #endif
 #if NET5_0
-                new object[] { "2.11.0" },
+                new object[] { "2.12.0" },
+                new object[] { "3.1.1" },
 #endif
 #if NET6_0
-                new object[] { "2.11.0" },
+                new object[] { "2.12.0" },
+                new object[] { "3.1.1" },
+#endif
+#if NET7_0
+                new object[] { "2.12.0" },
+                new object[] { "3.1.1" },
+#endif
+#if NET8_0
+                new object[] { "2.12.0" },
+                new object[] { "3.1.1" },
 #endif
 #endif
             };
@@ -704,32 +1205,40 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "1.0.0.505" },
                 new object[] { "2.1.0" },
                 new object[] { "3.2.1" },
                 new object[] { "4.7.15" },
-                new object[] { "5.0.1" },
+                new object[] { "5.2.8" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "4.7.15" },
-                new object[] { "5.0.1" },
+                new object[] { "5.2.8" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "4.7.15" },
-                new object[] { "5.0.1" },
+                new object[] { "5.2.8" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "4.7.15" },
-                new object[] { "5.0.1" },
+                new object[] { "5.2.8" },
 #endif
 #if NET5_0
                 new object[] { "4.7.15" },
-                new object[] { "5.0.1" },
+                new object[] { "5.2.8" },
 #endif
 #if NET6_0
                 new object[] { "4.7.15" },
-                new object[] { "5.0.1" },
+                new object[] { "5.2.8" },
+#endif
+#if NET7_0
+                new object[] { "4.7.15" },
+                new object[] { "5.2.8" },
+#endif
+#if NET8_0
+                new object[] { "4.7.15" },
+                new object[] { "5.2.8" },
 #endif
 #endif
             };
@@ -741,24 +1250,52 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "1.2.11" },
-                new object[] { "2.0.14" },
+                new object[] { "2.0.16" },
 #endif
 #if NETCOREAPP2_1
-                new object[] { "2.0.14" },
+                new object[] { "2.0.16" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "2.0.14" },
+                new object[] { "2.0.16" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "2.0.14" },
+                new object[] { "2.0.16" },
 #endif
 #if NET5_0
-                new object[] { "2.0.14" },
+                new object[] { "2.0.16" },
 #endif
 #if NET6_0
-                new object[] { "2.0.14" },
+                new object[] { "2.0.16" },
+#endif
+#if NET7_0
+                new object[] { "2.0.16" },
+#endif
+#if NET8_0
+                new object[] { "2.0.16" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> ILogger =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET462
+                new object[] { "8.3.0" },
+#endif
+#if NET6_0
+                new object[] { "8.3.0" },
+#endif
+#if NET7_0
+                new object[] { "8.3.0" },
+#endif
+#if NET8_0
+                new object[] { "8.3.0" },
 #endif
 #endif
             };
@@ -770,28 +1307,42 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "4.2.7" },
+#if NET462
+                new object[] { "4.3.1" },
 #endif
 #if NETCOREAPP2_1
-                new object[] { "4.2.7" },
-                new object[] { "5.2.0" },
+                new object[] { "4.3.1" },
+                new object[] { "5.4.1" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "4.2.7" },
-                new object[] { "5.2.0" },
+                new object[] { "4.3.1" },
+                new object[] { "5.4.1" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "4.2.7" },
-                new object[] { "5.2.0" },
+                new object[] { "4.3.1" },
+                new object[] { "5.4.1" },
 #endif
 #if NET5_0
-                new object[] { "4.2.7" },
-                new object[] { "5.2.0" },
+                new object[] { "4.3.1" },
+                new object[] { "5.4.1" },
 #endif
 #if NET6_0
-                new object[] { "4.2.7" },
-                new object[] { "5.2.0" },
+                new object[] { "4.3.1" },
+                new object[] { "5.4.1" },
+                new object[] { "6.2.0" },
+                new object[] { "7.0.1" },
+#endif
+#if NET7_0
+                new object[] { "4.3.1" },
+                new object[] { "5.4.1" },
+                new object[] { "6.2.0" },
+                new object[] { "7.0.1" },
+#endif
+#if NET8_0
+                new object[] { "4.3.1" },
+                new object[] { "5.4.1" },
+                new object[] { "6.2.0" },
+                new object[] { "7.0.1" },
 #endif
 #endif
             };
@@ -803,7 +1354,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
+#if NET462
                 new object[] { "2.7.27" },
 #endif
 #if NETCOREAPP2_1
@@ -819,6 +1370,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.7.27" },
 #endif
 #if NET6_0
+                new object[] { "2.7.27" },
+#endif
+#if NET7_0
+                new object[] { "2.7.27" },
+#endif
+#if NET8_0
                 new object[] { "2.7.27" },
 #endif
 #endif
@@ -831,8 +1388,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "3.3.3" },
+#if NET462
+                new object[] { "3.5.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "3.2.5" },
@@ -841,13 +1398,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.2.5" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "3.3.3" },
+                new object[] { "3.5.0" },
 #endif
 #if NET5_0
-                new object[] { "3.3.3" },
+                new object[] { "3.5.0" },
 #endif
 #if NET6_0
-                new object[] { "3.3.3" },
+                new object[] { "3.5.0" },
+#endif
+#if NET7_0
+                new object[] { "3.5.0" },
+#endif
+#if NET8_0
+                new object[] { "3.5.0" },
 #endif
 #endif
             };
@@ -860,16 +1423,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NETCOREAPP3_0
-                new object[] { "2.47.0" },
+                new object[] { "2.56.0" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "2.47.0" },
+                new object[] { "2.56.0" },
 #endif
 #if NET5_0
-                new object[] { "2.47.0" },
+                new object[] { "2.56.0" },
 #endif
 #if NET6_0
-                new object[] { "2.47.0" },
+                new object[] { "2.61.0" },
+#endif
+#if NET7_0
+                new object[] { "2.61.0" },
+#endif
+#if NET8_0
+                new object[] { "2.61.0" },
 #endif
 #endif
             };
@@ -881,23 +1450,125 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "2.46.3" },
+#if NET462
+                new object[] { "2.46.6" },
 #endif
 #if NETCOREAPP2_1
-                new object[] { "2.46.3" },
+                new object[] { "2.46.6" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "2.46.3" },
+                new object[] { "2.46.6" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "2.46.3" },
+                new object[] { "2.46.6" },
 #endif
 #if NET5_0
-                new object[] { "2.46.3" },
+                new object[] { "2.46.6" },
 #endif
 #if NET6_0
-                new object[] { "2.46.3" },
+                new object[] { "2.46.6" },
+#endif
+#if NET7_0
+                new object[] { "2.46.6" },
+#endif
+#if NET8_0
+                new object[] { "2.46.6" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> OpenTelemetry =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET462
+                new object[] { "1.7.0" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "1.7.0" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "1.7.0" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "1.7.0" },
+#endif
+#if NET5_0
+                new object[] { "1.7.0" },
+#endif
+#if NET6_0
+                new object[] { "1.7.0" },
+#endif
+#if NET7_0
+                new object[] { "1.7.0" },
+#endif
+#if NET8_0
+                new object[] { "1.7.0" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> Yarp =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETCOREAPP3_1
+                new object[] { "1.1.2" },
+#endif
+#if NET5_0
+                new object[] { "1.1.2" },
+#endif
+#if NET6_0
+                new object[] { "1.1.2" },
+                new object[] { "2.1.0" },
+#endif
+#if NET7_0
+                new object[] { "1.1.2" },
+                new object[] { "2.1.0" },
+#endif
+#if NET8_0
+                new object[] { "1.1.2" },
+                new object[] { "2.1.0" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> AzureServiceBus =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET462
+                new object[] { "7.17.4" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "7.17.4" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "7.17.4" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "7.17.4" },
+#endif
+#if NET5_0
+                new object[] { "7.17.4" },
+#endif
+#if NET6_0
+                new object[] { "7.17.4" },
+#endif
+#if NET7_0
+                new object[] { "7.17.4" },
+#endif
+#if NET8_0
+                new object[] { "7.17.4" },
 #endif
 #endif
             };

@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     public class AspNetCoreMvc30WrongMethodTests : AspNetCoreMvcWrongMethodTestBase
     {
-        public AspNetCoreMvc30WrongMethodTests(AspNetCoreMvcTestBase.AspNetCoreTestFixture fixture, ITestOutputHelper output)
+        public AspNetCoreMvc30WrongMethodTests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
             : base(nameof(AspNetCoreMvc30WrongMethodTests), "AspNetCoreMvc30", fixture, output)
         {
         }

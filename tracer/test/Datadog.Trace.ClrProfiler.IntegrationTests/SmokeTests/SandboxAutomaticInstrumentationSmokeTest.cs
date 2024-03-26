@@ -3,7 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET461
+#if NETFRAMEWORK
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,9 +19,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         [SkippableFact]
         [Trait("Category", "Smoke")]
-        public void Fails()
+        public async Task Fails()
         {
-            CheckForSmoke(shouldDeserializeTraces: false, expectedExitCode: -10);
+            await CheckForSmoke(shouldDeserializeTraces: false, expectedExitCode: 0);
         }
     }
 }

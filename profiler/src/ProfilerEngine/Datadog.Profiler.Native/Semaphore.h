@@ -16,8 +16,8 @@ public:
     Semaphore(const Semaphore&) = delete;
     Semaphore& operator=(const Semaphore&) = delete;
 
-    inline bool TryAcquire(void);
-    inline std::uint32_t Acquire(void);
+    inline bool TryAcquire();
+    inline std::uint32_t Acquire();
     inline std::uint32_t Release();
     inline std::uint32_t GetCurrentCount() const;
     inline std::uint32_t GetMaxCount() const;
@@ -59,7 +59,7 @@ inline Semaphore::Semaphore(std::uint32_t initialCount, std::uint32_t maxCount) 
 {
 }
 
-inline bool Semaphore::TryAcquire(void)
+inline bool Semaphore::TryAcquire()
 {
     if (_currentCount > 0)
     {
@@ -75,7 +75,7 @@ inline bool Semaphore::TryAcquire(void)
     return false;
 }
 
-inline std::uint32_t Semaphore::Acquire(void)
+inline std::uint32_t Semaphore::Acquire()
 {
     std::unique_lock<std::mutex> lock(_syncLock);
 

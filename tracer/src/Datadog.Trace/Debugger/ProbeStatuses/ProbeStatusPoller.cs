@@ -9,7 +9,9 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Debugger.ProbeStatuses
 {
@@ -18,55 +20,124 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeStatusPoller));
 
         private readonly ProbeStatusSink _probeStatusSink;
-        private readonly TimeSpan _period;
-        private readonly HashSet<string> _probes = new();
+        private readonly TimeSpan _shortPeriod = TimeSpan.FromSeconds(10);
+        private readonly TimeSpan _longPeriod = TimeSpan.FromMinutes(60);
+        private readonly HashSet<FetchProbeStatus> _probes = new();
         private readonly object _locker = new object();
         private Timer _pollerTimer;
         private bool _isPolling;
+        private bool _isRecentlyForcedSchedule;
 
-        private ProbeStatusPoller(ProbeStatusSink probeStatusSink, TimeSpan period)
+        private ProbeStatusPoller(ProbeStatusSink probeStatusSink)
         {
             _probeStatusSink = probeStatusSink;
-            _period = period;
         }
 
-        internal static ProbeStatusPoller Create(ImmutableDebuggerSettings settings, ProbeStatusSink probeStatusSink)
+        internal static ProbeStatusPoller Create(ProbeStatusSink probeStatusSink, DebuggerSettings settings)
         {
-            return new ProbeStatusPoller(probeStatusSink, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
+            return new ProbeStatusPoller(probeStatusSink);
         }
 
         private void PollerCallback(object state)
         {
-            _pollerTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+            if (TryAcquireLock())
+            {
+                try
+                {
+                    PausePollerTimer();
+                    OnProbeStatusesPoll();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Polling probe status has failed.");
+                }
+                finally
+                {
+                    ResumePollerTimer();
+                    ReleaseLock();
+                }
+            }
+        }
+
+        private bool TryAcquireLock()
+        {
+            var lockTaken = false;
             try
             {
-                OnProbeStatusesPoll();
+                Monitor.TryEnter(_locker, ref lockTaken);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Polling probe status has failed.");
+                Log.Error(ex, "Probe Status Poller: Lock acquisition failed.");
             }
-            finally
+
+            return lockTaken;
+        }
+
+        private void ReleaseLock()
+        {
+            Monitor.Exit(_locker);
+        }
+
+        private void PausePollerTimer()
+        {
+            try
             {
-                _pollerTimer?.Change(_period, _period);
+                _pollerTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Probe Status Poller: Pausing the poller has failed.");
+            }
+        }
+
+        private void ResumePollerTimer()
+        {
+            try
+            {
+                var waitPeriod = _isRecentlyForcedSchedule ? _shortPeriod : _longPeriod;
+                _pollerTimer?.Change(waitPeriod, waitPeriod);
+                _isRecentlyForcedSchedule = false;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Probe Status Poller: Resuming the poller has failed.");
             }
         }
 
         private void OnProbeStatusesPoll()
         {
-            lock (_locker)
+            if (!_probes.Any())
             {
-                if (_probes.Count == 0)
-                {
-                    return;
-                }
+                return;
+            }
 
-                var probeStatuses = DebuggerNativeMethods.GetProbesStatuses(_probes.ToArray());
+            var probesToFetch = _probes.
+                                Where(p => p.ShouldFetch())
+                               .Select(p => p.ProbeId)
+                               .ToArray();
 
-                foreach (var probeStatus in probeStatuses)
-                {
-                    _probeStatusSink.AddProbeStatus(probeStatus.ProbeId, probeStatus.Status);
-                }
+            var probeStatuses = _probes.Where(p => !p.ShouldFetch())
+                                       .Select(p => p.ProbeStatus)
+                                       .ToList();
+
+            if (probesToFetch.Any())
+            {
+                probeStatuses.AddRange(DebuggerNativeMethods.GetProbesStatuses(probesToFetch));
+            }
+
+            if (!probeStatuses.Any())
+            {
+                return;
+            }
+
+            foreach (var probeStatus in probeStatuses)
+            {
+                var probeVersion = _probes.SingleOrDefault(p => p.ProbeId == probeStatus.ProbeId)?.ProbeVersion ?? 0;
+                // Normalize `INSTRUMENTED` status to `INSTALLED`. The `INSTRUMENTED` status is not recognized by the backend,
+                // it was added to satisfy Exception Debugging to better distinguish between RequestReJIT (INSTALLED) and actual instrumentation (INSTRUMENTED).
+                var status = probeStatus.Status == Status.INSTRUMENTED ? Status.INSTALLED : probeStatus.Status;
+                _probeStatusSink.AddProbeStatus(probeStatus.ProbeId, status, probeVersion, errorMessage: probeStatus.ErrorMessage);
             }
         }
 
@@ -84,16 +155,29 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
                     return;
                 }
 
-                _pollerTimer = new Timer(PollerCallback, state: null, dueTime: TimeSpan.Zero, _period);
+                _pollerTimer = new Timer(PollerCallback, state: null, dueTime: TimeSpan.Zero, _shortPeriod);
                 _isPolling = true;
             }
         }
 
-        public void AddProbes(string[] newProbes)
+        public void AddProbes(FetchProbeStatus[] newProbes)
         {
             lock (_locker)
             {
                 _probes.UnionWith(newProbes);
+                ScheduleNextPollInOneSeconds();
+            }
+        }
+
+        private void ScheduleNextPollInOneSeconds()
+        {
+            lock (_locker)
+            {
+                if (_isPolling)
+                {
+                    _pollerTimer?.Change(TimeSpan.FromSeconds(1), _shortPeriod);
+                    _isRecentlyForcedSchedule = true;
+                }
             }
         }
 
@@ -101,12 +185,33 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         {
             lock (_locker)
             {
-                _probes.ExceptWith(removedProbes);
+                _probes.RemoveWhere(p => removedProbes.Contains(p.ProbeId));
 
                 foreach (var rmProbe in removedProbes)
                 {
                     _probeStatusSink.Remove(rmProbe);
                 }
+            }
+        }
+
+        public void UpdateProbes(string[] probeIds, FetchProbeStatus[] newProbeStatuses)
+        {
+            lock (_locker)
+            {
+                RemoveProbes(probeIds);
+                AddProbes(newProbeStatuses);
+            }
+        }
+
+        public string[] GetFetchedProbes(string[] candidateProbeIds)
+        {
+            lock (_locker)
+            {
+                return _probes
+                      .Where(p => p.ShouldFetch() && candidateProbeIds
+                                .Contains(p.ProbeId))
+                      .Select(p => p.ProbeId)
+                      .ToArray();
             }
         }
 

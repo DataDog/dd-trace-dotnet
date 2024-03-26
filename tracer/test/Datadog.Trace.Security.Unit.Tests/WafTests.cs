@@ -5,25 +5,27 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.Unit.Tests.Utils;
+using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
-    [Collection("WafTests")]
-    public class WafTests
+    public class WafTests : WafLibraryRequiredTest
     {
         [Theory]
         [InlineData("[$ne]", "arg", "nosql_injection", "crs-942-290")]
         [InlineData("attack", "appscan_fingerprint", "security_scanner", "crs-913-120")]
-        [InlineData("key", "<script>", "xss", "crs-941-100")]
+        [InlineData("key", "<script>", "xss", "crs-941-110")]
         [InlineData("value", "sleep(10)", "sql_injection", "crs-942-160")]
         public void QueryStringAttack(string key, string attack, string flow, string rule)
         {
@@ -57,8 +59,8 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Theory]
-        [InlineData("user-agent", "Arachni/v1", "security_scanner", "ua0-600-12x")]
-        [InlineData("referer", "<script >", "xss", "crs-941-100")]
+        [InlineData("user-agent", "Arachni/v1", "attack_tool", "ua0-600-12x")]
+        [InlineData("referer", "<script >", "xss", "crs-941-110")]
         [InlineData("x-file-name", "routing.yml", "command_injection", "crs-932-180")]
         [InlineData("x-filename", "routing.yml", "command_injection", "crs-932-180")]
         [InlineData("x_filename", "routing.yml", "command_injection", "crs-932-180")]
@@ -78,7 +80,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("key", ".cookie-;domain=", "http_protocol_violation", "crs-943-100")]
         [InlineData("x-attack", " var_dump ()", "php_code_injection", "crs-933-160")]
         [InlineData("x-attack", "o:4:\"x\":5:{d}", "php_code_injection", "crs-933-170")]
-        [InlineData("key", "<script>", "xss", "crs-941-100")]
+        [InlineData("key", "<script>", "xss", "crs-941-110")]
         public void CookiesAttack(string key, string content, string flow, string rule)
         {
             Execute(
@@ -92,9 +94,49 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("/.adsensepostnottherenonobook", "security_scanner", "crs-913-120")]
         public void BodyAttack(string body, string flow, string rule) => Execute(AddressesConstants.RequestBody, body, flow, rule);
 
-        private static void Execute(string address, object value, string flow, string rule)
+        [Fact]
+        public void SchemaBodyExtraction()
+        {
+            Execute(
+                AddressesConstants.RequestBody,
+                new Dictionary<string, object>
+                {
+                    { "property1", "/.adsensepostnottherenonobook" },
+                    { "property2", 2 },
+                    { "property3", 3.10 },
+                    { "property4", 5.10M },
+                    { "property5", true },
+                    { "property6", 10u }
+                },
+                "security_scanner",
+                "crs-913-120",
+                schemaExtraction: """{"_dd.appsec.s.req.body":[{"property1":[8],"property2":[4],"property3":[16],"property4":[16],"property5":[2],"property6":[4] }]}""");
+        }
+
+        [Fact]
+        public void SchemaRequestExtraction()
+        {
+            Execute(
+                AddressesConstants.RequestHeaderNoCookies,
+                new Dictionary<string, object> { { "Content-Type", "/.adsensepostnottherenonobook" }, },
+                schemaExtraction: """{"_dd.appsec.s.req.headers":[{"Content-Type":[8]}]}""");
+        }
+
+        private void Execute(string address, object value, string flow = null, string rule = null, string schemaExtraction = null)
+        {
+            ExecuteInternal(address, value, flow, rule, schemaExtraction, true);
+            ExecuteInternal(address, value, flow, rule, schemaExtraction, false);
+        }
+
+        private void ExecuteInternal(string address, object value, string flow, string rule, string schemaExtraction, bool newEncoder)
         {
             var args = new Dictionary<string, object> { { address, value } };
+            var extractSchema = schemaExtraction is not null;
+            if (extractSchema)
+            {
+                args.Add(AddressesConstants.WafContextProcessor, new Dictionary<string, bool> { { "extract-schema", true } });
+            }
+
             if (!args.ContainsKey(AddressesConstants.RequestUriRaw))
             {
                 args.Add(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
@@ -105,15 +147,26 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            using var waf = Waf.Create(string.Empty, string.Empty);
+            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, setupWafSchemaExtraction: extractSchema, useUnsafeEncoder: newEncoder);
+            using var waf = initResult.Waf;
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
-            var result = context.Run(args, 1_000_000);
-            result.ReturnCode.Should().Be(ReturnCode.Monitor);
-            var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
-            resultData.Rule.Tags.Type.Should().Be(flow);
-            resultData.Rule.Id.Should().Be(rule);
-            resultData.RuleMatches[0].Parameters[0].Address.Should().Be(address);
+            var result = context.Run(args, TimeoutMicroSeconds);
+            if (flow is not null)
+            {
+                result.ReturnCode.Should().Be(WafReturnCode.Match);
+                var jsonString = JsonConvert.SerializeObject(result.Data);
+                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
+                resultData.Rule.Tags.Type.Should().Be(flow);
+                resultData.Rule.Id.Should().Be(rule);
+                resultData.RuleMatches[0].Parameters[0].Address.Should().Be(address);
+            }
+
+            if (extractSchema)
+            {
+                var serializedDerivatives = JsonConvert.SerializeObject(result.Derivatives);
+                serializedDerivatives.Should().BeJsonEquivalentTo(schemaExtraction);
+            }
         }
     }
 }

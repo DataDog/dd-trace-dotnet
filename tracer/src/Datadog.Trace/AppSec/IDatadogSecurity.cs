@@ -13,8 +13,6 @@ namespace Datadog.Trace.AppSec
 {
     internal interface IDatadogSecurity
     {
-        InstrumentationGateway InstrumentationGateway { get; }
-
         SecuritySettings Settings { get; }
     }
 }

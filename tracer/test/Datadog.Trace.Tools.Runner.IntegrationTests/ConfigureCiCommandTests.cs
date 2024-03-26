@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using Xunit;
@@ -15,6 +16,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
     public class ConfigureCiCommandTests
     {
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public void ConfigureCi()
         {
             var commandLine = "ci configure azp --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url TestAgentUrl";
@@ -30,7 +32,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             foreach (var line in console.ReadLines())
             {
                 // ##vso[task.setvariable variable=DD_DOTNET_TRACER_HOME]TestTracerHome
-                var match = Regex.Match(line, @"##vso\[task.setvariable variable=(?<name>[A-Z1-9_]+)\](?<value>.*)");
+                var match = Regex.Match(line, @"##vso\[task.setvariable variable=(?<name>[A-Z1-9_]+);\](?<value>.*)");
 
                 if (match.Success)
                 {
@@ -41,11 +43,12 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables.Should().Contain("DD_ENV", "TestEnv");
             environmentVariables.Should().Contain("DD_SERVICE", "TestService");
             environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
-            environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", "TestTracerHome");
+            environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", Path.GetFullPath("TestTracerHome"));
             environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", "TestAgentUrl");
         }
 
         [SkippableTheory]
+        [Trait("RunOnWindows", "True")]
         [InlineData("TF_BUILD", "1", 0, "Detected CI AzurePipelines.")]
         [InlineData("Nope", "0", 1, "Failed to autodetect CI.")]
         public void AutodetectCi(string key, string value, int expectedStatusCode, string expectedMessage)

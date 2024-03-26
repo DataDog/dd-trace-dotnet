@@ -3,10 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
@@ -17,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         AssemblyName = "StackExchange.Redis",
         TypeName = "StackExchange.Redis.ConnectionMultiplexer",
         MethodName = "ExecuteAsyncImpl",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[!!0]",
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", ClrNames.Object, "StackExchange.Redis.ServerEndPoint" },
         MinimumVersion = "1.0.0",
         MaximumVersion = "2.*.*",
@@ -26,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         AssemblyName = "StackExchange.Redis.StrongName",
         TypeName = "StackExchange.Redis.ConnectionMultiplexer",
         MethodName = "ExecuteAsyncImpl",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[!!0]",
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", ClrNames.Object, "StackExchange.Redis.ServerEndPoint" },
         MinimumVersion = "1.0.0",
         MaximumVersion = "2.*.*",
@@ -50,12 +53,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TMessage, TProcessor, TServerEndPoint>(TTarget instance, TMessage message, TProcessor resultProcessor, object state, TServerEndPoint serverEndPoint)
             where TTarget : IConnectionMultiplexer
-            where TMessage : IMessageData
+            where TMessage : IMessageData, IDuckType
         {
-            string rawCommand = message.CommandAndKey ?? "COMMAND";
-            StackExchangeRedisHelper.HostAndPort hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Configuration);
+            if (message.Instance is null)
+            {
+                return CallTargetState.GetDefault();
+            }
 
-            Scope scope = RedisHelper.CreateScope(Tracer.Instance, StackExchangeRedisHelper.IntegrationId, StackExchangeRedisHelper.IntegrationName, hostAndPort.Host, hostAndPort.Port, rawCommand);
+            string rawCommand = message.CommandAndKey ?? "COMMAND";
+
+            // Assuming that instance.Instance is not null, because we're calling an instance method
+            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Configuration);
+
+            var scope = RedisHelper.CreateScope(
+                Tracer.Instance,
+                StackExchangeRedisHelper.IntegrationId,
+                StackExchangeRedisHelper.IntegrationName,
+                hostAndPort.Host,
+                hostAndPort.Port,
+                rawCommand,
+                StackExchangeRedisHelper.GetDb(message.Db));
+
             if (scope is not null)
             {
                 return new CallTargetState(scope);

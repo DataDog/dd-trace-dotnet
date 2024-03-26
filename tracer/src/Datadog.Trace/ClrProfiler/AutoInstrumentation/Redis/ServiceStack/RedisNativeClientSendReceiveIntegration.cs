@@ -6,21 +6,20 @@
 using System;
 using System.ComponentModel;
 using System.Globalization;
-using System.Linq;
-using System.Text;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
 {
     /// <summary>
-    /// ServiceStack.Redis.RedisNativeClient.SendReceive[T] calltarget instrumentation
+    /// ServiceStack.Redis.RedisNativeClient.SendReceive[T] calltarget instrumentation.
     /// </summary>
+    /// <seealso cref="RedisNativeClientSendReceiveIntegration_6_2_0"/>
     [InstrumentMethod(
         AssemblyName = "ServiceStack.Redis",
         TypeName = "ServiceStack.Redis.RedisNativeClient",
         MethodName = "SendReceive",
-        ReturnTypeName = "T",
+        ReturnTypeName = "!!0",
         ParameterTypeNames = new[] { "System.Byte[][]", "System.Func`1[!!0]", "System.Action`1[System.Func`1[!!0]]", ClrNames.Bool },
         MinimumVersion = "4.0.0",
         MaximumVersion = "6.*.*",
@@ -47,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
         internal static CallTargetState OnMethodBegin<TTarget, TFunc, TAction>(TTarget instance, byte[][] cmdWithBinaryArgs, TFunc fn, TAction completePipelineFn, bool sendWithoutRead)
             where TTarget : IRedisNativeClient
         {
-            Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, IntegrationName, instance.Host ?? string.Empty, instance.Port.ToString(CultureInfo.InvariantCulture), GetRawCommand(cmdWithBinaryArgs));
+            Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, IntegrationName, instance.Host ?? string.Empty, instance.Port.ToString(CultureInfo.InvariantCulture), RedisHelper.GetRawCommand(cmdWithBinaryArgs), instance.Db);
             if (scope is not null)
             {
                 return new CallTargetState(scope);
@@ -70,24 +69,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
         {
             state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TResponse>(response);
-        }
-
-        private static string GetRawCommand(byte[][] cmdWithBinaryArgs)
-        {
-            return string.Join(
-                " ",
-                cmdWithBinaryArgs.Select(
-                    bs =>
-                    {
-                        try
-                        {
-                            return Encoding.UTF8.GetString(bs);
-                        }
-                        catch
-                        {
-                            return string.Empty;
-                        }
-                    }));
         }
     }
 }

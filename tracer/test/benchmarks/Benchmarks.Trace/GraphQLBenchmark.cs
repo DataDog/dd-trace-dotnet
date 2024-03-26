@@ -10,6 +10,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkAgent3]
+    [BenchmarkCategory(Constants.TracerCategory)]
     public class GraphQLBenchmark
     {
         private static readonly Task<ExecutionResult> Result = Task.FromResult(new ExecutionResult { Value = 42 });
@@ -31,7 +32,7 @@ namespace Benchmarks.Trace
         [Benchmark]
         public unsafe int ExecuteAsync()
         {
-            var task = CallTarget.Run<Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration, GraphQLClient, ExecutionContext, Task<ExecutionResult>>(
+            var task = CallTarget.Run<Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegration, GraphQLClient, ExecutionContext, Task<ExecutionResult>>(
                 Client,
                 Context,
                 &ExecuteAsync);

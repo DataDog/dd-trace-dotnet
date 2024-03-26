@@ -14,7 +14,6 @@ class MetadataInterfaces : public IMetaDataError,
                                       IMetaDataAssemblyImport,
                                       IMetaDataValidate,
                                       IMetaDataDispenserEx,
-                                      ICeeGen,
                                       IMetaDataTables2,
                                       IMetaDataInfo
 {
@@ -27,8 +26,8 @@ public:
     ~MetadataInterfaces();
 
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
-    ULONG STDMETHODCALLTYPE AddRef(void) override;
-    ULONG STDMETHODCALLTYPE Release(void) override;
+    ULONG STDMETHODCALLTYPE AddRef() override;
+    ULONG STDMETHODCALLTYPE Release() override;
     void WriteMetadataChange(const mdToken* pToken, const shared::WSTRING& metadataName) const;
     HRESULT STDMETHODCALLTYPE OnError(HRESULT hrError, mdToken token) override;
     HRESULT STDMETHODCALLTYPE Map(mdToken tkImp, mdToken tkEmit) override;
@@ -351,22 +350,6 @@ public:
     HRESULT STDMETHODCALLTYPE FindAssemblyModule(LPCWSTR szAppBase, LPCWSTR szPrivateBin, LPCWSTR szGlobalBin,
                                                  LPCWSTR szAssemblyName, LPCWSTR szModuleName, LPWSTR szName,
                                                  ULONG cchName, ULONG* pcName) override;
-    HRESULT STDMETHODCALLTYPE EmitString(LPWSTR lpString, ULONG* RVA) override;
-    HRESULT STDMETHODCALLTYPE GetString(ULONG RVA, LPWSTR* lpString) override;
-    HRESULT STDMETHODCALLTYPE AllocateMethodBuffer(ULONG cchBuffer, UCHAR** lpBuffer, ULONG* RVA) override;
-    HRESULT STDMETHODCALLTYPE GetMethodBuffer(ULONG RVA, UCHAR** lpBuffer) override;
-    HRESULT STDMETHODCALLTYPE GetIMapTokenIface(IUnknown** pIMapToken) override;
-    HRESULT STDMETHODCALLTYPE GenerateCeeFile() override;
-    HRESULT STDMETHODCALLTYPE GetIlSection(HCEESECTION* section) override;
-    HRESULT STDMETHODCALLTYPE GetStringSection(HCEESECTION* section) override;
-    HRESULT STDMETHODCALLTYPE AddSectionReloc(HCEESECTION section, ULONG offset, HCEESECTION relativeTo,
-                                              CeeSectionRelocType relocType) override;
-    HRESULT STDMETHODCALLTYPE GetSectionCreate(const char* name, DWORD flags, HCEESECTION* section) override;
-    HRESULT STDMETHODCALLTYPE GetSectionDataLen(HCEESECTION section, ULONG* dataLen) override;
-    HRESULT STDMETHODCALLTYPE GetSectionBlock(HCEESECTION section, ULONG len, ULONG align, void** ppBytes) override;
-    HRESULT STDMETHODCALLTYPE TruncateSection(HCEESECTION section, ULONG len) override;
-    HRESULT STDMETHODCALLTYPE GenerateCeeMemoryImage(void** ppImage) override;
-    HRESULT STDMETHODCALLTYPE ComputePointer(HCEESECTION section, ULONG RVA, UCHAR** lpBuffer) override;
     HRESULT STDMETHODCALLTYPE GetStringHeapSize(ULONG* pcbStrings) override;
     HRESULT STDMETHODCALLTYPE GetBlobHeapSize(ULONG* pcbBlobs) override;
     HRESULT STDMETHODCALLTYPE GetGuidHeapSize(ULONG* pcbGuids) override;

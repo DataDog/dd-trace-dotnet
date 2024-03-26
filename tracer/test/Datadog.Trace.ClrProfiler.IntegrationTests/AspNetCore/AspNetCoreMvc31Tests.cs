@@ -6,6 +6,7 @@
 #if NETCOREAPP3_1
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -39,6 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected AspNetCoreMvc31Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames)
             : base("AspNetCoreMvc31", fixture, output, enableRouteTemplateResourceNames)
         {
+            SetEnvironmentVariable("ADD_EXTRA_MIDDLEWARE", "1");
             _testName = GetTestName(nameof(AspNetCoreMvc31Tests));
         }
 
@@ -51,20 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             await Fixture.TryStartApp(this);
 
             var spans = await Fixture.WaitForSpans(path);
-
-            var aspnetCoreSpans = spans.Where(s => s.Name == "aspnet_core.request");
-            foreach (var aspnetCoreSpan in aspnetCoreSpans)
-            {
-                var result = aspnetCoreSpan.IsAspNetCore();
-                Assert.True(result.Success, result.ToString());
-            }
-
-            var aspnetCoreMvcSpans = spans.Where(s => s.Name == "aspnet_core_mvc.request");
-            foreach (var aspnetCoreMvcSpan in aspnetCoreMvcSpans)
-            {
-                var result = aspnetCoreMvcSpan.IsAspNetCoreMvc();
-                Assert.True(result.Success, result.ToString());
-            }
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.AspNetCoreMvc31", isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);

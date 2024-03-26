@@ -19,5 +19,7 @@ namespace Datadog.Trace.Telemetry
         public string Name { get; set; }
 
         public string? Version { get; set; }
+
+        public string? Hash { get; set; }
     }
 }

@@ -9,9 +9,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Web;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
@@ -25,10 +27,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MethodName = "InvokeActionMethod",
         ReturnTypeName = ActionResultTypeName,
         ParameterTypeNames = new[] { ControllerContextTypeName, ActionDescriptorTypeName, DictionaryTypeName },
-        MinimumVersion = MinimumVersion,
-        MaximumVersion = MaximumVersion,
+        MinimumVersion = "4",
+        MaximumVersion = "5",
         IntegrationName = IntegrationName,
-        InstrumentationCategory = InstrumentationCategory.AppSec)]
+        InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -39,8 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private const string ControllerContextTypeName = "System.Web.Mvc.ControllerContext";
         private const string ActionDescriptorTypeName = "System.Web.Mvc.ActionDescriptor";
         private const string DictionaryTypeName = "System.Collections.Generic.IDictionary`2[System.String,System.Object]";
-        private const string MinimumVersion = "4";
-        private const string MaximumVersion = "5";
 
         private const string IntegrationName = nameof(IntegrationId.AspNetMvc);
 
@@ -70,6 +70,41 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
 
             return CallTargetState.GetDefault();
+        }
+
+        /// <summary>
+        /// OnMethodEnd callback
+        /// </summary>
+        /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <typeparam name="TResult">TestResult type</typeparam>
+        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="returnValue">Original method return value</param>
+        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
+        /// <param name="state">Calltarget state value</param>
+        /// <returns>Return value of the method</returns>
+        internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)
+        {
+            var security = Security.Instance;
+            if (security.Enabled)
+            {
+                if (returnValue.TryDuckCast<IJsonResultMvc>(out var actionResult))
+                {
+                    var responseObject = actionResult.Data;
+                    if (responseObject is not null)
+                    {
+                        var context = HttpContext.Current;
+                        var scope = SharedItems.TryPeekScope(context, AspNetMvcIntegration.HttpContextKey);
+                        var securityTransport = new SecurityCoordinator(security, context, scope.Span);
+                        if (!securityTransport.IsBlocked)
+                        {
+                            var inputData = new Dictionary<string, object> { { AddressesConstants.ResponseBody, ObjectExtractor.Extract(responseObject) } };
+                            securityTransport.CheckAndBlock(inputData);
+                        }
+                    }
+                }
+            }
+
+            return new CallTargetReturn<TResult>(returnValue);
         }
     }
 }

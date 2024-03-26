@@ -28,7 +28,6 @@
     </ClCompile>
     <ClCompile Include="environment_variables_util.cpp" />
     <ClCompile Include="tracer_tokens.cpp" />
-    <ClCompile Include="..\..\..\shared\src\native-lib\spdlog\src\spdlog.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\string.cpp">
       <Filter>shared</Filter>
     </ClCompile>
@@ -44,9 +43,43 @@
     <ClCompile Include="debugger_environment_variables_util.cpp">
       <Filter>Debugger</Filter>
     </ClCompile>
-    <ClCompile Include="probes_tracker.cpp">
+    <ClCompile Include="debugger_probes_tracker.cpp">
       <Filter>Debugger</Filter>
     </ClCompile>
+    <ClCompile Include="iast\iast_util.cpp" />
+    <ClCompile Include="iast\aspect.cpp" />
+    <ClCompile Include="iast\dataflow_il_analysis.cpp" />
+    <ClCompile Include="iast\dataflow_il_rewriter.cpp" />
+    <ClCompile Include="iast\aspect_filter.cpp" />
+    <ClCompile Include="iast\signature_info.cpp" />
+    <ClCompile Include="iast\method_info.cpp" />
+    <ClCompile Include="iast\module_info.cpp" />
+    <ClCompile Include="iast\signature_types.cpp" />
+    <ClCompile Include="iast\dataflow_aspects.cpp" />
+    <ClCompile Include="iast\dataflow.cpp" />
+    <ClCompile Include="iast\string_literal_aspect_filter.cpp" />
+    <ClCompile Include="iast\string_optimization_aspect_filter.cpp" />
+    <ClCompile Include="fault_tolerant_tracker.cpp">
+      <Filter>FaultTolerant</Filter>
+    </ClCompile>
+    <ClCompile Include="fault_tolerant_method_duplicator.cpp">
+      <Filter>FaultTolerant</Filter>
+    </ClCompile>
+    <ClCompile Include="fault_tolerant_envionrment_variables_util.cpp">
+      <Filter>FaultTolerant</Filter>
+    </ClCompile>
+    <ClCompile Include="fault_tolerant_rewriter.cpp">
+      <Filter>FaultTolerant</Filter>
+    </ClCompile>
+    <ClCompile Include="fault_tolerant_tokens.cpp">
+      <Filter>FaultTolerant</Filter>
+    </ClCompile>
+    <ClCompile Include="fault_tolerant_cor_profiler_function_control.cpp">
+      <Filter>FaultTolerant\Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\method_analyzers.cpp" />
+    <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp" />
+    <ClCompile Include="iast\method_analyzer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -114,12 +147,51 @@
     <ClInclude Include="debugger_environment_variables_util.h">
       <Filter>Debugger</Filter>
     </ClInclude>
-    <ClInclude Include="probes_tracker.h">
+    <ClInclude Include="debugger_probes_tracker.h">
       <Filter>Debugger</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <ClInclude Include="iast\dataflow.h" />
+    <ClInclude Include="iast\iast_util.h" />
+    <ClInclude Include="iast\aspect.h" />
+    <ClInclude Include="iast\iast_constants.h" />
+    <ClInclude Include="iast\method_info.h" />
+    <ClInclude Include="iast\signature_info.h" />
+    <ClInclude Include="iast\signature_types.h" />
+    <ClInclude Include="iast\module_info.h" />
+    <ClInclude Include="iast\app_domain_info.h" />
+    <ClInclude Include="iast\dataflow_aspects.h" />
+    <ClInclude Include="iast\aspect_filter_factory.h" />
+    <ClInclude Include="iast\aspect_filter.h" />
+    <ClInclude Include="iast\string_literal_aspect_filter.h" />
+    <ClInclude Include="iast\string_optimization_aspect_filter.h" />
+    <ClInclude Include="iast\dataflow_il_rewriter.h" />
+    <ClInclude Include="iast\dataflow_il_analysis.h" />
+    <ClInclude Include="iast\method_analyzers.h" />
+    <ClInclude Include="iast\method_analyzer.h" />
+    <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h" />
+    <ClInclude Include="Synchronized.hpp" />
+    <ClInclude Include="fault_tolerant_tracker.h">
+      <Filter>FaultTolerant</Filter>
+    </ClInclude>
+    <ClInclude Include="fault_tolerant_method_duplicator.h">
+      <Filter>FaultTolerant</Filter>
+    </ClInclude>
+    <ClInclude Include="fault_tolerant_envionrment_variables_util.h">
+      <Filter>FaultTolerant</Filter>
+    </ClInclude>
+    <ClInclude Include="fault_tolerant_environment_variables.h">
+      <Filter>FaultTolerant</Filter>
+    </ClInclude>
+    <ClInclude Include="fault_tolerant_rewriter.h">
+      <Filter>FaultTolerant</Filter>
+    </ClInclude>
+    <ClInclude Include="fault_tolerant_tokens.h">
+      <Filter>FaultTolerant</Filter>
+    </ClInclude>
+    <ClInclude Include="instrumenting_product.h" />
+    <ClInclude Include="fault_tolerant_cor_profiler_function_control.h">
+      <Filter>FaultTolerant\Hooks</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Debugger">
@@ -127,6 +199,12 @@
     </Filter>
     <Filter Include="shared">
       <UniqueIdentifier>{b31bbb47-af39-4840-88e2-eaba1bf73d34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="FaultTolerant">
+      <UniqueIdentifier>{c978629f-9250-49b5-a5f4-6bdcedfb1531}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="FaultTolerant\Hooks">
+      <UniqueIdentifier>{35c3ef95-c2c0-4141-8a54-ee60d6a8c348}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

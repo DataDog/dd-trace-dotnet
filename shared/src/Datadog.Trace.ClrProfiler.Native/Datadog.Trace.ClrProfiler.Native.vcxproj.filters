@@ -81,6 +81,9 @@
     <ClInclude Include="instrumented_assembly_generator\method_info.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -119,9 +122,6 @@
     <ClCompile Include="instrumented_assembly_generator\method_signature.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\shared\src\native-lib\spdlog\src\spdlog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\shared\src\native-src\miniutf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -146,5 +146,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Datadog.Trace.ClrProfiler.Native.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

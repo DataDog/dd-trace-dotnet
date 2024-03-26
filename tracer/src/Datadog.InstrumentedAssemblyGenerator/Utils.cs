@@ -15,11 +15,11 @@ namespace Datadog.InstrumentedAssemblyGenerator
         /// <param name="file"></param>
         /// <param name="replaceWith"></param>
         /// <returns></returns>
-        internal static string CleanFileName(this FileInfo file, string replaceWith = "")
+        internal static string CleanFileName(string file, string replaceWith = "")
         {
             return Path.GetInvalidFileNameChars().
                 Concat(Path.GetInvalidPathChars()).
-                Aggregate(file.Name, (current, c) => current.Replace(c.ToString(), replaceWith));
+                Aggregate(file, (current, c) => current.Replace(c.ToString(), replaceWith));
         }
 
         /// <summary>

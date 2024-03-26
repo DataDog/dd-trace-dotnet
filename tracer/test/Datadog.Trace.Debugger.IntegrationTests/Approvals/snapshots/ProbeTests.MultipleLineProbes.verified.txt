@@ -1,0 +1,304 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "callerName": {
+                "type": "String",
+                "value": "Run"
+              },
+              "this": {
+                "type": "MultipleLineProbes",
+                "value": "MultipleLineProbes"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "callerName": {
+                "type": "String",
+                "value": "Run"
+              },
+              "this": {
+                "type": "MultipleLineProbes",
+                "value": "MultipleLineProbes"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "MethodToInstrument",
+            "type": "Samples.Probes.TestRuns.SmokeTests.MultipleLineProbes"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MultipleLineProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "21": {
+              "arguments": {
+                "callerName": {
+                  "type": "String",
+                  "value": "Run"
+                },
+                "this": {
+                  "type": "MultipleLineProbes",
+                  "value": "MultipleLineProbes"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "MultipleLineProbes.cs",
+            "lines": [
+              21
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MultipleLineProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "22": {
+              "arguments": {
+                "callerName": {
+                  "type": "String",
+                  "value": "Run"
+                },
+                "this": {
+                  "type": "MultipleLineProbes",
+                  "value": "MultipleLineProbes"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "MultipleLineProbes.cs",
+            "lines": [
+              22
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MultipleLineProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "23": {
+              "arguments": {
+                "callerName": {
+                  "type": "String",
+                  "value": "Run"
+                },
+                "this": {
+                  "type": "MultipleLineProbes",
+                  "value": "MultipleLineProbes"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "MultipleLineProbes.cs",
+            "lines": [
+              23
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MultipleLineProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "24": {
+              "arguments": {
+                "callerName": {
+                  "type": "String",
+                  "value": "Run"
+                },
+                "this": {
+                  "type": "MultipleLineProbes",
+                  "value": "MultipleLineProbes"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "MultipleLineProbes.cs",
+            "lines": [
+              24
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MultipleLineProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "25": {
+              "arguments": {
+                "callerName": {
+                  "type": "String",
+                  "value": "Run"
+                },
+                "this": {
+                  "type": "MultipleLineProbes",
+                  "value": "MultipleLineProbes"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "MultipleLineProbes.cs",
+            "lines": [
+              25
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MultipleLineProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

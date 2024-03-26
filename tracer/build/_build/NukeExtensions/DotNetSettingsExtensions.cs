@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Nuke.Common;
 using Nuke.Common.IO;
+using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
@@ -45,6 +46,9 @@ internal static partial class DotNetSettingsExtensions
             : settings.SetProperty("Platform", GetTargetPlatform(platform));
     }
 
+    public static DotNetTestSettings SetIsDebugRun(this DotNetTestSettings settings, bool isDebugRun)
+        => settings.When(isDebugRun, c => c.SetProcessEnvironmentVariable("DD_TRACE_DEBUG", "1"));
+
     private static string GetTargetPlatform(MSBuildTargetPlatform platform) =>
         platform == MSBuildTargetPlatform.MSIL ? "AnyCPU" : platform.ToString();
 
@@ -54,14 +58,14 @@ internal static partial class DotNetSettingsExtensions
         return settings.SetProcessArgumentConfigurator(
             arg => arg.Add("/nowarn:netsdk1138"));
     }
-    
+
     public static T SetPlatform<T>(this T settings, MSBuildTargetPlatform platform)
         where T: NuGetRestoreSettings
     {
         return settings.SetProcessArgumentConfigurator(
             arg => arg.Add($"/p:\"Platform={platform}\""));
     }
-    
+
     public static T SetDDEnvironmentVariables<T>(this T settings, string serviceName)
         where T: ToolSettings
     {
@@ -73,7 +77,7 @@ internal static partial class DotNetSettingsExtensions
     {
         return settings.SetProcessEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logsDirectory);
     }
-    
+
     public static T SetProcessEnvironmentVariables<T>(this T settings, IEnumerable<KeyValuePair<string, string>> variables)
         where T: ToolSettings
     {
@@ -91,10 +95,27 @@ internal static partial class DotNetSettingsExtensions
         return settings.SetProperty("BuildProjectReferences", false);
     }
 
+    public static DotNetMSBuildSettings EnableNoDependencies(this DotNetMSBuildSettings settings)
+    {
+        return settings.SetProperty("BuildProjectReferences", false);
+    }
+
+    public static DotNetTestSettings EnableCrashDumps(this DotNetTestSettings settings, MiniDumpType dumpType = MiniDumpType.MiniDumpWithFullMemory)
+    {
+        if (bool.Parse(Environment.GetEnvironmentVariable("enable_crash_dumps") ?? "false"))
+        {
+            return settings
+                .SetProcessEnvironmentVariable("COMPlus_DbgEnableMiniDump", "1")
+                .SetProcessEnvironmentVariable("COMPlus_DbgMiniDumpType", ((int) dumpType).ToString());
+        }
+
+        return settings;
+    }
+
     public static DotNetTestSettings EnableTrxLogOutput(this DotNetTestSettings settings, string resultsDirectory)
     {
         return settings
-            .SetLogger("trx")
+            .SetLoggers("trx")
             .SetResultsDirectory(resultsDirectory);
     }
 
@@ -115,14 +136,22 @@ internal static partial class DotNetSettingsExtensions
         }
         catch
         {
-
-            var editions = new[] { "Enterprise", "Professional", "Community", "BuildTools", "Preview" };
-            toolPath = editions
-                      .Select(edition => Path.Combine(
-                                  EnvironmentInfo.SpecialFolder(SpecialFolders.ProgramFiles)!,
-                                  $@"Microsoft Visual Studio\2022\{edition}\MSBuild\Current\Bin\msbuild.exe"))
-                      .First(File.Exists);
+            Serilog.Log.Information("MSBuild auto-detection failed, checking fallback paths");
+            // favour the Preview version and x64 versions first 
+            var editions = new[] { "Preview", "Enterprise", "Professional", "Community", "BuildTools", };
+            var programFiles = new[] { EnvironmentInfo.SpecialFolder(SpecialFolders.ProgramFiles), EnvironmentInfo.SpecialFolder(SpecialFolders.ProgramFilesX86)! };
+            var allPaths = (from edition in editions
+                            from root in programFiles
+                            select Path.Combine(root, $@"Microsoft Visual Studio\2022\{edition}\MSBuild\Current\Bin\msbuild.exe")).ToList();
+            toolPath = allPaths.FirstOrDefault(File.Exists);
+            if (toolPath is null)
+            {
+                Serilog.Log.Error("Error locating MSBuild. Checked the following paths:{Paths}", string.Join(Environment.NewLine, allPaths));
+                throw new ArgumentException("Error locating MSBuild");
+            }
         }
+
+        Serilog.Log.Information("Using MSBuild path '{MSBuild}'", toolPath);
 
         return settings.SetProcessToolPath(toolPath);
     }
@@ -133,22 +162,43 @@ internal static partial class DotNetSettingsExtensions
     public static T SetDotnetPath<T>(this T settings, MSBuildTargetPlatform platform)
         where T : ToolSettings
     {
-        if (platform != MSBuildTargetPlatform.x86 && platform != MSBuildTargetPlatform.Win32)
-        {
-            return settings;
-        }
+        var dotnetPath = GetDotNetPath(platform);
+        return settings.SetProcessToolPath(dotnetPath);
+    }
 
+    /// <summary>
+    /// Get the path to `dotnet` depending on the platform
+    /// </summary>
+    public static string GetDotNetPath(MSBuildTargetPlatform platform)
+    {
+        if (!MSBuildTargetPlatform.x86.Equals(platform))
+            return DotNetTasks.DotNetPath;
 
-        // assume it's installed where we expect
         var dotnetPath = EnvironmentInfo.GetVariable<string>("DOTNET_EXE_32")
-                      ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "dotnet", "dotnet.exe");
+                 ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "dotnet", "dotnet.exe");
 
         if (!File.Exists(dotnetPath))
         {
             throw new Exception($"Error locating 32-bit dotnet process. Expected at '{dotnetPath}'");
         }
+        return dotnetPath;
+    }
 
-        return settings.SetProcessToolPath(dotnetPath);
+    public static T SetTestTargetPlatform<T>(this T settings, MSBuildTargetPlatform platform)
+        where T : ToolSettings
+    {
+        // To avoid annoying differences in the test code, convert the MSBuildTargetPlatform string values to
+        // the same values returned by Environment.Platform(), and skip unsupported values (e.g. MSIL, arm)
+        var strPlatform = platform.ToString().ToLowerInvariant();
+        var target = strPlatform switch
+        {
+            "x86" => "X86",
+            "x64" => "X64",
+            "arm64" => "ARM64",
+            _ => throw new InvalidOperationException($"Should only use x64, x86 or ARM64 for Test target platform. (Invalid : {strPlatform})"),
+        };
+
+        return settings.SetProcessEnvironmentVariable("TargetPlatform", target);
     }
 
     /// <summary>
@@ -162,7 +212,7 @@ internal static partial class DotNetSettingsExtensions
             var sb = new StringBuilder();
             foreach (var testToIgnore in testsToIgnore)
             {
-                sb.Append("FullyQualifiedName!~");
+                sb.Append("FullyQualifiedName!=");
                 sb.Append(testToIgnore);
                 sb.Append(value: '&');
             }
@@ -183,5 +233,51 @@ internal static partial class DotNetSettingsExtensions
                     .Add("--blame-hang-dump-type full")
                     .Add($"--blame-hang-timeout {timeoutInMinutes}m")
         );
+    }
+
+    public static DotNetTestSettings WithDatadogLogger(this DotNetTestSettings settings)
+    {
+        var enabled = NukeBuild.IsServerBuild;
+        try
+        {
+            var envVar = Environment.GetEnvironmentVariable("DD_LOGGER_ENABLED");
+            if (!string.IsNullOrWhiteSpace(envVar))
+            {
+                enabled = !string.Equals(envVar, "false", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+        catch
+        {
+            // Security issues...
+        }
+
+        if (enabled)
+        {
+            return settings
+                  .SetProcessEnvironmentVariable("DD_LOGGER_BUILD_SOURCESDIRECTORY", NukeBuild.RootDirectory)
+                  .SetProcessEnvironmentVariable("DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH", NukeBuild.RootDirectory / "Datadog.Trace.snk")
+                  .SetSettingsFile(NukeBuild.RootDirectory / "tracer" / "test" / "test.settings");
+        }
+
+        return settings;
+    }
+
+    public static T SetLocalOsxEnvironmentVariables<T>(this T toolSettings)
+        where T : ToolSettings
+    {
+        return toolSettings
+              .SetProcessEnvironmentVariable("MONGO_HOST", "localhost")
+              .SetProcessEnvironmentVariable("SERVICESTACK_REDIS_HOST", "localhost:6379")
+              .SetProcessEnvironmentVariable("STACKEXCHANGE_REDIS_HOST", "localhost:6392,127.0.0.1:6390")
+              .SetProcessEnvironmentVariable("STACKEXCHANGE_REDIS_SINGLE_HOST", "localhost:6391")
+              .SetProcessEnvironmentVariable("ELASTICSEARCH7_HOST", "localhost:9200")
+              .SetProcessEnvironmentVariable("ELASTICSEARCH6_HOST", "localhost:9200")
+              .SetProcessEnvironmentVariable("ELASTICSEARCH5_HOST", "localhost:9200")
+              .SetProcessEnvironmentVariable("SQLSERVER_CONNECTION_STRING", "Server=localhost;User=sa;Password=Strong!Passw0rd")
+              .SetProcessEnvironmentVariable("POSTGRES_HOST", "localhost")
+              .SetProcessEnvironmentVariable("MYSQL_HOST", "localhost")
+              .SetProcessEnvironmentVariable("MYSQL_PORT", "3306")
+              .SetProcessEnvironmentVariable("RABBITMQ_HOST", "localhost")
+              .SetProcessEnvironmentVariable("AWS_SDK_HOST", "localhost:4566");
     }
 }

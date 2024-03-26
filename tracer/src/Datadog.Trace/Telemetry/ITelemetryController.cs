@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Iast.Settings;
 
 namespace Datadog.Trace.Telemetry
 {
@@ -33,12 +33,7 @@ namespace Datadog.Trace.Telemetry
         /// Called when a tracer is initialized to record the tracer's settings
         /// Only the first tracer registered is recorded
         /// </summary>
-        void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName, AzureAppServices appServicesMetadata);
-
-        /// <summary>
-        /// Called when app sec security is enabled to record the security settings
-        /// </summary>
-        public void RecordSecuritySettings(SecuritySettings settings);
+        void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName);
 
         /// <summary>
         /// Called to record profiler-related telemetry
@@ -48,17 +43,21 @@ namespace Datadog.Trace.Telemetry
         /// <summary>
         /// Dispose resources for sending telemetry
         /// </summary>
-        /// <param name="sendAppClosingTelemetry">True if the controller should send "app closing" telemetry before disposing</param>
-        public Task DisposeAsync(bool sendAppClosingTelemetry);
-
-        /// <summary>
-        /// Dispose resources for sending telemetry
-        /// </summary>
         public Task DisposeAsync();
 
         /// <summary>
-        /// Indicates the
+        /// Indicates the controller can start sending telemetry
         /// </summary>
         void Start();
+
+        /// <summary>
+        /// Should be called when the status (enabled/disabled) of a product (ASM/Profiler) changed.
+        /// </summary>
+        void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error);
+
+        /// <summary>
+        /// Dumps the current telemetry state to the provided filename.
+        /// </summary>
+        Task DumpTelemetry(string filePath);
     }
 }

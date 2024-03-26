@@ -17,31 +17,31 @@ FrameStoreHelper::FrameStoreHelper(bool isManaged, std::string prefix, size_t co
         std::stringstream moduleBuilder;
         moduleBuilder << "module #" << i;
 
-        _mapping[i] = { isManaged, moduleBuilder.str(), frameBuilder.str() };
+        _mapping[i] = {isManaged, {moduleBuilder.str(), frameBuilder.str(), "", 0}};
     }
 }
 
-
-//FrameStoreHelper::FrameStoreHelper(std::unordered_map<uintptr_t, std::string> mapping)
-//    :
-//    _mapping{mapping}
-//{
-//}
-
-
-std::tuple<bool, std::string, std::string> FrameStoreHelper::GetFrame(uintptr_t instructionPointer)
+std::pair<bool, FrameInfoView> FrameStoreHelper::GetFrame(uintptr_t instructionPointer)
 {
+    static std::string UnknownModuleName = "module???";
+    static std::string UnknownFunctionName = "frame???";
+
     auto item = _mapping.find(instructionPointer);
     if (item != _mapping.end())
     {
         return item->second;
     }
 
-    return { true, "module???", "frame???" };
+    return {true, {UnknownModuleName, UnknownFunctionName, "", 0}};
 }
 
 
 bool FrameStoreHelper::GetTypeName(ClassID classId, std::string& name)
+{
+    return false;
+}
+
+bool FrameStoreHelper::GetTypeName(ClassID classId, std::string_view& name)
 {
     return false;
 }

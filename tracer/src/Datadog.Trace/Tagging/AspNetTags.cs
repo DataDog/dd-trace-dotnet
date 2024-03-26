@@ -20,5 +20,8 @@ namespace Datadog.Trace.Tagging
 
         [Tag(Trace.Tags.AspNetArea)]
         public string AspNetArea { get; set; }
+
+        [Tag(Tags.HttpRoute)]
+        public string HttpRoute { get; set; }
     }
 }

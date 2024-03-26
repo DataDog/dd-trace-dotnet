@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET461
+#if NETFRAMEWORK
+using System.Net;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -50,10 +52,10 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
     }
 
-    public abstract class AspNetWebForms : AspNetBase, IClassFixture<IisFixture>
+    public abstract class AspNetWebForms : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
-        private readonly bool _enableSecurity;
+        private readonly bool _classicMode;
         private readonly string _testName;
 
         public AspNetWebForms(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
@@ -63,12 +65,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
             _iisFixture = iisFixture;
-            _enableSecurity = enableSecurity;
-            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+            _classicMode = classicMode;
             _testName = "Security." + nameof(AspNetWebForms)
                      + (classicMode ? ".Classic" : ".Integrated")
                      + ".enableSecurity=" + enableSecurity;
-            SetHttpPort(iisFixture.HttpPort);
         }
 
         [Trait("Category", "EndToEnd")]
@@ -88,6 +88,27 @@ namespace Datadog.Trace.Security.IntegrationTests
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl, body);
             return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 1, settings, "application/x-www-form-urlencoded");
         }
+
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+        [SkippableTheory]
+        [InlineData("blocking")]
+        public async Task TestBlockedRequest(string test)
+        {
+            var url = "/Health";
+
+            var settings = VerifyHelper.GetSpanVerifierSettings(test);
+            await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
+        }
+
+        public async Task InitializeAsync()
+        {
+            await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+            SetHttpPort(_iisFixture.HttpPort);
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
 
         protected override string GetTestName() => _testName;
     }

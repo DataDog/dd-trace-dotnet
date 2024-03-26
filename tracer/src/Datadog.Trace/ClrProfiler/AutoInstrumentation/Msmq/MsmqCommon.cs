@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -13,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsmqCommon));
 
-        internal static Scope CreateScope<TMessageQueue>(Tracer tracer, string command, string spanKind, TMessageQueue messageQueue, bool? messagePartofTransaction = null)
+        internal static Scope? CreateScope<TMessageQueue>(Tracer tracer, string command, string spanKind, TMessageQueue messageQueue, bool? isMessagePartOfTransaction = null)
             where TMessageQueue : IMessageQueue
         {
             if (!tracer.Settings.IsIntegrationEnabled(MsmqConstants.IntegrationId))
@@ -22,28 +25,43 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
-                var tags = new MsmqTags(spanKind)
+                string operationName = GetOperationName(tracer, spanKind);
+                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MsmqConstants.MessagingType);
+                MsmqTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateMsmqTags(spanKind);
+
+                tags.Command = command;
+                try
                 {
-                    Command = command,
-                    IsTransactionalQueue = messageQueue.Transactional.ToString(),
-                    Path = messageQueue.Path,
-                };
-                if (messagePartofTransaction.HasValue)
+                    tags.Path = messageQueue.Path;
+                    tags.Host = messageQueue.MachineName;
+                    tags.IsTransactionalQueue = messageQueue.Transactional.ToString();
+                }
+                catch
                 {
-                    tags.MessageWithTransaction = messagePartofTransaction.ToString();
+                    // Depending on the permissions available, messageQueue.Transactional may throw
+                    // a MessageQueueException. The Path and machine name are apparently fraught
+                    // with potential issues too, so playing it safe and swallowing any issues here
+                    // We could consider diving into the internals to fish out the value, but not
+                    // worth it IMO, especially as that would effectively bypass a "security" feature
                 }
 
-                var serviceName = tracer.Settings.GetServiceName(tracer, MsmqConstants.ServiceName);
+                if (isMessagePartOfTransaction.HasValue)
+                {
+                    tags.MessageWithTransaction = isMessagePartOfTransaction.ToString();
+                }
 
-                scope = tracer.StartActiveInternal(MsmqConstants.OperationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
                 span.ResourceName = $"{command} {messageQueue.Path}";
+
+                // TODO: PBT: I think this span should be measured when span kind is consumer or producer
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MsmqConstants.IntegrationId);
             }
             catch (Exception ex)
@@ -52,6 +70,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             }
 
             return scope;
+        }
+
+        // internal for testing
+        internal static string GetOperationName(Tracer tracer, string spanKind)
+        {
+            if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)
+            {
+                return MsmqConstants.MsmqCommand;
+            }
+
+            return spanKind switch
+            {
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MsmqConstants.MessagingType),
+                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MsmqConstants.MessagingType),
+                _ => MsmqConstants.MsmqCommand
+            };
         }
     }
 }

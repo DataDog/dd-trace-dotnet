@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -38,8 +39,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
                 }
 
                 var serviceName = tracer.DefaultServiceName ?? "grpc-server";
-
-                scope = tracer.StartActiveInternal(GrpcCommon.OperationName, parent: spanContext, tags: tags, serviceName: serviceName);
+                string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForProtocol("grpc");
+                scope = tracer.StartActiveInternal(operationName, parent: spanContext, tags: tags, serviceName: serviceName);
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Grpc;
@@ -47,8 +48,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
 
                 if (metadata?.Count > 0)
                 {
-                    span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
+                    span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.Settings.GrpcTagsInternal, GrpcCommon.RequestMetadataTagPrefix);
                 }
+
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
             }
             catch (Exception ex)
             {

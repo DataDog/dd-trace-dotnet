@@ -36,7 +36,6 @@
 System.Exception: This was a bad request.
 at Samples.AspNetCoreMvc.Controllers.HomeController.ThrowException(),
       error.type: System.Exception,
-      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: bad-request,
@@ -44,11 +43,9 @@ at Samples.AspNetCoreMvc.Controllers.HomeController.ThrowException(),
       http.url: http://localhost:00000/bad-request,
       http.useragent: testhelper,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.p.dm: -0
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,

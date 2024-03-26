@@ -3,24 +3,25 @@
 
 #include "gtest/gtest.h"
 
-#include <vector>
-#include <unordered_map>
 #include <chrono>
+#include <memory>
+#include <unordered_map>
+#include <vector>
 
-#include "ProfilerMockedInterface.h"
 #include "AppDomainStoreHelper.h"
-#include "RuntimeIdStoreHelper.h"
-#include "IFrameStore.h"
-#include "IAppDomainStore.h"
-#include "FrameStoreHelper.h"
-#include "WallTimeProvider.h"
 #include "CpuTimeProvider.h"
+#include "FrameStoreHelper.h"
+#include "IAppDomainStore.h"
+#include "IFrameStore.h"
+#include "ProfilerMockedInterface.h"
 #include "RawCpuSample.h"
 #include "RawWallTimeSample.h"
+#include "RuntimeIdStoreHelper.h"
+#include "SampleValueTypeProvider.h"
 #include "ThreadsCpuManagerHelper.h"
+#include "WallTimeProvider.h"
 
 using namespace std::chrono_literals;
-
 
 RawWallTimeSample GetWallTimeRawSample(
     std::uint64_t timeStamp,
@@ -28,8 +29,7 @@ RawWallTimeSample GetWallTimeRawSample(
     AppDomainID appDomainId,
     std::uint64_t traceId,
     std::uint64_t spanId,
-    size_t frameCount
-    )
+    size_t frameCount)
 {
     RawWallTimeSample raw;
     raw.Timestamp = timeStamp;
@@ -56,12 +56,11 @@ RawCpuSample GetRawCpuSample(
     AppDomainID appDomainId,
     std::uint64_t traceId,
     std::uint64_t spanId,
-    size_t frameCount
-    )
+    size_t frameCount)
 {
     RawCpuSample raw;
     raw.Timestamp = timeStamp;
-    raw.Duration = duration;  // in milliseconds
+    raw.Duration = duration; // in milliseconds
     raw.AppDomainId = appDomainId;
     raw.LocalRootSpanId = traceId;
     raw.SpanId = spanId;
@@ -78,19 +77,21 @@ RawCpuSample GetRawCpuSample(
     return raw;
 }
 
-
 TEST(WallTimeProviderTest, CheckNoMissingSample)
 {
-// collect samples and check none are missing on the provider side (just count)
-    auto frameStore = new FrameStoreHelper(true, "Frame", 1);
-    auto appDomainStore = new AppDomainStoreHelper(2);
-    auto threadscpuManager = new ThreadsCpuManagerHelper();
+    // collect samples and check none are missing on the provider side (just count)
+    auto frameStore = FrameStoreHelper(true, "Frame", 1);
+    auto appDomainStore = AppDomainStoreHelper(2);
+    auto threadscpuManager = ThreadsCpuManagerHelper();
+    auto valueTypeProvider = SampleValueTypeProvider();
     MockRuntimeIdStore runtimeIdStore;
+    auto [configuration, mockConfiguration] = CreateConfiguration();
 
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration);
+    Sample::ValuesCount = 1;
     provider.Start();
 
     // check the number of samples: 3 here
@@ -99,19 +100,20 @@ TEST(WallTimeProviderTest, CheckNoMissingSample)
     provider.Add(RawWallTimeSample());
 
     auto samples = provider.GetSamples();
-    ASSERT_EQ(3, samples.size());
+    ASSERT_EQ(3, samples->size());
 
     provider.Stop();
 }
 
 TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
 {
-// add samples and check their appdomain, and pid labels
-// Note: thread labels cannot be checked because ThreadInfo is nullptr
-    auto frameStore = new FrameStoreHelper(true, "Frame", 1);
-    auto appDomainStore = new AppDomainStoreHelper(2);
+    // add samples and check their appdomain, and pid labels
+    // Note: thread labels cannot be checked because ThreadInfo is nullptr
+    auto frameStore = FrameStoreHelper(true, "Frame", 1);
+    auto appDomainStore = AppDomainStoreHelper(2);
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto threadscpuManager = new ThreadsCpuManagerHelper();
+    auto threadscpuManager = ThreadsCpuManagerHelper();
+    auto valueTypeProvider = SampleValueTypeProvider();
     MockRuntimeIdStore runtimeIdStore;
 
     std::string firstExpectedRuntimeId = "MyRid";
@@ -120,10 +122,11 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     std::string secondExpectedRuntimeId = "OtherRid";
     EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(2))).WillRepeatedly(::testing::Return(secondExpectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration);
+    Sample::ValuesCount = 1;
     provider.Start();
 
-    std::vector<size_t> expectedAppDomainId { 1, 2, 2, 1};
+    std::vector<size_t> expectedAppDomainId{1, 2, 2, 1};
     //                                                       V-- check the appdomains are correct
     provider.Add(GetWallTimeRawSample(0, 0, static_cast<AppDomainID>(expectedAppDomainId[0]), 0, 0, 1));
     provider.Add(GetWallTimeRawSample(0, 0, static_cast<AppDomainID>(expectedAppDomainId[1]), 0, 0, 2));
@@ -137,9 +140,11 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     provider.Stop();
 
     size_t currentSample = 0;
-    for (const Sample& sample : samples)
+    auto sample = std::make_shared<Sample>(0, std::string_view{}, 10);
+
+    while (samples->MoveNext(sample))
     {
-        const auto& currentRuntimeId = sample.GetRuntimeId();
+        const auto& currentRuntimeId = sample->GetRuntimeId();
         if (expectedAppDomainId[currentSample] == 1)
         {
             ASSERT_EQ(currentRuntimeId, firstExpectedRuntimeId);
@@ -157,7 +162,7 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
         builder2 << expectedAppDomainId[currentSample];
         std::string expectedPid(builder2.str());
 
-        auto labels = sample.GetLabels();
+        auto labels = sample->GetLabels();
         for (const Label& label : labels)
         {
             if (label.first == Sample::AppDomainNameLabel)
@@ -168,11 +173,9 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
             {
                 ASSERT_EQ(expectedPid, label.second);
             }
-            else
-            if (
+            else if (
                 (label.first == Sample::ThreadIdLabel) ||
-                (label.first == Sample::ThreadNameLabel)
-                )
+                (label.first == Sample::ThreadNameLabel))
             {
                 // can't test thread info
             }
@@ -189,17 +192,19 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
 
 TEST(WallTimeProviderTest, CheckFrames)
 {
-// add samples and check their frames
-    auto frameStore = new FrameStoreHelper(true, "Frame", 4);
-    auto appDomainStore = new AppDomainStoreHelper(1);
+    // add samples and check their frames
+    auto frameStore = FrameStoreHelper(true, "Frame", 4);
+    auto appDomainStore = AppDomainStoreHelper(1);
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto threadscpuManager = new ThreadsCpuManagerHelper();
+    auto threadscpuManager = ThreadsCpuManagerHelper();
+    auto valueTypeProvider = SampleValueTypeProvider();
     MockRuntimeIdStore runtimeIdStore;
 
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(1))).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration);
+    Sample::ValuesCount = 1;
     provider.Start();
 
     //                                                                 V-- check the frames are correct
@@ -215,29 +220,31 @@ TEST(WallTimeProviderTest, CheckFrames)
     provider.Stop();
 
     std::vector<std::string> expectedFrames =
-    {
-        "Frame #1",
-        "Frame #2",
-        "Frame #3",
-        "Frame #4",
-    };
+        {
+            "Frame #1",
+            "Frame #2",
+            "Frame #3",
+            "Frame #4",
+        };
 
     std::vector<std::string> expectedModules =
-    {
-        "module #1",
-        "module #2",
-        "module #3",
-        "module #4",
-    };
+        {
+            "module #1",
+            "module #2",
+            "module #3",
+            "module #4",
+        };
 
-    for (const Sample& sample : samples)
+    auto sample = std::make_shared<Sample>(0, std::string_view{}, 10);
+
+    while (samples->MoveNext(sample))
     {
         size_t currentFrame = 0;
-        auto frames = sample.GetCallstack();
+        auto frames = sample->GetCallstack();
         for (auto frame : frames)
         {
-            ASSERT_EQ(expectedModules[currentFrame], frame.first);
-            ASSERT_EQ(expectedFrames[currentFrame], frame.second);
+            ASSERT_EQ(expectedModules[currentFrame], frame.ModuleName);
+            ASSERT_EQ(expectedFrames[currentFrame], frame.Frame);
 
             currentFrame++;
         }
@@ -247,16 +254,18 @@ TEST(WallTimeProviderTest, CheckFrames)
 TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
 {
     // add samples and check their frames
-    auto frameStore = new FrameStoreHelper(true, "Frame", 1);
-    auto appDomainStore = new AppDomainStoreHelper(1);
+    auto frameStore = FrameStoreHelper(true, "Frame", 1);
+    auto appDomainStore = AppDomainStoreHelper(1);
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto threadscpuManager = new ThreadsCpuManagerHelper();
+    auto threadscpuManager = ThreadsCpuManagerHelper();
+    auto valueTypeProvider = SampleValueTypeProvider();
     MockRuntimeIdStore runtimeIdStore;
 
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration);
+    Sample::ValuesCount = 1;
     provider.Start();
 
     //                                V-----V-- check these values are correct
@@ -272,21 +281,17 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
     provider.Stop();
 
     size_t currentSample = 1;
-    for (const Sample& sample : samples)
-    {
-        ASSERT_EQ(currentSample * 1000, sample.GetTimeStamp());
+    auto sample = std::make_shared<Sample>(0, std::string_view{}, 10);
 
-        auto values = sample.GetValues();
+    while (samples->MoveNext(sample))
+    {
+        ASSERT_EQ(currentSample * 1000, sample->GetTimeStamp());
+
+        auto values = sample->GetValues();
+        ASSERT_EQ(values.size(), 1);
         for (size_t current = 0; current < values.size(); current++)
         {
-            if (current == (size_t)SampleValue::WallTimeDuration)
-            {
-                ASSERT_EQ(currentSample * 10, values[current]);
-            }
-            else // all other values must be 0
-            {
-                ASSERT_EQ(0, values[current]);
-            }
+            ASSERT_EQ(currentSample * 10, values[current]);
         }
 
         currentSample++;
@@ -296,12 +301,15 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
 TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
 {
     // add samples and check their frames
-    auto frameStore = new FrameStoreHelper(true, "Frame", 1);
-    auto appDomainStore = new AppDomainStoreHelper(1);
-    auto threadscpuManager = new ThreadsCpuManagerHelper();
+    auto frameStore = FrameStoreHelper(true, "Frame", 1);
+    auto appDomainStore = AppDomainStoreHelper(1);
+    auto threadscpuManager = ThreadsCpuManagerHelper();
+    auto valueTypeProvider = SampleValueTypeProvider();
     RuntimeIdStoreHelper runtimeIdStore;
+    auto [configuration, mockConfiguration] = CreateConfiguration();
 
-    CpuTimeProvider provider(threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    CpuTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration);
+    Sample::ValuesCount = 1;
     provider.Start();
 
     //                           V-----V-- check these values are correct
@@ -314,25 +322,22 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
     std::this_thread::sleep_for(200ms);
 
     auto samples = provider.GetSamples();
+    ASSERT_EQ(4, samples->size());
     provider.Stop();
 
     size_t currentSample = 1;
-    for (const Sample& sample : samples)
-    {
-        ASSERT_EQ(currentSample * 1000, sample.GetTimeStamp());
+    auto sample = std::make_shared<Sample>(0, std::string_view{}, 10);
 
-        auto values = sample.GetValues();
+    while (samples->MoveNext(sample))
+    {
+        ASSERT_EQ(currentSample * 1000, sample->GetTimeStamp());
+
+        auto values = sample->GetValues();
+        ASSERT_EQ(values.size(), 1);
         for (size_t current = 0; current < values.size(); current++)
         {
-            if (current == (size_t)SampleValue::CpuTimeDuration)
-            {
-                //                             V-- in nanoseconds
-                ASSERT_EQ(currentSample * 10 * 1000000, values[current]);
-            }
-            else // all other values must be 0
-            {
-                ASSERT_EQ(0, values[current]);
-            }
+            //                             V-- in nanoseconds
+            ASSERT_EQ(currentSample * 10 * 1000000, values[current]);
         }
 
         currentSample++;

@@ -4,55 +4,60 @@ parameters:
     default: false
 
 steps:
-- task: UseDotNet@2
-  displayName: install dotnet core sdk 2.1
-  inputs:
-    packageType: sdk
-    version: 2.1.x
-  retryCountOnTaskFailure: 5
+- template: install-dotnet-sdk-manually.yml
+  parameters:
+    channel: 2.1
 
-- task: UseDotNet@2
-  displayName: install dotnet core sdk 3.0
-  inputs:
-    packageType: sdk
-    version: 3.0.x
-  retryCountOnTaskFailure: 5
+- template: install-dotnet-sdk-manually.yml
+  parameters:
+    channel: 3.0
 
-- task: UseDotNet@2
-  displayName: install dotnet core sdk 3.1
-  inputs:
-    packageType: sdk
-    version: 3.1.x
-  retryCountOnTaskFailure: 5
+- template: install-dotnet-sdk-manually.yml
+  parameters:
+    channel: 3.1
 
-- task: UseDotNet@2
-  displayName: install dotnet core sdk 5
-  inputs:
-    packageType: sdk
-    version: 5.0.x
-  retryCountOnTaskFailure: 5
+- template: install-dotnet-sdk-manually.yml
+  parameters:
+    channel: 5.0
 
-- task: UseDotNet@2
-  displayName: install latest dotnet core sdk
-  inputs:
-    packageType: sdk
-    version: $(dotnetCoreSdkLatestVersion)
-    includePreviewVersions: true
-  retryCountOnTaskFailure: 5
+- template: install-dotnet-sdk-manually.yml
+  parameters:
+    channel: 6.0
+
+- template: install-dotnet-sdk-manually.yml
+  parameters:
+    channel: 7.0
+
+- template: install-dotnet-sdk-manually.yml
+  parameters:
+    sdkVersion: $(dotnetCoreSdkLatestVersion)
 
 - ${{ if eq(parameters.includeX86, true) }}:
-    - template: install-dotnet-sdk-32bit.yml
+    - template: install-dotnet-sdk-manually.yml
       parameters:
         channel: 2.1
-    - template: install-dotnet-sdk-32bit.yml
+        is64bit: false
+    - template: install-dotnet-sdk-manually.yml
       parameters:
         channel: 3.0
-    - template: install-dotnet-sdk-32bit.yml
+        is64bit: false
+    - template: install-dotnet-sdk-manually.yml
       parameters:
         channel: 3.1
-    - template: install-dotnet-sdk-32bit.yml
+        is64bit: false
+    - template: install-dotnet-sdk-manually.yml
       parameters:
         channel: 5.0
-    - template: install-dotnet-sdk-32bit.yml
+        is64bit: false
+    - template: install-dotnet-sdk-manually.yml
+      parameters:
+        channel: 6.0
+        is64bit: false
+    - template: install-dotnet-sdk-manually.yml
+      parameters:
+        channel: 7.0
+        is64bit: false
+    - template: install-dotnet-sdk-manually.yml
       parameters:
         sdkVersion: $(dotnetCoreSdkLatestVersion)
+        is64bit: false

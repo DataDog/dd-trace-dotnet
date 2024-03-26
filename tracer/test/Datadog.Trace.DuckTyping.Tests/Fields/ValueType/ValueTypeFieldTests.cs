@@ -50,6 +50,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
+            ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
+            Assert.Same(obscureObject, originalObject);
+
             // *
             Assert.Equal(10, duckInterface.PublicStaticReadonlyValueTypeField);
             Assert.Equal(10, duckAbstract.PublicStaticReadonlyValueTypeField);
@@ -80,6 +83,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
+            ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
+            Assert.Same(obscureObject, originalObject);
+
             Assert.Equal(20, duckInterface.PublicStaticValueTypeField);
             Assert.Equal(20, duckAbstract.PublicStaticValueTypeField);
             Assert.Equal(20, duckVirtual.PublicStaticValueTypeField);
@@ -99,6 +105,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
             Assert.Equal(60, duckAbstract.PublicStaticValueTypeField);
             Assert.Equal(60, duckVirtual.PublicStaticValueTypeField);
 
+            duckInterface.PublicStaticValueTypeField = 20;
             // *
 
             Assert.Equal(21, duckInterface.InternalStaticValueTypeField);
@@ -120,6 +127,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
             Assert.Equal(60, duckAbstract.InternalStaticValueTypeField);
             Assert.Equal(60, duckVirtual.InternalStaticValueTypeField);
 
+            duckInterface.InternalStaticValueTypeField = 21;
             // *
 
             Assert.Equal(22, duckInterface.ProtectedStaticValueTypeField);
@@ -141,6 +149,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
             Assert.Equal(60, duckAbstract.ProtectedStaticValueTypeField);
             Assert.Equal(60, duckVirtual.ProtectedStaticValueTypeField);
 
+            duckInterface.ProtectedStaticValueTypeField = 22;
             // *
 
             Assert.Equal(23, duckInterface.PrivateStaticValueTypeField);
@@ -161,6 +170,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
             Assert.Equal(60, duckInterface.PrivateStaticValueTypeField);
             Assert.Equal(60, duckAbstract.PrivateStaticValueTypeField);
             Assert.Equal(60, duckVirtual.PrivateStaticValueTypeField);
+
+            duckInterface.PrivateStaticValueTypeField = 23;
         }
 
         [Theory]
@@ -171,6 +182,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
             var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
+
+            ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
+            Assert.Same(obscureObject, originalObject);
 
             // *
             Assert.Equal(30, duckInterface.PublicReadonlyValueTypeField);
@@ -202,6 +216,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
+            ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
+            Assert.Same(obscureObject, originalObject);
+
             Assert.Equal(40, duckInterface.PublicValueTypeField);
             Assert.Equal(40, duckAbstract.PublicValueTypeField);
             Assert.Equal(40, duckVirtual.PublicValueTypeField);
@@ -221,6 +238,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
             Assert.Equal(60, duckAbstract.PublicValueTypeField);
             Assert.Equal(60, duckVirtual.PublicValueTypeField);
 
+            duckInterface.PublicValueTypeField = 40;
             // *
 
             Assert.Equal(41, duckInterface.InternalValueTypeField);
@@ -242,6 +260,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
             Assert.Equal(60, duckAbstract.InternalValueTypeField);
             Assert.Equal(60, duckVirtual.InternalValueTypeField);
 
+            duckInterface.InternalValueTypeField = 41;
             // *
 
             Assert.Equal(42, duckInterface.ProtectedValueTypeField);
@@ -263,6 +282,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
             Assert.Equal(60, duckAbstract.ProtectedValueTypeField);
             Assert.Equal(60, duckVirtual.ProtectedValueTypeField);
 
+            duckInterface.ProtectedValueTypeField = 42;
             // *
 
             Assert.Equal(43, duckInterface.PrivateValueTypeField);
@@ -283,6 +303,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
             Assert.Equal(60, duckInterface.PrivateValueTypeField);
             Assert.Equal(60, duckAbstract.PrivateValueTypeField);
             Assert.Equal(60, duckVirtual.PrivateValueTypeField);
+
+            duckInterface.PrivateValueTypeField = 43;
         }
 
         [Theory]
@@ -294,14 +316,32 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
+            ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
+            Assert.Same(obscureObject, originalObject);
+
             Assert.Null(duckInterface.PublicStaticNullableIntField);
             Assert.Null(duckAbstract.PublicStaticNullableIntField);
             Assert.Null(duckVirtual.PublicStaticNullableIntField);
+
+            Assert.Null(duckInterface.PublicStaticNullableIntFieldWithType.Value);
+            Assert.Equal(typeof(int?), duckInterface.PublicStaticNullableIntFieldWithType.Type);
+            Assert.Null(duckAbstract.PublicStaticNullableIntFieldWithType.Value);
+            Assert.Equal(typeof(int?), duckAbstract.PublicStaticNullableIntFieldWithType.Type);
+            Assert.Null(duckVirtual.PublicStaticNullableIntFieldWithType.Value);
+            Assert.Equal(typeof(int?), duckVirtual.PublicStaticNullableIntFieldWithType.Type);
 
             duckInterface.PublicStaticNullableIntField = 42;
             Assert.Equal(42, duckInterface.PublicStaticNullableIntField);
             Assert.Equal(42, duckAbstract.PublicStaticNullableIntField);
             Assert.Equal(42, duckVirtual.PublicStaticNullableIntField);
+
+            duckInterface.PublicStaticNullableIntFieldWithType = ValueWithType<int?>.Create(42, null!);
+            Assert.Equal(42, duckInterface.PublicStaticNullableIntFieldWithType.Value);
+            Assert.Equal(typeof(int?), duckInterface.PublicStaticNullableIntFieldWithType.Type);
+            Assert.Equal(42, duckAbstract.PublicStaticNullableIntFieldWithType.Value);
+            Assert.Equal(typeof(int?), duckAbstract.PublicStaticNullableIntFieldWithType.Type);
+            Assert.Equal(42, duckVirtual.PublicStaticNullableIntFieldWithType.Value);
+            Assert.Equal(typeof(int?), duckVirtual.PublicStaticNullableIntFieldWithType.Type);
 
             duckAbstract.PublicStaticNullableIntField = 50;
             Assert.Equal(50, duckInterface.PublicStaticNullableIntField);

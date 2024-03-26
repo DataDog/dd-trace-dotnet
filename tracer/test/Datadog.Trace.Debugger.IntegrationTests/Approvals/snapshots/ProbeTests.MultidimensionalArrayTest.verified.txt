@@ -1,0 +1,251 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "this": {
+                "type": "MultidimensionalArrayTest",
+                "value": "MultidimensionalArrayTest"
+              }
+            },
+            "staticFields": {
+              "StateArray": {
+                "elements": [
+                  {
+                    "elements": [
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      }
+                    ],
+                    "size": 10,
+                    "type": "State[]"
+                  },
+                  {
+                    "elements": [
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      }
+                    ],
+                    "size": 10,
+                    "type": "State[]"
+                  }
+                ],
+                "size": 2,
+                "type": "State[][]"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "this": {
+                "type": "MultidimensionalArrayTest",
+                "value": "MultidimensionalArrayTest"
+              }
+            },
+            "staticFields": {
+              "StateArray": {
+                "elements": [
+                  {
+                    "elements": [
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      }
+                    ],
+                    "size": 10,
+                    "type": "State[]"
+                  },
+                  {
+                    "elements": [
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "type": "State",
+                        "value": "Error"
+                      }
+                    ],
+                    "size": 10,
+                    "type": "State[]"
+                  }
+                ],
+                "size": 2,
+                "type": "State[][]"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.MultidimensionalArrayTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MultidimensionalArrayTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

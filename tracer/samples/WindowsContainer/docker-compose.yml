@@ -13,8 +13,9 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
 
   datadog-agent:
-    image: "gcr.io/datadoghq/agent:7"
+    image: "gcr.io/datadoghq/agent:latest"
     environment:
+      DD_HOSTNAME: "windowscontainer-datadog-agent"
       DD_API_KEY: ${DD_API_KEY}
       DD_APM_ENABLED: "true"
       DD_APM_NON_LOCAL_TRAFFIC: "true"

@@ -19,7 +19,7 @@ namespace Samples.FakeDbCommand
         {
         }
 
-        public override string ConnectionString { get; set; } = string.Empty;
+        public override string ConnectionString { get; set; } = "Database=fake";
         
         public override string Database { get; } = "Database";
         

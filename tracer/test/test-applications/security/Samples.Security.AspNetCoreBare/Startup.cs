@@ -34,6 +34,14 @@ namespace Samples.Security.AspNetCoreBare
 
             app.UseAuthorization();
 
+            app.Map("/alive-check", builder =>
+            {
+                builder.Run(async context =>
+                {
+                    await context.Response.WriteAsync("Yes");
+                });
+            });
+
             app.Map("/shutdown", builder =>
             {
                 builder.Run(async context =>

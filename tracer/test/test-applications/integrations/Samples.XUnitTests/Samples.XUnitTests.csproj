@@ -3,10 +3,12 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <OutputType>Library</OutputType>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">2.3.1</ApiVersion>
-    <MicrosoftTestSDKVersion Condition="$(ApiVersion.StartsWith('2.4'))">16.7.1</MicrosoftTestSDKVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.7.0</ApiVersion>
+    <MicrosoftTestSDKVersion>16.7.1</MicrosoftTestSDKVersion>
     <MicrosoftTestSDKVersion Condition="$(ApiVersion.StartsWith('2.3'))">16.2.0</MicrosoftTestSDKVersion>
     <MicrosoftTestSDKVersion Condition="$(ApiVersion.StartsWith('2.2'))">15.9.0</MicrosoftTestSDKVersion>
+    <VsAdapterApiVersion>$(ApiVersion)</VsAdapterApiVersion>
+    <VsAdapterApiVersion Condition="'$(VsAdapterApiVersion)'&gt;='2.5.3'">2.5.3</VsAdapterApiVersion>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -18,7 +20,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftTestSDKVersion)" />
     <PackageReference Include="xunit" Version="$(ApiVersion)" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="$(ApiVersion)">
+    <PackageReference Include="xunit.runner.visualstudio" Version="$(VsAdapterApiVersion)">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>

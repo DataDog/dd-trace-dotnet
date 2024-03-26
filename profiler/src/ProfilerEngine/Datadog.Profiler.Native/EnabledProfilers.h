@@ -11,8 +11,9 @@ class IConfiguration;
 class EnabledProfilers : public IEnabledProfilers
 {
 public:
-    EnabledProfilers(IConfiguration* pConfiguration, bool isListeningToClrEvents);
-    virtual bool IsEnabled(RuntimeProfiler profiler) const override;
+    EnabledProfilers(IConfiguration* pConfiguration, bool isListeningToClrEvents, bool isHeapProfilingEnabled);
+    bool IsEnabled(RuntimeProfiler profiler) const override;
+    void Disable(RuntimeProfiler profiler) override;
 
 private:
     RuntimeProfiler _enabledProfilers;

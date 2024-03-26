@@ -1,5 +1,51 @@
 [
   {
+    "IntegrationName": "AwsDynamoDb",
+    "SampleProjectName": "Samples.AWS.DynamoDBv2",
+    "NugetPackageSearchName": "AWSSDK.DynamoDBv2",
+    "MinVersion": "3.0.0",
+    "MaxVersionExclusive": "3.8.0",
+    "SpecificVersions": [
+      "3.1.*",
+      "3.3.*",
+      "3.*.*"
+    ],
+    "VersionConditions": [{
+      "MaxVersionExclusive": "3.3.0",
+      "IncludeOnlyTargetFrameworks": ["net462"]
+    }]
+  },
+  {
+    "IntegrationName": "AwsKinesis",
+    "SampleProjectName": "Samples.AWS.Kinesis",
+    "NugetPackageSearchName": "AWSSDK.Kinesis",
+    "MinVersion": "3.0.0",
+    "MaxVersionExclusive": "3.8.0",
+    "SpecificVersions": [
+      "3.1.*",
+      "3.3.*",
+      "3.*.*"
+    ],
+    "VersionConditions": [{
+      "MaxVersionExclusive": "3.3.0",
+      "IncludeOnlyTargetFrameworks": ["net462"]
+    }]
+  },
+  {
+    "IntegrationName": "AwsLambda",
+    "SampleProjectName": "Samples.Amazon.Lambda.RuntimeSupport",
+    "NugetPackageSearchName": "Amazon.Lambda.RuntimeSupport",
+    "MinVersion": "1.4.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.10.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "1.4.0",
+      "IncludeOnlyTargetFrameworks": ["net6.0","net7.0","net8.0"]
+    }]
+  },
+  {
     "IntegrationName": "AwsSqs",
     "SampleProjectName": "Samples.AWS.SQS",
     "NugetPackageSearchName": "AWSSDK.SQS",
@@ -12,8 +58,26 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "3.3.0",
-      "IncludeOnlyTargetFrameworks": ["net461"]
+      "IncludeOnlyTargetFrameworks": ["net462"]
     }]
+  },
+  {
+    "IntegrationName": "AwsSns",
+    "SampleProjectName": "Samples.AWS.SimpleNotificationService",
+    "NugetPackageSearchName": "AWSSDK.SimpleNotificationService",
+    "MinVersion": "3.0.0",
+    "MaxVersionExclusive": "3.8.0",
+    "SpecificVersions": [
+      "3.1.*",
+      "3.3.*",
+      "3.*.*"
+    ],
+    "VersionConditions": [
+      {
+        "MaxVersionExclusive": "3.3.0",
+        "IncludeOnlyTargetFrameworks": ["net462"]
+      }
+    ]
   },
   {
     "IntegrationName": "MongoDB",
@@ -29,7 +93,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "2.3.0",
-      "IncludeOnlyTargetFrameworks": ["net461"]
+      "IncludeOnlyTargetFrameworks": ["net462"]
     }]
   },
   {
@@ -83,10 +147,43 @@
     "VersionConditions": [{
       "MinVersion": "5.0.0",
       "MaxVersionExclusive": "5.1.1",
-      "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0"]
+      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
     },{
       "MaxVersionExclusive": "6.0.0",
-      "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0"]
+      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0"]
+    }]
+  },
+  {
+    "IntegrationName": "GraphQL7",
+    "SampleProjectName": "Samples.GraphQL7",
+    "NugetPackageSearchName": "GraphQL",
+    "MinVersion": "7.0.0",
+    "MaxVersionExclusive": "8.0.0",
+    "SpecificVersions": [
+      "7.*.*"
+    ],
+    "VersionConditions": [{
+      "MaxVersionExclusive": "8.0.0",
+      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0"]
+    }]
+  },
+  {
+    "IntegrationName": "HotChocolate",
+    "SampleProjectName": "Samples.HotChocolate",
+    "NugetPackageSearchName": "HotChocolate.AspNetCore",
+    "MinVersion": "11.0.0",
+    "MaxVersionExclusive": "14.0.0",
+    "SpecificVersions": [
+      "11.*.*",
+      "12.*.*",
+      "13.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "12.22.0",
+      "ExcludeTargetFrameworks": [ "netcoreapp3.1", "net5.0" ]
+    },{
+      "MaxVersionExclusive": "14.0.0",
+      "ExcludeTargetFrameworks": [ "net462", "netcoreapp2.1", "netcoreapp3.0" ]
     }]
   },
   {
@@ -94,11 +191,13 @@
     "SampleProjectName": "Samples.Npgsql",
     "NugetPackageSearchName": "Npgsql",
     "MinVersion": "4.0.0",
-    "MaxVersionExclusive": "7.0.0",
+    "MaxVersionExclusive": "9.0.0",
     "SpecificVersions": [
       "4.*.*",
       "5.*.*",
-      "6.*.*"
+      "6.*.*",
+      "7.*.*",
+      "8.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "6.0.0",
@@ -108,6 +207,19 @@
   {
     "IntegrationName": "RabbitMQ",
     "SampleProjectName": "Samples.RabbitMQ",
+    "NugetPackageSearchName": "RabbitMQ.Client",
+    "MinVersion": "3.6.9",
+    "MaxVersionExclusive": "7.0.0",
+    "SpecificVersions": [
+      "3.*.*",
+      "4.*.*",
+      "5.*.*",
+      "6.*.*"
+    ]
+  },
+  {
+    "IntegrationName": "DataStreamsRabbitMQ",
+    "SampleProjectName": "Samples.DataStreams.RabbitMQ",
     "NugetPackageSearchName": "RabbitMQ.Client",
     "MinVersion": "3.6.9",
     "MaxVersionExclusive": "7.0.0",
@@ -135,13 +247,18 @@
     "SampleProjectName": "Samples.Microsoft.Data.SqlClient",
     "NugetPackageSearchName": "Microsoft.Data.SqlClient",
     "MinVersion": "1.0.0",
-    "MaxVersionExclusive": "5.0.0",
+    "MaxVersionExclusive": "6.0.0",
     "SpecificVersions": [
       "1.*.*",
       "2.*.*",
       "3.*.*",
-      "4.*.*"
-    ]
+      "4.*.*",
+      "5.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "5.1.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
+    }]
   },
   {
     "IntegrationName": "StackExchangeRedis",
@@ -151,10 +268,13 @@
     "MaxVersionExclusive": "3.0.0",
     "VersionConditions": [{
       "MaxVersionExclusive": "1.1.700",
-      "IncludeOnlyTargetFrameworks": ["net461"]
+      "IncludeOnlyTargetFrameworks": ["net462"]
     },{
       "MinVersion": "2.2.0",
       "ExcludeTargetFrameworks": ["netcoreapp2.1"]
+    },{
+      "MinVersion": "2.7.4",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
     }],
     "SpecificVersions": [
       "1.0.*",
@@ -167,15 +287,19 @@
     "SampleProjectName": "Samples.ServiceStack.Redis",
     "NugetPackageSearchName": "ServiceStack.Redis",
     "MinVersion": "4.0.48",
-    "MaxVersionExclusive": "7.0.0",
+    "MaxVersionExclusive": "9.0.0",
     "SpecificVersions": [
       "4.*.*",
       "5.*.*",
-      "6.*.*"
+      "6.*.*",
+      "8.*.*"
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "5.0.0",
-      "IncludeOnlyTargetFrameworks": ["net461"]
+      "IncludeOnlyTargetFrameworks": ["net462"]
+    },{
+      "MinVersion": "6.2.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
     }]
   },
   {
@@ -188,7 +312,11 @@
       "6.7.*",
       "6.*.*",
       "8.*.*"
-    ]
+    ],
+    "VersionConditions": [{
+      "MinVersion": "8.0.33",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
+    }]
   },
   {
     "IntegrationName": "MySqlConnector",
@@ -208,12 +336,24 @@
     "SampleProjectName": "Samples.Microsoft.Data.Sqlite",
     "NugetPackageSearchName": "Microsoft.Data.Sqlite",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "7.0.0",
+    "MaxVersionExclusive": "9.0.0",
     "SpecificVersions": [
       "2.*.*",
       "3.*.*",
       "5.*.*",
-      "6.*.*"
+      "6.*.*",
+      "7.*.*",
+      "8.*.*"
+    ],
+    "VersionConditions": [
+      {
+        "MinVersion": "3.1.32",
+        "MaxVersionExclusive": "4.0.0",
+        "ExcludeTargetFrameworks": [ "netcoreapp3.0" ]
+      },
+      {
+        "ExcludeTargetFrameworks": [ "netcoreapp2.1" ]
+      }
     ]
   },
   {
@@ -224,7 +364,15 @@
     "MaxVersionExclusive": "3.0.0",
     "SpecificVersions": [
       "2.2.*",
+      "2.4.3",
       "2.*.*"
+    ],
+    "VersionConditions": [
+      {
+        "MinVersion": "2.4.5",
+        "MaxVersionExclusive": "3.0.0",
+        "ExcludeTargetFrameworks": [ "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
+      }
     ]
   },
   {
@@ -232,11 +380,18 @@
     "SampleProjectName": "Samples.NUnitTests",
     "NugetPackageSearchName": "NUnit",
     "MinVersion": "3.6.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
     "SpecificVersions": [
       "3.6.*",
       "3.10.*",
-      "3.*.*"
+      "3.*.*",
+      "4.*.*"
+    ],
+    "VersionConditions": [
+      {
+        "MinVersion": "4.0.0",
+        "ExcludeTargetFrameworks": [ "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
+      }
     ]
   },
   {
@@ -244,10 +399,23 @@
     "SampleProjectName": "Samples.MSTestTests",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "3.0.0",
+    "MaxVersionExclusive": "4.0.0",
     "SpecificVersions": [
       "2.0.*",
-      "2.*.*"
+      "2.*.*",
+      "3.*.*"
+    ]
+  },
+  {
+    "IntegrationName": "MSTest2",
+    "SampleProjectName": "Samples.MSTestTests2",
+    "NugetPackageSearchName": "MSTest.TestFramework",
+    "MinVersion": "2.0.0",
+    "MaxVersionExclusive": "4.0.0",
+    "SpecificVersions": [
+      "2.0.*",
+      "2.*.*",
+      "3.*.*"
     ]
   },
   {
@@ -255,10 +423,11 @@
     "SampleProjectName": "Samples.Kafka",
     "NugetPackageSearchName": "Confluent.Kafka",
     "MinVersion": "1.4.0",
-    "MaxVersionExclusive": "2.0.0",
+    "MaxVersionExclusive": "3.0.0",
     "SpecificVersions": [
       "1.4.*",
-      "1.*.*"
+      "1.*.*",
+      "2.*.*"
     ]
   },
   {
@@ -281,15 +450,19 @@
     "SampleProjectName": "LogsInjection.Serilog",
     "NugetPackageSearchName": "Serilog",
     "MinVersion": "1.0.0",
-    "MaxVersionExclusive": "3.0.0",
+    "MaxVersionExclusive": "4.0.0",
     "SpecificVersions": [
       "1.*.*",
       "1.4.*",
-      "2.*.*"
+      "2.*.*",
+      "3.*.*"
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "2.0.0",
-      "IncludeOnlyTargetFrameworks": ["net461"]
+      "IncludeOnlyTargetFrameworks": ["net462"]
+    },{
+      "MinVersion": "3.1.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
     }]
   },
   {
@@ -307,7 +480,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "4.5.0",
-      "IncludeOnlyTargetFrameworks": ["net461"]
+      "IncludeOnlyTargetFrameworks": ["net462"]
     }]
   },
   {
@@ -322,7 +495,21 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "2.0.6",
-      "IncludeOnlyTargetFrameworks": ["net461"]
+      "IncludeOnlyTargetFrameworks": ["net462"]
+    }]
+  },
+  {
+    "IntegrationName": "ILogger",
+    "SampleProjectName": "LogsInjection.ILogger.ExtendedLogger",
+    "NugetPackageSearchName": "Microsoft.Extensions.Telemetry",
+    "MinVersion": "8.0.0",
+    "MaxVersionExclusive": "9.0.0",
+    "SpecificVersions": [
+      "8.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "8.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
     }]
   },
   {
@@ -330,15 +517,19 @@
     "SampleProjectName": "Samples.Aerospike",
     "NugetPackageSearchName": "Aerospike.Client",
     "MinVersion": "4.0.0",
-    "MaxVersionExclusive": "6.0.0",
+    "MaxVersionExclusive": "8.0.0",
     "SpecificVersions": [
       "4.0.*",
       "4.*.*",
-      "5.*.*"
+      "5.*.*",
+      "7.*.*"
     ],
     "VersionConditions": [{
+      "MinVersion": "6.0.0",
+      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
+    },{
       "MinVersion": "5.0.0",
-      "ExcludeTargetFrameworks": ["net461"]
+      "ExcludeTargetFrameworks": ["net462"]
     }]
   },
   {
@@ -382,8 +573,11 @@
       "MinVersion": "2.0.0",
       "SkipAlpine": true
     }, {
-      "MaxVersionExclusive": "2.37.0",
+      "MaxVersionExclusive": "2.38.1",
       "SkipArm64": true
+    }, {
+      "MinVersion": "2.57.0",
+      "ExcludeTargetFrameworks": ["netcoreapp3.0", "netcoreapp3.1", "net5.0"]
     }]
   },
   {
@@ -401,8 +595,49 @@
       "MinVersion": "2.0.0",
       "SkipAlpine": true
     }, {
-      "MaxVersionExclusive": "2.37.0",
+      "MaxVersionExclusive": "2.38.1",
       "SkipArm64": true
     }]
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "SampleProjectName": "Samples.OpenTelemetrySdk",
+    "NugetPackageSearchName": "OpenTelemetry.Api",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.0.1",
+      "1.*.*"
+    ]
+  },
+  {
+    "IntegrationName": "Yarp",
+    "SampleProjectName": "Samples.Yarp.DistributedTracing",
+    "NugetPackageSearchName": "Yarp.ReverseProxy",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "3.0.0",
+    "SpecificVersions": [
+      "1.0.*",
+      "1.1.0",
+      "2.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "2.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp3.1", "net5.0"]
+    }
+    ]
+  },
+  {
+    "IntegrationName": "AzureServiceBus",
+    "SampleProjectName": "Samples.AzureServiceBus",
+    "NugetPackageSearchName": "Azure.Messaging.ServiceBus",
+    "MinVersion": "7.4.0",
+    "MaxVersionExclusive": "7.18.0",
+    "SpecificVersions": [
+      "7.4.*",
+      "7.10.*",
+      "7.13.*",
+      "7.*.*"
+    ]
   }
 ]

@@ -15,7 +15,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     MaximumVersion = "4.*.*",
     IntegrationName = nameof(IntegrationId.SqlClient),
     DataReaderType = "System.Data.SqlClient.SqlDataReader",
-    DataReaderTaskType = "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[System.Data.SqlClient.SqlDataReader]",
     TargetMethodAttributes = new[]
     {
         // Task<int> System.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
@@ -45,7 +45,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     MaximumVersion = "4.*.*",
     IntegrationName = nameof(IntegrationId.SqlClient),
     DataReaderType = "System.Data.SqlClient.SqlDataReader",
-    DataReaderTaskType = "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[System.Data.SqlClient.SqlDataReader]",
     TargetMethodAttributes = new[]
     {
         // Task<int> System.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
@@ -72,10 +72,10 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     AssemblyName = "Microsoft.Data.SqlClient",
     TypeName = "Microsoft.Data.SqlClient.SqlCommand",
     MinimumVersion = "1.0.0",
-    MaximumVersion = "4.*.*",
+    MaximumVersion = "5.*.*",
     IntegrationName = nameof(IntegrationId.SqlClient),
     DataReaderType = "Microsoft.Data.SqlClient.SqlDataReader",
-    DataReaderTaskType = "System.Threading.Tasks.Task`1<Microsoft.Data.SqlClient.SqlDataReader>",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[Microsoft.Data.SqlClient.SqlDataReader]",
     TargetMethodAttributes = new[]
     {
         // Task<int> Microsoft.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)

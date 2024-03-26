@@ -10,8 +10,23 @@ namespace Samples.Aerospike
         static async Task Main(string[] args)
         {
             var host = Host();
+            AsyncClient client = null;
 
-            var client = new AsyncClient(host.Item1, host.Item2);
+            int retries = 3;
+            while (true)
+            {
+                try
+                {
+                    client = new AsyncClient(new AsyncClientPolicy { timeout = 10_000 }, host.Item1, host.Item2);
+                    break;
+                }
+                catch (AerospikeException) when (retries > 0)
+                {
+                    retries--;
+                }
+
+                await Task.Delay(TimeSpan.FromMilliseconds(500));
+            }
 
             var key1 = new Key("test", "myset1", "mykey1");
             var key2 = new Key("test", "myset2", "mykey2");

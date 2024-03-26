@@ -41,6 +41,21 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Initializes a new instance of the <see cref="CallTargetState"/> struct.
         /// </summary>
         /// <param name="scope">Scope instance</param>
+        /// <param name="previousScope">Previous scope instance</param>
+        /// <param name="previousDistributedSpanContext">Previous distributed span context</param>
+        internal CallTargetState(Scope scope, Scope previousScope, IReadOnlyDictionary<string, string> previousDistributedSpanContext)
+        {
+            _previousScope = previousScope;
+            _scope = scope;
+            _state = null;
+            _startTime = null;
+            _previousDistributedSpanContext = previousDistributedSpanContext;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CallTargetState"/> struct.
+        /// </summary>
+        /// <param name="scope">Scope instance</param>
         /// <param name="state">Object state instance</param>
         internal CallTargetState(Scope scope, object state)
         {

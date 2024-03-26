@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -36,9 +38,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         /// <param name="messageQueueTransaction">Message queue transaction can be null</param>
         /// <param name="messageQueueTransactionType">Message queue transaction type can be null</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance, object message, object messageQueueTransaction, MessageQueueTransactionType messageQueueTransactionType)
+        internal static CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance, object? message, object? messageQueueTransaction, MessageQueueTransactionType messageQueueTransactionType)
             where TMessageQueue : IMessageQueue
         {
+            // Given this is an instance method, it's safe to assume instance.Instance is not null
             var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance, messageQueueTransaction != null || messageQueueTransactionType != MessageQueueTransactionType.None);
             return new CallTargetState(scope);
         }

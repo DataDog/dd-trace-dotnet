@@ -6,6 +6,9 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Snapshots;
 
 namespace Datadog.Trace.Debugger.Instrumentation
@@ -15,56 +18,76 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public ref struct MethodDebuggerState
+    public struct MethodDebuggerState
     {
+        /// <summary>
+        /// Gets a disabled states
+        /// </summary>
+        internal static readonly MethodDebuggerState[] DisabledStates = { new() { IsActive = false } };
+
         private readonly string _probeId;
         private readonly Scope _scope;
-        private readonly DateTimeOffset? _startTime;
 
         /// <summary>
-        /// Used to perform a fast lookup to grab the proper <see cref="MethodMetadataInfo"/>.
+        /// Backing field of <see cref="MethodMetadataIndex"/>.
+        /// Used to perform a fast lookup to grab the proper <see cref="Collections.MethodMetadataInfo"/>.
         /// This index is hard-coded into the method's instrumented bytecode.
         /// </summary>
         private readonly int _methodMetadataIndex;
 
         // Determines whether we should still be capturing values, or halt for any reason (e.g an exception was caused by our instrumentation, rate limiter threshold reached).
         internal bool IsActive = true;
-
         internal bool HasLocalsOrReturnValue;
+        internal object InvocationTarget;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MethodDebuggerState"/> struct.
         /// </summary>
         /// <param name="probeId">The id of the probe</param>
         /// <param name="scope">Scope instance</param>
-        /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
-        /// <param name="methodMetadataIndex">The unique index of the method's <see cref="MethodMetadataInfo"/></param>
-        internal MethodDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex)
+        /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Collections.MethodMetadataInfo"/></param>
+        /// <param name="probeData">The <see cref="ProbeData"/> associated with the executing instrumentation</param>
+        /// <param name="invocationTarget">The current invocation target ('this' object)</param>
+        internal MethodDebuggerState(string probeId, Scope scope, int methodMetadataIndex, ref ProbeData probeData, object invocationTarget)
         {
             _probeId = probeId;
             _scope = scope;
-            _startTime = startTime;
             _methodMetadataIndex = methodMetadataIndex;
             HasLocalsOrReturnValue = false;
-            SnapshotCreator = new DebuggerSnapshotCreator();
+            InvocationTarget = invocationTarget;
+            var processor = probeData.Processor;
+            SnapshotCreator = processor.CreateSnapshotCreator();
+            ProbeData = probeData;
+            MethodPhase = EvaluateAt.Entry;
         }
 
-        internal ref MethodMetadataInfo MethodMetadaInfo => ref MethodMetadataProvider.Get(_methodMetadataIndex);
+        /// <summary>
+        /// Gets an index that is used as a fast lookup to grab the proper <see cref="Collections.MethodMetadataInfo"/>.
+        /// This index is hard-coded into the method's instrumented bytecode.
+        /// </summary>
+        internal int MethodMetadataIndex
+        {
+            get
+            {
+                return _methodMetadataIndex;
+            }
+        }
+
+        internal EvaluateAt MethodPhase { get; set; }
+
+        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataCollection.Instance.Get(_methodMetadataIndex);
+
+        internal ProbeData ProbeData { get; }
 
         /// <summary>
         /// Gets the LiveDebugger SnapshotCreator
         /// </summary>
-        internal DebuggerSnapshotCreator SnapshotCreator { get; }
+        internal IDebuggerSnapshotCreator SnapshotCreator { get; }
 
         /// <summary>
         /// Gets the LiveDebugger BeginMethod scope
         /// </summary>
         internal Scope Scope => _scope;
-
-        /// <summary>
-        /// Gets the LiveDebugger state StartTime
-        /// </summary>
-        internal DateTimeOffset? StartTime => _startTime;
 
         /// <summary>
         /// Gets the Id of the probe

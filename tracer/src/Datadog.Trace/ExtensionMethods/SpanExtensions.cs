@@ -5,13 +5,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ExtensionMethods
 {
@@ -20,6 +24,8 @@ namespace Datadog.Trace.ExtensionMethods
     /// </summary>
     public static class SpanExtensions
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanExtensions));
+
         /// <summary>
         /// Sets the sampling priority for the trace that contains the specified <see cref="ISpan"/>.
         /// </summary>
@@ -28,7 +34,14 @@ namespace Datadog.Trace.ExtensionMethods
         /// <remarks>
         /// This public extension method is meant for external users only. Internal Datadog calls should
         /// use the methods on <see cref="TraceContext"/> instead.</remarks>
+        [PublicApi]
         public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetTraceSamplingPriority);
+            SetTraceSamplingPriorityInternal(span, samplingPriority);
+        }
+
+        internal static void SetTraceSamplingPriorityInternal(this ISpan span, SamplingPriority samplingPriority)
         {
             if (span == null) { ThrowHelper.ThrowArgumentNullException(nameof(span)); }
 
@@ -45,8 +58,7 @@ namespace Datadog.Trace.ExtensionMethods
             string host,
             string httpUrl,
             string userAgent,
-            WebTags tags,
-            IEnumerable<KeyValuePair<string, string>> tagsFromHeaders)
+            WebTags tags)
         {
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
@@ -58,11 +70,6 @@ namespace Datadog.Trace.ExtensionMethods
                 tags.HttpUrl = httpUrl;
                 tags.HttpUserAgent = userAgent;
             }
-
-            foreach (var kvp in tagsFromHeaders)
-            {
-                span.SetTag(kvp.Key, kvp.Value);
-            }
         }
 
         internal static void SetHeaderTags<T>(this ISpan span, T headers, IReadOnlyDictionary<string, string> headerTags, string defaultTagPrefix)
@@ -72,11 +79,7 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 try
                 {
-                    var tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, defaultTagPrefix);
-                    foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
-                    {
-                        span.SetTag(kvp.Key, kvp.Value);
-                    }
+                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers, headerTags, defaultTagPrefix);
                 }
                 catch (Exception ex)
                 {
@@ -127,6 +130,26 @@ namespace Datadog.Trace.ExtensionMethods
                     span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {statusCodeString}.");
                 }
             }
+        }
+
+        internal static string GetTraceIdStringForLogs(this ISpan span)
+        {
+            if (span is not Span s)
+            {
+                return span?.TraceId.ToString(CultureInfo.InvariantCulture);
+            }
+
+            var context = s.Context;
+            var use128Bits = context.TraceContext?.Tracer?.Settings?.TraceId128BitLoggingEnabled ?? false;
+
+            if (use128Bits && context.TraceId128.Upper > 0)
+            {
+                // encode all 128 bits of the trace id as a hex string
+                return context.RawTraceId;
+            }
+
+            // encode only the lower 64 bits of the trace ids as decimal (not hex)
+            return context.TraceId128.Lower.ToString(CultureInfo.InvariantCulture);
         }
 
         private static string ConvertStatusCodeToString(int statusCode)

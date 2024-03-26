@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET461
+#if NETFRAMEWORK
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class AspNetMvc5QueryStringTests : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetMvc5QueryStringTests : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
@@ -52,12 +52,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
-            _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetMvc5QueryStringTests)
                       + (enableQueryStringReporting ? ".WithQueryString" : ".WithoutQueryString");
         }
 
         public static TheoryData<string, int> Data => new() { { "/?authentic1=val1&token=a0b21ce2-006f-4cc6-95d5-d7b550698482&key2=val2", 200 }, };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Name switch
+            {
+                "aspnet.request" => span.IsAspNet(metadataSchemaVersion),
+                "aspnet-mvc.request" => span.IsAspNetMvc(metadataSchemaVersion),
+                _ => Result.DefaultSuccess,
+            };
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
@@ -79,6 +86,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                           .UseMethodName("_")
                           .UseTypeName(_testName);
         }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 }
 

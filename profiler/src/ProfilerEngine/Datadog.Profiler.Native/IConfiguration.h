@@ -6,6 +6,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <cstdint>
 
 #include "TagsHelper.h"
 
@@ -41,4 +42,29 @@ public:
     virtual bool IsAllocationProfilingEnabled() const = 0;
     virtual bool IsContentionProfilingEnabled() const = 0;
     virtual double MinimumCores() const = 0;
+    virtual int32_t AllocationSampleLimit() const = 0;
+    virtual int32_t ContentionSampleLimit() const = 0;
+    virtual int32_t ContentionDurationThreshold() const = 0;
+    virtual std::chrono::nanoseconds CpuWallTimeSamplingRate() const = 0;
+    virtual const std::string& GetNamedPipeName() const = 0;
+    virtual bool IsTimestampsAsLabelEnabled() const = 0;
+    virtual int32_t WalltimeThreadsThreshold() const = 0;
+    virtual int32_t CpuThreadsThreshold() const = 0;
+    virtual int32_t CodeHotspotsThreadsThreshold() const = 0;
+    virtual bool IsGarbageCollectionProfilingEnabled() const = 0;
+    virtual bool IsHeapProfilingEnabled() const = 0;
+    virtual bool UseBacktrace2() const = 0;
+    virtual bool IsAllocationRecorderEnabled() const = 0;
+    virtual bool IsDebugInfoEnabled() const = 0;
+    virtual bool IsGcThreadsCpuTimeEnabled() const = 0;
+    virtual bool IsThreadLifetimeEnabled() const = 0;
+    virtual std::string const& GetGitRepositoryUrl() const = 0;
+    virtual std::string const& GetGitCommitSha() const = 0;
+    virtual bool IsInternalMetricsEnabled() const = 0;
+    virtual bool IsSystemCallsShieldEnabled() const = 0;
+    virtual bool IsCIVisibilityEnabled() const = 0;
+    virtual std::uint64_t GetCIVisibilitySpanId() const = 0;
+    virtual bool IsEtwEnabled() const = 0;
+    virtual bool IsSsiDeployed() const = 0;
+    virtual bool IsSsiActivated() const = 0;
 };

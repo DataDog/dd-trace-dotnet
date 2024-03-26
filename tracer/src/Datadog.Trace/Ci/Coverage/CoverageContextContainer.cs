@@ -2,79 +2,114 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.Ci.Coverage
+namespace Datadog.Trace.Ci.Coverage;
+
+/// <summary>
+/// Coverage context container instance
+/// </summary>
+internal sealed class CoverageContextContainer
 {
+    private readonly List<ModuleValue> _container = new();
+    private ModuleValue? _currentModuleValue = null;
+
     /// <summary>
-    /// Coverage context container instance
+    /// Initializes a new instance of the <see cref="CoverageContextContainer"/> class.
     /// </summary>
-    internal sealed class CoverageContextContainer
+    /// <param name="state">State instance</param>
+    public CoverageContextContainer(object? state = null)
     {
-        private readonly List<CoverageInstruction> _payloads = new(32);
+        State = state;
+    }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether if the coverage is enabled for the context
-        /// </summary>
-        public bool Enabled
+    /// <summary>
+    /// Gets or sets the context container state
+    /// </summary>
+    public object? State { get; set; }
+
+    /// <summary>
+    /// Gets the current module value
+    /// </summary>
+    /// <param name="module">Module instance</param>
+    /// <returns>Current module instance</returns>
+    internal ModuleValue? GetModuleValue(Module module)
+    {
+        if (_currentModuleValue is { } moduleValue && moduleValue.Module == module)
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal set;
+            return moduleValue;
         }
 
-            = true;
+        return GetModuleValueSlow(module);
+    }
 
-        /// <summary>
-        /// Stores coverage instruction
-        /// </summary>
-        /// <param name="filePath">Filepath for the range</param>
-        /// <param name="range">Range value</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void Store(string filePath, ulong range)
+    private ModuleValue? GetModuleValueSlow(Module module)
+    {
+        var container = _container;
+        lock (container)
         {
-            // Jit emits better asm code with this data locality, also the global field is marked as readonly
-            var payloads = _payloads;
-            lock (payloads)
+            for (var i = 0; i < container.Count; i++)
             {
-                payloads.Add(new CoverageInstruction(filePath, range));
+                if (container[i] is { } moduleValueItem && moduleValueItem.Module == module)
+                {
+                    _currentModuleValue = moduleValueItem;
+                    return moduleValueItem;
+                }
             }
         }
 
-        /// <summary>
-        /// Stores multiple coverage instructions
-        /// </summary>
-        /// <param name="filePath">Filepath for the range</param>
-        /// <param name="range">Range value</param>
-        /// <param name="range2">Range2 value</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void Store(string filePath, ulong range, ulong range2)
-        {
-            // Jit emits better asm code with this data locality, also the global field is marked as readonly
-            var payloads = _payloads;
-            lock (payloads)
-            {
-                payloads.Add(new CoverageInstruction(filePath, range));
-                payloads.Add(new CoverageInstruction(filePath, range2));
-            }
-        }
+        return null;
+    }
 
-        /// <summary>
-        /// Gets payload data from the context
-        /// </summary>
-        /// <returns>Instruction array from the context</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public CoverageInstruction[] GetPayload()
+    /// <summary>
+    /// Stores module data into the context
+    /// </summary>
+    /// <param name="module">Module instance</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void Add(ModuleValue module)
+    {
+        var container = _container;
+        lock (container)
         {
-            // Jit emits better asm code with this data locality, also the global field is marked as readonly
-            var payloads = _payloads;
-            lock (payloads)
+            container.Add(module);
+            _currentModuleValue = module;
+        }
+    }
+
+    /// <summary>
+    /// Clear context data
+    /// </summary>
+    internal void Clear()
+    {
+        var container = _container;
+        lock (container)
+        {
+            foreach (var moduleValue in container)
             {
-                return payloads.ToArray();
+                moduleValue.Dispose();
             }
+
+            container.Clear();
+            _currentModuleValue = null;
+        }
+    }
+
+    /// <summary>
+    /// Gets modules data from the context
+    /// </summary>
+    /// <returns>Instruction array from the context</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ModuleValue[] CloseContext()
+    {
+        var container = _container;
+        lock (container)
+        {
+            _currentModuleValue = null;
+            return container.Count == 0 ? [] : container.ToArray();
         }
     }
 }

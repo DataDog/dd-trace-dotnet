@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class MongoDbTests : TestHelper
+    public class MongoDbTests : TracingIntegrationTest
     {
         private static readonly Regex OsRegex = new(@"""os"" : \{.*?\} ");
         private static readonly Regex ObjectIdRegex = new(@"ObjectId\("".*?""\)");
@@ -31,14 +32,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.MongoDB
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMongoDb(metadataSchemaVersion);
+
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.MongoDB), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-mongodb" : EnvironmentHelper.FullSampleName;
+
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(3, 500);
 
@@ -61,8 +75,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // normalise between running directly against localhost and against mongo container
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: mongo");
                 settings.AddSimpleScrubber("out.host: mongo_arm64", "out.host: mongo");
+                settings.AddSimpleScrubber("peer.service: localhost", "peer.service: mongo");
+                settings.AddSimpleScrubber("peer.service: mongo_arm64", "peer.service: mongo");
                 // In some package versions, aggregate queries have an ID, others don't
                 settings.AddSimpleScrubber("\"$group\" : { \"_id\" : null, \"n\"", "\"$group\" : { \"_id\" : 1, \"n\"");
+                // In 2.19, The explain query includes { "$expr" : true }, whereas in earlier versions it doesn't
+                settings.AddSimpleScrubber("{ \"$expr\" : true }", "{ }");
 
                 // The mongodb driver sends periodic monitors
                 var adminSpans = spans
@@ -76,20 +94,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                     .ToList();
 
                 await VerifyHelper.VerifySpans(nonAdminSpans, settings)
-                                  .UseTextForParameters($"packageVersion={snapshotSuffix}")
+                                  .UseTextForParameters($"packageVersion={snapshotSuffix}.Schema{metadataSchemaVersion.ToUpper()}")
                                   .DisableRequireUniquePrefix();
 
-                foreach (var span in allMongoSpans)
-                {
-                    var result = span.IsMongoDB();
-                    Assert.True(result.Success, result.ToString());
-                }
+                ValidateIntegrationSpans(allMongoSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.MongoDb);
 
                 // do some basic verification on the "admin" spans
                 using var scope = new AssertionScope();
-                adminSpans.Should().AllBeEquivalentTo(new { Service = "Samples.MongoDB-mongodb", Type = "mongodb", });
+                adminSpans.Should().AllBeEquivalentTo(new { Service = clientSpanServiceName, Type = "mongodb", });
                 foreach (var adminSpan in adminSpans)
                 {
                     adminSpan.Tags.Should().IntersectWith(new Dictionary<string, string>

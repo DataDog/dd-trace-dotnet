@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
@@ -20,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [Collection(nameof(StackExchangeRedisTestCollection))]
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class StackExchangeRedisTests : TestHelper
+    public class StackExchangeRedisTests : TracingIntegrationTest
     {
         public StackExchangeRedisTests(ITestOutputHelper output)
             : base("StackExchange.Redis", output)
@@ -42,15 +43,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // ReSharper restore InconsistentNaming
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.StackExchangeRedis
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsStackExchangeRedis(metadataSchemaVersion);
+
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.StackExchangeRedis), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-redis" : EnvironmentHelper.FullSampleName;
+
             using var a = new AssertionScope();
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 var calculatedVersion = GetPackageVersion(packageVersion);
 
@@ -62,28 +74,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 };
 
                 var spans = agent.WaitForSpans(expectedCount);
-                foreach (var span in spans)
-                {
-                    var result = span.IsStackExchangeRedis();
-                    Assert.True(result.Success, result.ToString());
-                }
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
                 var port = host.Substring(host.IndexOf(':') + 1);
                 host = host.Substring(0, host.IndexOf(':'));
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.UseFileName($"{nameof(StackExchangeRedisTests)}.{calculatedVersion}");
+                settings.UseFileName($"{nameof(StackExchangeRedisTests)}.{calculatedVersion}" + $".Schema{metadataSchemaVersion.ToUpper()}");
                 settings.DisableRequireUniquePrefix();
                 settings.AddSimpleScrubber($" {TestPrefix}StackExchange.Redis.", " StackExchange.Redis.");
-                settings.AddSimpleScrubber($"out.host: {host}", "out.host: stackexchangeredis");
-                settings.AddSimpleScrubber($"out.port: {port}", "out.port: 6379");
+                if (EnvironmentTools.IsOsx())
+                {
+                    settings.AddSimpleScrubber("out.host: localhost", "out.host: stackexchangeredis");
+                    settings.AddSimpleScrubber("peer.service: localhost", "peer.service: stackexchangeredis");
+                    settings.AddSimpleScrubber("out.host: 127.0.0.1", "out.host: stackexchangeredis-replica");
+                    settings.AddSimpleScrubber("peer.service: 127.0.0.1", "peer.service: stackexchangeredis-replica");
+                    settings.AddSimpleScrubber("out.port: 6390", "out.port: 6379");
+                    settings.AddSimpleScrubber("out.port: 6391", "out.port: 6379");
+                    settings.AddSimpleScrubber("out.port: 6392", "out.port: 6379");
+                }
+                else
+                {
+                    settings.AddSimpleScrubber($"out.host: {host}", "out.host: stackexchangeredis");
+                    settings.AddSimpleScrubber($"peer.service: {host}", "peer.service: stackexchangeredis");
+                    settings.AddSimpleScrubber($"out.port: {port}", "out.port: 6379");
+                }
 
                 await VerifyHelper.VerifySpans(
                     spans,
                     settings,
                     o => o
-                        .OrderBy(x => VerifyHelper.GetRootSpanName(x, o))
+                        .OrderBy(x => VerifyHelper.GetRootSpanResourceName(x, o))
                         .ThenBy(x => VerifyHelper.GetSpanDepth(x, o))
                         .ThenBy(x => x.Tags.TryGetValue("redis.raw_command", out var value) ? value.Replace(TestPrefix, string.Empty) : null)
                         .ThenBy(x => x.Start)

@@ -3,13 +3,20 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
     /// <summary>
     /// Message interface for duck-typing
     /// </summary>
-    internal interface IMessage
+    internal interface IMessage : IDuckType
     {
+        /// <summary>
+        /// Gets the key of the message
+        /// </summary>
+        public object Key { get; }
+
         /// <summary>
         /// Gets the value of the message
         /// </summary>

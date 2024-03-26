@@ -13,6 +13,7 @@
 #include "corhdr.h"
 #include "corinfo.h"
 #include "corpriv.h"
+#include <minipal/utils.h>
 
 //---------------------------------------------------------------------------------------
 // These macros define how arguments are mapped to the stack in the managed calling convention.
@@ -26,7 +27,6 @@
 #else
 #define STACK_GROWS_UP_ON_ARGS_WALK
 #endif
-
 
 //------------------------------------------------------------------------
 // Encapsulates how compressed integers and typeref tokens are encoded into
@@ -44,13 +44,13 @@ class SigParser
         // This type is performance critical - do not add fields to it.
         // (If you must, check for managed types that may use a SigParser or SigPointer inline, like ArgIterator.)
         PCCOR_SIGNATURE m_ptr;
-        DWORD           m_dwLen;
+        uint32_t           m_dwLen;
 
         //------------------------------------------------------------------------
         // Skips specified number of bytes WITHOUT VALIDATION. Only to be used
         // when it is known that it won't overflow the signature buffer.
         //------------------------------------------------------------------------
-        FORCEINLINE void SkipBytes(ULONG cb)
+        FORCEINLINE void SkipBytes(uint32_t cb)
         {
             SUPPORTS_DAC;
             _ASSERT(cb <= m_dwLen);
@@ -82,7 +82,7 @@ class SigParser
             m_dwLen = 0xffffffff;
         }
 
-        FORCEINLINE SigParser(PCCOR_SIGNATURE ptr, DWORD len)
+        FORCEINLINE SigParser(PCCOR_SIGNATURE ptr, uint32_t len)
         {
             LIMITED_METHOD_CONTRACT;
 
@@ -99,7 +99,7 @@ class SigParser
             m_dwLen = 0xffffffff;
         }
 
-        inline void SetSig(PCCOR_SIGNATURE ptr, DWORD len)
+        inline void SetSig(PCCOR_SIGNATURE ptr, uint32_t len)
         {
             LIMITED_METHOD_CONTRACT;
 
@@ -119,7 +119,7 @@ class SigParser
         void
         GetSignature(
             PCCOR_SIGNATURE * pSig,
-            DWORD           * pcbSigSize)
+            uint32_t           * pcbSigSize)
         {
             *pSig = m_ptr;
             *pcbSigSize = m_dwLen;
@@ -142,13 +142,13 @@ class SigParser
         // the head of the stream and return it.
         //------------------------------------------------------------------------
         __checkReturn
-        FORCEINLINE HRESULT GetData(ULONG* data)
+        FORCEINLINE HRESULT GetData(uint32_t* data)
         {
             WRAPPER_NO_CONTRACT;
             SUPPORTS_DAC;
 
-            ULONG sizeOfData = 0;
-            ULONG tempData;
+            uint32_t sizeOfData = 0;
+            uint32_t tempData;
 
             if (data == NULL)
                 data = &tempData;
@@ -275,12 +275,12 @@ class SigParser
 
         // Note: Calling convention is always one byte, not four bytes
         __checkReturn
-        HRESULT GetCallingConvInfo(ULONG * data)
+        HRESULT GetCallingConvInfo(uint32_t * data)
         {
             WRAPPER_NO_CONTRACT;
             SUPPORTS_DAC;
 
-            ULONG tmpData;
+            uint32_t tmpData;
 
             if (data == NULL)
                 data = &tmpData;
@@ -295,10 +295,10 @@ class SigParser
         }
 
         __checkReturn
-        HRESULT GetCallingConv(ULONG* data)  // @REVISIT_TODO: Calling convention is one byte, not four.
+        HRESULT GetCallingConv(uint32_t* data)  // @REVISIT_TODO: Calling convention is one byte, not four.
         {
             WRAPPER_NO_CONTRACT;
-            ULONG info;
+            uint32_t info;
             HRESULT hr = GetCallingConvInfo(&info);
 
             if (SUCCEEDED(hr) && data != NULL)
@@ -313,12 +313,12 @@ class SigParser
         // Non-destructive read of compressed integer.
         //------------------------------------------------------------------------
         __checkReturn
-        HRESULT PeekData(ULONG *data) const
+        HRESULT PeekData(uint32_t *data) const
         {
             WRAPPER_NO_CONTRACT;
             _ASSERTE(data != NULL);
 
-            ULONG sizeOfData = 0;
+            uint32_t sizeOfData = 0;
             return CorSigUncompressData(m_ptr, m_dwLen, data, &sizeOfData);
         }
 
@@ -386,12 +386,12 @@ class SigParser
         // E_INVALIDARG for base types that have variables sizes.
         //-------------------------------------------------------------------------
         __checkReturn
-        HRESULT PeekElemTypeSize(ULONG *pSize)
+        HRESULT PeekElemTypeSize(uint32_t *pSize)
         {
             WRAPPER_NO_CONTRACT;
             HRESULT hr = S_OK;
 
-            DWORD dwSize = 0;
+            uint32_t dwSize = 0;
 
             if (pSize == NULL)
             {
@@ -488,7 +488,7 @@ class SigParser
         }
 
         //------------------------------------------------------------------------
-        // Is this at the Sentinal (the ... in a varargs signature) that marks
+        // Is this at the Sentinel (the ... in a varargs signature) that marks
         // the beginning of varguments that are not decared at the target
 
         bool AtSentinel() const
@@ -510,7 +510,7 @@ class SigParser
         HRESULT GetToken(mdToken * token)
         {
             WRAPPER_NO_CONTRACT;
-            DWORD dwLen;
+            uint32_t dwLen;
             mdToken tempToken;
 
             if (token == NULL)
@@ -716,7 +716,7 @@ class SigParser
         // the arguments.
         //------------------------------------------------------------------------
         __checkReturn
-        HRESULT SkipMethodHeaderSignature(ULONG *pcArgs);
+        HRESULT SkipMethodHeaderSignature(uint32_t *pcArgs);
 
         //------------------------------------------------------------------------
         // Skip a sub signature (as immediately follows an ELEMENT_TYPE_FNPTR).
@@ -793,7 +793,7 @@ protected:
         }
         CONTRACTL_END;
 
-        if (type >= (CorElementType)_countof(info))
+        if (type >= (CorElementType)ARRAY_SIZE(info))
         {
             ThrowHR(COR_E_BADIMAGEFORMAT);
         }
@@ -803,7 +803,7 @@ protected:
     {
         LIMITED_METHOD_DAC_CONTRACT;
 
-        if (type >= (CorElementType)_countof(info))
+        if (type >= (CorElementType)ARRAY_SIZE(info))
         {
             return info[ELEMENT_TYPE_END];
         }
@@ -830,7 +830,7 @@ public:
     {
         LIMITED_METHOD_CONTRACT;
 
-        for (int i = 0; i < (int)_countof(info); i++)
+        for (int i = 0; i < (int)ARRAY_SIZE(info); i++)
         {
             _ASSERTE(info[i].type == i);
         }
@@ -862,6 +862,21 @@ public:
         SUPPORTS_DAC;
 
         return (GetGCType_NoThrow(type) == TYPE_GC_REF);
+    }
+
+    static BOOL IsByRef(CorElementType type)
+    {
+        WRAPPER_NO_CONTRACT;
+        SUPPORTS_DAC;
+
+        return (GetGCType(type) == TYPE_GC_BYREF);
+    }
+    static BOOL IsByRef_NoThrow(CorElementType type)
+    {
+        WRAPPER_NO_CONTRACT;
+        SUPPORTS_DAC;
+
+        return (GetGCType_NoThrow(type) == TYPE_GC_BYREF);
     }
 
     FORCEINLINE static BOOL IsGenericVariable(CorElementType type)
@@ -951,7 +966,7 @@ protected:
 
 
 // Returns the address of the payload inside the stackelem
-inline void* StackElemEndianessFixup(void* pStackElem, UINT cbSize) {
+inline void* StackElemEndiannessFixup(void* pStackElem, UINT cbSize) {
     LIMITED_METHOD_CONTRACT;
 
     BYTE *pRetVal = (BYTE*)pStackElem;

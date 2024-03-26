@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
@@ -17,6 +19,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         /// Gets the command object passed into the wire protocol
         /// </summary>
         [DuckField(Name = "_command")]
-        public BsonDocumentProxy Command;
+        public object? Command;
     }
 }

@@ -44,6 +44,33 @@ public:
     bool IsAllocationProfilingEnabled() const override;
     bool IsContentionProfilingEnabled() const override;
     double MinimumCores() const override;
+    int32_t AllocationSampleLimit() const override;
+    int32_t ContentionSampleLimit() const override;
+    int32_t ContentionDurationThreshold() const override;
+    std::chrono::nanoseconds CpuWallTimeSamplingRate() const override;
+    const std::string& GetNamedPipeName() const override;
+    bool IsTimestampsAsLabelEnabled() const override;
+    int32_t WalltimeThreadsThreshold() const override;
+    int32_t CpuThreadsThreshold() const override;
+    int32_t CodeHotspotsThreadsThreshold() const override;
+    bool IsGarbageCollectionProfilingEnabled() const override;
+    bool IsHeapProfilingEnabled() const override;
+    bool UseBacktrace2() const override;
+    bool IsAllocationRecorderEnabled() const override;
+    bool IsDebugInfoEnabled() const override;
+    bool IsGcThreadsCpuTimeEnabled() const override;
+    bool IsThreadLifetimeEnabled() const override;
+    std::string const& GetGitRepositoryUrl() const override;
+    std::string const& GetGitCommitSha() const override;
+    bool IsInternalMetricsEnabled() const override;
+    bool IsSystemCallsShieldEnabled() const override;
+    bool IsCIVisibilityEnabled() const override;
+    std::uint64_t GetCIVisibilitySpanId() const override;
+    bool IsEtwEnabled() const override;
+    bool IsSsiDeployed() const override;
+    bool IsSsiActivated() const override;
+
+
 
 private:
     static tags ExtractUserTags();
@@ -58,6 +85,14 @@ private:
     static bool GetDefaultDebugLogEnabled();
     template <typename T>
     static T GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue);
+    template <typename T>
+    static bool IsEnvironmentValueSet(shared::WSTRING const& name, T& value);
+    static std::chrono::nanoseconds ExtractCpuWallTimeSamplingRate(int minimum = 5);
+    static int32_t ExtractWallTimeThreadsThreshold();
+    static int32_t ExtractCpuThreadsThreshold();
+    static int32_t ExtractCodeHotspotsThreadsThreshold();
+    static bool GetContention();
+    static void ExtractSsiState(bool& ssiDeployed, bool& ssiEnabled);
 
 private:
     static std::string const DefaultProdSite;
@@ -76,6 +111,9 @@ private:
     bool _isExceptionProfilingEnabled;
     bool _isAllocationProfilingEnabled;
     bool _isContentionProfilingEnabled;
+    bool _isGarbageCollectionProfilingEnabled;
+    bool _isHeapProfilingEnabled;
+    bool _isThreadLifetimeEnabled;
     bool _debugLogEnabled;
     fs::path _logDirectory;
     fs::path _pprofDirectory;
@@ -94,5 +132,29 @@ private:
     bool _isNativeFrameEnabled;
     bool _isAgentLess;
     int32_t _exceptionSampleLimit;
+    int32_t _allocationSampleLimit;
+    int32_t _contentionSampleLimit;
+    int32_t _contentionDurationThreshold;
+    std::chrono::nanoseconds _cpuWallTimeSamplingRate;
+    int32_t _walltimeThreadsThreshold;
+    int32_t _cpuThreadsThreshold;
+    int32_t _codeHotspotsThreadsThreshold;
+    bool _useBacktrace2;
+    bool _isAllocationRecorderEnabled;
+    bool _isGcThreadsCpuTimeEnabled;
+    std::string _gitRepositoryUrl;
+    std::string _gitCommitSha;
+
     double _minimumCores;
+    std::string _namedPipeName;
+    bool _isTimestampsAsLabelEnabled;
+    bool _isDebugInfoEnabled;
+    bool _isInternalMetricsEnabled;
+    bool _isSystemCallsShieldEnabled;
+
+    bool _isCIVisibilityEnabled;
+    std::uint64_t _internalCIVisibilitySpanId;
+    bool _isEtwEnabled;
+    bool _isSsiDeployed;
+    bool _isSsiActivated;
 };

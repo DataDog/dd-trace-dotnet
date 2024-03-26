@@ -4,23 +4,28 @@
 // </copyright>
 
 #nullable enable
+namespace Datadog.Trace.Telemetry;
 
-namespace Datadog.Trace.Telemetry
+internal class HostTelemetryData
 {
-    internal class HostTelemetryData
+    public HostTelemetryData(string hostname, string os, string architecture)
     {
-        public string? ContainerId { get; set; }
-
-        public string? Hostname { get; set; }
-
-        public string? Os { get; set; }
-
-        public string? OsVersion { get; set; }
-
-        public string? KernelName { get; set; }
-
-        public string? KernelRelease { get; set; }
-
-        public string? KernelVersion { get; set; }
+        Hostname = hostname;
+        Os = os;
+        Architecture = architecture;
     }
+
+    public string Hostname { get; }
+
+    public string Architecture { get; }
+
+    public string Os { get; }
+
+    public string? OsVersion { get; set; }
+
+    public string? KernelName { get; set; }
+
+    public string? KernelRelease { get; set; }
+
+    public string? KernelVersion { get; set; }
 }

@@ -1,28 +1,34 @@
 
 stages:
   - build
+  - package
   - publish
   - deploy
-  
+
+include:
+  - remote: https://gitlab-templates.ddbuild.io/apm/packaging.yml
+
 variables:
-  DATADOG_AGENT_WINBUILDIMAGES: v9405677-746a71d
   GIT_PROFILER_REF: master
-  DEPLOY_TO_REL_ENV:
-    value: "false"
-    description: "Set to true to override rules in the reliability-env pipeline (e.g. override 'only deploy master')"
-    
+  DOTNET_PACKAGE_VERSION:
+    description: "Used by the package stage when triggered manually"
+
 build:
   only:
     - master
     - main
     - /^hotfix.*$/
     - /^release.*$/
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
   tags: ["runner:windows-docker", "windowsversion:1809"]
   script:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts) { remove-item -recurse -force artifacts }
-    - docker run --rm -m 4096M -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e ENABLE_MULTIPROCESSOR_COMPILATION=false -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e SIGN_WINDOWS=true 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/windows_1809_x64:$Env:DATADOG_AGENT_WINBUILDIMAGES c:\mnt\tracer\build\_build\gitlab.bat
+    - docker run --rm -m 8192M -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e ENABLE_MULTIPROCESSOR_COMPILATION=false -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e SIGN_WINDOWS=true -e NUGET_CERT_REVOCATION_MODE=offline datadog/dd-trace-dotnet-docker-build:latest
     - mkdir artifacts
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts
     - remove-item -recurse -force build-out\${CI_JOB_ID}
@@ -39,9 +45,13 @@ publish:
     - main
     - /^hotfix.*$/
     - /^release.*$/
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: publish
   tags: ["runner:windows-docker", "windowsversion:1809"]
-  dependencies: 
+  dependencies:
     - build
   script:
     - $result =  aws sts assume-role --role-arn "arn:aws:iam::486234852809:role/ci-datadog-windows-filter" --role-session-name AWSCLI-Session
@@ -70,14 +80,106 @@ publish:
           }
       } while ($i -lt 3)
 
-deploy_to_reliability_env:
+# The 4 jobs below, do not depend on the packaging stage. So they are ran always, even if package stage can fail.
+deploy_to_docker_registries:
   stage: deploy
   rules:
-    - if: '$DEPLOY_TO_REL_ENV == "true"'
+    - if: '$POPULATE_CACHE'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: always
+    - when: manual
+      allow_failure: true
   trigger:
-    project: DataDog/apm-reliability/datadog-reliability-env
-    branch: master
+    project: DataDog/public-images
+    branch: main
+    strategy: depend
   variables:
-    UPSTREAM_PACKAGE_JOB: build
-    UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
-    FORCE_TRIGGER: $DEPLOY_TO_REL_ENV
+    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA
+    IMG_DESTINATIONS: dd-lib-dotnet-init:$CI_COMMIT_TAG
+    IMG_SIGNING: "false"
+
+deploy_musl_tag_to_docker_registries:
+  stage: deploy
+  rules:
+    - if: '$POPULATE_CACHE'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: always
+    - when: manual
+      allow_failure: true
+  trigger:
+    project: DataDog/public-images
+    branch: main
+    strategy: depend
+  variables:
+    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA-musl
+    IMG_DESTINATIONS: dd-lib-dotnet-init:$CI_COMMIT_TAG-musl
+    IMG_SIGNING: "false"
+
+deploy_latest_tag_to_docker_registries:
+  stage: deploy
+  rules:
+    - if: '$POPULATE_CACHE'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: always
+    - when: manual
+      allow_failure: true
+  trigger:
+    project: DataDog/public-images
+    branch: main
+    strategy: depend
+  variables:
+    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA
+    IMG_DESTINATIONS: dd-lib-dotnet-init:latest
+    IMG_SIGNING: "false"
+
+deploy_latest_musl_tag_to_docker_registries:
+  stage: deploy
+  rules:
+    - if: '$POPULATE_CACHE'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: always
+    - when: manual
+      allow_failure: true
+  trigger:
+    project: DataDog/public-images
+    branch: main
+    strategy: depend
+  variables:
+    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA-musl
+    IMG_DESTINATIONS: dd-lib-dotnet-init:latest-musl
+    IMG_SIGNING: "false"
+
+package:
+  extends: .package
+  rules:
+    - if: $DOTNET_PACKAGE_VERSION
+      when: on_success
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: manual
+      allow_failure: false
+  script:
+    - ../.gitlab/build-deb-rpm.sh
+  variables:
+    ARCH: amd64
+
+package-arm:
+  extends: .package-arm
+  rules:
+    - if: $DOTNET_PACKAGE_VERSION
+      when: on_success
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: manual
+      allow_failure: false
+  script:
+    - ../.gitlab/build-deb-rpm.sh
+  variables:
+    ARCH: arm64
+
+.release-package:
+  stage: deploy
+  variables:
+    PRODUCT_NAME: auto_inject-dotnet

@@ -2,6 +2,8 @@
 #include "log.h"
 #include "dynamic_dispatcher.h"
 #include "util.h"
+#include "../../../shared/src/native-src/pal.h"
+#include "EnvironmentVariables.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_function_control.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_helper.h"
@@ -52,7 +54,12 @@ namespace datadog::shared::nativeloader
     CorProfiler* CorProfiler::m_this = nullptr;
 
     CorProfiler::CorProfiler(IDynamicDispatcher* dispatcher) :
-        m_refCount(0), m_dispatcher(dispatcher), m_cpProfiler(nullptr), m_tracerProfiler(nullptr), m_customProfiler(nullptr)
+        m_refCount(0),
+        m_dispatcher(dispatcher),
+        m_cpProfiler(nullptr),
+        m_tracerProfiler(nullptr),
+        m_customProfiler(nullptr),
+        m_info(nullptr)
     {
         Log::Debug("CorProfiler::.ctor");
     }
@@ -85,13 +92,13 @@ namespace datadog::shared::nativeloader
         return E_NOINTERFACE;
     }
 
-    ULONG STDMETHODCALLTYPE CorProfiler::AddRef(void)
+    ULONG STDMETHODCALLTYPE CorProfiler::AddRef()
     {
         Log::Debug("CorProfiler::AddRef");
         return std::atomic_fetch_add(&this->m_refCount, 1) + 1;
     }
 
-    ULONG STDMETHODCALLTYPE CorProfiler::Release(void)
+    ULONG STDMETHODCALLTYPE CorProfiler::Release()
     {
         Log::Debug("CorProfiler::Release");
         int count = std::atomic_fetch_sub(&this->m_refCount, 1) - 1;
@@ -109,7 +116,44 @@ namespace datadog::shared::nativeloader
     {
         Log::Debug("CorProfiler::Initialize");
         InspectRuntimeCompatibility(pICorProfilerInfoUnk);
-        // std::this_thread::sleep_for(std::chrono::milliseconds(20000));
+
+        const auto process_name = ::shared::GetCurrentProcessName();
+        Log::Debug("ProcessName: ", process_name);
+
+        Log::Debug("CorProfiler::Initialize");
+
+        const auto& include_process_names = GetEnvironmentValues(EnvironmentVariables::IncludeProcessNames);
+
+        // if there is a process inclusion list, attach clrprofiler only if this
+        // process's name is on the list
+        if (!include_process_names.empty() && !Contains(include_process_names, process_name))
+        {
+            Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name, " not found in ",
+                         EnvironmentVariables::IncludeProcessNames, ".");
+            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+        }
+
+        // if we were on the explicit include list, don't check the block list
+        if (include_process_names.empty())
+        {
+            // attach clrprofiler only if this process's name is NOT on the blocklists
+            const auto& exclude_process_names = GetEnvironmentValues(EnvironmentVariables::ExcludeProcessNames);
+            if (!exclude_process_names.empty() && Contains(exclude_process_names, process_name))
+            {
+                Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name, " found in ",
+                             EnvironmentVariables::ExcludeProcessNames, ".");
+                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+            }
+
+            for (auto&& exclude_assembly : default_exclude_assemblies)
+            {
+                if (process_name == exclude_assembly)
+                {
+                    Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name," found in default exclude list");
+                    return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+                }
+            }
+        }
 
         //
         // Get and set profiler pointers
@@ -419,7 +463,7 @@ namespace datadog::shared::nativeloader
     {
         try
         {
-            if (m_writeToDiskCorProfilerInfo != nullptr)
+            if (m_writeToDiskCorProfilerInfo != nullptr && SUCCEEDED(hrStatus))
             {
                 WCHAR modulePath[MAX_PATH];
                 DWORD nameSize = 0;
@@ -447,7 +491,15 @@ namespace datadog::shared::nativeloader
 
                     moduleName = moduleName + EndLWStr;
                     instrumented_assembly_generator::WriteTextToFile(instrumented_assembly_generator::ModulesFileName, moduleName);
-                    instrumented_assembly_generator::CopyOriginalModuleForInstrumentationVerification(modulePath);
+                    if (instrumented_assembly_generator::IsCopyingOriginalsModulesEnabled())
+                    {
+                        // This option means we copy every loaded assembly to the InstrumentationVerification folder.
+                        // It is off by default, but can be useful as during an escalation, we can request that the customer turn it on,
+                        // and then the customer will only need to upload the contents of their logs folder (which contains the InstrumentationVerification folder) to us for offline analysis, 
+                        // so we won't have to ask the customer to go and locate wherever it was that the assembly was loaded from at runtime.
+                        // In most cases, this would hopefully not be necessary as the textual output of the `dd-trace analyze-instrumentation` command should suffice.
+                        instrumented_assembly_generator::CopyOriginalModuleForInstrumentationVerification(modulePath);
+                    }
                 }
             }
         }
@@ -951,9 +1003,14 @@ namespace datadog::shared::nativeloader
         }
 
         IUnknown* tstVerProfilerInfo;
-        if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**) &tstVerProfilerInfo))
+        if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later.");
+            Log::Info("ICorProfilerInfo12 available. Profiling API compatibility: .NET Core 5.0 or later.");
+            tstVerProfilerInfo->Release();
+        }
+        else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**) &tstVerProfilerInfo))
+        {
+            Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 3.1 or later.");
             tstVerProfilerInfo->Release();
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo10), (void**) &tstVerProfilerInfo))

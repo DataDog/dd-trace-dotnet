@@ -5,95 +5,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Monitoring.Distribution/Datadog.Monitoring.Distribution.csproj;src/Datadog.Trace.Tools.Runner/*.csproj;src\**\Datadog.InstrumentedAssembly*.csproj" />
-    <CsharpUnitTestProject Include="test\**\*.Tests.csproj"/>
-    <CsharpInstrumentationVerificationLibrary Include="src\**\Datadog.InstrumentedAssembly*.csproj"/>
-    <CsharpIntegrationTestProject Include="test\*.IntegrationTests\*.IntegrationTests.csproj" />
-    <CsharpIntegrationTestProject Remove="test\Datadog.Trace.Tools.Runner.IntegrationTests\Datadog.Trace.Tools.Runner.IntegrationTests.csproj" Condition="$(TargetFramework.StartsWith('net4'))" />
-    <CsharpIntegrationTestRegressionProject Include="test\tests-applications\regression\*.IntegrationTests.csproj" />
-    <RazorPagesProject Include="test/test-applications/**/Samples.AspNetCoreRazorPages.csproj" />
-    <ExcludeExpenseItDemoProject Remove="test/test-applications/regression/**/ExpenseItDemo*.csproj" />
-    <ExcludeLegacyRedisProject Remove="test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
-    <CsharpTestHelperProject Include="test\**\*.TestHelpers.csproj"/>
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
-    <VbSampleLibProject Include="test\test-applications\integrations\**\*.vbproj" />
-    <LiveDebuggerSampleProject Include="test\test-applications\debugger\Samples.Probes\Samples.Probes.csproj" />
-    <SampleLibProject Include="test\test-applications\integrations\dependency-libs\**\*.csproj" />
-    <RegressionSampleLibProject Include="test\test-applications\regression\dependency-libs\**\Datadog.StackExchange.Redis*.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <FrameworkReproduction Include="test\test-applications\regression\StackExchange.Redis.AssemblyConflict.LegacyProject\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
   </ItemGroup>
-
-  <!--  Used by CompileManagedSrc-->
-  <Target Name="BuildCsharpSrc">
-    <MSBuild Targets="Build" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!--  Used by CompileManagedTestHelpers-->
-  <Target Name="BuildInstrumentationVerificationLibrary">
-    <MSBuild Targets="Restore;Build" Projects="@(CsharpInstrumentationVerificationLibrary)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-  
-  <!--  Used by CompileManagedTestHelpers-->
-  <Target Name="BuildCsharpTestHelpers">
-    <MSBuild Targets="Build" Projects="@(CsharpTestHelperProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!--  Used by CompileManagedUnitTests-->
-  <Target Name="BuildCsharpUnitTests">
-    <MSBuild Targets="Build" Projects="@(CsharpTestHelperProject);@(CsharpUnitTestProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!-- Used by CompileIntegrationTests-->
-  <Target Name="BuildCsharpIntegrationTests">
-
-    <!-- Filter the sample projects by TargetFramework -->
-    <ItemGroup>
-      <IntegrationTestProjects Include="@(RazorPagesProject)" Condition="!$(TargetFramework.StartsWith('net4'))" />
-      <IntegrationTestProjects Include="@(LiveDebuggerSampleProject)" />
-      <IntegrationTestProjects Include="@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeLegacyRedisProject)" />
-    </ItemGroup>
-
-    <MSBuild Targets="Build" Projects="@(IntegrationTestProjects)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
 
   <!--  Used by CompileNativeSrcWindows-->
   <Target Name="BuildCppSrc">
     <MSBuild Targets="Build" Projects="@(CppProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!--  Used by CompileDependencyLibs-->
-  <Target Name="BuildDependencyLibs">
-    <MSBuild Targets="Build" Projects="@(SampleLibProject);@(VbSampleLibProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!--  Used by CompileRegressionDependencyLibs-->
-  <Target Name="BuildRegressionDependencyLibs">
-    <MSBuild Targets="Build" Projects="@(RegressionSampleLibProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!--  Used by CompileFrameworkReproductions-->
-  <Target Name="BuildFrameworkReproductions">
-    <MSBuild Targets="Build" Projects="@(FrameworkReproduction)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
@@ -105,15 +24,24 @@
     </MSBuild>
   </Target>
 
+  <!--  Used by CompileFrameworkReproductions-->
+  <Target Name="BuildFrameworkReproductions">
+    <MSBuild Targets="Build" Projects="@(FrameworkReproduction)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
   <!-- Used by CompileMultiApiPackageVersionSamples -->
   <Target Name="RestoreSamplesForPackageVersionsOnly" Condition="'$(TestAllPackageVersions)'=='true'">
-    <!-- Filter the sample projects by TargetFramework -->
+
     <ItemGroup>
-      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="('$(IncludeTestsRequiringDocker)' == '' OR '%(PackageVersionSample.RequiresDockerDependency)'=='$(IncludeTestsRequiringDocker)') AND ('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)')" />
+      <!-- Assumes that the core C# projects are already built first -->
+      <!-- Filter the sample projects by various attributes -->
+      <PackageVersionSampleFiltered Include="@(PackageVersionSample)" Condition="('$(SampleName)' == '' OR '%(PackageVersionSample.SampleName)' == '$(SampleName)') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)') AND (('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true')) AND ('$(IncludeTestsRequiringDocker)' == '' OR ('$(IncludeTestsRequiringDocker)' == 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' != 'None') OR ('$(IncludeTestsRequiringDocker)' != 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' == 'None'))" />
     </ItemGroup>
 
     <!-- Build the sample projects concurrently -->
-    <MSBuild Targets="Restore" Projects="@(PackageVersionSampleCompile)" BuildInParallel="$(BuildInParallel)">
+    <MSBuild Targets="Restore" Projects="@(PackageVersionSampleFiltered)" BuildInParallel="$(BuildInParallel)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
@@ -121,14 +49,14 @@
   <!-- Used by CompileMultiApiPackageVersionSamples -->
   <Target Name="RestoreAndBuildSamplesForPackageVersionsOnly" Condition="'$(TestAllPackageVersions)'=='true'" DependsOnTargets="RestoreSamplesForPackageVersionsOnly">
 
-    <!-- Assumes that the core C# projects are already built first -->
-    <!-- Filter the sample projects by TargetFramework -->
     <ItemGroup>
-      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="('$(IncludeTestsRequiringDocker)' == '' OR '%(PackageVersionSample.RequiresDockerDependency)'=='$(IncludeTestsRequiringDocker)') AND ('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)')" />
+      <!-- Assumes that the core C# projects are already built first -->
+      <!-- Filter the sample projects by various attributes -->
+      <PackageVersionSampleFiltered Include="@(PackageVersionSample)" Condition="('$(SampleName)' == '' OR '%(PackageVersionSample.SampleName)' == '$(SampleName)') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)') AND (('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true')) AND ('$(IncludeTestsRequiringDocker)' == '' OR ('$(IncludeTestsRequiringDocker)' == 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' != 'None') OR ('$(IncludeTestsRequiringDocker)' != 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' == 'None'))" />
     </ItemGroup>
 
     <!-- Build the sample projects concurrently -->
-    <MSBuild Targets="Publish" Projects="@(PackageVersionSampleCompile)" BuildInParallel="$(BuildInParallel)">
+    <MSBuild Targets="Publish" Projects="@(PackageVersionSampleFiltered)" BuildInParallel="$(BuildInParallel)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>

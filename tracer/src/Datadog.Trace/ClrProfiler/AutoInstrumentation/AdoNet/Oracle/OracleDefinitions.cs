@@ -15,7 +15,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     MaximumVersion = "4.122.*",
     IntegrationName = nameof(IntegrationId.Oracle),
     DataReaderType = "Oracle.ManagedDataAccess.Client.OracleDataReader",
-    DataReaderTaskType = "System.Threading.Tasks.Task`1<Oracle.ManagedDataAccess.Client.OracleDataReader>",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
     TargetMethodAttributes = new[]
     {
         // int Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteNonQuery()
@@ -37,7 +37,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     MaximumVersion = "2.*.*",
     IntegrationName = nameof(IntegrationId.Oracle),
     DataReaderType = "Oracle.ManagedDataAccess.Client.OracleDataReader",
-    DataReaderTaskType = "System.Threading.Tasks.Task`1<Oracle.ManagedDataAccess.Client.OracleDataReader>",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
     TargetMethodAttributes = new[]
     {
         // int Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteNonQuery()
@@ -59,7 +59,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     MaximumVersion = "4.122.*",
     IntegrationName = nameof(IntegrationId.Oracle),
     DataReaderType = "Oracle.DataAccess.Client.OracleDataReader",
-    DataReaderTaskType = "System.Threading.Tasks.Task`1<Oracle.DataAccess.Client.OracleDataReader>",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[Oracle.DataAccess.Client.OracleDataReader]",
     TargetMethodAttributes = new[]
     {
         // int Oracle.DataAccess.Client.OracleCommand.ExecuteNonQuery()

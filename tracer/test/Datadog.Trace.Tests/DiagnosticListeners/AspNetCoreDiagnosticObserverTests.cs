@@ -96,7 +96,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         {
             var settings = new TracerSettings();
             var writerMock = new Mock<IAgentWriter>();
-            var samplerMock = new Mock<ISampler>();
+            var samplerMock = new Mock<ITraceSampler>();
 
             return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }

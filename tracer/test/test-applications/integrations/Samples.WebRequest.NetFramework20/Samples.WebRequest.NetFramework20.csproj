@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- override to only build/run net461 -->
-    <TargetFrameworks>net461</TargetFrameworks>
+    <!-- override to only build/run net462 -->
+    <TargetFrameworks>net462</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

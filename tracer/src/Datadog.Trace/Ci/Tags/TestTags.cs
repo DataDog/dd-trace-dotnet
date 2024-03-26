@@ -3,121 +3,140 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Ci.Tags
+namespace Datadog.Trace.Ci.Tags;
+
+/// <summary>
+/// Span tags for test data model
+/// </summary>
+internal static class TestTags
 {
     /// <summary>
-    /// Span tags for test data model
+    /// Test bundle name
     /// </summary>
-    internal static class TestTags
-    {
-        /// <summary>
-        /// Test bundle name
-        /// </summary>
-        public const string Bundle = "test.bundle";
+    public const string Bundle = "test.bundle";
 
-        /// <summary>
-        /// Test suite name
-        /// </summary>
-        public const string Suite = "test.suite";
+    /// <summary>
+    /// Test module name
+    /// </summary>
+    public const string Module = "test.module";
 
-        /// <summary>
-        /// Test name
-        /// </summary>
-        public const string Name = "test.name";
+    /// <summary>
+    /// Test suite name
+    /// </summary>
+    public const string Suite = "test.suite";
 
-        /// <summary>
-        /// Test type
-        /// </summary>
-        public const string Type = "test.type";
+    /// <summary>
+    /// Test name
+    /// </summary>
+    public const string Name = "test.name";
 
-        /// <summary>
-        /// Test type test
-        /// </summary>
-        public const string TypeTest = "test";
+    /// <summary>
+    /// Test type
+    /// </summary>
+    public const string Type = "test.type";
 
-        /// <summary>
-        /// Test type benchmark
-        /// </summary>
-        public const string TypeBenchmark = "benchmark";
+    /// <summary>
+    /// Test type test
+    /// </summary>
+    public const string TypeTest = "test";
 
-        /// <summary>
-        /// Test framework
-        /// </summary>
-        public const string Framework = "test.framework";
+    /// <summary>
+    /// Test type benchmark
+    /// </summary>
+    public const string TypeBenchmark = "benchmark";
 
-        /// <summary>
-        /// Test framework version
-        /// </summary>
-        public const string FrameworkVersion = "test.framework_version";
+    /// <summary>
+    /// Test framework
+    /// </summary>
+    public const string Framework = "test.framework";
 
-        /// <summary>
-        /// Test parameters
-        /// </summary>
-        public const string Parameters = "test.parameters";
+    /// <summary>
+    /// Test framework version
+    /// </summary>
+    public const string FrameworkVersion = "test.framework_version";
 
-        /// <summary>
-        /// Test traits
-        /// </summary>
-        public const string Traits = "test.traits";
+    /// <summary>
+    /// Test parameters
+    /// </summary>
+    public const string Parameters = "test.parameters";
 
-        /// <summary>
-        /// Test status
-        /// </summary>
-        public const string Status = "test.status";
+    /// <summary>
+    /// Test traits
+    /// </summary>
+    public const string Traits = "test.traits";
 
-        /// <summary>
-        /// Test Pass status
-        /// </summary>
-        public const string StatusPass = "pass";
+    /// <summary>
+    /// Test status
+    /// </summary>
+    public const string Status = "test.status";
 
-        /// <summary>
-        /// Test Fail status
-        /// </summary>
-        public const string StatusFail = "fail";
+    /// <summary>
+    /// Test Pass status
+    /// </summary>
+    public const string StatusPass = "pass";
 
-        /// <summary>
-        /// Test Skip status
-        /// </summary>
-        public const string StatusSkip = "skip";
+    /// <summary>
+    /// Test Fail status
+    /// </summary>
+    public const string StatusFail = "fail";
 
-        /// <summary>
-        /// Test skip reason
-        /// </summary>
-        public const string SkipReason = "test.skip_reason";
+    /// <summary>
+    /// Test Skip status
+    /// </summary>
+    public const string StatusSkip = "skip";
 
-        /// <summary>
-        /// Test output message
-        /// </summary>
-        public const string Message = "test.message";
+    /// <summary>
+    /// Test skip reason
+    /// </summary>
+    public const string SkipReason = "test.skip_reason";
 
-        /// <summary>
-        /// Parameters metadata TestName
-        /// </summary>
-        public const string MetadataTestName = "test_name";
+    /// <summary>
+    /// Test output message
+    /// </summary>
+    public const string Message = "test.message";
 
-        /// <summary>
-        /// Origin value for CIApp Test
-        /// </summary>
-        public const string CIAppTestOriginName = "ciapp-test";
+    /// <summary>
+    /// Parameters metadata TestName
+    /// </summary>
+    public const string MetadataTestName = "test_name";
 
-        /// <summary>
-        /// Test source file
-        /// </summary>
-        public const string SourceFile = "test.source.file";
+    /// <summary>
+    /// Origin value for CIApp Test
+    /// </summary>
+    public const string CIAppTestOriginName = "ciapp-test";
 
-        /// <summary>
-        /// Test source start line
-        /// </summary>
-        public const string SourceStart = "test.source.start";
+    /// <summary>
+    /// Test source file
+    /// </summary>
+    public const string SourceFile = "test.source.file";
 
-        /// <summary>
-        /// Test source end line
-        /// </summary>
-        public const string SourceEnd = "test.source.end";
+    /// <summary>
+    /// Test source start line
+    /// </summary>
+    public const string SourceStart = "test.source.start";
 
-        /// <summary>
-        /// Test code owners
-        /// </summary>
-        public const string CodeOwners = "test.codeowners";
-    }
+    /// <summary>
+    /// Test source end line
+    /// </summary>
+    public const string SourceEnd = "test.source.end";
+
+    /// <summary>
+    /// Test code owners
+    /// </summary>
+    public const string CodeOwners = "test.codeowners";
+
+    /// <summary>
+    /// Test command
+    /// </summary>
+    public const string Command = "test.command";
+
+    /// <summary>
+    /// Test command exit code
+    /// </summary>
+    public const string CommandExitCode = "test.exit_code";
+
+    /// <summary>
+    /// Test command working directory
+    /// </summary>
+    public const string CommandWorkingDirectory = "test.working_directory";
 }

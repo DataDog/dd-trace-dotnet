@@ -15,11 +15,11 @@
     <!-- https://www.nuget.org/packages/StatsdClient/6.0.0 -->
     <PackageReference Include="StatsdClient" Version="6.0.0" />
 
-    <!-- https://www.nuget.org/packages/MessagePack/1.9.3 -->
-    <PackageReference Include="MessagePack" Version="1.9.3" />
+    <!-- https://www.nuget.org/packages/MessagePack/1.9.11 -->
+    <PackageReference Include="MessagePack" Version="1.9.11" />
 
-    <!-- https://www.nuget.org/packages/Newtonsoft.Json/13.0.1 -->
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <!-- https://www.nuget.org/packages/Newtonsoft.Json/13.0.2 -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
 
     <!-- https://www.nuget.org/packages/dnlib/3.4.0 -->
     <PackageReference Include="dnlib" Version="3.4.0" />
@@ -29,6 +29,15 @@
 
     <!-- https://www.nuget.org/packages/IndieSystem.Text.RegularExpressions/0.6 -->
     <PackageReference Include="IndieSystem.Text.RegularExpressions" Version="0.6" />
+
+    <!-- https://www.nuget.org/packages/System.Collections.Immutable/1.0.0 -->
+    <PackageReference Include="System.Collections.Immutable" Version="7.0.0" />
+
+    <!-- https://www.nuget.org/packages/System.Memory/1.0.0 -->
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+
+    <!-- https://www.nuget.org/packages/System.Reflection.Metadata/1.0.0 -->
+    <PackageReference Include="System.Reflection.Metadata" Version="7.0.2" />
 
   </ItemGroup>
 

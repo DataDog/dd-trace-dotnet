@@ -111,6 +111,20 @@
 #define NOT_ARM64_ARG(x)    , x
 #endif
 
+#ifdef TARGET_LOONGARCH64
+#define LOONGARCH64_FIRST_ARG(x)  x ,
+#define LOONGARCH64_ARG(x)        , x
+#define LOONGARCH64_ONLY(x)       x
+#define NOT_LOONGARCH64(x)
+#define NOT_LOONGARCH64_ARG(x)
+#else
+#define LOONGARCH64_FIRST_ARG(x)
+#define LOONGARCH64_ARG(x)
+#define LOONGARCH64_ONLY(x)
+#define NOT_LOONGARCH64(x)        x
+#define NOT_LOONGARCH64_ARG(x)    , x
+#endif
+
 #ifdef TARGET_64BIT
 #define LOG2_PTRSIZE 3
 #else
@@ -185,17 +199,11 @@ inline size_t ALIGN_UP( size_t val, size_t alignment )
     _ASSERTE( result >= val );      // check for overflow
     return result;
 }
-inline void* ALIGN_UP( void* val, size_t alignment )
+
+template <typename T> inline T ALIGN_UP(T val, size_t alignment)
 {
     WRAPPER_NO_CONTRACT;
-
-    return (void*) ALIGN_UP( (size_t)val, alignment );
-}
-inline uint8_t* ALIGN_UP( uint8_t* val, size_t alignment )
-{
-    WRAPPER_NO_CONTRACT;
-
-    return (uint8_t*) ALIGN_UP( (size_t)val, alignment );
+    return (T)ALIGN_UP((size_t)val, alignment);
 }
 
 inline size_t ALIGN_DOWN( size_t val, size_t alignment )
@@ -336,12 +344,6 @@ inline ULONG RoundUpToPower2(ULONG x)
 #else
 #define UNIQUE_LABEL(a)                 UNIQUE_LABEL_DEF_X(_unique_label_##a##_, __LINE__)
 #endif
-
-
-#ifndef _countof
-#define _countof(_array) (sizeof(_array)/sizeof(_array[0]))
-#endif
-
 
 // This is temporary.  LKG should provide these macros and we should then
 // remove STRUNCATE and _TRUNCATE from here.

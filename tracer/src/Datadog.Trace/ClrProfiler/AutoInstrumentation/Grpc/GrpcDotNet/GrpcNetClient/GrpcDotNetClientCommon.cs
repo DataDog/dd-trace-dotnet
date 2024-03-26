@@ -1,4 +1,4 @@
-﻿// <copyright file="GrpcDotNetClientCommon.cs" company="Datadog">
+// <copyright file="GrpcDotNetClientCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,6 +14,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient
 {
@@ -36,13 +37,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
 
             try
             {
-                var tags = new GrpcClientTags();
+                var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
+                var tags = clientSchema.CreateGrpcClientTags();
                 var method = grpcCall.Method;
+                tags.Host = HttpRequestUtils.GetNormalizedHost(grpcCall.Channel.Address.Host);
                 GrpcCommon.AddGrpcTags(tags, tracer, method.GrpcType, name: method.Name, path: method.FullName, serviceName: method.ServiceName);
 
-                var serviceName = tracer.Settings.GetServiceName(tracer, GrpcCommon.ServiceName);
+                var operationName = clientSchema.GetOperationNameForProtocol("grpc");
+                var serviceName = clientSchema.GetServiceName(component: "grpc-client");
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
-                scope = tracer.StartActiveInternal(GrpcCommon.OperationName, tags: tags, serviceName: serviceName, startTime: null);
+                scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, startTime: null);
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Grpc;
@@ -56,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                 if (grpcCall.Options.Headers is { Count: > 0 })
                 {
                     var metadata = new MetadataHeadersCollection(grpcCall.Options.Headers);
-                    span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
+                    span.SetHeaderTags(metadata, tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
                 }
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
@@ -84,20 +89,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
             if (grpcCall.HttpResponse is { Headers: { } responseHeaders })
             {
                 var metadata = new HttpResponseHeadersCollection(responseHeaders);
-                span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                span.SetHeaderTags(metadata, tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
 
             // Note that this will be null if they haven't read the response body yet, but we can't force that on users
             if (grpcCall.TryGetTrailers(out var trailers) && trailers is { Count: > 0 })
             {
                 var metadata = new MetadataHeadersCollection(trailers);
-                span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                span.SetHeaderTags(metadata, tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
             else if (grpcCall.HttpResponse is { } httpResponse
                   && httpResponse.DuckCast<HttpResponseStruct>().TrailingHeaders is { } trailingHeaders)
             {
                 var metadata = new HttpResponseHeadersCollection(trailingHeaders);
-                span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                span.SetHeaderTags(metadata, tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
 
             GrpcCommon.RecordFinalClientSpanStatus(Tracer.Instance, grpcStatusCode, errorMessage, ex);

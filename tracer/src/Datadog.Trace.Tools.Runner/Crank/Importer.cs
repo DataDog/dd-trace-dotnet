@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Sampling;
@@ -246,7 +247,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                     // Ensure all the spans gets flushed before we report the success.
                     // In some cases the process finishes without sending the traces in the buffer.
-                    CIVisibility.FlushSpans();
+                    CIVisibility.Flush();
                 }
             }
             catch (Exception ex)

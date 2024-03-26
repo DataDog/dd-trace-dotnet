@@ -5,7 +5,6 @@
 
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -14,7 +13,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
 {
-#if NET461
+#if NETFRAMEWORK
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
@@ -27,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
         }
     }
 
-    public abstract class AspNetAsyncHandlerTests : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetAsyncHandlerTests : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
 
@@ -38,8 +37,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
 
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/shutdown";
-            _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Name switch
+            {
+                "aspnet.request" => span.IsAspNet(metadataSchemaVersion),
+                "aspnet-mvc.request" => span.IsAspNetMvc(metadataSchemaVersion),
+                _ => Result.DefaultSuccess,
+            };
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -55,6 +61,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
 
             customSpan.ParentId.Should().NotBeNull("traces should be correlated");
         }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 #endif
 }

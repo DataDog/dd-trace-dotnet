@@ -15,17 +15,33 @@ namespace Datadog.Trace.Telemetry
         internal static KeyValuePair<string, string>[] GetDefaultAgentHeaders()
             => new[]
             {
+                new KeyValuePair<string, string>(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language),
+                new KeyValuePair<string, string>(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion),
                 new KeyValuePair<string, string>(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
             };
 
         /// <summary>
         /// Gets the default constant headers that should be added to any request to the direct telemetry intake
         /// </summary>
-        internal static KeyValuePair<string, string>[] GetDefaultIntakeHeaders(string apiKey)
-            => new[]
+        internal static KeyValuePair<string, string>[] GetDefaultIntakeHeaders(TelemetrySettings.AgentlessSettings settings)
+        {
+            var headerCount = settings.Cloud is null ? 4 : 7;
+
+            var headers = new KeyValuePair<string, string>[headerCount];
+
+            headers[0] = new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language);
+            headers[1] = new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion);
+            headers[2] = new(HttpHeaderNames.TracingEnabled, "false"); // don't add automatic instrumentation to requests directed to the agent
+            headers[3] = new(TelemetryConstants.ApiKeyHeader, settings.ApiKey);
+
+            if (settings.Cloud is { } cloud)
             {
-                new KeyValuePair<string, string>(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
-                new KeyValuePair<string, string>(TelemetryConstants.ApiKeyHeader, apiKey),
-            };
+                headers[4] = new(TelemetryConstants.CloudProviderHeader, cloud.Provider);
+                headers[5] = new(TelemetryConstants.CloudResourceTypeHeader, cloud.ResourceType);
+                headers[6] = new(TelemetryConstants.CloudResourceIdentifierHeader, cloud.ResourceIdentifier);
+            }
+
+            return headers;
+        }
     }
 }

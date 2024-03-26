@@ -5,16 +5,21 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class SystemDataSqlClientTests : TestHelper
+    [UsesVerify]
+    public class SystemDataSqlClientTests : TracingIntegrationTest
     {
         public SystemDataSqlClientTests(ITestOutputHelper output)
             : base("SqlServer", output)
@@ -22,12 +27,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.SystemDataSqlClient
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               from propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
+
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.SystemDataSqlClient), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
+            SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
+
             // ALWAYS: 98 spans
             // - SqlCommand: 21 spans (3 groups * 7 spans)
             // - DbCommand:  42 spans (6 groups * 7 spans)
@@ -50,31 +65,48 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const int expectedSpanCount = 168;
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.SqlServer-" + dbType;
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-{dbType}" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
-            Assert.Equal(expectedSpanCount, spans.Count);
-
-            foreach (var span in spans)
-            {
-                var result = span.IsSqlClient();
-                Assert.True(result.Success, result.ToString());
-
-                Assert.Equal(expectedServiceName, span.Service);
-                Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-            }
-
+            spans.Count.Should().Be(expectedSpanCount);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
+
+            // Testing that spans yield the expected output when using DBM
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(new Regex("System-Data-SqlClient-Test-[a-zA-Z0-9]{32}"), "System-Data-SqlClient-Test-GUID");
+            settings.AddSimpleScrubber("out.host: localhost", "out.host: sqlserver");
+            settings.AddSimpleScrubber("out.host: (localdb)\\MSSQLLocalDB", "out.host: sqlserver");
+            settings.AddSimpleScrubber("out.host: sqledge_arm64", "out.host: sqlserver");
+            settings.AddSimpleScrubber("peer.service: localhost", "peer.service: sqlserver");
+            settings.AddSimpleScrubber("peer.service: (localdb)\\MSSQLLocalDB", "peer.service: sqlserver");
+            settings.AddSimpleScrubber("peer.service: sqledge_arm64", "peer.service: sqlserver");
+
+            var fileName = nameof(SystemDataSqlClientTests);
+
+            fileName = fileName + (dbmPropagation switch
+            {
+                "full" => ".tagged",
+                _ => ".untagged",
+            });
+
+            await VerifyHelper.VerifySpans(spans, settings)
+                              .DisableRequireUniquePrefix()
+                              .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
         }
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void IntegrationDisabled()
+        public async Task IntegrationDisabled()
         {
             const int totalSpanCount = 21;
             const string expectedOperationName = "sql-server.query";
@@ -84,7 +116,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             string packageVersion = PackageVersions.SystemDataSqlClient.First()[0] as string;
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);

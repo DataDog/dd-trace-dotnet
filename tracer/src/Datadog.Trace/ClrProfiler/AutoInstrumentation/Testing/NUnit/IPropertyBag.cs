@@ -32,5 +32,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         /// <param name="key">the key for which the values are to be retrieved</param>
         /// <returns>First value of the list for the key; otherwise null.</returns>
         object Get(string key);
+
+        /// <summary>
+        /// Sets the value for a key, removing any other
+        /// values that are already in the property set.
+        /// </summary>
+        /// <param name="key">the key for which the values are to be retrieved</param>
+        /// <param name="value">value for the key</param>
+        void Set(string key, object value);
     }
 }

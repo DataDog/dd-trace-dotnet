@@ -61,6 +61,11 @@ namespace Datadog.Trace.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         [DebuggerHidden]
         [DoesNotReturn]
+        internal static void ThrowIndexOutOfRangeException(string message) => throw new IndexOutOfRangeException(message);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [DebuggerHidden]
+        [DoesNotReturn]
         internal static void ThrowNotSupportedException(string message) => throw new NotSupportedException(message);
 
         [MethodImpl(MethodImplOptions.NoInlining)]

@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
 {
     public class NLogDuckTypingTests
     {
-#if NLOG_45
+#if (NLOG_45 || NLOG_50)
         [Fact]
         public void CanDuckTypeLoggingConfigurationInModernNlog()
         {
@@ -118,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
         public void CanReverseDuckTypeTarget()
         {
             var targetType = typeof(Target);
-            var target = NLogHelper.CreateTarget(new NullDatadogSink(), DirectSubmissionLogLevel.Debug);
+            var target = NLogHelper.CreateTarget(new NullDirectSubmissionLogSink(), DirectSubmissionLogLevel.Debug);
             var proxy = NLogCommon<Target>.CreateNLogTargetProxy(target);
 
             proxy.Should().NotBeNull();
@@ -129,7 +129,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
             var typedProxy = ((Target)proxy);
             typedProxy.WriteAsyncLogEvent(logInfo); // should not throw
 
-#if NLOG_45
+#if (NLOG_50)
+            var proxyOfProxy = proxy.DuckCast<ITargetWithContextV5BaseProxy>();
+            proxyOfProxy.Should().NotBeNull();
+
+            var results = proxyOfProxy.GetAllProperties(logInfo.LogEvent.DuckCast<ILogEventInfoProxy>());
+            results.Should().NotBeNull();
+
+            target.SetBaseProxy(proxyOfProxy);
+#elif (NLOG_45)
             var proxyOfProxy = proxy.DuckCast<ITargetWithContextBaseProxy>();
             proxyOfProxy.Should().NotBeNull();
 
@@ -140,7 +148,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
 #endif
         }
 
-#if !NLOG_45
+#if (!NLOG_45 && !NLOG_50)
         [Fact]
         public void CanDuckTypeLogInfoInLegacyNLog()
         {

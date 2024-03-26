@@ -1,0 +1,97 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "this": {
+                "type": "AsyncMethodRedactionTest",
+                "value": "AsyncMethodRedactionTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "this": {
+                "type": "AsyncMethodRedactionTest",
+                "value": "AsyncMethodRedactionTest"
+              }
+            },
+            "locals": {
+              "_Pass_WoRD_": {
+                "notCapturedReason": "redactedIdent",
+                "type": "String"
+              },
+              "_SeC_ReT": {
+                "notCapturedReason": "redactedIdent",
+                "type": "String"
+              },
+              "a": {
+                "fields": {
+                  "Id": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "PassWord": {
+                    "notCapturedReason": "redactedIdent",
+                    "type": "String"
+                  },
+                  "RedactMe": {
+                    "isNull": "true",
+                    "type": "String"
+                  }
+                },
+                "type": "OuterClass",
+                "value": "OuterClass"
+              },
+              "b": {
+                "fields": {
+                  "Id": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "PassWord": {
+                    "notCapturedReason": "redactedIdent",
+                    "type": "String"
+                  },
+                  "RedactMe": {
+                    "isNull": "true",
+                    "type": "String"
+                  }
+                },
+                "type": "OuterClass",
+                "value": "OuterClass"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "RunAsync",
+            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncMethodRedactionTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "RunAsync",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncMethodRedactionTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

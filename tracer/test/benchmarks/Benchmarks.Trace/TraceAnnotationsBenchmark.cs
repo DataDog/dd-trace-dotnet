@@ -9,6 +9,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkAgent6]
+    [BenchmarkCategory(Constants.TracerCategory)]
     public class TraceAnnotationsBenchmark
     {
         private static readonly RuntimeMethodHandle MethodHandle;
@@ -35,7 +36,8 @@ namespace Benchmarks.Trace
         public CallTargetReturn RunOnMethodBegin()
         {
             var state = TraceAnnotationsIntegration.OnMethodBegin<object>(null, MethodHandle, TypeHandle);
-            return TraceAnnotationsIntegration.OnMethodEnd<object>(null, null, state);
+            TraceAnnotationsIntegration.OnMethodEnd<object>(null, null, in state);
+            return CallTargetReturn.GetDefault();
         }
 
         public int InstrumentedMethod()

@@ -11,7 +11,7 @@ using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
@@ -37,6 +37,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private const string MaximumVersion = "5";
 
         private const string IntegrationName = nameof(IntegrationId.AspNetMvc);
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AsyncControllerActionInvoker_EndInvokeAction_Integration>();
 
         /// <summary>
         /// OnMethodEnd callback
@@ -75,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     // Additionally, update the scope so it does not finish the span on close. This allows
                     // us to defer finishing the span later while making sure callers of this method do not
                     // get this scope when calling Tracer.ActiveScope
-                    var now = scope.Span.Context.TraceContext.UtcNow;
+                    var now = scope.Span.Context.TraceContext.Clock.UtcNow;
                     httpContext.AddOnRequestCompleted(h => OnRequestCompletedAfterException(h, scope, now));
 
                     scope.SetFinishOnClose(false);

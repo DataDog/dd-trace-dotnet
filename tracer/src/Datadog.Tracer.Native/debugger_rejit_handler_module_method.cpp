@@ -7,14 +7,10 @@ namespace debugger
 DebuggerRejitHandlerModuleMethod::DebuggerRejitHandlerModuleMethod(
                                                     mdMethodDef methodDef, 
                                                     RejitHandlerModule* module,
-                                                    const FunctionInfo& functionInfo) :
-    RejitHandlerModuleMethod(methodDef, module, functionInfo)
+                                                    const FunctionInfo& functionInfo,
+                                                    std::unique_ptr<MethodRewriter> methodRewriter) :
+    RejitHandlerModuleMethod(methodDef, module, functionInfo, std::move(methodRewriter))
 {
-}
-
-MethodRewriter* DebuggerRejitHandlerModuleMethod::GetMethodRewriter()
-{
-    return DebuggerMethodRewriter::Instance();
 }
 
 void DebuggerRejitHandlerModuleMethod::AddProbe(ProbeDefinition_S probe)

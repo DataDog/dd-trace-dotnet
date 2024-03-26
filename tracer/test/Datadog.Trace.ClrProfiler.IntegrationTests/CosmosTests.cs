@@ -6,85 +6,76 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class CosmosTests : TestHelper
+    [UsesVerify]
+    public class CosmosTests : TracingIntegrationTest, IAsyncLifetime
     {
         private const string ExpectedOperationName = "cosmosdb.query";
-        private const string ExpectedServiceName = "Samples.CosmosDb-cosmosdb";
 
         public CosmosTests(ITestOutputHelper output)
             : base("CosmosDb", output)
         {
             SetServiceVersion("1.0.0");
-
-            // for some reason, the elumator needs a warm up run when piloted by the x86 client
-            if (!Environment.Is64BitProcess)
-            {
-                using var agent = EnvironmentHelper.GetMockAgent();
-                using var processResult = RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}");
-            }
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.CosmosDb
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsCosmosDb(metadataSchemaVersion);
+
         [SkippableTheory(Skip = "Cosmos emulator is too flaky at the moment")]
-        [MemberData(nameof(PackageVersions.CosmosDb), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTraces(string packageVersion)
+        public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
         {
             var expectedSpanCount = 14;
 
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-cosmosdb" : EnvironmentHelper.FullSampleName;
+
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
                 spans.Count.Should().BeGreaterOrEqualTo(expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");
 
-                Output.WriteLine($"spans.Count: {spans.Count}");
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
-                foreach (var span in spans)
-                {
-                    Output.WriteLine(span.ToString());
-                }
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}")
+                                  .DisableRequireUniquePrefix();
 
-                var dbTags = 0;
-                var containerTags = 0;
-
-                foreach (var span in spans)
-                {
-                    var result = span.IsCosmosDb();
-                    Assert.True(result.Success, result.ToString());
-
-                    span.Service.Should().Be(ExpectedServiceName);
-                    span.Resource.Should().StartWith("SELECT * FROM");
-                    span.Tags.Should().NotContain(Tags.Version, "External service span should not have service version tag.");
-
-                    if (span.Tags.ContainsKey(Tags.CosmosDbContainer))
-                    {
-                        span.Tags.Should().Contain(new KeyValuePair<string, string>(Tags.CosmosDbContainer, "items"));
-                        containerTags++;
-                    }
-
-                    if (span.Tags.ContainsKey(Tags.DbName))
-                    {
-                        span.Tags.Should().Contain(new KeyValuePair<string, string>(Tags.DbName, "db"));
-                        dbTags++;
-                    }
-                }
-
-                dbTags.Should().Be(10);
-                containerTags.Should().Be(4);
                 telemetry.AssertIntegrationEnabled(IntegrationId.CosmosDb);
             }
         }
+
+        public async Task InitializeAsync()
+        {
+            // For some reason, the emulator needs a warm up run when piloted by the x86 client
+            if (!EnvironmentTools.IsTestTarget64BitProcess())
+            {
+                using var agent = EnvironmentHelper.GetMockAgent();
+                using var processResult = await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}");
+            }
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 }

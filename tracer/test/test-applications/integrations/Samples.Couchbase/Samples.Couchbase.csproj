@@ -3,7 +3,8 @@
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.4.8</ApiVersion>
     <OutputType>Exe</OutputType>
-    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
   <ItemGroup>

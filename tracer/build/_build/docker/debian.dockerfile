@@ -14,7 +14,9 @@ ENV \
     # Enable correct mode for dotnet watch (only mode supported in a container)
     DOTNET_USE_POLLING_FILE_WATCHER=true \
     # Skip extraction of XML docs - generally not useful within an image/container - helps performance
-    NUGET_XMLDOC_MODE=skip
+    NUGET_XMLDOC_MODE=skip \
+    # Disable LTTng tracing with QUIC
+    QUIC_LTTng=0
 
 RUN apt-get update \
     && apt-get -y upgrade \
@@ -25,8 +27,6 @@ RUN apt-get update \
         curl \
         cmake \
         make \
-        llvm \
-        clang \
         gcc \
         build-essential \
         rpm \
@@ -38,10 +38,27 @@ RUN apt-get update \
         libtool \
         liblzma-dev \
         gdb \
+        cppcheck \
+		zlib1g-dev \
+        \
+        # required to install clang
+        lsb-release \
+        software-properties-common \
+        gnupg \
+        \
     && gem install --version 1.6.0 --user-install git \
     && gem install --version 2.7.6 dotenv \
-    && gem install --minimal-deps --no-document fpm \
+    && gem install --version 1.14.2 --minimal-deps --no-document fpm \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Clang
+RUN wget https://apt.llvm.org/llvm.sh && \
+    chmod u+x llvm.sh && \
+    ./llvm.sh 16 all && \
+    ln -s `which clang-16` /usr/bin/clang && \
+    ln -s `which clang++-16` /usr/bin/clang++ && \
+    ln -s `which clang-tidy-16` /usr/bin/clang-tidy && \
+    ln -s `which run-clang-tidy-16` /usr/bin/run-clang-tidy
 
 # Install the .NET SDK
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
@@ -52,14 +69,19 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
 # Trigger first run experience by running arbitrary cmd
     && dotnet help
 
-ENV CXX=clang++
-ENV CC=clang
+ENV \
+    DOTNET_ROLL_FORWARD_TO_PRERELEASE=1 \
+    CXX=clang++ \
+    CC=clang
 
 FROM base as builder
 
 # Copy the build project in and build it
+COPY *.csproj *.props *.targets /build/
+RUN dotnet restore /build
 COPY . /build
-RUN dotnet build /build
+RUN dotnet build /build --no-restore
+
 WORKDIR /project
 
 FROM base as tester
@@ -77,10 +99,14 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.1 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 5.0 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh --runtime aspnetcore --channel 6.0 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 
 # Copy the build project in and build it
+COPY *.csproj *.props *.targets /build/
+RUN dotnet restore /build
 COPY . /build
-RUN dotnet build /build
+RUN dotnet build /build --no-restore
 WORKDIR /project

@@ -41,12 +41,16 @@
 #define ARM_MAX_BREAKPOINTS     8
 #define ARM_MAX_WATCHPOINTS     1
 
+#ifndef CONTEXT_UNWOUND_TO_CALL
 #define CONTEXT_UNWOUND_TO_CALL 0x20000000
+#endif
 
+#if !defined(HOST_ARM64)
 typedef struct _NEON128 {
     ULONGLONG Low;
     LONGLONG High;
 } NEON128, *PNEON128;
+#endif // !defined(HOST_ARM64)
 
 typedef struct DECLSPEC_ALIGN(8) _T_CONTEXT {
     //
@@ -152,13 +156,14 @@ typedef struct _T_KNONVOLATILE_CONTEXT_POINTERS {
 //
 // Define dynamic function table entry.
 //
-
+#if defined(HOST_X86)
 typedef
 PT_RUNTIME_FUNCTION
 (*PGET_RUNTIME_FUNCTION_CALLBACK) (
     IN DWORD64 ControlPc,
     IN PVOID Context
     );
+#endif // defined(HOST_X86)
 
 typedef struct _T_DISPATCHER_CONTEXT {
     ULONG ControlPc;
@@ -294,6 +299,17 @@ typedef struct _T_RUNTIME_FUNCTION {
 } T_RUNTIME_FUNCTION, *PT_RUNTIME_FUNCTION;
 
 
+#ifdef HOST_UNIX
+
+typedef
+EXCEPTION_DISPOSITION
+(*PEXCEPTION_ROUTINE) (
+    PEXCEPTION_RECORD ExceptionRecord,
+    ULONG64 EstablisherFrame,
+    PCONTEXT ContextRecord,
+    PVOID DispatcherContext
+    );
+#endif
 //
 // Define exception dispatch context structure.
 //
@@ -345,6 +361,162 @@ typedef struct _T_KNONVOLATILE_CONTEXT_POINTERS {
 
 } T_KNONVOLATILE_CONTEXT_POINTERS, *PT_KNONVOLATILE_CONTEXT_POINTERS;
 
+#if defined(HOST_UNIX) && defined(TARGET_ARM64) && !defined(HOST_ARM64)
+enum
+{
+    UNW_AARCH64_X19 = 19,
+    UNW_AARCH64_X20 = 20,
+    UNW_AARCH64_X21 = 21,
+    UNW_AARCH64_X22 = 22,
+    UNW_AARCH64_X23 = 23,
+    UNW_AARCH64_X24 = 24,
+    UNW_AARCH64_X25 = 25,
+    UNW_AARCH64_X26 = 26,
+    UNW_AARCH64_X27 = 27,
+    UNW_AARCH64_X28 = 28,
+    UNW_AARCH64_X29 = 29,
+    UNW_AARCH64_X30 = 30,
+    UNW_AARCH64_SP = 31,
+    UNW_AARCH64_PC = 32
+};
+
+#endif // TARGET_ARM64 && !HOST_ARM64
+
+#elif defined(HOST_AMD64) && defined(TARGET_LOONGARCH64)  // Host amd64 managing LOONGARCH64 related code
+
+#ifndef CROSS_COMPILE
+#define CROSS_COMPILE
+#endif
+
+//
+// Specify the number of breakpoints and watchpoints that the OS
+// will track. Architecturally, LOONGARCH64 supports up to 16. In practice,
+// however, almost no one implements more than 4 of each.
+//
+
+#define LOONGARCH64_MAX_BREAKPOINTS     8
+#define LOONGARCH64_MAX_WATCHPOINTS     2
+
+#define CONTEXT_UNWOUND_TO_CALL 0x20000000
+
+typedef struct DECLSPEC_ALIGN(16) _T_CONTEXT {
+
+    //
+    // Control flags.
+    //
+
+    /* +0x000 */ DWORD ContextFlags;
+
+    //
+    // Integer registers
+    //
+    DWORD64 R0;
+    DWORD64 Ra;
+    DWORD64 Tp;
+    DWORD64 Sp;
+    DWORD64 A0;
+    DWORD64 A1;
+    DWORD64 A2;
+    DWORD64 A3;
+    DWORD64 A4;
+    DWORD64 A5;
+    DWORD64 A6;
+    DWORD64 A7;
+    DWORD64 T0;
+    DWORD64 T1;
+    DWORD64 T2;
+    DWORD64 T3;
+    DWORD64 T4;
+    DWORD64 T5;
+    DWORD64 T6;
+    DWORD64 T7;
+    DWORD64 T8;
+    DWORD64 X0;
+    DWORD64 Fp;
+    DWORD64 S0;
+    DWORD64 S1;
+    DWORD64 S2;
+    DWORD64 S3;
+    DWORD64 S4;
+    DWORD64 S5;
+    DWORD64 S6;
+    DWORD64 S7;
+    DWORD64 S8;
+    DWORD64 Pc;
+
+    //
+    // Floating Point Registers
+    //
+    //TODO-LoongArch64: support the SIMD.
+    ULONGLONG F[32];
+    DWORD   Fcsr;
+} T_CONTEXT, *PT_CONTEXT;
+
+// _IMAGE_LOONGARCH64_RUNTIME_FUNCTION_ENTRY (see ExternalAPIs\Win9CoreSystem\inc\winnt.h)
+typedef struct _T_RUNTIME_FUNCTION {
+    DWORD BeginAddress;
+    union {
+        DWORD UnwindData;
+        struct {
+            DWORD Flag : 2;
+            DWORD FunctionLength : 11;
+            DWORD RegF : 3;
+            DWORD RegI : 4;
+            DWORD H : 1;
+            DWORD CR : 2;
+            DWORD FrameSize : 9;
+        } PackedUnwindData;
+    };
+} T_RUNTIME_FUNCTION, *PT_RUNTIME_FUNCTION;
+
+//
+// Define exception dispatch context structure.
+//
+
+typedef struct _T_DISPATCHER_CONTEXT {
+    DWORD64 ControlPc;
+    DWORD64 ImageBase;
+    PT_RUNTIME_FUNCTION FunctionEntry;
+    DWORD64 EstablisherFrame;
+    DWORD64 TargetPc;
+    PCONTEXT ContextRecord;
+    PEXCEPTION_ROUTINE LanguageHandler;
+    PVOID HandlerData;
+    PVOID HistoryTable;
+    DWORD ScopeIndex;
+    BOOLEAN ControlPcIsUnwound;
+    PBYTE  NonVolatileRegisters;
+} T_DISPATCHER_CONTEXT, *PT_DISPATCHER_CONTEXT;
+
+//
+// Nonvolatile context pointer record.
+//
+
+typedef struct _T_KNONVOLATILE_CONTEXT_POINTERS {
+
+    PDWORD64 S0;
+    PDWORD64 S1;
+    PDWORD64 S2;
+    PDWORD64 S3;
+    PDWORD64 S4;
+    PDWORD64 S5;
+    PDWORD64 S6;
+    PDWORD64 S7;
+    PDWORD64 S8;
+    PDWORD64 Fp;
+    PDWORD64 Tp;
+    PDWORD64 Ra;
+
+    PDWORD64 F24;
+    PDWORD64 F25;
+    PDWORD64 F26;
+    PDWORD64 F27;
+    PDWORD64 F28;
+    PDWORD64 F29;
+    PDWORD64 F30;
+    PDWORD64 F31;
+} T_KNONVOLATILE_CONTEXT_POINTERS, *PT_KNONVOLATILE_CONTEXT_POINTERS;
+
 #else
 
 #define T_CONTEXT CONTEXT
@@ -364,7 +536,7 @@ typedef struct _T_KNONVOLATILE_CONTEXT_POINTERS {
 #if defined(DACCESS_COMPILE) && defined(TARGET_UNIX)
 // This is a TARGET oriented copy of CRITICAL_SECTION and PAL_CS_NATIVE_DATA_SIZE
 // It is configured based on TARGET configuration rather than HOST configuration
-// There is validation code in src/coreclr/src/vm/crst.cpp to keep these from
+// There is validation code in src/coreclr/vm/crst.cpp to keep these from
 // getting out of sync
 
 #define T_CRITICAL_SECTION_VALIDATION_MESSAGE "T_CRITICAL_SECTION validation failed. It is not in sync with CRITICAL_SECTION"
@@ -383,9 +555,17 @@ typedef struct _T_KNONVOLATILE_CONTEXT_POINTERS {
 #define DAC_CS_NATIVE_DATA_SIZE 80
 #elif defined(TARGET_LINUX) && defined(TARGET_ARM64)
 #define DAC_CS_NATIVE_DATA_SIZE 116
+#elif defined(TARGET_LINUX) && defined(TARGET_LOONGARCH64)
+#define DAC_CS_NATIVE_DATA_SIZE 96
 #elif defined(TARGET_LINUX) && defined(TARGET_X86)
 #define DAC_CS_NATIVE_DATA_SIZE 76
 #elif defined(TARGET_LINUX) && defined(TARGET_AMD64)
+#define DAC_CS_NATIVE_DATA_SIZE 96
+#elif defined(TARGET_LINUX) && defined(TARGET_S390X)
+#define DAC_CS_NATIVE_DATA_SIZE 96
+#elif defined(TARGET_LINUX) && defined(TARGET_LOONGARCH64)
+#define DAC_CS_NATIVE_DATA_SIZE 96
+#elif defined(TARGET_LINUX) && defined(TARGET_POWERPC64)
 #define DAC_CS_NATIVE_DATA_SIZE 96
 #elif defined(TARGET_NETBSD) && defined(TARGET_AMD64)
 #define DAC_CS_NATIVE_DATA_SIZE 96
@@ -422,6 +602,3 @@ struct T_CRITICAL_SECTION {
 #define T_CRITICAL_SECTION CRITICAL_SECTION
 #endif
 
-#ifdef CROSSGEN_COMPILE
-void CrossGenNotSupported(const char * message);
-#endif

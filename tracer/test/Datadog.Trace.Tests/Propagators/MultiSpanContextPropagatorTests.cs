@@ -4,8 +4,11 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -14,57 +17,251 @@ namespace Datadog.Trace.Tests.Propagators
 {
     public class MultiSpanContextPropagatorTests
     {
+        private const string PropagatedTagsString = "_dd.p.key1=value1,_dd.p.key2=value2";
+        private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
+
+        private static readonly TraceTagCollection PropagatedTagsCollection = new(
+            new List<KeyValuePair<string, string>>
+            {
+                new("_dd.p.key1", "value1"),
+                new("_dd.p.key2", "value2"),
+            },
+            PropagatedTagsString);
+
+        private static readonly TraceTagCollection EmptyPropagatedTags = new();
+
         private static readonly SpanContextPropagator Propagator;
+
+        private static readonly SpanContextPropagator W3CDatadogPropagatorExtractFirstTrue;
+        private static readonly SpanContextPropagator DatadogW3CPropagatorExtractFirstTrue;
+        private static readonly SpanContextPropagator W3CDatadogPropagatorExtractFirstFalse;
+        private static readonly SpanContextPropagator DatadogW3CPropagatorExtractFirstFalse;
 
         static MultiSpanContextPropagatorTests()
         {
-            var names = Enum.GetNames(typeof(ContextPropagators.Names));
-            Propagator = ContextPropagators.GetSpanContextPropagator(names, names);
+            var names = new[]
+                        {
+                            ContextPropagationHeaderStyle.W3CTraceContext,
+                            ContextPropagationHeaderStyle.Datadog,
+                            ContextPropagationHeaderStyle.B3MultipleHeaders,
+                            ContextPropagationHeaderStyle.B3SingleHeader,
+                        };
+
+            Propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names, true);
+
+            // W3CTraceContext-Datadog Extracts first header only
+            W3CDatadogPropagatorExtractFirstTrue = SpanContextPropagatorFactory.GetSpanContextPropagator(
+                new[]
+                {
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                    ContextPropagationHeaderStyle.Datadog,
+                },
+                new[]
+                {
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                    ContextPropagationHeaderStyle.Datadog,
+                },
+                true);
+
+            // Datadog-W3CTraceContext Extracts first header only
+            DatadogW3CPropagatorExtractFirstTrue = SpanContextPropagatorFactory.GetSpanContextPropagator(
+                new[]
+                {
+                    ContextPropagationHeaderStyle.Datadog,
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                },
+                new[]
+                {
+                    ContextPropagationHeaderStyle.Datadog,
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                },
+                true);
+
+            // W3CTraceContext-Datadog
+            W3CDatadogPropagatorExtractFirstFalse = SpanContextPropagatorFactory.GetSpanContextPropagator(
+                new[]
+                {
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                    ContextPropagationHeaderStyle.Datadog,
+                },
+                new[]
+                {
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                    ContextPropagationHeaderStyle.Datadog,
+                },
+                false);
+
+            // Datadog-W3CTraceContext
+            DatadogW3CPropagatorExtractFirstFalse = SpanContextPropagatorFactory.GetSpanContextPropagator(
+                new[]
+                {
+                    ContextPropagationHeaderStyle.Datadog,
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                },
+                new[]
+                {
+                    ContextPropagationHeaderStyle.Datadog,
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                },
+                false);
         }
 
         [Fact]
         public void Inject_All_IHeadersCollection()
         {
-            ulong traceId = 123456789;
-            ulong spanId = 987654321;
-            var samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, null);
+            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.Origin = "rum";
+            traceContext.Tags.SetTags(PropagatedTagsCollection);
+
+            var context = new SpanContext(
+                parent: SpanContext.None,
+                traceContext,
+                serviceName: null,
+                (TraceId)123456789,
+                spanId: 987654321);
+
             var headers = new Mock<IHeadersCollection>();
 
             Propagator.Inject(context, headers.Object);
 
-            headers.Verify(h => h.Set(HttpHeaderNames.TraceId, "123456789"), Times.Once());
-            headers.Verify(h => h.Set(HttpHeaderNames.ParentId, "987654321"), Times.Once());
-            headers.Verify(h => h.Set(HttpHeaderNames.SamplingPriority, "2"), Times.Once());
-            headers.Verify(h => h.Set(B3ContextPropagator.TraceId, "00000000075bcd15"), Times.Once());
-            headers.Verify(h => h.Set(B3ContextPropagator.SpanId, "000000003ade68b1"), Times.Once());
-            headers.Verify(h => h.Set(B3ContextPropagator.Sampled, "1"), Times.Once());
-            headers.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, "00000000075bcd15-000000003ade68b1-1"), Times.Once());
-            headers.Verify(h => h.Set(W3CContextPropagator.TraceParent, "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-trace-id", "123456789"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-parent-id", "987654321"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-sampling-priority", "2"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-origin", "rum"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-tags", PropagatedTagsString), Times.Once());
+
+            headers.Verify(h => h.Set("x-b3-traceid", "000000000000000000000000075bcd15"), Times.Once());
+            headers.Verify(h => h.Set("x-b3-spanid", "000000003ade68b1"), Times.Once());
+            headers.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
+
+            headers.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-1"), Times.Once());
+
+            headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;t.key1:value1;t.key2:value2"), Times.Once());
+
+            headers.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public void Inject_All_IHeadersCollection_128Bit_TraceId()
+        {
+            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.Origin = "rum";
+            traceContext.Tags.SetTags(PropagatedTagsCollection);
+
+            var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
+            var spanId = 1UL;
+
+            var context = new SpanContext(
+                parent: SpanContext.None,
+                traceContext,
+                serviceName: null,
+                traceId: traceId,
+                spanId: spanId,
+                rawTraceId: traceId.ToString(),
+                rawSpanId: spanId.ToString("x16"));
+
+            var headers = new Mock<IHeadersCollection>();
+
+            Propagator.Inject(context, headers.Object);
+
+            headers.Verify(h => h.Set("x-datadog-trace-id", traceId.Lower.ToString(InvariantCulture)), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-parent-id", spanId.ToString(InvariantCulture)), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-sampling-priority", "2"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-origin", "rum"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-tags", PropagatedTagsString + ",_dd.p.tid=1234567890abcdef"), Times.Once());
+
+            headers.Verify(h => h.Set("x-b3-traceid", "1234567890abcdef1122334455667788"), Times.Once());
+            headers.Verify(h => h.Set("x-b3-spanid", "0000000000000001"), Times.Once());
+            headers.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
+
+            headers.Verify(h => h.Set("b3", "1234567890abcdef1122334455667788-0000000000000001-1"), Times.Once());
+
+            headers.Verify(h => h.Set("traceparent", "00-1234567890abcdef1122334455667788-0000000000000001-01"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;t.key1:value1;t.key2:value2"), Times.Once());
+
             headers.VerifyNoOtherCalls();
         }
 
         [Fact]
         public void Inject_All_CarrierAndDelegate()
         {
-            ulong traceId = 123456789;
-            ulong spanId = 987654321;
-            var samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, null);
+            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.Origin = "rum";
+            traceContext.Tags.SetTags(PropagatedTagsCollection);
+
+            var context = new SpanContext(
+                parent: SpanContext.None,
+                traceContext,
+                serviceName: null,
+                (TraceId)123456789,
+                987654321);
 
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();
 
             Propagator.Inject(context, headers.Object, (carrier, name, value) => carrier.Set(name, value));
 
-            headers.Verify(h => h.Set(HttpHeaderNames.TraceId, "123456789"), Times.Once());
-            headers.Verify(h => h.Set(HttpHeaderNames.ParentId, "987654321"), Times.Once());
-            headers.Verify(h => h.Set(HttpHeaderNames.SamplingPriority, "2"), Times.Once());
-            headers.Verify(h => h.Set(B3ContextPropagator.TraceId, "00000000075bcd15"), Times.Once());
-            headers.Verify(h => h.Set(B3ContextPropagator.SpanId, "000000003ade68b1"), Times.Once());
-            headers.Verify(h => h.Set(B3ContextPropagator.Sampled, "1"), Times.Once());
-            headers.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, "00000000075bcd15-000000003ade68b1-1"), Times.Once());
-            headers.Verify(h => h.Set(W3CContextPropagator.TraceParent, "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-trace-id", "123456789"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-parent-id", "987654321"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-sampling-priority", "2"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-origin", "rum"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-tags", PropagatedTagsString), Times.Once());
+
+            headers.Verify(h => h.Set("x-b3-traceid", "000000000000000000000000075bcd15"), Times.Once());
+            headers.Verify(h => h.Set("x-b3-spanid", "000000003ade68b1"), Times.Once());
+            headers.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
+
+            headers.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-1"), Times.Once());
+
+            headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;t.key1:value1;t.key2:value2"), Times.Once());
+
+            headers.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public void Inject_All_CarrierAndDelegate_128Bit_TraceId()
+        {
+            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.Origin = "rum";
+            traceContext.Tags.SetTags(PropagatedTagsCollection);
+
+            var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
+            var spanId = 1UL;
+
+            var context = new SpanContext(
+                parent: SpanContext.None,
+                traceContext,
+                serviceName: null,
+                traceId: traceId,
+                spanId: spanId,
+                rawTraceId: traceId.ToString(),
+                rawSpanId: spanId.ToString("x16"));
+
+            var headers = new Mock<IHeadersCollection>();
+
+            Propagator.Inject(context, headers.Object, (carrier, name, value) => carrier.Set(name, value));
+
+            headers.Verify(h => h.Set("x-datadog-trace-id", traceId.Lower.ToString(InvariantCulture)), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-parent-id", spanId.ToString(InvariantCulture)), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-sampling-priority", "2"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-origin", "rum"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-tags", PropagatedTagsString + ",_dd.p.tid=1234567890abcdef"), Times.Once());
+
+            headers.Verify(h => h.Set("x-b3-traceid", "1234567890abcdef1122334455667788"), Times.Once());
+            headers.Verify(h => h.Set("x-b3-spanid", "0000000000000001"), Times.Once());
+            headers.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
+
+            headers.Verify(h => h.Set("b3", "1234567890abcdef1122334455667788-0000000000000001-1"), Times.Once());
+
+            headers.Verify(h => h.Set("traceparent", "00-1234567890abcdef1122334455667788-0000000000000001-01"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;t.key1:value1;t.key2:value2"), Times.Once());
+
             headers.VerifyNoOtherCalls();
         }
 
@@ -72,24 +269,29 @@ namespace Datadog.Trace.Tests.Propagators
         public void Extract_B3_IHeadersCollection()
         {
             var headers = new Mock<IHeadersCollection>();
-            headers.Setup(h => h.GetValues(B3ContextPropagator.TraceId))
+
+            headers.Setup(h => h.GetValues("x-b3-traceid"))
                    .Returns(new[] { "000000000000000000000000075bcd15" });
-            headers.Setup(h => h.GetValues(B3ContextPropagator.SpanId))
+            headers.Setup(h => h.GetValues("x-b3-spanid"))
                    .Returns(new[] { "000000003ade68b1" });
-            headers.Setup(h => h.GetValues(B3ContextPropagator.Sampled))
+            headers.Setup(h => h.GetValues("x-b3-sampled"))
                    .Returns(new[] { "1" });
 
             var result = Propagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(B3ContextPropagator.TraceId), Times.Once());
-            headers.Verify(h => h.GetValues(B3ContextPropagator.SpanId), Times.Once());
-            headers.Verify(h => h.GetValues(B3ContextPropagator.Sampled), Times.Once());
+            headers.Verify(h => h.GetValues("x-b3-traceid"), Times.Once());
+            headers.Verify(h => h.GetValues("x-b3-spanid"), Times.Once());
+            headers.Verify(h => h.GetValues("x-b3-sampled"), Times.Once());
+
             result.Should()
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
+                           TraceId128 = (TraceId)123456789,
                            TraceId = 123456789,
                            SpanId = 987654321,
+                           RawTraceId = "000000000000000000000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
                            Origin = null,
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
                        });
@@ -99,41 +301,90 @@ namespace Datadog.Trace.Tests.Propagators
         public void Extract_B3SingleHeader_IHeadersCollection()
         {
             var headers = new Mock<IHeadersCollection>();
-            headers.Setup(h => h.GetValues(B3SingleHeaderContextPropagator.B3))
+
+            headers.Setup(h => h.GetValues("b3"))
                    .Returns(new[] { "00000000075bcd15-000000003ade68b1-1" });
 
             var result = Propagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(B3SingleHeaderContextPropagator.B3), Times.Once());
+            headers.Verify(h => h.GetValues("b3"), Times.Once());
             result.Should()
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
+                           TraceId128 = (TraceId)123456789,
                            TraceId = 123456789,
                            SpanId = 987654321,
+                           RawTraceId = "00000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
                            Origin = null,
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
                        });
         }
 
         [Fact]
-        public void Extract_W3C_IHeadersCollection()
+        public void Extract_W3C_IHeadersCollection_traceparent()
         {
             var headers = new Mock<IHeadersCollection>();
-            headers.Setup(h => h.GetValues(W3CContextPropagator.TraceParent))
+
+            headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
 
             var result = Propagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(W3CContextPropagator.TraceParent), Times.Once());
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
+            headers.Verify(h => h.GetValues("tracestate"), Times.Once());
+
             result.Should()
+                  .NotBeNull()
+                  .And
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
+                           TraceId128 = (TraceId)123456789,
                            TraceId = 123456789,
                            SpanId = 987654321,
+                           RawTraceId = "000000000000000000000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
                            Origin = null,
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
+                           PropagatedTags = EmptyPropagatedTags,
+                       });
+        }
+
+        [Fact]
+        public void Extract_W3C_IHeadersCollection_traceparent_tracestate()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
+
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "dd=s:2;o:rum;t.key1:value1;t.key2:value2" });
+
+            var result = Propagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
+            headers.Verify(h => h.GetValues("tracestate"), Times.Once());
+            headers.VerifyNoOtherCalls();
+
+            result.Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId128 = (TraceId)123456789,
+                           TraceId = 123456789,
+                           SpanId = 987654321,
+                           RawTraceId = "000000000000000000000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
+                           SamplingPriority = SamplingPriorityValues.UserKeep,
+                           Origin = "rum",
+                           PropagatedTags = PropagatedTagsCollection,
+                           Parent = null,
+                           ParentId = null,
                        });
         }
 
@@ -141,127 +392,401 @@ namespace Datadog.Trace.Tests.Propagators
         public void Extract_Datadog_IHeadersCollection()
         {
             var headers = new Mock<IHeadersCollection>();
-            headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId))
+
+            headers.Setup(h => h.GetValues("x-datadog-trace-id"))
                    .Returns(new[] { "123456789" });
-            headers.Setup(h => h.GetValues(HttpHeaderNames.ParentId))
+            headers.Setup(h => h.GetValues("x-datadog-parent-id"))
                    .Returns(new[] { "987654321" });
-            headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority))
+            headers.Setup(h => h.GetValues("x-datadog-sampling-priority"))
                    .Returns(new[] { "1" });
+            headers.Setup(h => h.GetValues("x-datadog-origin"))
+                   .Returns(new[] { "rum" });
+            headers.Setup(h => h.GetValues("x-datadog-tags"))
+                   .Returns(new[] { "_dd.p.key1=value1,_dd.p.key2=value2" });
 
             var result = Propagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(HttpHeaderNames.TraceId), Times.Once());
-            headers.Verify(h => h.GetValues(HttpHeaderNames.ParentId), Times.Once());
-            headers.Verify(h => h.GetValues(HttpHeaderNames.SamplingPriority), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-trace-id"), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-parent-id"), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-sampling-priority"), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-origin"), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-tags"), Times.Once());
+
             result.Should()
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
+                           TraceId128 = (TraceId)123456789,
                            TraceId = 123456789,
+                           RawTraceId = "000000000000000000000000075bcd15",
                            SpanId = 987654321,
-                           Origin = null,
+                           RawSpanId = "000000003ade68b1",
+                           Origin = "rum",
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
+                           PropagatedTags = PropagatedTagsCollection,
                        });
         }
 
         [Fact]
         public void ExtractAndInject_W3C_PreserveOriginalTraceId()
         {
-            var traceId = "0af7651916cd43dd8448eb211c80319c";
-            var spanId = "00f067aa0ba902b7";
-            var expectedTraceParent = $"00-{traceId}-{spanId}-01";
+            const string traceId = "0af7651916cd43dd8448eb211c80319c";
+            const string spanId = "00f067aa0ba902b7";
+            const string expectedTraceParent = $"00-{traceId}-{spanId}-01";
             var headers = new Mock<IHeadersCollection>();
-            headers.Setup(h => h.GetValues(W3CContextPropagator.TraceParent))
+            headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { expectedTraceParent });
+
+            var expectedTraceId = new TraceId(0x0af7651916cd43dd, 0x8448eb211c80319c);
+            const ulong expectedSpanId = 0x00f067aa0ba902b7UL;
 
             var result = Propagator.Extract(headers.Object);
 
-            // 64 bits verify
-            var expectedTraceId = 9532127138774266268UL;
-            var expectedSpanId = 67667974448284343UL;
-            Assert.Equal(expectedTraceId, result.TraceId);
-            Assert.Equal(expectedSpanId, result.SpanId);
-
-            // Check truncation
-            var truncatedTraceId64 = expectedTraceId.ToString("x16");
-            Assert.Equal(truncatedTraceId64, traceId.Substring(16));
+            result.Should().NotBeNull();
+            result!.TraceId128.Should().Be(expectedTraceId);
+            result.TraceId.Should().Be(expectedTraceId.Lower);
+            result.SpanId.Should().Be(expectedSpanId);
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
-            headersForInjection.Setup(h => h.Set(W3CContextPropagator.TraceParent, expectedTraceParent));
+            headersForInjection.Setup(h => h.Set("traceparent", expectedTraceParent));
 
             Propagator.Inject(result, headersForInjection.Object);
 
-            headersForInjection.Verify(h => h.Set(W3CContextPropagator.TraceParent, expectedTraceParent), Times.Once());
+            headersForInjection.Verify(h => h.Set("traceparent", expectedTraceParent), Times.Once());
         }
 
         [Fact]
         public void ExtractAndInject_B3_PreserveOriginalTraceId()
         {
-            var traceId = "0af7651916cd43dd8448eb211c80319c";
-            var spanId = "00f067aa0ba902b7";
+            const string traceId = "0af7651916cd43dd8448eb211c80319c";
+            const string spanId = "00f067aa0ba902b7";
 
             var headers = new Mock<IHeadersCollection>();
-            headers.Setup(h => h.GetValues(B3ContextPropagator.TraceId))
+            headers.Setup(h => h.GetValues("x-b3-traceid"))
                    .Returns(new[] { traceId });
-            headers.Setup(h => h.GetValues(B3ContextPropagator.SpanId))
+            headers.Setup(h => h.GetValues("x-b3-spanid"))
                    .Returns(new[] { spanId });
-            headers.Setup(h => h.GetValues(B3ContextPropagator.Sampled))
+            headers.Setup(h => h.GetValues("x-b3-sampled"))
                    .Returns(new[] { "1" });
+
+            var expectedTraceId = new TraceId(0x0af7651916cd43dd, 0x8448eb211c80319c);
+            const ulong expectedSpanId = 0x00f067aa0ba902b7UL;
+
             var result = Propagator.Extract(headers.Object);
 
-            // 64 bits verify
-            var expectedTraceId = 9532127138774266268UL;
-            var expectedSpanId = 67667974448284343UL;
-            Assert.Equal(expectedTraceId, result.TraceId);
-            Assert.Equal(expectedSpanId, result.SpanId);
-
-            // Check truncation
-            var truncatedTraceId64 = expectedTraceId.ToString("x16");
-            Assert.Equal(truncatedTraceId64, traceId.Substring(16));
+            result.Should().NotBeNull();
+            result!.TraceId128.Should().Be(expectedTraceId);
+            result.TraceId.Should().Be(expectedTraceId.Lower);
+            result.SpanId.Should().Be(expectedSpanId);
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
-            headersForInjection.Setup(h => h.Set(B3ContextPropagator.TraceId, traceId));
-            headersForInjection.Setup(h => h.Set(B3ContextPropagator.SpanId, spanId));
-            headersForInjection.Setup(h => h.Set(B3ContextPropagator.Sampled, "1"));
+            headersForInjection.Setup(h => h.Set("x-b3-traceid", traceId));
+            headersForInjection.Setup(h => h.Set("x-b3-spanid", spanId));
+            headersForInjection.Setup(h => h.Set("x-b3-sampled", "1"));
 
             Propagator.Inject(result, headersForInjection.Object);
 
-            headersForInjection.Verify(h => h.Set(B3ContextPropagator.TraceId, traceId), Times.Once());
-            headersForInjection.Verify(h => h.Set(B3ContextPropagator.SpanId, spanId), Times.Once());
-            headersForInjection.Verify(h => h.Set(B3ContextPropagator.Sampled, "1"), Times.Once());
+            headersForInjection.Verify(h => h.Set("x-b3-traceid", traceId), Times.Once());
+            headersForInjection.Verify(h => h.Set("x-b3-spanid", spanId), Times.Once());
+            headersForInjection.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
         }
 
         [Fact]
         public void ExtractAndInject_B3SingleHeader_PreserveOriginalTraceId()
         {
-            var traceId = "0af7651916cd43dd8448eb211c80319c";
-            var spanId = "00f067aa0ba902b7";
-            var expectedTraceParent = $"{traceId}-{spanId}-1";
+            const string traceId = "0af7651916cd43dd8448eb211c80319c";
+            const string spanId = "00f067aa0ba902b7";
+            const string expectedTraceParent = $"{traceId}-{spanId}-1";
             var headers = new Mock<IHeadersCollection>();
-            headers.Setup(h => h.GetValues(B3SingleHeaderContextPropagator.B3))
+            headers.Setup(h => h.GetValues("b3"))
                    .Returns(new[] { expectedTraceParent });
 
             var result = Propagator.Extract(headers.Object);
 
-            // 64 bits verify
-            var expectedTraceId = 9532127138774266268UL;
-            var expectedSpanId = 67667974448284343UL;
-            Assert.Equal(expectedTraceId, result.TraceId);
+            var expectedTraceId = new TraceId(0x0af7651916cd43ddUL, 0x8448eb211c80319cUL);
+            const ulong expectedSpanId = 0x00f067aa0ba902b7UL;
+            Assert.Equal(expectedTraceId, result!.TraceId128);
             Assert.Equal(expectedSpanId, result.SpanId);
-
-            // Check truncation
-            var truncatedTraceId64 = expectedTraceId.ToString("x16");
-            Assert.Equal(truncatedTraceId64, traceId.Substring(16));
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
-            headersForInjection.Setup(h => h.Set(B3SingleHeaderContextPropagator.B3, expectedTraceParent));
+            headersForInjection.Setup(h => h.Set("b3", expectedTraceParent));
 
             Propagator.Inject(result, headersForInjection.Object);
 
-            headersForInjection.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, expectedTraceParent), Times.Once());
+            headersForInjection.Verify(h => h.Set("b3", expectedTraceParent), Times.Once());
         }
+
+        // Tests for making sure the behaviour of either copying the valid tracecontext or not is accurate
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void TraceContextPrecedence_Respected_WhenHavingMatchingTraceIds(bool extractFirst, bool w3CHeaderFirst)
+        {
+            // headers1 equivalent from system-tests
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-11111111111111110000000000000001-000000003ade68b1-01" });
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "dd=s:2;o:rum;t.tid:1111111111111111,foo=1" });
+            headers.Setup(h => h.GetValues("x-datadog-trace-id"))
+                   .Returns(new[] { "1" });
+            headers.Setup(h => h.GetValues("x-datadog-parent-id"))
+                   .Returns(new[] { "987654321" });
+            headers.Setup(h => h.GetValues("x-datadog-sampling-priority"))
+                   .Returns(new[] { "2" });
+            headers.Setup(h => h.GetValues("x-datadog-origin"))
+                   .Returns(new[] { "rum" });
+            headers.Setup(h => h.GetValues("x-datadog-tags"))
+                   .Returns(new[] { "_dd.p.tid=1111111111111111" });
+
+            var result = GetPropagatorToTest(extractFirst, w3CHeaderFirst).Extract(headers.Object);
+
+            TraceTagCollection propagatedTags = new(
+                new List<KeyValuePair<string, string>>
+                {
+                    new("_dd.p.tid", "1111111111111111"),
+                },
+                null);
+
+            result.Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId128 = new TraceId(0x1111111111111111, 1),
+                           TraceId = 1,
+                           SpanId = 987654321,
+                           RawTraceId = "11111111111111110000000000000001",
+                           RawSpanId = "000000003ade68b1",
+                           SamplingPriority = SamplingPriorityValues.UserKeep,
+                           PropagatedTags = propagatedTags,
+                           Origin = "rum",
+                           AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
+                           Parent = null,
+                           ParentId = null,
+                       });
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void TraceContextPrecedence_Correct_WithDifferentTracestate(bool extractFirst, bool w3CHeaderFirst)
+        {
+            // headers2 equivalent from system-tests
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-11111111111111110000000000000002-000000003ade68b1-01" });
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "dd=s:1;t.tid:1111111111111111,foo=1" });
+            headers.Setup(h => h.GetValues("x-datadog-trace-id"))
+                   .Returns(new[] { "2" });
+            headers.Setup(h => h.GetValues("x-datadog-parent-id"))
+                   .Returns(new[] { "987654321" });
+            headers.Setup(h => h.GetValues("x-datadog-sampling-priority"))
+                   .Returns(new[] { "2" });
+            headers.Setup(h => h.GetValues("x-datadog-tags"))
+                   .Returns(new[] { "_dd.p.tid=1111111111111111" });
+
+            var result = GetPropagatorToTest(extractFirst, w3CHeaderFirst).Extract(headers.Object);
+
+            TraceTagCollection propagatedTags = new(
+                new List<KeyValuePair<string, string>>
+                {
+                    new("_dd.p.tid", "1111111111111111"),
+                },
+                null);
+
+            result.Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId128 = new TraceId(0x1111111111111111, 2),
+                           TraceId = 2,
+                           SpanId = 987654321,
+                           RawTraceId = "11111111111111110000000000000002",
+                           RawSpanId = "000000003ade68b1",
+                           SamplingPriority = w3CHeaderFirst ? 1 : 2,
+                           PropagatedTags = propagatedTags,
+                           AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
+                           Parent = null,
+                           ParentId = null,
+                       });
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void TraceContextPrecedence_ExtractedState_WhenMissingDD_OnTracestate(bool extractFirst, bool w3CHeaderFirst)
+        {
+            // headers3 equivalent from system-tests
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-11111111111111110000000000000003-000000003ade68b1-01" });
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "foo=1" });
+            headers.Setup(h => h.GetValues("x-datadog-trace-id"))
+                   .Returns(new[] { "3" });
+            headers.Setup(h => h.GetValues("x-datadog-parent-id"))
+                   .Returns(new[] { "987654321" });
+            headers.Setup(h => h.GetValues("x-datadog-sampling-priority"))
+                   .Returns(new[] { "2" });
+            headers.Setup(h => h.GetValues("x-datadog-tags"))
+                   .Returns(new[] { "_dd.p.tid=1111111111111111" });
+
+            var result = GetPropagatorToTest(extractFirst, w3CHeaderFirst).Extract(headers.Object);
+
+            TraceTagCollection propagatedTags = new(
+                new List<KeyValuePair<string, string>>
+                {
+                    new("_dd.p.tid", "1111111111111111"),
+                },
+                null);
+
+            result.Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId128 = new TraceId(0x1111111111111111, 3),
+                           TraceId = 3,
+                           SpanId = 987654321,
+                           RawTraceId = "11111111111111110000000000000003",
+                           RawSpanId = "000000003ade68b1",
+                           SamplingPriority = w3CHeaderFirst ? 1 : 2,
+                           PropagatedTags = !w3CHeaderFirst ? propagatedTags : new TraceTagCollection(),
+                           AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
+                           Parent = null,
+                           ParentId = null,
+                       });
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void TraceContextPrecedence_ConsistentBehaviour_WithDifferentParentId(bool extractFirst, bool w3CHeaderFirst)
+        {
+            // headers4 equivalent from system-tests
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-11111111111111110000000000000004-000000003ade68b1-01" });
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "dd=s:2;t.tid:1111111111111111,foo=1" });
+            headers.Setup(h => h.GetValues("x-datadog-trace-id"))
+                   .Returns(new[] { "4" });
+            headers.Setup(h => h.GetValues("x-datadog-parent-id"))
+                   .Returns(new[] { "3540" });
+            headers.Setup(h => h.GetValues("x-datadog-sampling-priority"))
+                   .Returns(new[] { "2" });
+            headers.Setup(h => h.GetValues("x-datadog-tags"))
+                   .Returns(new[] { "_dd.p.tid=1111111111111111" });
+
+            var result = GetPropagatorToTest(extractFirst, w3CHeaderFirst).Extract(headers.Object);
+
+            TraceTagCollection propagatedTags = new(
+                new List<KeyValuePair<string, string>>
+                {
+                    new("_dd.p.tid", "1111111111111111"),
+                },
+                null);
+
+            result.Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId128 = new TraceId(0x1111111111111111, 4),
+                           TraceId = 4,
+                           SpanId = (ulong)(w3CHeaderFirst ? 987654321 : 3540),
+                           RawTraceId = "11111111111111110000000000000004",
+                           RawSpanId = w3CHeaderFirst ? "000000003ade68b1" : "0000000000000dd4",
+                           SamplingPriority = 2,
+                           PropagatedTags = propagatedTags,
+                           AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
+                           Parent = null,
+                           ParentId = null,
+                       });
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void TraceContextPrecedence_ConsistentBehaviour_WithDifferentTraceIds(bool extractFirst, bool w3CHeaderFirst)
+        {
+            // headers5 equivalent from system-tests
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-11111111111111110000000000000005-000000003ade68b1-01" });
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "foo=1" });
+            headers.Setup(h => h.GetValues("x-datadog-trace-id"))
+                   .Returns(new[] { "3541" });
+            headers.Setup(h => h.GetValues("x-datadog-parent-id"))
+                   .Returns(new[] { "987654321" });
+            headers.Setup(h => h.GetValues("x-datadog-sampling-priority"))
+                   .Returns(new[] { "2" });
+            headers.Setup(h => h.GetValues("x-datadog-tags"))
+                   .Returns(new[] { "_dd.p.tid=1111111111111111" });
+
+            var result = GetPropagatorToTest(extractFirst, w3CHeaderFirst).Extract(headers.Object);
+
+            TraceTagCollection propagatedTags = new(
+                new List<KeyValuePair<string, string>>
+                {
+                    new("_dd.p.tid", "1111111111111111"),
+                },
+                null);
+
+            var traceId = new TraceId(0x1111111111111111, (ulong)(w3CHeaderFirst ? 5 : 0xdd5));
+
+            result.Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId128 = traceId,
+                           TraceId = (ulong)(w3CHeaderFirst ? 5 : 0xdd5),
+                           SpanId = 987654321,
+                           RawTraceId = traceId.ToString(),
+                           RawSpanId = "000000003ade68b1",
+                           SamplingPriority = w3CHeaderFirst ? 1 : 2,
+                           PropagatedTags = !w3CHeaderFirst ? propagatedTags : new TraceTagCollection(),
+                           AdditionalW3CTraceState = w3CHeaderFirst ? "foo=1" : null,
+                           Parent = null,
+                           ParentId = null,
+                       });
+        }
+
+        private SpanContextPropagator GetPropagatorToTest(bool extractFirst, bool w3CHeaderFirst)
+            => (w3CHeaderFirst, extractFirst) switch
+        {
+            (true, true) => W3CDatadogPropagatorExtractFirstTrue,
+            (true, false) => W3CDatadogPropagatorExtractFirstFalse,
+            (false, true) => DatadogW3CPropagatorExtractFirstTrue,
+            (false, false) => DatadogW3CPropagatorExtractFirstFalse
+        };
     }
 }

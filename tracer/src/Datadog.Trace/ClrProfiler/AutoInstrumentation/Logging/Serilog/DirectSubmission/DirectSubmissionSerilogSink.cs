@@ -7,6 +7,8 @@
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission
 {
@@ -15,10 +17,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
     /// </summary>
     internal class DirectSubmissionSerilogSink
     {
-        private readonly IDatadogSink _sink;
+        private readonly IDirectSubmissionLogSink _sink;
         private readonly int _minimumLevel;
+        private bool _isDisabled;
 
-        internal DirectSubmissionSerilogSink(IDatadogSink sink, DirectSubmissionLogLevel minimumLevel)
+        internal DirectSubmissionSerilogSink(IDirectSubmissionLogSink sink, DirectSubmissionLogLevel minimumLevel)
         {
             _sink = sink;
             _minimumLevel = (int)minimumLevel;
@@ -31,17 +34,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
         [DuckReverseMethod(ParameterTypeNames = new[] { "Serilog.Events.LogEvent, Serilog" })]
         public void Emit(ILogEvent? logEvent)
         {
-            if (logEvent is null)
+            if (_isDisabled
+                || logEvent is null
+                || (int)logEvent.Level < _minimumLevel)
             {
                 return;
             }
 
-            if ((int)logEvent.Level < _minimumLevel)
-            {
-                return;
-            }
+            TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.Serilog);
+            _sink.EnqueueLog(new SerilogDirectSubmissionLogEvent(logEvent));
+        }
 
-            _sink.EnqueueLog(new SerilogDatadogLogEvent(logEvent));
+        internal void Disable()
+        {
+            _isDisabled = true;
         }
     }
 }

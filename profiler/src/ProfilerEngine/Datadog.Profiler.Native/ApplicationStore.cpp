@@ -28,17 +28,29 @@ ApplicationInfo ApplicationStore::GetApplicationInfo(const std::string& runtimeI
     {
         _pConfiguration->GetServiceName(),
         _pConfiguration->GetEnvironment(),
-        _pConfiguration->GetVersion()
+        _pConfiguration->GetVersion(),
+        _pConfiguration->GetGitRepositoryUrl(),
+        _pConfiguration->GetGitCommitSha()
     };
 }
 
-
 void ApplicationStore::SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version)
 {
-    const ApplicationInfo info(serviceName, environment, version);
-
     std::lock_guard lock(_infosLock);
-    _infos.insert_or_assign(runtimeId, info);
+    auto& info = _infos[runtimeId];
+    info.ServiceName = serviceName;
+    info.Environment = environment;
+    info.Version = version;
+    info.RepositoryUrl = _pConfiguration->GetGitRepositoryUrl();
+    info.CommitSha = _pConfiguration->GetGitCommitSha();
+}
+
+void ApplicationStore::SetGitMetadata(std::string runtimeId, std::string respositoryUrl, std::string commitSha)
+{
+    std::lock_guard lock(_infosLock);
+    auto& info = _infos[std::move(runtimeId)];
+    info.RepositoryUrl = std::move(respositoryUrl);
+    info.CommitSha = std::move(commitSha);
 }
 
 const char* ApplicationStore::GetName()

@@ -11,6 +11,7 @@ class IConfiguration;
 class IFrameStore;
 class IAppDomainStore;
 class IRuntimeIdStore;
+class SampleValueTypeProvider;
 
 
 class CpuTimeProvider
@@ -19,9 +20,14 @@ class CpuTimeProvider
 {
 public:
     CpuTimeProvider(
+        SampleValueTypeProvider& valueTypeProvider,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
-        IAppDomainStore* pAssemblyStore,
-        IRuntimeIdStore* pRuntimeIdStore
+        IAppDomainStore* pAppDomainStore,
+        IRuntimeIdStore* pRuntimeIdStore,
+        IConfiguration* pConfiguration
         );
+
+private:
+    static std::vector<SampleValueType> SampleTypeDefinitions;
 };

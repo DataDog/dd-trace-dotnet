@@ -1,6 +1,9 @@
 using System.Linq;
+using System.Web;
 using System.Web.Mvc;
 using Samples.AspNetMvc5.Models;
+using Samples.Security.AspNetMvc5.Models;
+using ActionResult = System.Web.Mvc.ActionResult;
 
 namespace Samples.AspNetMvc5.Controllers
 {
@@ -28,18 +31,35 @@ namespace Samples.AspNetMvc5.Controllers
             return View();
         }
 
+        public ActionResult LangHeader()
+        {
+            Response.AppendHeader("content-language", "krypton");
+
+            return Content("Setting content-language");
+        }
+
         [HttpPost]
         public ActionResult Upload(MiscModel miscModel)
         {
             ViewBag.Message = "Your upload page. Upload message: " + miscModel.Property1;
-            return View();
+            return View(miscModel);
+        }
+        
+        [HttpPost]
+        [Route("/home/apisecurity/{id:int}")]
+        public ActionResult ApiSecurity(int id, ApiSecurityModel model) => Json(new { Id = model.Dog, Message = $"{model.Dog2}-response", PathParamId = id });
+
+        [HttpPost]
+        [Route("api/home/emptymodel")]
+        public ActionResult EmptyModel(ApiSecurityModel model)
+        {
+            return Json(null);
         }
 
         [HttpPost]
         public ActionResult UploadStruct(MiscModelStruct miscModel)
         {
             ViewBag.Message = "Your upload page. Upload message: " + miscModel.Property1;
-
             return View();
         }
 

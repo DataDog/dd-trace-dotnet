@@ -49,6 +49,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
+            ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
+            Assert.Same(obscureObject, originalObject);
+
             // *
             Assert.Equal("10", duckInterface.PublicStaticGetReferenceType);
             Assert.Equal("10", duckAbstract.PublicStaticGetReferenceType);
@@ -78,6 +81,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
+
+            ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
+            Assert.Same(obscureObject, originalObject);
 
             Assert.Equal("20", duckInterface.PublicStaticGetSetReferenceType);
             Assert.Equal("20", duckAbstract.PublicStaticGetSetReferenceType);
@@ -168,6 +174,26 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             Assert.Equal("60", duckVirtual.PrivateStaticGetSetReferenceType);
 
             duckInterface.PrivateStaticGetSetReferenceType = "23";
+
+            duckInterface.PublicStaticOnlySet = "23";
+            Assert.Equal("23", duckInterface.PublicStaticGetSetReferenceType);
+            Assert.Equal("23", duckAbstract.PublicStaticGetSetReferenceType);
+            Assert.Equal("23", duckVirtual.PublicStaticGetSetReferenceType);
+
+            duckInterface.PublicStaticOnlySetWithType = ValueWithType<string>.Create("24", typeof(string));
+            Assert.Equal("24", duckInterface.PublicStaticGetSetReferenceType);
+            Assert.Equal("24", duckAbstract.PublicStaticGetSetReferenceType);
+            Assert.Equal("24", duckVirtual.PublicStaticGetSetReferenceType);
+
+            Assert.Equal("24", duckInterface.PublicStaticOnlyGet);
+            Assert.Equal("24", duckInterface.PublicStaticOnlyGetWithType.Value);
+            Assert.Equal(typeof(string), duckInterface.PublicStaticOnlyGetWithType.Type);
+            Assert.Equal("24", duckAbstract.PublicStaticOnlyGetWithType.Value);
+            Assert.Equal(typeof(string), duckAbstract.PublicStaticOnlyGetWithType.Type);
+            Assert.Equal("24", duckVirtual.PublicStaticOnlyGetWithType.Value);
+            Assert.Equal(typeof(string), duckVirtual.PublicStaticOnlyGetWithType.Type);
+
+            duckInterface.PublicStaticOnlySet = "20";
         }
 
         [Theory]
@@ -178,6 +204,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
+
+            ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
+            Assert.Same(obscureObject, originalObject);
 
             // *
             Assert.Equal("30", duckInterface.PublicGetReferenceType);
@@ -208,6 +237,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
+
+            ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
+            Assert.Same(obscureObject, originalObject);
 
             Assert.Equal("40", duckInterface.PublicGetSetReferenceType);
             Assert.Equal("40", duckAbstract.PublicGetSetReferenceType);
@@ -309,6 +341,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
+            ref var originalObject = ref ((IDuckType)duckInterface).GetInternalDuckTypedInstance<object>();
+            Assert.Same(obscureObject, originalObject);
+
             duckInterface["1"] = "100";
             Assert.Equal("100", duckInterface["1"]);
             Assert.Equal("100", duckAbstract["1"]);
@@ -351,6 +386,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             Assert.Equal("41", duckStructCopy.InternalGetSetReferenceType);
             Assert.Equal("42", duckStructCopy.ProtectedGetSetReferenceType);
             Assert.Equal("43", duckStructCopy.PrivateGetSetReferenceType);
+
+            Assert.Equal("20", duckStructCopy.PublicStaticOnlyGetWithType.Value);
+            Assert.Equal(typeof(string), duckStructCopy.PublicStaticOnlyGetWithType.Type);
         }
 
         [Theory]

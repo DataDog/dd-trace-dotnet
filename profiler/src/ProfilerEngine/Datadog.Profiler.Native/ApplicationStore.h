@@ -21,6 +21,7 @@ public:
 
     ApplicationInfo GetApplicationInfo(const std::string& runtimeId) override;
     void SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version) override;
+    void SetGitMetadata(std::string runtimeId, std::string repositoryUrl, std::string commitSha) override;
 
     const char* GetName() override;
     bool Start() override;

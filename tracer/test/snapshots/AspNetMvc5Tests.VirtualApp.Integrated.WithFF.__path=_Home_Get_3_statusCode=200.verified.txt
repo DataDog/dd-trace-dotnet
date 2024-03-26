@@ -15,7 +15,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/my-app/Home/Get/3,
+      http.url: http://localhost:00000/my-app/Home/Get/3,
       http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
@@ -31,19 +31,16 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: http://localhost/my-app/Home/Get/3,
+      http.url: http://localhost:00000/my-app/Home/Get/3,
       http.useragent: testhelper,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.p.dm: -0
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,

@@ -7,9 +7,12 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Sampling
 {
+    // These "default" sampling rule contains the mapping of service/env names to sampling rates.
+    // These rates are received in http responses from the trace agent after we send a trace payload.
     internal class DefaultSamplingRule : ISamplingRule
     {
         private const string DefaultKey = "service:,env:";
@@ -46,36 +49,41 @@ namespace Datadog.Trace.Sampling
                 // either we don't have sampling rate from the agent yet (cold start),
                 // or the only rate we received is for "service:,env:", which is not added to _sampleRates
                 defaultRate = _defaultSamplingRate ?? 1;
-                span.SetMetric(Metrics.SamplingAgentDecision, defaultRate); // Keep it to ease investigations
+                SetSamplingAgentDecision(span, defaultRate); // Keep it to ease investigations
                 return defaultRate;
             }
 
-            string env;
-
-            if (span.Tags is CommonTags tags)
-            {
-                env = tags.Environment;
-            }
-            else
-            {
-                env = span.GetTag(Tags.Env);
-            }
-
+            var env = span.Context.TraceContext.Environment;
             var service = span.ServiceName;
 
             var key = new SampleRateKey(service, env);
 
             if (_sampleRates.TryGetValue(key, out var sampleRate))
             {
-                span.SetMetric(Metrics.SamplingAgentDecision, sampleRate);
+                SetSamplingAgentDecision(span, sampleRate);
                 return sampleRate;
             }
 
-            Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {rate}", span.TraceId, _defaultSamplingRate);
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {Rate}", span.Context.RawTraceId, _defaultSamplingRate);
+            }
 
             defaultRate = _defaultSamplingRate ?? 1;
-            span.SetMetric(Metrics.SamplingAgentDecision, defaultRate);
+            SetSamplingAgentDecision(span, defaultRate);
             return defaultRate;
+
+            static void SetSamplingAgentDecision(Span span, float sampleRate)
+            {
+                if (span.Tags is CommonTags commonTags)
+                {
+                    commonTags.SamplingAgentDecision = sampleRate;
+                }
+                else
+                {
+                    span.SetMetric(Metrics.SamplingAgentDecision, sampleRate);
+                }
+            }
         }
 
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)

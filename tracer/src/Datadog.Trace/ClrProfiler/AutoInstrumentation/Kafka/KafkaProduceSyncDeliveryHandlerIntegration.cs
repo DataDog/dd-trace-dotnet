@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { ClrNames.String, "!0", "!1", KafkaConstants.ActionOfDeliveryReportTypeName },
         MinimumVersion = "1.4.0",
-        MaximumVersion = "1.*.*",
+        MaximumVersion = "2.*.*",
         IntegrationName = KafkaConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -141,6 +141,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         if (!isError && report?.Offset is not null)
                         {
                             tags.Offset = report.Offset.ToString();
+                        }
+
+                        if (!isError)
+                        {
+                            var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+                            dataStreams.TrackBacklog(
+                                $"partition:{report.Partition.Value},topic:{report.Topic},type:kafka_produce",
+                                report.Offset.Value);
                         }
                     }
 

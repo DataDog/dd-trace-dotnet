@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -19,16 +20,36 @@ namespace Datadog.Trace.Tests
     {
         private static readonly string TestPrefix = "test.prefix";
 
-        public static IEnumerable<object[]> GetHeaderCollections()
+        public enum HeaderCollectionType
         {
-            yield return new object[] { WebRequest.CreateHttp("http://localhost").Headers.Wrap() };
-            yield return new object[] { new NameValueCollection().Wrap() };
+            /// <summary>
+            /// NameValueCollection
+            /// </summary>
+            NameValueHeadersCollection,
+
+            /// <summary>
+            /// WebHeadersCollection
+            /// </summary>
+            WebHeadersCollection,
         }
+
+        public static TheoryData<HeaderCollectionType> GetHeaderCollections()
+            => new() { HeaderCollectionType.NameValueHeadersCollection, HeaderCollectionType.WebHeadersCollection, };
+
+        internal static IHeadersCollection GetHeadersCollection(HeaderCollectionType type)
+            => type switch
+            {
+                HeaderCollectionType.WebHeadersCollection => WebRequest.CreateHttp("http://localhost").Headers.Wrap(),
+                HeaderCollectionType.NameValueHeadersCollection => new NameValueCollection().Wrap(),
+                _ => throw new Exception("Unknown header collection type " + type),
+            };
 
         [Theory]
         [MemberData(nameof(GetHeaderCollections))]
-        internal void ExtractHeaderTags_MatchesCaseInsensitiveHeaders(IHeadersCollection headers)
+        internal void ExtractHeaderTags_MatchesCaseInsensitiveHeaders(HeaderCollectionType headersType)
         {
+            var headers = GetHeadersCollection(headersType);
+
             // Initialize constants
             const string customHeader1Name = "dd-custom-header1";
             const string customHeader1Value = "match1";
@@ -53,7 +74,9 @@ namespace Datadog.Trace.Tests
             expectedResults.Add(customHeader2TagName, customHeader2Value);
 
             // Test
-            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, TestPrefix);
+            var processor = new HeaderTagsProcessor();
+            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
+            var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
             Assert.NotNull(tagsFromHeader);
@@ -62,8 +85,10 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [MemberData(nameof(GetHeaderCollections))]
-        internal void ExtractHeaderTags_EmptyHeaders_AddsNoTags(IHeadersCollection headers)
+        internal void ExtractHeaderTags_EmptyHeaders_AddsNoTags(HeaderCollectionType headersType)
         {
+            var headers = GetHeadersCollection(headersType);
+
             // Do not add headers
 
             // Initialize header-tag arguments and expectations
@@ -73,7 +98,9 @@ namespace Datadog.Trace.Tests
             var expectedResults = new Dictionary<string, string>();
 
             // Test
-            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, TestPrefix);
+            var processor = new HeaderTagsProcessor();
+            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
+            var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
             Assert.NotNull(tagsFromHeader);
@@ -82,8 +109,10 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [MemberData(nameof(GetHeaderCollections))]
-        internal void ExtractHeaderTags_EmptyHeaderTags_AddsNoTags(IHeadersCollection headers)
+        internal void ExtractHeaderTags_EmptyHeaderTags_AddsNoTags(HeaderCollectionType headersType)
         {
+            var headers = GetHeadersCollection(headersType);
+
             // Add headers
             headers.Add("x-header-test-runner", "xunit");
 
@@ -92,7 +121,9 @@ namespace Datadog.Trace.Tests
             var expectedResults = new Dictionary<string, string>();
 
             // Test
-            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerToTagMap, TestPrefix);
+            var processor = new HeaderTagsProcessor();
+            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerToTagMap, TestPrefix);
+            var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
             Assert.NotNull(tagsFromHeader);
@@ -101,8 +132,10 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [MemberData(nameof(GetHeaderCollections))]
-        internal void ExtractHeaderTags_ForEmptyStringMappings_CreatesNormalizedTagWithPrefix(IHeadersCollection headers)
+        internal void ExtractHeaderTags_ForEmptyStringMappings_CreatesNormalizedTagWithPrefix(HeaderCollectionType headersType)
         {
+            var headers = GetHeadersCollection(headersType);
+
             string invalidCharacterSequence = "*|&#$%&^`.";
             string normalizedReplacementSequence = new string('_', invalidCharacterSequence.Length);
 
@@ -124,7 +157,9 @@ namespace Datadog.Trace.Tests
             };
 
             // Test
-            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerToTagMap, TestPrefix);
+            var processor = new HeaderTagsProcessor();
+            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerToTagMap, TestPrefix);
+            var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
             Assert.NotNull(tagsFromHeader);
@@ -151,14 +186,38 @@ namespace Datadog.Trace.Tests
             headerTags.Add(HttpHeaderNames.UserAgent, tagName);
 
             // Test no user agent
-            var tagsFromHeader = provideUserAgent ? SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, TestPrefix, uaInParameter) :
-                SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, TestPrefix);
+            var processor = new HeaderTagsProcessor();
+            if (provideUserAgent)
+            {
+                SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix, uaInParameter);
+            }
+            else
+            {
+                SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
+            }
+
+            var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
             Assert.Single(tagsFromHeader);
             var normalizedHeader = tagsFromHeader.First();
             Assert.Equal(tagName, normalizedHeader.Key);
             Assert.Equal(provideUserAgent ? uaInParameter : uaInHeaders, normalizedHeader.Value);
+        }
+
+        private readonly struct HeaderTagsProcessor : SpanContextPropagator.IHeaderTagProcessor
+        {
+            public HeaderTagsProcessor()
+            {
+                TagsFromHeader = new();
+            }
+
+            public Dictionary<string, string> TagsFromHeader { get; }
+
+            public void ProcessTag(string key, string value)
+            {
+                TagsFromHeader[key] = value;
+            }
         }
     }
 }

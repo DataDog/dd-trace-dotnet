@@ -3,7 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET461
+#if NETFRAMEWORK
+using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.TestHelpers;
@@ -51,23 +52,23 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
     }
 
-    public abstract class AspNetWebApi : AspNetBase, IClassFixture<IisFixture>
+    public abstract class AspNetWebApi : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
+        private readonly bool _classicMode;
 
         public AspNetWebApi(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
-            : base("WebApi", output, "/home/shutdown", @"test\test-applications\security\aspnet")
+            : base("WebApi", output, "/api/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
+            _classicMode = classicMode;
             _iisFixture = iisFixture;
-            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = "Security." + nameof(AspNetWebApi)
                      + (classicMode ? ".Classic" : ".Integrated")
                      + ".enableSecurity=" + enableSecurity; // assume that arm is the same
-            SetHttpPort(iisFixture.HttpPort);
         }
 
         [Trait("Category", "EndToEnd")]
@@ -78,6 +79,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(AddressesConstants.RequestQuery, "/api/Health/?arg=[$slice]", null)]
         [InlineData(AddressesConstants.RequestQuery, "/api/Health/?arg&[$slice]", null)]
         [InlineData(AddressesConstants.RequestPathParams, "/api/Health/appscan_fingerprint", null)]
+        [InlineData(AddressesConstants.RequestPathParams, "/api/route/2?arg=[$slice]", null)]
+        [InlineData(AddressesConstants.RequestPathParams, "/api/route/TwoMember?arg=[$slice]", null)]
         [InlineData(AddressesConstants.RequestBody, "/api/Home/Upload", "{\"Property1\": \"[$slice]\"}")]
         public Task TestSecurity(string test, string url, string body)
         {
@@ -87,6 +90,27 @@ namespace Datadog.Trace.Security.IntegrationTests
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
             return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, settings, "application/json");
         }
+
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+        [SkippableTheory]
+        [InlineData("blocking")]
+        public async Task TestBlockedRequest(string test)
+        {
+            var url = "/api/Health";
+
+            var settings = VerifyHelper.GetSpanVerifierSettings(test);
+            await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
+        }
+
+        public async Task InitializeAsync()
+        {
+            await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+            SetHttpPort(_iisFixture.HttpPort);
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
 
         protected override string GetTestName() => _testName;
     }

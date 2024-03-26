@@ -1,0 +1,105 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "this": {
+                "type": "RedactionTest",
+                "value": "RedactionTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "this": {
+                "type": "RedactionTest",
+                "value": "RedactionTest"
+              }
+            },
+            "locals": {
+              "_Pass_WoRD_": {
+                "notCapturedReason": "redactedIdent",
+                "type": "String"
+              },
+              "_SeC_ReT": {
+                "notCapturedReason": "redactedIdent",
+                "type": "String"
+              },
+              "a": {
+                "fields": {
+                  "Id": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "PassWord": {
+                    "notCapturedReason": "redactedIdent",
+                    "type": "String"
+                  },
+                  "RedactMe": {
+                    "notCapturedReason": "redactedIdent",
+                    "type": "String"
+                  }
+                },
+                "type": "OuterClass",
+                "value": "OuterClass"
+              },
+              "b": {
+                "notCapturedReason": "redactedIdent",
+                "type": "OuterClass"
+              },
+              "iamok": {
+                "fields": {
+                  "Name": {
+                    "type": "String",
+                    "value": "You should see me IAmOkType"
+                  }
+                },
+                "type": "IAmOkType",
+                "value": "IAmOkType"
+              },
+              "redactedTypeA": {
+                "notCapturedReason": "redactedType",
+                "type": "RedactMeTypeA"
+              },
+              "redactedTypeB": {
+                "notCapturedReason": "redactedType",
+                "type": "RedactMeTypeB"
+              },
+              "redactedTypeC": {
+                "notCapturedReason": "redactedType",
+                "type": "AnotherRedactMeTypeB"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Run",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RedactionTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RedactionTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

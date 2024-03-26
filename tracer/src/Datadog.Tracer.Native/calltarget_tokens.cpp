@@ -7,7 +7,6 @@
 
 namespace trace
 {
-
 const int signatureBufferSize = 500;
 
 /**
@@ -265,7 +264,7 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnValueDefaultMemberRef(mdTypeSpe
     return callTargetReturnTypeGetDefault;
 }
 
-mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(TypeSignature* methodArgument)
+mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(const TypeSignature* methodArgument)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -331,7 +330,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
                                          ULONG* callTargetStateIndex, ULONG* exceptionIndex,
                                          ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                          mdToken* callTargetStateToken, mdToken* exceptionToken,
-                                         mdToken* callTargetReturnToken)
+                                         mdToken* callTargetReturnToken, std::vector<ULONG>& additionalLocalIndices, bool isAsyncMethod)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -366,9 +365,9 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
             }
         }
     }
-
+    constexpr int variableNumber = 3;
     const auto additionalLocalsCount = GetAdditionalLocalsCount();
-    ULONG newLocalsCount = 3 + additionalLocalsCount;
+    ULONG newLocalsCount = variableNumber + additionalLocalsCount;
 
     // Gets the calltarget state type buffer and size
     unsigned callTargetStateTypeRefBuffer;
@@ -439,7 +438,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     }
 
     // New signature declaration
-    COR_SIGNATURE newSignatureBuffer[signatureBufferSize];
+    COR_SIGNATURE newSignatureBuffer[BUFFER_SIZE];
     newSignatureBuffer[newSignatureOffset++] = IMAGE_CEE_CS_CALLCONV_LOCAL_SIG;
 
     // Set the locals count
@@ -454,8 +453,6 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
         newSignatureOffset += copyLength;
     }
 
-    // Add new locals
-    
     // Return value local
     if (returnSignatureType != nullptr)
     {
@@ -480,8 +477,9 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
         memcpy(&newSignatureBuffer[newSignatureOffset], &callTargetReturnBuffer, callTargetReturnSize);
         newSignatureOffset += callTargetReturnSize;
     }
-
-    AddAdditionalLocals(newSignatureBuffer, newSignatureOffset, newSignatureSize);
+    
+    // Add custom locals
+    AddAdditionalLocals(newSignatureBuffer, newSignatureOffset, newSignatureSize, isAsyncMethod);
 
     // CallTarget state value
     newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_VALUETYPE;
@@ -501,16 +499,27 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     *callTargetStateToken = callTargetStateTypeRef;
     *exceptionToken = exTypeRef;
     *callTargetReturnToken = callTargetReturn;
+
+    const auto sizeOfOtherIndexes = additionalLocalIndices.size();
+    auto indexStart = variableNumber + additionalLocalsCount;
+
     if (returnSignatureType != nullptr)
     {
-        *returnValueIndex = newLocalsCount - 4 - additionalLocalsCount;
+        *returnValueIndex = newLocalsCount - (indexStart + 1); // index+1 because return type adds an additional index comparing to void
     }
     else
     {
         *returnValueIndex = static_cast<ULONG>(ULONG_MAX);
     }
-    *exceptionIndex = newLocalsCount - 3 - additionalLocalsCount;
-    *callTargetReturnIndex = newLocalsCount - 2 - additionalLocalsCount;
+
+    *exceptionIndex = newLocalsCount - indexStart--;
+    *callTargetReturnIndex = newLocalsCount - indexStart--;
+    
+    for (unsigned int i = 0; i < sizeOfOtherIndexes; i++)
+    {
+        additionalLocalIndices[i] = newLocalsCount - indexStart--;
+    }
+
     *callTargetStateIndex = newLocalsCount - 1; // Must be the last local.
     return hr;
 }
@@ -563,7 +572,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
         }
 
         hr = module_metadata->assembly_emit->DefineAssemblyRef(&assemblyReference.public_key.data, public_key_size,
-                                                               assemblyReference.name.data(), &assembly_metadata, NULL,
+                                                               assemblyReference.name.data(), &assembly_metadata, nullptr,
                                                                0, 0, &profilerAssemblyRef);
 
         if (FAILED(hr))
@@ -732,9 +741,14 @@ mdToken CallTargetTokens::GetCurrentTypeRef(const TypeInfo* currentType, bool& i
     // If the current type is a generic type we need to transverse the type.
     // to look for a non generic one that we can use.
     TypeInfo* cType = const_cast<TypeInfo*>(currentType);
-    while (cType->isGeneric)
+    while (cType != nullptr && cType->isGeneric)
     {
         cType = const_cast<TypeInfo*>(cType->extend_from.get());
+    }
+
+    if (cType == nullptr)
+    {
+        return objectTypeRef;
     }
 
     isValueType = cType->valueType;
@@ -747,7 +761,8 @@ int CallTargetTokens::GetAdditionalLocalsCount()
     return 0;
 }
 
-void CallTargetTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize)
+void CallTargetTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
+                                           ULONG& signatureSize, bool isAsyncMethod)
 {
 }
 
@@ -756,7 +771,9 @@ CallTargetTokens::CallTargetTokens(ModuleMetadata* moduleMetadataPtr, const bool
     module_metadata_ptr(moduleMetadataPtr),
     enable_by_ref_instrumentation(enableByRefInstrumentation),
     enable_calltarget_state_by_ref(enableCallTargetStateByRef)
-{ }
+{
+}
+
 /**
  * PUBLIC
  **/
@@ -765,37 +782,41 @@ mdTypeRef CallTargetTokens::GetObjectTypeRef()
 {
     return objectTypeRef;
 }
+
 mdTypeRef CallTargetTokens::GetExceptionTypeRef()
 {
     return exTypeRef;
 }
+
 mdTypeRef CallTargetTokens::GetRuntimeTypeHandleTypeRef()
 {
     return runtimeTypeHandleRef;
 }
+
 mdTypeRef CallTargetTokens::GetRuntimeMethodHandleTypeRef()
 {
     return runtimeMethodHandleRef;
 }
+
 mdAssemblyRef CallTargetTokens::GetCorLibAssemblyRef()
 {
     return corLibAssemblyRef;
 }
 
-HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, FunctionInfo* functionInfo,
+HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, TypeSignature* methodReturnType,
                                                       ULONG* callTargetStateIndex, ULONG* exceptionIndex,
                                                       ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                                       mdToken* callTargetStateToken, mdToken* exceptionToken,
-                                                      mdToken* callTargetReturnToken, ILInstr** firstInstruction)
+                                                      mdToken* callTargetReturnToken, ILInstr** firstInstruction,
+                                                      std::vector<ULONG>& additionalLocalIndices, bool isAsyncMethod)
 {
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
 
     // Modify the Local Var Signature of the method
-    auto returnFunctionMethod = functionInfo->method_signature.GetReturnValue();
 
-    auto hr = ModifyLocalSig(rewriterWrapper->GetILRewriter(), &returnFunctionMethod, callTargetStateIndex,
+    auto hr = ModifyLocalSig(rewriterWrapper->GetILRewriter(), methodReturnType, callTargetStateIndex,
                              exceptionIndex, callTargetReturnIndex, returnValueIndex, callTargetStateToken,
-                             exceptionToken, callTargetReturnToken);
+                             exceptionToken, callTargetReturnToken, additionalLocalIndices, isAsyncMethod);
 
     if (FAILED(hr))
     {
@@ -807,7 +828,7 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
     if (*returnValueIndex != static_cast<ULONG>(ULONG_MAX))
     {
         *firstInstruction =
-            rewriterWrapper->CallMember(GetCallTargetDefaultValueMethodSpec(&returnFunctionMethod), false);
+            rewriterWrapper->CallMember(GetCallTargetDefaultValueMethodSpec(methodReturnType), false);
         rewriterWrapper->StLocal(*returnValueIndex);
 
         rewriterWrapper->CallMember(GetCallTargetReturnValueDefaultMemberRef(*callTargetReturnToken), false);
@@ -862,5 +883,4 @@ HRESULT CallTargetTokens::WriteCallTargetReturnGetReturnValue(void* rewriterWrap
     *instruction = rewriterWrapper->CallMember(callTargetReturnGetValueMemberRef, false);
     return S_OK;
 }
-
 } // namespace trace

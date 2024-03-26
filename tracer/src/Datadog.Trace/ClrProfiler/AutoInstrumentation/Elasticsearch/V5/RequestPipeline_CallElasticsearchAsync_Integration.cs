@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5
         AssemblyName = ElasticsearchV5Constants.ElasticsearchAssemblyName,
         TypeName = ElasticsearchV5Constants.RequestPipelineTypeName,
         MethodName = "CallElasticsearchAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1<T>>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[Elasticsearch.Net.ElasticsearchResponse`1[!0]]",
         ParameterTypeNames = new[] { "Elasticsearch.Net.RequestData", ClrNames.CancellationToken },
         MinimumVersion = ElasticsearchV5Constants.Version5,
         MaximumVersion = ElasticsearchV5Constants.Version5,
@@ -38,8 +38,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TRequestData>(TTarget instance, TRequestData requestData, CancellationToken cancellationToken)
+            where TRequestData : IRequestData
         {
-            var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, ElasticsearchV5Constants.IntegrationId, instance.DuckCast<RequestPipelineStruct>(), new RequestDataV5(requestData));
+            var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, ElasticsearchV5Constants.IntegrationId, instance.DuckCast<RequestPipelineStruct>(), requestData);
 
             return new CallTargetState(scope);
         }

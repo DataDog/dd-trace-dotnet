@@ -9,7 +9,7 @@ class AppDomainInfo
 {
 public:
     AppDomainInfo();
-    AppDomainInfo(ProcessID pid, const std::string& name);
+    AppDomainInfo(ProcessID pid, std::string name);
 
 public:
     ProcessID Pid;

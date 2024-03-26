@@ -5,9 +5,9 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
@@ -27,6 +27,7 @@ namespace Datadog.Trace
             var osPlatform = "unknown";
             var osArchitecture = "unknown";
             var processArchitecture = "unknown";
+            var osDescription = "unknown";
 
             try
             {
@@ -59,6 +60,11 @@ namespace Datadog.Trace
                 osArchitecture = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
                 processArchitecture = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
                 frameworkVersion = GetNetCoreOrNetFrameworkVersion();
+#if NET8_0_OR_GREATER
+                osDescription = RuntimeInformation.OSDescription;
+#else
+                osDescription = GetOsDescription();
+#endif
             }
             catch (Exception ex)
             {
@@ -70,7 +76,8 @@ namespace Datadog.Trace
                 productVersion: frameworkVersion,
                 osPlatform: osPlatform,
                 osArchitecture: osArchitecture,
-                processArchitecture: processArchitecture);
+                processArchitecture: processArchitecture,
+                osDescription: osDescription);
         }
 
         public bool IsCoreClr()
@@ -130,6 +137,136 @@ namespace Datadog.Trace
             }
 
             return productVersion;
+        }
+
+        private static string GetOsDescription()
+        {
+            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                return RuntimeInformation.OSDescription;
+            }
+
+            // back-ports the .NET 8 implementation of RuntimeInformation.OSDescription
+            // for Linux. This gives us a "friendly" distribution name
+            // https://github.com/dotnet/runtime/blob/9fe22288c3b78dc681dbb02401c4197609cdb544/src/libraries/System.Private.CoreLib/src/System/Runtime/InteropServices/RuntimeInformation.Unix.cs#L34C32-L34C54
+            const string filename = "/etc/os-release";
+
+            if (File.Exists(filename))
+            {
+                string[] lines;
+                try
+                {
+                    lines = File.ReadAllLines(filename);
+                }
+                catch
+                {
+                    return null;
+                }
+
+#if NETCOREAPP
+                // Parse the NAME, PRETTY_NAME, and VERSION fields.
+                // These fields are suitable for presentation to the user.
+                ReadOnlySpan<char> prettyName = default, name = default, version = default;
+                foreach (string line in lines)
+                {
+                    ReadOnlySpan<char> lineSpan = line.AsSpan();
+                    _ = TryGetFieldValue(lineSpan, "PRETTY_NAME=", ref prettyName) ||
+                        TryGetFieldValue(lineSpan, "NAME=", ref name) ||
+                        TryGetFieldValue(lineSpan, "VERSION=", ref version);
+
+                    // Prefer "PRETTY_NAME".
+                    if (!prettyName.IsEmpty)
+                    {
+                        return new string(prettyName);
+                    }
+                }
+
+                // Fall back to "NAME[ VERSION]".
+                if (!name.IsEmpty)
+                {
+                    if (!version.IsEmpty)
+                    {
+                        return string.Concat(name, " ", version);
+                    }
+
+                    return new string(name);
+                }
+#else
+                // Parse the NAME, PRETTY_NAME, and VERSION fields.
+                // These fields are suitable for presentation to the user.
+                string prettyName = default, name = default, version = default;
+                foreach (string line in lines)
+                {
+                    _ = TryGetFieldValue(line, "PRETTY_NAME=", ref prettyName) ||
+                        TryGetFieldValue(line, "NAME=", ref name) ||
+                        TryGetFieldValue(line, "VERSION=", ref version);
+
+                    // Prefer "PRETTY_NAME".
+                    if (!string.IsNullOrEmpty(prettyName))
+                    {
+                        return prettyName;
+                    }
+                }
+
+                // Fall back to "NAME[ VERSION]".
+                if (!string.IsNullOrEmpty(name))
+                {
+                    if (!string.IsNullOrEmpty(version))
+                    {
+                        return string.Concat(name, " ", version);
+                    }
+
+                    return name;
+                }
+#endif
+            }
+
+            // Fallback to the "default" value
+            return RuntimeInformation.OSDescription;
+
+#if NETCOREAPP
+            static bool TryGetFieldValue(ReadOnlySpan<char> line, ReadOnlySpan<char> prefix, ref ReadOnlySpan<char> value)
+            {
+                if (!line.StartsWith(prefix))
+                {
+                    return false;
+                }
+
+                ReadOnlySpan<char> fieldValue = line.Slice(prefix.Length);
+
+                // Remove enclosing quotes.
+                if (fieldValue.Length >= 2 &&
+                    fieldValue[0] is '"' or '\'' &&
+                    fieldValue[0] == fieldValue[^1])
+                {
+                    fieldValue = fieldValue[1..^1];
+                }
+
+                value = fieldValue;
+                return true;
+            }
+#else
+            static bool TryGetFieldValue(string line, string prefix, ref string value)
+            {
+                if (!line.StartsWith(prefix))
+                {
+                    return false;
+                }
+
+                var fieldValue = line.Substring(prefix.Length);
+
+                // Remove enclosing quotes.
+                if (fieldValue.Length >= 2 &&
+                    fieldValue[0] is '"' or '\'' &&
+                    fieldValue[0] == fieldValue[fieldValue.Length - 1])
+                {
+                    fieldValue = fieldValue.Substring(1, fieldValue.Length - 2);
+                }
+
+                value = fieldValue;
+                return true;
+            }
+#endif
         }
     }
 }

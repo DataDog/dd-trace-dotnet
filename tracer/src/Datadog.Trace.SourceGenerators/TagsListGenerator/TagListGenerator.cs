@@ -10,339 +10,285 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.SourceGenerators.Helpers;
+using Datadog.Trace.SourceGenerators.TagsListGenerator;
 using Datadog.Trace.SourceGenerators.TagsListGenerator.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-namespace Datadog.Trace.SourceGenerators.TagsListGenerator
+/// <inheritdoc />
+[Generator]
+public class TagListGenerator : IIncrementalGenerator
 {
+    private const string TagAttributeFullName = "Datadog.Trace.SourceGenerators.TagAttribute";
+    private const string MetricAttributeFullName = "Datadog.Trace.SourceGenerators.MetricAttribute";
+
     /// <inheritdoc />
-    [Generator]
-    public class TagListGenerator : IIncrementalGenerator
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        /// <inheritdoc />
-        public void Initialize(IncrementalGeneratorInitializationContext context)
+        // Register the attribute source
+        context.RegisterPostInitializationOutput(ctx => ctx.AddSource("TagAttribute.g.cs", Sources.Attributes));
+
+        var tagProperties =
+            context.SyntaxProvider.ForAttributeWithMetadataName(
+                        TagAttributeFullName,
+                        static (node, _) => node is PropertyDeclarationSyntax,
+                        static (context, ct) => GetPropertyTagForTags(context, ct))
+                   .Where(static m => m is not null)!
+                   .WithTrackingName(TrackingNames.TagResults);
+
+        var metricProperties =
+            context.SyntaxProvider.ForAttributeWithMetadataName(
+                        MetricAttributeFullName,
+                        static (node, _) => node is PropertyDeclarationSyntax,
+                        static (context, ct) => GetPropertyTagForMetrics(context, ct))
+                   .Where(static m => m is not null)!
+                   .WithTrackingName(TrackingNames.MetricResults);
+
+        context.ReportDiagnostics(
+            tagProperties
+               .Where(static m => m.Errors.Count > 0)
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.TagDiagnostics));
+
+        context.ReportDiagnostics(
+            metricProperties
+               .Where(static m => m.Errors.Count > 0)
+               .SelectMany(static (x, _) => x.Errors)
+               .WithTrackingName(TrackingNames.MetricDiagnostics));
+
+        var allTags = tagProperties
+                     .Where(static m => m.Value.IsValid)
+                     .Select(static (x, _) => x.Value.PropertyTag)
+                     .Collect()
+                     .WithTrackingName(TrackingNames.AllTags);
+
+        var allMetrics = metricProperties
+                        .Where(static m => m.Value.IsValid)
+                        .Select(static (x, _) => x.Value.PropertyTag)
+                        .Collect()
+                        .WithTrackingName(TrackingNames.AllMetrics);
+
+        var allProperties = allTags
+                           .Combine(allMetrics)
+                           .WithTrackingName(TrackingNames.AllProperties);
+
+        context.RegisterSourceOutput(
+            allProperties,
+            static (spc, source) => Execute(source.Left, source.Right, spc));
+    }
+
+    private static void Execute(
+        ImmutableArray<PropertyTag> tagProperties,
+        ImmutableArray<PropertyTag> metricProperties,
+        SourceProductionContext context)
+    {
+        if (tagProperties.IsDefaultOrEmpty && metricProperties.IsDefaultOrEmpty)
         {
-            // Register the attribute source
-            context.RegisterPostInitializationOutput(ctx => ctx.AddSource("TagAttribute.g.cs", Sources.Attributes));
-
-            IncrementalValuesProvider<ClassDeclarationSyntax> classDeclarations =
-                context.SyntaxProvider.CreateSyntaxProvider(IsAttributedProperty, GetPotentialClassesForGeneration)
-                       .Where(static m => m is not null)!;
-
-            IncrementalValueProvider<(Compilation, ImmutableArray<ClassDeclarationSyntax>)> compilationAndClasses =
-                context.CompilationProvider.Combine(classDeclarations.Collect());
-
-            IncrementalValueProvider<(IReadOnlyList<TagList>, IReadOnlyList<Diagnostic>)> tagListsAndDiagnostics =
-                compilationAndClasses
-                   .Select(static (t, ct) => GetTagLists(t.Item1, t.Item2, ct));
-
-            context.RegisterSourceOutput(tagListsAndDiagnostics, static (spc, source) => Execute(source.Item1, source.Item2, spc));
+            // nothing to do yet
+            return;
         }
 
-        private static bool IsAttributedProperty(SyntaxNode node, CancellationToken cancellationToken)
-            => node is PropertyDeclarationSyntax m && m.AttributeLists.Count > 0;
-
-        private static ClassDeclarationSyntax? GetPotentialClassesForGeneration(GeneratorSyntaxContext context, CancellationToken cancellationToken)
+        StringBuilder? sb = null;
+        foreach (var tagList in GetTagLists(tagProperties, metricProperties))
         {
-            var propertyDeclarationSyntax = (PropertyDeclarationSyntax)context.Node;
+            sb ??= new StringBuilder();
+            var source = Sources.CreateTagsList(sb, tagList);
+            context.AddSource($"{tagList.ClassName}.g.cs", SourceText.From(source, Encoding.UTF8));
+            sb.Clear();
+        }
+    }
 
-            foreach (AttributeListSyntax attributeListSyntax in propertyDeclarationSyntax.AttributeLists)
+    private static IEnumerable<TagList> GetTagLists(ImmutableArray<PropertyTag> tagProperties, ImmutableArray<PropertyTag> metricProperties)
+    {
+        return tagProperties
+              .Concat(metricProperties)
+              .GroupBy(x => (x.ClassName, x.Namespace))
+              .Select(
+                   @grp =>
+                   {
+                       var tags = @grp.Where(x => x.IsTag).ToImmutableArray();
+                       var metrics = @grp.Where(x => !x.IsTag).ToImmutableArray();
+
+                       return new TagList(grp.Key.Namespace, grp.Key.ClassName, tags, metrics);
+                   });
+    }
+
+    private static Result<(PropertyTag PropertyTag, bool IsValid)> GetPropertyTagForTags(
+        GeneratorAttributeSyntaxContext ctx, CancellationToken ct) =>
+        GetPropertyTag(ctx, ct, "TagAttribute", "Tag", TagAttributeFullName, true);
+
+    private static Result<(PropertyTag PropertyTag, bool IsValid)> GetPropertyTagForMetrics(
+        GeneratorAttributeSyntaxContext ctx, CancellationToken ct) =>
+        GetPropertyTag(ctx, ct, "MetricAttribute", "Metric", MetricAttributeFullName, false);
+
+    private static Result<(PropertyTag PropertyTag, bool IsValid)> GetPropertyTag(
+        GeneratorAttributeSyntaxContext ctx, CancellationToken ct, string partialTagName1, string partialTagName2, string fullTagName, bool isTag)
+    {
+        var property = (PropertyDeclarationSyntax)ctx.TargetNode;
+        var classDec = (ClassDeclarationSyntax)ctx.TargetNode.Parent!;
+        var propertySymbol = ctx.SemanticModel.GetDeclaredSymbol(property, ct) as IPropertySymbol;
+        List<DiagnosticInfo>? diagnostics = null;
+        bool hasMisconfiguredInput = false;
+        string? key = null;
+
+        foreach (AttributeData attributeData in propertySymbol!.GetAttributes())
+        {
+            if ((attributeData.AttributeClass?.Name == partialTagName1 ||
+                 attributeData.AttributeClass?.Name == partialTagName2)
+             && attributeData.AttributeClass.ToDisplayString() == fullTagName)
             {
-                foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
+                // Supports [Tag("some.tag")] or [Metric("some.metric")]
+                if (attributeData.ConstructorArguments.Length != 1)
                 {
-                    if (attributeSyntax.Name.ToString() is "Tag" or "TagAttribute" or "Metric" or "MetricAttribute")
+                    hasMisconfiguredInput = true;
+                    break;
+                }
+
+                foreach (TypedConstant typedConstant in attributeData.ConstructorArguments)
+                {
+                    if (typedConstant.Kind == TypedConstantKind.Error)
                     {
-                        return propertyDeclarationSyntax.Parent as ClassDeclarationSyntax;
+                        hasMisconfiguredInput = true;
+                        break;
                     }
                 }
-            }
 
-            return null;
-        }
-
-        private static void Execute(IReadOnlyList<TagList> tagLists, IReadOnlyList<Diagnostic> diagnostics, SourceProductionContext context)
-        {
-            foreach (var diagnostic in diagnostics)
-            {
-                context.ReportDiagnostic(diagnostic);
-            }
-
-            if (tagLists.Count > 0)
-            {
-                var sb = new StringBuilder();
-                foreach (var tagList in tagLists)
+                if (hasMisconfiguredInput)
                 {
-                    var source = Sources.CreateTagsList(sb, tagList);
-                    context.AddSource($"{tagList.ClassName}.g.cs", SourceText.From(source, Encoding.UTF8));
-                    sb.Clear();
+                    break;
+                }
+
+                key = (string?)attributeData.ConstructorArguments[0].Value;
+                if (string.IsNullOrEmpty(key))
+                {
+                    diagnostics ??= new List<DiagnosticInfo>();
+                    diagnostics.Add(InvalidKeyDiagnostic.CreateInfo(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                    hasMisconfiguredInput = true;
+                    break;
+                }
+
+                if (key == "_dd.origin")
+                {
+                    diagnostics ??= new List<DiagnosticInfo>();
+                    diagnostics.Add(InvalidUseOfOriginDiagnostic.CreateInfo(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                    hasMisconfiguredInput = true;
+                    break;
+                }
+
+                if (key == "language")
+                {
+                    diagnostics ??= new List<DiagnosticInfo>();
+                    diagnostics.Add(InvalidUseOfLanguageDiagnostic.CreateInfo(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                    hasMisconfiguredInput = true;
+                    break;
                 }
             }
         }
 
-        private static (IReadOnlyList<TagList> TagLists, IReadOnlyList<Diagnostic> Diagnostics) GetTagLists(
-            Compilation compilation,
-            ImmutableArray<ClassDeclarationSyntax> classes,
-            CancellationToken cancellationToken)
+        var hasRequiredReturnType =
+            isTag
+                ? propertySymbol.Type.Name == "String"
+                : propertySymbol.Type is INamedTypeSymbol { Name: "Nullable", TypeArguments: { Length: 1 } typeArgs }
+               && typeArgs[0].Name == "Double";
+
+        if (!hasRequiredReturnType)
         {
-            if (classes.IsDefaultOrEmpty)
+            hasMisconfiguredInput = true;
+            diagnostics ??= new List<DiagnosticInfo>();
+            diagnostics.Add(
+                isTag
+                    ? InvalidTagPropertyReturnTypeDiagnostic.CreateInfo(ctx.TargetNode)
+                    : InvalidMetricPropertyReturnTypeDiagnostic.CreateInfo(ctx.TargetNode));
+        }
+
+        var errors = diagnostics is { Count: > 0 }
+                         ? new EquatableArray<DiagnosticInfo>(diagnostics.ToArray())
+                         : default;
+
+        if (hasMisconfiguredInput)
+        {
+            return new Result<(PropertyTag PropertyTag, bool IsValid)>((default, false), errors);
+        }
+
+        var tag = new PropertyTag(
+            nameSpace: GetClassNamespace(classDec),
+            className: classDec.Identifier.ToString() + classDec.TypeParameterList,
+            isReadOnly: propertySymbol!.IsReadOnly,
+            propertyName: propertySymbol.Name,
+            tagValue: key!,
+            isTag: isTag);
+
+        return new Result<(PropertyTag PropertyTag, bool IsValid)>((tag, true), errors);
+    }
+
+    private static string GetClassNamespace(ClassDeclarationSyntax classDec)
+    {
+        string? nameSpace;
+
+        // determine the namespace the class is declared in, if any
+        SyntaxNode? potentialNamespaceParent = classDec.Parent;
+        while (potentialNamespaceParent != null &&
+               potentialNamespaceParent is not NamespaceDeclarationSyntax
+            && potentialNamespaceParent is not FileScopedNamespaceDeclarationSyntax)
+        {
+            potentialNamespaceParent = potentialNamespaceParent.Parent;
+        }
+
+        if (potentialNamespaceParent is BaseNamespaceDeclarationSyntax namespaceParent)
+        {
+            nameSpace = namespaceParent.Name.ToString();
+            while (true)
             {
-                // nothing to do yet
-                return (Array.Empty<TagList>(), Array.Empty<Diagnostic>());
-            }
-
-            INamedTypeSymbol? tagAttribute = compilation.GetTypeByMetadataName(Constants.TagAttribute);
-            INamedTypeSymbol? metricAttribute = compilation.GetTypeByMetadataName(Constants.MetricAttribute);
-            if (tagAttribute is null || metricAttribute is null)
-            {
-                // nothing to do if these types aren't available
-                return (Array.Empty<TagList>(), Array.Empty<Diagnostic>());
-            }
-
-            // get the double? return type
-            INamedTypeSymbol nullableT = compilation.GetSpecialType(SpecialType.System_Nullable_T);
-            INamedTypeSymbol tagReturnType = compilation.GetSpecialType(SpecialType.System_String);
-            INamedTypeSymbol metricReturnType = nullableT.Construct(compilation.GetSpecialType(SpecialType.System_Double));
-
-            List<Diagnostic>? diagnostics = null;
-            var results = new List<TagList>();
-
-            // we enumerate by syntax tree, to minimize the need to instantiate semantic models (since they're expensive)
-            foreach (var group in classes.Distinct().GroupBy(x => x.SyntaxTree))
-            {
-                SemanticModel? sm = null;
-                foreach (ClassDeclarationSyntax classDec in group)
+                if (namespaceParent.Parent is NamespaceDeclarationSyntax parent)
                 {
-                    // stop if we're asked to
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    List<PropertyTag>? tagProperties = null;
-                    List<PropertyTag>? metricProperties = null;
-
-                    foreach (MemberDeclarationSyntax member in classDec.Members)
-                    {
-                        var property = member as PropertyDeclarationSyntax;
-                        if (property is null)
-                        {
-                            // we only care about properties
-                            continue;
-                        }
-
-                        sm ??= compilation.GetSemanticModel(classDec.SyntaxTree);
-                        IPropertySymbol? propertySymbol = sm.GetDeclaredSymbol(property, cancellationToken) as IPropertySymbol;
-                        Debug.Assert(propertySymbol is not null, "Tag/Metric property is not present");
-                        INamedTypeSymbol? propertyReturnType = propertySymbol!.Type as INamedTypeSymbol;
-                        string? key = null;
-
-                        AttributeData? tagAttributeData = null;
-                        AttributeData? metricAttributeData = null;
-
-                        bool hasMisconfiguredInput = false;
-                        ImmutableArray<AttributeData>? boundAttributes = propertySymbol.GetAttributes();
-
-                        if (boundAttributes == null)
-                        {
-                            // no attributes, skip
-                            continue;
-                        }
-
-                        foreach (AttributeData attributeData in boundAttributes)
-                        {
-                            var isTag = false;
-                            var isMetric = false;
-                            if (tagAttribute.Equals(attributeData.AttributeClass, SymbolEqualityComparer.Default))
-                            {
-                                tagAttributeData = attributeData;
-                                isTag = true;
-                            }
-                            else if (metricAttribute.Equals(attributeData.AttributeClass, SymbolEqualityComparer.Default))
-                            {
-                                metricAttributeData = attributeData;
-                                isMetric = true;
-                            }
-                            else
-                            {
-                                // Not the right attribute
-                                continue;
-                            }
-
-                            if (tagAttributeData is not null && metricAttributeData is not null)
-                            {
-                                // can't have both!
-                                hasMisconfiguredInput = true;
-                                diagnostics ??= new List<Diagnostic>();
-                                diagnostics.Add(DuplicateAttributeDiagnostic.Create(
-                                                metricAttributeData.ApplicationSyntaxReference?.GetSyntax(),
-                                                tagAttributeData.ApplicationSyntaxReference?.GetSyntax()));
-                                break;
-                            }
-
-                            if (isTag && propertyReturnType is not null
-                                      && !tagReturnType.Equals(propertyReturnType, SymbolEqualityComparer.Default))
-                            {
-                                diagnostics ??= new List<Diagnostic>();
-                                diagnostics.Add(InvalidTagPropertyReturnTypeDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
-                                hasMisconfiguredInput = true;
-                                break;
-                            }
-
-                            if (isMetric && propertyReturnType is not null
-                                         && !metricReturnType.Equals(propertyReturnType, SymbolEqualityComparer.Default))
-                            {
-                                diagnostics ??= new List<Diagnostic>();
-                                diagnostics.Add(InvalidMetricPropertyReturnTypeDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
-                                hasMisconfiguredInput = true;
-                                break;
-                            }
-
-                            // Supports [Tag("some.tag")] or [Metric("some.metric")]
-                            if (attributeData.ConstructorArguments.Length != 1)
-                            {
-                                hasMisconfiguredInput = true;
-                                break;
-                            }
-
-                            foreach (TypedConstant typedConstant in attributeData.ConstructorArguments)
-                            {
-                                if (typedConstant.Kind == TypedConstantKind.Error)
-                                {
-                                    hasMisconfiguredInput = true;
-                                    break;
-                                }
-                            }
-
-                            if (hasMisconfiguredInput)
-                            {
-                                break;
-                            }
-
-                            key = (string?)attributeData.ConstructorArguments[0].Value;
-                            if (string.IsNullOrEmpty(key))
-                            {
-                                diagnostics ??= new List<Diagnostic>();
-                                diagnostics.Add(InvalidKeyDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
-                                hasMisconfiguredInput = true;
-                                break;
-                            }
-
-                            if (key == "_dd.origin")
-                            {
-                                diagnostics ??= new List<Diagnostic>();
-                                diagnostics.Add(InvalidUseOfOriginDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
-                                hasMisconfiguredInput = true;
-                                break;
-                            }
-
-                            if (key == "language")
-                            {
-                                diagnostics ??= new List<Diagnostic>();
-                                diagnostics.Add(InvalidUseOfLanguageDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
-                                hasMisconfiguredInput = true;
-                                break;
-                            }
-                        }
-
-                        if (hasMisconfiguredInput)
-                        {
-                            continue;
-                        }
-
-                        if (tagAttributeData is not null)
-                        {
-                            tagProperties ??= new List<PropertyTag>();
-                            tagProperties.Add(
-                                new PropertyTag(
-                                    propertySymbol!.IsReadOnly,
-                                    propertyName: propertySymbol.Name,
-                                    key!));
-                        }
-                        else if (metricAttributeData is not null)
-                        {
-                            metricProperties ??= new List<PropertyTag>();
-                            metricProperties.Add(
-                                new PropertyTag(
-                                    propertySymbol!.IsReadOnly,
-                                    propertyName: propertySymbol.Name,
-                                    key!));
-                        }
-                    }
-
-                    if (tagProperties?.Count > 0 || metricProperties?.Count > 0)
-                    {
-                        results.Add(new TagList(
-                                        GetClassNamespace(classDec),
-                                        classDec.Identifier.ToString() + classDec.TypeParameterList,
-                                        tagProperties,
-                                        metricProperties));
-                    }
+                    namespaceParent = parent;
+                    nameSpace = $"{namespaceParent.Name}.{nameSpace}";
+                }
+                else
+                {
+                    return nameSpace;
                 }
             }
-
-            return (results, (IReadOnlyList<Diagnostic>?)diagnostics ?? Array.Empty<Diagnostic>());
         }
 
-        private static string GetClassNamespace(ClassDeclarationSyntax classDec)
+        return string.Empty;
+    }
+
+    internal readonly struct TagList
+    {
+        public readonly string Namespace;
+        public readonly string ClassName;
+        public readonly ImmutableArray<PropertyTag> TagProperties;
+        public readonly ImmutableArray<PropertyTag> MetricProperties;
+
+        public TagList(string nameSpace, string className, ImmutableArray<PropertyTag> tagProperties, ImmutableArray<PropertyTag> metricProperties)
         {
-            string? nameSpace;
-
-            // determine the namespace the class is declared in, if any
-            SyntaxNode? potentialNamespaceParent = classDec.Parent;
-            while (potentialNamespaceParent != null &&
-                   potentialNamespaceParent is not NamespaceDeclarationSyntax
-                && potentialNamespaceParent is not FileScopedNamespaceDeclarationSyntax)
-            {
-                potentialNamespaceParent = potentialNamespaceParent.Parent;
-            }
-
-            if (potentialNamespaceParent is BaseNamespaceDeclarationSyntax namespaceParent)
-            {
-                nameSpace = namespaceParent.Name.ToString();
-                while (true)
-                {
-                    if (namespaceParent.Parent is NamespaceDeclarationSyntax parent)
-                    {
-                        namespaceParent = parent;
-                        nameSpace = $"{namespaceParent.Name}.{nameSpace}";
-                    }
-                    else
-                    {
-                        return nameSpace;
-                    }
-                }
-            }
-
-            return string.Empty;
+            Namespace = nameSpace;
+            ClassName = className;
+            TagProperties = tagProperties;
+            MetricProperties = metricProperties;
         }
+    }
 
-        internal readonly struct TagList
+    internal readonly record struct PropertyTag
+    {
+        public readonly string Namespace;
+        public readonly string ClassName;
+        public readonly bool IsReadOnly;
+        public readonly string PropertyName;
+        public readonly string TagValue;
+        public readonly bool IsTag;
+
+        public PropertyTag(string nameSpace, string className, bool isReadOnly, string propertyName, string tagValue, bool isTag)
         {
-            public readonly string Namespace;
-            public readonly string ClassName;
-            public readonly List<PropertyTag>? TagProperties;
-            public readonly List<PropertyTag>? MetricProperties;
-
-            public TagList(string nameSpace, string className, List<PropertyTag>? tagProperties, List<PropertyTag>? metricProperties)
-            {
-                Namespace = nameSpace;
-                ClassName = className;
-                TagProperties = tagProperties;
-                MetricProperties = metricProperties;
-            }
-        }
-
-        internal readonly struct PropertyTag
-        {
-            public readonly bool IsReadOnly;
-            public readonly string PropertyName;
-            public readonly string TagValue;
-
-            public PropertyTag(bool isReadOnly, string propertyName, string tagValue)
-            {
-                IsReadOnly = isReadOnly;
-                PropertyName = propertyName;
-                TagValue = tagValue;
-            }
+            IsReadOnly = isReadOnly;
+            PropertyName = propertyName;
+            TagValue = tagValue;
+            IsTag = isTag;
+            Namespace = nameSpace;
+            ClassName = className;
         }
     }
 }

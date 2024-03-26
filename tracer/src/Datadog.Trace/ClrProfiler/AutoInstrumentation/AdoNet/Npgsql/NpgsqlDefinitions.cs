@@ -12,10 +12,10 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     AssemblyName = "Npgsql",
     TypeName = "Npgsql.NpgsqlCommand",
     MinimumVersion = "4.0.0",
-    MaximumVersion = "6.*.*",
+    MaximumVersion = "8.*.*",
     IntegrationName = nameof(IntegrationId.Npgsql),
     DataReaderType = "Npgsql.NpgsqlDataReader",
-    DataReaderTaskType = "System.Threading.Tasks.Task`1<Npgsql.NpgsqlDataReader>",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[Npgsql.NpgsqlDataReader]",
     TargetMethodAttributes = new[]
     {
         // Task<int> Npgsql.NpgsqlCommand.ExecuteNonQueryAsync(CancellationToken)

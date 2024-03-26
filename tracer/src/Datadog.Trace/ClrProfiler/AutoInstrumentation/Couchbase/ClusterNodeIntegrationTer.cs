@@ -44,8 +44,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         /// <typeparam name="TOperation">Type of the operation</typeparam>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TOperation>(TTarget instance, TOperation operation)
+            where TTarget : IClusterNode
         {
-            return CouchbaseCommon.CommonOnMethodBeginV3(operation);
+            return CouchbaseCommon.CommonOnMethodBeginV3(operation, instance);
         }
 
         /// <summary>
@@ -60,7 +61,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            return CouchbaseCommon.CommonOnMethodEnd(returnValue, exception, in state);
+            state.Scope?.DisposeWithException(exception);
+            return returnValue;
         }
     }
 }

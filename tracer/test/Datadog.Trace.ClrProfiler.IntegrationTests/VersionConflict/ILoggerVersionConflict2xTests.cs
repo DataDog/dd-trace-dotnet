@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -34,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void InjectsLogs()
+        public async Task InjectsLogs()
         {
             // One of the traces starts by manual opening a span when the background service starts,
             // and then it sends a HTTP request to the server.
@@ -52,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 #endif
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, aspNetCorePort: 0))
+            using (await RunSampleAndWaitForExit(agent, aspNetCorePort: 0))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 spans.Should().HaveCountGreaterOrEqualTo(1);

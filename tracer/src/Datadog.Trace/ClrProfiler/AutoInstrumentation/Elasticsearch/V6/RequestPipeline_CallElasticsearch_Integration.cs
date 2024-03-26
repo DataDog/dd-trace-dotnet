@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6
         AssemblyName = ElasticsearchV6Constants.ElasticsearchAssemblyName,
         TypeName = ElasticsearchV6Constants.RequestPipelineTypeName,
         MethodName = "CallElasticsearch",
-        ReturnTypeName = "T",
+        ReturnTypeName = "!0",
         ParameterTypeNames = new[] { "Elasticsearch.Net.RequestData" },
         MinimumVersion = ElasticsearchV6Constants.Version6,
         MaximumVersion = ElasticsearchV6Constants.Version6,
@@ -36,8 +36,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6
         /// <param name="requestData">The request data</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TRequestData>(TTarget instance, TRequestData requestData)
+            where TRequestData : IRequestData
         {
-            var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, ElasticsearchV6Constants.IntegrationId, instance.DuckCast<RequestPipelineStruct>(), new RequestDataV6(requestData));
+            var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, ElasticsearchV6Constants.IntegrationId, instance.DuckCast<RequestPipelineStruct>(), requestData);
 
             return new CallTargetState(scope);
         }

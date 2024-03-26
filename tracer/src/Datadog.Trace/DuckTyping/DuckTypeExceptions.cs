@@ -177,16 +177,16 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal class DuckTypePropertyOrFieldNotFoundException : DuckTypeException
     {
-        private DuckTypePropertyOrFieldNotFoundException(string name, string duckAttributeName)
-            : base($"The property or field '{duckAttributeName}' for the proxy property '{name}' was not found in the instance.")
+        private DuckTypePropertyOrFieldNotFoundException(string name, string duckAttributeName, string type)
+            : base($"The property or field '{duckAttributeName}' for the proxy property '{name}' was not found in the instance of type '{type}'.")
         {
         }
 
         [DebuggerHidden]
         [DoesNotReturn]
-        internal static void Throw(string name, string duckAttributeName)
+        internal static void Throw(string name, string duckAttributeName, Type type)
         {
-            throw new DuckTypePropertyOrFieldNotFoundException(name, duckAttributeName);
+            throw new DuckTypePropertyOrFieldNotFoundException(name, duckAttributeName, type?.FullName ?? type?.Name ?? "NULL");
         }
     }
 
@@ -476,6 +476,42 @@ namespace Datadog.Trace.DuckTyping
         internal static void Throw(MethodInfo implementationMethod, MethodInfo targetMethod)
         {
             throw new DuckTypeReverseProxyMustImplementGenericMethodAsGenericException(implementationMethod, targetMethod);
+        }
+    }
+
+    /// <summary>
+    /// DuckType property or field not found
+    /// </summary>
+    internal class DuckTypeCustomAttributeHasNamedArgumentsException : DuckTypeException
+    {
+        private DuckTypeCustomAttributeHasNamedArgumentsException(string attributeName, string type)
+            : base($"The attribute '{attributeName}' applied to '{type}' uses named arguments. Named arguments are not supported for custom attributes.")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(Type type, CustomAttributeData attributeData)
+        {
+            throw new DuckTypeCustomAttributeHasNamedArgumentsException(attributeData.AttributeType?.FullName ?? "Null", type?.FullName ?? type?.Name ?? "NULL");
+        }
+    }
+
+    /// <summary>
+    /// Ducktype DuckCopy struct does not contains any field
+    /// </summary>
+    internal class DuckTypeDuckCopyStructDoesNotContainsAnyField : DuckTypeException
+    {
+        private DuckTypeDuckCopyStructDoesNotContainsAnyField(string type)
+            : base($"The [DuckCopy] struct '{type}' does not contains any public field. Remember that DuckCopy proxies must be declared using fields instead of properties.")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(Type type)
+        {
+            throw new DuckTypeDuckCopyStructDoesNotContainsAnyField(type?.FullName ?? type?.Name ?? "NULL");
         }
     }
 }

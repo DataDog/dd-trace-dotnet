@@ -6,34 +6,56 @@
 #include "CollectorBase.h"
 #include "IFrameStore.h"
 #include "IManagedThreadList.h"
+#include "IUpscaleProvider.h"
 #include "RawExceptionSample.h"
 #include "cor.h"
 #include "corprof.h"
-#include "ExceptionSampler.h"
+#include "GroupSampler.h"
 #include "OsSpecificApi.h"
-#include "StackSnapshotResultReusableBuffer.h"
+#include "StackSnapshotResultBuffer.h"
+#include "MetricsRegistry.h"
+#include "CounterMetric.h"
+#include "IUpscaleProvider.h"
 
-class ExceptionsProvider
-    : public CollectorBase<RawExceptionSample>
+class IConfiguration;
+class SampleValueTypeProvider;
+
+class ExceptionsProvider :
+    public CollectorBase<RawExceptionSample>,
+    public IUpscaleProvider
 {
 public:
     ExceptionsProvider(
+        SampleValueTypeProvider& valueTypeProvider,
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
         IConfiguration* pConfiguration,
         IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore);
+        IRuntimeIdStore* pRuntimeIdStore,
+        MetricsRegistry& metricsRegistry);
 
     bool OnModuleLoaded(ModuleID moduleId);
-    bool OnExceptionThrown(ObjectID exception);
+    bool OnExceptionThrown(ObjectID thrownObjectId);
+
+    UpscalingInfo GetInfo() override;
+
+private:
+    struct ExceptionBucket
+    {
+        std::string Name;
+        uint64_t Count;
+    };
 
 private:
     bool LoadExceptionMetadata();
     bool GetExceptionType(ClassID classId, std::string& exceptionType);
 
+
 private:
+    static std::vector<SampleValueType> SampleTypeDefinitions;
+
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;
@@ -45,5 +67,8 @@ private:
     bool _loggedMscorlibError;
     std::unordered_map<ClassID, std::string> _exceptionTypes;
     std::mutex _exceptionTypesLock;
-    ExceptionSampler _sampler;
+    GroupSampler<std::string> _sampler;
+    IConfiguration const* const _pConfiguration;
+    std::shared_ptr<CounterMetric> _exceptionsCountMetric;
+    std::shared_ptr<CounterMetric> _sampledExceptionsCountMetric;
 };

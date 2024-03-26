@@ -1,0 +1,38 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "duration": "ScrubbedValue",
+        "evaluationErrors": [
+          {
+            "expr": "Convert(stringArg).ToDouble(value(System.Globalization.NumberFormatInfo)))",
+            "message": "ScrubbedValue"
+          }
+        ],
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.MetricCountNonNumeric"
+          },
+          "version": 0
+        },
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MetricCountNonNumeric",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

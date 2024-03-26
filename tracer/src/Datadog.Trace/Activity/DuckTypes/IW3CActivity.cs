@@ -25,5 +25,8 @@ namespace Datadog.Trace.Activity.DuckTypes
 
         [DuckField(Name = "_parentId")]
         string? RawParentId { get; set; }
+
+        // [DuckField(Name = "_traceState")] // Access from property so it can look up the Activity hierarchy
+        string? TraceStateString { get; set; }
     }
 }

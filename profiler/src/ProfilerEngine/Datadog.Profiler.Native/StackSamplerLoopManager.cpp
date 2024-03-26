@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "StackSamplerLoopManager.h"
+
 #include "IClrLifetime.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
@@ -10,8 +11,8 @@
 using namespace std::chrono_literals;
 
 constexpr std::chrono::milliseconds DeadlockDetectionInterval = 1s;
-constexpr std::chrono::milliseconds StackSamplerLoopManager_MaxExpectedStackSampleCollectionDurationMs = 500ms;
-constexpr std::chrono::nanoseconds CollectionDurationThresholdNs = std::chrono::nanoseconds(StackSamplerLoopManager_MaxExpectedStackSampleCollectionDurationMs);
+constexpr std::chrono::milliseconds MaxExpectedStackSampleCollectionDurationMs = 500ms;
+constexpr std::chrono::nanoseconds CollectionDurationThresholdNs = std::chrono::nanoseconds(MaxExpectedStackSampleCollectionDurationMs);
 
 #ifdef NDEBUG
 constexpr std::chrono::milliseconds StatsAggregationPeriodMs = 30000ms;
@@ -30,13 +31,21 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     IClrLifetime const* clrLifetime,
     IThreadsCpuManager* pThreadsCpuManager,
     IManagedThreadList* pManagedThreadList,
+    IManagedThreadList* pCodeHotspotThreadList,
     ICollector<RawWallTimeSample>* pWallTimeCollector,
-    ICollector<RawCpuSample>* pCpuTimeCollector
+    ICollector<RawCpuSample>* pCpuTimeCollector,
+    MetricsRegistry& metricsRegistry
     ) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pConfiguration{pConfiguration},
+    _pThreadsCpuManager{pThreadsCpuManager},
+    _pManagedThreadList{pManagedThreadList},
+    _pCodeHotspotsThreadList{pCodeHotspotThreadList},
+    _pWallTimeCollector{pWallTimeCollector},
+    _pCpuTimeCollector{pCpuTimeCollector},
     _pStackFramesCollector{nullptr},
     _pStackSamplerLoop{nullptr},
+    _deadlockInterventionInProgress{0},
     _pWatcherThread{nullptr},
     _isWatcherShutdownRequested{false},
     _pTargetThread{nullptr},
@@ -49,18 +58,15 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _totalDeadlockDetectionsCount{0},
     _metricsSender{metricsSender},
     _statisticsReadyToSend{nullptr},
-    _pClrLifetime{clrLifetime},
-    _pThreadsCpuManager{pThreadsCpuManager},
-    _pManagedThreadList{pManagedThreadList},
-    _pWallTimeCollector{pWallTimeCollector},
-    _pCpuTimeCollector{pCpuTimeCollector},
-    _deadlockInterventionInProgress{0}
+    _metricsRegistry{metricsRegistry}
 {
     _pCorProfilerInfo->AddRef();
-    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, pConfiguration);
 
     _currentStatistics = std::make_unique<Statistics>();
     _statisticCollectionStartNs = OpSysTools::GetHighPrecisionNanoseconds();
+
+    _deadlockCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_internal_deadlocks");
 }
 
 StackSamplerLoopManager::~StackSamplerLoopManager()
@@ -83,8 +89,8 @@ const char* StackSamplerLoopManager::GetName()
 
 bool StackSamplerLoopManager::Start()
 {
-    this->RunStackSampling();
-    this->RunWatcher();
+    RunStackSampling();
+    RunWatcher();
 
     return true;
 }
@@ -98,7 +104,8 @@ bool StackSamplerLoopManager::Stop()
     }
     _isStopped = true;
 
-    GracefulShutdownStackSampling();
+    _pStackSamplerLoop->Stop();
+
     ShutdownWatcher();
 
     return true;
@@ -106,54 +113,34 @@ bool StackSamplerLoopManager::Stop()
 
 void StackSamplerLoopManager::RunStackSampling()
 {
-    StackSamplerLoop* stackSamplerLoop = _pStackSamplerLoop;
-    if (stackSamplerLoop == nullptr)
-    {
-        assert(_pStackFramesCollector != nullptr);
+    _pStackSamplerLoop = std::make_unique<StackSamplerLoop>(
+        _pCorProfilerInfo,
+        _pConfiguration,
+        _pStackFramesCollector.get(),
+        this,
+        _pThreadsCpuManager,
+        _pManagedThreadList,
+        _pCodeHotspotsThreadList,
+        _pWallTimeCollector,
+        _pCpuTimeCollector,
+        _metricsRegistry);
 
-        stackSamplerLoop = new StackSamplerLoop(
-            _pCorProfilerInfo,
-            _pConfiguration,
-            _pStackFramesCollector.get(),
-            this,
-            _pThreadsCpuManager,
-            _pManagedThreadList,
-            _pWallTimeCollector,
-            _pCpuTimeCollector
-            );
-        _pStackSamplerLoop = stackSamplerLoop;
-    }
-}
-
-void StackSamplerLoopManager::GracefulShutdownStackSampling()
-{
-    StackSamplerLoop* stackSamplerLoop = _pStackSamplerLoop;
-    if (stackSamplerLoop != nullptr)
-    {
-        stackSamplerLoop->RequestShutdown();
-        stackSamplerLoop->Join();
-        delete stackSamplerLoop;
-        _pStackSamplerLoop = nullptr;
-    }
+    _pStackSamplerLoop->Start();
 }
 
 void StackSamplerLoopManager::RunWatcher()
 {
-    _pWatcherThread = new std::thread(&StackSamplerLoopManager::WatcherLoop, this);
-    OpSysTools::SetNativeThreadName(_pWatcherThread, WatcherThreadName);
+    _pWatcherThread = std::make_unique<std::thread>(&StackSamplerLoopManager::WatcherLoop, this);
+    OpSysTools::SetNativeThreadName(_pWatcherThread.get(), WatcherThreadName);
 }
 
 void StackSamplerLoopManager::ShutdownWatcher()
 {
-    std::thread* pWatcherThread = _pWatcherThread;
-    if (pWatcherThread != nullptr)
+    if (_pWatcherThread != nullptr)
     {
         _isWatcherShutdownRequested = true;
 
-        pWatcherThread->join();
-
-        delete pWatcherThread;
-        _pWatcherThread = nullptr;
+        _pWatcherThread->join();
     }
 }
 
@@ -230,11 +217,14 @@ void StackSamplerLoopManager::WatcherLoopIteration()
 
     if (_deadlockInterventionInProgress >= 1)
     {
-        _deadlockInterventionInProgress++;
-        Log::Error("StackSamplerLoopManager::WatcherLoopIteration - Deadlock intervention still in progress for thread ", _pTargetThread->GetOsThreadId(),
-                   std::hex, " (= 0x", _pTargetThread->GetOsThreadId(), ")");
         // TODO: Validate that calling resuming again (and again) could unlock the situation.
         // The previous call to ResumeThread failed.
+        if (_deadlockInterventionInProgress == 1)
+        {
+            _deadlockInterventionInProgress++;
+            Log::Info("StackSamplerLoopManager::WatcherLoopIteration - Deadlock intervention still in progress for thread ", _pTargetThread->GetOsThreadId(),
+                       std::hex, " (= 0x", _pTargetThread->GetOsThreadId(), ")");
+        }
         return;
     }
 
@@ -277,12 +267,10 @@ void StackSamplerLoopManager::WatcherLoopIteration()
     }
 #endif
 
+    _deadlockCountMetric->Incr();
     _currentStatistics->IncrDeadlockCount();
 
-    if (AllowDeadlockIntervention)
-    {
-        PerformDeadlockIntervention(collectionDurationNs);
-    }
+    PerformDeadlockIntervention(collectionDurationNs);
 }
 
 bool StackSamplerLoopManager::HasMadeProgress(FILETIME userTime, FILETIME kernelTime)
@@ -310,20 +298,20 @@ void StackSamplerLoopManager::PerformDeadlockIntervention(const std::chrono::nan
 
     // Determine if the thread was fit for collection previously
     // (this will also reset it's internal state for the current period if applicable)
-    bool wasThreadSafeForStackSampleCollection = GetUpdateIsThreadSafeForStackSampleCollection(_pTargetThread, nullptr);
+    bool wasThreadSafeForStackSampleCollection = GetUpdateIsThreadSafeForStackSampleCollection(_pTargetThread.get(), nullptr);
 
     _pTargetThread->IncDeadlocksCount();
     _deadlocksInPeriod++;
     _totalDeadlockDetectionsCount++;
 
     // Determine if the thread is fit for future collections. If this status changed, we will log it when safe.
-    bool isThreadSafeForStackSampleCollection = GetUpdateIsThreadSafeForStackSampleCollection(_pTargetThread, nullptr);
+    bool isThreadSafeForStackSampleCollection = GetUpdateIsThreadSafeForStackSampleCollection(_pTargetThread.get(), nullptr);
 
     _pStackFramesCollector->RequestAbortCurrentCollection();
 
     // resume target thread
     uint32_t hr;
-    _pStackFramesCollector->ResumeTargetThreadIfRequired(_pTargetThread,
+    _pStackFramesCollector->ResumeTargetThreadIfRequired(_pTargetThread.get(),
                                                          _isTargetThreadSuspended,
                                                          &hr);
 
@@ -355,8 +343,7 @@ void StackSamplerLoopManager::LogDeadlockIntervention(const std::chrono::nanosec
 
     Log::Info("StackSamplerLoopManager::PerformDeadlockIntervention(): The ongoing StackSampleCollection duration crossed the threshold."
               " A deadlock intervention was performed."
-              " Deadlocked target thread=(OsThreadId=",
-              std::dec, _pTargetThread->GetOsThreadId(), ", ",
+              " Deadlocked target thread=(OsThreadId=", std::dec, _pTargetThread->GetOsThreadId(), ", ",
               " ClrThreadId=0x", std::hex, _pTargetThread->GetClrThreadId(), ");", std::dec,
               " ongoingStackSampleCollectionDurationNs=", ToMillis(ongoingStackSampleCollectionDurationNs), " millisecs;",
               " _isTargetThreadResumed=", std::boolalpha, isThreadResumed, ";",
@@ -372,8 +359,7 @@ void StackSamplerLoopManager::LogDeadlockIntervention(const std::chrono::nanosec
     if (wasThreadSafeForStackSampleCollection != isThreadSafeForStackSampleCollection)
     {
         Log::Info("ShouldCollectThread status changed in PerformDeadlockIntervention"
-                  " for thread (OsThreadId=",
-                  _pTargetThread->GetOsThreadId(),
+                  " for thread (OsThreadId=", _pTargetThread->GetOsThreadId(),
                   ", ClrThreadId=0x", std::hex, _pTargetThread->GetClrThreadId(), std::dec,
                   ", ThreadName=\"", _pTargetThread->GetThreadName(),
                   " wasThreadSafeForStackSampleCollection=", std::boolalpha, wasThreadSafeForStackSampleCollection, ";",
@@ -397,24 +383,14 @@ void StackSamplerLoopManager::StartNewStatsAggregationPeriod(std::int64_t curren
     {
         // Do not flood logs:
         // If we detected issues in this period, always log an info message,
-        // if we did not, then only log a debug message.
         if (_deadlocksInPeriod > 0)
         {
             Log::Info("StackSamplerLoopManager: Completing a StatsAggregationPeriod.",
                       " Period-Index=", _currentPeriod, ",",
-                      " Targeted-PediodDuration=", StatsAggregationPeriodMs.count(), " millisec,",
-                      " Actual-PediodDuration=", ToMillis(periodDurationNs), " millisec,",
+                      " Targeted-PeriodDuration=", StatsAggregationPeriodMs.count(), " millisec,",
+                      " Actual-PeriodDuration=", ToMillis(periodDurationNs), " millisec,",
                       " Period-DeadlockDetectionsCount=", _deadlocksInPeriod, ",",
                       " AppLifetime-DeadlockDetectionsCount=", _totalDeadlockDetectionsCount, ".");
-        }
-        else if (Log::IsDebugEnabled())
-        {
-            Log::Debug("StackSamplerLoopManager: Completing a StatsAggregationPeriod.",
-                       " Period-Index=", _currentPeriod, ",",
-                       " Targeted-PediodDuration=", StatsAggregationPeriodMs.count(), " millisec,",
-                       " Actual-PediodDuration=", ToMillis(periodDurationNs), " millisec,",
-                       " Period-DeadlockDetectionsCount=", _deadlocksInPeriod, ",",
-                       " AppLifetime-DeadlockDetectionsCount=", _totalDeadlockDetectionsCount, ".");
         }
     }
 
@@ -428,12 +404,12 @@ double StackSamplerLoopManager::ToMillis(const std::chrono::nanoseconds& nanosec
     return nanosecs.count() / 1000000.0;
 }
 
-bool StackSamplerLoopManager::AllowStackWalk(ManagedThreadInfo* pThreadInfo)
+bool StackSamplerLoopManager::AllowStackWalk(std::shared_ptr<ManagedThreadInfo> pThreadInfo)
 {
     std::lock_guard<std::mutex> guardedLock(_watcherActivityLock);
 
     bool isThreadSafeStatusChanged;
-    bool isThreadSafeForStackSampleCollection = GetUpdateIsThreadSafeForStackSampleCollection(pThreadInfo, &isThreadSafeStatusChanged);
+    bool isThreadSafeForStackSampleCollection = GetUpdateIsThreadSafeForStackSampleCollection(pThreadInfo.get(), &isThreadSafeStatusChanged);
 
     if (isThreadSafeStatusChanged)
     {
@@ -475,8 +451,7 @@ bool StackSamplerLoopManager::AllowStackWalk(ManagedThreadInfo* pThreadInfo)
         return false;
     }
 
-    pThreadInfo->AddRef();
-    _pTargetThread = pThreadInfo;
+    _pTargetThread = std::move(pThreadInfo);
     _isTargetThreadSuspended = false;
     _isForceTerminated = false;
 
@@ -509,7 +484,11 @@ void StackSamplerLoopManager::NotifyCollectionEnd()
     std::lock_guard<std::mutex> guardedLock(_watcherActivityLock);
 
     std::int64_t collectionEndTimeNs = OpSysTools::GetHighPrecisionNanoseconds();
-    _currentStatistics->AddCollectionTime(collectionEndTimeNs - _collectionStartNs);
+    auto collectionDuration = collectionEndTimeNs - _collectionStartNs;
+
+    // TODO: update colletion time metric when available
+
+    _currentStatistics->AddCollectionTime(collectionDuration);
 
     _collectionStartNs = 0;
     _kernelTime = {0};
@@ -522,15 +501,18 @@ void StackSamplerLoopManager::NotifyIterationFinished()
     std::lock_guard<std::mutex> guardedLock(_watcherActivityLock);
 
     _pTargetThread->GetStackWalkLock().Release();
-    _pTargetThread->Release();
-    _pTargetThread = nullptr;
+    _pTargetThread.reset();
     _collectionStartNs = 0;
     _isTargetThreadSuspended = false;
 
     std::int64_t threadCollectionEndTimeNs = OpSysTools::GetHighPrecisionNanoseconds();
-    _currentStatistics->AddSuspensionTime(threadCollectionEndTimeNs - _threadSuspensionStart);
+    auto suspensionDuration = threadCollectionEndTimeNs - _threadSuspensionStart;
 
-    if (threadCollectionEndTimeNs - _statisticCollectionStartNs >= StatisticAggregationPeriodNs.count())
+    // TODO: update suspension time metric when available
+
+    _currentStatistics->AddSuspensionTime(suspensionDuration);
+
+    if (_metricsSender != nullptr && threadCollectionEndTimeNs - _statisticCollectionStartNs >= StatisticAggregationPeriodNs.count())
     {
         Log::Debug("Notify-ThreadStackSampleCollection-Finished invoked - Prepare statistics to be sent.");
         _statisticsReadyToSend.reset(_currentStatistics.release());
@@ -571,7 +553,7 @@ inline bool StackSamplerLoopManager::GetUpdateIsThreadSafeForStackSampleCollecti
 
 inline bool StackSamplerLoopManager::ShouldCollectThread(
     std::uint64_t threadAggPeriodDeadlockCount,
-    std::uint64_t globalAggPeriodDeadlockCount) const
+    std::uint64_t globalAggPeriodDeadlockCount)
 {
     return (threadAggPeriodDeadlockCount <= DeadlocksPerThreadThreshold) &&
            (globalAggPeriodDeadlockCount <= TotalDeadlocksThreshold);

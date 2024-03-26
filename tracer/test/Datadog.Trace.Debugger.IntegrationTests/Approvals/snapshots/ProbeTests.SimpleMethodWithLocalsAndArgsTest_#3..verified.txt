@@ -1,0 +1,32 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": null,
+            "type": "Samples.Probes.TestRuns.SmokeTests.SimpleMethodWithLocalsAndArgsTest"
+          },
+          "version": 0
+        },
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": null,
+      "name": "Samples.Probes.TestRuns.SmokeTests.SimpleMethodWithLocalsAndArgsTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

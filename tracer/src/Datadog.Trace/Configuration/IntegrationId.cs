@@ -3,8 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
+using Datadog.Trace.SourceGenerators;
+
 namespace Datadog.Trace.Configuration
 {
+    [EnumExtensions]
     internal enum IntegrationId
     {
         HttpMessageHandler,
@@ -17,6 +22,7 @@ namespace Datadog.Trace.Configuration
         AspNetMvc,
         AspNetWebApi2,
         GraphQL,
+        HotChocolate,
         MongoDb,
         XUnit,
         NUnit,
@@ -33,6 +39,8 @@ namespace Datadog.Trace.Configuration
         CosmosDb,
         AwsSdk,
         AwsSqs,
+        AwsSns,
+        AwsLambda,
         ILogger,
         Aerospike,
         AzureFunctions,
@@ -47,5 +55,26 @@ namespace Datadog.Trace.Configuration
         NLog,
         TraceAnnotations,
         Grpc,
+        Process,
+        HashAlgorithm,
+        SymmetricAlgorithm,
+        OpenTelemetry,
+        PathTraversal,
+        Ldap,
+        Ssrf,
+        AwsKinesis,
+        AzureServiceBus,
+        SystemRandom,
+        AwsDynamoDb,
+        HardcodedSecret,
+        IbmMq,
+        Remoting,
+        TrustBoundaryViolation,
+        UnvalidatedRedirect,
+        TestPlatformAssemblyResolver,
+        StackTraceLeak,
+        XpathInjection,
+        ReflectionInjection,
+        Xss,
     }
 }

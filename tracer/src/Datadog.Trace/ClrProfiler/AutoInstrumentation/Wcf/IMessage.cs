@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
@@ -15,11 +17,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <summary>
         /// Gets the properties dictionary
         /// </summary>
-        IDictionary<string, object> Properties { get; }
+        IDictionary<string, object?>? Properties { get; }
 
         /// <summary>
         /// Gets the message headers object
         /// </summary>
-        IMessageHeaders Headers { get; }
+        IMessageHeaders? Headers { get; }
     }
 }

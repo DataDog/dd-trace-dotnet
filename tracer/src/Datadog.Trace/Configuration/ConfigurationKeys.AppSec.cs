@@ -3,12 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Datadog.Trace.Configuration
 {
     internal partial class ConfigurationKeys
@@ -57,12 +51,32 @@ namespace Datadog.Trace.Configuration
             internal const string WafTimeout = "DD_APPSEC_WAF_TIMEOUT";
 
             /// <summary>
-            /// The regex that will be used to obfuscate possible senative data in keys that are highlighted WAF as potentially malicious
+            /// default value to true. Set to false to disable exploit prevention.
+            /// </summary>
+            internal const string RaspEnabled = "DD_APPSEC_RASP_ENABLED";
+
+            /// <summary>
+            /// with a default value of true, it allows a customer to disable the generation of stack traces, for any ASM-specific purpose such as RASP.
+            /// </summary>
+            internal const string StackTraceEnabled = "DD_APPSEC_STACK_TRACE_ENABLED";
+
+            /// <summary>
+            /// with a default value of 2, defines the maximum number of stack traces to be reported due to RASP events. 0 for unlimited.
+            /// </summary>
+            internal const string MaxStackTraces = "DD_APPSEC_MAX_STACK_TRACES";
+
+            /// <summary>
+            /// with a default value of 32, defines the maximum depth of a stack trace to be reported due to RASP events. O for unlimited.
+            /// </summary>
+            internal const string MaxStackTraceDepth = "DD_APPSEC_MAX_STACK_TRACE_DEPTH";
+
+            /// <summary>
+            /// The regex that will be used to obfuscate possible sensitive data in keys that are highlighted WAF as potentially malicious
             /// </summary>
             internal const string ObfuscationParameterKeyRegex = "DD_APPSEC_OBFUSCATION_PARAMETER_KEY_REGEXP";
 
             /// <summary>
-            /// The regex that will be used to obfuscate possible senative data in values that are highlighted WAF as potentially malicious
+            /// The regex that will be used to obfuscate possible sensitive data in values that are highlighted WAF as potentially malicious
             /// </summary>
             internal const string ObfuscationParameterValueRegex = "DD_APPSEC_OBFUSCATION_PARAMETER_VALUE_REGEXP";
 
@@ -75,6 +89,33 @@ namespace Datadog.Trace.Configuration
             /// Blocking response template for Json content. This template is used in combination with the status code to craft and send a response upon blocking the request.
             /// </summary>
             internal const string JsonBlockedTemplate = "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON";
+
+            /// <summary>
+            /// Automatic tracking of user events mode. Values can be disabled, safe or extended.
+            /// </summary>
+            internal const string UserEventsAutomatedTracking = "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING";
+
+            /// <summary>
+            /// Percentage of requests for which the schema should be extracted. Between 0 and 1, defaults to 0.1 (10%)
+            /// A value of 0 means no schemas are extracted, effectively disabling schema extraction altogether
+            /// </summary>
+            internal const string ApiSecurityRequestSampleRate = "DD_API_SECURITY_REQUEST_SAMPLE_RATE";
+
+            /// <summary>
+            /// Configuration key for the maximum number of requests
+            /// to be analyzed by api security concurrently. Defaults to 1.
+            /// </summary>
+            internal const string ApiSecurityMaxConcurrentRequests = "DD_API_SECURITY_MAX_CONCURRENT_REQUESTS";
+
+            /// <summary>
+            /// Unless set to true or 1, tracers don’t collect schemas. After the experiment, the environment variable will be removed and schema collection will be enabled only when ASM is enabled
+            /// </summary>
+            internal const string ApiExperimentalSecurityEnabled = "DD_EXPERIMENTAL_API_SECURITY_ENABLED";
+
+            /// <summary>
+            /// Use legacy encoder for the waf
+            /// </summary>
+            internal const string UseUnsafeEncoder = "DD_EXPERIMENTAL_APPSEC_USE_UNSAFE_ENCODER";
         }
     }
 }

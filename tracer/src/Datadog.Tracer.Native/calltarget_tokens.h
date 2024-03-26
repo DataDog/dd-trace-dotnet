@@ -1,6 +1,8 @@
 #ifndef DD_CLR_PROFILER_CALLTARGET_TOKENS_H_
 #define DD_CLR_PROFILER_CALLTARGET_TOKENS_H_
 
+#define BUFFER_SIZE 1000
+
 #include <corhlpr.h>
 
 #include <mutex>
@@ -35,17 +37,17 @@ private:
     mdMemberRef callTargetReturnVoidTypeGetDefault = mdMemberRefNil;
     mdMemberRef getDefaultMemberRef = mdMemberRefNil;
 
-    HRESULT EnsureCorLibTokens();
     mdTypeRef GetTargetStateTypeRef();
     mdTypeRef GetTargetVoidReturnTypeRef();
     mdMemberRef GetCallTargetStateDefaultMemberRef();
     mdMemberRef GetCallTargetReturnVoidDefaultMemberRef();
     mdMemberRef GetCallTargetReturnValueDefaultMemberRef(mdTypeSpec callTargetReturnTypeSpec);
-    mdMethodSpec GetCallTargetDefaultValueMethodSpec(TypeSignature* methodArgument);
+    mdMethodSpec GetCallTargetDefaultValueMethodSpec(const TypeSignature* methodArgument);
 
     HRESULT ModifyLocalSig(ILRewriter* reWriter, TypeSignature* methodReturnValue, ULONG* callTargetStateIndex,
                            ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
-                           mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken);
+                           mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken, std::vector<ULONG>& additionalLocalIndices, bool
+                           isAsyncMethod = false);
 
 protected:
     // CallTarget tokens
@@ -69,13 +71,16 @@ protected:
     virtual const shared::WSTRING& GetCallTargetStateType() = 0;
     virtual const shared::WSTRING& GetCallTargetReturnType() = 0;
     virtual const shared::WSTRING& GetCallTargetReturnGenericType() = 0;
-    virtual int GetAdditionalLocalsCount();
-    virtual void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize);
+    virtual void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
+                                     ULONG& signatureSize, bool isAsyncMethod);
 
-    CallTargetTokens(ModuleMetadata* moduleMetadataPtr, const bool enableByRefInstrumentation,
-                     const bool enableCallTargetStateByRef);
+    CallTargetTokens(ModuleMetadata* moduleMetadataPtr, bool enableByRefInstrumentation,
+                     bool enableCallTargetStateByRef);
 
 public:
+    HRESULT EnsureCorLibTokens();
+
+    virtual int GetAdditionalLocalsCount();
     mdTypeRef GetObjectTypeRef();
     mdTypeRef GetExceptionTypeRef();
     mdTypeRef GetRuntimeTypeHandleTypeRef();
@@ -83,11 +88,12 @@ public:
     mdAssemblyRef GetCorLibAssemblyRef();
     mdToken GetCurrentTypeRef(const TypeInfo* currentType, bool& isValueType);
 
-    HRESULT ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, FunctionInfo* functionInfo,
+    HRESULT ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, TypeSignature* methodReturnType,
                                         ULONG* callTargetStateIndex, ULONG* exceptionIndex,
                                         ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                         mdToken* callTargetStateToken, mdToken* exceptionToken,
-                                        mdToken* callTargetReturnToken, ILInstr** firstInstruction);
+                                        mdToken* callTargetReturnToken, ILInstr** firstInstruction, std::vector<ULONG>& additionalLocalIndices, bool
+                                        isAsyncMethod = false);
 
     HRESULT WriteCallTargetReturnGetReturnValue(void* rewriterWrapperPtr, mdTypeSpec callTargetReturnTypeSpec,
                                                 ILInstr** instruction);

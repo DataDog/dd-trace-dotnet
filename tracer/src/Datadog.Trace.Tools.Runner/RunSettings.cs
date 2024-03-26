@@ -3,18 +3,44 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
-using Spectre.Console.Cli;
+using System.CommandLine;
+using System.CommandLine.Parsing;
 
 namespace Datadog.Trace.Tools.Runner
 {
     internal class RunSettings : CommonTracerSettings
     {
-        [CommandArgument(0, "[command]")]
-        public string[] Command { get; set; }
+        public RunSettings(Command command)
+            : base(command)
+        {
+            command.AddArgument(Command);
+            command.AddOption(AdditionalEnvironmentVariables);
+            command.AddValidator(Validate);
+        }
 
-        [Description("Sets environment variables for the target command.")]
-        [CommandOption("--set-env <VARIABLES>")]
-        public string[] AdditionalEnvironmentVariables { get; set; }
+        public Argument<string[]> Command { get; } = new("command", CommandLineHelpers.ParseArrayArgument, isDefault: false);
+
+        public Option<string[]> AdditionalEnvironmentVariables { get; } = new("--set-env", CommandLineHelpers.ParseArrayArgument, description: "Sets environment variables for the target command.");
+
+        private void Validate(CommandResult target)
+        {
+            var environmentVariables = target.GetValueForOption(AdditionalEnvironmentVariables);
+
+            foreach (var variable in environmentVariables)
+            {
+                if (!variable.Contains('='))
+                {
+                    target.ErrorMessage = $"Badly formatted environment variable: {variable}";
+                    return;
+                }
+            }
+
+            var command = target.GetValueForArgument(Command);
+
+            if (command.Length == 0)
+            {
+                target.ErrorMessage = "Empty command";
+            }
+        }
     }
 }

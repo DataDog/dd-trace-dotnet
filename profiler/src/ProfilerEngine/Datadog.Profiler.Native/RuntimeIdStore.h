@@ -26,7 +26,7 @@ private:
     static const char* const ExternalFunctionName;
 
     static void* LoadDynamicLibrary(std::string filePath);
-    static void* GetExternalFunction(void* instance, const char* const funcName);
+    static void* GetExternalFunction(void* instance, const char* funcName);
     static bool FreeDynamicLibrary(void* handle);
 
     void* _instance = nullptr;

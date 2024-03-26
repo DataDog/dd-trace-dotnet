@@ -5,7 +5,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BenchmarkComparison;
@@ -19,6 +21,7 @@ using Nuke.Common.Tools.Git;
 using Octokit;
 using Octokit.GraphQL;
 using Octokit.GraphQL.Model;
+using ThroughputComparison;
 using YamlDotNet.Serialization.NamingConventions;
 using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.IO.FileSystemTasks;
@@ -29,6 +32,7 @@ using static Octokit.GraphQL.Variable;
 using Environment = System.Environment;
 using Milestone = Octokit.Milestone;
 using Release = Octokit.Release;
+using Logger = Serilog.Log;
 
 partial class Build
 {
@@ -52,6 +56,9 @@ partial class Build
 
     [Parameter("The specific commit sha to use", List = false)]
     readonly string CommitSha;
+
+    [Parameter("The specific Azure DevOps Build ID to use", List = false)]
+    readonly int? AzureDevopsBuildId;
 
     [Parameter("The git branch to use", List = false)]
     readonly string TargetBranch;
@@ -91,31 +98,21 @@ partial class Build
            .Requires(() => GitHubRepositoryName)
            .Requires(() => GitHubToken)
            .Requires(() => PullRequestNumber)
+           .Requires(() => TargetBranch)
            .Executes(async() =>
             {
-                var client = GetGitHubClient();
-
-                var pr = await client.PullRequest.Get(
-                    owner: GitHubRepositoryOwner,
-                    name: GitHubRepositoryName,
-                    number: PullRequestNumber.Value);
-
-                // Fixes an issue (ambiguous argument) when we do git diff in the Action.
-                GitTasks.Git("fetch origin master:master", logOutput: false);
+                // This assumes that we're running in a pull request, so we compare against the target branch
+                var baseCommit = GitTasks.Git($"merge-base origin/{TargetBranch} HEAD").First().Text;
 
                 // This is a dumb implementation that just show the diff
                 // We could imagine getting the whole context with -U1000 and show the differences including parent name
                 // eg now we show -oldAttribute: oldValue, but we could show -tag.oldattribute: oldvalue
-                var changes = GitTasks.Git("diff master -- tracer/test/snapshots")
+                var changes = GitTasks.Git($"diff --diff-filter=M \"{baseCommit}\" -- */*snapshots*/*.*")
                                    .Select(f => f.Text);
 
-                const int minFiles = 50;
-                var nbSnapshotsModified = changes.Count(f => f.Contains("@@ "));
-                if (nbSnapshotsModified < minFiles)
+                if (!changes.Any())
                 {
-                    // Dumb early exit, if we modify less than 50 files, we can review them manually
-                    // Also it's certainly an addition of snapshot tests, so may not make sense to print a summary.
-                    Console.WriteLine($"{nbSnapshotsModified} snapshots modified. Not doing snapshots diff for PRs modifying less than {minFiles}.");
+                    Console.WriteLine($"No snapshots modified (some may have been added/deleted). Not doing snapshots diff.");
                     return;
                 }
 
@@ -168,7 +165,8 @@ partial class Build
 
                 var markdown = new StringBuilder();
                 markdown.AppendLine("## Snapshots difference summary").AppendLine();
-                markdown.AppendLine("The following differences have been observed in snapshots. So diff is simplistic, so please check some files anyway while we improve it.").AppendLine();
+                markdown.AppendLine("The following differences have been observed in committed snapshots. It is meant to help the reviewer.");
+                markdown.AppendLine("The diff is simplistic, so please check some files anyway while we improve it.").AppendLine();
 
                 if (considerUpdatingPublicFeed)
                 {
@@ -184,8 +182,7 @@ partial class Build
                 }
 
                 // Console.WriteLine(markdown.ToString());
-                await HideCommentsInPullRequest(PullRequestNumber.Value, "## Snapshots difference");
-                await PostCommentToPullRequest(PullRequestNumber.Value, markdown.ToString());
+                await ReplaceCommentInPullRequest(PullRequestNumber.Value, "## Snapshots difference", markdown.ToString());
 
                 void RecordChange(StringBuilder diffsInFile, Dictionary<string, int> diffCounts)
                 {
@@ -239,7 +236,7 @@ partial class Build
             }
             catch(Exception ex)
             {
-                Logger.Warn($"An error happened while updating the labels on the PR: {ex}");
+                Logger.Warning($"An error happened while updating the labels on the PR: {ex}");
             }
 
             Console.WriteLine($"PR labels updated");
@@ -275,7 +272,7 @@ partial class Build
                     }
                     catch(Exception ex)
                     {
-                        Logger.Warn($"There was an error trying to check labels: {ex}");
+                        Logger.Warning($"There was an error trying to check labels: {ex}");
                     }
                 }
                 return updatedLabels;
@@ -284,7 +281,7 @@ partial class Build
            LabbelerConfiguration GetLabellerConfiguration()
            {
                var labellerConfigYaml = RootDirectory / ".github" / "labeller.yml";
-               Logger.Info($"Reading {labellerConfigYaml} YAML file");
+               Logger.Information($"Reading {labellerConfigYaml} YAML file");
                var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
                                  .WithNamingConvention(CamelCaseNamingConvention.Instance)
                                  .IgnoreUnmatchedProperties()
@@ -365,12 +362,24 @@ partial class Build
        .Unlisted()
        .After(UpdateVersion)
        .Requires(() => Version)
-       .Executes(() =>
+       .Executes(async () =>
         {
             Console.WriteLine("Using version to " + FullVersion);
             Console.WriteLine("::set-output name=version::" + Version);
             Console.WriteLine("::set-output name=full_version::" + FullVersion);
             Console.WriteLine("::set-output name=isprerelease::" + (IsPrerelease ? "true" : "false"));
+            Console.WriteLine("::set-output name=lib_waf_version::" + LibDdwafVersion);
+
+            var rulesPath = Solution.GetProject(Projects.DatadogTrace)!.Directory / "AppSec" / "Waf" / "ConfigFiles" / "rule-set.json";
+            await using var rules = File.OpenRead(rulesPath);
+            using var doc = await JsonDocument.ParseAsync(rules, new JsonDocumentOptions { AllowTrailingCommas = true });
+            var rulesVersion = doc.RootElement.GetProperty("metadata").GetProperty("rules_version").GetString();
+            if (string.IsNullOrEmpty(rulesVersion))
+            {
+                throw new Exception($"There was an error reading the metadata.rules_version element from {rulesPath}");
+            }
+
+            Console.WriteLine("::set-output name=waf_rules_version::" + rulesVersion);
         });
 
     Target CalculateNextVersion => _ => _
@@ -414,12 +423,15 @@ partial class Build
         {
             var expectedFileChanges = new List<string>
             {
-                ".github/scripts/package_and_deploy.sh",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
+                "profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt",
                 "profiler/src/ProfilerEngine/ProductVersion.props",
+                "shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
+                "shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
                 "shared/src/msi-installer/WindowsInstaller.wixproj",
+                "tracer/build/artifacts/dd-dotnet.sh",
                 "tracer/build/_build/Build.cs",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
@@ -430,8 +442,9 @@ partial class Build
                 "tracer/samples/ConsoleApp/Alpine3.10.dockerfile",
                 "tracer/samples/ConsoleApp/Alpine3.9.dockerfile",
                 "tracer/samples/ConsoleApp/Debian.dockerfile",
+                "tracer/samples/OpenTelemetry/Debian.dockerfile",
                 "tracer/samples/WindowsContainer/Dockerfile",
-                "tracer/src/Datadog.Monitoring.Distribution/Datadog.Monitoring.Distribution.csproj",
+                "tracer/src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
                 "tracer/src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
                 "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                 "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
@@ -440,10 +453,13 @@ partial class Build
                 "tracer/src/Datadog.Tracer.Native/Resource.rc",
                 "tracer/src/Datadog.Tracer.Native/version.h",
                 "tracer/src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj",
+                "tracer/src/Datadog.Trace.BenchmarkDotNet/Datadog.Trace.BenchmarkDotNet.csproj",
                 "tracer/src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
+                "tracer/src/Datadog.Trace.Tools.dd_dotnet/Datadog.Trace.Tools.dd_dotnet.csproj",
                 "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
                 "tracer/src/Datadog.Trace/Datadog.Trace.csproj",
                 "tracer/src/Datadog.Trace/TracerConstants.cs",
+                "tracer/src/Datadog.Trace.Trimming/Datadog.Trace.Trimming.csproj",
                 "tracer/tools/PipelineMonitor/PipelineMonitor.csproj",
             };
 
@@ -452,7 +468,7 @@ partial class Build
                 expectedFileChanges.Insert(0, "docs/CHANGELOG.md");
             }
 
-            Logger.Info("Verifying that all expected files changed...");
+            Logger.Information("Verifying that all expected files changed...");
             var changes = GitTasks.Git("diff --name-only");
             var stagedChanges = GitTasks.Git("diff --name-only --staged");
 
@@ -709,7 +725,31 @@ partial class Build
             };
         });
 
-    Target DownloadAzurePipelineAndGitlabArtifacts => _ => _
+    Target DownloadAzurePipelineFromBuild => _ => _
+        .Unlisted()
+        .Description("Downloads the release artifacts from the specified Azure DevOps BuildId")
+        .DependsOn(CreateRequiredDirectories)
+        .Requires(() => AzureDevopsToken)
+        .Requires(() => Version)
+        .Requires(() => AzureDevopsBuildId)
+        .Executes(async () =>
+        {
+            // Connect to Azure DevOps Services
+            var connection = new VssConnection(
+                new Uri(AzureDevopsOrganisation),
+                new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+            // Get an Azure devops client
+            using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+
+            BuildArtifact artifact = await DownloadArtifactsFromConsolidatedPipelineBuild(buildHttpClient, AzureDevopsBuildId.Value, $"{FullVersion}-release-artifacts");
+
+            var resourceDownloadUrl = artifact.Resource.DownloadUrl;
+
+            Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
+        });
+
+    Target DownloadReleaseArtifacts => _ => _
        .Unlisted()
        .Description("Downloads the latest artifacts from Azure Devops and Gitlab that has the provided version")
        .DependsOn(CreateRequiredDirectories)
@@ -726,145 +766,46 @@ partial class Build
             // Get an Azure devops client
             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
 
-            // Get all the builds to TargetBranch that were triggered by a CI push
+            int buildId = await GetConsolidatedPipelineBuildId(buildHttpClient, TargetBranch, CommitSha);
+            BuildArtifact artifact = await DownloadArtifactsFromConsolidatedPipelineBuild(buildHttpClient, buildId, $"{FullVersion}-release-artifacts");
 
-            var builds = await buildHttpClient.GetBuildsAsync(
-                             project: AzureDevopsProjectId,
-                             definitions: new[] { AzureDevopsConsolidatePipelineId },
-                             reasonFilter: BuildReason.IndividualCI,
-                             branchName: TargetBranch,
-                             queryOrder: BuildQueryOrder.QueueTimeDescending);
-
-            if (builds.Count == 0)
-            {
-                Logger.Error($"::error::No builds found for {TargetBranch}. Did you include the full git ref, e.g. refs/heads/master?");
-                throw new Exception($"No builds found for {TargetBranch}");
-            }
-
-            BuildArtifact artifact = null;
-            var artifactName = $"{FullVersion}-release-artifacts";
-            string commitSha = CommitSha;
-
-            if (!string.IsNullOrEmpty(CommitSha))
-            {
-                var foundSha = false;
-                var maxCommitsBack = 20;
-                // basic verification, to ensure that the provided commitsha is actually on this branch
-                for (var i = 0; i < maxCommitsBack; i++)
-                {
-                    var sha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
-                            .FirstOrDefault(x => x.Type == OutputType.Std)
-                            .Text;
-
-                    if (string.Equals(CommitSha, sha, StringComparison.OrdinalIgnoreCase))
-                    {
-                        // OK, this SHA is definitely on this branch
-                        foundSha = true;
-                        break;
-                    }
-                }
-
-                if (!foundSha)
-                {
-                    Logger.Error($"Error: The commit {CommitSha} could not be found in the last {maxCommitsBack} of the branch {TargetBranch}" +
-                                 $"Ensure that the commit sha you have provided is correct, and you are running the create_release action from the correct branch");
-                    throw new Exception($"The commit {CommitSha} could not found in the latest {maxCommitsBack} of target branch {TargetBranch}");
-                }
-
-
-                Logger.Info($"Finding build for commit sha: {CommitSha}");
-                var build = builds
-                   .FirstOrDefault(b => string.Equals(b.SourceVersion, CommitSha, StringComparison.OrdinalIgnoreCase));
-                if (build is null)
-                {
-                    throw new Exception($"No builds for commit {CommitSha} found. Please check you have provided the correct SHA, and that there is a build in AzureDevops for the commit");
-                }
-
-                try
-                {
-                    artifact = await buildHttpClient.GetArtifactAsync(
-                                   project: AzureDevopsProjectId,
-                                   buildId: build.Id,
-                                   artifactName: artifactName);
-                }
-                catch (ArtifactNotFoundException)
-                {
-                    Logger.Error($"Error: The build {build.Id} for commit  could not find {artifactName} artifact for build {build.Id} for commit {commitSha}. " +
-                                 $"Ensure the build has successfully generated artifacts for this commit before creating a release");
-                    throw;
-                }
-            }
-            else
-            {
-                Logger.Info($"Checking builds for artifact called: {artifactName}");
-
-                // start from the current commit, and keep looking backwards until we find a commit that has a build
-                // that has successful artifacts. Should only be called from branches with a linear history (i.e. single parent)
-                // This solves a potential issue where we previously selecting a build by start order, not by the actual
-                // git commit order. Generally that shouldn't be an issue, but if we manually trigger builds on master
-                // (which we sometimes do e.g. trying to bisect and issue, or retrying flaky test for coverage reasons),
-                // then we could end up selecting the wrong build.
-                const int maxCommitsBack = 20;
-                for (var i = 0; i < maxCommitsBack; i++)
-                {
-                    commitSha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
-                                        .FirstOrDefault(x => x.Type == OutputType.Std)
-                                        .Text;
-
-                    Logger.Info($"Looking for builds for {commitSha}");
-
-                    foreach (var build in builds)
-                    {
-                        if (string.Equals(build.SourceVersion, commitSha, StringComparison.OrdinalIgnoreCase))
-                        {
-                            // Found a build for the commit, so should be successful and have an artifact
-                            if (build.Result != BuildResult.Succeeded && build.Result != BuildResult.PartiallySucceeded)
-                            {
-                                Logger.Error($"::error::The build for commit {commitSha} was not successful. Please retry any failed stages for the build before creating a release");
-                                throw new Exception("Latest build for branch was not successful. Please retry the build before creating a release");
-                            }
-
-                            try
-                            {
-                                artifact = await buildHttpClient.GetArtifactAsync(
-                                               project: AzureDevopsProjectId,
-                                               buildId: build.Id,
-                                               artifactName: artifactName);
-
-                                break;
-                            }
-                            catch (ArtifactNotFoundException)
-                            {
-                                Logger.Error($"Error: could not find {artifactName} artifact for build {build.Id} for commit {commitSha}. " +
-                                             $"Ensure the build has completed successfully for this commit before creating a release");
-                                throw;
-                            }
-                        }
-                    }
-
-                    if (artifact is not null)
-                    {
-                        break;
-                    }
-                }
-            }
-
-            if (artifact is null)
-            {
-                Logger.Error($"::error::Could not find artifacts called {artifactName} for release. Please ensure the pipeline is running correctly for commits to this branch");
-                throw new Exception("Could not find any artifacts to create a release");
-            }
-
-            Logger.Info("Release artifacts found, downloading...");
-
-            await DownloadAzureArtifact(OutputDirectory, artifact, AzureDevopsToken);
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
 
+            var artifactsPath = OutputDirectory / artifact.Name;
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
-            Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
+            Console.WriteLine("::set-output name=artifacts_path::" + artifactsPath);
 
-            await DownloadGitlabArtifacts(OutputDirectory, commitSha, FullVersion);
-            Console.WriteLine("::set-output name=gitlab_artifacts_path::" + OutputDirectory / commitSha);
+            var gitlabPath = OutputDirectory / CommitSha;
+            await DownloadGitlabArtifacts(OutputDirectory, CommitSha, FullVersion);
+            Console.WriteLine("::set-output name=gitlab_artifacts_path::" + gitlabPath);
+
+            var files = artifactsPath.GlobFiles("*.*")
+                .Concat(gitlabPath.GlobFiles("*.*"))
+                .OrderBy(x => Path.GetFileName(x));
+
+            var checksums = new List<string>();
+            foreach (var path in files)
+            {
+                using var file = File.OpenRead(path);
+                var expectedBytes = 512 / 8;
+                var buffer = new byte[expectedBytes];
+                var bytes = await SHA512.HashDataAsync(file, buffer);
+                if (bytes != expectedBytes)
+                {
+                    throw new Exception($"Expected to write {expectedBytes}bytes, but wrote {bytes}");
+                }
+
+                var checksumLine = $"{Convert.ToHexString(buffer)} {Path.GetFileName(path)}";
+                Logger.Information(checksumLine);
+                checksums.Add(checksumLine);
+            }
+
+            var checksumPath = OutputDirectory / "sha512.txt";
+
+            // Use LF so can be read on linux
+            File.WriteAllText(checksumPath, string.Join("\n", checksums));
+
+            Console.WriteLine("::set-output name=sha_path::" + checksumPath);
         });
 
     Target CompareCodeCoverageReports => _ => _
@@ -923,8 +864,7 @@ partial class Build
                   oldBuild.SourceVersion,
                   newBuild.SourceVersion);
 
-              await HideCommentsInPullRequest(prNumber, "## Code Coverage Report");
-              await PostCommentToPullRequest(prNumber, markdown);
+              await ReplaceCommentInPullRequest(prNumber, "## Code Coverage Report", markdown);
           });
 
     Target CompareBenchmarksResults => _ => _
@@ -933,16 +873,176 @@ partial class Build
          .Requires(() => AzureDevopsToken)
          .Requires(() => GitHubRepositoryName)
          .Requires(() => GitHubToken)
+         .Requires(() => BenchmarkCategory)
          .Executes(async () =>
          {
              if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
              {
-                 Logger.Warn("No PR_NUMBER variable found. Skipping benchmark comparison");
+                 Logger.Warning("No PR_NUMBER variable found. Skipping benchmark comparison");
                  return;
              }
 
              var masterDir = BuildDataDirectory / "previous_benchmarks";
              var prDir = BuildDataDirectory / "benchmarks";
+
+             EnsureCleanDirectory(masterDir);
+
+             // Connect to Azure DevOps Services
+             var connection = new VssConnection(
+                 new Uri(AzureDevopsOrganisation),
+                 new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+             var artifactName = string.Empty;
+             switch (BenchmarkCategory)
+             {
+                 case  "tracer": artifactName = "benchmarks_results"; break;
+                 case  "appsec": artifactName = "benchmarks_appsec_results"; break;
+                 default: Logger.Warning("Unknown benchmark category {BenchmarkCategory}. Skipping comparison", BenchmarkCategory); break;
+             }
+
+             var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", _ => artifactName, masterDir, buildReason: null);
+
+             if (oldBuild is null)
+             {
+                    Logger.Warning("Old build is null");
+                    return;
+             }
+
+             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName, BenchmarkCategory);
+
+             await ReplaceCommentInPullRequest(prNumber, $"## Benchmarks Report for " + BenchmarkCategory, markdown);
+         });
+
+    Target CompareThroughputResults => _ => _
+         .Unlisted()
+         .DependsOn(CreateRequiredDirectories)
+         .Requires(() => AzureDevopsToken)
+         .Requires(() => GitHubRepositoryName)
+         .Requires(() => GitHubToken)
+         .Executes(async () =>
+         {
+             var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
+
+             var testedCommit = GetCommitDetails();
+
+             var throughputDir = BuildDataDirectory / "throughput";
+             var masterDir = throughputDir / "master";
+             var oldBenchmarksDir = throughputDir / "benchmarks_2_9_0";
+             var latestBenchmarksDir = throughputDir / "latest_benchmarks";
+             var commitDir = throughputDir / "current";
+
+             FileSystemTasks.EnsureCleanDirectory(masterDir);
+             FileSystemTasks.EnsureCleanDirectory(oldBenchmarksDir);
+             FileSystemTasks.EnsureCleanDirectory(latestBenchmarksDir);
+
+             // Connect to Azure DevOps Services
+             var connection = new VssConnection(
+                 new Uri(AzureDevopsOrganisation),
+                 new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+
+             // Grab the comparison artifacts
+             var masterBuild = await GetCrankArtifacts(buildHttpClient, "refs/heads/master", masterDir);
+             var oldBenchmarkBuild = await GetCrankArtifacts(buildHttpClient, "refs/heads/benchmarks/2.9.0", oldBenchmarksDir);
+             var (newBenchmarkBuild, benchmarkVersion) = await GetCrankArtifactsForLatestBenchmarkBranch(buildHttpClient, latestBenchmarksDir);
+
+             var commitName = isPr ? $"This PR ({prNumber})" : $"This commit ({testedCommit.Substring(0, 6)})";
+             var sources = new List<CrankResultSource>
+             {
+                 new(commitName, testedCommit, CrankSourceType.CurrentCommit, commitDir),
+                 new("master", masterBuild.SourceVersion, CrankSourceType.Master, masterDir),
+                 new("benchmarks/2.9.0", oldBenchmarkBuild.SourceVersion, CrankSourceType.OldBenchmark, oldBenchmarksDir),
+             };
+
+             if (newBenchmarkBuild is not null && benchmarkVersion is not null)
+             {
+                 sources.Add(new($"benchmarks/{benchmarkVersion}", newBenchmarkBuild.SourceVersion, CrankSourceType.LatestBenchmark, latestBenchmarksDir));
+             }
+
+             var markdown = CompareThroughput.GetMarkdown(sources);
+
+             Logger.Information("Markdown build complete, writing report");
+
+             // save the report so we can upload it as an atefact for prosperity
+             await File.WriteAllTextAsync(throughputDir / "throughput_report.md", markdown);
+
+             if(isPr)
+             {
+                 Logger.Information("Updating PR comment on GitHub");
+                 await ReplaceCommentInPullRequest(prNumber, "## Throughput/Crank Report", markdown);
+             }
+
+             async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, string Version)> GetCrankArtifactsForLatestBenchmarkBranch(BuildHttpClient httpClient, AbsolutePath directory)
+             {
+                 // current (not released version)
+                 var version = new Version(Version);
+                 var versionsToCheck = 3;
+                 while (versionsToCheck > 0)
+                 {
+                     // only looking back across minor releases (ignoring patch etc)
+                     versionsToCheck--;
+                     version = new Version(version.Major, version.Minor - 1, 0);
+
+                     try
+                     {
+                         var thisVersion = $"{version.Major}.{version.Minor}.0";
+                         var build = await GetCrankArtifacts(httpClient, $"refs/heads/benchmarks/{thisVersion}", directory);
+                         return (build, thisVersion);
+                     }
+                     catch (Exception)
+                     {
+                         // if this fails, it's because we have no primary artifacts for that branch
+                         Console.WriteLine($"No artifacts found for version {version}, checking next branch");
+                     }
+                 }
+
+                 Console.WriteLine("No benchmarks found, skipping");
+                 return (null, null);
+             }
+
+             async Task<Microsoft.TeamFoundation.Build.WebApi.Build> GetCrankArtifacts(BuildHttpClient httpClient, string branch, AbsolutePath directory)
+             {
+                 // find the first build with the linux crank results
+                 var (build, _) = await FindAndDownloadAzureArtifact(httpClient, branch, build => "crank_linux_x64_1", directory, buildReason: null);
+
+                 // get all the other artifacts from the same build for consistency
+                 var artifacts = new[] { "crank_linux_arm64_1", "crank_linux_x64_asm_1", "crank_windows_x64_1" };
+                 foreach (var artifactName in artifacts)
+                 {
+                     try
+                     {
+                         var artifact = await httpClient.GetArtifactAsync(
+                                        project: AzureDevopsProjectId,
+                                        buildId: build.Id,
+                                        artifactName: artifactName);
+                         await DownloadAzureArtifact(directory, artifact, AzureDevopsToken);
+                     }
+                     catch (ArtifactNotFoundException)
+                     {
+                         Console.WriteLine($"Could not find {artifactName} artifact for build {build.Id}. Skipping");
+                     }
+                 }
+
+                 return build;
+             }
+         });
+
+    Target CompareExecutionTimeBenchmarkResults => _ => _
+         .Unlisted()
+         .DependsOn(CreateRequiredDirectories)
+         .Requires(() => AzureDevopsToken)
+         .Requires(() => GitHubRepositoryName)
+         .Requires(() => GitHubToken)
+         .Executes(async () =>
+         {
+             var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
+             var testedCommit = GetCommitDetails();
+
+             var executionDir = BuildDataDirectory / "execution_benchmarks";
+             var masterDir = executionDir / "master";
+             var commitDir = executionDir / "current";
 
              FileSystemTasks.EnsureCleanDirectory(masterDir);
 
@@ -953,13 +1053,121 @@ partial class Build
 
              using var buildHttpClient = connection.GetClient<BuildHttpClient>();
 
-             var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => "benchmarks_results", masterDir, buildReason: null);
+             // Grab the comparison artifacts
+             var masterBuild = await GetExecutionBenchmarkArtifacts(buildHttpClient, "refs/heads/master", masterDir);
 
-             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName);
+             var commitName = isPr ? $"This PR ({prNumber})" : $"This commit ({testedCommit.Substring(0, 6)})";
+             var sources = new List<ExecutionTimeResultSource>
+             {
+                 new(commitName, testedCommit, ExecutionTimeSourceType.CurrentCommit, commitDir),
+                 new("master", masterBuild.SourceVersion, ExecutionTimeSourceType.Master, masterDir),
+              };
 
-             await HideCommentsInPullRequest(prNumber, "## Benchmarks Report");
-             await PostCommentToPullRequest(prNumber, markdown);
+             var markdown = CompareExecutionTime.GetMarkdown(sources);
+
+             Logger.Information("Markdown build complete, writing report");
+
+             // save the report so we can upload it as an atefact for prosperity
+             await File.WriteAllTextAsync(executionDir / "execution_time_report.md", markdown);
+
+             if(isPr)
+             {
+                 Logger.Information("Updating PR comment on GitHub");
+                 await ReplaceCommentInPullRequest(prNumber, "## Execution-Time Benchmarks Report", markdown);
+             }
+
+             async Task<Microsoft.TeamFoundation.Build.WebApi.Build> GetExecutionBenchmarkArtifacts(BuildHttpClient httpClient, string branch, AbsolutePath directory)
+             {
+                 // find the first build with the execution benchmarks results
+                 var (build, _) = await FindAndDownloadAzureArtifact(httpClient, branch, build => "execution_time_benchmarks_windows_x64_HttpMessageHandler_1", directory, buildReason: null);
+
+                 // get all the other artifacts from the same build for consistency
+                 var artifacts = new[] { "execution_time_benchmarks_windows_x64_FakeDbCommand_1" };
+                 foreach (var artifactName in artifacts)
+                 {
+                     try
+                     {
+                         var artifact = await httpClient.GetArtifactAsync(
+                                        project: AzureDevopsProjectId,
+                                        buildId: build.Id,
+                                        artifactName: artifactName);
+                         await DownloadAzureArtifact(directory, artifact, AzureDevopsToken);
+                     }
+                     catch (ArtifactNotFoundException)
+                     {
+                         Console.WriteLine($"Could not find {artifactName} artifact for build {build.Id}. Skipping");
+                     }
+                 }
+
+                 return build;
+             }
          });
+
+    async Task ReplaceCommentInPullRequest(int prNumber, string title, string markdown)
+    {
+        try
+        {
+            Console.WriteLine("Replacing comment in GitHub");
+        
+            var clientId = "nuke-ci-client";
+            var productInformation = Octokit.GraphQL.ProductHeaderValue.Parse(clientId);
+            var connection = new Octokit.GraphQL.Connection(productInformation, GitHubToken);
+
+            var query = new Octokit.GraphQL.Query()
+                       .Repository(GitHubRepositoryName, GitHubRepositoryOwner)
+                       .PullRequest(prNumber)
+                       .Comments()
+                       .AllPages()
+                       .Select(comment => new { comment.Id, comment.Body, comment.IsMinimized });
+
+            var prComments = (await connection.Run(query)).ToList();
+        
+            Console.WriteLine($"Found {prComments.Count} comments for PR {prNumber}");
+
+            var updated = false;
+            foreach (var prComment in prComments)
+            {
+                if (prComment.IsMinimized || !prComment.Body.StartsWith(title))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var arg = new UpdateIssueCommentInput
+                    {
+                        Id = prComment.Id,
+                        Body = markdown,
+                        ClientMutationId = clientId
+                    };
+
+                    var mutation = new Mutation()
+                                  .UpdateIssueComment(arg)
+                                  .Select(x => new { x.IssueComment.Id });
+
+                    await connection.Run(mutation);
+                    updated = true;
+                    Console.WriteLine($"Updated comment {prComment.Id} for PR {prNumber}");
+                    break;
+
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning($"Error updating comment with ID {prComment.Id}: {ex}");
+                }
+            }
+
+            if (!updated)
+            {
+                Console.WriteLine($"No comment matching title '{title}' was found in {prNumber}, posting it for the first time.");
+                await PostCommentToPullRequest(prNumber, markdown);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"There was an error trying to update comment with title '{title}': {ex}");
+        }
+    }
 
     async Task PostCommentToPullRequest(int prNumber, string markdown)
     {
@@ -985,66 +1193,6 @@ partial class Build
             var response = await result.Content.ReadAsStringAsync();
             Console.WriteLine("Error: " + response);
             result.EnsureSuccessStatusCode();
-        }
-    }
-
-    async Task HideCommentsInPullRequest(int prNumber, string prefix)
-    {
-        try
-        {
-            Console.WriteLine("Looking for comments to hide in GitHub");
-
-            var clientId = "nuke-ci-client";
-            var productInformation = Octokit.GraphQL.ProductHeaderValue.Parse(clientId);
-            var connection = new Octokit.GraphQL.Connection(productInformation, GitHubToken);
-
-            var query = new Octokit.GraphQL.Query()
-                       .Repository(GitHubRepositoryName, GitHubRepositoryOwner)
-                       .PullRequest(prNumber)
-                       .Comments()
-                       .AllPages()
-                       .Select(issue => new { issue.Id, issue.Body, issue.IsMinimized, });
-
-            var issueComments =  (await connection.Run(query)).ToList();
-
-            Console.WriteLine($"Found {issueComments} comments for PR {prNumber}");
-
-            var count = 0;
-            foreach (var issueComment in issueComments)
-            {
-                if (issueComment.IsMinimized || ! issueComment.Body.StartsWith(prefix))
-                {
-                    continue;
-                }
-
-                try
-                {
-                    var arg = new MinimizeCommentInput
-                    {
-                        Classifier = ReportedContentClassifiers.Outdated,
-                        SubjectId = issueComment.Id,
-                        ClientMutationId = clientId
-                    };
-
-                    var mutation = new Mutation()
-                                  .MinimizeComment(arg)
-                                  .Select(x => new { x.MinimizedComment.IsMinimized });
-
-                    await connection.Run(mutation);
-                    count++;
-
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warn($"Error minimising comment with ID {issueComment.Id}: {ex}");
-                }
-            }
-
-            Console.WriteLine($"Minimised {count} comments for PR {prNumber}");
-        }
-        catch (Exception ex)
-        {
-            Logger.Warn($"There was an error trying to minimise old comments with prefix '{prefix}': {ex}");
         }
     }
 
@@ -1078,7 +1226,7 @@ partial class Build
         }
 
         var successfulBuilds = completedBuilds
-                              .Where(x => x.Result == BuildResult.Succeeded || x.Result == BuildResult.PartiallySucceeded)
+                              .Where(x => x.Result is BuildResult.Succeeded or BuildResult.PartiallySucceeded)
                               .ToList();
 
         if (!successfulBuilds.Any())
@@ -1221,6 +1369,138 @@ partial class Build
                                     new MilestoneRequest { State = ItemStateFilter.Open });
 
         return allOpenMilestones.FirstOrDefault(x => x.Title == milestoneName);
+    }
+
+    private async Task<int> GetConsolidatedPipelineBuildId(BuildHttpClient buildHttpClient, string targetBranch, string commitSha)
+    {
+        // Get all the builds to TargetBranch that were triggered by a CI push
+        var builds = await buildHttpClient.GetBuildsAsync(
+                            project: AzureDevopsProjectId,
+                            definitions: new[] { AzureDevopsConsolidatePipelineId },
+                            reasonFilter: BuildReason.IndividualCI,
+                            branchName: targetBranch,
+                            queryOrder: BuildQueryOrder.QueueTimeDescending);
+
+        if (builds.Count == 0)
+        {
+            Logger.Error($"::error::No builds found for {targetBranch}. Did you include the full git ref, e.g. refs/heads/master?");
+            throw new Exception($"No builds found for {targetBranch}");
+        }
+
+        if (!string.IsNullOrEmpty(commitSha))
+        {
+            var foundSha = false;
+            var maxCommitsBack = 20;
+            // basic verification, to ensure that the provided commitsha is actually on this branch
+            for (var i = 0; i < maxCommitsBack; i++)
+            {
+                var sha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
+                        .FirstOrDefault(x => x.Type == OutputType.Std)
+                        .Text;
+
+                if (string.Equals(commitSha, sha, StringComparison.OrdinalIgnoreCase))
+                {
+                    // OK, this SHA is definitely on this branch
+                    foundSha = true;
+                    break;
+                }
+            }
+
+            if (!foundSha)
+            {
+                Logger.Error($"Error: The commit {commitSha} could not be found in the last {maxCommitsBack} of the branch {TargetBranch}" +
+                                $"Ensure that the commit sha you have provided is correct, and you are running the create_release action from the correct branch");
+                throw new Exception($"The commit {commitSha} could not found in the latest {maxCommitsBack} of target branch {TargetBranch}");
+            }
+
+
+            Logger.Information($"Finding build for commit sha: {commitSha}");
+            var build = builds
+                .FirstOrDefault(b => string.Equals(b.SourceVersion, commitSha, StringComparison.OrdinalIgnoreCase));
+            if (build is null)
+            {
+                throw new Exception($"No builds for commit {commitSha} found. Please check you have provided the correct SHA, and that there is a build in AzureDevops for the commit");
+            }
+
+            return build.Id;
+        }
+        else
+        {
+            // start from the current commit, and keep looking backwards until we find a commit that has a build
+            // that has successful artifacts. Should only be called from branches with a linear history (i.e. single parent)
+            // This solves a potential issue where we previously selecting a build by start order, not by the actual
+            // git commit order. Generally that shouldn't be an issue, but if we manually trigger builds on master
+            // (which we sometimes do e.g. trying to bisect and issue, or retrying flaky test for coverage reasons),
+            // then we could end up selecting the wrong build.
+            const int maxCommitsBack = 20;
+            for (var i = 0; i < maxCommitsBack; i++)
+            {
+                commitSha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
+                                    .FirstOrDefault(x => x.Type == OutputType.Std)
+                                    .Text;
+
+                Logger.Information($"Looking for builds for {commitSha}");
+
+                foreach (var build in builds)
+                {
+                    if (string.Equals(build.SourceVersion, commitSha, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Found a build for the commit, so should be successful and have an artifact
+                        if (build.Result != BuildResult.Succeeded && build.Result != BuildResult.PartiallySucceeded)
+                        {
+                            Logger.Error($"::error::The build for commit {commitSha} was not successful. Please retry any failed stages for the build before creating a release");
+                            throw new Exception("Latest build for branch was not successful. Please retry the build before creating a release");
+                        }
+
+                        return build.Id;
+                    }
+                }
+            }
+
+            throw new Exception($"No builds for commit {CommitSha} found. Please check you have provided the correct SHA, and that there is a build in AzureDevops for the commit");
+        }
+    }
+
+    private async Task<BuildArtifact> DownloadArtifactsFromConsolidatedPipelineBuild(BuildHttpClient buildHttpClient, int buildId, string artifactName)
+    {
+        try
+        {
+            BuildArtifact artifact = await buildHttpClient.GetArtifactAsync(
+                            project: AzureDevopsProjectId,
+                            buildId: buildId,
+                            artifactName: artifactName);
+
+            Logger.Information("Release artifacts found, downloading...");
+            await DownloadAzureArtifact(OutputDirectory, artifact, AzureDevopsToken);
+
+            return artifact;
+        }
+        catch (ArtifactNotFoundException)
+        {
+            Logger.Error($"Error: The build {buildId} for commit could not find {artifactName} artifact for build {buildId} for commit {CommitSha}. " +
+                            $"Ensure the build has successfully generated artifacts for this commit before creating a release");
+            throw;
+        }
+    }
+
+    static string GetCommitDetails()
+    {
+        var testedCommit = Environment.GetEnvironmentVariable("OriginalCommitId");
+        if (string.IsNullOrEmpty(testedCommit))
+        {
+            testedCommit = GitTasks.Git($"rev-parse HEAD").FirstOrDefault().Text;
+            if(string.IsNullOrEmpty(testedCommit))
+            {
+                Logger.Warning("No OriginalCommitId variable found and unable to infer commit. Skipping throughput comparison");
+                return null;
+            }
+            else
+            {
+                Logger.Information($"No OriginalCommitId variable found. Using inferred commit {testedCommit}");
+            }
+        }
+
+        return testedCommit;
     }
 
     class LabbelerConfiguration

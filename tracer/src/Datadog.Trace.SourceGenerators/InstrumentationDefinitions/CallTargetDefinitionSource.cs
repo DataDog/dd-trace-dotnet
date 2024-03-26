@@ -4,23 +4,24 @@
 // </copyright>
 
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.SourceGenerators.Helpers;
 
 namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions;
 
 internal record CallTargetDefinitionSource
 {
-    public CallTargetDefinitionSource(string integrationName, string assemblyName, string targetTypeName, string targetMethodName, string targetReturnType, string[] targetParameterTypes, (ushort Major, ushort Minor, ushort Patch) minimumVersion, (ushort Major, ushort Minor, ushort Patch) maximumVersion, string instrumentationTypeName, int integrationType, bool isAdoNetIntegration, InstrumentationCategory instrumentationCategory)
+    public CallTargetDefinitionSource(string integrationName, string assemblyName, string targetTypeName, string targetMethodName, string targetReturnType, string[] targetParameterTypes, (ushort Major, ushort Minor, ushort Patch) minimumVersion, (ushort Major, ushort Minor, ushort Patch) maximumVersion, string instrumentationTypeName, int integrationKind, bool isAdoNetIntegration, InstrumentationCategory instrumentationCategory)
     {
         IntegrationName = integrationName;
         AssemblyName = assemblyName;
         TargetTypeName = targetTypeName;
         TargetMethodName = targetMethodName;
         TargetReturnType = targetReturnType;
-        TargetParameterTypes = targetParameterTypes;
+        TargetParameterTypes = new EquatableArray<string>(targetParameterTypes);
         MinimumVersion = minimumVersion;
         MaximumVersion = maximumVersion;
         InstrumentationTypeName = instrumentationTypeName;
-        IntegrationType = integrationType;
+        IntegrationKind = integrationKind;
         IsAdoNetIntegration = isAdoNetIntegration;
         InstrumentationCategory = instrumentationCategory;
     }
@@ -35,7 +36,7 @@ internal record CallTargetDefinitionSource
 
     public string TargetReturnType { get; }
 
-    public string[] TargetParameterTypes { get; }
+    public EquatableArray<string> TargetParameterTypes { get; }
 
     public (ushort Major, ushort Minor, ushort Patch) MinimumVersion { get; }
 
@@ -43,7 +44,7 @@ internal record CallTargetDefinitionSource
 
     public string InstrumentationTypeName { get; }
 
-    public int IntegrationType { get; }
+    public int IntegrationKind { get; }
 
     public bool IsAdoNetIntegration { get; }
 

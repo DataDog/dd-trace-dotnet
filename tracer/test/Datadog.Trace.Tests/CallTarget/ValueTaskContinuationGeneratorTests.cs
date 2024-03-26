@@ -107,9 +107,11 @@ namespace Datadog.Trace.Tests.CallTarget
             var synchronizationContext = new CustomSynchronizationContext();
             SynchronizationContext.SetSynchronizationContext(synchronizationContext);
 
+            var tcs = new TaskCompletionSource<bool>();
             var state = CallTargetState.GetDefault();
-            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, in state).AsTask();
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(tcs.Task), null, in state).AsTask();
 
+            tcs.TrySetResult(true);
             Task.WaitAny(cTask, synchronizationContext.Task);
 
             // If preserving context, the continuation should be posted to the synchronization context and cTask should never complete
@@ -118,9 +120,9 @@ namespace Datadog.Trace.Tests.CallTarget
 
             Assert.False(notCompletedTask.IsCompleted);
 
-            async ValueTask GetPreviousTask()
+            async ValueTask GetPreviousTask(Task task)
             {
-                await Task.Delay(1000).ConfigureAwait(false);
+                await task.ConfigureAwait(false);
             }
         }
 
@@ -212,9 +214,12 @@ namespace Datadog.Trace.Tests.CallTarget
             var synchronizationContext = new CustomSynchronizationContext();
             SynchronizationContext.SetSynchronizationContext(synchronizationContext);
 
+            var tcs = new TaskCompletionSource<bool>();
             var state = CallTargetState.GetDefault();
-            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, in state).AsTask();
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(tcs.Task), null, in state).AsTask();
 
+            // After setting the continuation, we resolve the task completion source.
+            tcs.TrySetResult(true);
             Task.WaitAny(cTask, synchronizationContext.Task);
 
             // If preserving context, the continuation should be posted to the synchronization context and cTask should never complete
@@ -223,10 +228,47 @@ namespace Datadog.Trace.Tests.CallTarget
 
             Assert.False(notCompletedTask.IsCompleted);
 
-            async ValueTask<bool> GetPreviousTask()
+            async ValueTask<bool> GetPreviousTask(Task task)
+            {
+                await task.ConfigureAwait(false);
+                return true;
+            }
+        }
+
+        [Fact]
+        public async Task SuccessGenericDuckTypeTest()
+        {
+            var tcg = new ValueTaskContinuationGenerator<IntegrationWithDuckType, ValueTaskContinuationGeneratorTests, ValueTask<ReturnValue>, ReturnValue>();
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, in state);
+
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue[Modified]", rValue.Value);
+
+            async ValueTask<ReturnValue> GetPreviousTask()
             {
                 await Task.Delay(1000).ConfigureAwait(false);
-                return true;
+                return new ReturnValue
+                {
+                    Value = "ReturnValue"
+                };
+            }
+        }
+
+        [Fact]
+        public async Task SuccessGenericKnownTypeTest()
+        {
+            var tcg = new ValueTaskContinuationGenerator<IntegrationWithKnownType, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>();
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, in state);
+
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue[Modified]", rValue);
+
+            async ValueTask<string> GetPreviousTask()
+            {
+                await Task.Delay(1000).ConfigureAwait(false);
+                return "ReturnValue";
             }
         }
 
@@ -269,6 +311,34 @@ namespace Datadog.Trace.Tests.CallTarget
             public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
             {
                 return returnValue;
+            }
+        }
+
+        internal class IntegrationWithDuckType
+        {
+            public interface IReturnValue
+            {
+                string Value { get; set; }
+            }
+
+            public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+                where TReturn : IReturnValue
+            {
+                returnValue.Value += "[Modified]";
+                return returnValue;
+            }
+        }
+
+        internal class ReturnValue
+        {
+            public string Value { get; set; }
+        }
+
+        internal class IntegrationWithKnownType
+        {
+            public static string OnAsyncMethodEnd<TTarget>(TTarget instance, string returnValue, Exception exception, in CallTargetState state)
+            {
+                return returnValue + "[Modified]";
             }
         }
     }

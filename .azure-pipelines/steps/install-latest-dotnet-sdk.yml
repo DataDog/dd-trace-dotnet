@@ -5,7 +5,7 @@ parameters:
 
 steps:
 - task: UseDotNet@2
-  displayName: install dotnet core sdk 6
+  displayName: install .NET SDK $(dotnetCoreSdkLatestVersion)
   inputs:
     packageType: sdk
     version: $(dotnetCoreSdkLatestVersion)
@@ -13,6 +13,7 @@ steps:
   retryCountOnTaskFailure: 5
 
 - ${{ if eq(parameters.includeX86, true) }}:
-    - template: install-dotnet-sdk-32bit.yml
+    - template: install-dotnet-sdk-manually.yml
       parameters:
         sdkVersion: $(dotnetCoreSdkLatestVersion)
+        is64bit: false

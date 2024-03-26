@@ -10,6 +10,10 @@
         HRESULT hr = x;                                                                                       \
         if (FAILED(hr))                                                                                       \
         {                                                                                                     \
+            static bool callAlreadyLogged = false;                                                            \
+            if (callAlreadyLogged)                                                                            \
+                return;                                                                                       \
+            callAlreadyLogged = true;                                                                           \
             Log::Warn("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x); \
             return;                                                                                           \
         }                                                                                                     \
@@ -20,7 +24,25 @@
         HRESULT hr = x;                                                                                       \
         if (FAILED(hr))                                                                                       \
         {                                                                                                     \
+            static bool invokeAlreadyLogged = false;                                                          \
+            if (invokeAlreadyLogged)                                                                          \
+                return false;                                                                                 \
+            invokeAlreadyLogged = true;                                                                           \
             Log::Warn("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x); \
+            return false;                                                                                     \
+        }                                                                                                     \
+    }
+
+#define INVOKE_INFO(x)                                                                                             \
+    {                                                                                                         \
+        HRESULT hr = x;                                                                                       \
+        if (FAILED(hr))                                                                                       \
+        {                                                                                                     \
+            static bool invokeAlreadyLogged = false;                                                          \
+            if (invokeAlreadyLogged)                                                                          \
+                return false;                                                                                 \
+            invokeAlreadyLogged = true;                                                                       \
+            Log::Info("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x); \
             return false;                                                                                     \
         }                                                                                                     \
     }

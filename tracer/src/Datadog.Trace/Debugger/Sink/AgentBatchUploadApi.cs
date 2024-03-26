@@ -5,11 +5,17 @@
 
 #nullable enable
 using System;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Sink
 {
@@ -18,27 +24,37 @@ namespace Datadog.Trace.Debugger.Sink
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentBatchUploadApi>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly IDiscoveryService _discoveryService;
-        private readonly Uri? _snapshotUri;
+        private readonly IGitMetadataTagsProvider? _gitMetadataTagsProvider;
+        private string? _endpoint = null;
+        private string? _tags = null;
 
-        private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, Uri? snapshotUri)
+        private AgentBatchUploadApi(
+            IApiRequestFactory apiRequestFactory,
+            IDiscoveryService discoveryService,
+            IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
             _apiRequestFactory = apiRequestFactory;
-            _discoveryService = discoveryService;
-            _snapshotUri = snapshotUri;
+            _gitMetadataTagsProvider = gitMetadataTagsProvider;
+            discoveryService.SubscribeToChanges(c => _endpoint = c.DebuggerEndpoint);
         }
 
-        public static AgentBatchUploadApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+        public static AgentBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
-            return new AgentBatchUploadApi(apiRequestFactory, discoveryService, settings.SnapshotUri);
+            return new AgentBatchUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
         }
 
-        public async Task<bool> SendBatchAsync(ArraySegment<byte> snapshots)
+        public async Task<bool> SendBatchAsync(ArraySegment<byte> data)
         {
-            var uri = _snapshotUri ?? _apiRequestFactory.GetEndpoint(_discoveryService.DebuggerEndpoint);
-            var request = _apiRequestFactory.Create(uri);
+            if (Volatile.Read(ref _endpoint) is not { } endpoint)
+            {
+                Log.Warning("Failed to upload snapshot: debugger endpoint not yet retrieved from discovery service");
+                return false;
+            }
 
-            using var response = await request.PostAsync(snapshots, MimeTypes.Json).ConfigureAwait(false);
+            var uri = BuildUri(endpoint);
+            var request = _apiRequestFactory.Create(new Uri(uri));
+
+            using var response = await request.PostAsync(data, MimeTypes.Json).ConfigureAwait(false);
             if (response.StatusCode is not (>= 200 and <= 299))
             {
                 var content = await response.ReadAsStringAsync().ConfigureAwait(false);
@@ -47,6 +63,73 @@ namespace Datadog.Trace.Debugger.Sink
             }
 
             return true;
+        }
+
+        private string BuildUri(string endpoint)
+        {
+            var uri = _apiRequestFactory.GetEndpoint(endpoint);
+            var builder = new UriBuilder(uri);
+            var query = HttpUtility.ParseQueryString(builder.Query);
+            _tags ??= GetDefaultTagsMergedWithGlobalTags();
+            query["ddtags"] = _tags;
+            builder.Query = query.ToString();
+            return builder.ToString();
+        }
+
+        private string GetDefaultTagsMergedWithGlobalTags()
+        {
+            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+
+            try
+            {
+                var environment = TraceUtil.NormalizeTag(Tracer.Instance.Settings.EnvironmentInternal);
+                if (!string.IsNullOrEmpty(environment))
+                {
+                    sb.Append($"env:{environment},");
+                }
+
+                var version = Tracer.Instance.Settings.ServiceVersionInternal;
+                if (!string.IsNullOrEmpty(version))
+                {
+                    sb.Append($"version:{version},");
+                }
+
+                var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;
+                if (!string.IsNullOrEmpty(hostName))
+                {
+                    sb.Append($"host:{hostName},");
+                }
+
+                var runtimeId = Tracer.RuntimeId;
+                if (!string.IsNullOrEmpty(runtimeId))
+                {
+                    sb.Append($"{Tags.RuntimeId}:{runtimeId},");
+                }
+
+                if (_gitMetadataTagsProvider != null &&
+                    _gitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata) &&
+                    gitMetadata != GitMetadata.Empty)
+                {
+                    sb.Append($"{CommonTags.GitRepository}:{gitMetadata.RepositoryUrl},");
+                    sb.Append($"{CommonTags.GitCommit}:{gitMetadata.CommitSha},");
+                }
+
+                foreach (var kvp in Tracer.Instance.Settings.GlobalTagsInternal)
+                {
+                    sb.Append($"{kvp.Key}:{kvp.Value},");
+                }
+
+                if (sb[sb.Length - 1] == ',')
+                {
+                    sb.Length--;
+                }
+
+                return sb.ToString();
+            }
+            finally
+            {
+                StringBuilderCache.Release(sb);
+            }
         }
     }
 }

@@ -13,9 +13,9 @@ namespace Datadog.Trace.Debugger.Sink
     {
         Task StartFlushingAsync();
 
-        void AddSnapshot(string snapshot);
+        void AddSnapshot(string probeId, string snapshot);
 
-        void AddProbeStatus(string probeId, Status status, Exception exception = null, string errorMessage = null);
+        void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception exception = null, string errorMessage = null);
     }
 
     internal static class DebuggerSinkExtensions
@@ -35,9 +35,9 @@ namespace Datadog.Trace.Debugger.Sink
             debuggerSink.AddProbeStatus(probeId, Status.BLOCKED);
         }
 
-        internal static void AddErrorProbeStatus(this IDebuggerSink debuggerSink, string probeId, Exception exception, string errorMessage)
+        internal static void AddErrorProbeStatus(this IDebuggerSink debuggerSink, string probeId, int probeVersion, Exception exception, string errorMessage)
         {
-            debuggerSink.AddProbeStatus(probeId, Status.ERROR, exception, errorMessage);
+            debuggerSink.AddProbeStatus(probeId, Status.ERROR, probeVersion, exception, errorMessage);
         }
     }
 }

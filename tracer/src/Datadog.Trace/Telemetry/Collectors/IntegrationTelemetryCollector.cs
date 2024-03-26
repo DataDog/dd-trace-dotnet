@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Concurrent;
+#nullable enable
+
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using Datadog.Trace.Configuration;
 
@@ -14,12 +14,15 @@ namespace Datadog.Trace.Telemetry
     internal class IntegrationTelemetryCollector
     {
         private readonly IntegrationDetail[] _integrationsById;
+        private readonly IntegrationTelemetryData[] _previousValues;
 
         private int _hasChangesFlag = 0;
+        private bool _hasSentFirstValues = false;
 
         public IntegrationTelemetryCollector()
         {
             _integrationsById = new IntegrationDetail[IntegrationRegistry.Names.Length];
+            _previousValues = new IntegrationTelemetryData[IntegrationRegistry.Names.Length];
 
             for (var i = 0; i < IntegrationRegistry.Names.Length; i++)
             {
@@ -29,10 +32,10 @@ namespace Datadog.Trace.Telemetry
 
         public void RecordTracerSettings(ImmutableTracerSettings settings)
         {
-            for (var i = 0; i < settings.Integrations.Settings.Length; i++)
+            for (var i = 0; i < settings.IntegrationsInternal.Settings.Length; i++)
             {
-                var integration = settings.Integrations.Settings[i];
-                if (integration.Enabled == false)
+                var integration = settings.IntegrationsInternal.Settings[i];
+                if (integration.EnabledInternal == false)
                 {
                     _integrationsById[i].WasExplicitlyDisabled = 1;
                 }
@@ -103,7 +106,7 @@ namespace Datadog.Trace.Telemetry
         /// Get the latest data to send to the intake.
         /// </summary>
         /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
-        public ICollection<IntegrationTelemetryData> GetData()
+        public ICollection<IntegrationTelemetryData>? GetData()
         {
             var hasChanges = Interlocked.CompareExchange(ref _hasChangesFlag, 0, 1) == 1;
             if (!hasChanges)
@@ -111,16 +114,50 @@ namespace Datadog.Trace.Telemetry
                 return null;
             }
 
-            return _integrationsById
-                  .Select(
-                       integration => new IntegrationTelemetryData(
-                           name: integration.Name,
-                           enabled: integration.HasGeneratedSpan > 0 && integration.WasExplicitlyDisabled == 0)
-                       {
-                           AutoEnabled = integration.WasExecuted > 0,
-                           Error = integration.Error
-                       })
-                  .ToList();
+            // Must only include integrations that have changed since last time.
+            // If this is the first time we're sending data, we know we're sending all of them
+            List<IntegrationTelemetryData> changed;
+
+            if (!_hasSentFirstValues)
+            {
+                _hasSentFirstValues = true;
+                changed = new(IntegrationRegistry.Names.Length);
+            }
+            else
+            {
+                changed = new();
+            }
+
+            return BuildTelemetryData(changed, includeAllValues: false);
+        }
+
+        public List<IntegrationTelemetryData> GetFullData()
+            => BuildTelemetryData(new(IntegrationRegistry.Names.Length), includeAllValues: true);
+
+        private List<IntegrationTelemetryData> BuildTelemetryData(List<IntegrationTelemetryData> integrations, bool includeAllValues)
+        {
+            for (var i = 0; i < _integrationsById.Length; i++)
+            {
+                var integration = _integrationsById[i];
+                var data = new IntegrationTelemetryData(
+                    name: integration.Name,
+                    enabled: integration.HasGeneratedSpan > 0 && integration.WasExplicitlyDisabled == 0,
+                    autoEnabled: integration.WasExecuted > 0,
+                    error: integration.Error);
+
+                if (includeAllValues)
+                {
+                    // don't update previous if we're dumping all values
+                    integrations.Add(data);
+                }
+                else if (!data.Equals(_previousValues[i]))
+                {
+                    _previousValues[i] = data;
+                    integrations.Add(data);
+                }
+            }
+
+            return integrations;
         }
 
         private void SetHasChanges()
@@ -156,7 +193,7 @@ namespace Datadog.Trace.Telemetry
             /// <summary>
             /// Gets or sets a value indicating whether an integration was disabled due to a fatal error
             /// </summary>
-            public string Error;
+            public string? Error;
         }
     }
 }

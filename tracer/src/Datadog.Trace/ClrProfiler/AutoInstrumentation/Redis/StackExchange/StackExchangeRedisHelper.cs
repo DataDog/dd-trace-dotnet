@@ -3,8 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
@@ -21,19 +24,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         /// </summary>
         /// <param name="config">The config</param>
         /// <returns>The host and port</returns>
-        public static HostAndPort GetHostAndPort(string config)
+        public static HostAndPort GetHostAndPort(string? config)
         {
-            string host = null;
-            string port = null;
+            string? host = null;
+            string? port = null;
 
             if (config != null)
             {
                 // config can contain several settings separated by commas:
                 // hostname:port,name=MyName,keepAlive=180,syncTimeout=10000,abortConnect=False
                 // split in commas, find the one without '=', split that one on ':'
-                string[] hostAndPort = config.Split(',')
-                                             .FirstOrDefault(p => !p.Contains("="))
-                                            ?.Split(':');
+                var hostAndPort = config.Split(',')
+                                        .FirstOrDefault(p => !p.Contains("="))
+                                       ?.Split(':');
 
                 if (hostAndPort != null)
                 {
@@ -50,12 +53,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
             return new HostAndPort(host, port);
         }
 
+        public static long? GetDb(int db) => db < 0 ? null : db;
+
         internal readonly struct HostAndPort
         {
-            public readonly string Host;
-            public readonly string Port;
+            public readonly string? Host;
+            public readonly string? Port;
 
-            public HostAndPort(string host, string port)
+            public HostAndPort(string? host, string? port)
             {
                 Host = host;
                 Port = port;

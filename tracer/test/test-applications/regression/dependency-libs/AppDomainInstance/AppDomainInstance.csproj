@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net461</TargetFrameworks>
-    <Platforms>x64;x86</Platforms>
+    <TargetFrameworks>net462</TargetFrameworks>
     <PlatformTarget>$(Platform)</PlatformTarget>
     <IsPackable>false</IsPackable>
   </PropertyGroup>

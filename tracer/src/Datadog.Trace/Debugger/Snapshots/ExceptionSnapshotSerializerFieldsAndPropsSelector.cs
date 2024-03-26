@@ -31,8 +31,6 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal override IEnumerable<MemberInfo> GetFieldsAndProps(
             Type type,
             object source,
-            int maximumDepthOfHierarchyToCopy,
-            int maximumNumberOfFieldsToCopy,
             CancellationTokenSource cts)
         {
             // Include the interesting (side-effect-free) properties from System.Exception
@@ -43,7 +41,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                    .Select(p => p);
 
             // Remove the fields declared on System.Exception - they are not interesting.
-            var fields = base.GetFieldsAndProps(type, source, maximumDepthOfHierarchyToCopy, maximumNumberOfFieldsToCopy, cts)
+            var fields = base.GetFieldsAndProps(type, source, cts)
                              .Where(b => b.DeclaringType != typeof(Exception));
 
             return regularProps.Concat(fields);

@@ -10,6 +10,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -18,25 +19,26 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     internal static class ScopeFactory
     {
-        public const string OperationName = "http.request";
-        public const string ServiceName = "http-client";
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ScopeFactory));
 
         public static Scope GetActiveHttpScope(Tracer tracer)
         {
-            var scope = tracer.InternalActiveScope;
-
-            var parent = scope?.Span;
-
-            if (parent != null &&
-                parent.Type == SpanTypes.Http &&
-                parent.GetTag(Tags.InstrumentationName) != null)
+            if (tracer.InternalActiveScope is { Span: { Type: SpanTypes.Http } parent } scope && HasInstrumentationNameTag(parent))
             {
                 return scope;
             }
 
             return null;
+
+            static bool HasInstrumentationNameTag(Span span)
+            {
+                if (span.Tags is HttpTags httpTags)
+                {
+                    return httpTags.InstrumentationName != null;
+                }
+
+                return span.GetTag(Tags.InstrumentationName) != null;
+            }
         }
 
         /// <summary>
@@ -51,11 +53,9 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="spanId">The span id</param>
         /// <param name="startTime">The start time that should be applied to the span</param>
         /// <returns>A new pre-populated scope.</returns>
-        internal static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationId integrationId, out HttpTags tags, ulong? traceId = null, ulong? spanId = null, DateTimeOffset? startTime = null)
+        internal static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationId integrationId, out HttpTags tags, TraceId traceId = default, ulong spanId = 0, DateTimeOffset? startTime = null)
         {
-            var span = CreateInactiveOutboundHttpSpan(tracer, httpMethod, requestUri, integrationId, out tags, traceId, spanId, startTime, addToTraceContext: true);
-
-            if (span != null)
+            if (CreateInactiveOutboundHttpSpan(tracer, httpMethod, requestUri, integrationId, out tags, traceId, spanId, startTime, addToTraceContext: true) is { } span)
             {
                 return tracer.ActivateSpan(span);
             }
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="startTime">The start time that should be applied to the span</param>
         /// <param name="addToTraceContext">Set to false if the span is meant to be discarded. In that case, the span won't be added to the TraceContext.</param>
         /// <returns>A new pre-populated scope.</returns>
-        internal static Span CreateInactiveOutboundHttpSpan(Tracer tracer, string httpMethod, Uri requestUri, IntegrationId integrationId, out HttpTags tags, ulong? traceId, ulong? spanId, DateTimeOffset? startTime, bool addToTraceContext)
+        internal static Span CreateInactiveOutboundHttpSpan(Tracer tracer, string httpMethod, Uri requestUri, IntegrationId integrationId, out HttpTags tags, TraceId traceId, ulong spanId, DateTimeOffset? startTime, bool addToTraceContext)
         {
             tags = null;
 
@@ -99,26 +99,32 @@ namespace Datadog.Trace.ClrProfiler
                 }
 
                 string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
-                string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
 
-                tags = new HttpTags();
+                var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("http");
+                var serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "http-client");
+                tags = tracer.CurrentTraceSettings.Schema.Client.CreateHttpTags();
 
-                string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
-                span = tracer.StartSpan(OperationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
+                span = tracer.StartSpan(operationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
 
                 span.Type = SpanTypes.Http;
                 span.ResourceName = $"{httpMethod} {resourceUrl}";
 
                 tags.HttpMethod = httpMethod?.ToUpperInvariant();
-                tags.HttpUrl = httpUrl;
+                if (requestUri is not null)
+                {
+                    tags.HttpUrl = HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager);
+                    tags.Host = HttpRequestUtils.GetNormalizedHost(requestUri.Host);
+                }
+
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
                 if (!addToTraceContext && span.Context.TraceContext.SamplingPriority == null)
                 {
                     // If we don't add the span to the trace context, then we need to manually call the sampler
-                    var samplingDecision = tracer.TracerManager.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
+                    var samplingDecision = tracer.CurrentTraceSettings.TraceSampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
                     span.Context.TraceContext.SetSamplingPriority(samplingDecision);
                 }
             }

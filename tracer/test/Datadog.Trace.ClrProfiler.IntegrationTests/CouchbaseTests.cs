@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
@@ -14,7 +15,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class CouchbaseTests : TestHelper
+    public class CouchbaseTests : TracingIntegrationTest
     {
         public CouchbaseTests(ITestOutputHelper output)
             : base("Couchbase", output)
@@ -22,35 +23,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public static System.Collections.Generic.IEnumerable<object[]> GetCouchbase()
-        {
-            foreach (var item in PackageVersions.Couchbase)
-            {
-                yield return item.ToArray();
-            }
-        }
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.Couchbase
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsCouchbase(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(GetCouchbase))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-couchbase" : EnvironmentHelper.FullSampleName;
+
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(13, 500);
                 Assert.True(spans.Count >= 13, $"Expecting at least 13 spans, only received {spans.Count}");
-
-                foreach (var span in spans)
-                {
-                    var result = span.IsCouchbase();
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.Equal("Samples.Couchbase-couchbase", span.Service);
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                }
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var expected = new List<string>
                 {

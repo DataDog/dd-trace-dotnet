@@ -6,11 +6,21 @@ EXPORTS
     IsProfilerAttached
     GetAssemblyAndSymbolsBytes
     InitializeProfiler
+    RemoveCallTargetDefinitions
     EnableByRefInstrumentation
     EnableCallTargetStateByRef
     AddDerivedInstrumentations
+    AddInterfaceInstrumentations
     AddTraceAttributeInstrumentation
     InitializeTraceMethods
     InstrumentProbes
     GetProbesStatuses
     DisableTracerCLRProfiler
+    RegisterIastAspects
+    RegisterCallTargetDefinitions
+    EnableCallTargetDefinitions
+    DisableCallTargetDefinitions
+    UpdateSettings
+    ShouldHeal
+    ReportSuccessfulInstrumentation
+    GetUserStrings

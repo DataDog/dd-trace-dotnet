@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
   </PropertyGroup>
   
   <ItemGroup>

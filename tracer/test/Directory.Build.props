@@ -3,20 +3,57 @@
 
   <PropertyGroup>
     <!-- only run .NET Framework tests on Windows -->
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net462;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
 
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <!-- Stop NuGet from complaining about vulnerable packages -->
+    <NuGetAudit>false</NuGetAudit>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+
+    <!-- WebClient is obsolete -->
+    <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
+    <NoWarn>SYSLIB0014;NU1901;NU1902;NU1903;NU1904</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="6.4.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
     <PackageReference Include="Moq" Version="4.16.0" />
-    <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
+    <PackageReference Include="xunit" Version="2.4.2" />
     <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
+  </ItemGroup>
+
+  <!-- Have to use the latest version of the test SDK on .NET Framework so that code coverage works -->
+  <!-- But this version does not support .NET Core 2.1/3.0, so need to ifdef here -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
+    <!-- Note that we're using a custom version of coverlet from the Azure feed that supports StrongNaming -->
+    <PackageReference Include="coverlet.collector" Version="3.2.1-preview.4.g46dda4ea49">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
+    <!-- Note that we're using a custom version of coverlet from the Azure feed that supports StrongNaming -->
+    <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- This property ensures NuGet packages are copied to the bin folder. This happens automatically in netcoreapp3.0+ -->
+  <PropertyGroup Condition=" $(DD_LOGGER_ENABLED) != 'false' AND '$(TargetFramework)' == 'netcoreapp2.1' ">
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" $(DD_LOGGER_ENABLED) != 'false' ">
+    <PackageReference Include="DatadogTestCollector" Version="0.0.50" ExcludeAssets="compile"/>
+    <PackageReference Include="DatadogTestLogger" Version="0.0.50" ExcludeAssets="compile"/>
   </ItemGroup>
 
   <!-- StyleCop -->

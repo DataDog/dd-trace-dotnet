@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
-    public abstract class AspNetCoreIisMvc21Tests : AspNetCoreIisMvcTestBase
+    public abstract class AspNetCoreIisMvc21Tests : AspNetCoreIisMvcTestBase, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
@@ -46,7 +46,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             _testName = GetTestName(nameof(AspNetCoreIisMvc21Tests));
             _iisFixture = fixture;
-            _iisFixture.TryStartIis(this, inProcess ? IisAppType.AspNetCoreInProcess : IisAppType.AspNetCoreOutOfProcess);
         }
 
         [SkippableTheory]
@@ -58,18 +57,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             // We actually sometimes expect 2, but waiting for 1 is good enough
             var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount: 1);
-
-            var aspnetCoreSpans = spans.Where(s => s.Name == "aspnet_core.request");
-            foreach (var aspnetCoreSpan in aspnetCoreSpans)
+            foreach (var span in spans)
             {
-                var result = aspnetCoreSpan.IsAspNetCore();
-                Assert.True(result.Success, result.ToString());
-            }
-
-            var aspnetCoreMvcSpans = spans.Where(s => s.Name == "aspnet_core_mvc.request");
-            foreach (var aspnetCoreMvcSpan in aspnetCoreMvcSpans)
-            {
-                var result = aspnetCoreMvcSpan.IsAspNetCoreMvc();
+                var result = ValidateIntegrationSpan(span, metadataSchemaVersion: "v0");
                 Assert.True(result.Success, result.ToString());
             }
 
@@ -83,6 +73,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                           .UseMethodName("_")
                           .UseTypeName(_testName);
         }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, InProcess ? IisAppType.AspNetCoreInProcess : IisAppType.AspNetCoreOutOfProcess);
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 }
 #endif

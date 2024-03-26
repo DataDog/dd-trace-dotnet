@@ -7,9 +7,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
 {
@@ -17,29 +19,7 @@ namespace Datadog.Trace.Propagators
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ParseUtility>();
 
-#if NETCOREAPP
-        public static ulong ParseFromHexOrDefault(ReadOnlySpan<char> value)
-        {
-            if (ulong.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var result))
-            {
-                return result;
-            }
-
-            return default;
-        }
-#else
-        public static ulong ParseFromHexOrDefault(string value)
-        {
-            try
-            {
-                return Convert.ToUInt64(value, 16);
-            }
-            catch
-            {
-                return default;
-            }
-        }
-#endif
+        private static bool _firstWarning = true;
 
         public static ulong? ParseUInt64<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter getter, string headerName)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
@@ -67,10 +47,21 @@ namespace Datadog.Trace.Propagators
 
             if (hasValue)
             {
-                Log.Warning(
-                    "Could not parse {HeaderName} headers: {HeaderValues}",
-                    headerName,
-                    string.Join(",", headerValues));
+                if (_firstWarning)
+                {
+                    Log.Warning(
+                        "Could not parse {HeaderName} headers: {HeaderValues}",
+                        headerName,
+                        string.Join(",", headerValues));
+                    _firstWarning = false;
+                }
+                else
+                {
+                    Log.Debug(
+                        "Could not parse {HeaderName} headers: {HeaderValues}",
+                        headerName,
+                        string.Join(",", headerValues));
+                }
             }
 
             return null;
@@ -122,10 +113,21 @@ namespace Datadog.Trace.Propagators
 
             if (hasValue)
             {
-                Log.Warning(
-                    "Could not parse {HeaderName} headers: {HeaderValues}",
-                    headerName,
-                    string.Join(",", headerValues));
+                if (_firstWarning)
+                {
+                    Log.Warning(
+                        "Could not parse {HeaderName} headers: {HeaderValues}",
+                        headerName,
+                        string.Join(",", headerValues));
+                    _firstWarning = false;
+                }
+                else
+                {
+                    Log.Debug(
+                        "Could not parse {HeaderName} headers: {HeaderValues}",
+                        headerName,
+                        string.Join(",", headerValues));
+                }
             }
 
             return null;

@@ -3,8 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if !NETCOREAPP2_1
+
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -12,7 +16,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    public class MicrosoftDataSqliteTests : TestHelper
+    public class MicrosoftDataSqliteTests : TracingIntegrationTest
     {
         public MicrosoftDataSqliteTests(ITestOutputHelper output)
             : base("Microsoft.Data.Sqlite", output)
@@ -20,12 +24,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.MicrosoftDataSqlite
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlite(metadataSchemaVersion);
+
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.MicrosoftDataSqlite), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
 #if NETCOREAPP3_0
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine")) // set in dockerfile
@@ -39,23 +50,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const int expectedSpanCount = 91;
             const string dbType = "sqlite";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.Microsoft.Data.Sqlite-" + dbType;
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-{dbType}" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
             Assert.Equal(expectedSpanCount, spans.Count);
-
-            foreach (var span in spans)
-            {
-                var result = span.IsSqlite();
-                Assert.True(result.Success, result.ToString());
-
-                Assert.Equal(expectedServiceName, span.Service);
-                Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-            }
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             telemetry.AssertIntegrationEnabled(IntegrationId.Sqlite);
         }
@@ -64,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
-        public void IntegrationDisabled()
+        public async Task IntegrationDisabled()
         {
             const int totalSpanCount = 21;
             const string expectedOperationName = "sqlite.query";
@@ -74,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             string packageVersion = PackageVersions.MicrosoftDataSqlite.First()[0] as string;
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
@@ -83,3 +89,5 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
     }
 }
+
+#endif

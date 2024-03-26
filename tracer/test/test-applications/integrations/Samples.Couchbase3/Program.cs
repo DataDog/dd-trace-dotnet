@@ -44,6 +44,16 @@ namespace Samples.Couchbase3
             }
 
             await collection.RemoveAsync("my-document-key");
+
+            // this should error as it doesn't exist
+            try
+            {
+                await collection.RemoveAsync("does-not-exist");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Expected error removing non-existent key: " + ex);
+            }
         }
 
         private static string Host()

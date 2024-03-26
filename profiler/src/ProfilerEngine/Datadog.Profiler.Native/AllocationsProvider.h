@@ -4,14 +4,22 @@
 #pragma once
 
 #include "CollectorBase.h"
+#include "CounterMetric.h"
+#include "GenericSampler.h"
 #include "IAllocationsListener.h"
+#include "MeanMaxMetric.h"
+#include "MetricsRegistry.h"
 #include "RawAllocationSample.h"
+#include "SumMetric.h"
 
+class IConfiguration;
 class IManagedThreadList;
 class IFrameStore;
 class IThreadsCpuManager;
 class IAppDomainStore;
 class IRuntimeIdStore;
+class ISampledAllocationsListener;
+class SampleValueTypeProvider;
 
 
 class AllocationsProvider
@@ -20,20 +28,51 @@ class AllocationsProvider
     public IAllocationsListener
 {
 public:
-    AllocationsProvider(ICorProfilerInfo4* pCorProfilerInfo,
-                        IManagedThreadList* pManagedThreadList,
-                        IFrameStore* pFrameStore,
-                        IThreadsCpuManager* pThreadsCpuManager,
-                        IAppDomainStore* pAppDomainStore,
-                        IRuntimeIdStore* pRuntimeIdStore);
+    AllocationsProvider(
+        SampleValueTypeProvider& valueTypeProvider,
+        ICorProfilerInfo4* pCorProfilerInfo,
+        IManagedThreadList* pManagedThreadList,
+        IFrameStore* pFrameStore,
+        IThreadsCpuManager* pThreadsCpuManager,
+        IAppDomainStore* pAppDomainStore,
+        IRuntimeIdStore* pRuntimeIdStore,
+        IConfiguration* pConfiguration,
+        ISampledAllocationsListener* pListener,
+        MetricsRegistry& metricsRegistry);
+
+    AllocationsProvider(
+        std::vector<SampleValueTypeProvider::Offset> valueTypeProvider,
+        ICorProfilerInfo4* pCorProfilerInfo,
+        IManagedThreadList* pManagedThreadList,
+        IFrameStore* pFrameStore,
+        IThreadsCpuManager* pThreadsCpuManager,
+        IAppDomainStore* pAppDomainStore,
+        IRuntimeIdStore* pRuntimeIdStore,
+        IConfiguration* pConfiguration,
+        ISampledAllocationsListener* pListener,
+        MetricsRegistry& metricsRegistry);
+
     void OnAllocation(uint32_t allocationKind,
                       ClassID classId,
-                      const WCHAR* TypeName,
-                      uintptr_t Address,
-                      uint64_t ObjectSize) override;
+                      const WCHAR* typeName,
+                      uintptr_t address,
+                      uint64_t objectSize,
+                      uint64_t allocationAmount) override;
 
 private:
+    static std::vector<SampleValueType> SampleTypeDefinitions;
+
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;
+    ISampledAllocationsListener* _pListener = nullptr;
+    GenericSampler _sampler;
+    int32_t _sampleLimit;
+    IConfiguration const* const _pConfiguration;
+    bool _shouldSubSample;
+    std::shared_ptr<CounterMetric> _allocationsCountMetric;
+    std::shared_ptr<MeanMaxMetric> _allocationsSizeMetric;
+    std::shared_ptr<CounterMetric> _sampledAllocationsCountMetric;
+    std::shared_ptr<MeanMaxMetric> _sampledAllocationsSizeMetric;
+    std::shared_ptr<SumMetric> _totalAllocationsSizeMetric;
 };

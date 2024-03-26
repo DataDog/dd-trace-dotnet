@@ -1,7 +1,0 @@
-{
-  "profiles": {
-    "InstrumentedAssemblyVerification.Standalone": {
-      "commandName": "Project"
-    }
-  }
-}

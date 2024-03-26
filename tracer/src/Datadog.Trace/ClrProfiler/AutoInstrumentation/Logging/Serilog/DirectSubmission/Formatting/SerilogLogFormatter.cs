@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug($"Unknown Serilog LogEventPropertyValue '{value.GetType()}': skipping in log message");
+                Log.Debug("Unknown Serilog LogEventPropertyValue '{Type}': skipping in log message", value.GetType());
                 LogFormatter.WriteValue(writer, value: null);
             }
         }

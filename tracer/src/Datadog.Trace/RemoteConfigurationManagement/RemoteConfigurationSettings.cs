@@ -3,60 +3,45 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal class RemoteConfigurationSettings
     {
-        private const int DefaultPollIntervalMilliseconds = 5000;
+        internal const double DefaultPollIntervalSeconds = 5;
 
-        public RemoteConfigurationSettings()
-            : this(configurationSource: null)
+        public RemoteConfigurationSettings(IConfigurationSource? configurationSource, IConfigurationTelemetry telemetry)
         {
-        }
+            configurationSource ??= NullConfigurationSource.Instance;
 
-        public RemoteConfigurationSettings(IConfigurationSource configurationSource)
-        {
-            Id = Guid.NewGuid().ToString();
             RuntimeId = Util.RuntimeId.Get();
-            TracerVersion = TracerConstants.AssemblyVersion;
-            Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
-            AppVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
-            FilePath = configurationSource?.GetString(ConfigurationKeys.Rcm.FilePath);
+            TracerVersion = TracerConstants.ThreePartVersion;
 
-            var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Rcm.PollInterval);
-            pollInterval =
-                pollInterval is null or <= 0 or > 5000
-                    ? DefaultPollIntervalMilliseconds
-                    : pollInterval.Value;
+            var pollInterval = new ConfigurationBuilder(configurationSource, telemetry)
+#pragma warning disable CS0618
+                              .WithKeys(ConfigurationKeys.Rcm.PollInterval, ConfigurationKeys.Rcm.PollIntervalInternal)
+#pragma warning restore CS0618
+                              .AsDouble(DefaultPollIntervalSeconds, pollInterval => pollInterval is > 0 and <= 5);
 
-            PollInterval = TimeSpan.FromMilliseconds(pollInterval.Value);
+            PollInterval = TimeSpan.FromSeconds(pollInterval.Value);
         }
-
-        public string Id { get; }
 
         public string RuntimeId { get; }
 
         public string TracerVersion { get; }
 
-        public string Environment { get; }
-
-        public string AppVersion { get; }
-
         public TimeSpan PollInterval { get; }
 
-        public string FilePath { get; set; }
-
-        public static RemoteConfigurationSettings FromSource(IConfigurationSource source)
-        {
-            return new RemoteConfigurationSettings(source);
-        }
+        public static RemoteConfigurationSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
+            => new(source, telemetry);
 
         public static RemoteConfigurationSettings FromDefaultSource()
-        {
-            return FromSource(GlobalSettings.CreateDefaultConfigurationSource());
-        }
+            => FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
     }
 }

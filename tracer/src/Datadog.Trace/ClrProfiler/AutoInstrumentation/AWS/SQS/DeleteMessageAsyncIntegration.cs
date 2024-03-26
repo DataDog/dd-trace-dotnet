@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using System.Threading;
@@ -19,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         AssemblyName = "AWSSDK.SQS",
         TypeName = "Amazon.SQS.AmazonSQSClient",
         MethodName = "DeleteMessageAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteMessageResponse>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.SQS.Model.DeleteMessageResponse]",
         ParameterTypeNames = new[] { "Amazon.SQS.Model.DeleteMessageRequest", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
@@ -47,8 +49,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 return CallTargetState.GetDefault();
             }
 
-            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out AwsSqsTags tags);
-            tags.QueueUrl = request.QueueUrl;
+            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out var tags);
+            if (tags is not null && request.QueueUrl is not null)
+            {
+                tags.QueueUrl = request.QueueUrl;
+                tags.QueueName = AwsSqsCommon.GetQueueName(request.QueueUrl);
+            }
 
             return new CallTargetState(scope);
         }

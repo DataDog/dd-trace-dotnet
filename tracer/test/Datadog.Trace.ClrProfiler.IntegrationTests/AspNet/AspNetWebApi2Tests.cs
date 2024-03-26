@@ -3,10 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET461
+#if NETFRAMEWORK
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -16,6 +18,7 @@ using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
+using Expectations = System.Collections.Generic.Dictionary<string, (int StatusCode, int ExpectedSpanCount)>;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -70,6 +73,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 : base(iisFixture, output, virtualApp: true, classicMode: false, enableRouteTemplateResourceNames: true)
             {
             }
+
+            protected override string ExpectedServiceName => "sample/my-app";
         }
 
         [Collection("IisTests")]
@@ -110,10 +115,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class AspNetWebApi2Tests : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetWebApi2Tests : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
+        private static readonly Expectations ClassicExpectations = CreateExpectations(classicMode: true);
+        private static readonly Expectations IntegratedExpectations = CreateExpectations(classicMode: false);
+
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
+        private readonly Expectations _expectations;
+        private readonly bool _classicMode;
 
         public AspNetWebApi2Tests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableRouteTemplateResourceNames, bool enableRouteTemplateExpansion = false, bool virtualApp = false)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
@@ -122,6 +132,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
             SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, enableRouteTemplateExpansion.ToString());
 
+            _expectations = classicMode ? ClassicExpectations : IntegratedExpectations;
+            _classicMode = classicMode;
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
             if (virtualApp)
@@ -129,108 +141,109 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.VirtualApplicationPath = "/my-app";
             }
 
-            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetWebApi2Tests)
                       + (virtualApp ? ".VirtualApp" : string.Empty)
                       + (classicMode ? ".Classic" : ".Integrated")
                       + (enableRouteTemplateExpansion ? ".WithExpansion" :
-                        (enableRouteTemplateResourceNames ?  ".WithFF" : ".NoFF"));
+                        (enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF"));
         }
 
-        public static TheoryData<string, int, int> Data() => new()
+        protected virtual string ExpectedServiceName => "sample";
+
+        // classicMode doesn't change the paths we test, just the expectations, so can use either
+        public static IEnumerable<object[]> Data() => IntegratedExpectations.Keys.Select(x => new object[] { x });
+
+        public static Dictionary<string, (int StatusCode, int ExpectedSpanCount)> CreateExpectations(bool classicMode) => new()
         {
-            { "/api/environment", 200, 2 },
-            { "/api/absolute-route", 200, 2 },
-            { "/api/delay/0", 200, 2 },
-            { "/api/delay-optional", 200, 2 },
-            { "/api/delay-optional/1", 200, 2 },
-            { "/api/delay-async/0", 200, 2 },
-            { "/api/transient-failure/true", 200, 2 },
-            { "/api/transient-failure/false", 500, 3 },
-            { "/api/statuscode/201", 201, 2 },
-            { "/api/statuscode/503", 503, 2 },
-            { "/api/constraints", 200, 2 },
-            { "/api/constraints/201", 201, 2 },
-            { "/api/TransferRequest/401", 401, 4 },
-            { "/api/TransferRequest/503", 503, 4 },
-            { "/api2/delay/0", 200, 2 },
-            { "/api2/optional", 200, 2 },
-            { "/api2/optional/1", 200, 2 },
-            { "/api2/delayAsync/0", 200, 2 },
-            { "/api2/transientfailure/true", 200, 2 },
-            { "/api2/transientfailure/false", 500, 3 },
-            { "/api2/statuscode/201", 201, 2 },
-            { "/api2/statuscode/503", 503, 3 },
+            { "/api/environment", (200, 2) },
+            { "/api/absolute-route", (200, 2) },
+            { "/api/delay/0", (200, 2) },
+            { "/api/delay-optional", (200, 2) },
+            { "/api/delay-optional/1", (200, 2) },
+            { "/api/delay-async/0", (200, 2) },
+            { "/api/transient-failure/true", (200, 2) },
+            { "/api/transient-failure/false", (500, 3) },
+            { "/api/statuscode/201", (201, 2) },
+            { "/api/statuscode/503", (503, 2) },
+            { "/api/constraints", (200, 2) },
+            { "/api/constraints/201", (201, 2) },
+            { "/api/TransferRequest/401", (401, classicMode ? 2 : 4) },
+            { "/api/TransferRequest/503", (503, classicMode ? 2 : 4) },
+            { "/api2/delay/0", (200, 2) },
+            { "/api2/optional", (200, 2) },
+            { "/api2/optional/1", (200, 2) },
+            { "/api2/delayAsync/0", (200, 2) },
+            { "/api2/transientfailure/true", (200, 2) },
+            { "/api2/transientfailure/false", (500, 3) },
+            { "/api2/statuscode/201", (201, 2) },
+            { "/api2/statuscode/503", (503, 2) },
 
             // The global message handler will fail when ps=false
             // The per-route message handler is not invoked with the route /api2, so ts=true|false has no effect
-            { "/api2/statuscode/201?ps=true&ts=true", 201, 2 },
-            { "/api2/statuscode/201?ps=true&ts=false", 201, 2 },
-            { "/api2/statuscode/201?ps=false&ts=true", 500, 2 },
-            { "/api2/statuscode/201?ps=false&ts=false", 500, 2 },
+            { "/api2/statuscode/201?ps=true&ts=true", (201, 2) },
+            { "/api2/statuscode/201?ps=true&ts=false", (201, 2) },
+            { "/api2/statuscode/201?ps=false&ts=true", (500, 2) },
+            { "/api2/statuscode/201?ps=false&ts=false", (500, 2) },
 
             // The global message handler will fail when ps=false
             // The global and per-route message handler is invoked with the route /handler-api, so ts=false will also fail the request
-            { "/handler-api/api?ps=true&ts=true", 200, 1 },
-            { "/handler-api/api?ps=true&ts=false", 500, 2 },
-            { "/handler-api/api?ps=false&ts=true", 500, 2 },
-            { "/handler-api/api?ps=false&ts=false", 500, 2 },
+            { "/handler-api/api?ps=true&ts=true", (200, 1) },
+            { "/handler-api/api?ps=true&ts=false", (500, 2) },
+            { "/handler-api/api?ps=false&ts=true", (500, 2) },
+            { "/handler-api/api?ps=false&ts=false", (500, 2) },
         };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Name switch
+            {
+                "aspnet.request" => span.IsAspNet(metadataSchemaVersion),
+                "aspnet-mvc.request" => span.IsAspNetMvc(metadataSchemaVersion),
+                "aspnet-webapi.request" => span.IsAspNetWebApi2(metadataSchemaVersion),
+                _ => Result.DefaultSuccess,
+            };
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [MemberData(nameof(Data))]
-        public async Task SubmitsTraces(string path, HttpStatusCode statusCode, int expectedSpanCount)
+        public async Task SubmitsTraces(string path)
         {
+            var (statusCode, expectedSpanCount) = _expectations[path];
+
             // TransferRequest cannot be called in the classic mode, so we expect a 500 when this happens
             var toLowerPath = path.ToLower();
             if (_testName.Contains(".Classic") && toLowerPath.Contains("transferrequest"))
             {
-                statusCode = (HttpStatusCode)500;
+                statusCode = 500;
             }
 
             // Append virtual directory to the actual request
-            var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount);
-
-            var aspnetSpans = spans.Where(s => s.Name == "aspnet.request");
-            foreach (var aspnetSpan in aspnetSpans)
-            {
-                var result = aspnetSpan.IsAspNet();
-                Assert.True(result.Success, result.ToString());
-            }
-
-            var aspnetMvcSpans = spans.Where(s => s.Name == "aspnet-mvc.request");
-            foreach (var aspnetMvcSpan in aspnetMvcSpans)
-            {
-                var result = aspnetMvcSpan.IsAspNetMvc();
-                Assert.True(result.Success, result.ToString());
-            }
-
-            var aspnetWebApi2Spans = spans.Where(s => s.Name == "aspnet-webapi.request");
-            foreach (var aspnetWebApi2Span in aspnetWebApi2Spans)
-            {
-                var result = aspnetWebApi2Span.IsAspNetWebApi2();
-                Assert.True(result.Success, result.ToString());
-            }
+            var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, (HttpStatusCode)statusCode, expectedSpanCount);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Overriding the method name to _
             // Overriding the parameters to remove the expectedSpanCount parameter, which is necessary for operation but unnecessary for the filename
             await Verifier.Verify(spans, settings)
-                          .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={(int)statusCode}");
+                          .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={statusCode}")
+                          .DisableRequireUniquePrefix(); // sharing snapshots between web api and owin
         }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 
     [UsesVerify]
-    public abstract class AspNetWebApi2ModuleOnlyTests : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetWebApi2ModuleOnlyTests : TestHelper, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
+        private readonly bool _classicMode;
 
         public AspNetWebApi2ModuleOnlyTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableRouteTemplateResourceNames, bool virtualApp = false)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
@@ -241,6 +254,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Disable the WebApi2 part, so we can't back propagate any details to the tracing module
             SetEnvironmentVariable(ConfigurationKeys.DisabledIntegrations, nameof(Configuration.IntegrationId.AspNetWebApi2));
 
+            _classicMode = classicMode;
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
             if (virtualApp)
@@ -248,7 +262,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.VirtualApplicationPath = "/my-app";
             }
 
-            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetWebApi2Tests)
                       + "ModuleOnly"
                       + (virtualApp ? ".VirtualApp" : string.Empty);
@@ -293,6 +306,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                           .DisableRequireUniquePrefix()
                           .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={(int)statusCode}");
         }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 }
 #endif

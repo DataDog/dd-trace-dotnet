@@ -1,4 +1,4 @@
-﻿// <copyright file="DirectLogSubmissionSettings.cs" company="Datadog">
+// <copyright file="DirectLogSubmissionSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Logging.DirectSubmission
@@ -18,129 +20,179 @@ namespace Datadog.Trace.Logging.DirectSubmission
     /// </summary>
     internal class DirectLogSubmissionSettings
     {
-        private const string DefaultSource = "csharp";
+        internal const string DefaultSource = "csharp";
+        internal const DirectSubmissionLogLevel DefaultMinimumLevel = DirectSubmissionLogLevel.Information;
+        internal const int DefaultBatchSizeLimit = 1000;
+        internal const int DefaultQueueSizeLimit = 100_000;
+        internal const int DefaultBatchPeriodSeconds = 2;
         private const string IntakePrefix = "https://http-intake.logs.";
         private const string DefaultSite = "datadoghq.com";
         private const string IntakeSuffix = ":443";
-        private const DirectSubmissionLogLevel DefaultMinimumLevel = DirectSubmissionLogLevel.Information;
-        private const int DefaultBatchSizeLimit = 1000;
-        private const int DefaultQueueSizeLimit = 100_000;
-        private const int DefaultBatchPeriodSeconds = 2;
 
-        public DirectLogSubmissionSettings()
-            : this(source: null)
+        public DirectLogSubmissionSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
-        }
+            // TODO: Combine DirectLogSubmissionSettings and ImmutableDirectLogSubmissionSettings
+            source ??= NullConfigurationSource.Instance;
+            var config = new ConfigurationBuilder(source, telemetry);
 
-        public DirectLogSubmissionSettings(IConfigurationSource? source)
-        {
-            DirectLogSubmissionHost = source?.GetString(ConfigurationKeys.DirectLogSubmission.Host)
-                                   ?? HostMetadata.Instance.Hostname;
-            DirectLogSubmissionSource = source?.GetString(ConfigurationKeys.DirectLogSubmission.Source) ?? DefaultSource;
+            DirectLogSubmissionHost = config
+                                     .WithKeys(ConfigurationKeys.DirectLogSubmission.Host)
+                                     .AsString(HostMetadata.Instance.Hostname ?? string.Empty);
+            DirectLogSubmissionSource = config
+                                       .WithKeys(ConfigurationKeys.DirectLogSubmission.Source)
+                                       .AsString(DefaultSource);
 
-            var overriddenSubmissionUrl = source?.GetString(ConfigurationKeys.DirectLogSubmission.Url);
-            if (!string.IsNullOrEmpty(overriddenSubmissionUrl))
-            {
-                // if they provide a url, use it
-                DirectLogSubmissionUrl = overriddenSubmissionUrl;
-            }
-            else
-            {
-                // They didn't provide a URL, use the default (With DD_SITE if provided)
-                var specificSite = source?.GetString(ConfigurationKeys.Site);
-                var ddSite = string.IsNullOrEmpty(specificSite)
-                                 ? DefaultSite
-                                 : specificSite;
+            var directLogSubmissionUrl = config
+                                    .WithKeys(ConfigurationKeys.DirectLogSubmission.Url)
+                                    .AsString(
+                                         getDefaultValue: () =>
+                                         {
+                                             // They didn't provide a URL, use the default (With DD_SITE if provided)
+                                             var ddSite = config
+                                                         .WithKeys(ConfigurationKeys.Site)
+                                                         .AsString(DefaultSite, x => !string.IsNullOrEmpty(x));
 
-                DirectLogSubmissionUrl = $"{IntakePrefix}{ddSite}{IntakeSuffix}";
-            }
+                                             return $"{IntakePrefix}{ddSite}{IntakeSuffix}";
+                                         },
+                                         validator: x => !string.IsNullOrEmpty(x));
 
-            DirectLogSubmissionMinimumLevel = DirectSubmissionLogLevelExtensions.Parse(
-                source?.GetString(ConfigurationKeys.DirectLogSubmission.MinimumLevel), DefaultMinimumLevel);
+            DirectLogSubmissionMinimumLevel = config
+                                             .WithKeys(ConfigurationKeys.DirectLogSubmission.MinimumLevel)
+                                             .GetAs(
+                                                  () => new DefaultResult<DirectSubmissionLogLevel>(DefaultMinimumLevel, nameof(DirectSubmissionLogLevel.Information)),
+                                                  converter: x => DirectSubmissionLogLevelExtensions.Parse(x) ?? ParsingResult<DirectSubmissionLogLevel>.Failure(),
+                                                  validator: null);
 
-            var globalTags = source?.GetDictionary(ConfigurationKeys.DirectLogSubmission.GlobalTags)
-                          ?? source?.GetDictionary(ConfigurationKeys.GlobalTags)
-                             // backwards compatibility for names used in the past
-                          ?? source?.GetDictionary("DD_TRACE_GLOBAL_TAGS");
+            var globalTags = config
+                            .WithKeys(ConfigurationKeys.DirectLogSubmission.GlobalTags)
+                            .AsDictionary();
 
             DirectLogSubmissionGlobalTags = globalTags?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())
                                          ?? new Dictionary<string, string>();
 
-            var logSubmissionIntegrations = source?.GetString(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations)
-                                                  ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
+            var logSubmissionIntegrations = config
+                                           .WithKeys(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations)
+                                           .AsString()
+                                          ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
                                             Enumerable.Empty<string>();
             DirectLogSubmissionEnabledIntegrations = new HashSet<string>(logSubmissionIntegrations, StringComparer.OrdinalIgnoreCase);
 
-            var batchSizeLimit = source?.GetInt32(ConfigurationKeys.DirectLogSubmission.BatchSizeLimit);
-            DirectLogSubmissionBatchSizeLimit = batchSizeLimit is null or <= 0
-                                                    ? DefaultBatchSizeLimit
-                                                    : batchSizeLimit.Value;
+            DirectLogSubmissionBatchSizeLimit = config
+                                               .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchSizeLimit)
+                                               .AsInt32(DefaultBatchSizeLimit, x => x > 0)
+                                               .Value;
 
-            var queueSizeLimit = source?.GetInt32(ConfigurationKeys.DirectLogSubmission.QueueSizeLimit);
-            DirectLogSubmissionQueueSizeLimit = queueSizeLimit is null or <= 0
-                                                    ? DefaultQueueSizeLimit
-                                                    : queueSizeLimit.Value;
+            DirectLogSubmissionQueueSizeLimit = config
+                                               .WithKeys(ConfigurationKeys.DirectLogSubmission.QueueSizeLimit)
+                                               .AsInt32(DefaultQueueSizeLimit, x => x > 0)
+                                               .Value;
 
-            var seconds = source?.GetInt32(ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds);
-            DirectLogSubmissionBatchPeriod = TimeSpan.FromSeconds(
-                seconds is null or <= 0
-                    ? DefaultBatchPeriodSeconds
-                    : seconds.Value);
+            var seconds = config
+                     .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds)
+                     .AsInt32(DefaultBatchPeriodSeconds, x => x > 0)
+                     .Value;
 
-            ApiKey = source?.GetString(ConfigurationKeys.ApiKey);
+            DirectLogSubmissionBatchPeriod = TimeSpan.FromSeconds(seconds);
 
-            LogsInjectionEnabled = source?.GetBool(ConfigurationKeys.LogsInjectionEnabled);
+            ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+
+            var isEnabled = DirectLogSubmissionEnabledIntegrations.Count > 0;
+            var validationErrors = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(DirectLogSubmissionHost))
+            {
+                isEnabled = false;
+                validationErrors.Add($"Missing required setting '{ConfigurationKeys.DirectLogSubmission.Host}'.");
+            }
+
+            if (string.IsNullOrWhiteSpace(DirectLogSubmissionSource))
+            {
+                isEnabled = false;
+                validationErrors.Add($"Missing required setting '{ConfigurationKeys.DirectLogSubmission.Source}'.");
+            }
+
+            if (!Uri.TryCreate(directLogSubmissionUrl, UriKind.Absolute, out var uri))
+            {
+                isEnabled = false;
+                validationErrors.Add($"The intake url '{directLogSubmissionUrl}' was not a valid URL.");
+            }
+            else
+            {
+                DirectLogSubmissionUrl = uri;
+            }
+
+            if (string.IsNullOrWhiteSpace(ApiKey))
+            {
+                isEnabled = false;
+                validationErrors.Add($"Missing required settings '{ConfigurationKeys.ApiKey}'.");
+            }
+
+            ValidationErrors = validationErrors;
+            IsEnabled = isEnabled;
+
+            // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
+            LogsInjectionEnabled = config.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(defaultValue: isEnabled);
         }
 
         /// <summary>
-        /// Gets or Sets the integrations enabled for direct log submission
+        /// Gets a value indicating whether direct log submission is enabled
+        /// </summary>
+        internal bool IsEnabled { get; }
+
+        /// <summary>
+        /// Gets the validation errors, if any
+        /// </summary>
+        internal IReadOnlyList<string> ValidationErrors { get; }
+
+        /// <summary>
+        /// Gets the integrations enabled for direct log submission
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.EnabledIntegrations" />
-        internal HashSet<string> DirectLogSubmissionEnabledIntegrations { get; set; }
+        internal HashSet<string> DirectLogSubmissionEnabledIntegrations { get; }
 
         /// <summary>
-        /// Gets or Sets the originating host name for direct logs submission
+        /// Gets the originating host name for direct logs submission
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Host" />
-        internal string DirectLogSubmissionHost { get; set; }
+        internal string DirectLogSubmissionHost { get; }
 
         /// <summary>
-        /// Gets or Sets the originating source for direct logs submission
+        /// Gets the originating source for direct logs submission
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Source" />
-        internal string DirectLogSubmissionSource { get; set; }
+        internal string DirectLogSubmissionSource { get; }
 
         /// <summary>
-        /// Gets or sets the global tags, which are applied to all directly submitted logs. If not provided,
+        /// Gets the global tags, which are applied to all directly submitted logs. If not provided,
         /// <see cref="TracerSettings.GlobalTags"/> are used instead
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.GlobalTags" />
-        internal IDictionary<string, string> DirectLogSubmissionGlobalTags { get; set; }
+        internal IDictionary<string, string> DirectLogSubmissionGlobalTags { get; }
 
         /// <summary>
-        /// Gets or sets the url to send logs to
+        /// Gets the url to send logs to
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Url" />
-        internal string? DirectLogSubmissionUrl { get; set; }
+        internal Uri? DirectLogSubmissionUrl { get; }
 
         /// <summary>
-        /// Gets or sets the minimum level logs should have to be sent to the intake.
+        /// Gets the minimum level logs should have to be sent to the intake.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Url" />
-        internal DirectSubmissionLogLevel DirectLogSubmissionMinimumLevel { get; set; }
+        internal DirectSubmissionLogLevel DirectLogSubmissionMinimumLevel { get; }
 
         /// <summary>
-        /// Gets or sets the maximum number of logs to send at one time
+        /// Gets the maximum number of logs to send at one time
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.BatchSizeLimit"/>
-        internal int DirectLogSubmissionBatchSizeLimit { get; set; }
+        internal int DirectLogSubmissionBatchSizeLimit { get; }
 
         /// <summary>
-        /// Gets or sets the maximum number of logs to hold in internal queue at any one time
+        /// Gets the maximum number of logs to hold in internal queue at any one time
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.QueueSizeLimit"/>
-        internal int DirectLogSubmissionQueueSizeLimit { get; set; }
+        internal int DirectLogSubmissionQueueSizeLimit { get; }
 
         /// <summary>
         /// Gets or sets the time to wait between checking for batches
@@ -149,13 +201,13 @@ namespace Datadog.Trace.Logging.DirectSubmission
         internal TimeSpan DirectLogSubmissionBatchPeriod { get; set; }
 
         /// <summary>
-        /// Gets or sets the Datadog API key
+        /// Gets the Datadog API key
         /// </summary>
-        internal string? ApiKey { get; set; }
+        internal string? ApiKey { get; }
 
         /// <summary>
-        /// Gets or sets whether logs injection has been explicitly enabled or disabled
+        /// Gets or sets a value indicating whether logs injection is enabled or disabled
         /// </summary>
-        internal bool? LogsInjectionEnabled { get; set; }
+        internal bool LogsInjectionEnabled { get; set; }
     }
 }

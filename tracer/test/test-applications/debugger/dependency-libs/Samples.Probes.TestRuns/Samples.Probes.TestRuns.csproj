@@ -1,0 +1,7 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Samples.Probes.External\Samples.Probes.External.csproj" />
+  </ItemGroup>
+
+</Project>

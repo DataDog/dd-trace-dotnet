@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent.Transports
@@ -17,21 +18,20 @@ namespace Datadog.Trace.Agent.Transports
         public ApiWebResponse(HttpWebResponse response)
         {
             _response = response;
+            ContentEncoding = !string.IsNullOrEmpty(response.ContentEncoding) ? Encoding.GetEncoding(response.ContentEncoding) : Encoding.UTF8;
         }
 
         public int StatusCode => (int)_response.StatusCode;
 
         public long ContentLength => _response.ContentLength;
 
+        public Encoding ContentEncoding { get; }
+
         public string GetHeader(string headerName) => _response.Headers[headerName];
 
-        public async Task<string> ReadAsStringAsync()
+        public Task<Stream> GetStreamAsync()
         {
-            using (var responseStream = _response.GetResponseStream())
-            {
-                var reader = new StreamReader(responseStream);
-                return await reader.ReadToEndAsync().ConfigureAwait(false);
-            }
+            return Task.FromResult(_response.GetResponseStream());
         }
 
         public void Dispose()

@@ -4,11 +4,17 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <ImplicitUsings>false</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="16.4.0" />
-      <PackageReference Include="Mono.Cecil" Version="0.11.4" />
+      <PackageReference Include="Mono.Cecil" Version="0.11.5" />
+
+      <!-- Microsoft.Extensions.FileSystemGlobbing 6.0.0 doesn't support netcoreapp2.1 -->
+      <!-- Microsoft.Extensions.FileSystemGlobbing 7.0.0 doesn't support net5.0 -->
+      <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="5.0.0" />
     </ItemGroup>
 
     <ItemGroup>

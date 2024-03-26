@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">3.3.3</ApiVersion>
-    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.SQS" Version="$(ApiVersion)" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="System.Net.Requests" Version="4.3.0" />
   </ItemGroup>
 

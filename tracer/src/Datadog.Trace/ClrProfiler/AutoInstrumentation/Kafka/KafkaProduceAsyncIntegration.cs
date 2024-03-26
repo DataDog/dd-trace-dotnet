@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         ReturnTypeName = KafkaConstants.TaskDeliveryReportTypeName,
         ParameterTypeNames = new[] { KafkaConstants.TopicPartitionTypeName, KafkaConstants.MessageTypeName, ClrNames.CancellationToken },
         MinimumVersion = "1.4.0",
-        MaximumVersion = "1.*.*",
+        MaximumVersion = "2.*.*",
         IntegrationName = KafkaConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -42,15 +42,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal static CallTargetState OnMethodBegin<TTarget, TTopicPartition, TMessage>(TTarget instance, TTopicPartition topicPartition, TMessage message, CancellationToken cancellationToken)
             where TMessage : IMessage
         {
+            var partition = topicPartition.DuckCast<ITopicPartition>();
             Scope scope = KafkaHelper.CreateProducerScope(
                 Tracer.Instance,
-                topicPartition.DuckCast<ITopicPartition>(),
+                instance,
+                partition,
                 isTombstone: message.Value is null,
                 finishOnClose: true);
 
             if (scope is not null)
             {
-                KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(scope.Span.Context, message);
+                KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(
+                    scope.Span,
+                    Tracer.Instance.TracerManager.DataStreamsManager,
+                    partition?.Topic,
+                    message);
                 return new CallTargetState(scope);
             }
 
@@ -90,6 +96,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     tags.Partition = deliveryResult.Partition.ToString();
                     tags.Offset = deliveryResult.Offset.ToString();
+
+                    var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+                    if (dataStreams.IsEnabled)
+                    {
+                        dataStreams.TrackBacklog(
+                            $"partition:{deliveryResult.Partition.Value},topic:{deliveryResult.Topic},type:kafka_produce",
+                            deliveryResult.Offset.Value);
+                    }
                 }
             }
 

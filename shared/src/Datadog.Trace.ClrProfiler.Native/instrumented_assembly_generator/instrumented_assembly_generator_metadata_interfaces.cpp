@@ -15,8 +15,6 @@ MetadataInterfaces::MetadataInterfaces(
     m_metadataInterfaces(metadataInterfaces)
 {
     AddRef();
-    // attach from tests, we can do it also with ev and spin
-    // std::this_thread::sleep_for(std::chrono::milliseconds(20000));
 }
 
 MetadataInterfaces::~MetadataInterfaces()
@@ -34,7 +32,7 @@ HRESULT STDMETHODCALLTYPE MetadataInterfaces::QueryInterface(REFIID riid, void**
         riid == IID_IMetaDataDispenserEx || riid == IID_IMetaDataEmit || riid == IID_IMetaDataEmit2 ||
         riid == IID_IMetaDataImport || riid == IID_IMetaDataImport2 || riid == IID_IMetaDataFilter ||
         riid == IID_IHostFilter || riid == IID_IMetaDataAssemblyEmit || riid == IID_IMetaDataAssemblyImport ||
-        riid == IID_IMetaDataValidate || riid == IID_ICeeGen || riid == IID_IMetaDataTables ||
+        riid == IID_IMetaDataValidate || riid == IID_IMetaDataTables ||
         riid == IID_IMetaDataTables2 || riid == IID_IMetaDataInfo || 
         riid == IID_IUnknown)
     {
@@ -103,10 +101,6 @@ HRESULT STDMETHODCALLTYPE MetadataInterfaces::QueryInterface(REFIID riid, void**
         {
             *ppvObject = static_cast<IMetaDataValidate*>(this);
         }
-        else if (riid == IID_ICeeGen)
-        {
-            *ppvObject = static_cast<ICeeGen*>(this);
-        }
         else if (riid == IID_IMetaDataTables)
         {
             *ppvObject = static_cast<IMetaDataTables*>(this);
@@ -132,12 +126,12 @@ HRESULT STDMETHODCALLTYPE MetadataInterfaces::QueryInterface(REFIID riid, void**
     return E_NOINTERFACE;
 }
 
-ULONG STDMETHODCALLTYPE MetadataInterfaces::AddRef(void)
+ULONG STDMETHODCALLTYPE MetadataInterfaces::AddRef()
 {
     return std::atomic_fetch_add(&this->m_refCount, 1) + 1;
 }
 
-ULONG STDMETHODCALLTYPE MetadataInterfaces::Release(void)
+ULONG STDMETHODCALLTYPE MetadataInterfaces::Release()
 {
     int count = std::atomic_fetch_sub(&this->m_refCount, 1) - 1;
 
@@ -504,11 +498,6 @@ HRESULT MetadataInterfaces::DefineExportedType(LPCWSTR szName, mdToken tkImpleme
 {
     return m_metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit)
         ->DefineExportedType(szName, tkImplementation, tkTypeDef, dwExportedTypeFlags, pmdct);
-}
-
-HRESULT MetadataInterfaces::EmitString(LPWSTR lpString, ULONG* RVA)
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->EmitString(lpString, RVA);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1546,82 +1535,6 @@ HRESULT MetadataInterfaces::FindAssemblyModule(LPCWSTR szAppBase, LPCWSTR szPriv
     return m_metadataInterfaces.As<IMetaDataDispenserEx>(IID_IMetaDataDispenserEx)
         ->FindAssemblyModule(szAppBase, szPrivateBin, szGlobalBin, szAssemblyName, szModuleName, szName, cchName,
                              pcName);
-}
-
-HRESULT MetadataInterfaces::GetString(ULONG RVA, LPWSTR* lpString)
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetString(RVA, lpString);
-}
-
-HRESULT MetadataInterfaces::AllocateMethodBuffer(ULONG cchBuffer, UCHAR** lpBuffer,
-                                                                              ULONG* RVA)
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->AllocateMethodBuffer(cchBuffer, lpBuffer, RVA);
-}
-
-HRESULT MetadataInterfaces::GetMethodBuffer(ULONG RVA, UCHAR** lpBuffer)
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetMethodBuffer(RVA, lpBuffer);
-}
-
-HRESULT MetadataInterfaces::GetIMapTokenIface(IUnknown** pIMapToken)
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetIMapTokenIface(pIMapToken);
-}
-
-HRESULT MetadataInterfaces::GenerateCeeFile()
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GenerateCeeFile();
-}
-
-HRESULT MetadataInterfaces::GetIlSection(HCEESECTION* section)
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetIlSection(section);
-}
-
-HRESULT MetadataInterfaces::GetStringSection(HCEESECTION* section)
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetStringSection(section);
-}
-
-HRESULT MetadataInterfaces::AddSectionReloc(HCEESECTION section, ULONG offset,
-                                                                         HCEESECTION relativeTo,
-                                                                         CeeSectionRelocType relocType)
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->AddSectionReloc(section, offset, relativeTo, relocType);
-}
-
-HRESULT MetadataInterfaces::GetSectionCreate(const char* name, DWORD flags,
-                                                                          HCEESECTION* section)
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetSectionCreate(name, flags, section);
-}
-
-HRESULT MetadataInterfaces::GetSectionDataLen(HCEESECTION section, ULONG* dataLen)
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetSectionDataLen(section, dataLen);
-}
-
-HRESULT MetadataInterfaces::GetSectionBlock(HCEESECTION section, ULONG len, ULONG align,
-                                                                         void** ppBytes)
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetSectionBlock(section, len, align, ppBytes);
-}
-
-HRESULT MetadataInterfaces::TruncateSection(HCEESECTION section, ULONG len)
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->TruncateSection(section, len);
-}
-
-HRESULT MetadataInterfaces::GenerateCeeMemoryImage(void** ppImage)
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GenerateCeeMemoryImage(ppImage);
-}
-
-HRESULT MetadataInterfaces::ComputePointer(HCEESECTION section, ULONG RVA,
-                                                                        UCHAR** lpBuffer)
-{
-    return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->ComputePointer(section, RVA, lpBuffer);
 }
 
 HRESULT MetadataInterfaces::GetStringHeapSize(ULONG* pcbStrings)

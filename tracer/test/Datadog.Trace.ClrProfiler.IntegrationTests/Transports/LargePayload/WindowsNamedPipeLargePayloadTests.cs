@@ -3,12 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [Collection("LargePayloadTests")]
     public class WindowsNamedPipeLargePayloadTests : LargePayloadTestBase
     {
         public WindowsNamedPipeLargePayloadTests(ITestOutputHelper output)
@@ -22,10 +24,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact(Skip = "Windows named pipes are not yet supported in the MockTracerAgent")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
-        public void SubmitsTraces()
+        public async Task SubmitsTraces()
         {
             EnvironmentHelper.EnableWindowsNamedPipes();
-            RunTest();
+            await RunTest();
         }
     }
 }

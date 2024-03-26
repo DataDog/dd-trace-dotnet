@@ -52,7 +52,7 @@ namespace Datadog.Trace.Processors
         {
             for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
             {
-                trace.Array[i] = Process(trace.Array[i]);
+                trace.Array![i] = Process(trace.Array[i]);
             }
 
             return trace;
@@ -131,7 +131,7 @@ namespace Datadog.Trace.Processors
             }
             catch (Exception ex)
             {
-                Log.Debug("Error obfuscating sql {}", sqlQuery, ex);
+                Log.Debug(ex, "Error obfuscating sql {Query}", sqlQuery);
             }
 
             return sqlQuery;

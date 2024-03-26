@@ -6,7 +6,7 @@
 //
 // Async logging using global thread pool
 // All loggers created here share same global thread pool.
-// Each log message is pushed to a queue along withe a shared pointer to the
+// Each log message is pushed to a queue along with a shared pointer to the
 // logger.
 // If a logger deleted while having pending messages in the queue, it's actual
 // destruction will defer
@@ -14,9 +14,9 @@
 // This is because each message in the queue holds a shared_ptr to the
 // originating logger.
 
-#include "spdlog/async_logger.h"
-#include "spdlog/details/registry.h"
-#include "spdlog/details/thread_pool.h"
+#include <spdlog/async_logger.h>
+#include <spdlog/details/registry.h>
+#include <spdlog/details/thread_pool.h>
 
 #include <memory>
 #include <mutex>
@@ -40,11 +40,13 @@ struct async_factory_impl
         auto &registry_inst = details::registry::instance();
 
         // create global thread pool if not already exists..
-        std::lock_guard<std::recursive_mutex> tp_lock(registry_inst.tp_mutex());
+
+        auto &mutex = registry_inst.tp_mutex();
+        std::lock_guard<std::recursive_mutex> tp_lock(mutex);
         auto tp = registry_inst.get_tp();
         if (tp == nullptr)
         {
-            tp = std::make_shared<details::thread_pool>(details::default_async_q_size, 1);
+            tp = std::make_shared<details::thread_pool>(details::default_async_q_size, 1U);
             registry_inst.set_tp(tp);
         }
 
@@ -71,16 +73,22 @@ inline std::shared_ptr<spdlog::logger> create_async_nb(std::string logger_name, 
 }
 
 // set global thread pool.
-inline void init_thread_pool(size_t q_size, size_t thread_count, std::function<void()> on_thread_start)
+inline void init_thread_pool(
+    size_t q_size, size_t thread_count, std::function<void()> on_thread_start, std::function<void()> on_thread_stop)
 {
-    auto tp = std::make_shared<details::thread_pool>(q_size, thread_count, on_thread_start);
+    auto tp = std::make_shared<details::thread_pool>(q_size, thread_count, on_thread_start, on_thread_stop);
     details::registry::instance().set_tp(std::move(tp));
 }
 
-// set global thread pool.
+inline void init_thread_pool(size_t q_size, size_t thread_count, std::function<void()> on_thread_start)
+{
+    init_thread_pool(q_size, thread_count, on_thread_start, [] {});
+}
+
 inline void init_thread_pool(size_t q_size, size_t thread_count)
 {
-    init_thread_pool(q_size, thread_count, [] {});
+    init_thread_pool(
+        q_size, thread_count, [] {}, [] {});
 }
 
 // get the global thread pool.

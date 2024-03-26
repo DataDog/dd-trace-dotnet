@@ -14,7 +14,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/api/Health/?arg&[$slice],
+      http.url: http://localhost:00000/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
@@ -29,18 +29,15 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
       http.status_code: 200,
-      http.url: http://localhost/api/Health/?arg&[$slice],
+      http.url: http://localhost:00000/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.p.dm: -0
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
@@ -65,7 +62,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/api/Health/?arg&[$slice],
+      http.url: http://localhost:00000/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
@@ -80,18 +77,15 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
       http.status_code: 200,
-      http.url: http://localhost/api/Health/?arg&[$slice],
+      http.url: http://localhost:00000/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.p.dm: -0
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
@@ -116,7 +110,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/api/Health/?arg&[$slice],
+      http.url: http://localhost:00000/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
@@ -131,18 +125,15 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
       http.status_code: 200,
-      http.url: http://localhost/api/Health/?arg&[$slice],
+      http.url: http://localhost:00000/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.p.dm: -0
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
@@ -167,7 +158,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/api/Health/?arg&[$slice],
+      http.url: http://localhost:00000/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
@@ -182,18 +173,15 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
       http.status_code: 200,
-      http.url: http://localhost/api/Health/?arg&[$slice],
+      http.url: http://localhost:00000/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.p.dm: -0
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
@@ -218,7 +206,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/api/Health/?arg&[$slice],
+      http.url: http://localhost:00000/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
@@ -233,18 +221,15 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
       http.status_code: 200,
-      http.url: http://localhost/api/Health/?arg&[$slice],
+      http.url: http://localhost:00000/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.p.dm: -0
+      span.kind: server
     },
     Metrics: {
       process_id: 0,

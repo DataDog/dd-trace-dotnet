@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Debugger
+namespace Datadog.Trace.Debugger.Models
 {
     internal record struct Snapshot
     {
@@ -41,6 +41,6 @@ namespace Datadog.Trace.Debugger
 
     internal record struct DebuggerSnapshot
     {
-        public ProbeSnapshot Snapshot { get; set; }
+        public SnapshotProbe Snapshot { get; set; }
     }
 }

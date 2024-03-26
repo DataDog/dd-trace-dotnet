@@ -3,6 +3,23 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <Platforms>x64;x86;AnyCPU</Platforms>
+    <DefineConstants Condition="'$(MANUAL_INSTRUMENTATION)' == 'true'">$(DefineConstants);MANUAL_INSTRUMENTATION</DefineConstants>
+    <DefineConstants Condition="'$(VERSION_MISMATCH)' == 'true'">$(DefineConstants);VERSION_MISMATCH</DefineConstants>
   </PropertyGroup>
 
+  <ItemGroup Condition="'$(MANUAL_INSTRUMENTATION)' == 'true' AND '$(VERSION_MISMATCH)' != 'true'">
+    <!--    If you want to run the app locally, switch the reference out for this-->
+    <!--    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />-->
+    <Reference Include="Datadog.Trace">
+      <HintPath>Datadog.Trace.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(MANUAL_INSTRUMENTATION)' == 'true' AND '$(VERSION_MISMATCH)' == 'true'">
+    <PackageReference Include="Datadog.Trace" Version="2.22.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" />
+  </ItemGroup>
 </Project>

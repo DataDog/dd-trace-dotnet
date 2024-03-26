@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>Datadog.Trace.Trimming</id>
+    <version>1.0.0</version>
+    <title>Datadog APM Trimmed Apps Support</title>
+    <authors>Datadog</authors>
+    <owners></owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">Apache-2.0</license>
+    <icon>datadog-logo-256x256.png</icon>
+    <readme>README.md</readme>
+    <projectUrl>https://docs.datadoghq.com/tracing/trace_collection/dd_libraries</projectUrl>
+    <iconUrl>https://github.com/DataDog/dd-trace-dotnet/raw/master/datadog-logo-64x64.png</iconUrl>
+    <description>This package is required to enable Datadog automatic instrumentation on a trimmed app.</description>
+    <releaseNotes>See release notes at https://github.com/DataDog/dd-trace-dotnet/releases.
+      Please note that Datadog does not support tracing (manual or automatic) in partial-trust environments.</releaseNotes>
+    <copyright>Copyright 2017 Datadog, Inc.</copyright>
+    <tags>Datadog APM tracing profiling instrumentation trimming</tags>
+    <repository type="git" url="https://github.com/DataDog/dd-trace-dotnet.git" />
+    <dependencies>
+      <group targetFramework="net7.0" />
+      <group targetFramework="net6.0" />
+      <group targetFramework="net5.0" />
+      <group targetFramework=".NETCoreApp3.1" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="build\Datadog.Trace.Trimming.props" target="build\Datadog.Trace.Trimming.props" />
+    <file src="build\Datadog.Trace.Trimming.xml" target="build\Datadog.Trace.Trimming.xml" />
+    <file src="Sdk\Sdk.props" target="Sdk\Sdk.props" />
+    <file src="..\..\..\datadog-logo-256x256.png" target="datadog-logo-256x256.png" />
+    <file src="README.md" target="README.md" />
+  </files>
+</package>

@@ -1,0 +1,26 @@
+﻿// <copyright file="ErrorData.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+namespace Datadog.Trace.Telemetry;
+
+internal readonly record struct ErrorData
+{
+    public ErrorData(TelemetryErrorCode error)
+        : this(error, error.ToStringFast())
+    {
+    }
+
+    public ErrorData(TelemetryErrorCode code, string message)
+    {
+        Code = (int)code;
+        Message = message;
+    }
+
+    public int Code { get; }
+
+    public string Message { get; }
+}

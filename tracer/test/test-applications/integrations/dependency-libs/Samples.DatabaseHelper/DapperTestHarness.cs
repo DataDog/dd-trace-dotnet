@@ -4,7 +4,6 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
-using Datadog.Trace;
 
 namespace Samples.DatabaseHelper
 {
@@ -26,13 +25,13 @@ namespace Samples.DatabaseHelper
 
             string connectionTypeName = connection.GetType().FullName;
 
-            using (var scopeAll = Tracer.Instance.StartActive("run.all"))
+            using (var scopeAll = SampleHelpers.CreateScope("run.all"))
             {
-                scopeAll.Span.SetTag("connection-type", connectionTypeName);
+                SampleHelpers.TrySetTag(scopeAll, "connection-type", connectionTypeName);
 
-                using (var scopeSync = Tracer.Instance.StartActive("run.sync"))
+                using (var scopeSync = SampleHelpers.CreateScope("run.sync"))
                 {
-                    scopeSync.Span.SetTag("connection-type", connectionTypeName);
+                    SampleHelpers.TrySetTag(scopeSync, "connection-type", connectionTypeName);
 
                     connection.Open();
                     CreateNewTable(connection);
@@ -48,9 +47,9 @@ namespace Samples.DatabaseHelper
                 // leave a small space between spans, for better visibility in the UI
                 await Task.Delay(TimeSpan.FromSeconds(0.1));
 
-                using (var scopeAsync = Tracer.Instance.StartActive("run.async"))
+                using (var scopeAsync = SampleHelpers.CreateScope("run.async"))
                 {
-                    scopeAsync.Span.SetTag("connection-type", connectionTypeName);
+                    SampleHelpers.TrySetTag(scopeAsync, "connection-type", connectionTypeName);
 
                     await connection.OpenAsync();
                     await CreateNewTableAsync(connection);

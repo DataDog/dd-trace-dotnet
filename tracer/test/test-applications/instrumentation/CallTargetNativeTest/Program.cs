@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using CallTargetNativeTest.NoOp;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace CallTargetNativeTest
 {
@@ -14,6 +16,11 @@ namespace CallTargetNativeTest
     {
         private static MemoryStream mStream = new();
         private static StreamWriter sWriter = new(mStream);
+        private static NativeCallTargetDefinition[] definitions;
+        private static string definitionsId;
+
+        const string TargetAssembly = "CallTargetNativeTest";
+        static string integrationAssembly = typeof(NoOp.Noop0ArgumentsIntegration).Assembly.FullName;
 
         static void Main(string[] args)
         {
@@ -23,9 +30,6 @@ namespace CallTargetNativeTest
 
         static void InjectCallTargetDefinitions()
         {
-            const string TargetAssembly = "CallTargetNativeTest";
-            string integrationAssembly = typeof(NoOp.Noop0ArgumentsIntegration).Assembly.FullName;
-
             var definitionsList = new List<NativeCallTargetDefinition>();
             definitionsList.Add(new(TargetAssembly, typeof(With0ArgumentsThrowOnAsyncEnd).FullName, "Wait2Seconds", new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsParentType.With0ArgumentsThrowOnAsyncEnd).FullName, "Wait2Seconds", new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
@@ -101,7 +105,26 @@ namespace CallTargetNativeTest
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsGenericParentType<>.WithOutArguments).FullName, "VoidMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntOutVoidIntegration).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsGenericParentType<>.WithOutArguments).FullName, "VoidMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericOutModificationVoidIntegration).FullName));
 
-            NativeMethods.InitializeProfiler(Guid.NewGuid().ToString("N"), definitionsList.ToArray());
+            // Add extra integrations
+            definitionsList.Add(new(TargetAssembly, typeof(Extras).FullName, nameof(CallTargetNativeTest.Extras.NonVoidWithBranchToLastReturn), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(Noop0ArgumentsIntegration).FullName));
+            
+            // call target bubble up exception
+            definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowBubbleUpOnBegin).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowBubbleUpOnBegin.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegration).FullName));
+            
+            definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnBegin).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnBegin.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegration).FullName));
+            
+            definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowBubbleUpOnEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowBubbleUpOnEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegration).FullName));
+            
+            definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegration).FullName));
+            
+            definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegrationAsync).FullName));
+            
+            definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegrationAsync).FullName));
+            
+            
+            definitionsId = Guid.NewGuid().ToString("N");
+            definitions = definitionsList.ToArray();
+            EnableDefinitions();
 
             NativeMethods.AddDerivedInstrumentations(Guid.NewGuid().ToString("N"), new NativeCallTargetDefinition[]
             {
@@ -121,6 +144,21 @@ namespace CallTargetNativeTest
                 new(TargetAssembly, typeof(ArgumentsGenericParentType<>.AbstractClass).FullName, "OtherMethod", new[] { "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop0ArgumentsVoidIntegration).FullName),
                 new(TargetAssembly, typeof(ArgumentsGenericParentType<>.NonAbstractClass).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
             });
+
+            NativeMethods.AddInterfaceInstrumentations(Guid.NewGuid().ToString("N"), new NativeCallTargetDefinition[]
+            {
+                new(TargetAssembly, typeof(InterfaceType).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
+                new(TargetAssembly, typeof(IExplicitOverNormal).FullName, "ReturnValueMethod", new[] { "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(ExplicitOverNormalIntegration).FullName),
+            });
+        }
+
+        static void EnableDefinitions()
+        {
+            NativeMethods.InitializeProfiler(definitionsId, definitions);
+        }
+        static void DisableDefinitions()
+        {
+            NativeMethods.RemoveCallTargetDefinitions(definitionsId, definitions);
         }
 
         static void RunTests(string[] args)
@@ -232,6 +270,40 @@ namespace CallTargetNativeTest
                         // GenericParentAbstractMethod();
                         break;
                     }
+                case "interface":
+                    {
+                        InterfaceMethod();
+                        break;
+                    }
+                case "remove":
+                    {
+                        WithOutArguments();
+                        DisableDefinitions();
+                        WithOutArguments(false);
+                        EnableDefinitions();
+                        WithOutArguments();
+                        break;
+                    }
+                case "extras":
+                    {
+                        Extras();
+                        break;
+                    }
+                case "categories":
+                    {
+                        CategoriesTest();
+                        break;
+                    }
+                case "callsite":
+                    {
+                        CallSite();
+                        break;
+                    }
+                case "calltargetbubbleupexceptions":
+                {
+                    CallTargetBubbleUpExceptions();
+                    break;
+                }
                 case "all":
                     {
                         Argument0();
@@ -295,14 +367,27 @@ namespace CallTargetNativeTest
                         GenericParentWithOutArguments();
                         // .
                         AbstractMethod();
+                        // .
+                        InterfaceMethod();
+                        //.
+                        WithOutArguments();
+                        DisableDefinitions();
+                        WithOutArguments(false);
+                        EnableDefinitions();
+                        WithOutArguments();
                         // *** Derived instrumentation is not yet supported for nested types.
                         // ParentAbstractMethod();
                         // StructParentAbstractMethod();
                         // GenericParentAbstractMethod();
+                        Extras();
+                        //.
+                        CallTargetBubbleUpExceptions();
+                        //.
+                        CallSite();
                         break;
                     }
                 default:
-                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/abstract/all as an argument.");
+                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/abstract/interface/remove/all as an argument.");
                     return;
             }
 
@@ -312,21 +397,49 @@ namespace CallTargetNativeTest
 #endif
         }
 
-        private static void RunMethod(Action action)
+        private static void RunMethod(Action action, bool checkInstrumented = true, bool bubblingUpException = false)
         {
             var cOut = Console.Out;
             Console.SetOut(sWriter);
-            action();
+
+            if (bubblingUpException)
+            {
+                try
+                {
+                    action();
+                    throw new Exception("No exception bubbled up when it was expected to, check that the native code filter is working properly or that your instrumentation is throwing a CallTargetBubbleUpException (or a nested one)");
+                }
+                catch (Exception e) when (CallTargetBubbleUpException.IsCallTargetBubbleUpException(e))
+                {
+                    // this is normal and expected if not, throw after action is executed
+                }
+            }
+            else
+            {
+                action();
+            }
+
             sWriter.Flush();
             var str = Encoding.UTF8.GetString(mStream.GetBuffer(), 0, (int)mStream.Length);
             mStream.SetLength(0);
-            if (string.IsNullOrEmpty(str))
+            if (checkInstrumented)
             {
-                throw new Exception("The profiler is not connected or is not compiled as DEBUG with the DD_CTARGET_TESTMODE=True environment variable.");
+                if (string.IsNullOrEmpty(str))
+                {
+                    throw new Exception("The profiler is not connected or is not compiled as DEBUG with the DD_CTARGET_TESTMODE=True environment variable.");
+                }
+                if (!str.Contains("ProfilerOK: BeginMethod") || !str.Contains("ProfilerOK: EndMethod"))
+                {
+                    throw new Exception("Profiler didn't return a valid ProfilerOK: BeginMethod string.");
+                }
             }
-            if (!str.Contains("ProfilerOK: BeginMethod") || !str.Contains("ProfilerOK: EndMethod"))
+            else 
             {
-                throw new Exception("Profiler didn't return a valid ProfilerOK: BeginMethod string.");
+                if (!string.IsNullOrEmpty(str))
+                {
+                    throw new Exception("Profiler instrumented disabled function.");
+                }
+                str = "OK: Not instrumented";
             }
             if (!string.IsNullOrEmpty(str))
             {

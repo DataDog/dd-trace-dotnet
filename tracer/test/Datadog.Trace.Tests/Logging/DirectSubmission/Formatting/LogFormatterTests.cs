@@ -1,16 +1,19 @@
-﻿// <copyright file="LogFormatterTests.cs" company="Datadog">
+// <copyright file="LogFormatterTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
+using Datadog.Trace.Tests.PlatformHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -25,28 +28,32 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
         private const string Service = "TestService";
         private const string Env = "integrationTests";
         private const string Version = "1.0.0";
-        private readonly LogFormatter _formatter;
+
+        private static readonly NameValueCollection Defaults = new()
+        {
+            { ConfigurationKeys.ApiKey, "some_value" },
+            { ConfigurationKeys.DirectLogSubmission.Host, Host },
+            { ConfigurationKeys.DirectLogSubmission.Source, Source },
+            { ConfigurationKeys.DirectLogSubmission.Url, "http://localhost" },
+            { ConfigurationKeys.DirectLogSubmission.MinimumLevel, "debug" },
+            { ConfigurationKeys.DirectLogSubmission.GlobalTags, "Key1:Value1,Key2:Value2" },
+            { ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, nameof(IntegrationId.ILogger) },
+            { ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, "100" },
+            { ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, "2" },
+            { ConfigurationKeys.DirectLogSubmission.QueueSizeLimit, "1000" }
+        };
+
         private readonly JsonTextWriter _writer;
         private readonly StringBuilder _sb;
+        private readonly ImmutableTracerSettings _tracerSettings;
+        private readonly ImmutableDirectLogSubmissionSettings _directLogSettings;
 
         public LogFormatterTests()
         {
-            var settings = ImmutableDirectLogSubmissionSettings.Create(
-                host: Host,
-                source: Source,
-                intakeUrl: "http://localhost",
-                apiKey: "some_value",
-                minimumLevel: DirectSubmissionLogLevel.Debug,
-                globalTags: new Dictionary<string, string> { { "Key1", "Value1" }, { "Key2", "Value2" } },
-                enabledLogShippingIntegrations: new List<string> { nameof(IntegrationId.ILogger) },
-                batchingOptions: new BatchingSinkOptions(batchSizeLimit: 100, queueLimit: 1000, TimeSpan.FromSeconds(2)));
-            settings.IsEnabled.Should().BeTrue();
-
-            _formatter = new LogFormatter(
-                settings,
-                serviceName: Service,
-                env: Env,
-                version: Version);
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(Defaults));
+            _tracerSettings = new ImmutableTracerSettings(tracerSettings);
+            _directLogSettings = ImmutableDirectLogSubmissionSettings.Create(tracerSettings);
+            _directLogSettings.IsEnabled.Should().BeTrue();
 
             _sb = new StringBuilder();
             _writer = LogFormatter.GetJsonWriter(_sb);
@@ -138,15 +145,26 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
             bool hasRenderedHost,
             bool hasRenderedTags,
             bool hasRenderedEnv,
-            bool hasRenderedVersion)
+            bool hasRenderedVersion,
+            bool isInAas)
         {
             var timestamp = new DateTime(year: 2020, month: 3, day: 7, hour: 11, minute: 23, second: 26, millisecond: 500, DateTimeKind.Utc);
             var sb = new StringBuilder();
             var state = new TestObject();
             var message = "Some message";
             var logLevel = "Info";
+            var aasSettings = isInAas ? GetAasSettings() : null;
 
-            _formatter.FormatLog(sb, state, timestamp, message, eventId: null, logLevel, exception: null, RenderProperties);
+            var formatter = new LogFormatter(
+                _tracerSettings,
+                _directLogSettings,
+                aasSettings: aasSettings,
+                serviceName: Service,
+                env: Env,
+                version: Version,
+                gitMetadataTagsProvider: new NullGitMetadataProvider());
+
+            formatter.FormatLog(sb, state, timestamp, message, eventId: null, logLevel, exception: null, RenderProperties);
 
             var log = sb.ToString();
 
@@ -160,7 +178,15 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
             HasExpectedValue(log, !hasRenderedSource, $"\"ddsource\":\"{Source}\"");
             HasExpectedValue(log, !hasRenderedService, $"\"service\":\"{Service}\"");
             HasExpectedValue(log, !hasRenderedHost, $"\"host\":\"{Host}\"");
-            HasExpectedValue(log, !hasRenderedTags, $"\"ddtags\":\"Key1:Value1,Key2:Value2\"");
+
+            (string Key, string Value)[] expectedTags = (isInAas, hasRenderedTags) switch
+            {
+                (_, true) => null, // if the log itself adds this, we don't add the global tags currently
+                (true, false) => [("aas.resource.id", aasSettings!.ResourceId), ("Key1", "Value1"), ("Key2", "Value2")],
+                (false, false) => [("Key1", "Value1"), ("Key2", "Value2")],
+            };
+
+            HasExpectedTags(log, expectedTags);
             HasExpectedValue(log, !hasRenderedEnv, $"\"dd_env\":\"{Env}\"");
             HasExpectedValue(log, !hasRenderedVersion, $"\"dd_version\":\"{Version}\"");
 
@@ -174,6 +200,42 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
                     hasRenderedVersion: hasRenderedVersion,
                     messageTemplate: null);
 
+            static List<(string Key, string Value)> ExtractTags(string log)
+            {
+                var match = Regex.Match(log, "\"ddtags\":\"(.*)\"");
+
+                if (!match.Success)
+                {
+                    return null;
+                }
+
+                var tags = match.Groups[1].Value;
+
+                var result = new List<(string Key, string Value)>();
+
+                foreach (var item in tags.Split(','))
+                {
+                    var values = item.Split(':');
+                    result.Add((values[0], values[1]));
+                }
+
+                return result;
+            }
+
+            static void HasExpectedTags(string log, (string Key, string Value)[] expectedTags)
+            {
+                var actualTags = ExtractTags(log);
+
+                if (expectedTags == null)
+                {
+                    actualTags.Should().BeNull();
+                }
+                else
+                {
+                    actualTags.Should().BeEquivalentTo(expectedTags);
+                }
+            }
+
             static void HasExpectedValue(string log, bool shouldContain, string value)
             {
                 if (shouldContain)
@@ -184,6 +246,17 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
                 {
                     log.Should().NotContain(value);
                 }
+            }
+
+            ImmutableAzureAppServiceSettings GetAasSettings()
+            {
+                return new ImmutableAzureAppServiceSettings(
+                    AzureAppServiceHelper.GetRequiredAasConfigurationValues(
+                        subscriptionId: "8c500027-5f00-400e-8f00-60000000000f",
+                        deploymentId: "AzureExampleSiteName",
+                        planResourceGroup: "apm-dotnet",
+                        siteResourceGroup: "apm-dotnet-site-resource-group"),
+                    NullConfigurationTelemetry.Instance);
             }
         }
 
@@ -198,7 +271,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
                    from tags in Options
                    from env in Options
                    from version in Options
-                   select new object[] { src, service, host, tags, env, version };
+                   from aas in Options
+                   select new object[] { src, service, host, tags, env, version, aas };
         }
 
         private class FormattableObject : IFormattable

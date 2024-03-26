@@ -5,10 +5,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 
 namespace PrepareRelease
@@ -40,6 +40,13 @@ namespace PrepareRelease
                .GetMethod("GetAllDefinitionsNative", BindingFlags.Static | BindingFlags.NonPublic);
             var derivedDefinitionsMethod = definitionsClass
                    .GetMethod("GetAllDerivedDefinitionsNative", BindingFlags.Static | BindingFlags.NonPublic);
+            var getIntegrationIdMethod = definitionsClass
+                   .GetMethod("GetIntegrationId", BindingFlags.Static | BindingFlags.NonPublic);
+            var getAdoNetIntegrationIdMethod = definitionsClass
+                   .GetMethod("GetAdoNetIntegrationId", BindingFlags.Static | BindingFlags.Public);
+
+            var integrationIdExtensionsClass = assembly.GetType("Datadog.Trace.Configuration.IntegrationIdExtensions");
+            var toStringFastMethod = integrationIdExtensionsClass.GetMethod("ToStringFast", BindingFlags.Static | BindingFlags.Public);
 
             var structDefinition = assembly.GetType("Datadog.Trace.ClrProfiler.NativeCallTargetDefinition");
 
@@ -51,16 +58,37 @@ namespace PrepareRelease
                   .Concat(derivedDefinitions.Cast<object>())
                   .Select(x => new InstrumentedAssembly
                   {
-                      TargetAssembly = (string)structDefinition.GetField("TargetAssembly").GetValue(x),
-                      TargetMinimumMajor = (ushort)structDefinition.GetField("TargetMinimumMajor").GetValue(x),
-                      TargetMinimumMinor = (ushort)structDefinition.GetField("TargetMinimumMinor").GetValue(x),
-                      TargetMinimumPatch = (ushort)structDefinition.GetField("TargetMinimumPatch").GetValue(x),
-                      TargetMaximumMajor = (ushort)structDefinition.GetField("TargetMaximumMajor").GetValue(x),
-                      TargetMaximumMinor = (ushort)structDefinition.GetField("TargetMaximumMinor").GetValue(x),
-                      TargetMaximumPatch = (ushort)structDefinition.GetField("TargetMaximumPatch").GetValue(x),
+                      IntegrationName = GetIntegrationName(structDefinition, x, toStringFastMethod, getIntegrationIdMethod, getAdoNetIntegrationIdMethod),
+                      TargetAssembly = Marshal.PtrToStringUni((IntPtr) structDefinition.GetField("TargetAssembly").GetValue(x)),
+                      TargetMinimumMajor = (ushort) structDefinition.GetField("TargetMinimumMajor").GetValue(x),
+                      TargetMinimumMinor = (ushort) structDefinition.GetField("TargetMinimumMinor").GetValue(x),
+                      TargetMinimumPatch = (ushort) structDefinition.GetField("TargetMinimumPatch").GetValue(x),
+                      TargetMaximumMajor = (ushort) structDefinition.GetField("TargetMaximumMajor").GetValue(x),
+                      TargetMaximumMinor = (ushort) structDefinition.GetField("TargetMaximumMinor").GetValue(x),
+                      TargetMaximumPatch = (ushort) structDefinition.GetField("TargetMaximumPatch").GetValue(x),
                   })
                   .Distinct()
                   .ToList();
+            
+            static string GetIntegrationName(Type structDefinition, object definition, MethodInfo toStringFast, MethodInfo getIntegrationId, MethodInfo getAdoNetIntegrationId)
+            {
+                var targetAssemblyName = Marshal.PtrToStringUni((IntPtr) structDefinition.GetField("TargetAssembly").GetValue(definition));
+                var targetTypeName = Marshal.PtrToStringUni((IntPtr) structDefinition.GetField("TargetType").GetValue(definition));
+                // var targetType = assembly.GetType(targetTypeName);
+                
+                var integrationType = Marshal.PtrToStringUni((IntPtr) structDefinition.GetField("IntegrationType").GetValue(definition));
+                // can't get the actual types we need, so hack it
+                var integrationId = getIntegrationId.Invoke(null, new object[] {integrationType, structDefinition});
+                var integrationName = (string) toStringFast.Invoke(null, new[] {integrationId});
+                if (integrationName == "AdoNet")
+                {
+                    // use the other method
+                    integrationId = getAdoNetIntegrationId.Invoke(null, new object[] {integrationType, targetTypeName, targetAssemblyName});
+                    integrationName = (string) toStringFast.Invoke(null, new[] {integrationId});
+                }
+
+                return  integrationName;
+            }
         }
 
         class CustomAssemblyLoadContext : AssemblyLoadContext

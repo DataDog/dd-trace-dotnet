@@ -9,6 +9,10 @@ parameters:
     type: boolean
     default: true
 
+  - name: 'apiKey'
+    type: string
+    default: ''
+
 steps:
 - bash: |
     echo "##vso[task.setvariable variable=TOKEN]$(System.JobId)"
@@ -45,6 +49,7 @@ steps:
     docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run --rm $(START_TEST_AGENT_TARGET)
   env:
     dockerTag: $(dockerTag)
+    DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   displayName: docker-compose run start-test-agent
   retryCountOnTaskFailure: 3
 
@@ -52,13 +57,15 @@ steps:
     echo "Starting snapshot session"
     docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail "http://localhost:8126$(START_ENDPOINT)"
   displayName: start snapshot session
+  env:
+    DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
 
 - bash: |
     docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) ${{ parameters.target }}
   env:
     dockerTag: $(dockerTag)
+    DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   displayName: docker-compose run ${{ parameters.target }}
-
 
 - script: |
     echo "Dumping traces"
@@ -69,10 +76,24 @@ steps:
     
     echo "Dumping all requests"
     docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) -o /debug_snapshots/${{ parameters.snapshotPrefix }}_requests.json "http://localhost:8126$(REQUESTS_DUMP_ENDPOINT)"
-    
-    echo "Verifying snapshot session (fail on mis-match)"
-    docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail "http://localhost:8126$(VERIFY_ENDPOINT)"
-  displayName: check snapshots
+  displayName: dump snapshots
+  env:
+    DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
+
+- ${{ if eq(parameters.isLinux, true) }}:
+  - bash: |
+      echo "Verifying snapshot session (fail on mis-match)"
+      docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --w '\nGetting a 400 means there is a diff in snapshots. You can diff the files with the artifacts generated. You can also run the tests locally. Follow the doc in /docs/development/CI/RunSmokeTestsLocally\n' --fail "http://localhost:8126$(VERIFY_ENDPOINT)"
+    displayName: check snapshots
+    env:
+      DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
+- ${{ else }}:
+  - bash: |
+      echo "Verifying snapshot session (fail on mis-match)"
+      docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail "http://localhost:8126$(VERIFY_ENDPOINT)"
+    displayName: check snapshots
+    env:
+      DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
 
 - task: DockerCompose@0
   displayName: dump docker-compose logs for $(TEST_AGENT_TARGET)
@@ -81,6 +102,8 @@ steps:
     dockerComposeCommand: logs $(TEST_AGENT_TARGET)
     projectName: ddtrace_$(Build.BuildNumber)
     dockerComposeFile: $(COMPOSE_PATH)
+  env:
+    DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   condition: succeededOrFailed()
   continueOnError: true
 
@@ -91,5 +114,7 @@ steps:
     dockerComposeCommand: down
     projectName: ddtrace_$(Build.BuildNumber)
     dockerComposeFile: $(COMPOSE_PATH)
+  env:
+    DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   condition: succeededOrFailed()
   continueOnError: true

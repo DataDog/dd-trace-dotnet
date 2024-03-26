@@ -6,18 +6,23 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
+
 #include "Log.h"
 #include "OpSysTools.h"
 
-#include "IService.h"
+#include "IAppDomainStore.h"
 #include "ICollector.h"
 #include "IConfiguration.h"
 #include "IFrameStore.h"
-#include "IAppDomainStore.h"
 #include "IRuntimeIdStore.h"
+#include "IService.h"
 #include "IThreadsCpuManager.h"
 #include "ProviderBase.h"
 #include "RawSample.h"
+#include "RawSamples.hpp"
+#include "SamplesEnumerator.h"
+#include "SampleValueTypeProvider.h"
 
 #include "shared/src/native-src/string.h"
 
@@ -27,7 +32,6 @@ class IFrameStore;
 class IAppDomainStore;
 
 using namespace std::chrono_literals;
-
 
 // Base class used for storing raw samples that are transformed into exportable Sample
 // every hundreds of milliseconds. The transformation code is setting :
@@ -39,30 +43,33 @@ using namespace std::chrono_literals;
 // specific labels (such as exception name or exception message) if any but more important,
 // to set its value(s) like wall time duration or cpu time duration.
 //
-template <class TRawSample>   // TRawSample is supposed to inherit from RawSample
+template <class TRawSample> // TRawSample is supposed to inherit from RawSample
 class CollectorBase
     :
     public IService,
-    public ICollector<TRawSample>,  // allows profilers to add TRawSample instances
-    public ProviderBase          // returns Samples to the aggregator
+    public ICollector<TRawSample>, // allows profilers to add TRawSample instances
+    public ProviderBase            // returns Samples to the aggregator
 {
 public:
     CollectorBase<TRawSample>(
         const char* name,
+        std::vector<SampleValueTypeProvider::Offset> valueOffsets,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore
-        ) :
+        IRuntimeIdStore* pRuntimeIdStore)
+        :
         ProviderBase(name),
         _pFrameStore{pFrameStore},
         _pAppDomainStore{pAppDomainStore},
         _pRuntimeIdStore{pRuntimeIdStore},
-        _pThreadsCpuManager{pThreadsCpuManager}
+        _pThreadsCpuManager{pThreadsCpuManager},
+        _collectedSamples{}
     {
+        _valueOffsets = std::move(valueOffsets);
     }
 
-// interfaces implementation
+    // interfaces implementation
 public:
     bool Start() override
     {
@@ -81,49 +88,22 @@ public:
 
     void Add(TRawSample&& sample) override
     {
-        std::lock_guard<std::mutex> lock(_rawSamplesLock);
-
-        _collectedSamples.push_back(std::forward<TRawSample>(sample));
+        _collectedSamples.Add(std::forward<TRawSample>(sample));
     }
 
-    inline std::list<Sample> GetSamples() override
+    void TransformRawSample(const TRawSample& rawSample, std::shared_ptr<Sample>& sample)
     {
-        std::list<TRawSample> input = FetchRawSamples();
+        sample->Reset();
 
-        return TransformRawSamples(input);
-    }
-
-private:
-
-    std::list<TRawSample> FetchRawSamples()
-    {
-        std::lock_guard<std::mutex> lock(_rawSamplesLock);
-
-        std::list<TRawSample> input = std::move(_collectedSamples); // _collectedSamples is empty now
-        return input;
-    }
-
-    std::list<Sample> TransformRawSamples(const std::list<TRawSample>& input)
-    {
-        std::list<Sample> samples;
-
-        for (auto const& rawSample : input)
-        {
-            samples.push_back(TransformRawSample(rawSample));
-        }
-
-        return samples;
-    }
-
-    Sample TransformRawSample(const TRawSample& rawSample)
-    {
         auto runtimeId = _pRuntimeIdStore->GetId(rawSample.AppDomainId);
 
-        Sample sample(rawSample.Timestamp, runtimeId == nullptr ? std::string_view() : std::string_view(runtimeId));
+        sample->SetRuntimeId(runtimeId == nullptr ? std::string_view() : std::string_view(runtimeId));
+        sample->SetTimestamp(rawSample.Timestamp);
+
         if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
         {
-            sample.AddLabel(Label{Sample::LocalRootSpanIdLabel, std::to_string(rawSample.LocalRootSpanId)});
-            sample.AddLabel(Label{Sample::SpanIdLabel, std::to_string(rawSample.SpanId)});
+            sample->AddNumericLabel(SpanLabel{Sample::LocalRootSpanIdLabel, rawSample.LocalRootSpanId});
+            sample->AddNumericLabel(SpanLabel{Sample::SpanIdLabel, rawSample.SpanId});
         }
 
         // compute thread/appdomain details
@@ -134,75 +114,136 @@ private:
         SetStack(rawSample, sample);
 
         // allow inherited classes to add values and specific labels
-        rawSample.OnTransform(sample);
+        rawSample.OnTransform(sample, _valueOffsets);
+    }
+
+    // When TransformRawSample becomes a hot path, callers should call the overload
+    // with std::shared_ptr<Sample> as out parameter (avoid alloc/dealloc and add up overhead)
+    std::shared_ptr<Sample> TransformRawSample(const TRawSample& rawSample)
+    {
+        auto sample = std::make_shared<Sample>(0, std::string_view(), rawSample.Stack.size());
+
+        TransformRawSample(rawSample, sample);
 
         return sample;
     }
 
-    void SetAppDomainDetails(const TRawSample& rawSample, Sample& sample)
+    std::unique_ptr<SamplesEnumerator> GetSamples() override
+    {
+        return std::make_unique<SamplesEnumeratorImpl>(_collectedSamples.Move(), this);
+    }
+
+protected:
+    uint64_t GetCurrentTimestamp()
+    {
+        return OpSysTools::GetHighPrecisionTimestamp();
+    }
+
+    std::vector<SampleValueTypeProvider::Offset> const& GetValueOffsets() const
+    {
+        return _valueOffsets;
+    }
+
+private:
+
+    class SamplesEnumeratorImpl : public SamplesEnumerator
+    {
+    public:
+        SamplesEnumeratorImpl(RawSamples<TRawSample> rawSamples, CollectorBase<TRawSample>* collector) :
+            _rawSamples{std::move(rawSamples)}, _collector{collector}
+        {
+            _currentRawSample = _rawSamples.cbegin();
+        }
+
+        // Inherited via SamplesEnumerator
+        std::size_t size() const override
+        {
+            return _rawSamples.size();
+        }
+
+        bool MoveNext(std::shared_ptr<Sample>& sample) override
+        {
+            if (_currentRawSample == _rawSamples.cend())
+                return false;
+
+            _collector->TransformRawSample(*_currentRawSample, sample);
+            _currentRawSample++;
+
+            return true;
+        }
+
+    private:
+        RawSamples<TRawSample> _rawSamples;
+        CollectorBase<TRawSample>* _collector;
+        typename RawSamples<TRawSample>::const_iterator _currentRawSample;
+    };
+
+private:
+    void SetAppDomainDetails(const TRawSample& rawSample, std::shared_ptr<Sample>& sample)
     {
         ProcessID pid;
         std::string appDomainName;
 
-        if (!_pAppDomainStore->GetInfo(rawSample.AppDomainId, pid, appDomainName))
+        // check for null AppDomainId (garbage collection for example)
+        if (rawSample.AppDomainId == 0)
         {
-            sample.SetAppDomainName("");
-            sample.SetPid("0");
+            sample->SetAppDomainName("CLR");
+            sample->SetPid(OpSysTools::GetProcId());
 
             return;
         }
 
-        sample.SetAppDomainName(appDomainName);
+        if (!_pAppDomainStore->GetInfo(rawSample.AppDomainId, pid, appDomainName))
+        {
+            sample->SetAppDomainName("");
+            sample->SetPid(OpSysTools::GetProcId());
 
-        std::stringstream builder;
-        builder << std::dec << pid;
-        sample.SetPid(builder.str());
+            return;
+        }
+
+        sample->SetAppDomainName(std::move(appDomainName));
+        sample->SetPid(pid);
     }
 
-    void SetThreadDetails(const TRawSample& rawSample, Sample& sample)
+    void SetThreadDetails(const TRawSample& rawSample, std::shared_ptr<Sample>& sample)
     {
         // needed for tests
         if (rawSample.ThreadInfo == nullptr)
         {
-            sample.SetThreadId("<0> [# 0]");
-            sample.SetThreadName("Managed thread (name unknown) [#0]");
+            // find a way to skip thread details like for garbage collection where no managed threads are involved
+            // --> if everything is empty
+
+            if (
+                (rawSample.LocalRootSpanId == 0) &&
+                (rawSample.SpanId == 0) &&
+                (rawSample.AppDomainId == 0) &&
+                (rawSample.Stack.size() == 0))
+            {
+                sample->SetThreadId("GC");
+                sample->SetThreadName("CLR thread (garbage collector)");
+                return;
+            }
+
+            sample->SetThreadId("<0> [#0]");
+            sample->SetThreadName("Managed thread (name unknown) [#0]");
 
             return;
         }
 
-        // build the ID
-        std::stringstream builder;
-        auto profTid = rawSample.ThreadInfo->GetProfilerThreadInfoId();
-        auto osTid = rawSample.ThreadInfo->GetOsThreadId();
-        builder << "<" << std::dec << profTid << "> [#" << osTid << "]";
-        sample.SetThreadId(builder.str());
-
-        // build the name
-        std::stringstream nameBuilder;
-        if (rawSample.ThreadInfo->GetThreadName().empty())
-        {
-            nameBuilder << "Managed thread (name unknown)";
-        }
-        else
-        {
-            nameBuilder << shared::ToString(rawSample.ThreadInfo->GetThreadName());
-        }
-        nameBuilder << " [#" << rawSample.ThreadInfo->GetOsThreadId() << "]";
-        sample.SetThreadName(nameBuilder.str());
-
-        // don't forget to release the ManagedThreadInfo
-        rawSample.ThreadInfo->Release();
+        sample->SetThreadId(rawSample.ThreadInfo->GetProfileThreadId());
+        sample->SetThreadName(rawSample.ThreadInfo->GetProfileThreadName());
     }
 
-    void SetStack(const TRawSample& rawSample, Sample& sample)
+    void SetStack(const TRawSample& rawSample, std::shared_ptr<Sample>& sample)
     {
+        // Deal with fake stack frames like for garbage collections since the Stack will be empty
         for (auto const& instructionPointer : rawSample.Stack)
         {
-            auto [isResolved, moduleName, frame] = _pFrameStore->GetFrame(instructionPointer);
+            auto [isResolved, frame] = _pFrameStore->GetFrame(instructionPointer);
 
             if (isResolved)
             {
-                sample.AddFrame(moduleName, frame);
+                sample->AddFrame(frame);
             }
         }
     }
@@ -214,10 +255,6 @@ private:
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
     bool _isNativeFramesEnabled = false;
 
-    // A thread is responsible for asynchronously fetching raw samples from the input queue
-    // and feeding the output sample list with symbolized frames and thread/appdomain names
-    std::atomic<bool> _stopRequested = false;
-
-    std::mutex _rawSamplesLock;
-    std::list<TRawSample> _collectedSamples;
+    RawSamples<TRawSample> _collectedSamples;
+    std::vector<SampleValueTypeProvider::Offset> _valueOffsets;
 };

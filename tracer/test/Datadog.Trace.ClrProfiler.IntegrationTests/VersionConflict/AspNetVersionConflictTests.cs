@@ -19,7 +19,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 {
     [Collection("IisTests")]
-    public class AspNetVersionConflictTests : TestHelper, IClassFixture<IisFixture>
+    public class AspNetVersionConflictTests : TestHelper, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
 
@@ -30,9 +30,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
-            // There is an issue in the TracingHttpModule that causes the parent trace to be locked, making the test useless
-            // This code is not run when IIS is in classic mode, so using that as a workaround
-            _iisFixture.TryStartIis(this, IisAppType.AspNetClassic);
         }
 
         [SkippableFact]
@@ -207,24 +204,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             result["ServiceName"].Value<string>().Should().Be(mvcSpan.Service);
         }
 
-        private static bool VerifySpan(MockSpan span, bool parentTrace)
-        {
-            if (!span.Metrics.ContainsKey(Metrics.SamplingPriority))
-            {
-                return true;
-            }
+        // There is an issue in the TracingHttpModule that causes the parent trace to be locked, making the test useless
+        // The code causing the issue is not executed when IIS is in classic mode, so using that as a workaround
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetClassic);
 
-            if (!parentTrace)
-            {
-                // The root asp.net trace has an automatic priority
-                if (span.Name == "aspnet.request" && span.Resource == "GET /home/sampling")
-                {
-                    return span.Metrics[Metrics.SamplingPriority] == 1;
-                }
-            }
-
-            return span.Metrics[Metrics.SamplingPriority] == 2;
-        }
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 }
 

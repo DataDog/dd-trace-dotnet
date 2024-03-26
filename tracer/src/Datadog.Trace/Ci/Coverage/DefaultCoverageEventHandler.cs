@@ -2,48 +2,135 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Ci.Coverage.Models;
+using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Ci.Coverage.Models.Tests;
+using Datadog.Trace.Ci.Coverage.Util;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Ci.Coverage
+namespace Datadog.Trace.Ci.Coverage;
+
+internal class DefaultCoverageEventHandler : CoverageEventHandler
 {
-    internal sealed class DefaultCoverageEventHandler : CoverageEventHandler
+    protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultCoverageEventHandler));
+
+    protected override void OnSessionStart(CoverageContextContainer context)
     {
-        protected override object OnSessionFinished(CoverageInstruction[] coverageInstructions)
+    }
+
+    protected override unsafe object? OnSessionFinished(CoverageContextContainer context)
+    {
+        try
         {
-            if (coverageInstructions == null || coverageInstructions.Length == 0)
+            var modules = context.CloseContext();
+
+            Dictionary<string, FileCoverage>? fileDictionary = null;
+            var fileBitmapBuffer = stackalloc byte[512];
+            foreach (var moduleValue in modules)
             {
-                return null;
-            }
-
-            var groupByFiles = coverageInstructions.GroupBy(i => i.FilePath).ToList();
-            var coveragePayload = new CoveragePayload();
-
-            foreach (var boundariesPerFile in groupByFiles)
-            {
-                var fileName = boundariesPerFile.Key;
-                var coverageFileName = new FileCoverage
+                foreach (var moduleFile in moduleValue.Metadata.Files)
                 {
-                    FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(fileName, false)
-                };
+                    var fileBitmapLastExecutableLine = moduleFile.LastExecutableLine;
+                    var fileBitmapSize = FileBitmap.GetSize(fileBitmapLastExecutableLine);
+                    using var fileBitmap = fileBitmapSize <= 512 ? new FileBitmap(fileBitmapBuffer, fileBitmapSize) : new FileBitmap(new byte[fileBitmapSize]);
+                    if (moduleValue.Metadata.CoverageMode == 0)
+                    {
+                        var filesLines = (byte*)moduleValue.FilesLines + moduleFile.Offset;
+                        for (var i = 0; i < fileBitmapLastExecutableLine; i++)
+                        {
+                            if (filesLines[i] == 1)
+                            {
+                                fileBitmap.Set(i + 1);
+                            }
+                        }
+                    }
+                    else if (moduleValue.Metadata.CoverageMode == 1)
+                    {
+                        var filesLines = (int*)moduleValue.FilesLines + moduleFile.Offset;
+                        for (var i = 0; i < fileBitmapLastExecutableLine; i++)
+                        {
+                            if (filesLines[i] == 1)
+                            {
+                                fileBitmap.Set(i + 1);
+                            }
+                        }
+                    }
 
-                coveragePayload.Files.Add(coverageFileName);
+                    if (fileBitmap.HasActiveBits())
+                    {
+                        FileCoverage? fileCoverage;
+                        if (fileDictionary is null)
+                        {
+                            fileCoverage = new FileCoverage
+                            {
+                                FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false)
+                            };
 
-                foreach (var rangeGroup in boundariesPerFile.GroupBy(i => i.Range))
-                {
-                    var range = rangeGroup.Key;
-                    var endColumn = (ushort)(range & 0xFFFFFF);
-                    var endLine = (ushort)((range >> 16) & 0xFFFFFF);
-                    var startColumn = (ushort)((range >> 32) & 0xFFFFFF);
-                    var startLine = (ushort)((range >> 48) & 0xFFFFFF);
-                    var num = rangeGroup.Count();
-                    coverageFileName.Segments.Add(new[] { startLine, startColumn, endLine, endColumn, (uint)num });
+                            fileDictionary = new Dictionary<string, FileCoverage>
+                            {
+                                [moduleFile.Path] = fileCoverage
+                            };
+                        }
+                        else if (!fileDictionary.TryGetValue(moduleFile.Path, out fileCoverage))
+                        {
+                            fileCoverage = new FileCoverage
+                            {
+                                FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false)
+                            };
+
+                            fileDictionary[moduleFile.Path] = fileCoverage;
+                        }
+
+                        if (fileCoverage.Bitmap is { } bitmap)
+                        {
+                            using var currentBitmap = new FileBitmap(bitmap);
+                            fileCoverage.Bitmap = FileBitmap.Or(fileBitmap, currentBitmap, true).GetInternalArrayOrToArrayAndDispose();
+                        }
+                        else
+                        {
+                            fileCoverage.Bitmap = fileBitmap.GetInternalArrayOrToArrayAndDispose();
+                        }
+                    }
                 }
             }
 
-            return coveragePayload;
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityCodeCoverageFiles(fileDictionary?.Count ?? 0);
+
+            if (fileDictionary is null || fileDictionary.Count == 0)
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageIsEmpty();
+                return null;
+            }
+
+            var testCoverage = new TestCoverage
+            {
+                Files = fileDictionary.Values.ToList()
+            };
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Test Coverage: {Json}", JsonConvert.SerializeObject(testCoverage));
+            }
+
+            return testCoverage;
         }
+        catch (Exception ex)
+        {
+            TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+            Log.Error(ex, "Error processing the coverage data.");
+            throw;
+        }
+    }
+
+    protected override void OnClearContext(CoverageContextContainer context)
+    {
+        context.Clear();
     }
 }

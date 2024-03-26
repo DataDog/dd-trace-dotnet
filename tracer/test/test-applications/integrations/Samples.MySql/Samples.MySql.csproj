@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">8.0.17</ApiVersion>
-    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">8.0.30</ApiVersion>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

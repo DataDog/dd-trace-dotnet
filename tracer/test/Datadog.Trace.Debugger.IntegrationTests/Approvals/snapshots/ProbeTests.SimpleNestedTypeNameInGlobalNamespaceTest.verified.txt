@@ -1,0 +1,116 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "callerName": {
+                "type": "String",
+                "value": "Run"
+              },
+              "this": {
+                "type": "NestedType",
+                "value": "NestedType"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "callerName": {
+                "type": "String",
+                "value": "Run"
+              },
+              "this": {
+                "type": "NestedType",
+                "value": "NestedType"
+              }
+            },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233088"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "Same length."
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "IntentionalDebuggerException",
+                "value": "IntentionalDebuggerException"
+              },
+              "arr": {
+                "elements": [
+                  {
+                    "type": "String",
+                    "value": "Run"
+                  },
+                  {
+                    "type": "String",
+                    "value": "MethodToInstrument"
+                  },
+                  {
+                    "type": "String",
+                    "value": "SimpleTypeNameTest"
+                  }
+                ],
+                "size": 3,
+                "type": "String[]"
+              }
+            },
+            "throwable": {
+              "message": "Same length.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.SmokeTests.SimpleNestedTypeNameInGlobalNamespaceTest+NestedType.MethodToInstrument",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "Samples.Probes.TestRuns.Shared.IntentionalDebuggerException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "MethodToInstrument",
+            "type": "Samples.Probes.TestRuns.SmokeTests.SimpleNestedTypeNameInGlobalNamespaceTest+NestedType"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.TestRuns.SmokeTests.SimpleNestedTypeNameInGlobalNamespaceTest+NestedType",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

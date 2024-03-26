@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using static Datadog.InstrumentedAssemblyGenerator.InstrumentedAssemblyGeneratorConsts;
@@ -52,7 +52,6 @@ namespace Datadog.InstrumentedAssemblyGenerator
         internal string MethodName { get; }
         internal bool IsStatic { get; }
         internal Lazy<byte[]> Code { get; }
-
 
         /// <summary>
         /// File content pattern:

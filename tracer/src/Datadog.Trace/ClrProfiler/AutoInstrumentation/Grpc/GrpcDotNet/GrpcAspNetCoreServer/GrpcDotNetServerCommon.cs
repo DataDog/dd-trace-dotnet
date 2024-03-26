@@ -44,8 +44,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
                 }
 
                 var serviceName = tracer.DefaultServiceName ?? "grpc-server";
-
-                scope = tracer.StartActiveInternal(GrpcCommon.OperationName, parent: spanContext, tags: tags, serviceName: serviceName);
+                string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForProtocol("grpc");
+                scope = tracer.StartActiveInternal(operationName, parent: spanContext, tags: tags, serviceName: serviceName);
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Grpc;

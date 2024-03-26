@@ -65,7 +65,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 }
 
                 // Check if any headers were injected by a previous call
-                var existingSpanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
+                // Since it is possible for users to manually propagate headers (which we should
+                // overwrite), check our cache which will be populated with header objects
+                // that we have injected context into
+                SpanContext existingSpanContext = null;
+                if (HeadersInjectedCache.TryGetInjectedHeaders(request.Headers))
+                {
+                    existingSpanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
+                }
 
                 // If this operation creates the trace, then we need to re-apply the sampling priority
                 bool setSamplingPriority = existingSpanContext?.SamplingPriority != null && Tracer.Instance.ActiveScope == null;
@@ -74,7 +81,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                 try
                 {
-                    scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, WebRequestCommon.IntegrationId, out _, traceId: existingSpanContext?.TraceId, spanId: existingSpanContext?.SpanId, startTime);
+                    scope = ScopeFactory.CreateOutboundHttpScope(
+                        Tracer.Instance,
+                        request.Method,
+                        request.RequestUri,
+                        WebRequestCommon.IntegrationId,
+                        out _,
+                        traceId: existingSpanContext?.TraceId128 ?? TraceId.Zero,
+                        spanId: existingSpanContext?.SpanId ?? 0,
+                        startTime);
 
                     if (scope is not null)
                     {
@@ -86,9 +101,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         if (returnValue is HttpWebResponse response)
                         {
                             scope.Span.SetHttpStatusCode((int)response.StatusCode, isServer: false, Tracer.Instance.Settings);
+                            scope.Dispose();
                         }
+                        else if (exception is WebException { Status: WebExceptionStatus.ProtocolError, Response: HttpWebResponse exceptionResponse })
+                        {
+                            // Add the exception tags without setting the Error property
+                            // SetHttpStatusCode will mark the span with an error if the StatusCode is within the configured range
+                            scope.Span.SetExceptionTags(exception);
 
-                        scope.DisposeWithException(exception);
+                            scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, isServer: false, Tracer.Instance.Settings);
+                            scope.Dispose();
+                        }
+                        else
+                        {
+                            scope.DisposeWithException(exception);
+                        }
                     }
                 }
                 catch

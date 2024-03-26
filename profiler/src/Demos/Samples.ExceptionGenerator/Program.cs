@@ -18,6 +18,7 @@ namespace Samples.ExceptionGenerator
         Sampling = 3,
         GenericExceptions = 4,
         TimeItExceptions = 5,
+        MeasureExceptions = 6,
     }
 
     public class Program
@@ -84,6 +85,11 @@ namespace Samples.ExceptionGenerator
                                     Console.WriteLine(" ########### Generating exceptions in parallel...");
                                     break;
 
+                                case Scenario.MeasureExceptions:
+                                    new MeasureExceptionsScenario().Run();
+                                    Console.WriteLine(" ########### Measuring exceptions...");
+                                    break;
+
                                 default:
                                     Console.WriteLine($" ########### Unknown scenario: {scenario}.");
                                     break;
@@ -115,6 +121,7 @@ namespace Samples.ExceptionGenerator
                         exceptionGeneratorService.StopService();
                     }
                 }
+
                 Console.WriteLine($"{Environment.NewLine} ########### Finishing run at {DateTime.UtcNow}");
             }
         }

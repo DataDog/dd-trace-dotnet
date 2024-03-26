@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
@@ -18,12 +19,14 @@ namespace BuggyBits
         private readonly CancellationToken _exitToken;
         private readonly HttpClient _httpClient;
         private readonly Scenario _scenario;
+        private readonly int _nbIdleThreads;
 
-        public SelfInvoker(CancellationToken token, Scenario scenario)
+        public SelfInvoker(CancellationToken token, Scenario scenario, int nbIdleThreds)
         {
             _exitToken = token;
             _httpClient = new HttpClient();
             _scenario = scenario;
+            _nbIdleThreads = nbIdleThreds;
         }
 
         public void Dispose()
@@ -35,48 +38,114 @@ namespace BuggyBits
         {
             Console.WriteLine($"{this.GetType().Name} started.");
 
-            try
+            CreateIdleThreads();
+
+            if (_scenario == Scenario.None)
             {
-                string asyncEndpoint = GetEndpoint(rootUrl);
-
-                // Run for the given number of iterations
-                // 0 means wait for cancellation
-                int current = 0;
-                while (
-                    ((iterations == 0) && !_exitToken.IsCancellationRequested) ||
-                    (iterations > current))
-                {
-                    await Task.Delay(SleepDuration);
-                    await ExecuteIterationAsync(asyncEndpoint);
-
-                    current++;
-                }
+                await Task.Delay(Timeout.Infinite, _exitToken);
             }
-            catch (Exception x)
+            else
             {
-                Console.WriteLine($"{x.GetType().Name} | {x.Message}");
+                try
+                {
+                    List<string> asyncEndpoints = GetEndpoints(rootUrl);
+
+                    // Run for the given number of iterations
+                    // 0 means wait for cancellation
+                    int current = 0;
+                    while (
+                        ((iterations == 0) && !_exitToken.IsCancellationRequested) ||
+                        (iterations > current))
+                    {
+                        foreach (var asyncEndpoint in asyncEndpoints)
+                        {
+                            await ExecuteIterationAsync(asyncEndpoint);
+                        }
+
+                        await Task.Delay(SleepDuration);
+                        current++;
+                    }
+                }
+                catch (Exception x)
+                {
+                    Console.WriteLine($"{x.GetType().Name} | {x.Message}");
+                }
             }
 
             Console.WriteLine($"{this.GetType().Name} stopped.");
         }
 
-        private string GetEndpoint(string rootUrl)
+        private void CreateIdleThreads()
         {
-            switch (_scenario)
+            if (_nbIdleThreads == 0)
             {
-                case Scenario.StringConcat:
-                default:
-                    return $"{rootUrl}/Products/Index";
-
-                case Scenario.StringBuilder:
-                    return $"{rootUrl}/Products/Builder";
-
-                case Scenario.Parallel:
-                    return $"{rootUrl}/Products/Parallel";
-
-                case Scenario.Async:
-                    return $"{rootUrl}/Products/async";
+                return;
             }
+
+            Console.WriteLine($"----- Creating {_nbIdleThreads} idle threads");
+
+            for (var i = 0; i < _nbIdleThreads; i++)
+            {
+                Task.Factory.StartNew(() => { _exitToken.WaitHandle.WaitOne(); }, TaskCreationOptions.LongRunning);
+            }
+        }
+
+        private List<string> GetEndpoints(string rootUrl)
+        {
+            List<string> urls = new List<string>();
+            if (_scenario == Scenario.None)
+            {
+                urls.Add($"{rootUrl}/Products");
+            }
+            else
+            {
+                if ((_scenario & Scenario.StringConcat) == Scenario.StringConcat)
+                {
+                    urls.Add($"{rootUrl}/Products");
+                }
+
+                if ((_scenario & Scenario.StringBuilder) == Scenario.StringBuilder)
+                {
+                    urls.Add($"{rootUrl}/Products/Builder");
+                }
+
+                if ((_scenario & Scenario.Parallel) == Scenario.Parallel)
+                {
+                    urls.Add($"{rootUrl}/Products/Parallel");
+                }
+
+                if ((_scenario & Scenario.Async) == Scenario.Async)
+                {
+                    urls.Add($"{rootUrl}/Products/async");
+                }
+
+                if ((_scenario & Scenario.FormatExceptions) == Scenario.FormatExceptions)
+                {
+                    urls.Add($"{rootUrl}/Products/Sales");
+                }
+
+                if ((_scenario & Scenario.ParallelLock) == Scenario.ParallelLock)
+                {
+                    urls.Add($"{rootUrl}/Products/ParallelLock");
+                }
+
+                if ((_scenario & Scenario.MemoryLeak) == Scenario.MemoryLeak)
+                {
+                    urls.Add($"{rootUrl}/News");
+                }
+
+                if ((_scenario & Scenario.EndpointsCount) == Scenario.EndpointsCount)
+                {
+                    urls.Add($"{rootUrl}/End.Point.With.Dots");
+                }
+
+                if ((_scenario & Scenario.Spin) == Scenario.Spin)
+                {
+                    urls.Add($"{rootUrl}/Products/IndexSlow");
+                }
+            }
+
+            return urls;
         }
 
         private async Task ExecuteIterationAsync(string endpointUrl)
@@ -87,7 +156,7 @@ namespace BuggyBits
                 var response = await _httpClient.GetAsync(endpointUrl, _exitToken);
                 if (!response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine($"[Error] Request failed {response.StatusCode}");
+                    Console.WriteLine($"[Error] Request '{endpointUrl}' failed {response.StatusCode}");
                     return;
                 }
 

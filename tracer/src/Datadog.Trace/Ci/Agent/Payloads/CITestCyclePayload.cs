@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.EventModel;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
@@ -21,10 +22,12 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         public override string EventPlatformPath => "api/v2/citestcycle";
 
+        public override MetricTags.CIVisibilityEndpoints TelemetryEndpoint => MetricTags.CIVisibilityEndpoints.TestCycle;
+
         public override bool CanProcessEvent(IEvent @event)
         {
             // This intake accepts both Span and Test events
-            if (@event is SpanEvent or TestEvent)
+            if (@event is CIVisibilityEvent<Span>)
             {
                 return true;
             }

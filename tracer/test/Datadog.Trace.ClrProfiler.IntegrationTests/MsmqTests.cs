@@ -6,6 +6,7 @@
 #if NETFRAMEWORK
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -14,20 +15,34 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class MsmqTests : TestHelper
+    public class MsmqTests : TracingIntegrationTest
     {
-        private const string ExpectedServiceName = "Samples.Msmq-msmq";
-
         public MsmqTests(ITestOutputHelper output)
             : base("Msmq", output)
         {
             SetServiceVersion("1.0.0");
         }
 
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Tags["span.kind"] switch
+            {
+                SpanKinds.Consumer => span.IsMsmqInbound(metadataSchemaVersion),
+                SpanKinds.Producer => span.IsMsmqOutbound(metadataSchemaVersion),
+                SpanKinds.Client => span.IsMsmqClient(metadataSchemaVersion),
+                _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the MSMQ integration: {span.Tags["span.kind"]}", nameof(span)),
+            };
+
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [SkippableFact]
-        public void SubmitTraces()
+        public Task SubmitTracesV0() => RunTest("v0");
+
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [SkippableFact]
+        public Task SubmitTracesV1() => RunTest("v1");
+
+        private async Task RunTest(string metadataSchemaVersion)
         {
             const int expectedTransactionalTraces = 13;
             const int expectedNonTransactionalTracesTraces = 12;
@@ -44,20 +59,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var transactionalTraces = 0;
             var nonTransactionalTraces = 0;
 
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-msmq" : EnvironmentHelper.FullSampleName;
+
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var processResult = RunSampleAndWaitForExit(agent, arguments: $"5 5");
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: $"5 5");
 
             var spans = agent.WaitForSpans(totalTransactions);
             Assert.True(spans.Count >= totalTransactions, $"Expecting at least {totalTransactions} spans, only received {spans.Count}");
-            var msmqSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
+            var msmqSpans = spans.Where(span => string.Equals(span.GetTag("component"), "msmq", StringComparison.OrdinalIgnoreCase));
+            ValidateIntegrationSpans(msmqSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+
             foreach (var span in msmqSpans)
             {
-                var result = span.IsMsmq();
-                Assert.True(result.Success, result.ToString());
-
-                span.Service.Should().Be(ExpectedServiceName);
-                span.Tags.Should().Contain(new System.Collections.Generic.KeyValuePair<string, string>(Tags.InstrumentationName, "msmq"));
                 if (span.Tags[Tags.MsmqIsTransactionalQueue] == "True")
                 {
                     span.Tags[Tags.MsmqQueuePath].Should().Be(".\\Private$\\private-transactional-queue");
@@ -68,8 +84,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     span.Tags[Tags.MsmqQueuePath].Should().Be(".\\Private$\\private-nontransactional-queue");
                     nonTransactionalTraces++;
                 }
-
-                span.Tags?.ContainsKey(Tags.Version).Should().BeFalse("External service span should not have service version tag.");
 
                 var command = span.Tags[Tags.MsmqCommand];
 

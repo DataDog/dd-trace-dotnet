@@ -1,8 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Platforms>x64;x86</Platforms>
-
     <!--These should be consolidated in a file that can be shared for the tests and samples directories -->
     <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
     <DefineConstants Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'=='true'">$(DefineConstants);TEST_ALL_MINOR_PACKAGE_VERSIONS</DefineConstants>
@@ -20,17 +18,12 @@
     </Content>
 
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-    <ProjectReference Include="..\test-applications\debugger\Samples.Probes\Samples.Probes.csproj" />
-
-    <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
 
     <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.0.226801" />
 
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
 
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
 

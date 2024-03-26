@@ -6,53 +6,40 @@
 #include <cassert>
 #include <chrono>
 #include <errno.h>
-#include <mutex>
-#include <signal.h>
-#include <sys/syscall.h>
-#include <unordered_map>
 #include <iomanip>
+#include <libunwind.h>
+#include <mutex>
+#include <ucontext.h>
+#include <unordered_map>
 
-#ifdef ARM64
-#include <libunwind-aarch64.h>
-#elif AMD64
-#include <libunwind-x86_64.h>
-#else
-error("unsupported architecture")
-#endif
-
+#include "IConfiguration.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
+#include "ProfilerSignalManager.h"
 #include "ScopeFinalizer.h"
-#include "StackSnapshotResultReusableBuffer.h"
+#include "StackSnapshotResultBuffer.h"
 
 using namespace std::chrono_literals;
 
-std::mutex LinuxStackFramesCollector::s_signalHandlerInitLock;
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
-bool LinuxStackFramesCollector::s_isSignalHandlerSetup = false;
-int32_t LinuxStackFramesCollector::s_signalToSend = -1;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
-LinuxStackFramesCollector::LinuxStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo) :
-    _pCorProfilerInfo(_pCorProfilerInfo),
+LinuxStackFramesCollector::LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* const configuration) :
+    StackFramesCollectorBase(configuration),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
-    _errorStatistics{}
+    _processId{OpSysTools::GetProcId()},
+    _signalManager{signalManager},
+    _errorStatistics{},
+    _useBacktrace2{configuration->UseBacktrace2()}
 {
-    _pCorProfilerInfo->AddRef();
-    InitializeSignalHandler();
-}
-LinuxStackFramesCollector::~LinuxStackFramesCollector()
-{
-    _pCorProfilerInfo->Release();
-    _errorStatistics.Log();
-    // !! @ToDo: We must uninstall the signal handler!!
+    _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
 }
 
-bool IsThreadAlive(::pid_t processId, ::pid_t threadId)
+LinuxStackFramesCollector::~LinuxStackFramesCollector()
 {
-    return syscall(SYS_tgkill, processId, threadId, 0) == 0;
+    _errorStatistics.Log();
 }
 
 bool LinuxStackFramesCollector::ShouldLogStats()
@@ -98,60 +85,66 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
     if (selfCollect)
     {
-        errorCode = CollectCallStackCurrentThread();
+        // In case we are self-unwinding, we do not want to be interrupted by the signal-based profilers (walltime and cpu)
+        // This will crashing in libunwind (accessing a memory area  which was unmapped)
+        // This lock is acquired by the signal-based profiler (see StackSamplerLoop->StackSamplerLoopManager)
+        pThreadInfo->GetStackWalkLock().Acquire();
+
+        on_leave
+        {
+            pThreadInfo->GetStackWalkLock().Release();
+        };
+
+        errorCode = CollectCallStackCurrentThread(nullptr);
     }
     else
     {
-        if (!s_isSignalHandlerSetup)
+        if (!_signalManager->IsHandlerInPlace())
         {
-            Log::Debug("LinuxStackFramesCollector::CollectStackSampleImplementation: Signal handler not set up. Cannot collect callstacks."
-                       " (Earlier log entry may contain additinal details.)");
-
             *pHR = E_FAIL;
-
             return GetStackSnapshotResult();
         }
 
         std::unique_lock<std::mutex> stackWalkInProgressLock(s_stackWalkInProgressMutex);
 
-        const auto osThreadId = static_cast<::pid_t>(pThreadInfo->GetOsThreadId());
-        const auto processId = static_cast<::pid_t>(OpSysTools::GetProcId());
+        const auto threadId = static_cast<::pid_t>(pThreadInfo->GetOsThreadId());
 
-#ifndef NDEBUG
-        Log::Debug("LinuxStackFramesCollector::CollectStackSampleImplementation: Sending signal ",
-                   s_signalToSend, " to thread with osThreadId=", osThreadId, ".");
-#endif
         s_pInstanceCurrentlyStackWalking = this;
 
         on_leave { s_pInstanceCurrentlyStackWalking = nullptr; };
 
         _stackWalkFinished = false;
 
-        errorCode = syscall(SYS_tgkill, processId, osThreadId, s_signalToSend);
+        errorCode = _signalManager->SendSignal(threadId);
 
         if (errorCode == -1)
         {
             Log::Warn("LinuxStackFramesCollector::CollectStackSampleImplementation:"
-                      " Unable to send signal USR1 to thread with osThreadId=",
-                      osThreadId, ". Error code: ",
-                      strerror(errno));
+                      " Unable to send signal USR1 to thread with threadId=",
+                      threadId, ". Error code: ", strerror(errno));
         }
         else
         {
-            do
+            // release the lock and wait for a notification or the 2s timeout
+            auto status = _stackWalkInProgressWaiter.wait_for(stackWalkInProgressLock, 2s);
+
+            // The lock is reacquired, but we might have faced an issue:
+            // - the thread is dead and the lock released
+            // - the profiler signal handler was replaced
+
+            if (status == std::cv_status::timeout)
             {
-                // When the application ends and the CLR shuts down, it might happen that
-                // the currently walked thread gets terminated without noticing us.
-                // This loop ensures that the code does not stay stuck waiting for a lock that will
-                // never be released. It will exit if the stack walked thread does not run anymore or
-                // the stack walk finishes as expected.
-                _stackWalkInProgressWaiter.wait_for(stackWalkInProgressLock, 500ms);
-                if (!IsThreadAlive(processId, osThreadId))
+                _lastStackWalkErrorCode = E_ABORT;
+                ;
+                if (!_signalManager->CheckSignalHandler())
                 {
-                    _lastStackWalkErrorCode = E_ABORT;
-                    break;
+                    _lastStackWalkErrorCode = E_FAIL;
+                    Log::Info("Profiler signal handler was replaced but we failed or stopped at restoring it. We won't be able to collect callstacks.");
+                    *pHR = E_FAIL;
+                    return GetStackSnapshotResult();
                 }
-            } while (!_stackWalkFinished);
+            }
+
             errorCode = _lastStackWalkErrorCode;
         }
     }
@@ -173,173 +166,27 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 void LinuxStackFramesCollector::NotifyStackWalkCompleted(std::int32_t resultErrorCode)
 {
     _lastStackWalkErrorCode = resultErrorCode;
-    _stackWalkInProgressWaiter.notify_one();
     _stackWalkFinished = true;
+    _stackWalkInProgressWaiter.notify_one();
 }
 
-void LinuxStackFramesCollector::InitializeSignalHandler()
+// This symbol is defined in the Datadog.Linux.ApiWrapper. It allows us to check if the thread to be profiled
+// contains a frame of a function that might cause a deadlock.
+extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak));
+
+std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 {
-    if (s_isSignalHandlerSetup)
-        return;
-
-    std::unique_lock<std::mutex> lock{s_signalHandlerInitLock};
-
-    if (s_isSignalHandlerSetup)
-        return;
-
-    s_isSignalHandlerSetup = SetupSignalHandler();
-}
-
-bool LinuxStackFramesCollector::TrySetHandlerForSignal(int32_t signal, struct sigaction& action)
-{
-    struct sigaction oldAction;
-    if (sigaction(signal, nullptr, &oldAction) < 0)
+    if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
     {
-        Log::Error("LinuxStackFramesCollector::TrySetHandlerForSignal:"
-                   " Unable to examine signal handler for signal ",
-                   signal, ". Reason:",
-                   strerror(errno), ".");
-        return false;
+        return E_ABORT;
     }
 
-    // Replace signal only if there is no user-defined one.
-    // @ToDo: is that enough?
-    if (oldAction.sa_handler == SIG_DFL || oldAction.sa_handler == SIG_IGN)
-    {
-        sigaddset(&action.sa_mask, signal);
-        int32_t result = sigaction(signal, &action, &oldAction);
-        if (result == 0)
-        {
-            return true;
-        }
-
-        sigdelset(&action.sa_mask, signal);
-        Log::Error("LinuxStackFramesCollector::TrySetHandlerForSignal:"
-                   " Unable to setup signal handler for signal",
-                   signal, ". Reason: ",
-                   strerror(errno), ".");
-    }
-
-    Log::Info("LinuxStackFramesCollector::TrySetHandlerForSignal:"
-              " Unable to set signal for ",
-              signal, ". The default one is overriden by ",
-              oldAction.sa_handler, ".");
-
-    return false;
-}
-
-bool LinuxStackFramesCollector::SetupSignalHandler()
-{
-    // SIGUSR1 & SIGUSR2 are not use in the CLR
-    // But, let's check if they are available
-
-    struct sigaction sampleAction;
-    sampleAction.sa_flags = 0;
-    sampleAction.sa_handler = LinuxStackFramesCollector::CollectStackSampleSignalHandler;
-    sigemptyset(&sampleAction.sa_mask);
-
-    if (TrySetHandlerForSignal(SIGUSR1, sampleAction))
-    {
-        s_signalToSend = SIGUSR1;
-        Log::Info("LinuxStackFramesCollector::SetupSignalHandler: Successfully setup signal handler for SIGUSR1 signal.");
-        return true;
-    }
-
-    if (TrySetHandlerForSignal(SIGUSR2, sampleAction))
-    {
-        s_signalToSend = SIGUSR2;
-        Log::Info("LinuxStackFramesCollector::SetupSignalHandler: Successfully setup signal handler for SIGUSR2 signal.");
-        return true;
-    }
-
-    Log::Error("LinuxStackFramesCollector::SetupSignalHandler: Failed to setup signal handler for SIGUSR1 or SIGUSR2 signals.");
-    return false;
-}
-
-char const* LinuxStackFramesCollector::ErrorCodeToString(int32_t errorCode)
-{
-    switch (errorCode)
-    {
-        case -UNW_ESUCCESS:
-            return "success (UNW_ESUCCESS)";
-        case -UNW_EUNSPEC:
-            return "unspecified (general) error (UNW_EUNSPEC)";
-        case -UNW_ENOMEM:
-            return "out of memory (UNW_ENOMEM)";
-        case -UNW_EBADREG:
-            return "bad register number (UNW_EBADREG)";
-        case -UNW_EREADONLYREG:
-            return "attempt to write read-only register (UNW_EREADONLYREG)";
-        case -UNW_ESTOPUNWIND:
-            return "stop unwinding (UNW_ESTOPUNWIND)";
-        case -UNW_EINVALIDIP:
-            return "invalid IP (UNW_EINVALIDIP)";
-        case -UNW_EBADFRAME:
-            return "bad frame (UNW_EBADFRAME)";
-        case -UNW_EINVAL:
-            return "unsupported operation or bad value (UNW_EINVAL)";
-        case -UNW_EBADVERSION:
-            return "unwind info has unsupported version (UNW_EBADVERSION)";
-        case -UNW_ENOINFO:
-            return "no unwind info found (UNW_ENOINFO)";
-
-        default:
-            return "Unknown libunwind error code";
-    }
-}
-
-std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
-{
     try
     {
-        std::int32_t resultErrorCode;
+        // Collect data for TraceContext tracking:
+        TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
-        {
-            // Collect data for TraceContext tracking:
-            bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
-
-            // Now walk the stack:
-
-            unw_context_t uc;
-            unw_getcontext(&uc);
-
-            unw_cursor_t cursor;
-            unw_init_local(&cursor, &uc);
-
-            // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
-            if (IsCurrentCollectionAbortRequested())
-            {
-                AddFakeFrame();
-                return E_ABORT;
-            }
-
-            resultErrorCode = unw_step(&cursor);
-
-            while (resultErrorCode > 0)
-            {
-                // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
-                if (IsCurrentCollectionAbortRequested())
-                {
-                    AddFakeFrame();
-                    return E_ABORT;
-                }
-
-                unw_word_t nativeInstructionPointer;
-                resultErrorCode = unw_get_reg(&cursor, UNW_REG_IP, &nativeInstructionPointer);
-                if (resultErrorCode != 0)
-                {
-                    return resultErrorCode;
-                }
-
-                if (!AddFrame(nativeInstructionPointer))
-                {
-                    return S_FALSE;
-                }
-
-                resultErrorCode = unw_step(&cursor);
-            }
-        }
-        return resultErrorCode;
+        return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
     }
     catch (...)
     {
@@ -347,14 +194,156 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
     }
 }
 
-void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int32_t signal)
+std::int32_t LinuxStackFramesCollector::CollectStackManually(void* ctx)
 {
-    std::unique_lock<std::mutex> stackWalkInProgressLock(s_stackWalkInProgressMutex);
-    LinuxStackFramesCollector* pCollectorInstanceCurrentlyStackWalking = s_pInstanceCurrentlyStackWalking;
+    std::int32_t resultErrorCode;
 
-    std::int32_t resultErrorCode = pCollectorInstanceCurrentlyStackWalking->CollectCallStackCurrentThread();
-    stackWalkInProgressLock.unlock();
-    pCollectorInstanceCurrentlyStackWalking->NotifyStackWalkCompleted(resultErrorCode);
+    // if we are in the signal handler, ctx won't be null, so we will use the context
+    // This will allow us to skip the syscall frame and start from the frame before the syscall.
+    auto flag = UNW_INIT_SIGNAL_FRAME;
+    unw_context_t context;
+    if (ctx != nullptr)
+    {
+        context = *reinterpret_cast<unw_context_t*>(ctx);
+    }
+    else
+    {
+        // not in signal handler. Get the context and initialize the cursor form here
+        resultErrorCode = unw_getcontext(&context);
+        if (resultErrorCode != 0)
+        {
+            return E_ABORT; // unw_getcontext does not return a specific error code. Only -1
+        }
+
+        flag = static_cast<unw_init_local2_flags_t>(0);
+    }
+
+    unw_cursor_t cursor;
+    resultErrorCode = unw_init_local2(&cursor, &context, flag);
+
+    if (resultErrorCode < 0)
+    {
+        return resultErrorCode;
+    }
+
+    do
+    {
+        // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
+        if (IsCurrentCollectionAbortRequested())
+        {
+            AddFakeFrame();
+            return E_ABORT;
+        }
+
+        unw_word_t ip;
+        resultErrorCode = unw_get_reg(&cursor, UNW_REG_IP, &ip);
+        if (resultErrorCode != 0)
+        {
+            return resultErrorCode;
+        }
+
+        if (!AddFrame(ip))
+        {
+            return S_FALSE;
+        }
+
+        resultErrorCode = unw_step(&cursor);
+    } while (resultErrorCode > 0);
+
+    return resultErrorCode;
+}
+
+std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
+{
+    auto* context = reinterpret_cast<unw_context_t*>(ctx);
+
+    // Now walk the stack:
+    auto [data, size] = Data();
+    auto count = unw_backtrace2((void**)data, size, context);
+
+    if (count == 0)
+    {
+        return E_FAIL;
+    }
+
+    SetFrameCount(count);
+    return S_OK;
+}
+
+bool LinuxStackFramesCollector::CanCollect(int32_t threadId, pid_t processId) const
+{
+    // on OSX, processId can be equal to 0. https://sourcegraph.com/github.com/dotnet/runtime/-/blob/src/coreclr/pal/src/exception/signal.cpp?L818:5&subtree=true
+    // Since the profiler does not run on OSX, we leave it like this.
+    auto* currentThreadInfo = _pCurrentCollectionThreadInfo;
+    return currentThreadInfo != nullptr && currentThreadInfo->GetOsThreadId() == threadId && processId == _processId;
+}
+
+void LinuxStackFramesCollector::MarkAsInterrupted()
+{
+    auto* currentThreadInfo = _pCurrentCollectionThreadInfo;
+
+    if (currentThreadInfo != nullptr)
+    {
+        currentThreadInfo->MarkAsInterrupted();
+    }
+}
+
+bool IsInSigSegvHandler(void* context)
+{
+    auto* ctx = reinterpret_cast<ucontext_t*>(context);
+
+    // If SIGSEGV is part of the sigmask set, it means that the thread was executing
+    // the SIGSEGV signal handler (or someone blocks SIGSEGV signal for this thread,
+    // but that less likely)
+    return sigismember(&(ctx->uc_sigmask), SIGSEGV) == 1;
+}
+
+bool LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, siginfo_t* info, void* context)
+{
+    // This is a workaround to prevent libunwind from unwind 2 signal frames and potentially crashing.
+    // Current crash occurs in libcoreclr.so, while reading the Elf header.
+    if (IsInSigSegvHandler(context))
+    {
+        return false;
+    }
+
+    // Libunwind can overwrite the value of errno - save it beforehand and restore it at the end
+    auto oldErrno = errno;
+
+    bool success = false;
+
+    LinuxStackFramesCollector* pCollectorInstance = s_pInstanceCurrentlyStackWalking;
+
+    if (pCollectorInstance != nullptr)
+    {
+        std::unique_lock<std::mutex> stackWalkInProgressLock(s_stackWalkInProgressMutex);
+
+        pCollectorInstance = s_pInstanceCurrentlyStackWalking;
+
+        // sampling in progress
+        if (pCollectorInstance != nullptr)
+        {
+            pCollectorInstance->MarkAsInterrupted();
+
+            // There can be a race:
+            // The sampling thread has sent the signal and is waiting, but another SIGUSR1 signal was sent
+            // by another thread and is handled before the one sent by the sampling thread.
+            if (pCollectorInstance->CanCollect(OpSysTools::GetThreadId(), info->si_pid))
+            {
+                // In case it's the thread we want to sample, just get its callstack
+                auto resultErrorCode = pCollectorInstance->CollectCallStackCurrentThread(context);
+
+                // release the lock
+                stackWalkInProgressLock.unlock();
+                pCollectorInstance->NotifyStackWalkCompleted(resultErrorCode);
+                success = true;
+            }
+        }
+        // no need to release the lock and notify. The sampling thread must wait until its signal is handled correctly
+    }
+
+    errno = oldErrno;
+    return success;
 }
 
 void LinuxStackFramesCollector::ErrorStatistics::Add(std::int32_t errorCode)
@@ -368,10 +357,12 @@ void LinuxStackFramesCollector::ErrorStatistics::Log()
     if (!_stats.empty())
     {
         std::stringstream ss;
-        ss << std::setfill(' ') << std::setw(13) << "# occurrences" << "  |  " << "Error message\n";
+        ss << std::setfill(' ') << std::setw(13) << "# occurrences"
+           << " | "
+           << "Error message\n";
         for (auto& errorCodeAndStats : _stats)
         {
-            ss << std::setfill(' ') << std::setw(10) << errorCodeAndStats.second << "  |  " << ErrorCodeToString(errorCodeAndStats.first) << " (" << errorCodeAndStats.first << ")\n";
+            ss << std::setfill(' ') << std::setw(10) << errorCodeAndStats.second << "  |  " << unw_strerror(errorCodeAndStats.first) << " (" << errorCodeAndStats.first << ")\n";
         }
 
         Log::Info("LinuxStackFramesCollector::CollectStackSampleImplementation: The sampler thread encoutered errors in the interval\n",

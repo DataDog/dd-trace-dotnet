@@ -1,20 +1,11 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-# GoogleTest requires at least C++11
-set(CMAKE_CXX_STANDARD 17)
-
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/e2239ee6043f73722e7aa812a459f54a28552929.zip
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
-if(NOT googletest_POPULATED)
-   FetchContent_Populate(googletest)
-   add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
+if (IS_ALPINE)
+    add_compile_definitions(-DDD_ALPINE)
 endif()
 
 add_subdirectory(Datadog.Profiler.Native.Tests)
+add_subdirectory(Datadog.Linux.ApiWrapper.Tests)
 
+add_custom_target(profiler-native-tests)
+add_dependencies(profiler-native-tests Datadog.Profiler.Native.Tests Datadog.Linux.ApiWrapper.Tests)

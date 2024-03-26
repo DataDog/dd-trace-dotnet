@@ -18,5 +18,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         public IntPtr KeyRegex;
 
         public IntPtr ValueRegex;
+
+        public IntPtr FreeWafFunction;
     }
 }

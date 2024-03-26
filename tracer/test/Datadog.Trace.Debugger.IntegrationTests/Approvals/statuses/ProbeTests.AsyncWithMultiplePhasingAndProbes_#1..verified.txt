@@ -1,0 +1,74 @@
+﻿[
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "03da93fa-95b1-4bbc-89e2-6c29cb8f1744",
+        "status": "INSTALLED"
+      }
+    },
+    "message": "Installed probe 03da93fa-95b1-4bbc-89e2-6c29cb8f1744.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "17c1e39c-e46c-828e-4e02-21be0f3b5358",
+        "status": "INSTALLED"
+      }
+    },
+    "message": "Installed probe 17c1e39c-e46c-828e-4e02-21be0f3b5358.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "23827d5e-fc78-6898-4039-dec54409f8c4",
+        "status": "INSTALLED"
+      }
+    },
+    "message": "Installed probe 23827d5e-fc78-6898-4039-dec54409f8c4.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "3410cda1-5b13-a34e-6f84-a54adf7a0ea0",
+        "status": "INSTALLED"
+      }
+    },
+    "message": "Installed probe 3410cda1-5b13-a34e-6f84-a54adf7a0ea0.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "8286d046-9740-a3e4-95cf-ff46699c73c4",
+        "status": "INSTALLED"
+      }
+    },
+    "message": "Installed probe 8286d046-9740-a3e4-95cf-ff46699c73c4.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "9abe7e9c-fd77-89e5-9fec-f460cd25403b",
+        "status": "INSTALLED"
+      }
+    },
+    "message": "Installed probe 9abe7e9c-fd77-89e5-9fec-f460cd25403b.",
+    "service": "probes"
+  }
+]

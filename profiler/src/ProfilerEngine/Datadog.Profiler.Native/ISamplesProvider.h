@@ -3,13 +3,15 @@
 
 #pragma once
 #include <list>
+#include <memory>
 
 // forward declarations
-class Sample;
+class SamplesEnumerator;
 
 class ISamplesProvider
 {
 public:
     virtual ~ISamplesProvider() = default;
-    virtual std::list<Sample> GetSamples() = 0;
+    virtual std::unique_ptr<SamplesEnumerator> GetSamples() = 0;
+    virtual const char* GetName() = 0;
 };

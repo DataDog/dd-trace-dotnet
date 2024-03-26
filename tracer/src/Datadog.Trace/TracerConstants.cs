@@ -8,12 +8,7 @@ namespace Datadog.Trace
     internal static class TracerConstants
     {
         public const string Language = "dotnet";
-
-        /// <summary>
-        /// 2^63-1
-        /// </summary>
-        public const ulong MaxTraceId = 9_223_372_036_854_775_807;
-
-        public const string AssemblyVersion = "2.15.0.0";
+        public const string AssemblyVersion = "2.50.0.0";
+        public const string ThreePartVersion = "2.50.0";
     }
 }

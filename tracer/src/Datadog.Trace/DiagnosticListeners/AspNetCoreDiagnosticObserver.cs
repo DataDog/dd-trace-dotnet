@@ -12,10 +12,13 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
@@ -78,7 +81,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
 
-        private IDatadogSecurity CurrentSecurity => _security ?? Security.Instance;
+        private Security CurrentSecurity => _security ?? Security.Instance;
 
 #if NETCOREAPP
         protected override void OnNext(string eventName, object arg)
@@ -272,187 +275,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 #endif
 
-        private static string SimplifyRoutePattern(
-            RoutePattern routePattern,
-            RouteValueDictionary routeValueDictionary,
-            string areaName,
-            string controllerName,
-            string actionName,
-            bool expandRouteParameters)
-        {
-            var maxSize = routePattern.RawText.Length
-                        + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
-                        + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
-                        + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName.Length - 6, 0)) // "action".Length
-                        + 1; // '/' prefix
-
-            var sb = StringBuilderCache.Acquire(maxSize);
-
-            foreach (var pathSegment in routePattern.PathSegments)
-            {
-                foreach (var part in pathSegment.DuckCast<RoutePatternPathSegmentStruct>().Parts)
-                {
-                    if (part.TryDuckCast(out RoutePatternContentPartStruct contentPart))
-                    {
-                        sb.Append('/');
-                        sb.Append(contentPart.Content);
-                    }
-                    else if (part.TryDuckCast(out RoutePatternParameterPartStruct parameter))
-                    {
-                        var parameterName = parameter.Name;
-                        if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
-                        {
-                            sb.Append('/');
-                            sb.Append(areaName);
-                        }
-                        else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
-                        {
-                            sb.Append('/');
-                            sb.Append(controllerName);
-                        }
-                        else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
-                        {
-                            sb.Append('/');
-                            sb.Append(actionName);
-                        }
-                        else
-                        {
-                            var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
-                            if (!parameter.IsOptional || haveParameter)
-                            {
-                                sb.Append('/');
-                                if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
-                                {
-                                    // write the expanded parameter value
-                                    sb.Append(valueAsString);
-                                }
-                                else
-                                {
-                                    // write the route template value
-                                    sb.Append('{');
-                                    if (parameter.IsCatchAll)
-                                    {
-                                        if (parameter.EncodeSlashes)
-                                        {
-                                            sb.Append("**");
-                                        }
-                                        else
-                                        {
-                                            sb.Append('*');
-                                        }
-                                    }
-
-                                    sb.Append(parameterName);
-                                    if (parameter.IsOptional)
-                                    {
-                                        sb.Append('?');
-                                    }
-
-                                    sb.Append('}');
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
-
-            return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
-        }
-
-        private static string SimplifyRoutePattern(
-            RouteTemplate routePattern,
-            RouteValueDictionary routeValueDictionary,
-            string areaName,
-            string controllerName,
-            string actionName,
-            bool expandRouteParameters)
-        {
-            var maxSize = routePattern.TemplateText.Length
-                        + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
-                        + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
-                        + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName.Length - 6, 0)) // "action".Length
-                        + 1; // '/' prefix
-
-            var sb = StringBuilderCache.Acquire(maxSize);
-
-            foreach (var pathSegment in routePattern.Segments)
-            {
-                foreach (var part in pathSegment.Parts)
-                {
-                    var partName = part.Name;
-
-                    if (!part.IsParameter)
-                    {
-                        sb.Append('/');
-                        sb.Append(part.Text);
-                    }
-                    else if (partName.Equals("area", StringComparison.OrdinalIgnoreCase))
-                    {
-                        sb.Append('/');
-                        sb.Append(areaName);
-                    }
-                    else if (partName.Equals("controller", StringComparison.OrdinalIgnoreCase))
-                    {
-                        sb.Append('/');
-                        sb.Append(controllerName);
-                    }
-                    else if (partName.Equals("action", StringComparison.OrdinalIgnoreCase))
-                    {
-                        sb.Append('/');
-                        sb.Append(actionName);
-                    }
-                    else
-                    {
-                        var haveParameter = routeValueDictionary.TryGetValue(partName, out var value);
-                        if (!part.IsOptional || haveParameter)
-                        {
-                            sb.Append('/');
-                            if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
-                            {
-                                // write the expanded parameter value
-                                sb.Append(valueAsString);
-                            }
-                            else
-                            {
-                                // write the route template value
-                                sb.Append('{');
-                                if (part.IsCatchAll)
-                                {
-                                    sb.Append('*');
-                                }
-
-                                sb.Append(partName);
-                                if (part.IsOptional)
-                                {
-                                    sb.Append('?');
-                                }
-
-                                sb.Append('}');
-                            }
-                        }
-                    }
-                }
-            }
-
-            var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
-
-            return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
-        }
-
-        private static bool IsIdentifierSegment(object value, [NotNullWhen(false)] out string valueAsString)
-        {
-            valueAsString = value as string ?? value?.ToString();
-            if (valueAsString is null)
-            {
-                return false;
-            }
-
-            return UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length);
-        }
-
-        private static void SetLegacyResourceNames(BeforeActionStruct typedArg, Span span)
+        private static string GetLegacyResourceName(BeforeActionStruct typedArg)
         {
             ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
             HttpRequest request = typedArg.HttpContext.Request;
@@ -467,24 +290,27 @@ namespace Datadog.Trace.DiagnosticListeners
                 routeTemplate = $"{controllerName}/{actionName}";
             }
 
-            string resourceName = $"{httpMethod} {routeTemplate}";
-
-            // override the parent's resource name with the MVC route template
-            span.ResourceName = resourceName;
+            return $"{httpMethod} {routeTemplate}";
         }
 
-        private static Span StartMvcCoreSpan(Tracer tracer, Span parentSpan, BeforeActionStruct typedArg, HttpContext httpContext, HttpRequest request)
+        private static Span StartMvcCoreSpan(
+            Tracer tracer,
+            AspNetCoreHttpRequestHandler.RequestTrackingFeature trackingFeature,
+            BeforeActionStruct typedArg,
+            HttpContext httpContext,
+            HttpRequest request)
         {
             // Create a child span for the MVC action
             var mvcSpanTags = new AspNetCoreMvcTags();
-            var mvcScope = tracer.StartActiveInternal(MvcOperationName, parentSpan.Context, tags: mvcSpanTags);
+            var mvcScope = tracer.StartActiveInternal(MvcOperationName, tags: mvcSpanTags);
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             var span = mvcScope.Span;
             span.Type = SpanTypes.Web;
 
-            // This is only called with new route names, so parent tags are always AspNetCoreEndpointTags
-            var parentTags = (AspNetCoreEndpointTags)parentSpan.Tags;
+            // StartMvcCoreSpan is only called with new route names, so parent tags are always AspNetCoreEndpointTags
+            var rootSpan = trackingFeature.RootScope.Span;
+            var rootSpanTags = (AspNetCoreEndpointTags)rootSpan.Tags;
 
-            var trackingFeature = httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>();
             var isUsingEndpointRouting = trackingFeature.IsUsingEndpointRouting;
 
             var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
@@ -544,7 +370,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (routeTemplate is not null)
                 {
                     // If we have a route, overwrite the existing resource name
-                    var resourcePathName = SimplifyRoutePattern(
+                    var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRouteTemplate(
                         routeTemplate,
                         typedArg.RouteData.Values,
                         areaName: areaName,
@@ -552,7 +378,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         actionName: actionName,
                         expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled);
 
-                    resourceName = $"{parentTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    resourceName = $"{rootSpanTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
                     aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
                 }
@@ -561,9 +387,9 @@ namespace Datadog.Trace.DiagnosticListeners
             // mirror the parent if we couldn't extract a route for some reason
             // (and the parent is not using the placeholder resource name)
             span.ResourceName = resourceName
-                             ?? (string.IsNullOrEmpty(parentSpan.ResourceName)
+                             ?? (string.IsNullOrEmpty(rootSpan.ResourceName)
                                      ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request)
-                                     : parentSpan.ResourceName);
+                                     : rootSpan.ResourceName);
 
             mvcSpanTags.AspNetCoreAction = actionName;
             mvcSpanTags.AspNetCoreController = controllerName;
@@ -575,34 +401,12 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 // If we're using endpoint routing or this is a pipeline re-execution,
                 // these will already be set correctly
-                parentTags.AspNetCoreRoute = aspNetRoute;
-                parentSpan.ResourceName = span.ResourceName;
-                parentSpan.SetTag(Tags.HttpRoute, aspNetRoute);
+                rootSpanTags.AspNetCoreRoute = aspNetRoute;
+                rootSpan.ResourceName = span.ResourceName;
+                rootSpanTags.HttpRoute = aspNetRoute;
             }
 
             return span;
-        }
-
-        private static void DoBeforeRequestStops(HttpContext httpContext, Scope scope, ImmutableTracerSettings tracerSettings)
-        {
-            var span = scope.Span;
-            var isMissingHttpStatusCode = !span.HasHttpStatusCode();
-
-            if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
-            {
-                if (string.IsNullOrEmpty(span.ResourceName))
-                {
-                    span.ResourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
-                }
-
-                if (isMissingHttpStatusCode)
-                {
-                    span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracerSettings);
-                }
-            }
-
-            span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracerSettings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-            scope.Dispose();
         }
 
         private void OnHostingHttpRequestInStart(object arg)
@@ -611,7 +415,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var security = CurrentSecurity;
 
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.Settings.Enabled;
+            var shouldSecure = security.Enabled;
 
             if (!shouldTrace && !shouldSecure)
             {
@@ -621,38 +425,16 @@ namespace Datadog.Trace.DiagnosticListeners
             if (arg.TryDuckCast<HttpRequestInStartStruct>(out var requestStruct))
             {
                 HttpContext httpContext = requestStruct.HttpContext;
-                HttpRequest request = httpContext.Request;
-                Span span = null;
-                Scope scope = null;
                 if (shouldTrace)
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
-                    scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty);
-                    span = scope.Span;
-                }
-
-                if (shouldSecure)
-                {
-                    httpContext.Response.OnCompleted(
-                        () =>
-                        {
-                            security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, span);
-                            return Task.CompletedTask;
-                        });
-
-                    httpContext.Response.OnStarting(
-                        () =>
-                        {
-                            // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
-                            // the waf is already disposed by the registerfordispose callback, but we need to be at the end to get the real response status code
-                            security.InstrumentationGateway.RaiseRequestEnd(httpContext, request, span);
-                            return Task.CompletedTask;
-                        });
-
-                    security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span);
-                    // Should we get rid of the Instrumentation Gateway, it s been making the code very cumbersome and hard to follow and an event driven model doesnt seem adapted here cause we need to get a return value from the security component to know here that we need to flush the span after blocking, hence the cumbersome action (last param here), binding parameters to avoid capturing local variables but so hard to read. It would be simpler to just call the security component with the current data, get the return, flush the span and throw if needed.
-                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, (args) => DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
+                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, httpContext, resourceName: string.Empty);
+                    if (shouldSecure)
+                    {
+                        CoreHttpContextStore.Instance.Set(httpContext);
+                        SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
+                    }
                 }
             }
         }
@@ -667,19 +449,16 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            Span span = tracer.InternalActiveScope?.Span;
-
-            if (span != null)
+            if (arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg)
+             && typedArg.HttpContext is { } httpContext
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
             {
-                var tags = span.Tags as AspNetCoreEndpointTags;
-                if (tags is null || !arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg))
+                if (rootSpan.Tags is not AspNetCoreEndpointTags tags)
                 {
-                    // Shouldn't happen in normal execution
+                    // customer is using legacy resource names
                     return;
                 }
 
-                HttpContext httpContext = typedArg.HttpContext;
-                var trackingFeature = httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>();
                 var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
                 if (isFirstExecution)
                 {
@@ -758,7 +537,7 @@ namespace Datadog.Trace.DiagnosticListeners
                                       ? raw as string
                                       : null;
 
-                var resourcePathName = SimplifyRoutePattern(
+                var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
                     routePattern,
                     routeValues,
                     areaName: areaName,
@@ -776,22 +555,16 @@ namespace Datadog.Trace.DiagnosticListeners
                 trackingFeature.ResourceName = resourceName;
                 if (isFirstExecution)
                 {
-                    span.ResourceName = resourceName;
+                    rootSpan.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
-                    span.SetTag(Tags.HttpRoute, normalizedRoute);
+                    tags.HttpRoute = normalizedRoute;
                 }
 
-                var security = CurrentSecurity;
-                var shouldSecure = security.Settings.Enabled;
-                if (shouldSecure)
+                CurrentSecurity.CheckPathParams(httpContext, rootSpan, routeValues);
+
+                if (Iast.Iast.Instance.Settings.Enabled)
                 {
-                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span, routeValues);
-                    security.InstrumentationGateway.RaiseBlockingOpportunity(
-                        httpContext,
-                        tracer.InternalActiveScope,
-                        tracer.Settings,
-                        args =>
-                            DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
+                    rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
                 }
             }
         }
@@ -802,18 +575,18 @@ namespace Datadog.Trace.DiagnosticListeners
             var security = CurrentSecurity;
 
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.Settings.Enabled;
+            var shouldSecure = security.Enabled;
+            var shouldUseIast = Iast.Iast.Instance.Settings.Enabled;
 
-            if (!shouldTrace && !shouldSecure)
+            if (!shouldTrace && !shouldSecure && !shouldUseIast)
             {
                 return;
             }
 
-            Span parentSpan = tracer.InternalActiveScope?.Span;
-
-            if (parentSpan != null && arg.TryDuckCast<BeforeActionStruct>(out var typedArg))
+            if (arg.TryDuckCast<BeforeActionStruct>(out var typedArg)
+             && typedArg.HttpContext is { } httpContext
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
             {
-                HttpContext httpContext = typedArg.HttpContext;
                 HttpRequest request = httpContext.Request;
 
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
@@ -823,28 +596,23 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
                     {
-                        SetLegacyResourceNames(typedArg, parentSpan);
+                        // override the parent's resource name with the simplified MVC route template
+                        rootSpan.ResourceName = GetLegacyResourceName(typedArg);
                     }
                     else
                     {
-                        span = StartMvcCoreSpan(tracer, parentSpan, typedArg, httpContext, request);
+                        span = StartMvcCoreSpan(tracer, trackingFeature, typedArg, httpContext, request);
                     }
                 }
 
-                if (shouldSecure && typedArg.ActionDescriptor?.Parameters != null)
+                if (span is not null)
                 {
-                    var pathParams = typedArg.ActionDescriptor.Parameters;
-                    var eventData = new Dictionary<string, object>(pathParams.Count);
-                    for (var i = 0; i < pathParams.Count; i++)
-                    {
-                        var p = typedArg.ActionDescriptor.Parameters[i];
-                        if (typedArg.RouteData.Values.ContainsKey(p.Name))
-                        {
-                            eventData.Add(p.Name, typedArg.RouteData.Values[p.Name]);
-                        }
-                    }
+                    CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+                }
 
-                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span ?? parentSpan, eventData);
+                if (shouldUseIast)
+                {
+                    rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
             }
         }
@@ -898,18 +666,13 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var scope = tracer.InternalActiveScope;
-
-            if (scope != null)
+            if (arg.DuckCast<HttpRequestInStopStruct>().HttpContext is { } httpContext
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope: { } rootScope })
             {
-                // We may need to update the resource name if none of the routing/mvc events updated it.
-                // If we had an unhandled exception, the status code will already be updated correctly,
-                // but if the span was manually marked as an error, we still need to record the status code
-                var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
-                HttpContext httpContext = httpRequest.HttpContext;
-
-                DoBeforeRequestStops(httpContext, scope, tracer.Settings);
+                AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, rootScope, httpContext);
             }
+
+            // If we don't have a scope, no need to call Stop pipeline
         }
 
         private void OnHostingUnhandledException(object arg)
@@ -921,33 +684,14 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var span = tracer.InternalActiveScope?.Span;
-
-            if (span != null && arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct))
+            if (arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct)
+             && unhandledStruct.HttpContext is { } httpContext
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan })
             {
-                int statusCode = 500;
-
-                if (unhandledStruct.Exception.TryDuckCast<BadHttpRequestExceptionStruct>(out var badRequestException))
-                {
-                    statusCode = badRequestException.StatusCode;
-                }
-
-                // Generic unhandled exceptions are converted to 500 errors by Kestrel
-                span.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
-
-                var security = CurrentSecurity;
-                if (unhandledStruct.Exception is not BlockException)
-                {
-                    span.SetException(unhandledStruct.Exception);
-                    if (security.Settings.Enabled)
-                    {
-                        span.SetException(unhandledStruct.Exception);
-                        var httpContext = unhandledStruct.HttpContext;
-                        security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, span);
-                        security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, tracer.InternalActiveScope, tracer.Settings);
-                    }
-                }
+                AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, CurrentSecurity, rootSpan, httpContext, unhandledStruct.Exception);
             }
+
+            // If we don't have a span, no need to call Handle exception
         }
 
         [DuckCopy]

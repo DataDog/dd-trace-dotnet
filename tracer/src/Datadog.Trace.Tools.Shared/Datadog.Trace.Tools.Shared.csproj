@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;</TargetFrameworks>
+    <RootNamespace>Datadog.Trace.Tools.Shared</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
+    
+    <!-- Disable the warnings about commenting public members - This library is not exposed publicly -->
+    <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
+    <NoWarn>CS1591;SA1600;SA1602;NU1901;NU1902;NU1903;NU1904</NoWarn>
+    <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Datadog.Trace\Util\System.Diagnostics.CodeAnalysis.Attributes.cs" Link="System.Diagnostics.CodeAnalysis.Attributes.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+  </ItemGroup>
+
+</Project>

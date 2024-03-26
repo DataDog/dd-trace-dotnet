@@ -7,12 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [CollectionDefinition("LargePayloadTests", DisableParallelization = true)]
     public class LargePayloadTestBase : TestHelper
     {
         public LargePayloadTestBase(ITestOutputHelper output)
@@ -28,11 +30,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public int ExpectedSpans => TracesToTrigger + (TracesToTrigger * SpansPerTrace);
 
-        protected void RunTest()
+        protected async Task RunTest()
         {
             using (var agent = EnvironmentHelper.GetMockAgent())
             {
-                using (var sample = RunSampleAndWaitForExit(agent, arguments: $" -t {TracesToTrigger} -s {SpansPerTrace} -f {FillerTagLength}"))
+                using (var sample = await RunSampleAndWaitForExit(agent, arguments: $" -t {TracesToTrigger} -s {SpansPerTrace} -f {FillerTagLength}"))
                 {
                     // Extra long time out because big payloads
                     var timeoutInMilliseconds = 60_000;

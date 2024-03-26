@@ -17,37 +17,32 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [UsesVerify]
-    public class AspNetCoreMvcWrongMethodTestBase : TestHelper, IClassFixture<AspNetCoreMvcTestBase.AspNetCoreTestFixture>
+    public class AspNetCoreMvcWrongMethodTestBase : TracingIntegrationTest, IClassFixture<AspNetCoreTestFixture>
     {
-        private readonly AspNetCoreMvcTestBase.AspNetCoreTestFixture fixture;
+        private readonly AspNetCoreTestFixture fixture;
         private readonly string _testName;
 
-        public AspNetCoreMvcWrongMethodTestBase(string testName, string sampleName, AspNetCoreMvcTestBase.AspNetCoreTestFixture fixture, ITestOutputHelper output)
+        public AspNetCoreMvcWrongMethodTestBase(string testName, string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output)
             : base(sampleName, output)
         {
             this.fixture = fixture;
             _testName = testName;
         }
 
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Name switch
+            {
+                "aspnet_core.request" => span.IsAspNetCore(metadataSchemaVersion),
+                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(metadataSchemaVersion),
+                _ => Result.DefaultSuccess,
+            };
+
         public async Task TestIncorrectMethod(string path)
         {
             await fixture.TryStartApp(this);
 
             var spans = await fixture.WaitForSpans(path, true);
-
-            var aspnetCoreSpans = spans.Where(s => s.Name == "aspnet_core.request");
-            foreach (var aspnetCoreSpan in aspnetCoreSpans)
-            {
-                var result = aspnetCoreSpan.IsAspNetCore();
-                Assert.True(result.Success, result.ToString());
-            }
-
-            var aspnetCoreMvcSpans = spans.Where(s => s.Name == "aspnet_core_mvc.request");
-            foreach (var aspnetCoreMvcSpan in aspnetCoreMvcSpans)
-            {
-                var result = aspnetCoreMvcSpan.IsAspNetCoreMvc();
-                Assert.True(result.Success, result.ToString());
-            }
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath);

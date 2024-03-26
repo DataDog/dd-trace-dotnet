@@ -3,7 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
+using System.Linq;
+using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -16,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RedisHelper));
 
-        internal static Scope CreateScope(Tracer tracer, IntegrationId integrationId, string integrationName, string host, string port, string rawCommand)
+        internal static Scope? CreateScope(Tracer tracer, IntegrationId integrationId, string integrationName, string? host, string? port, string rawCommand, long? databaseIndex)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationId))
             {
@@ -32,12 +36,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 return null;
             }
 
-            string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
-            Scope scope = null;
+            string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(ServiceName);
+            Scope? scope = null;
 
             try
             {
-                var tags = new RedisTags();
+                var tags = tracer.CurrentTraceSettings.Schema.Database.CreateRedisTags();
                 tags.InstrumentationName = integrationName;
 
                 scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
@@ -59,8 +63,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 tags.RawCommand = rawCommand;
                 tags.Host = host;
                 tags.Port = port;
+                if (databaseIndex.HasValue)
+                {
+                    tags.DatabaseIndex = databaseIndex.Value;
+                }
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
             catch (Exception ex)
@@ -69,6 +78,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             }
 
             return scope;
+        }
+
+        internal static string GetRawCommand(byte[][] cmdWithBinaryArgs)
+        {
+            return string.Join(
+                " ",
+                cmdWithBinaryArgs.Select(
+                    bs =>
+                    {
+                        try
+                        {
+                            return Encoding.UTF8.GetString(bs);
+                        }
+                        catch
+                        {
+                            return string.Empty;
+                        }
+                    }));
         }
     }
 }

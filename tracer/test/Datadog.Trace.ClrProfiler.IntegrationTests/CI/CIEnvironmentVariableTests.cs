@@ -7,9 +7,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
+using FluentAssertions;
 using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
@@ -30,39 +32,66 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public static IEnumerable<object[]> GetJsonItems()
         {
             // Check if the CI\Data folder exists.
-            string jsonFolder = DataHelpers.GetCiDataDirectory();
+            var jsonFolder = DataHelpers.GetCiDataDirectory();
 
             // JSON file path
-            foreach (string filePath in Directory.EnumerateFiles(jsonFolder, "*.json", SearchOption.TopDirectoryOnly))
+            foreach (var filePath in Directory.EnumerateFiles(jsonFolder, "*.json", SearchOption.TopDirectoryOnly))
             {
-                string name = Path.GetFileNameWithoutExtension(filePath);
-                string content = File.ReadAllText(filePath);
+                var name = Path.GetFileNameWithoutExtension(filePath);
+                var content = File.ReadAllText(filePath);
                 var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, string>[][]>(content);
                 yield return new object[] { new JsonDataItem(name, jsonObject) };
             }
+        }
+
+        [InlineData("git@github.com:DataDog/dd-trace-dotnet.git", true)]
+        [InlineData("git@git@hub.com:DataDog/dd-trace-dotnet.git", false)]
+        [InlineData("git@git/hub.com:DataDog/dd-trace-dotnet.git", false)]
+        [InlineData("git@git$hub.com:DataDog/dd-trace-dotnet.git", false)]
+        [InlineData("github.com:DataDog/dd-trace-dotnet.git", false)]
+        [InlineData("https://github.com/DataDog/dd-trace-dotnet.git", true)]
+        [InlineData("https://github.com/DataDog/dd-trace-dotnet", true)]
+        [InlineData("git@gitlab.com:gitlab-org/gitlab.git", true)]
+        [InlineData("https://gitlab.com/gitlab-org/gitlab.git", true)]
+        [SkippableTheory]
+        public void RepositoryPattern(string value, bool expected)
+        {
+            Assert.Equal(expected, Regex.Match(value, CIEnvironmentValues.RepositoryUrlPattern).Length == value.Length);
+        }
+
+        [InlineData(null, null)]
+        [InlineData("", "")]
+        [InlineData("Hello World", "Hello World")]
+        [InlineData("user@host", "user@host")]
+        [InlineData("https://username@github.com/username/repository.git", "https://github.com/username/repository.git")]
+        [InlineData("https://username:password@github.com/username/repository.git", "https://github.com/username/repository.git")]
+        [InlineData("user@host:path/to/repo", "user@host:path/to/repo")]
+        [InlineData("ssh://user@host:path/to/repo", "ssh://host:path/to/repo")]
+        [InlineData("ssh://user@host:23/path/to/repo", "ssh://host:23/path/to/repo")]
+        [InlineData("ftp://user@host:23/path/to/repo", "ftp://host:23/path/to/repo")]
+        [SkippableTheory]
+        public void CleanSensitiveDataFromRepositoryUrl(string value, string expected)
+        {
+            CIEnvironmentValues.RemoveSensitiveInformationFromUrl(value).Should().Be(expected);
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetJsonItems))]
         public void CheckEnvironmentVariables(JsonDataItem jsonData)
         {
-            SpanContext context = new SpanContext(null, null, null);
-            DateTimeOffset time = DateTimeOffset.UtcNow;
-            foreach (Dictionary<string, string>[] testItem in jsonData.Data)
+            var context = new SpanContext(null, null, null);
+            var time = DateTimeOffset.UtcNow;
+            foreach (var testItem in jsonData.Data)
             {
-                Dictionary<string, string> envData = testItem[0];
-                Dictionary<string, string> spanData = testItem[1];
+                var envData = testItem[0];
+                var spanData = testItem[1];
 
-                Span span = new Span(context, time);
+                var span = new Span(context, time);
+                CIEnvironmentValues.Create(envData).DecorateSpan(span);
 
-                SetEnvironmentFromDictionary(envData);
-                CIEnvironmentValues.Instance.ReloadEnvironmentData();
-                CIEnvironmentValues.Instance.DecorateSpan(span);
-                ResetEnvironmentFromDictionary(envData);
-
-                foreach (KeyValuePair<string, string> spanDataItem in spanData)
+                foreach (var spanDataItem in spanData)
                 {
-                    string value = span.Tags.GetTag(spanDataItem.Key);
+                    var value = span.Tags.GetTag(spanDataItem.Key);
 
                     /* Due date parsing and DateTimeOffset.ToString() we need to remove
                      * The fraction of a second part from the actual value.
@@ -86,40 +115,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         value = value.Replace(".000", string.Empty);
                     }
 
+                    if (spanDataItem.Key == CommonTags.CINodeLabels)
+                    {
+                        var labelsExpected = Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(
+                            spanDataItem.Value);
+                        Array.Sort(labelsExpected);
+
+                        var labelsActual =
+                            Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(value);
+                        Array.Sort(labelsActual);
+
+                        labelsActual.Should().Equal(labelsExpected);
+                        continue;
+                    }
+
                     Assert.Equal(spanDataItem.Value, value);
                 }
-
-                if (jsonData.Name != "usersupplied")
-                {
-                    string providerName = span.Tags.GetTag(CommonTags.CIProvider);
-                    Assert.Equal(jsonData.Name, providerName);
-                }
-            }
-        }
-
-        internal void SetEnvironmentFromDictionary(IDictionary values)
-        {
-            foreach (DictionaryEntry item in _originalEnvVars)
-            {
-                Environment.SetEnvironmentVariable(item.Key.ToString(), null);
-            }
-
-            foreach (DictionaryEntry item in values)
-            {
-                Environment.SetEnvironmentVariable(item.Key.ToString(), item.Value.ToString());
-            }
-        }
-
-        internal void ResetEnvironmentFromDictionary(IDictionary values)
-        {
-            foreach (DictionaryEntry item in values)
-            {
-                Environment.SetEnvironmentVariable(item.Key.ToString(), null);
-            }
-
-            foreach (DictionaryEntry item in _originalEnvVars)
-            {
-                Environment.SetEnvironmentVariable(item.Key.ToString(), item.Value.ToString());
             }
         }
 

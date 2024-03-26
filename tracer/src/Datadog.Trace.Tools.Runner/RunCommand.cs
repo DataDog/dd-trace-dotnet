@@ -3,29 +3,59 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.CommandLine;
+using System.CommandLine.Invocation;
+using System.Linq;
 using Spectre.Console;
-using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner
 {
-    internal class RunCommand : Command<RunSettings>
+    internal class RunCommand : CommandWithExamples
     {
+        private readonly ApplicationContext _applicationContext;
+        private readonly RunSettings _runSettings;
+
         public RunCommand(ApplicationContext applicationContext)
+            : base("run", "Run a command with the Datadog tracer enabled")
         {
-            ApplicationContext = applicationContext;
+            _applicationContext = applicationContext;
+            _runSettings = new RunSettings(this);
+
+            AddExample("dd-trace run -- dotnet myApp.dll");
+            AddExample("dd-trace run -- MyApp.exe");
+
+            this.SetHandler(Execute);
         }
 
-        protected ApplicationContext ApplicationContext { get; }
-
-        public override int Execute(CommandContext context, RunSettings settings)
+        private void Execute(InvocationContext context)
         {
-            return RunHelper.Execute(ApplicationContext, context, settings);
-        }
+            var args = _runSettings.Command.GetValue(context);
+            var program = args[0];
+            var arguments = args.Length > 1 ? Utils.GetArgumentsAsString(args.Skip(1)) : string.Empty;
 
-        public override ValidationResult Validate(CommandContext context, RunSettings settings)
-        {
-            var runValidation = RunHelper.Validate(context, settings);
-            return !runValidation.Successful ? runValidation : base.Validate(context, settings);
+            // Get profiler environment variables
+            if (!RunHelper.TryGetEnvironmentVariables(_applicationContext, context, _runSettings, out var profilerEnvironmentVariables))
+            {
+                context.ExitCode = 1;
+                return;
+            }
+
+            AnsiConsole.WriteLine("Running: {0} {1}", program, arguments);
+
+            if (Program.CallbackForTests != null)
+            {
+                Program.CallbackForTests(program, arguments, profilerEnvironmentVariables);
+                return;
+            }
+
+            var processInfo = Utils.GetProcessStartInfo(program, Environment.CurrentDirectory, profilerEnvironmentVariables);
+            if (!string.IsNullOrEmpty(arguments))
+            {
+                processInfo.Arguments = arguments;
+            }
+
+            context.ExitCode = Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
         }
     }
 }

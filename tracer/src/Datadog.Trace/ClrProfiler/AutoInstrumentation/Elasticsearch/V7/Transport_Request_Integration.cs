@@ -3,9 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
 {
@@ -16,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
         AssemblyName = ElasticsearchV7Constants.ElasticsearchAssemblyName,
         TypeName = ElasticsearchV7Constants.TransportTypeName,
         MethodName = "Request",
-        ReturnTypeName = "T",
+        ReturnTypeName = "!0",
         ParameterTypeNames = new[] { "Elasticsearch.Net.HttpMethod", ClrNames.String, "Elasticsearch.Net.PostData", "Elasticsearch.Net.IRequestParameters" },
         MinimumVersion = ElasticsearchV7Constants.Version7,
         MaximumVersion = ElasticsearchV7Constants.Version7,
@@ -41,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, THttpMethod, TPostData, TRequestParameters>(TTarget instance, THttpMethod method, string path, TPostData postData, TRequestParameters requestParameters)
         {
-            var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, ElasticsearchV7Constants.IntegrationId, path, method.ToString(), requestParameters, out var tags);
+            var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, ElasticsearchV7Constants.IntegrationId, method?.ToString(), requestParameters, out var tags);
 
             return new CallTargetState(scope, tags);
         }
@@ -57,22 +61,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
-            where TResponse : IElasticsearchResponse
+            where TResponse : IElasticsearchResponse, IDuckType
         {
-            var uri = response?.ApiCall?.Uri?.ToString();
-
-            if (uri != null)
+            if (response.Instance is not null && response.ApiCall?.Uri is { } uri)
             {
                 var tags = (ElasticsearchTags)state.State;
 
                 if (tags != null)
                 {
-                    tags.Url = uri;
+                    tags.Url = uri.ToString();
+                    tags.Host = HttpRequestUtils.GetNormalizedHost(uri.Host);
                 }
             }
 
             state.Scope.DisposeWithException(exception);
-            return new CallTargetReturn<TResponse>(response);
+            return new CallTargetReturn<TResponse>(response!);
         }
     }
 }

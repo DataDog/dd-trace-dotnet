@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Snapshots;
 
 namespace Datadog.Trace.Debugger.Instrumentation
@@ -19,19 +20,18 @@ namespace Datadog.Trace.Debugger.Instrumentation
     {
         private readonly string _probeId;
         private readonly Scope _scope;
-        private readonly DateTimeOffset? _startTime;
         private readonly string _probeFilePath;
         private readonly int _lineNumber;
 
         /// <summary>
-        /// Used to perform a fast lookup to grab the proper <see cref="MethodMetadataInfo"/>.
+        /// Backing field of <see cref="MethodMetadataIndex"/>.
+        /// Used to perform a fast lookup to grab the proper <see cref="Collections.MethodMetadataInfo"/>.
         /// This index is hard-coded into the method's instrumented bytecode.
         /// </summary>
         private readonly int _methodMetadataIndex;
 
         // Determines whether we should still be capturing values, or halt for any reason (e.g an exception was caused by our instrumentation, rate limiter threshold reached).
         internal bool IsActive = true;
-
         internal bool HasLocalsOrReturnValue;
 
         /// <summary>
@@ -39,38 +39,50 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// </summary>
         /// <param name="probeId">The id of the probe</param>
         /// <param name="scope">Scope instance</param>
-        /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
-        /// <param name="methodMetadataIndex">The unique index of the method's <see cref="MethodMetadataInfo"/></param>
+        /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Collections.MethodMetadataInfo"/></param>
+        /// <param name="probeData">The <see cref="ProbeData"/> associated with the executing instrumentation</param>
         /// <param name="lineNumber">The line number where the probe is located on</param>
         /// <param name="probeFilePath">The path to the file of the probe</param>
-        internal LineDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex, int lineNumber, string probeFilePath)
+        /// <param name="invocationTarget">The instance object (or null for static methods)</param>
+        internal LineDebuggerState(string probeId, Scope scope, int methodMetadataIndex, ref ProbeData probeData, int lineNumber, string probeFilePath, object invocationTarget)
         {
             _probeId = probeId;
             _scope = scope;
-            _startTime = startTime;
             _methodMetadataIndex = methodMetadataIndex;
             _lineNumber = lineNumber;
             _probeFilePath = probeFilePath;
             HasLocalsOrReturnValue = false;
-            SnapshotCreator = new DebuggerSnapshotCreator();
+            var processor = probeData.Processor;
+            SnapshotCreator = processor.CreateSnapshotCreator();
+            ProbeData = probeData;
+            InvocationTarget = invocationTarget;
         }
 
-        internal ref MethodMetadataInfo MethodMetadaInfo => ref MethodMetadataProvider.Get(_methodMetadataIndex);
+        /// <summary>
+        /// Gets an index that is used as a fast lookup to grab the proper <see cref="Collections.MethodMetadataInfo"/>.
+        /// This index is hard-coded into the method's instrumented bytecode.
+        /// </summary>
+        internal int MethodMetadataIndex
+        {
+            get
+            {
+                return _methodMetadataIndex;
+            }
+        }
+
+        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataCollection.Instance.Get(_methodMetadataIndex);
+
+        internal ProbeData ProbeData { get; }
 
         /// <summary>
         /// Gets the LiveDebugger SnapshotCreator
         /// </summary>
-        internal DebuggerSnapshotCreator SnapshotCreator { get; }
+        internal IDebuggerSnapshotCreator SnapshotCreator { get; }
 
         /// <summary>
         /// Gets the LiveDebugger BeginMethod scope
         /// </summary>
         internal Scope Scope => _scope;
-
-        /// <summary>
-        /// Gets the LiveDebugger state StartTime
-        /// </summary>
-        internal DateTimeOffset? StartTime => _startTime;
 
         /// <summary>
         /// Gets the Id of the probe
@@ -86,6 +98,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Gets the Line Number
         /// </summary>
         internal int LineNumber => _lineNumber;
+
+        internal object InvocationTarget { get; }
 
         /// <summary>
         /// Gets the default live debugger state (used by the native side to initialize the locals)

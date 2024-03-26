@@ -1,12 +1,12 @@
-﻿// <copyright file="AdaptiveSampler.cs" company="Datadog">
+// <copyright file="AdaptiveSampler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.Threading;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Debugger.RateLimiting
 {
@@ -32,8 +32,10 @@ namespace Datadog.Trace.Debugger.RateLimiting
     /// to compensate for too rapid changes in the incoming events rate and maintain the target average
     /// number of samples per window.
     /// </summary>
-    internal class AdaptiveSampler
+    internal class AdaptiveSampler : IAdaptiveSampler
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AdaptiveSampler>();
+
         /// <summary>
         /// Exponential Moving Average (EMA) last element weight.
         /// Check out papers about using EMA for streaming data - eg.
@@ -102,7 +104,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
         }
 
-        internal bool Sample()
+        public bool Sample()
         {
             _countsRef.AddTest();
 
@@ -114,22 +116,22 @@ namespace Datadog.Trace.Debugger.RateLimiting
             return false;
         }
 
-        internal bool Keep()
+        public bool Keep()
         {
             _countsRef.AddTest();
             _countsRef.AddSample();
             return true;
         }
 
-        internal bool Drop()
+        public bool Drop()
         {
             _countsRef.AddTest();
             return false;
         }
 
-        internal double NextDouble()
+        public double NextDouble()
         {
-            return ThreadSafeRandom.NextDouble();
+            return ThreadSafeRandom.Shared.NextDouble();
         }
 
         private double ComputeIntervalAlpha(int lookback)

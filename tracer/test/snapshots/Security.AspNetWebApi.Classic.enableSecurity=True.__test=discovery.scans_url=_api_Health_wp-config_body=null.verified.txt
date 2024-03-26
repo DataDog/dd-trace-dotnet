@@ -14,7 +14,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/api/Health/wp-config,
+      http.url: http://localhost:00000/api/Health/wp-config,
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
@@ -34,13 +34,12 @@
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
       http.status_code: 200,
-      http.url: http://localhost/api/Health/wp-config,
+      http.url: http://localhost:00000/api/Health/wp-config,
       http.useragent: Mistake Not...,
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -67,7 +66,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/api/Health/wp-config,
+      http.url: http://localhost:00000/api/Health/wp-config,
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
@@ -87,13 +86,12 @@
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
       http.status_code: 200,
-      http.url: http://localhost/api/Health/wp-config,
+      http.url: http://localhost:00000/api/Health/wp-config,
       http.useragent: Mistake Not...,
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -120,7 +118,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/api/Health/wp-config,
+      http.url: http://localhost:00000/api/Health/wp-config,
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
@@ -140,13 +138,12 @@
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
       http.status_code: 200,
-      http.url: http://localhost/api/Health/wp-config,
+      http.url: http://localhost:00000/api/Health/wp-config,
       http.useragent: Mistake Not...,
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -173,7 +170,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/api/Health/wp-config,
+      http.url: http://localhost:00000/api/Health/wp-config,
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
@@ -193,13 +190,12 @@
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
       http.status_code: 200,
-      http.url: http://localhost/api/Health/wp-config,
+      http.url: http://localhost:00000/api/Health/wp-config,
       http.useragent: Mistake Not...,
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -226,7 +222,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/api/Health/wp-config,
+      http.url: http://localhost:00000/api/Health/wp-config,
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
@@ -246,13 +242,12 @@
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
       http.status_code: 200,
-      http.url: http://localhost/api/Health/wp-config,
+      http.url: http://localhost:00000/api/Health/wp-config,
       http.useragent: Mistake Not...,
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
     Metrics: {

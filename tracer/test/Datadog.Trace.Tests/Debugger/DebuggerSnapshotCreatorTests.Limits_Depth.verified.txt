@@ -1,0 +1,37 @@
+﻿{
+  local0: {
+    fields: {
+      number: {
+        type: Int32,
+        value: 666
+      },
+      soInfinite: {
+        fields: {
+          number: {
+            type: Int32,
+            value: 666
+          },
+          soInfinite: {
+            fields: {
+              number: {
+                type: Int32,
+                value: 666
+              },
+              soInfinite: {
+                notCapturedReason: depth,
+                type: InfiniteRecursion,
+                value: InfiniteRecursion
+              }
+            },
+            type: InfiniteRecursion,
+            value: InfiniteRecursion
+          }
+        },
+        type: InfiniteRecursion,
+        value: InfiniteRecursion
+      }
+    },
+    type: InfiniteRecursion,
+    value: InfiniteRecursion
+  }
+}

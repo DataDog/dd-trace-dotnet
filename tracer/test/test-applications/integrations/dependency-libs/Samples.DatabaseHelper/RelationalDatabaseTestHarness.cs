@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace;
 
 // ReSharper disable MethodHasAsyncOverloadWithCancellation
 // ReSharper disable MethodSupportsCancellation
@@ -53,7 +52,7 @@ namespace Samples.DatabaseHelper
                                 new DbCommandNetStandardInterfaceGenericExecutor<TCommand>(),
                             };
 
-            using (var root = Tracer.Instance.StartActive("RunAllAsync<TCommand>"))
+            using (var root = SampleHelpers.CreateScope("RunAllAsync<TCommand>"))
             {
                 foreach (var executor in executors)
                 {
@@ -89,7 +88,7 @@ namespace Samples.DatabaseHelper
                                 new DbCommandNetStandardInterfaceExecutor(),
                             };
 
-            using (var root = Tracer.Instance.StartActive("RunBaseClassesAsync"))
+            using (var root = SampleHelpers.CreateScope("RunBaseClassesAsync"))
             {
                 foreach (var executor in executors)
                 {
@@ -109,7 +108,7 @@ namespace Samples.DatabaseHelper
                                 providerSpecificCommandExecutor
                             };
 
-            using (var root = Tracer.Instance.StartActive("RunSingleAsync"))
+            using (var root = SampleHelpers.CreateScope("RunSingleAsync"))
             {
                 foreach (var executor in executors)
                 {
@@ -133,7 +132,7 @@ namespace Samples.DatabaseHelper
             CancellationToken cancellationToken,
             params IDbCommandExecutor[] providerSpecificCommandExecutors)
         {
-            using (var root = Tracer.Instance.StartActive("RunAllAsync"))
+            using (var root = SampleHelpers.CreateScope("RunAllAsync"))
             {
                 foreach (var executor in providerSpecificCommandExecutors)
                 {
@@ -159,18 +158,17 @@ namespace Samples.DatabaseHelper
             string commandName = commandExecutor.CommandTypeName;
             Console.WriteLine(commandName);
 
-            using (var parentScope = Tracer.Instance.StartActive("command"))
+            using (var parentScope = SampleHelpers.CreateScope("command"))
             {
-                parentScope.Span.ResourceName = commandName;
+                SampleHelpers.TrySetResourceName(parentScope, commandName);
                 IDbCommand command;
 
-                using (var scope = Tracer.Instance.StartActive("sync"))
+                using (var scope = SampleHelpers.CreateScope("sync"))
                 {
-                    scope.Span.ResourceName = commandName;
+                    SampleHelpers.TrySetResourceName(scope, commandName);
 
                     Console.WriteLine("  Synchronous");
                     Console.WriteLine();
-                    await Task.Delay(100, cancellationToken);
 
                     command = commandFactory.GetCreateTableCommand(connection);
                     commandExecutor.ExecuteNonQuery(command);
@@ -196,15 +194,12 @@ namespace Samples.DatabaseHelper
 
                 if (commandExecutor.SupportsAsyncMethods)
                 {
-                    await Task.Delay(100, cancellationToken);
-
-                    using (var scope = Tracer.Instance.StartActive("async"))
+                    using (var scope = SampleHelpers.CreateScope("async"))
                     {
-                        scope.Span.ResourceName = commandName;
+                        SampleHelpers.TrySetResourceName(scope, commandName);
 
                         Console.WriteLine("  Asynchronous");
                         Console.WriteLine();
-                        await Task.Delay(100, cancellationToken);
 
                         command = commandFactory.GetCreateTableCommand(connection);
                         await commandExecutor.ExecuteNonQueryAsync(command);
@@ -228,15 +223,12 @@ namespace Samples.DatabaseHelper
                         await commandExecutor.ExecuteNonQueryAsync(command);
                     }
 
-                    await Task.Delay(100, cancellationToken);
-
-                    using (var scope = Tracer.Instance.StartActive("async-with-cancellation"))
+                    using (var scope = SampleHelpers.CreateScope("async-with-cancellation"))
                     {
-                        scope.Span.ResourceName = commandName;
+                        SampleHelpers.TrySetResourceName(scope, commandName);
 
                         Console.WriteLine("  Asynchronous with cancellation");
                         Console.WriteLine();
-                        await Task.Delay(100, cancellationToken);
 
                         command = commandFactory.GetCreateTableCommand(connection);
                         await commandExecutor.ExecuteNonQueryAsync(command, cancellationToken);
@@ -261,8 +253,6 @@ namespace Samples.DatabaseHelper
                     }
                 }
             }
-
-            await Task.Delay(100, cancellationToken);
         }
     }
 }

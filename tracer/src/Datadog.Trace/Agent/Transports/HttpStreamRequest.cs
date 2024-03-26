@@ -32,34 +32,58 @@ namespace Datadog.Trace.Agent.Transports
             _headers.Add(name, value);
         }
 
-        public async Task<IApiResponse> GetAsync() => (await SendAsync(WebRequestMethods.Http.Get, null, null).ConfigureAwait(false)).Item1;
+        public async Task<IApiResponse> GetAsync()
+            => (await SendAsync(WebRequestMethods.Http.Get, null, null, null, chunkedEncoding: false).ConfigureAwait(false)).Item1;
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType) => (await SendAsync(WebRequestMethods.Http.Post, contentType, new BufferContent(bytes)).ConfigureAwait(false)).Item1;
+        public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
+            => PostAsync(bytes, contentType, contentEncoding: null);
 
-        private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType, IHttpContent content)
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
+            => (await SendAsync(WebRequestMethods.Http.Post, contentType, new BufferContent(bytes), contentEncoding, chunkedEncoding: false).ConfigureAwait(false)).Item1;
+
+        public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
+            => (await SendAsync(WebRequestMethods.Http.Post, contentType, new HttpOverStreams.HttpContent.PushStreamContent(writeToRequestStream), contentEncoding, chunkedEncoding: true, multipartBoundary).ConfigureAwait(false)).Item1;
+
+        private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType, IHttpContent content, string contentEncoding, bool chunkedEncoding, string multipartBoundary = null)
         {
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
             {
                 if (contentType != null)
                 {
-                    _headers.Add("Content-Type", contentType);
+                    _headers.Add("Content-Type", ContentTypeHelper.GetContentType(contentType, multipartBoundary));
+                }
+
+                if (!string.IsNullOrEmpty(contentEncoding))
+                {
+                    _headers.Add("Content-Encoding", contentEncoding);
+                }
+
+                if (chunkedEncoding)
+                {
+                    _headers.Add("Transfer-Encoding", "chunked");
                 }
 
                 var request = new HttpRequest(verb, _uri.Host, _uri.PathAndQuery, _headers, content);
                 // send request, get response
                 var response = await _client.SendAsync(request, bidirectionalStream, bidirectionalStream).ConfigureAwait(false);
 
-                // Content-Length is required as we don't support chunked transfer
-                var contentLength = response.Content.Length;
-                if (!contentLength.HasValue)
+                MemoryStream responseContentStream;
+                if (response.ContentLength is { } contentLength)
                 {
-                    ThrowHelper.ThrowException("Content-Length is required but was not provided");
+                    // buffer the entire contents for now
+                    var buffer = new byte[contentLength];
+                    responseContentStream = new MemoryStream(buffer);
+                    await response.Content.CopyToAsync(buffer).ConfigureAwait(false);
+                }
+                else
+                {
+                    // We don't know the length, so can't use a fixed size buffer.
+                    // This happens when we receive chunked responses, so is relatively rare.
+                    // TODO: We should look at removing this buffering, but it requires a big refactor
+                    responseContentStream = new MemoryStream();
+                    await response.Content.CopyToAsync(responseContentStream).ConfigureAwait(false);
                 }
 
-                // buffer the entire contents for now
-                var buffer = new byte[contentLength.Value];
-                var responseContentStream = new MemoryStream(buffer);
-                await response.Content.CopyToAsync(buffer).ConfigureAwait(false);
                 responseContentStream.Position = 0;
 
                 return new Tuple<IApiResponse, HttpRequest>(new HttpStreamResponse(response.StatusCode, responseContentStream.Length, response.GetContentEncoding(), responseContentStream, response.Headers), request);

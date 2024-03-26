@@ -7,7 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DatabaseMonitoring;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -17,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     internal static class DbScopeFactory
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
+        private static bool _dbCommandCachingLogged = false;
 
         private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
@@ -27,14 +31,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
 
             Scope scope = null;
+            string commandText = command.CommandText;
 
             try
             {
                 Span parent = tracer.InternalActiveScope?.Span;
 
                 if (parent is { Type: SpanTypes.Sql } &&
-                    parent.GetTag(Tags.DbType) == dbType &&
-                    parent.ResourceName == command.CommandText)
+                    HasDbType(parent, dbType) &&
+                    (parent.ResourceName == commandText || commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix)))
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
@@ -42,21 +47,61 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return null;
                 }
 
-                var tags = new SqlTags
-                           {
-                               DbType = dbType,
-                               InstrumentationName = IntegrationRegistry.GetName(integrationId),
-                               DbName = tagsFromConnectionString.DbName,
-                               DbUser = tagsFromConnectionString.DbUser,
-                               OutHost = tagsFromConnectionString.OutHost,
-                           };
+                SqlTags tags = tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags();
+                tags.DbType = dbType;
+                tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
+                tags.DbName = tagsFromConnectionString.DbName;
+                tags.DbUser = tagsFromConnectionString.DbUser;
+                tags.OutHost = tagsFromConnectionString.OutHost;
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
-                scope.Span.ResourceName = command.CommandText;
+                scope.Span.ResourceName = commandText;
                 scope.Span.Type = SpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+
+                if (Iast.Iast.Instance.Settings.Enabled)
+                {
+                    IastModule.OnSqlQuery(commandText, integrationId);
+                }
+
+                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled
+                    && command.CommandType != CommandType.StoredProcedure)
+                {
+                    var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix);
+                    if (alreadyInjected)
+                    {
+                        // The command text is already injected, so they're probably caching the SqlCommand
+                        // that's not a problem if they're using 'service' mode, but it _is_ a problem for 'full' mode
+                        // There's not a lot we can do about it (we don't want to start parsing commandText), so just
+                        // report it for now
+                        if (!Volatile.Read(ref _dbCommandCachingLogged)
+                            && tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Service)
+                        {
+                            _dbCommandCachingLogged = true;
+                            var spanContext = scope.Span.Context;
+                            Log.Warning(
+                                "The {CommandType} IDbCommand instance already contains DBM information. Caching of the command objects is not supported with full DBM mode. [s_id: {SpanId}, t_id: {TraceId}]",
+                                command.CommandType,
+                                spanContext.RawSpanId,
+                                spanContext.RawTraceId);
+                        }
+                    }
+                    else
+                    {
+                        var propagatedCommand = DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, integrationId, out var traceParentInjected);
+                        if (!string.IsNullOrEmpty(propagatedCommand))
+                        {
+                            command.CommandText = $"{propagatedCommand} {commandText}";
+                            if (traceParentInjected)
+                            {
+                                tags.DbmTraceInjected = "true";
+                            }
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -64,6 +109,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
 
             return scope;
+
+            static bool HasDbType(Span span, string dbType)
+            {
+                if (span.Tags is SqlTags sqlTags)
+                {
+                    return sqlTags.DbType == dbType;
+                }
+
+                return span.GetTag(Tags.DbType) == dbType;
+            }
         }
 
         public static bool TryGetIntegrationDetails(
@@ -194,12 +249,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             private static string GetServiceName(Tracer tracer, string dbTypeName)
             {
-                if (!tracer.Settings.TryGetServiceName(dbTypeName, out string serviceName))
+                if (!tracer.CurrentTraceSettings.ServiceNames.TryGetValue(dbTypeName, out string serviceName))
                 {
                     if (DbTypeName != dbTypeName)
                     {
                         // We cannot cache in the base class
-                        return $"{tracer.DefaultServiceName}-{dbTypeName}";
+                        return tracer.CurrentTraceSettings.GetServiceName(tracer, dbTypeName);
                     }
 
                     var serviceNameCache = _serviceNameCache;
@@ -215,7 +270,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     // We create or replace the cache with the new service name
                     // Slowpath
                     var defaultServiceName = tracer.DefaultServiceName;
-                    serviceName = $"{defaultServiceName}-{dbTypeName}";
+                    serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, dbTypeName);
                     _serviceNameCache = new KeyValuePair<string, string>(defaultServiceName, serviceName);
                 }
 
@@ -224,7 +279,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             private static DbCommandCache.TagsCacheItem GetTagsFromConnectionString(IDbCommand command)
             {
-                var connectionString = command.Connection?.ConnectionString;
+                string connectionString = null;
+                try
+                {
+                    if (command.GetType().FullName == "System.Data.Common.DbDataSource.DbCommandWrapper")
+                    {
+                        return default;
+                    }
+
+                    connectionString = command.Connection?.ConnectionString;
+                }
+                catch (NotSupportedException nsException)
+                {
+                    Log.Debug(nsException, "ConnectionString cannot be retrieved from the command.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "Error trying to retrieve the ConnectionString from the command.");
+                }
+
+                if (connectionString is null)
+                {
+                    return default;
+                }
 
                 // Check if the connection string is the one in the cache
                 var tagsByConnectionString = _tagsByConnectionStringCache;

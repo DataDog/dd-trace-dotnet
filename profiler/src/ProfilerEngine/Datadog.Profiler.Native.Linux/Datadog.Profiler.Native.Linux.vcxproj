@@ -113,18 +113,25 @@
   <ItemGroup>
     <ClCompile Include="..\..\dotnet-runtime-coreclr\pal\prebuilt\idl\corprof_i.cpp" />
     <ClCompile Include="LinuxStackFramesCollector.cpp" />
+    <ClCompile Include="LinuxThreadInfo.cpp" />
     <ClCompile Include="LinuxThreadsCpuManager.cpp" />
     <ClCompile Include="OsSpecificApi.cpp" />
+    <ClCompile Include="ProfilerSignalManager.cpp" />
+    <ClCompile Include="SystemCallsShield.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="prepare_loader_for_linking.sh" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LinuxStackFramesCollector.h" />
+    <ClInclude Include="LinuxThreadInfo.h" />
+    <ClInclude Include="ProfilerSignalManager.h" />
+    <ClInclude Include="SystemCallsShield.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;PAL_STDCPP_COMPAT;BIT64;UNICODE;HOST_64BIT;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>-fms-extensions   -stdlib=libc++ </AdditionalOptions>
       <CppLanguageStandard>c++17</CppLanguageStandard>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
@@ -140,6 +147,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;PAL_STDCPP_COMPAT;BIT64;UNICODE;HOST_64BIT;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>-fms-extensions   -stdlib=libc++ %(AdditionalOptions)</AdditionalOptions>
       <CppLanguageStandard>c++17</CppLanguageStandard>
     </ClCompile>
@@ -159,12 +167,14 @@
     <ClCompile>
       <AdditionalOptions>-fms-extensions   -stdlib=libc++ </AdditionalOptions>
       <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;PAL_STDCPP_COMPAT;UNICODE;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CppLanguageStandard>c++17</CppLanguageStandard>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <ClCompile>
       <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;PAL_STDCPP_COMPAT;UNICODE;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>-fms-extensions   -stdlib=libc++ %(AdditionalOptions)</AdditionalOptions>
       <CppLanguageStandard>c++17</CppLanguageStandard>
     </ClCompile>
@@ -177,6 +187,7 @@
     <ClCompile>
       <CppLanguageStandard>c++17</CppLanguageStandard>
       <AdditionalOptions>-fms-extensions   -stdlib=libc++ %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalOptions>-pthread  -lc++ </AdditionalOptions>
@@ -186,6 +197,7 @@
     <ClCompile>
       <CppLanguageStandard>c++17</CppLanguageStandard>
       <AdditionalOptions>-fms-extensions   -stdlib=libc++ %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalOptions>-pthread  -lc++ </AdditionalOptions>
@@ -195,6 +207,7 @@
     <ClCompile>
       <CppLanguageStandard>c++17</CppLanguageStandard>
       <AdditionalOptions>-fms-extensions   -stdlib=libc++ %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalOptions>-pthread  -lc++ </AdditionalOptions>
@@ -204,6 +217,7 @@
     <ClCompile>
       <CppLanguageStandard>c++17</CppLanguageStandard>
       <AdditionalOptions>-fms-extensions   -stdlib=libc++ %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalOptions>-pthread  -lc++ </AdditionalOptions>

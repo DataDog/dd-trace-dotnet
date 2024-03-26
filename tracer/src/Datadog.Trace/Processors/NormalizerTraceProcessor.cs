@@ -54,7 +54,15 @@ namespace Datadog.Trace.Processors
 
             for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
             {
-                trace.Array[i] = Process(trace.Array[i]);
+                trace.Array![i] = Process(trace.Array[i]);
+            }
+
+            // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L133-L135
+            var traceContext = trace.Array![trace.Offset].Context.TraceContext;
+
+            if (!string.IsNullOrEmpty(traceContext.Environment))
+            {
+                traceContext.Environment = TraceUtil.NormalizeTag(traceContext.Environment);
             }
 
             return trace;
@@ -71,7 +79,7 @@ namespace Datadog.Trace.Processors
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L89-L93
             if (string.IsNullOrEmpty(span.ResourceName))
             {
-                Log.Debug("Fixing malformed trace. Resource is empty (reason:resource_empty), setting span.resource={name}: {span}", span.OperationName, span);
+                Log.Debug("Fixing malformed trace. Resource is empty (reason:resource_empty), setting span.resource={Name}: {Span}", span.OperationName, span);
                 span.ResourceName = span.OperationName;
             }
 
@@ -83,22 +91,22 @@ namespace Datadog.Trace.Processors
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L108-L112
             if (span.Duration < TimeSpan.Zero)
             {
-                Log.Debug("Fixing malformed trace. Duration is invalid (reason:invalid_duration), setting span.duration=0: {span}", span.OperationName, span);
+                Log.Debug("Fixing malformed trace. Duration is invalid (reason:invalid_duration), setting span.duration=0: {Span}", span);
                 span.SetDuration(TimeSpan.Zero);
             }
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L113-L117
             if (span.Duration.ToNanoseconds() > long.MaxValue - span.StartTime.ToUnixTimeNanoseconds())
             {
-                Log.Debug("Fixing malformed trace. Duration is too large and causes overflow (reason:invalid_duration), setting span.duration=0: {span}", span.OperationName, span);
+                Log.Debug("Fixing malformed trace. Duration is too large and causes overflow (reason:invalid_duration), setting span.duration=0: {Span}", span);
                 span.SetDuration(TimeSpan.Zero);
             }
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L118-L126
             if (span.StartTime < Year2000Time)
             {
-                Log.Debug("Fixing malformed trace. Start date is invalid (reason:invalid_start_date), setting span.start=time.now(): {span}", span);
-                var now = span.Context.TraceContext.UtcNow;
+                Log.Debug("Fixing malformed trace. Start date is invalid (reason:invalid_start_date), setting span.start=time.now(): {Span}", span);
+                var now = span.Context.TraceContext.Clock.UtcNow;
                 var start = now - span.Duration;
                 if (start.ToUnixTimeNanoseconds() < 0)
                 {
@@ -113,29 +121,18 @@ namespace Datadog.Trace.Processors
             if (TraceUtil.TruncateUTF8(ref type, MaxTypeLen))
             {
                 span.Type = type;
-                Log.Debug("Fixing malformed trace. Type is too long (reason:type_truncate), truncating span.type to length={maxServiceLen}: {span}", MaxTypeLen, span);
+                Log.Debug("Fixing malformed trace. Type is too long (reason:type_truncate), truncating span.type to length={MaxServiceLen}: {Span}", MaxTypeLen, span);
             }
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L133-L135
-            if (span.Tags is CommonTags commonTags)
-            {
-                commonTags.Environment = TraceUtil.NormalizeTag(commonTags.Environment);
-            }
-            else
-            {
-                string env = span.GetTag("env");
-                if (!string.IsNullOrEmpty(env))
-                {
-                    span.Tags.SetTag("env", TraceUtil.NormalizeTag(env));
-                }
-            }
+            // NOTE: moved normalization of "env" tag to Process(ArraySegment<Span>)
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L136-L142
             if (span.Tags is IHasStatusCode statusCodeTags)
             {
                 if (!TraceUtil.IsValidStatusCode(statusCodeTags.HttpStatusCode))
                 {
-                    Log.Debug("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={invalidStatusCode}: {span}", statusCodeTags.HttpStatusCode, span);
+                    Log.Debug("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={InvalidStatusCode}: {Span}", statusCodeTags.HttpStatusCode, span);
                     statusCodeTags.HttpStatusCode = string.Empty;
                 }
             }
@@ -144,7 +141,7 @@ namespace Datadog.Trace.Processors
                 string httpStatusCode = span.GetTag(Tags.HttpStatusCode);
                 if (!string.IsNullOrEmpty(httpStatusCode) && !TraceUtil.IsValidStatusCode(httpStatusCode))
                 {
-                    Log.Debug("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={invalidStatusCode}: {span}", httpStatusCode, span);
+                    Log.Debug("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={InvalidStatusCode}: {Span}", httpStatusCode, span);
                     span.Tags.SetTag(Tags.HttpStatusCode, null);
                 }
             }
@@ -162,14 +159,14 @@ namespace Datadog.Trace.Processors
         {
             if (string.IsNullOrEmpty(svc))
             {
-                Log.Debug("Fixing malformed trace. Service  is empty (reason:service_empty), setting span.service={serviceName}.", svc);
+                Log.Debug("Fixing malformed trace. Service  is empty (reason:service_empty), setting span.service={ServiceName}.", svc);
                 return DefaultServiceName;
             }
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L59-L73
             if (TraceUtil.TruncateUTF8(ref svc, MaxServiceLen))
             {
-                Log.Debug<int>("Fixing malformed trace. Service is too long (reason:service_truncate), truncating span.service to length={maxServiceLen}.", MaxServiceLen);
+                Log.Debug<int>("Fixing malformed trace. Service is too long (reason:service_truncate), truncating span.service to length={MaxServiceLen}.", MaxServiceLen);
             }
 
             return TraceUtil.NormalizeTag(svc);
@@ -180,13 +177,13 @@ namespace Datadog.Trace.Processors
         {
             if (string.IsNullOrEmpty(name))
             {
-                Log.Debug("Fixing malformed trace. Name is empty (reason:span_name_empty), setting span.name={name}.", name);
+                Log.Debug("Fixing malformed trace. Name is empty (reason:span_name_empty), setting span.name={Name}.", name);
                 return DefaultSpanName;
             }
 
             if (TraceUtil.TruncateUTF8(ref name, MaxNameLen))
             {
-                Log.Debug<int>("Fixing malformed trace. Name is too long (reason:span_name_truncate), truncating span.name to length={maxServiceLen}.", MaxNameLen);
+                Log.Debug<int>("Fixing malformed trace. Name is too long (reason:span_name_truncate), truncating span.name to length={MaxServiceLen}.", MaxNameLen);
             }
 
             name = TraceUtil.NormalizeMetricName(name, MaxNameLen);

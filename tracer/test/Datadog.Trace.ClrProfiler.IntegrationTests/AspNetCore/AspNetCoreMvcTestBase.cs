@@ -4,6 +4,7 @@
 // </copyright>
 #if NETCOREAPP
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Net;
@@ -19,7 +20,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [UsesVerify]
-    public abstract class AspNetCoreMvcTestBase : TestHelper, IClassFixture<AspNetCoreMvcTestBase.AspNetCoreTestFixture>, IDisposable
+    public abstract class AspNetCoreMvcTestBase : TracingIntegrationTest, IClassFixture<AspNetCoreTestFixture>, IDisposable
     {
         protected const string HeaderName1WithMapping = "datadog-header-name";
         protected const string HeaderName1UpperWithMapping = "DATADOG-HEADER-NAME";
@@ -29,6 +30,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected const string HeaderValue2 = "0000-0000-0000";
         protected const string HeaderName3 = "Server";
         protected const string HeaderValue3 = "Kestrel";
+
+        private static readonly HashSet<string> ExcludeTags = new HashSet<string>
+        {
+            "datadog-header-tag",
+            "http.request.headers.sample_correlation_identifier",
+            "http.response.headers.sample_correlation_identifier",
+            "http.response.headers.server",
+        };
 
         private readonly bool _enableRouteTemplateResourceNames;
 
@@ -66,200 +75,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "/handled-exception", 500 },
         };
 
-        public void Dispose()
+        public override void Dispose()
         {
             Fixture.SetOutput(null);
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Name switch
+            {
+                "aspnet_core.request" => span.IsAspNetCore(metadataSchemaVersion, ExcludeTags),
+                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(metadataSchemaVersion),
+                _ => Result.DefaultSuccess,
+            };
 
         protected virtual string GetTestName(string testName)
         {
             return testName
                  + (_enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
-        }
-
-        public sealed class AspNetCoreTestFixture : IDisposable
-        {
-            private readonly HttpClient _httpClient;
-            private Process _process;
-            private ITestOutputHelper _currentOutput;
-
-            public AspNetCoreTestFixture()
-            {
-                _httpClient = new HttpClient();
-                _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-                _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
-                _httpClient.DefaultRequestHeaders.Add(HeaderName1WithMapping, HeaderValue1);
-                _httpClient.DefaultRequestHeaders.Add(HeaderName2, HeaderValue2);
-            }
-
-            public MockTracerAgent.TcpUdpAgent Agent { get; private set; }
-
-            public int HttpPort { get; private set; }
-
-            public void SetOutput(ITestOutputHelper output)
-            {
-                lock (this)
-                {
-                    _currentOutput = output;
-                }
-            }
-
-            public async Task TryStartApp(TestHelper helper)
-            {
-                if (_process is not null)
-                {
-                    return;
-                }
-
-                lock (this)
-                {
-                    if (_process is null)
-                    {
-                        var initialAgentPort = TcpPortProvider.GetOpenPort();
-                        HttpPort = TcpPortProvider.GetOpenPort();
-
-                        Agent = MockTracerAgent.Create(_currentOutput, initialAgentPort);
-                        Agent.SpanFilters.Add(IsNotServerLifeCheck);
-                        WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
-                        _process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
-                    }
-                }
-
-                await EnsureServerStarted();
-            }
-
-            public void Dispose()
-            {
-                var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
-                request.GetResponse().Close();
-
-                if (_process is not null)
-                {
-                    try
-                    {
-                        if (!_process.HasExited)
-                        {
-                            if (!_process.WaitForExit(5000))
-                            {
-                                _process.Kill();
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
-                    }
-
-                    _process.Dispose();
-                }
-
-                Agent?.Dispose();
-            }
-
-            public async Task<IImmutableList<MockSpan>> WaitForSpans(string path, bool post = false)
-            {
-                var testStart = DateTime.UtcNow;
-
-                await SubmitRequest(path, post);
-                return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
-            }
-
-            private async Task EnsureServerStarted()
-            {
-                var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
-
-                _process.OutputDataReceived += (sender, args) =>
-                {
-                    if (args.Data != null)
-                    {
-                        if (args.Data.Contains("Webserver started"))
-                        {
-                            wh.Set();
-                        }
-
-                        WriteToOutput($"[webserver][stdout] {args.Data}");
-                    }
-                };
-                _process.BeginOutputReadLine();
-
-                _process.ErrorDataReceived += (sender, args) =>
-                {
-                    if (args.Data != null)
-                    {
-                        WriteToOutput($"[webserver][stderr] {args.Data}");
-                    }
-                };
-
-                _process.BeginErrorReadLine();
-
-                wh.WaitOne(5000);
-
-                var maxMillisecondsToWait = 30_000;
-                var intervalMilliseconds = 500;
-                var intervals = maxMillisecondsToWait / intervalMilliseconds;
-                var serverReady = false;
-
-                // wait for server to be ready to receive requests
-                while (intervals-- > 0)
-                {
-                    try
-                    {
-                        serverReady = await SubmitRequest("/alive-check") == HttpStatusCode.OK;
-                    }
-                    catch
-                    {
-                        // ignore
-                    }
-
-                    if (serverReady)
-                    {
-                        break;
-                    }
-
-                    Thread.Sleep(intervalMilliseconds);
-                }
-
-                if (!serverReady)
-                {
-                    throw new Exception("Couldn't verify the application is ready to receive requests.");
-                }
-            }
-
-            private bool IsNotServerLifeCheck(MockSpan span)
-            {
-                span.Tags.TryGetValue(Tags.HttpUrl, out var url);
-                if (url == null)
-                {
-                    return true;
-                }
-
-                return !url.Contains("alive-check") && !url.Contains("shutdown");
-            }
-
-            private async Task<HttpStatusCode> SubmitRequest(string path, bool post = false)
-            {
-                HttpResponseMessage response;
-                if (!post)
-                {
-                    response = await _httpClient.GetAsync($"http://localhost:{HttpPort}{path}");
-                }
-                else
-                {
-                    response = await _httpClient.PostAsync($"http://localhost:{HttpPort}{path}", null);
-                }
-
-                string responseText = await response.Content.ReadAsStringAsync();
-                WriteToOutput($"[http] {response.StatusCode} {responseText}");
-                return response.StatusCode;
-            }
-
-            private void WriteToOutput(string line)
-            {
-                lock (this)
-                {
-                    _currentOutput?.WriteLine(line);
-                }
-            }
         }
     }
 }

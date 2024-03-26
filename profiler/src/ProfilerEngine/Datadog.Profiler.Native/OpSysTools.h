@@ -3,11 +3,14 @@
 
 #pragma once
 
+#include "shared/src/native-src/string.h"
+
 #include <string>
 #include <thread>
 
 #ifdef _WINDOWS
 #include <atlbase.h>
+#include "ScopedHandle.h"
 #else
 #include "pal.h"
 #include "pal_mstypes.h"
@@ -28,27 +31,33 @@ public:
     /// This function will return non-high-precision values or work slowly if a high precision timer
     /// is not available on the system or if <i>InitHighPrecisionTimer()</i> was not called.
     /// </summary>
-    static inline std::int64_t GetHighPrecisionNanoseconds(void);
+    static inline std::int64_t GetHighPrecisionNanoseconds();
 
-    static bool InitHighPrecisionTimer(void);
+    static bool InitHighPrecisionTimer();
 
     static inline bool QueryThreadCycleTime(HANDLE handle, PULONG64 cycleTime);
     static inline HANDLE GetCurrentProcess();
 
     static bool SetNativeThreadName(std::thread* pNativeThread, const WCHAR* description);
-    static bool GetNativeThreadName(HANDLE windowsThreadHandle, WCHAR* pThreadDescrBuff, const std::uint32_t threadDescrBuffSize);
+#ifdef _WINDOWS
+    static shared::WSTRING GetNativeThreadName(HANDLE threadHandle);
+    static ScopedHandle GetThreadHandle(DWORD threadId);
+#else
+    static shared::WSTRING GetNativeThreadName(pid_t tid);
+#endif
 
     static bool GetModuleHandleFromInstructionPointer(void* nativeIP, std::uint64_t* pModuleHandle);
     static std::string GetModuleName(void* nativeIP);
 
     static void* AlignedMAlloc(size_t alignment, size_t size);
 
-    static void MemoryBarrierProcessWide(void);
+    static void MemoryBarrierProcessWide();
 
     static std::string GetHostname();
     static std::string GetProcessName();
 
-    static bool ParseThreadInfo(std::string line, char& state, int32_t& userTime, int32_t& kernelTime)
+#ifdef LINUX
+    static bool ParseThreadInfo(char const* line, char& state, int32_t& userTime, int32_t& kernelTime)
     {
         // based on https://linux.die.net/man/5/proc
         // state  = 3rd position  and 'R' for Running
@@ -57,27 +66,61 @@ public:
 
         // The thread name is in second position and wrapped by ()
         // Since the name can contain SPACE and () characters, skip it before scanning the values
-        auto pos = line.find_last_of(")");
-        const char* pEnd = line.c_str() + pos + 1;
+        auto* pos = strrchr(line, ')');
 
-#ifdef _WINDOWS
-        bool result = sscanf_s(pEnd, " %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d", &state, 1, &userTime, &kernelTime) == 3;
-#else
-        bool result = sscanf(pEnd, " %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d", &state, &userTime, &kernelTime) == 3;
+        // paranoia
+        if (pos == nullptr)
+            return false;
+
+        int currentIdx = 2; // because we are currently at the thread name offset which is 2
+        int nbElement = 0;
+        while (nbElement != 3)
+        {
+            pos = strchr(pos, ' ');
+            if (pos == nullptr)
+                break;
+
+            // skip whitespaces
+            pos = pos + strspn(pos, " ");
+
+            if (*pos == '\0')
+                break;
+
+            currentIdx++;
+            if (currentIdx == 3)
+            {
+                state = *pos;
+                nbElement++;
+            }
+            else if (currentIdx == 14)
+            {
+                userTime = atoi(pos);
+                nbElement++;
+            }
+            else if (currentIdx == 15)
+            {
+                kernelTime = atoi(pos);
+                nbElement++;
+            }
+        }
+        return nbElement == 3;
+    }
 #endif
 
-        return result;
-    }
+    static bool IsSafeToStartProfiler(double coresThreshold, double& cpuLimit);
+    static std::int64_t GetHighPrecisionTimestamp();
+    static std::int64_t ConvertTicks(uint64_t ticks);
 
-    static bool IsSafeToStartProfiler(double coresThreshold);
+    static void Sleep(std::chrono::nanoseconds duration);
 
 private:
     static constexpr std::int64_t NanosecondsPerSecond = 1000000000;
 
     static std::int64_t s_nanosecondsPerHighPrecisionTimerTick;
     static std::int64_t s_highPrecisionTimerTicksPerNanosecond;
+    static uint64_t s_ticksPerSecond;
 
-    static std::int64_t GetHighPrecisionNanosecondsFallback(void);
+    static std::int64_t GetHighPrecisionNanosecondsFallback();
 
 #ifdef _WINDOWS
     typedef HRESULT(__stdcall* SetThreadDescriptionDelegate_t)(HANDLE threadHandle, PCWSTR pThreadDescription);
@@ -87,13 +130,21 @@ private:
     static SetThreadDescriptionDelegate_t s_setThreadDescriptionDelegate;
     static GetThreadDescriptionDelegate_t s_getThreadDescriptionDelegate;
 
-    static void InitDelegates_GetSetThreadDescription(void);
-    static SetThreadDescriptionDelegate_t GetDelegate_SetThreadDescription(void);
-    static GetThreadDescriptionDelegate_t GetDelegate_GetThreadDescription(void);
+    static void InitDelegates_GetSetThreadDescription();
+    static SetThreadDescriptionDelegate_t GetDelegate_SetThreadDescription();
+    static GetThreadDescriptionDelegate_t GetDelegate_GetThreadDescription();
 #endif
 };
 
-inline std::int64_t OpSysTools::GetHighPrecisionNanoseconds(void)
+inline std::int64_t OpSysTools::GetHighPrecisionTimestamp()
+{
+    auto now = std::chrono::system_clock::now();
+
+    int64_t totalNanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+    return static_cast<std::int64_t>(totalNanosecs);
+}
+
+inline std::int64_t OpSysTools::GetHighPrecisionNanoseconds()
 {
 #ifdef _WINDOWS
     if (0 != s_nanosecondsPerHighPrecisionTimerTick || 0 != s_highPrecisionTimerTicksPerNanosecond)
@@ -121,6 +172,23 @@ inline std::int64_t OpSysTools::GetHighPrecisionNanoseconds(void)
 #else
     // Need to implement this for Linux!
     return OpSysTools::GetHighPrecisionNanosecondsFallback();
+#endif
+}
+
+// TODO: remove if not needed
+inline std::int64_t OpSysTools::ConvertTicks(uint64_t ticks)
+{
+#ifdef _WINDOWS
+    if (s_ticksPerSecond != 0)
+    {
+        uint64_t microsecs = ticks * 1000000 / s_ticksPerSecond; // microseconds
+        return microsecs * 1000;                                 // nanoseconds
+    }
+
+    return 0;
+#else
+    // only used for ETW (Windows only)
+    return 0;
 #endif
 }
 

@@ -9,14 +9,23 @@
 #include "IThreadsCpuManager.h"
 #include "RawWallTimeSample.h"
 
+class SampleValueTypeProvider;
+
+std::vector<SampleValueType> WallTimeProvider::SampleTypeDefinitions(
+    {
+        {"wall", "nanoseconds"}
+    }
+    );
 
 WallTimeProvider::WallTimeProvider(
+    SampleValueTypeProvider& sampleValueTypeProvider,
     IThreadsCpuManager* pThreadsCpuManager,
     IFrameStore* pFrameStore,
     IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore
+    IRuntimeIdStore* pRuntimeIdStore,
+    IConfiguration* pConfiguration
     )
     :
-    CollectorBase<RawWallTimeSample>("WallTimeProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
+    CollectorBase<RawWallTimeSample>("WallTimeProvider", sampleValueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
 {
 }

@@ -27,37 +27,30 @@ namespace Datadog.Trace.Util
 {
     internal class BoundedConcurrentQueue<T>
     {
-        private const int Unbounded = -1;
-
         private readonly ConcurrentQueue<T> _queue = new();
         private readonly int _queueLimit;
 
         private int _counter;
 
-        public BoundedConcurrentQueue(int? queueLimit = null)
+        public BoundedConcurrentQueue(int queueLimit)
         {
             if (queueLimit is <= 0)
             {
                 ThrowHelper.ThrowArgumentOutOfRangeException(nameof(queueLimit), "Queue limit must be positive, or `null` to indicate unbounded.");
             }
 
-            _queueLimit = queueLimit ?? Unbounded;
+            _queueLimit = queueLimit;
         }
 
         // Internal for testing
         internal ConcurrentQueue<T> InnerQueue => _queue;
 
-        public int Count => _queue.Count;
+        public int Count => _counter;
 
         public bool IsEmpty => _queue.IsEmpty;
 
         public bool TryDequeue([NotNullWhen(returnValue: true)] out T? item)
         {
-            if (_queueLimit == Unbounded)
-            {
-                return _queue.TryDequeue(out item!);
-            }
-
             if (_queue.TryDequeue(out item!))
             {
                 Interlocked.Decrement(ref _counter);
@@ -69,12 +62,6 @@ namespace Datadog.Trace.Util
 
         public bool TryEnqueue(T item)
         {
-            if (_queueLimit == Unbounded)
-            {
-                _queue.Enqueue(item);
-                return true;
-            }
-
             if (Interlocked.Increment(ref _counter) <= _queueLimit)
             {
                 _queue.Enqueue(item);
@@ -83,6 +70,24 @@ namespace Datadog.Trace.Util
 
             Interlocked.Decrement(ref _counter);
             return false;
+        }
+
+        public T[] ToArray() => _queue.ToArray();
+
+        /// <summary>
+        /// Remove all the items from the queue. Note that this is NOT thread safe,
+        /// and should not be called at the same time as <see cref="TryDequeue"/> or <see cref="TryEnqueue"/>
+        /// </summary>
+        public void Clear()
+        {
+#if NETCOREAPP
+            _queue.Clear();
+#else
+            while (_queue.TryDequeue(out _))
+            {
+            }
+#endif
+            _counter = 0;
         }
     }
 }

@@ -6,16 +6,19 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Microsoft.Build.Framework;
 
@@ -28,9 +31,9 @@ namespace Datadog.Trace.MSBuild
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogLogger));
 
-        private Tracer _tracer = null;
-        private Span _buildSpan = null;
-        private ConcurrentDictionary<int, Span> _projects = new ConcurrentDictionary<int, Span>();
+        private readonly ConcurrentDictionary<int, Span> _projects = new();
+        private Tracer _tracer;
+        private Span _buildSpan;
 
         static DatadogLogger()
         {
@@ -107,10 +110,14 @@ namespace Datadog.Trace.MSBuild
 
                 _buildSpan = _tracer.StartSpan(BuildTags.BuildOperationName);
                 _buildSpan.SetMetric(Tags.Analytics, 1.0d);
-                _buildSpan.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+
+                if (_buildSpan.Context.TraceContext is { } traceContext)
+                {
+                    traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+                    traceContext.Origin = TestTags.CIAppTestOriginName;
+                }
 
                 _buildSpan.Type = SpanTypes.Build;
-                _buildSpan.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
                 _buildSpan.SetTag(BuildTags.BuildName, e.SenderName);
 
                 _buildSpan.SetTag(BuildTags.BuildCommand, Environment.CommandLine);
@@ -121,6 +128,7 @@ namespace Datadog.Trace.MSBuild
                 _buildSpan.SetTag(CommonTags.RuntimeArchitecture, Environment.Is64BitProcess ? "x64" : "x86");
                 _buildSpan.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
                 CIEnvironmentValues.Instance.DecorateSpan(_buildSpan);
+                TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Msbuild);
 
                 _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, _buildSpan));
             }
@@ -205,6 +213,7 @@ namespace Datadog.Trace.MSBuild
                 projectSpan.SetTag(BuildTags.ProjectToolsVersion, e.ToolsVersion);
                 projectSpan.SetTag(BuildTags.BuildName, projectName);
                 _projects.TryAdd(context, projectSpan);
+                TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Msbuild);
                 _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, projectSpan));
             }
             catch (Exception ex)
@@ -252,34 +261,32 @@ namespace Datadog.Trace.MSBuild
                 int context = e.BuildEventContext.ProjectContextId;
                 if (_projects.TryGetValue(context, out Span projectSpan))
                 {
-                    string correlation = $"[{CorrelationIdentifier.TraceIdKey}={projectSpan.TraceId},{CorrelationIdentifier.SpanIdKey}={projectSpan.SpanId}]";
                     string message = e.Message;
                     string type = $"{e.SenderName?.ToUpperInvariant()} ({e.Code}) Error";
                     string code = e.Code;
-                    int? lineNumber = e.LineNumber > 0 ? (int?)e.LineNumber : null;
-                    int? columnNumber = e.ColumnNumber > 0 ? (int?)e.ColumnNumber : null;
-                    int? endLineNumber = e.EndLineNumber > 0 ? (int?)e.EndLineNumber : null;
-                    int? endColumnNumber = e.EndColumnNumber > 0 ? (int?)e.EndColumnNumber : null;
+                    int? lineNumber = e.LineNumber > 0 ? e.LineNumber : null;
+                    int? columnNumber = e.ColumnNumber > 0 ? e.ColumnNumber : null;
+                    int? endLineNumber = e.EndLineNumber > 0 ? e.EndLineNumber : null;
+                    int? endColumnNumber = e.EndColumnNumber > 0 ? e.EndColumnNumber : null;
                     string projectFile = e.ProjectFile;
-                    string filePath = null;
-                    string stack = null;
                     string subCategory = e.Subcategory;
 
                     projectSpan.Error = true;
                     projectSpan.SetTag(BuildTags.ErrorMessage, message);
                     projectSpan.SetTag(BuildTags.ErrorType, type);
                     projectSpan.SetTag(BuildTags.ErrorCode, code);
-                    projectSpan.SetTag(BuildTags.ErrorStartLine, lineNumber.ToString());
-                    projectSpan.SetTag(BuildTags.ErrorStartColumn, columnNumber.ToString());
+                    projectSpan.SetTag(BuildTags.ErrorStartLine, lineNumber?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
+                    projectSpan.SetTag(BuildTags.ErrorStartColumn, columnNumber?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
                     projectSpan.SetTag(BuildTags.ErrorProjectFile, projectFile);
 
                     if (!string.IsNullOrEmpty(e.File))
                     {
-                        filePath = Path.Combine(Path.GetDirectoryName(projectFile), e.File);
+                        var filePath = Path.Combine(Path.GetDirectoryName(projectFile), e.File);
                         projectSpan.SetTag(BuildTags.ErrorFile, filePath);
+
                         if (lineNumber.HasValue && lineNumber != 0)
                         {
-                            stack = $" at Source code in {filePath}:line {e.LineNumber}";
+                            var stack = $" at Source code in {filePath}:line {e.LineNumber}";
                             projectSpan.SetTag(BuildTags.ErrorStack, stack);
                         }
                     }
@@ -320,30 +327,9 @@ namespace Datadog.Trace.MSBuild
                 Log.Debug("Warning Raised");
 
                 int context = e.BuildEventContext.ProjectContextId;
+
                 if (_projects.TryGetValue(context, out Span projectSpan))
                 {
-                    string correlation = $"[{CorrelationIdentifier.TraceIdKey}={projectSpan.TraceId},{CorrelationIdentifier.SpanIdKey}={projectSpan.SpanId}]";
-                    string message = e.Message;
-                    string type = $"{e.SenderName?.ToUpperInvariant()} ({e.Code}) Warning";
-                    string code = e.Code;
-                    int? lineNumber = e.LineNumber > 0 ? (int?)e.LineNumber : null;
-                    int? columnNumber = e.ColumnNumber > 0 ? (int?)e.ColumnNumber : null;
-                    int? endLineNumber = e.EndLineNumber > 0 ? (int?)e.EndLineNumber : null;
-                    int? endColumnNumber = e.EndColumnNumber > 0 ? (int?)e.EndColumnNumber : null;
-                    string projectFile = e.ProjectFile;
-                    string filePath = null;
-                    string stack = null;
-                    string subCategory = e.Subcategory;
-
-                    if (!string.IsNullOrEmpty(e.File))
-                    {
-                        filePath = Path.Combine(Path.GetDirectoryName(projectFile), e.File);
-                        if (lineNumber.HasValue && lineNumber != 0)
-                        {
-                            stack = $" at Source code in {filePath}:line {e.LineNumber}";
-                        }
-                    }
-
                     _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Warning, e.Message, projectSpan));
                 }
             }
@@ -353,7 +339,7 @@ namespace Datadog.Trace.MSBuild
             }
         }
 
-        private class MsBuildLogEvent : DatadogLogEvent
+        private class MsBuildLogEvent : DirectSubmissionLogEvent
         {
             private readonly string _level;
             private readonly string _message;
@@ -363,7 +349,18 @@ namespace Datadog.Trace.MSBuild
             {
                 _level = level;
                 _message = message;
-                _context = span is null ? null : new Context(span.TraceId, span.SpanId, span.Context.Origin);
+
+                if (span is null)
+                {
+                    _context = null;
+                }
+                else
+                {
+                    var traceId = span.GetTraceIdStringForLogs();
+                    var spanId = span.SpanId.ToString(CultureInfo.InvariantCulture);
+
+                    _context = new Context(traceId, spanId, span.Context.Origin);
+                }
             }
 
             public override void Format(StringBuilder sb, LogFormatter formatter)
@@ -378,14 +375,19 @@ namespace Datadog.Trace.MSBuild
                     exception: null,
                     (JsonTextWriter writer, in Context? state) =>
                     {
-                        if (state.HasValue)
+                        if (state is { } context)
                         {
+                            // encode all 128 bits of the trace id as a hex string, or
+                            // encode only the lower 64 bits of the trace ids as decimal (not hex)
                             writer.WritePropertyName("dd.trace_id");
-                            writer.WriteValue($"{state.Value.TraceId}");
+                            writer.WriteValue(context.TraceId);
+
+                            // 64-bit span ids are always encoded as decimal (not hex)
                             writer.WritePropertyName("dd.span_id");
-                            writer.WriteValue($"{state.Value.SpanId}");
+                            writer.WriteValue(context.SpanId);
+
                             writer.WritePropertyName("_dd.origin");
-                            writer.WriteValue($"{state.Value.Origin}");
+                            writer.WriteValue(context.Origin);
                         }
 
                         return default;
@@ -394,11 +396,11 @@ namespace Datadog.Trace.MSBuild
 
             private readonly struct Context
             {
-                public readonly ulong TraceId;
-                public readonly ulong SpanId;
+                public readonly string TraceId;
+                public readonly string SpanId;
                 public readonly string Origin;
 
-                public Context(ulong traceId, ulong spanId, string origin)
+                public Context(string traceId, string spanId, string origin)
                 {
                     TraceId = traceId;
                     SpanId = spanId;

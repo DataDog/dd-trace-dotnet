@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
   </PropertyGroup>
 
   <ItemGroup>

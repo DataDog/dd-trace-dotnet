@@ -5,11 +5,11 @@
 
 using System;
 using System.Reflection;
+using System.Threading;
 using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Pdb;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 {
@@ -17,21 +17,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
     {
         internal static readonly IDatadogLogger Log = Ci.CIVisibility.Log;
 
-        internal static void FlushSpans(IntegrationId integrationInfo)
-        {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationInfo))
-            {
-                return;
-            }
-
-            CIVisibility.FlushSpans();
-        }
-
         internal static string GetParametersValueData(object paramValue)
         {
             if (paramValue is null)
             {
                 return "(null)";
+            }
+
+            if (paramValue is string strValue)
+            {
+                return strValue;
             }
 
             if (paramValue is Array pValueArray)
@@ -56,59 +51,69 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             return paramValue.ToString();
         }
 
-        internal static void DecorateSpanWithSourceAndCodeOwners(Span span, MethodInfo testMethod)
+        internal static bool ShouldSkip(string testSuite, string testName, object[] testMethodArguments, ParameterInfo[] methodParameters)
         {
-            if (MethodSymbolResolver.Instance.TryGetMethodSymbol(testMethod, out var methodSymbol))
+            var currentContext = SynchronizationContext.Current;
+            try
             {
-                span.SetTag(TestTags.SourceFile, CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
-                span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
-                span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
-
-                if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
+                SynchronizationContext.SetSynchronizationContext(null);
+                var skippableTests = AsyncUtil.RunSync(() => CIVisibility.GetSkippableTestsFromSuiteAndNameAsync(testSuite, testName));
+                if (skippableTests.Count > 0)
                 {
-                    var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
-                    if (match is not null)
+                    foreach (var skippableTest in skippableTests)
                     {
-                        span.SetTag(TestTags.CodeOwners, match.Value.GetOwnersString());
+                        var parameters = skippableTest.GetParameters();
+
+                        // Same test name and no parameters
+                        if ((parameters?.Arguments is null || parameters.Arguments.Count == 0) &&
+                            (testMethodArguments is null || testMethodArguments.Length == 0))
+                        {
+                            return true;
+                        }
+
+                        if (parameters?.Arguments is not null)
+                        {
+                            var matchSignature = true;
+                            for (var i = 0; i < methodParameters.Length; i++)
+                            {
+                                var targetValue = "(default)";
+                                if (i < testMethodArguments.Length)
+                                {
+                                    targetValue = GetParametersValueData(testMethodArguments[i]);
+                                }
+
+                                if (!parameters.Arguments.TryGetValue(methodParameters[i].Name ?? string.Empty, out var argValue))
+                                {
+                                    matchSignature = false;
+                                    break;
+                                }
+
+                                if (argValue is not string strArgValue)
+                                {
+                                    strArgValue = argValue?.ToString() ?? "(null)";
+                                }
+
+                                if (strArgValue != targetValue)
+                                {
+                                    matchSignature = false;
+                                    break;
+                                }
+                            }
+
+                            if (matchSignature)
+                            {
+                                return true;
+                            }
+                        }
                     }
                 }
             }
-        }
-
-        internal static void DecorateSpanWithRuntimeAndCiInformation(Span span)
-        {
-            // CI Environment variables data
-            CIEnvironmentValues.Instance.DecorateSpan(span);
-
-            // Runtime information
-            var framework = FrameworkDescription.Instance;
-            span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
-            span.SetTag(CommonTags.RuntimeName, framework.Name);
-            span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
-            span.SetTag(CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
-            span.SetTag(CommonTags.OSArchitecture, framework.OSArchitecture);
-            span.SetTag(CommonTags.OSPlatform, framework.OSPlatform);
-            span.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
-        }
-
-        internal static void StartCoverage()
-        {
-            Ci.Coverage.CoverageReporter.Handler.StartSession();
-        }
-
-        internal static void StopCoverage(Span span)
-        {
-            if (Ci.Coverage.CoverageReporter.Handler.EndSession() is Ci.Coverage.Models.CoveragePayload coveragePayload)
+            finally
             {
-                if (span is not null)
-                {
-                    coveragePayload.TraceId = span.TraceId;
-                    coveragePayload.SpanId = span.SpanId;
-                }
-
-                Log.Debug("Coverage data for TraceId={traceId} and SpanId={spanId} processed.", coveragePayload.TraceId, coveragePayload.SpanId);
-                Ci.CIVisibility.Manager?.WriteEvent(coveragePayload);
+                SynchronizationContext.SetSynchronizationContext(currentContext);
             }
+
+            return false;
         }
     }
 }

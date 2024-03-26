@@ -2,8 +2,10 @@
 
 #include "../../src/Datadog.Trace.ClrProfiler.Native/runtimeid_store.h"
 
-using namespace datadog::shared::nativeloader;
-
+// we _MUST_ define/declare those tests in the same namespace as the runtimeid_store class
+// to ensure the friend trick works.
+namespace datadog::shared::nativeloader
+{
 TEST(runtimeid_store, EnsureRuntimeIdIsNotEmptyAtFirstCall)
 {
     AppDomainID id = 42;
@@ -35,7 +37,7 @@ TEST(runtimeid_store, EnsureRuntimeIsDifferentFor2DifferentAppDomains)
     AppDomainID appId1 = 42;
     AppDomainID appId2 = 21;
 
-    RuntimeIdStore store;
+    RuntimeIdStore store(true);
     auto const& rid = store.Get(appId1);
 
     auto const& rid2 = store.Get(appId2);
@@ -44,3 +46,4 @@ TEST(runtimeid_store, EnsureRuntimeIsDifferentFor2DifferentAppDomains)
     ASSERT_FALSE(rid2.empty());
     ASSERT_NE(rid, rid2);
 }
+} // namespace datadog::shared::nativeloader

@@ -1,2 +1,9 @@
 <Project>
+  <!--  Everything below here is from Nuke.Common.props -->
+  <!--  Added manually here, and excluded the build assets because referencing -->
+  <!--  directly apparently breaks the ARM64 build. No, I don't know why -->
+  <PropertyGroup>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <MSBuildWarningsAsErrors>$(MSBuildWarningsAsErrors);CS8785</MSBuildWarningsAsErrors>
+  </PropertyGroup>
 </Project>

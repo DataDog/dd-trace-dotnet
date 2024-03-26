@@ -7,9 +7,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DiagnosticListeners;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -69,20 +74,19 @@ namespace Datadog.Trace.PlatformHelpers
             return null;
         }
 
-        private IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags(HttpRequest request, Tracer tracer)
+        private void AddHeaderTagsToSpan(ISpan span, HttpRequest request, Tracer tracer)
         {
             var settings = tracer.Settings;
 
-            if (!settings.HeaderTags.IsNullOrEmpty())
+            if (!settings.HeaderTagsInternal.IsNullOrEmpty())
             {
                 try
                 {
                     // extract propagation details from http headers
                     var requestHeaders = request.Headers;
-
                     if (requestHeaders != null)
                     {
-                        return SpanContextPropagator.Instance.ExtractHeaderTags(new HeadersCollectionAdapter(requestHeaders), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, new HeadersCollectionAdapter(requestHeaders), settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
                 }
                 catch (Exception ex)
@@ -90,42 +94,42 @@ namespace Datadog.Trace.PlatformHelpers
                     _log.Error(ex, "Error extracting propagated HTTP headers.");
                 }
             }
-
-            return Enumerable.Empty<KeyValuePair<string, string>>();
         }
 
-        public Scope StartAspNetCorePipelineScope(Tracer tracer, HttpContext httpContext, HttpRequest request, string resourceName)
+        public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, HttpContext httpContext, string resourceName)
         {
+            var request = httpContext.Request;
             string host = request.Host.Value;
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-            string url = request.GetUrl(tracer.TracerManager.QueryStringManager);
+            string url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
 
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
             resourceName ??= GetDefaultResourceName(request);
 
             SpanContext propagatedContext = ExtractPropagatedContext(request);
-            var tagsFromHeaders = ExtractHeaderTags(request, tracer);
 
-            AspNetCoreTags tags;
-
-            if (tracer.Settings.RouteTemplateResourceNamesEnabled)
-            {
-                var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
-                httpContext.Features.Set(new RequestTrackingFeature(originalPath));
-                tags = new AspNetCoreEndpointTags();
-            }
-            else
-            {
-                tags = new AspNetCoreTags();
-            }
+            var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
+            var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, propagatedContext, tags: tags);
-            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags, tagsFromHeaders);
-            if (!tracer.Settings.IpHeaderDisabled)
+            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
+            AddHeaderTagsToSpan(scope.Span, request, tracer);
+
+            var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
+            httpContext.Features.Set(new RequestTrackingFeature(originalPath, scope));
+
+            if (tracer.Settings.IpHeaderEnabled || security.Enabled)
             {
                 var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
                 Func<string, string> getRequestHeaderFromKey = key => request.Headers.TryGetValue(key, out var value) ? value : string.Empty;
                 Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, getRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
+            }
+
+            var iastInstance = Iast.Iast.Instance;
+            if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
+            {
+                // If the overheadController disables the vulnerability detection for this request, we do not initialize the iast context of TraceContext
+                scope.Span.Context?.TraceContext?.EnableIastInRequest();
             }
 
             tags.SetAnalyticsSampleRate(_integrationId, tracer.Settings, enabledWithGlobalSetting: true);
@@ -134,14 +138,85 @@ namespace Datadog.Trace.PlatformHelpers
             return scope;
         }
 
+        public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope rootScope, HttpContext httpContext)
+        {
+            if (rootScope != null)
+            {
+                // We may need to update the resource name if none of the routing/mvc events updated it.
+                // If we had an unhandled exception, the status code will already be updated correctly,
+                // but if the span was manually marked as an error, we still need to record the status code
+
+                // WARNING: This code assumes that the rootSpan passed in is the aspnetcore.request
+                // root span. In "normal" operation, this will be the same span returned by
+                // Tracer.Instance.ActiveScope, but if a customer is not disposing a span somewhere,
+                // that will not necessarily be true, so make sure you use the RequestTrackingFeature.
+                var span = rootScope.Span;
+                var isMissingHttpStatusCode = !span.HasHttpStatusCode();
+
+                if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
+                {
+                    if (string.IsNullOrEmpty(span.ResourceName))
+                    {
+                        span.ResourceName = GetDefaultResourceName(httpContext.Request);
+                    }
+
+                    if (isMissingHttpStatusCode)
+                    {
+                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
+                    }
+                }
+
+                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                if (security.Enabled)
+                {
+                    var transport = new SecurityCoordinator(security, httpContext, span);
+                    transport.AddResponseHeadersToSpanAndCleanup();
+                }
+                else
+                {
+                    // remember security could have been disabled while a request is still executed
+                    new SecurityCoordinator.HttpTransport(httpContext).DisposeAdditiveContext();
+                }
+
+                rootScope.Dispose();
+            }
+        }
+
+        public void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception)
+        {
+            // WARNING: This code assumes that the rootSpan passed in is the aspnetcore.request
+            // root span. In "normal" operation, this will be the same span returned by
+            // Tracer.Instance.ActiveScope, but if a customer is not disposing a span somewhere,
+            // that will not necessarily be true, so make sure you use the RequestTrackingFeature.
+            if (rootSpan != null && httpContext is not null && exception is not null)
+            {
+                var statusCode = 500;
+
+                if (exception.TryDuckCast<AspNetCoreDiagnosticObserver.BadHttpRequestExceptionStruct>(out var badRequestException))
+                {
+                    statusCode = badRequestException.StatusCode;
+                }
+
+                // Generic unhandled exceptions are converted to 500 errors by Kestrel
+                rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
+
+                if (exception is not BlockException)
+                {
+                    rootSpan.SetException(exception);
+                    security.CheckAndBlock(httpContext, rootSpan);
+                }
+            }
+        }
+
         /// <summary>
         /// Holds state that we want to pass between diagnostic source events
         /// </summary>
         internal class RequestTrackingFeature
         {
-            public RequestTrackingFeature(PathString originalPath)
+            public RequestTrackingFeature(PathString originalPath, Scope rootAspNetCoreScope)
             {
                 OriginalPath = originalPath;
+                RootScope = rootAspNetCoreScope;
             }
 
             /// <summary>
@@ -168,6 +243,11 @@ namespace Datadog.Trace.PlatformHelpers
             /// Gets a value indicating the original combined Path and PathBase
             /// </summary>
             public PathString OriginalPath { get; }
+
+            /// <summary>
+            /// Gets the root ASP.NET Core Scope
+            /// </summary>
+            public Scope RootScope { get; }
 
             public bool MatchesOriginalPath(HttpRequest request)
             {

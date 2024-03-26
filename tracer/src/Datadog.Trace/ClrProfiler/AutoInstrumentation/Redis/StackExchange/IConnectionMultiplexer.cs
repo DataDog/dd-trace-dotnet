@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
     /// <summary>
@@ -13,6 +15,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         /// <summary>
         /// Gets the conection configuration
         /// </summary>
-        string Configuration { get; }
+        string? Configuration { get; }
     }
 }

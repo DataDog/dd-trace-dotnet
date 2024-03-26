@@ -12,6 +12,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
     /// <summary>
     /// Microsoft.Azure.Cosmos.Container.QueryIteratorsIntegrations calltarget instrumentation
     /// </summary>
+    /// <remarks>
+    /// https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/CosmosClient.cs
+    /// </remarks>
+    // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/CosmosClient.cs#L981
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.CosmosClient",
@@ -21,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
+    // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/CosmosClient.cs#L1080
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.CosmosClient",
@@ -30,6 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
+    // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/CosmosClient.cs#L1034
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.CosmosClient",
@@ -39,6 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
+    // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/CosmosClient.cs#L1136
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.CosmosClient",

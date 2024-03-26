@@ -1,0 +1,35 @@
+name: Verify integrations map correctly added
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  bump_package_versions:
+    runs-on: windows-latest
+
+    steps:
+      - name: Support longpaths
+        run: git config --system core.longpaths true
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '8.0.100'
+
+      - name: "Regenerating package versions"
+        run: .\tracer\build.ps1 GeneratePackageVersions
+
+      - name: Report error
+        if: failure()
+        run: |
+          echo "## :warning: Error generating package versions" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "New integration detected. You must update the [IntegrationGroup.IntegrationMap](tracer/build/_build/Honeypot/IntegrationGroups.cs)" >> $GITHUB_STEP_SUMMARY
+          echo "class to include the new integration." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "If your new integration uses multi-api testing to test multiple package versions," >> $GITHUB_STEP_SUMMARY
+          echo "list the NuGet package in the associated array. Otherwise use an empty array." >> $GITHUB_STEP_SUMMARY
+

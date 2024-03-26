@@ -11,13 +11,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '6.0.100'
+          dotnet-version: '8.0.100'
 
       - name: "Check Snapshots"
         run: ./tracer/build.sh SummaryOfSnapshotChanges
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           PullRequestNumber: "${{ github.event.pull_request.number }}"
+          TargetBranch: "${{ github.base_ref }}"

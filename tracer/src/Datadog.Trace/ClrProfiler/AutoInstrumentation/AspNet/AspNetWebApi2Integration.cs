@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -48,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 var tracer = Tracer.Instance;
                 var request = controllerContext.Request;
                 SpanContext propagatedContext = null;
-                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
+                HttpHeadersCollection? headersCollection = null;
                 tags = new AspNetTags();
 
                 if (request != null && tracer.InternalActiveScope == null)
@@ -57,19 +58,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     {
                         // extract propagated http headers
                         var headers = request.Headers;
-                        var headersCollection = new HttpHeadersCollection(headers);
-
-                        propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
-                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headersCollection, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix, request.Headers.UserAgent.ToString());
+                        headersCollection = new HttpHeadersCollection(headers);
+                        propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection.Value);
                     }
                     catch (Exception ex)
                     {
                         Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
 
-                    const string httpContextKey = "MS_HttpContext";
-                    if (!tracer.Settings.IpHeaderDisabled)
+                    if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)
                     {
+                        const string httpContextKey = "MS_HttpContext";
                         if (request.Properties.TryGetValue("MS_OwinContext", out var owinContextObj))
                         {
                             if (owinContextObj != null)
@@ -99,7 +98,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 }
 
                 scope = tracer.StartActiveInternal(OperationName, propagatedContext, tags: tags);
-                UpdateSpan(controllerContext, scope.Span, tags, tagsFromHeaders);
+                UpdateSpan(controllerContext, scope.Span, tags);
+                if (headersCollection is not null)
+                {
+                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headersCollection.Value, tracer.Settings.HeaderTagsInternal, SpanContextPropagator.HttpRequestHeadersTagPrefix, request.Headers.UserAgent.ToString());
+                }
+
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
@@ -111,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             return scope;
         }
 
-        internal static void UpdateSpan(IHttpControllerContext controllerContext, Span span, AspNetTags tags, IEnumerable<KeyValuePair<string, string>> headerTags)
+        internal static void UpdateSpan(IHttpControllerContext controllerContext, Span span, AspNetTags tags)
         {
             try
             {
@@ -185,7 +189,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
                 }
 
-                var url = request.GetUrl(tracer.TracerManager.QueryStringManager);
+                var url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
 
                 span.DecorateWebServerSpan(
                     resourceName: resourceName,
@@ -193,8 +197,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     host: host,
                     httpUrl: url,
                     userAgent: userAgent,
-                    tags,
-                    headerTags);
+                    tags);
 
                 if (tags is not null)
                 {
@@ -202,7 +205,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags.AspNetController = controller;
                     tags.AspNetArea = area;
                     tags.AspNetRoute = route;
-                    span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
+                    if (span.Context.TraceContext.RootSpan.Tags is AspNetTags rootAspNetTags)
+                    {
+                        rootAspNetTags.HttpRoute = route;
+                    }
+                    else
+                    {
+                        span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
+                    }
                 }
 
                 if (newResourceNamesEnabled)

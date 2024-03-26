@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -11,7 +12,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    public class SystemDataSqliteTests : TestHelper
+    public class SystemDataSqliteTests : TracingIntegrationTest
     {
         public SystemDataSqliteTests(ITestOutputHelper output)
             : base("SQLite.Core", output)
@@ -19,41 +20,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTraces()
-        {
-            const int expectedSpanCount = 91;
-            const string dbType = "sqlite";
-            const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.SQLite.Core-" + dbType;
-
-            using var telemetry = this.ConfigureTelemetry();
-            using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-
-            Assert.Equal(expectedSpanCount, spans.Count);
-
-            foreach (var span in spans)
-            {
-                var result = span.IsSqlite();
-                Assert.True(result.Success, result.ToString());
-
-                Assert.Equal(expectedServiceName, span.Service);
-                Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-            }
-
-            telemetry.AssertIntegrationEnabled(IntegrationId.Sqlite);
-        }
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlite(metadataSchemaVersion);
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
-        public void IntegrationDisabled()
+        public Task SubmitsTracesV0() => RunTest("v0");
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("Category", "ArmUnsupported")]
+        public Task SubmitsTracesV1() => RunTest("v1");
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("Category", "ArmUnsupported")]
+        public async Task IntegrationDisabled()
         {
             const int totalSpanCount = 21;
             const string expectedOperationName = "sqlite.query";
@@ -61,12 +46,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Sqlite)}_ENABLED", "false");
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent);
+            using var process = await RunSampleAndWaitForExit(agent);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
             Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
             telemetry.AssertIntegrationDisabled(IntegrationId.Sqlite);
+        }
+
+        private async Task RunTest(string metadataSchemaVersion)
+        {
+            const int expectedSpanCount = 91;
+            const string dbType = "sqlite";
+            const string expectedOperationName = dbType + ".query";
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-{dbType}" : EnvironmentHelper.FullSampleName;
+
+            using var telemetry = this.ConfigureTelemetry();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var process = await RunSampleAndWaitForExit(agent);
+            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+
+            Assert.Equal(expectedSpanCount, spans.Count);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            telemetry.AssertIntegrationEnabled(IntegrationId.Sqlite);
         }
     }
 }

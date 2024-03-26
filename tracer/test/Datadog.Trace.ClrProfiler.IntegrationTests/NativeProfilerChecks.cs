@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.IO;
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -17,16 +18,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base(new EnvironmentHelper("Datadog.Tracer.Native.Checks", typeof(TestHelper), output, samplesDirectory: Path.Combine("test", "test-applications", "instrumentation"), prependSamplesToAppName: false), output)
         {
             SetServiceVersion("1.0.0");
-            EnableDebugMode();
         }
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void RunChecksProject()
+        public async Task RunChecksProject()
         {
             SetInstrumentationVerification();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent))
+            using (var processResult = await RunSampleAndWaitForExit(agent))
             {
                 var exitCode = processResult.ExitCode;
                 if (exitCode == 139)
@@ -35,7 +35,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     throw new SkipException("Unexpected segmentation fault in NativeProfilerChecks");
                 }
 
-                exitCode.Should().Be(0);
+                ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
+
                 VerifyInstrumentation(processResult.Process);
             }
         }

@@ -3,9 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.IO;
+#nullable enable
+
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Configuration
@@ -16,27 +20,20 @@ namespace Datadog.Trace.Configuration
     public class GlobalSettings
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="GlobalSettings"/> class with default values.
-        /// </summary>
-        internal GlobalSettings()
-            : this(null)
-        {
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="GlobalSettings"/> class
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        internal GlobalSettings(IConfigurationSource source)
+        /// <param name="telemetry">Records the origin of telemetry values</param>
+        internal GlobalSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
-            DebugEnabled = source?.GetBool(ConfigurationKeys.DebugEnabled) ??
-                           // default value
-                           false;
+            DebugEnabledInternal = new ConfigurationBuilder(source, telemetry)
+                          .WithKeys(ConfigurationKeys.DebugEnabled)
+                          .AsBool(false);
 
-            DiagnosticSourceEnabled = source?.GetBool(ConfigurationKeys.DiagnosticSourceEnabled) ??
-                                      // default value
-                                      true;
+            DiagnosticSourceEnabled = new ConfigurationBuilder(source, telemetry)
+                                     .WithKeys(ConfigurationKeys.DiagnosticSourceEnabled)
+                                     .AsBool(true);
         }
 
         /// <summary>
@@ -45,12 +42,19 @@ namespace Datadog.Trace.Configuration
         /// Set in code via <see cref="SetDebugEnabled"/>
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DebugEnabled"/>
-        public bool DebugEnabled { get; private set; }
+        public bool DebugEnabled
+        {
+            get
+            {
+                TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_DebugEnabled_Get);
+                return DebugEnabledInternal;
+            }
+        }
 
         /// <summary>
-        /// Gets or sets the global settings instance.
+        /// Gets the global settings instance.
         /// </summary>
-        internal static GlobalSettings Source { get; set; } = FromDefaultSources();
+        internal static GlobalSettings Instance { get; private set; } = CreateFromDefaultSources();
 
         /// <summary>
         /// Gets a value indicating whether the use
@@ -60,14 +64,23 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal bool DiagnosticSourceEnabled { get; }
 
+        internal bool DebugEnabledInternal { get; private set; }
+
         /// <summary>
         /// Set whether debug mode is enabled.
         /// Affects the level of logs written to file.
         /// </summary>
         /// <param name="enabled">Whether debug is enabled.</param>
+        [PublicApi]
         public static void SetDebugEnabled(bool enabled)
         {
-            Source.DebugEnabled = enabled;
+            TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_SetDebugEnabled);
+            SetDebugEnabledInternal(enabled);
+        }
+
+        internal static void SetDebugEnabledInternal(bool enabled)
+        {
+            Instance.DebugEnabledInternal = enabled;
 
             if (enabled)
             {
@@ -77,85 +90,36 @@ namespace Datadog.Trace.Configuration
             {
                 DatadogLogging.UseDefaultLevel();
             }
+
+            TelemetryFactory.Config.Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
         }
 
         /// <summary>
         /// Used to refresh global settings when environment variables or config sources change.
         /// This is not necessary if changes are set via code, only environment.
         /// </summary>
+        [PublicApi]
         public static void Reload()
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_Reload);
             DatadogLogging.Reset();
-            Source = FromDefaultSources();
+            GlobalConfigurationSource.Reload();
+            Instance = CreateFromDefaultSources();
         }
 
         /// <summary>
         /// Create a <see cref="GlobalSettings"/> populated from the default sources
-        /// returned by <see cref="CreateDefaultConfigurationSource"/>.
+        /// returned by <see cref="GlobalConfigurationSource.Instance"/>.
         /// </summary>
         /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
+        [PublicApi]
         public static GlobalSettings FromDefaultSources()
         {
-            var source = CreateDefaultConfigurationSource();
-            return new GlobalSettings(source);
+            TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_FromDefaultSources);
+            return CreateFromDefaultSources();
         }
 
-        /// <summary>
-        /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,
-        /// AppSettings where available, and a local datadog.json file, if present.
-        /// </summary>
-        /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
-        internal static CompositeConfigurationSource CreateDefaultConfigurationSource()
-        {
-            // env > AppSettings > datadog.json
-            var configurationSource = new CompositeConfigurationSource
-            {
-                new EnvironmentConfigurationSource(),
-
-#if NETFRAMEWORK
-                // on .NET Framework only, also read from app.config/web.config
-                new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings)
-#endif
-            };
-
-            if (TryLoadJsonConfigurationFile(configurationSource, null, out var jsonConfigurationSource))
-            {
-                configurationSource.Add(jsonConfigurationSource);
-            }
-
-            return configurationSource;
-        }
-
-        internal static bool TryLoadJsonConfigurationFile(IConfigurationSource configurationSource, string baseDirectory, out IConfigurationSource jsonConfigurationSource)
-        {
-            try
-            {
-                // if environment variable is not set, look for default file name in the current directory
-                var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
-                                            configurationSource.GetString("DD_DOTNET_TRACER_CONFIG_FILE") ??
-                                            Path.Combine(baseDirectory ?? GetCurrentDirectory(), "datadog.json");
-
-                if (string.Equals(Path.GetExtension(configurationFileName), ".JSON", StringComparison.OrdinalIgnoreCase) &&
-                    File.Exists(configurationFileName))
-                {
-                    jsonConfigurationSource = JsonConfigurationSource.FromFile(configurationFileName);
-                    return true;
-                }
-            }
-            catch (Exception)
-            {
-                // Unable to load the JSON file from disk
-                // The configuration manager should not depend on a logger being bootstrapped yet
-                // so do not do anything
-            }
-
-            jsonConfigurationSource = default;
-            return false;
-        }
-
-        private static string GetCurrentDirectory()
-        {
-            return System.AppDomain.CurrentDomain.BaseDirectory;
-        }
+        private static GlobalSettings CreateFromDefaultSources()
+            => new(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
     }
 }

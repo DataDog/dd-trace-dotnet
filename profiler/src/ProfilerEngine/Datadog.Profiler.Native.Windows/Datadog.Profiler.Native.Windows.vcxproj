@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props')" />
+  <Import Project="..\..\..\..\packages\libdatadog.5.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.5.0.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -24,7 +24,7 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{9908ACFF-650D-4481-8060-6F6A4FF23B41}</ProjectGuid>
     <RootNamespace>DatadogProfilerNativeWindows</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
     <ProjectName>Datadog.Profiler.Native.Windows</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -39,26 +39,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -99,10 +99,11 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;DATADOGAUTOINSTRUMENTATIONPROFILERNATIVEWINDOWS_EXPORTS;_WINDOWS;_USRDLL;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>../Datadog.Profiler.Native;$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
@@ -113,7 +114,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition=" '$(EnableASAN)'=='true' ">/INFERASANLIBS:NO /wholearchive:clang_rt.asan_dbg-i386.lib /wholearchive:clang_rt.asan_cxx_dbg-i386.lib %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration Condition=" '$(EnableASAN)'=='true' ">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
@@ -129,10 +129,11 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;DATADOGAUTOINSTRUMENTATIONPROFILERNATIVEWINDOWS_EXPORTS;_WINDOWS;_USRDLL;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>../Datadog.Profiler.Native;$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
@@ -145,7 +146,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition=" '$(EnableASAN)'=='true' ">/INFERASANLIBS:NO /wholearchive:clang_rt.asan-i386.lib /wholearchive:clang_rt.asan_cxx-i386.lib %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration Condition=" '$(EnableASAN)'=='true' ">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
@@ -159,10 +159,11 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>BIT64;_DEBUG;DATADOGAUTOINSTRUMENTATIONPROFILERNATIVEWINDOWS_EXPORTS;_WINDOWS;_USRDLL;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>../Datadog.Profiler.Native;$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
@@ -173,7 +174,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition=" '$(EnableASAN)'=='true' ">/INFERASANLIBS:NO /wholearchive:clang_rt.asan_dbg-x86_64.lib /wholearchive:clang_rt.asan_cxx_dbg-x86_64.lib %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration Condition=" '$(EnableASAN)'=='true' ">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
@@ -189,10 +189,11 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>BIT64;NDEBUG;DATADOGAUTOINSTRUMENTATIONPROFILERNATIVEWINDOWS_EXPORTS;_WINDOWS;_USRDLL;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -207,7 +208,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition=" '$(EnableASAN)'=='true' ">/INFERASANLIBS:NO /wholearchive:clang_rt.asan-x86_64.lib /wholearchive:clang_rt.asan_cxx-x86_64.lib %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration Condition=" '$(EnableASAN)'=='true' ">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
@@ -219,14 +219,31 @@
   <ItemGroup>
     <ClInclude Include="..\Datadog.Profiler.Native\DllMain.h" />
     <ClInclude Include="..\Datadog.Profiler.Native.Windows\resource.h" />
+    <ClInclude Include="EtwEventsManager.h" />
+    <ClInclude Include="ETW\EtwEventsHandler.h" />
+    <ClInclude Include="ETW\IIpcLogger.h" />
+    <ClInclude Include="ETW\INamedPipeHandler.h" />
+    <ClInclude Include="ETW\IpcClient.h" />
+    <ClInclude Include="ETW\IpcServer.h" />
+    <ClInclude Include="ETW\ProfilerLogger.h" />
+    <ClInclude Include="ETW\Protocol.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="SecurityDescriptorHelpers.h" />
     <ClInclude Include="SystemTime.h" />
     <ClInclude Include="Windows64BitStackFramesCollector.h" />
     <ClInclude Include="Windows32BitStackFramesCollector.h" />
+    <ClInclude Include="WindowsThreadInfo.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Datadog.Profiler.Native\DllMain.cpp" />
+    <ClCompile Include="EtwEventsManager.cpp" />
+    <ClCompile Include="ETW\EtwEventsHandler.cpp" />
+    <ClCompile Include="ETW\IpcClient.cpp" />
+    <ClCompile Include="ETW\IpcServer.cpp" />
+    <ClCompile Include="ETW\ProfilerLogger.cpp" />
+    <ClCompile Include="SecurityDescriptorHelpers.cpp" />
     <ClCompile Include="SystemTime.cpp" />
+    <ClCompile Include="WindowsThreadInfo.cpp" />
     <ClCompile Include="WindowsThreadsCpuManager.cpp" />
     <ClCompile Include="OsSpecificApi.cpp" />
     <ClCompile Include="Windows64BitStackFramesCollector.cpp" />
@@ -250,6 +267,6 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props'))" />
+    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.5.0.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.5.0.0\build\native\libdatadog.props'))" />
   </Target>
 </Project>

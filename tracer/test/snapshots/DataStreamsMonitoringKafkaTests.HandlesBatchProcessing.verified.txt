@@ -1,0 +1,218 @@
+﻿{
+  Env: integration_tests,
+  Service: Samples.DataStreams.Kafka,
+  TracerVersion: <snip>,
+  Lang: dotnet,
+  Stats: [
+    {
+      Start: 1661520120000000000,
+      Duration: 10000000000,
+      Stats: [
+        {
+          EdgeTags: [
+            direction:out,
+            topic:data-streams-batch-processing-1,
+            type:kafka
+          ],
+          Hash: 4913488602916801083,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            group:Samples.DataStreams.Kafka.fan-in-consumer,
+            topic:data-streams-batch-processing-1,
+            type:kafka
+          ],
+          Hash: 9315422718960432191,
+          ParentHash: 4913488602916801083,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:out,
+            topic:data-streams-batch-processing-2,
+            type:kafka
+          ],
+          Hash: 9937680799879052874,
+          ParentHash: 9315422718960432191,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            group:Samples.DataStreams.Kafka.topic-2-consumer,
+            topic:data-streams-batch-processing-2,
+            type:kafka
+          ],
+          Hash: 8667739576086808638,
+          ParentHash: 9937680799879052874,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        }
+      ],
+      Backlogs: [
+        {
+          Tags: [
+            consumer_group:Samples.DataStreams.Kafka.fan-in-consumer,
+            partition:0,
+            topic:data-streams-batch-processing-1,
+            type:kafka_commit
+          ]
+        },
+        {
+          Tags: [
+            consumer_group:Samples.DataStreams.Kafka.fan-in-consumer,
+            partition:1,
+            topic:data-streams-batch-processing-1,
+            type:kafka_commit
+          ]
+        },
+        {
+          Tags: [
+            consumer_group:Samples.DataStreams.Kafka.fan-in-consumer,
+            partition:2,
+            topic:data-streams-batch-processing-1,
+            type:kafka_commit
+          ]
+        },
+        {
+          Tags: [
+            consumer_group:Samples.DataStreams.Kafka.topic-2-consumer,
+            partition:0,
+            topic:data-streams-batch-processing-2,
+            type:kafka_commit
+          ]
+        },
+        {
+          Tags: [
+            consumer_group:Samples.DataStreams.Kafka.topic-2-consumer,
+            partition:1,
+            topic:data-streams-batch-processing-2,
+            type:kafka_commit
+          ]
+        },
+        {
+          Tags: [
+            consumer_group:Samples.DataStreams.Kafka.topic-2-consumer,
+            partition:2,
+            topic:data-streams-batch-processing-2,
+            type:kafka_commit
+          ]
+        },
+        {
+          Tags: [
+            partition:0,
+            topic:data-streams-batch-processing-1,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
+            partition:0,
+            topic:data-streams-batch-processing-2,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
+            partition:1,
+            topic:data-streams-batch-processing-1,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
+            partition:1,
+            topic:data-streams-batch-processing-2,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
+            partition:2,
+            topic:data-streams-batch-processing-1,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
+            partition:2,
+            topic:data-streams-batch-processing-2,
+            type:kafka_produce
+          ]
+        }
+      ]
+    },
+    {
+      Start: 1661520120000000000,
+      Duration: 10000000000,
+      Stats: [
+        {
+          EdgeTags: [
+            direction:out,
+            topic:data-streams-batch-processing-1,
+            type:kafka
+          ],
+          Hash: 4913488602916801083,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: origin
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            group:Samples.DataStreams.Kafka.fan-in-consumer,
+            topic:data-streams-batch-processing-1,
+            type:kafka
+          ],
+          Hash: 9315422718960432191,
+          ParentHash: 4913488602916801083,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: origin
+        },
+        {
+          EdgeTags: [
+            direction:out,
+            topic:data-streams-batch-processing-2,
+            type:kafka
+          ],
+          Hash: 9937680799879052874,
+          ParentHash: 9315422718960432191,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: origin
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            group:Samples.DataStreams.Kafka.topic-2-consumer,
+            topic:data-streams-batch-processing-2,
+            type:kafka
+          ],
+          Hash: 8667739576086808638,
+          ParentHash: 9937680799879052874,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: origin
+        }
+      ]
+    }
+  ]
+}

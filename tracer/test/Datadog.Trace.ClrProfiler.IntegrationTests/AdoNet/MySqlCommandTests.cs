@@ -6,15 +6,20 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class MySqlCommandTests : TestHelper
+    [UsesVerify]
+    public class MySqlCommandTests : TracingIntegrationTest
     {
         public MySqlCommandTests(ITestOutputHelper output)
             : base("MySql", output)
@@ -24,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         public static IEnumerable<object[]> GetMySql8Data()
         {
+            var propagation = new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" };
+
             foreach (object[] item in PackageVersions.MySqlData)
             {
                 if (!((string)item[0]).StartsWith("8") && !string.IsNullOrEmpty((string)item[0]))
@@ -31,12 +38,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     continue;
                 }
 
-                yield return item;
+                var result = propagation.SelectMany(prop => new[]
+                {
+                    new[] { item[0], "v0", prop },
+                    new[] { item[0], "v1", prop }
+                });
+
+                foreach (var row in result)
+                {
+                    yield return row;
+                }
             }
         }
 
         public static IEnumerable<object[]> GetOldMySqlData()
         {
+            var propagation = new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" };
+
             foreach (object[] item in PackageVersions.MySqlData)
             {
                 if (((string)item[0]).StartsWith("8"))
@@ -44,30 +62,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     continue;
                 }
 
-                yield return item;
+                var result = propagation.SelectMany(prop => new[]
+                {
+                    new[] { item[0], "v0", prop },
+                    new[] { item[0], "v1", prop }
+                });
+
+                foreach (var row in result)
+                {
+                    yield return row;
+                }
             }
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMySql(metadataSchemaVersion);
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesInMySql8(string packageVersion)
+        public async Task SubmitsTracesInMySql8(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
-            SubmitsTraces(packageVersion);
+            await SubmitsTraces(packageVersion, metadataSchemaVersion, dbmPropagation);
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetOldMySqlData))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTracesInOldMySql(string packageVersion)
+        public async Task SubmitsTracesInOldMySql(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
-            SubmitsTraces(packageVersion);
+            await SubmitsTraces(packageVersion, metadataSchemaVersion, dbmPropagation);
         }
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void IntegrationDisabled()
+        public async Task IntegrationDisabled()
         {
             const int totalSpanCount = 21;
             const string expectedOperationName = "mysql.query";
@@ -80,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // don't use the first package version which is 6.x and is not supported on ARM64.
             // use the default package version for the sample, currently 8.0.17.
             // string packageVersion = PackageVersions.MySqlData.First()[0] as string;
-            using var process = RunSampleAndWaitForExit(agent /* , packageVersion: packageVersion */);
+            using var process = await RunSampleAndWaitForExit(agent /* , packageVersion: packageVersion */);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
@@ -88,8 +117,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             telemetry.AssertIntegrationDisabled(IntegrationId.MySql);
         }
 
-        private void SubmitsTraces(string packageVersion)
+        private async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
+            SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
+
             // ALWAYS: 75 spans
             // - MySqlCommand: 19 spans (3 groups * 7 spans - 2 missing spans)
             // - DbCommand:  42 spans (6 groups * 7 spans)
@@ -109,26 +140,45 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             const string dbType = "mysql";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.MySql-" + dbType;
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-{dbType}" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-            int actualSpanCount = spans.Count(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)); // Remove unexpected DB spans from the calculation
+            var filteredSpans = spans.Where(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)).ToList();
 
-            Assert.Equal(expectedSpanCount, actualSpanCount);
-
-            foreach (var span in spans)
-            {
-                var result = span.IsMySql();
-                Assert.True(result.Success, result.ToString());
-
-                Assert.Equal(expectedServiceName, span.Service);
-                Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-            }
-
+            filteredSpans.Count.Should().Be(expectedSpanCount);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.MySql);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(new Regex("MySql-Test-[a-zA-Z0-9]{32}"), "MySql-Test-GUID");
+            settings.AddSimpleScrubber("out.host: localhost", "out.host: mysql");
+            settings.AddSimpleScrubber("out.host: mysql57", "out.host: mysql");
+            settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: mysql");
+
+            var fileName = nameof(MySqlCommandTests);
+
+#if NET5_0_OR_GREATER
+            fileName = fileName + ".Net";
+#elif NET462
+            fileName = fileName + ".Net462";
+#else
+            fileName = fileName + ".NetCore";
+#endif
+            fileName = fileName + (dbmPropagation switch
+            {
+                "full" => ".tagged",
+                _ => ".untagged",
+            });
+
+            await VerifyHelper.VerifySpans(filteredSpans, settings)
+                              .DisableRequireUniquePrefix()
+                              .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
         }
     }
 }

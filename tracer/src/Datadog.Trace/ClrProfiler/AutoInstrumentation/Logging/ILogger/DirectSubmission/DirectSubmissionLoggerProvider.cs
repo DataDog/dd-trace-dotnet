@@ -17,30 +17,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     /// <summary>
     /// Duck type for ILoggerProvider
     /// </summary>
+    [Microsoft.Extensions.Logging.ProviderAlias("Datadog")]
     internal class DirectSubmissionLoggerProvider
     {
         private readonly Func<string, DirectSubmissionLogger> _createLoggerFunc;
         private readonly ConcurrentDictionary<string, DirectSubmissionLogger> _loggers = new();
-        private readonly IDatadogSink _sink;
+        private readonly IDirectSubmissionLogSink _sink;
         private readonly LogFormatter? _formatter;
         private readonly DirectSubmissionLogLevel _minimumLogLevel;
         private IExternalScopeProvider? _scopeProvider;
 
-        internal DirectSubmissionLoggerProvider(IDatadogSink sink, DirectSubmissionLogLevel minimumLogLevel)
-            : this(sink, formatter: null, minimumLogLevel)
+        internal DirectSubmissionLoggerProvider(IDirectSubmissionLogSink sink, DirectSubmissionLogLevel minimumLogLevel, IExternalScopeProvider? scopeProvider)
+            : this(sink, formatter: null, minimumLogLevel, scopeProvider)
         {
         }
 
         // used for testing
         internal DirectSubmissionLoggerProvider(
-            IDatadogSink sink,
+            IDirectSubmissionLogSink sink,
             LogFormatter? formatter,
-            DirectSubmissionLogLevel minimumLogLevel)
+            DirectSubmissionLogLevel minimumLogLevel,
+            IExternalScopeProvider? scopeProvider)
         {
             _sink = sink;
             _formatter = formatter;
             _minimumLogLevel = minimumLogLevel;
             _createLoggerFunc = CreateLoggerImplementation;
+            _scopeProvider = scopeProvider;
         }
 
         /// <summary>

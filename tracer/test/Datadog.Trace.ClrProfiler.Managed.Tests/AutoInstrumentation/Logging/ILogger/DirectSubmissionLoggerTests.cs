@@ -106,11 +106,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
                 minimumLogLevel: settings.MinimumLevel);
         }
 
-        internal class TestSink : IDatadogSink
+        internal class TestSink : IDirectSubmissionLogSink
         {
-            public ConcurrentQueue<DatadogLogEvent> Events { get; } = new();
+            public ConcurrentQueue<DirectSubmissionLogEvent> Events { get; } = new();
 
-            public void EnqueueLog(DatadogLogEvent logEvent)
+            public void EnqueueLog(DirectSubmissionLogEvent logEvent)
             {
                 Events.Enqueue(logEvent);
             }

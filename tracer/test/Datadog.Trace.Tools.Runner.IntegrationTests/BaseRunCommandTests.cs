@@ -4,6 +4,8 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -24,6 +26,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         protected bool EnableCiVisibilityMode { get; }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public void Run()
         {
             string command = null;
@@ -40,7 +43,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             };
 
             // CI visibility mode checks if there's a running agent
-            using var agent = EnableCiVisibilityMode ? MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort()) : null;
+            using var agent = EnableCiVisibilityMode ? GetMockTracerAgent() : null;
 
             var agentUrl = $"http://localhost:{agent?.Port ?? 1111}";
 
@@ -64,7 +67,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables.Should().Contain("DD_ENV", "TestEnv");
             environmentVariables.Should().Contain("DD_SERVICE", "TestService");
             environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
-            environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", "TestTracerHome");
+            environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME",  Path.GetFullPath("TestTracerHome"));
             environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", agentUrl);
             environmentVariables.Should().Contain("VAR1", "A");
             environmentVariables.Should().Contain("VAR2", "B");
@@ -80,6 +83,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public void AdditionalArguments()
         {
             string command = null;
@@ -96,7 +100,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             };
 
             // CI visibility mode checks if there's a running agent
-            using var agent = EnableCiVisibilityMode ? MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort()) : null;
+            using var agent = EnableCiVisibilityMode ? GetMockTracerAgent() : null;
 
             var agentUrl = $"http://localhost:{agent?.Port ?? 1111}";
 
@@ -120,6 +124,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public void EmptyCommand()
         {
             bool callbackInvoked = false;
@@ -130,7 +135,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             };
 
             // CI visibility mode checks if there's a running agent
-            using var agent = EnableCiVisibilityMode ? MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort()) : null;
+            using var agent = EnableCiVisibilityMode ? GetMockTracerAgent() : null;
 
             var agentUrl = $"http://localhost:{agent?.Port ?? 1111}";
 
@@ -147,7 +152,15 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             exitCode.Should().Be(1);
             callbackInvoked.Should().BeFalse();
-            console.Output.Should().Contain("Error: Missing command");
+            console.Output.Should().Contain("Empty command");
+        }
+
+        private static MockTracerAgent.TcpUdpAgent GetMockTracerAgent()
+        {
+            var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+            // We remove the evp_proxy endpoint to force the APM protocol compatibility
+            agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2") && !e.Contains("evp_proxy/v4")).ToArray();
+            return agent;
         }
     }
 }

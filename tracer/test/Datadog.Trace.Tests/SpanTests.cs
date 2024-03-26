@@ -5,11 +5,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Sampling;
 using FluentAssertions;
 using Moq;
@@ -28,9 +30,17 @@ namespace Datadog.Trace.Tests
         {
             _output = output;
 
-            var settings = new TracerSettings();
+            var settings = new TracerSettings(
+                new NameValueConfigurationSource(
+                    new NameValueCollection
+                    {
+                        { ConfigurationKeys.PeerServiceDefaultsEnabled, "true" },
+                        { ConfigurationKeys.PeerServiceNameMappings, "a-peer-service:a-remmaped-peer-service" }
+                    }),
+                new ConfigurationTelemetry());
+
             _writerMock = new Mock<IAgentWriter>();
-            var samplerMock = new Mock<ISampler>();
+            var samplerMock = new Mock<ITraceSampler>();
 
             _tracer = new Tracer(settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
@@ -45,8 +55,21 @@ namespace Datadog.Trace.Tests
 
             span.SetTag(key, value);
 
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>(), It.IsAny<bool>()), Times.Never);
-            Assert.Equal(span.GetTag(key), value);
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Never);
+            span.GetTag(key).Should().Be(value);
+        }
+
+        [Fact]
+        public void SetPeerServiceTag_CallsRemapper()
+        {
+            var span = _tracer.StartSpan("Operation");
+            Assert.Null(span.GetTag(Tags.PeerService));
+
+            span.SetTag(Tags.PeerService, "a-peer-service");
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Never);
+            span.GetTag(Tags.PeerService).Should().Be("a-remmaped-peer-service");
+            span.GetTag(Tags.PeerServiceRemappedFrom).Should().Be("a-peer-service");
         }
 
         [Fact]
@@ -68,7 +91,7 @@ namespace Datadog.Trace.Tests
             await Task.Delay(TimeSpan.FromMilliseconds(1));
             span.Finish();
 
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>(), It.IsAny<bool>()), Times.Once);
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Once);
             Assert.True(span.Duration > TimeSpan.Zero);
         }
 
@@ -302,6 +325,98 @@ namespace Datadog.Trace.Tests
                 span3.RootSpanId.Should().Be(scope1.Span.SpanId);
                 span4.RootSpanId.Should().Be(scope1.Span.SpanId);
             }
+        }
+
+        [Theory]
+        [InlineData(0x1234567890abcdef, 0x1122334455667788, "1234567890abcdef1122334455667788")]
+        [InlineData(0, 0x1122334455667788, "00000000000000001122334455667788")]
+        public void GetTag_TraceId(ulong upper, ulong lower, string expected)
+        {
+            var traceId = new TraceId(upper, lower);
+            var trace = new TraceContext(Mock.Of<IDatadogTracer>());
+            var propagatedContext = new SpanContext(traceId, spanId: 1, samplingPriority: null, serviceName: null, origin: null);
+            var childContext = new SpanContext(propagatedContext, trace, serviceName: null);
+            var span = new Span(childContext, start: null);
+
+            span.GetTag(Tags.TraceId).Should().Be(expected);
+        }
+
+        [Fact]
+        public void SetTag_Double()
+        {
+            var span = _tracer.StartSpan(nameof(SetTag_Double));
+            var stringKey = "StringTag";
+            var stringValue = "My Tag";
+            var numericKey = "NumericValue";
+            var numericValue = int.MaxValue;
+
+            // Write a normal string tag.
+            span.SetTag(stringKey, stringValue);
+
+            // Let's set the numeric value to the span (save it into the Metrics dictionary)
+            span.SetTag(numericKey, numericValue);
+
+            // The normal GetTag only look into the Meta dictionary.
+            span.GetTag(stringKey).Should().Be(stringValue);
+            span.GetTag(numericKey).Should().BeNull();
+        }
+
+        [Fact]
+        public void ServiceOverride_WhenSet_HasBaseService()
+        {
+            var origName = "MyServiceA";
+            var newName = "MyServiceB";
+            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
+            span.ServiceName = newName;
+
+            span.ServiceName.Should().Be(newName);
+            span.GetTag(Tags.BaseService).Should().Be(origName);
+        }
+
+        [Fact]
+        public void ServiceOverride_WhenNotSet_HasNoBaseService()
+        {
+            var origName = "MyServiceA";
+            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
+
+            span.ServiceName.Should().Be(origName);
+            span.GetTag(Tags.BaseService).Should().BeNull();
+        }
+
+        [Fact]
+        public void ServiceOverride_WhenSetSame_HasNoBaseService()
+        {
+            var origName = "MyServiceA";
+            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
+            span.ServiceName = origName;
+
+            span.ServiceName.Should().Be(origName);
+            span.GetTag(Tags.BaseService).Should().BeNull();
+        }
+
+        [Fact]
+        public void ServiceOverride_WhenSetSameWithDifferentCase_HasNoBaseService()
+        {
+            var origName = "MyServiceA";
+            var newName = origName.ToUpper();
+            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
+            span.ServiceName = newName;
+
+            span.ServiceName.Should().Be(newName); // ServiceName should change although _dd.base_service has not been added
+            span.GetTag(Tags.BaseService).Should().BeNull();
+        }
+
+        [Fact]
+        public void ServiceOverride_WhenSetTwice_HasBaseService()
+        {
+            var origName = "MyServiceA";
+            var newName = "MyServiceC";
+            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
+            span.ServiceName = "MyServiceB";
+            span.ServiceName = newName;
+
+            span.ServiceName.Should().Be(newName);
+            span.GetTag(Tags.BaseService).Should().Be(origName);
         }
     }
 }

@@ -5,41 +5,47 @@
 
 #include <chrono>
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 
 #include "ManagedThreadInfo.h"
-#include "StackSnapshotResultReusableBuffer.h"
+#include "StackSnapshotResultBuffer.h"
+
+class IConfiguration;
 
 class StackFramesCollectorBase
 {
 protected:
-    StackFramesCollectorBase();
+    StackFramesCollectorBase(IConfiguration const * _configuration);
 
-    bool TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot(void);
+    bool TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
     bool AddFrame(std::uintptr_t ip);
     void AddFakeFrame();
+    void SetFrameCount(std::uint16_t count);
 
-    StackSnapshotResultBuffer* GetStackSnapshotResult(void);
+    std::pair<uintptr_t*, std::uint16_t> Data();
+
+    StackSnapshotResultBuffer* GetStackSnapshotResult();
     bool IsCurrentCollectionAbortRequested();
 
     // The XxxImplementation(..) methods below are the key routines to be implemented by the specific stack sample collectors.
     // We make them virtual but NOT astract, so that if a particular collector does not need to implement some
     // of these methods (because they are no-op for that specific collector), then they do not have to.
     // For this, we provide a reasonable default implementation.
-    virtual void PrepareForNextCollectionImplementation(void);
+    virtual void PrepareForNextCollectionImplementation();
     virtual bool SuspendTargetThreadImplementation(ManagedThreadInfo* pThreadInfo, bool* pIsTargetThreadSuspended);
     virtual void ResumeTargetThreadIfRequiredImplementation(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR);
     virtual StackSnapshotResultBuffer* CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, bool selfCollect);
 
 public:
-    virtual ~StackFramesCollectorBase();
+    virtual ~StackFramesCollectorBase() = default;
     StackFramesCollectorBase(StackFramesCollectorBase const&) = delete;
     StackFramesCollectorBase& operator=(StackFramesCollectorBase const&) = delete;
 
     virtual void OnDeadlock();
 
-    void RequestAbortCurrentCollection(void);
-    void PrepareForNextCollection(void);
+    void RequestAbortCurrentCollection();
+    void PrepareForNextCollection();
     bool SuspendTargetThread(ManagedThreadInfo* pThreadInfo, bool* pIsTargetThreadSuspended);
     void ResumeTargetThreadIfRequired(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR);
     StackSnapshotResultBuffer* CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR);
@@ -48,9 +54,13 @@ protected:
     ManagedThreadInfo* _pCurrentCollectionThreadInfo;
 
 private:
-    StackSnapshotResultReusableBuffer* _pReusableStackSnapshotResult;
+    std::unique_ptr<StackSnapshotResultBuffer> _pStackSnapshotResult;
     std::atomic<bool> _isCurrentCollectionAbortRequested;
     std::condition_variable _collectionAbortPerformedSignal;
     std::mutex _collectionAbortNotificationLock;
     bool _isRequestedCollectionAbortSuccessful;
+
+    // CI Visibility support
+    bool _isCIVisibilityEnabled;
+    uint64_t _ciVisibilitySpanId;
 };
