@@ -14,7 +14,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Configuration
 {
-    internal class CIVisibilitySettings
+    internal partial class CIVisibilitySettings
     {
         private TracerSettings? _tracerSettings;
 
@@ -115,24 +115,9 @@ namespace Datadog.Trace.Ci.Configuration
         public bool? CodeCoverageEnabled { get; private set; }
 
         /// <summary>
-        /// Gets the snk filepath to re-signing assemblies after the code coverage modification.
-        /// </summary>
-        public string? CodeCoverageSnkFilePath { get; }
-
-        /// <summary>
         /// Gets the path to store the code coverage json files.
         /// </summary>
         public string? CodeCoveragePath { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether the Code Coverage Jit Optimizations should be enabled
-        /// </summary>
-        public bool CodeCoverageEnableJitOptimizations { get; }
-
-        /// <summary>
-        /// Gets the code coverage mode
-        /// </summary>
-        public string? CodeCoverageMode { get; private set; }
 
         /// <summary>
         /// Gets a value indicating whether the Git Upload metadata is going to be used.
@@ -199,11 +184,6 @@ namespace Datadog.Trace.Ci.Configuration
             Agentless = enabled;
             ApiKey = apiKey;
             AgentlessUrl = agentlessUrl;
-        }
-
-        internal void SetCodeCoverageMode(string? coverageMode)
-        {
-            CodeCoverageMode = coverageMode;
         }
 
         internal void SetDefaultManualInstrumentationSettings()

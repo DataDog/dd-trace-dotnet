@@ -17,7 +17,7 @@ internal class QueueHelper
 
     public static void SetQueue(object consumer, string queue)
     {
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
         ConsumerToQueueMap.AddOrUpdate(consumer, queue);
 #else
         ConsumerToQueueMap.GetValue(consumer, x => queue);
