@@ -120,14 +120,14 @@ namespace Datadog.Trace
             _appSecRequestContext!.AddWafSecurityEvents(events);
         }
 
-        internal void AddStackTraceElement(AppSec.Rasp.StackTraceInfo stack)
+        internal void AddStackTraceElement(AppSec.Rasp.StackTraceInfo stack, int maxStackTraces)
         {
             if (Volatile.Read(ref _appSecRequestContext) is null)
             {
                 Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
             }
 
-            _appSecRequestContext!.AddRaspStackTrace(stack);
+            _appSecRequestContext!.AddRaspStackTrace(stack, maxStackTraces);
         }
 
         internal void EnableIastInRequest()

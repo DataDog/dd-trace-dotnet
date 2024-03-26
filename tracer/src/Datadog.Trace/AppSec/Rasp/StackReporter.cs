@@ -17,9 +17,9 @@ internal static class StackReporter
 {
     private const string _language = "dotnet";
 
-    public static StackTraceInfo? GetStack(SecuritySettings settings)
+    public static StackTraceInfo? GetStack(int maxStaxckTraceDepth)
     {
-        var frames = GetFrames(settings);
+        var frames = GetFrames(maxStaxckTraceDepth);
 
         if (frames is null || frames.Count == 0)
         {
@@ -32,7 +32,7 @@ internal static class StackReporter
         return stack;
     }
 
-    private static List<StackFrame>? GetFrames(SecuritySettings settings)
+    private static List<StackFrame>? GetFrames(int maxStaxckTraceDepth)
     {
         var stackTrace = new System.Diagnostics.StackTrace(true);
         var stackFrameList = new List<StackFrame>(stackTrace.FrameCount);
@@ -44,11 +44,21 @@ internal static class StackReporter
             var assembly = declaringType?.Assembly.GetName().Name;
             if (assembly != null && !AssemblyExcluded(assembly))
             {
-                stackFrameList.Add(new StackFrame((uint)counter, null, System.IO.Path.GetFileName(frame?.GetFileName()), (uint?)frame?.GetFileLineNumber(), (uint?)frame?.GetFileColumnNumber(), declaringType?.Namespace, declaringType?.Name, frame?.GetMethod()?.Name));
+                var fileName = System.IO.Path.GetFileName(frame?.GetFileName());
+                var fileNameValid = !string.IsNullOrEmpty(fileName);
+                stackFrameList.Add(new StackFrame(
+                    (uint)counter,
+                    null,
+                    fileName,
+                    (uint?)(fileNameValid ? frame?.GetFileLineNumber() : null),
+                    (uint?)(fileNameValid ? frame?.GetFileColumnNumber() : null),
+                    declaringType?.Namespace,
+                    declaringType?.Name,
+                    frame?.GetMethod()?.Name));
                 counter++;
             }
 
-            if (settings.MaxStackTraceDepth > 0 && counter >= settings.MaxStackTraceDepth)
+            if (maxStaxckTraceDepth > 0 && counter >= maxStaxckTraceDepth)
             {
                 break;
             }

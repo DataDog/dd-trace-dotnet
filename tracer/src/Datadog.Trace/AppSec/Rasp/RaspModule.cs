@@ -45,10 +45,11 @@ internal static class RaspModule
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, Tracer.Instance.InternalActiveScope.Root.Span);
         var result = securityCoordinator.RunWaf(arguments, (log, ex) => log.Error(ex, "Error in RASP."));
 
-        if (result?.ShouldSendStack == true)
+        if (result?.ShouldSendStack == true && Security.Instance.Settings.StackTraceEnabled)
         {
-            // TODO: Right now, the WAF does not generate a stack_id, but it will in the future before releasing, so
+            // TODO: Right now, the WAF does not generate a stack_id, but it will in the future, so
             // we are creating a stack id and adding it to the result as a temporary solution.
+            // This code will be removed when the WAF generates the stack id.
             var stackId = SendStack(rootSpan);
 
             if (!string.IsNullOrEmpty(stackId))
@@ -78,11 +79,11 @@ internal static class RaspModule
 
     private static string? SendStack(Span rootSpan)
     {
-        var stack = StackReporter.GetStack(Security.Instance.Settings);
+        var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth);
 
         if (stack.HasValue)
         {
-            rootSpan.Context.TraceContext.AddStackTraceElement(stack.Value);
+            rootSpan.Context.TraceContext.AddStackTraceElement(stack.Value, Security.Instance.Settings.MaxStackTraces);
             return stack.Value.Id;
         }
 

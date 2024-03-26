@@ -56,13 +56,18 @@ internal class AppSecRequestContext
         }
     }
 
-    internal void AddRaspStackTrace(StackTraceInfo stackTrace)
+    internal void AddRaspStackTrace(StackTraceInfo stackTrace, int maxStackTraces)
     {
         lock (_sync)
         {
             if (_raspStackTraces is null)
             {
                 _raspStackTraces = new();
+            }
+
+            if (_raspStackTraces.Count >= maxStackTraces)
+            {
+                return;
             }
 
             _raspStackTraces.Add(stackTrace.ToDictionary());
