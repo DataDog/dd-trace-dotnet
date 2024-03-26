@@ -164,57 +164,63 @@ internal record ConfigurationStatus
         }
     }
 
-    public void StoreConfigs(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
+    public bool StoreConfigs(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
     {
         // todo make sure remote config sends everything again, normally yes
         _fileUpdates.Clear();
         _fileRemoves.Clear();
         List<RemoteConfiguration> asmFeaturesToUpdate = new();
         List<RemoteConfigurationPath> asmFeaturesToRemove = new();
-        foreach (var configByProduct in configsByProduct)
+        var anyChange = configsByProduct.Count > 0 || removedConfigs?.Count > 0;
+        if (anyChange)
         {
-            if (configByProduct.Key == RcmProducts.AsmFeatures)
+            foreach (var configByProduct in configsByProduct)
             {
-                asmFeaturesToUpdate.AddRange(configByProduct.Value);
-            }
-            else
-            {
-                if (_fileUpdates.ContainsKey(configByProduct.Key))
+                if (configByProduct.Key == RcmProducts.AsmFeatures)
                 {
-                    _fileUpdates[configByProduct.Key].AddRange(configByProduct.Value);
+                    asmFeaturesToUpdate.AddRange(configByProduct.Value);
                 }
                 else
                 {
-                    _fileUpdates[configByProduct.Key] = configByProduct.Value;
-                }
-            }
-        }
-
-        if (removedConfigs != null)
-        {
-            foreach (var configByProductToRemove in removedConfigs)
-            {
-                if (configByProductToRemove.Key == RcmProducts.AsmFeatures)
-                {
-                    asmFeaturesToRemove.AddRange(configByProductToRemove.Value);
-                }
-                else
-                {
-                    if (_fileRemoves.ContainsKey(configByProductToRemove.Key))
+                    if (_fileUpdates.ContainsKey(configByProduct.Key))
                     {
-                        _fileRemoves[configByProductToRemove.Key].AddRange(configByProductToRemove.Value);
+                        _fileUpdates[configByProduct.Key].AddRange(configByProduct.Value);
                     }
                     else
                     {
-                        _fileRemoves[configByProductToRemove.Key] = configByProductToRemove.Value;
+                        _fileUpdates[configByProduct.Key] = configByProduct.Value;
                     }
                 }
             }
 
-            // only treat asm_features as it will decide if asm gets toggled on and if we deserialize all the others
-            _asmFeatureProduct.ProcessUpdates(this, asmFeaturesToUpdate);
-            _asmFeatureProduct.ProcessRemovals(this, asmFeaturesToRemove);
+            if (removedConfigs != null)
+            {
+                foreach (var configByProductToRemove in removedConfigs)
+                {
+                    if (configByProductToRemove.Key == RcmProducts.AsmFeatures)
+                    {
+                        asmFeaturesToRemove.AddRange(configByProductToRemove.Value);
+                    }
+                    else
+                    {
+                        if (_fileRemoves.ContainsKey(configByProductToRemove.Key))
+                        {
+                            _fileRemoves[configByProductToRemove.Key].AddRange(configByProductToRemove.Value);
+                        }
+                        else
+                        {
+                            _fileRemoves[configByProductToRemove.Key] = configByProductToRemove.Value;
+                        }
+                    }
+                }
+
+                // only treat asm_features as it will decide if asm gets toggled on and if we deserialize all the others
+                _asmFeatureProduct.ProcessUpdates(this, asmFeaturesToUpdate);
+                _asmFeatureProduct.ProcessRemovals(this, asmFeaturesToRemove);
+            }
         }
+
+        return anyChange;
     }
 
     public void ResetUpdateMarkers() => IncomingUpdateState.Reset();

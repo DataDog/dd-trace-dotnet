@@ -171,17 +171,18 @@ namespace Datadog.Trace.AppSec
 
             try
             {
-                _configurationStatus.StoreConfigs(configsByProduct, removedConfigs);
+                var anyChange = _configurationStatus.StoreConfigs(configsByProduct, removedConfigs);
                 _configurationStatus.EnableAsm = !_configurationStatus.AsmFeaturesByFile.IsEmpty() && _configurationStatus.AsmFeaturesByFile.All(a => a.Value.Enabled == true);
 
                 // normally CanBeToggled should not need a check as asm_features capacity is only sent if AppSec env var is null, but still guards it in case
                 if (_configurationStatus.IncomingUpdateState.SecurityStateChange && _settings.CanBeToggled)
                 {
+                    // disable ASM scenario
                     if (Enabled && _configurationStatus.EnableAsm == false)
                     {
                         DisposeWafAndInstrumentations(true);
                         _configurationStatus.IncomingUpdateState.SecurityStateChange = false;
-                    }
+                    } // enable ASM scenario
                     else if (!Enabled && _configurationStatus.EnableAsm == true)
                     {
                         _configurationStatus.ApplyStoredFiles();
@@ -194,8 +195,8 @@ namespace Datadog.Trace.AppSec
 
                         _configurationStatus.IncomingUpdateState.SecurityStateChange = false;
                     }
-                }
-                else if (Enabled && _configurationStatus.IncomingUpdateState.WafKeysToApply.Any())
+                } // update asm configuration
+                else if (Enabled && anyChange)
                 {
                     _configurationStatus.ApplyStoredFiles();
                     updateResult = _waf?.UpdateWafFromConfigurationStatus(_configurationStatus);
