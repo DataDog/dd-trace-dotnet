@@ -172,17 +172,16 @@ namespace Datadog.Trace.AppSec
             try
             {
                 var anyChange = _configurationStatus.StoreConfigs(configsByProduct, removedConfigs);
-                _configurationStatus.EnableAsm = !_configurationStatus.AsmFeaturesByFile.IsEmpty() && _configurationStatus.AsmFeaturesByFile.All(a => a.Value.Enabled == true);
+                var securityStateChange = Enabled != _configurationStatus.EnableAsm;
 
                 // normally CanBeToggled should not need a check as asm_features capacity is only sent if AppSec env var is null, but still guards it in case
-                if (_configurationStatus.IncomingUpdateState.SecurityStateChange && _settings.CanBeToggled)
+                if (securityStateChange && _settings.CanBeToggled)
                 {
                     // disable ASM scenario
                     if (Enabled && _configurationStatus.EnableAsm == false)
                     {
                         DisposeWafAndInstrumentations(true);
-                        _configurationStatus.IncomingUpdateState.SecurityStateChange = false;
-                    } // enable ASM scenario
+                    } // enable ASM scenario taking into account rcm changes for other products/data
                     else if (!Enabled && _configurationStatus.EnableAsm == true)
                     {
                         _configurationStatus.ApplyStoredFiles();
@@ -192,8 +191,6 @@ namespace Datadog.Trace.AppSec
                         {
                             WafRuleFileVersion = _wafInitResult.RuleFileVersion;
                         }
-
-                        _configurationStatus.IncomingUpdateState.SecurityStateChange = false;
                     }
                 } // update asm configuration
                 else if (Enabled && anyChange)
@@ -358,7 +355,7 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmTrustedIps, _noLocalRules);
         }
 
-        private void InitWafAndInstrumentations(bool fromRemoteConfig = false)
+        private void InitWafAndInstrumentations(bool configurationFromRcm = false)
         {
             // initialization of WafLibraryInvoker
             if (_libraryInitializationResult == null)
@@ -375,7 +372,12 @@ namespace Datadog.Trace.AppSec
                 _wafLibraryInvoker = _libraryInitializationResult.WafLibraryInvoker;
             }
 
-            _wafInitResult = Waf.Waf.Create(_wafLibraryInvoker!, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, fromRemoteConfig ? _configurationStatus : null,
+            _wafInitResult = Waf.Waf.Create(
+                _wafLibraryInvoker!,
+                _settings.ObfuscationParameterKeyRegex,
+                _settings.ObfuscationParameterValueRegex,
+                _settings.Rules,
+                configurationFromRcm ? _configurationStatus : null,
                 _settings.UseUnsafeEncoder,
                 GlobalSettings.Instance.DebugEnabledInternal && _settings.WafDebugEnabled);
             if (_wafInitResult.Success)
@@ -391,13 +393,13 @@ namespace Datadog.Trace.AppSec
                 _rateLimiter ??= new(_settings.TraceRateLimit);
                 Enabled = true;
                 InitializationError = null;
-                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
+                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, configurationFromRcm);
                 if (_wafInitResult.EmbeddedRules != null)
                 {
                     _configurationStatus.FallbackEmbeddedRuleSet ??= RuleSet.From(_wafInitResult.EmbeddedRules);
                 }
 
-                if (!fromRemoteConfig)
+                if (!configurationFromRcm)
                 {
                     // occurs the first time we initialize the WAF
                     TelemetryFactory.Metrics.SetWafVersion(_waf!.Version);

@@ -69,10 +69,18 @@ namespace Datadog.Trace.AppSec.Waf
 
             // set the log level and setup the logger
             wafLibraryInvoker.SetupLogging(wafDebugEnabled);
-            object? configurationToEncode = configurationStatus is not null
-                                                ? configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate()
-                                                : WafConfigurator.DeserializeEmbeddedOrStaticRules(
-                                                    embeddedRulesetPath)!;
+
+            object? configurationToEncode = null;
+            if (configurationStatus is not null)
+            {
+                var configFromRcm = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate();
+                if (configFromRcm.Count > 0)
+                {
+                    configurationToEncode = configFromRcm;
+                }
+            }
+
+            configurationToEncode ??= WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath)!;
 
             if (configurationToEncode is null)
             {

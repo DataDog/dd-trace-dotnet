@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.AppSec.Waf.Initialization;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -217,6 +218,7 @@ internal record ConfigurationStatus
                 // only treat asm_features as it will decide if asm gets toggled on and if we deserialize all the others
                 _asmFeatureProduct.ProcessUpdates(this, asmFeaturesToUpdate);
                 _asmFeatureProduct.ProcessRemovals(this, asmFeaturesToRemove);
+                EnableAsm = !AsmFeaturesByFile.IsEmpty() && AsmFeaturesByFile.All(a => a.Value.Enabled == true);
             }
         }
 
