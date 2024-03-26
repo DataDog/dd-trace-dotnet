@@ -29,8 +29,8 @@ namespace Datadog.Trace.Telemetry
         public const string ManagedTracerTfmValue = "net6.0";
 #elif NETCOREAPP3_1
         public const string ManagedTracerTfmValue = "netcoreapp3.1";
-#elif NETSTANDARD2_0
-        public const string ManagedTracerTfmValue = "netstandard2.0";
+#elif NETCOREAPP2_1
+        public const string ManagedTracerTfmValue = "netcoreapp2.1";
 #elif NETFRAMEWORK
         public const string ManagedTracerTfmValue = "net461";
 #else
