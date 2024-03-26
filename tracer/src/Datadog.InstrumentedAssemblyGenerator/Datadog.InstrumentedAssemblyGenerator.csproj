@@ -6,7 +6,7 @@
     <Copyright>Copyright 2022 Datadog, Inc.</Copyright>
     
     <LangVersion>latest</LangVersion>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
     <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
     <AnalysisLevel>none</AnalysisLevel>
     <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>

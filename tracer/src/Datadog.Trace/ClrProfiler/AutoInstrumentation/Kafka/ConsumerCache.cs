@@ -19,7 +19,7 @@ internal static class ConsumerCache
 
     public static void SetConsumerGroup(object consumer, string groupId, string bootstrapServers)
     {
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
         ConsumerToGroupIdMap.AddOrUpdate(consumer, groupId);
         ConsumerToBootstrapServersMap.AddOrUpdate(consumer, bootstrapServers);
 #else

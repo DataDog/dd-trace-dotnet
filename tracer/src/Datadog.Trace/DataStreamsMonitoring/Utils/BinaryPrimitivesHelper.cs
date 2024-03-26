@@ -15,7 +15,7 @@ internal static class BinaryPrimitivesHelper
 {
     public static void WriteUInt64LittleEndian(byte[] bytes, ulong value)
     {
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
         System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(bytes, value);
 #else
         if (bytes.Length < 8)
@@ -52,7 +52,7 @@ internal static class BinaryPrimitivesHelper
 
     public static ulong ReadUInt64LittleEndian(byte[] bytes)
     {
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
         return System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(bytes);
 #else
         if (bytes.Length < 8)
@@ -91,7 +91,7 @@ internal static class BinaryPrimitivesHelper
     // ReverseEndianness() from .NET repository.
     // https://github.com/dotnet/runtime/blob/f8ab5554091d2124dffa6002650d9a5ca0a7fba3/src/libraries/System.Private.CoreLib/src/System/Buffers/Binary/BinaryPrimitives.ReverseEndianness.cs
 
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
 
     /// <summary>
     /// Reverses a primitive value - performs an endianness swap
