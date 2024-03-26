@@ -37,7 +37,7 @@ internal class SpanLink
 
     internal SpanContext Context { get;  }
 
-    internal void AddAttribute(string name, object value)
+    internal SpanLink AddAttribute(string name, object value)
     {
         var newAttribute = new KeyValuePair<string, object>(name, value);
         if (Attributes is null)
@@ -46,5 +46,6 @@ internal class SpanLink
         }
 
         Attributes.Add(newAttribute);
+        return this;
     }
 }
