@@ -3799,8 +3799,8 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
     }
     else
     {
-        dllLpName = MAKEINTRESOURCE(NETCOREAPP20_MANAGED_ENTRYPOINT_DLL);
-        symbolsLpName = MAKEINTRESOURCE(NETCOREAPP20_MANAGED_ENTRYPOINT_SYMBOLS);
+        dllLpName = MAKEINTRESOURCE(NETCOREAPP21_MANAGED_ENTRYPOINT_DLL);
+        symbolsLpName = MAKEINTRESOURCE(NETCOREAPP21_MANAGED_ENTRYPOINT_SYMBOLS);
     }
 
     HRSRC hResAssemblyInfo = FindResource(hInstance, dllLpName, L"ASSEMBLY");
