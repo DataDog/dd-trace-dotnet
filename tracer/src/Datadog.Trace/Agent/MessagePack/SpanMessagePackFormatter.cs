@@ -231,7 +231,6 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 var context = spanLink.Context;
                 var traceState = W3CTraceContextPropagator.CreateTraceStateHeader(context);
-                // 3 possible values, 1, 0 or null
                 var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
                 var traceFlags = samplingPriority switch
                 {
