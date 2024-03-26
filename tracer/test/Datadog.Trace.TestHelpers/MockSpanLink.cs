@@ -10,7 +10,6 @@ using MessagePack;
 namespace Datadog.Trace.TestHelpers
 {
     [MessagePackObject]
-    [DebuggerDisplay("{ToString(),nq}")]
     public class MockSpanLink
     {
         [Key("trace_id")]
