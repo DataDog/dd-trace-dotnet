@@ -1,4 +1,4 @@
-// <copyright file="IQueryAspect.cs" company="Datadog">
+// <copyright file="ISessionAspect.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,7 +7,6 @@
 
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast.Aspects.NHibernate;
 
@@ -15,20 +14,18 @@ namespace Datadog.Trace.Iast.Aspects.NHibernate;
 [AspectClass("NHibernate", AspectType.Sink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class IQueryAspect
+public class ISessionAspect
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IQueryAspect));
-
     /// <summary>
     ///     NHibernate aspect
     /// </summary>
-    /// <param name="command"> the mongodb command </param>
+    /// <param name="query"> the mongodb command </param>
     /// <returns> the original command </returns>
     [AspectMethodInsertBefore("NHibernate.ISession::CreateQuery(System.String)", 0)]
     [AspectMethodInsertBefore("NHibernate.ISession::CreateSQLQuery(System.String)", 0)]
-    public static object AnalyzeQuery(string command)
+    public static object AnalyzeQuery(string query)
     {
-        IastModule.OnSqlQuery(command, IntegrationId.NHibernate);
-        return command;
+        IastModule.OnSqlQuery(query, IntegrationId.NHibernate);
+        return query;
     }
 }
