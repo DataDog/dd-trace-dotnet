@@ -25,10 +25,7 @@ internal class SpanLink
     internal SpanLink(SpanContext spanLinkContext, List<KeyValuePair<string, object>>? optionalAttributes)
     {
         Context = spanLinkContext;
-        if (optionalAttributes is not null)
-        {
-            Attributes = optionalAttributes;
-        }
+        Attributes = optionalAttributes;
     }
 
     internal SpanLink(Span spanToLink, List<KeyValuePair<string, object>>? optionalAttributes)
