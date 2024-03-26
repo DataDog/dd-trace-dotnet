@@ -108,8 +108,8 @@ namespace Datadog.Trace.TestHelpers
             return "net6.0";
 #elif NETCOREAPP3_1_OR_GREATER
             return "netcoreapp3.1";
-#elif NETCOREAPP || NETSTANDARD
-            return "netstandard2.0";
+#elif NETCOREAPP2_1_OR_GREATER
+            return "netcoreapp2.1";
 #elif NETFRAMEWORK
             return "net461";
 #else

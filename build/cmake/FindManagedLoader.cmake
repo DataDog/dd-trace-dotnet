@@ -1,6 +1,6 @@
 include(ExternalProject)
 
-SET(MANAGED_LOADER_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tracer/src/bin/ProfilerResources/netcoreapp2.0)
+SET(MANAGED_LOADER_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tracer/src/bin/ProfilerResources/netcoreapp2.1)
 
 
 # Set specific custom commands to embed the loader
