@@ -199,7 +199,7 @@ partial class Build
     readonly IEnumerable<TargetFramework> TargetFrameworks = new[]
     {
         TargetFramework.NET461,
-        TargetFramework.NETSTANDARD2_0,
+        TargetFramework.NETCOREAPP2_1,
         TargetFramework.NETCOREAPP3_1,
         TargetFramework.NET6_0,
     };
@@ -933,7 +933,7 @@ partial class Build
                     "--maintainer \"Datadog Packages <package@datadoghq.com>\"",
                     "createLogPath.sh",
                     "dd-dotnet.sh",
-                    "netstandard2.0/",
+                    "netcoreapp2.1/",
                     "netcoreapp3.1/",
                     "net6.0/",
                     "Datadog.Trace.ClrProfiler.Native.so",
@@ -2255,7 +2255,7 @@ partial class Build
        .DependsOn(CompileManagedSrc)
        .Executes(() =>
         {
-            var loaderTypes = GetTypeReferences(SourceDirectory / "bin" / "ProfilerResources" / "netcoreapp2.0" / "Datadog.Trace.ClrProfiler.Managed.Loader.dll");
+            var loaderTypes = GetTypeReferences(SourceDirectory / "bin" / "ProfilerResources" / "netcoreapp2.1" / "Datadog.Trace.ClrProfiler.Managed.Loader.dll");
             List<(string Assembly, string Type)> datadogTraceTypes = new();
             foreach (var tfm in AppTrimmingTFMs)
             {
