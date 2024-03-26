@@ -6,7 +6,7 @@
     The application directory - defaults to the location of this script and need not be set
     by the user unless samples are moved around.
 .PARAMETER ApiKey
-    The Datadog API key (only required when -Agentless is set)
+    The Datadog API key
 .EXAMPLE
     pwsh BuildAndRunSample.ps1 -ApiKey YOUR_API_KEY_HERE
 #>
@@ -65,9 +65,12 @@ Set-EnvironmentVariableForProcess -name "DD_VERSION" -value "1.0.0"
 Set-EnvironmentVariableForProcess -name "DD_API_KEY" -value $ApiKey
 Set-EnvironmentVariableForProcess -name "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS" -value "ILogger"
 
-if ($IsWindows) {
+if ($IsWindows -or ([System.Environment]::OSVersion.Platform -eq "Win32NT")) {
     Write-Host "Using Windows configuration"
-    $AppDirectory = Get-ApplicationDirectory
+    if ($AppDirectory -eq $null)
+    {
+        $AppDirectory = "$pwd"
+    }
     $DotNetTracerHome = Join-Path $AppDirectory "datadog"
 
     $ClrProfilerPath = ""
