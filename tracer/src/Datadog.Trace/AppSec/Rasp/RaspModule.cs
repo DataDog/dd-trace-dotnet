@@ -5,8 +5,10 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Rasp;
@@ -35,13 +37,55 @@ internal static class RaspModule
         }
 
         var arguments = new Dictionary<string, object> { [address] = valueToCheck };
-        RunWaf(arguments);
+        RunWaf(arguments, rootSpan);
     }
 
-    private static void RunWaf(Dictionary<string, object> arguments)
+    private static void RunWaf(Dictionary<string, object> arguments, Span rootSpan)
     {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, Tracer.Instance.InternalActiveScope.Root.Span);
         var result = securityCoordinator.RunWaf(arguments, (log, ex) => log.Error(ex, "Error in RASP."));
+
+        if (result?.ShouldSendStack == true)
+        {
+            // TODO: Right now, the WAF does not generate a stack_id, but it will in the future before releasing, so
+            // we are creating a stack id and adding it to the result as a temporary solution.
+            var stackId = SendStack(rootSpan);
+
+            if (!string.IsNullOrEmpty(stackId))
+            {
+                AddStackIdToResult(stackId!, result);
+            }
+        }
+
         securityCoordinator.CheckAndBlockRasp(result);
+    }
+
+    private static void AddStackIdToResult(string stackId, IResult result)
+    {
+        var data = result.Data as List<object>;
+
+        if (data is not null)
+        {
+            foreach (var item in data)
+            {
+                if (item is Dictionary<string, object> dictionary)
+                {
+                    dictionary["stack_id"] = stackId;
+                }
+            }
+        }
+    }
+
+    private static string? SendStack(Span rootSpan)
+    {
+        var stack = StackReporter.GetStack(Security.Instance.Settings);
+
+        if (stack.HasValue)
+        {
+            rootSpan.Context.TraceContext.AddStackTraceElement(stack.Value);
+            return stack.Value.Id;
+        }
+
+        return null;
     }
 }

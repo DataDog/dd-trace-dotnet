@@ -33,20 +33,15 @@ public class RaspWafTests : WafLibraryRequiredTest
 
     private void Execute(string address, object value, string vulnerabilityType, string rule = null, string ruleFile = null, string expectedAction = null)
     {
-        ExecuteInternal(address, value, vulnerabilityType, rule, true, ruleFile, true, expectedAction);
-        ExecuteInternal(address, value, vulnerabilityType, rule, true, ruleFile, false, expectedAction);
-        ExecuteInternal(address, value, vulnerabilityType, rule, false, ruleFile, true, expectedAction);
-        ExecuteInternal(address, value, vulnerabilityType, rule, false, ruleFile, false, expectedAction);
+        ExecuteInternal(address, value, vulnerabilityType, rule, true, ruleFile, expectedAction);
+        ExecuteInternal(address, value, vulnerabilityType, rule, false, ruleFile, expectedAction);
+        ExecuteInternal(address, value, vulnerabilityType, rule, true, ruleFile, expectedAction, runNtimes: 5);
+        ExecuteInternal(address, value, vulnerabilityType, rule, false, ruleFile, expectedAction, runNtimes: 5);
     }
 
-    private void ExecuteInternal(string address, object value, string requestParam, string rule, bool newEncoder, string ruleFile, bool useTwoCalls, string expectedAction = null)
+    private void ExecuteInternal(string address, object value, string requestParam, string rule, bool newEncoder, string ruleFile, string expectedAction = null, int runNtimes = 1)
     {
         var args = new Dictionary<string, object>();
-
-        if (!useTwoCalls)
-        {
-            args[address] = value;
-        }
 
         args.Add(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
         args.Add(AddressesConstants.RequestBody, new[] { "param", requestParam });
@@ -63,24 +58,25 @@ public class RaspWafTests : WafLibraryRequiredTest
         using var context = waf.CreateContext();
         var result = context.Run(args, TimeoutMicroSeconds);
 
-        if (useTwoCalls)
+        for (int i = 0; i < runNtimes; i++)
         {
             args.Clear();
             args[address] = value;
-            result = context.Run(args, TimeoutMicroSeconds);
+            result = context.RunWithEphemeral(args, TimeoutMicroSeconds);
+            CheckResult(rule, expectedAction, result);
         }
+    }
 
-        if (requestParam is not null)
+    private void CheckResult(string rule, string expectedAction, IResult result)
+    {
+        result.ReturnCode.Should().Be(WafReturnCode.Match);
+        if (!string.IsNullOrEmpty(expectedAction))
         {
-            result.ReturnCode.Should().Be(WafReturnCode.Match);
-            if (!string.IsNullOrEmpty(expectedAction))
-            {
-                result.Actions[0].Should().BeEquivalentTo(expectedAction);
-            }
-
-            var jsonString = JsonConvert.SerializeObject(result.Data);
-            var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
-            resultData.Rule.Id.Should().Be(rule);
+            result.Actions[0].Should().BeEquivalentTo(expectedAction);
         }
+
+        var jsonString = JsonConvert.SerializeObject(result.Data);
+        var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
+        resultData.Rule.Id.Should().Be(rule);
     }
 }

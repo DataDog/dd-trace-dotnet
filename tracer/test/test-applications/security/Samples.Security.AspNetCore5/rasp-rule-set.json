@@ -1,0 +1,89 @@
+{
+  "version": "2.2",
+  "metadata": {
+    "rules_version": "1.10.0"
+  },
+  "rules": [
+    {
+      "id": "rasp-001-001",
+      "name": "Path traversal attack",
+      "tags": {
+        "type": "lfi",
+        "category": "vulnerability_trigger",
+        "module": "rasp"
+      },
+      "conditions": [
+        {
+          "operator": "lfi_detector",
+          "parameters": {
+            "resource": [
+              {
+                "address": "server.io.fs.file"
+              }
+            ],
+            "params": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              },
+              {
+                "address": "grpc.server.request.message"
+              },
+              {
+                "address": "graphql.server.all_resolvers"
+              },
+              {
+                "address": "graphql.server.resolver"
+              }
+            ]
+          }
+        }
+      ],
+      "on_match": [
+        "block",
+        "stack_trace"
+      ]
+    },
+    {
+      "id": "test-dummy-rule",
+      "name": "Dummy rule to test blocking",
+      "tags": {
+        "type": "security_scanner",
+        "crs_id": "913121",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              }
+            ],
+            "list": [
+              "dummy_rule"
+            ]
+          },
+          "operator": "phrase_match"
+        }
+      ],
+      "transformers": [
+        "lowercase"
+      ],
+      "on_match": [
+        "block"
+      ]
+    }
+  ]
+}

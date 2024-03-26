@@ -15,14 +15,26 @@ namespace Datadog.Trace.AppSec.Rasp;
 
 internal static class StackReporter
 {
-    public static List<StackFrame>? GetFrames(SecuritySettings settings)
+    private const string _language = "dotnet";
+
+    public static StackTraceInfo? GetStack(SecuritySettings settings)
     {
-        if (!settings.StackTraceEnabled)
+        var frames = GetFrames(settings);
+
+        if (frames is null || frames.Count == 0)
         {
             return null;
         }
 
-        var stackTrace = new StackTrace(true);
+        var id = Guid.NewGuid().ToString();
+        var stack = new StackTraceInfo(null, _language, id, null, frames);
+
+        return stack;
+    }
+
+    private static List<StackFrame>? GetFrames(SecuritySettings settings)
+    {
+        var stackTrace = new System.Diagnostics.StackTrace(true);
         var stackFrameList = new List<StackFrame>(stackTrace.FrameCount);
         int counter = 0;
 
@@ -48,15 +60,5 @@ internal static class StackReporter
     private static bool AssemblyExcluded(string assembly)
     {
         return assembly.Equals("Datadog.Trace", StringComparison.OrdinalIgnoreCase);
-    }
-
-    internal static void AddStackToSpan(SecuritySettings settings, Span span, string eventCategoryText, string? stackId = null)
-    {
-        var frames = GetFrames(settings);
-
-        if (frames is not null)
-        {
-            span.SetMetaStruct($"_dd.stack.{eventCategoryText}", MetaStructHelper.StackToByteArray(null, "dotnet", stackId ?? Guid.NewGuid().ToString(), null, frames));
-        }
     }
 }
