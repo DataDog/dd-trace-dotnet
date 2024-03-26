@@ -116,13 +116,13 @@ public class ApiSecurityTests
         span.SetTag(Tags.HttpStatusCode, "200");
         span.SetTag(Tags.HttpMethod, "GET");
         List<Thread> threads = new();
-        ConcurrentBag<bool> results = new();
+        ConcurrentQueue<bool> results = new();
         for (var i = 0; i < 20; i++)
         {
             var thread = new Thread(
                 o =>
                 {
-                    results.Add(apiSec.ShouldAnalyzeSchema(true, span, dic, null, dic));
+                    results.Enqueue(apiSec.ShouldAnalyzeSchema(true, span, dic, null, dic));
                 });
             threads.Add(thread);
         }
