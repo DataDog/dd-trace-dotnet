@@ -14,6 +14,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
@@ -157,6 +158,25 @@ public class SpanMessagePackFormatterTests
                     actualSpanLink.TraceIdHigh.Should().Be(expectedSpanlink.SpanLinkContext.TraceId128.Upper);
                     actualSpanLink.TraceIdLow.Should().Be(expectedSpanlink.SpanLinkContext.TraceId128.Lower);
                     actualSpanLink.SpanId.Should().Be(expectedSpanlink.SpanLinkContext.SpanId);
+                    var expectedTraceState = W3CTraceContextPropagator.CreateTraceStateHeader(expectedSpanlink.SpanLinkContext);
+                    if (string.IsNullOrEmpty(expectedTraceState))
+                    {
+                        actualSpanLink.TraceState.Should().Be(expectedTraceState);
+                    }
+
+                    // 3 possible values, 1, 0 or null
+                    var samplingPriority = expectedSpanlink.SpanLinkContext.TraceContext?.SamplingPriority ?? expectedSpanlink.SpanLinkContext.SamplingPriority;
+                    var expectedTraceFlags = samplingPriority switch
+                    {
+                        null => 0u,
+                        > 0 => 1u + (1u << 31),
+                        <= 0 => 1u << 31,
+                    };
+                    if (expectedTraceFlags > 0)
+                    {
+                        actualSpanLink.TraceFlags.Should().Be(expectedTraceFlags);
+                    }
+
                     if (expectedSpanlink.Attributes is not null && expectedSpanlink.Attributes.Count > 0)
                     {
                         actualSpanLink.Attributes.Should().BeEquivalentTo(expectedSpanlink.Attributes);
