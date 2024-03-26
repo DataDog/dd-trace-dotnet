@@ -745,7 +745,7 @@ public class StringBuilderAspects
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target);
     }
 
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
     /// <summary>StringBuilder.AppendJoin aspect</summary>
     /// <param name="target">The StringBuilder instance.</param>
     /// <param name="separator">The character to use as a separator.</param>

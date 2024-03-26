@@ -89,7 +89,7 @@ internal abstract class DelegatingStream(Stream innerStream) : Stream
         base.Dispose(disposing);
     }
 
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
     public override ValueTask DisposeAsync() => _innerStream.DisposeAsync();
 #endif
 }

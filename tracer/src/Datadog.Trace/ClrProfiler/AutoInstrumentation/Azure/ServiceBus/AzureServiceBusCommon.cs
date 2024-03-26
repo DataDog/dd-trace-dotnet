@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
         public static void SetMessage(object applicationProperties, object? message)
         {
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
             ApplicationPropertiesToMessageMap.AddOrUpdate(applicationProperties, message);
 #else
             ApplicationPropertiesToMessageMap.GetValue(applicationProperties, x => message);
