@@ -10,6 +10,8 @@ if [ -z "$ARCH" ]; then
   ARCH=amd64
 fi
 
+OS=linux
+
 TMP_DIR=$(mktemp --dir)
 
 curl --location --fail \
@@ -31,7 +33,7 @@ datadog-package create \
     --version="$DOTNET_PACKAGE_VERSION" \
     --package="datadog-apm-library-dotnet" \
     --archive=true \
-    --archive-path="datadog-apm-library-dotnet-$DOTNET_PACKAGE_VERSION-$ARCH.tar" \
+    --archive-path="datadog-apm-library-dotnet-$DOTNET_PACKAGE_VERSION-$ARCH-$OS.tar" \
     --arch "$ARCH" \
     --os "linux" \
     $TMP_DIR/datadog-dotnet-apm.dir/opt/datadog
