@@ -235,9 +235,9 @@ namespace Datadog.Trace.Agent.MessagePack
                 var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
                 var traceFlags = samplingPriority switch
                 {
-                    null => 0u,
-                    > 0 => 1u + (1u << 31),
-                    <= 0 => 1u << 31,
+                    null => 0u,             // not set
+                    > 0 => 1u + (1u << 31), // keep
+                    <= 0 => 1u << 31,       // drop
                 };
                 var len = 3;
                 if (string.IsNullOrEmpty(traceState))
