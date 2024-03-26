@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.csproj" />
+    <ProjectReference Include="..\..\src\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj" Aliases="DatadogTraceCollector" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
   </ItemGroup>
 
