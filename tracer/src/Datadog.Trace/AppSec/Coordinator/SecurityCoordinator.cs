@@ -12,6 +12,7 @@ using System.IO.Compression;
 using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -60,22 +61,13 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    public IResult? Scan(bool firstTime = false)
+    public IResult? Scan(bool lastTime = false)
     {
         var args = GetBasicRequestArgsForWaf();
-        if (firstTime)
-        {
-            var isApiSecurityProcessed = _security.ApiSecurity.TryTellWafToAnalyzeSchema(args);
-            if (isApiSecurityProcessed)
-            {
-                _localRootSpan.Context.TraceContext.MarkApiSecurity();
-            }
-        }
-
-        return RunWaf(args);
+        return RunWaf(args, lastTime);
     }
 
-    public IResult? RunWaf(Dictionary<string, object> args)
+    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false)
     {
         LogAddressIfDebugEnabled(args);
         IResult? result = null;
@@ -92,6 +84,8 @@ internal readonly partial struct SecurityCoordinator
                     _httpTransport.SetAdditiveContext(additiveContext);
                 }
             }
+
+            _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode.ToString(), _httpTransport.RouteData);
 
             if (additiveContext != null)
             {

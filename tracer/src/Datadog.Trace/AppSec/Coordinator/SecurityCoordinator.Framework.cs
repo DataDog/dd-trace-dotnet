@@ -254,18 +254,9 @@ internal readonly partial struct SecurityCoordinator
     /// <summary>
     /// Framework can do it all at once, but framework only unfortunately
     /// </summary>
-    internal void CheckAndBlock(Dictionary<string, object> args, bool tryToReportSchema = false)
+    internal void CheckAndBlock(Dictionary<string, object> args, bool lastWafCall = false)
     {
-        if (tryToReportSchema)
-        {
-            var isApiSecurityProcessed = _security.ApiSecurity.TryTellWafToAnalyzeSchema(args);
-            if (isApiSecurityProcessed)
-            {
-                _localRootSpan.Context.TraceContext.MarkApiSecurity();
-            }
-        }
-
-        var result = RunWaf(args);
+        var result = RunWaf(args, lastWafCall);
         if (result is not null)
         {
             var reporting = MakeReportingFunction(result);
@@ -405,7 +396,7 @@ internal readonly partial struct SecurityCoordinator
                     {
                         if (!queryDic.ContainsKey(v))
                         {
-                            queryDic.Add(v, new string[0]);
+                            queryDic.Add(v, Array.Empty<string>());
                         }
                     }
                 }
@@ -481,6 +472,10 @@ internal readonly partial struct SecurityCoordinator
         public HttpTransport(HttpContext context) => _context = context;
 
         internal override bool IsBlocked => _context.Items["block"] is true;
+
+        internal override int StatusCode => _context.Response.StatusCode;
+
+        internal override IDictionary<string, object>? RouteData => _context.Request.RequestContext.RouteData?.Values;
 
         internal override void MarkBlocked() => _context.Items["block"] = true;
 

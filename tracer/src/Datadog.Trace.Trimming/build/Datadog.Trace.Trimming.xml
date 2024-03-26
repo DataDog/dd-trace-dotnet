@@ -70,6 +70,7 @@
       <type fullname="Microsoft.AspNetCore.Routing.IRoutingFeature" />
       <type fullname="Microsoft.AspNetCore.Routing.RouteData" />
       <type fullname="Microsoft.AspNetCore.Routing.RouteValueDictionary" />
+      <type fullname="Microsoft.AspNetCore.Routing.RoutingHttpContextExtensions" />
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Server.IIS" />
    <assembly fullname="Microsoft.AspNetCore.Server.Kestrel.Core" />
@@ -157,6 +158,7 @@
    </assembly>
    <assembly fullname="System.Collections.Specialized">
       <type fullname="System.Collections.Specialized.NameValueCollection" />
+      <type fullname="System.Collections.Specialized.OrderedDictionary" />
    </assembly>
    <assembly fullname="System.ComponentModel.Primitives">
       <type fullname="System.ComponentModel.BrowsableAttribute" />

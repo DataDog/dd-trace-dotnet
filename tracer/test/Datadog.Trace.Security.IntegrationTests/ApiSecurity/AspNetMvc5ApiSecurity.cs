@@ -51,7 +51,6 @@ public abstract class AspNetMvc5ApiSecurity : AspNetBase, IClassFixture<IisFixtu
         if (enableApiSecurity)
         {
             EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled, "true");
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiSecurityRequestSampleRate, "1");
         }
 
         AddCookies(new Dictionary<string, string> { { "cookie-key", "cookie-value" } });
@@ -63,7 +62,7 @@ public abstract class AspNetMvc5ApiSecurity : AspNetBase, IClassFixture<IisFixtu
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]
     [Trait("LoadFromGAC", "True")]
-    [InlineData("scan-without-attack", "/home/apisecurity/12", """{"Dog":"23", "Dog2":"test", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
+    [InlineData("scan-without-attack", "/home/apisecurity/11", """{"Dog":"23", "Dog2":"test", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
     [InlineData("scan-with-attack", "/home/apisecurity/12", """{"Dog":"23", "Dog2":"dev/zero", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
     [InlineData("scan-empty-model", "/home/emptymodel", """{"Dog":"23", "Dog2":"test", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
     public async Task TestApiSecurityScan(string scenario, string url, string body)
