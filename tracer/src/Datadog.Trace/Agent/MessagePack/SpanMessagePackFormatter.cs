@@ -152,7 +152,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 len++;
             }
 
-            if (span.SpanLinkList is { Count: > 0 })
+            if (span.SpanLinks is { Count: > 0 })
             {
                 len++;
             }
@@ -214,7 +214,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += WriteMetaStruct(ref bytes, offset, in spanModel);
             }
 
-            if (span.SpanLinkList is { Count: > 0 })
+            if (span.SpanLinks is { Count: > 0 })
             {
                 offset += WriteSpanLink(ref bytes, offset, in spanModel);
             }
@@ -226,10 +226,10 @@ namespace Datadog.Trace.Agent.MessagePack
         {
             int originalOffset = offset;
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanLinkBytes);
-            offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, spanModel.Span.SpanLinkList.Count);
-            foreach (var spanLink in spanModel.Span.SpanLinkList)
+            offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, spanModel.Span.SpanLinks.Count);
+            foreach (var spanLink in spanModel.Span.SpanLinks)
             {
-                var context = spanLink.SpanLinkContext;
+                var context = spanLink.Context;
                 var traceState = W3CTraceContextPropagator.CreateTraceStateHeader(context);
                 // 3 possible values, 1, 0 or null
                 var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;

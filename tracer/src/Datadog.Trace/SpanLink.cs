@@ -6,10 +6,12 @@
 using System.Collections.Generic;
 using Datadog.Trace.Propagators;
 
+#nullable enable
+
 namespace Datadog.Trace;
 
 /// <summary>
-/// The SpanLink contains the information needed for a decroated span for its Span Links.
+/// The SpanLink contains the information needed for a decorated span for its Span Links.
 /// </summary>
 internal class SpanLink
 {
@@ -20,25 +22,21 @@ internal class SpanLink
     /// </summary>
     /// <param name="spanLinkContext">The context of the spanlink to extract attributes from</param>
     /// <param name="optionalAttributes">Optional dictionary of attributes to take for the spanlink.</param>
-    internal SpanLink(SpanContext spanLinkContext, Dictionary<string, object> optionalAttributes)
+    internal SpanLink(SpanContext spanLinkContext, List<KeyValuePair<string, object>>? optionalAttributes)
     {
-        SpanLinkContext = spanLinkContext;
+        Context = spanLinkContext;
         if (optionalAttributes is not null)
         {
             Attributes = optionalAttributes;
         }
     }
 
-    internal SpanLink(Span spanToLink, Dictionary<string, object> optionalAttributes)
+    internal SpanLink(Span spanToLink, List<KeyValuePair<string, object>>? optionalAttributes)
         : this(spanToLink.Context, optionalAttributes)
     {
     }
 
-    internal Dictionary<string, object> Attributes { get;  }
+    internal List<KeyValuePair<string, object>>? Attributes { get;  }
 
-    internal SpanContext SpanLinkContext { get;  }
-
-    // TODO: implement traceflags, tracestate, attributes - using spancontext
-
-    // TODO - generate constructor that takes a W3C header and extracts the attributes
+    internal SpanContext Context { get;  }
 }

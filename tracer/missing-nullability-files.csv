@@ -36,7 +36,6 @@ src/Datadog.Trace/SpanExtensions.Core.cs
 src/Datadog.Trace/SpanExtensions.cs
 src/Datadog.Trace/SpanExtensions.Framework.cs
 src/Datadog.Trace/SpanKinds.cs
-src/Datadog.Trace/SpanLink.cs
 src/Datadog.Trace/SpanTypes.cs
 src/Datadog.Trace/TaggingUtils.cs
 src/Datadog.Trace/Tags.AppSec.cs

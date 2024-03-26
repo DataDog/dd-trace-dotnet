@@ -126,8 +126,13 @@ public class SpanMessagePackFormatterTests
             new Span(new SpanContext(parentContext, new TraceContext(Mock.Of<IDatadogTracer>()), "ServiceName1"), DateTimeOffset.UtcNow),
             new Span(new SpanContext(new TraceId(0, 5), 6, (int)SamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
         };
-
-        spans[0].AddSpanLink(spans[1], new Dictionary<string, object> { { "link.name", "manually_linking" }, { "pair", false }, { "arbitrary", 56709 } });
+        var attributesToAdd = new List<KeyValuePair<string, object>>
+        {
+            new KeyValuePair<string, object>("link.name", "manually_linking"),
+            new KeyValuePair<string, object>("pair", false),
+            new KeyValuePair<string, object>("arbitrary", 56709)
+        };
+        spans[0].AddSpanLink(spans[1], attributesToAdd);
         spans[1].AddSpanLink(spans[2]);
         spans[1].AddSpanLink(spans[0]);
 
@@ -148,23 +153,23 @@ public class SpanMessagePackFormatterTests
             var expected = spans[i];
             var actual = result[i];
 
-            if (expected.SpanLinkList is not null)
+            if (expected.SpanLinks is not null)
             {
-                for (int j = 0; j < expected.SpanLinkList.Count; j++)
+                for (int j = 0; j < expected.SpanLinks.Count; j++)
                 {
-                    var expectedSpanlink = expected.SpanLinkList[j];
-                    var actualSpanLink = actual.SpanLinkList[j];
-                    actualSpanLink.TraceIdHigh.Should().Be(expectedSpanlink.SpanLinkContext.TraceId128.Upper);
-                    actualSpanLink.TraceIdLow.Should().Be(expectedSpanlink.SpanLinkContext.TraceId128.Lower);
-                    actualSpanLink.SpanId.Should().Be(expectedSpanlink.SpanLinkContext.SpanId);
-                    var expectedTraceState = W3CTraceContextPropagator.CreateTraceStateHeader(expectedSpanlink.SpanLinkContext);
+                    var expectedSpanlink = expected.SpanLinks[j];
+                    var actualSpanLink = actual.SpanLinks[j];
+                    actualSpanLink.TraceIdHigh.Should().Be(expectedSpanlink.Context.TraceId128.Upper);
+                    actualSpanLink.TraceIdLow.Should().Be(expectedSpanlink.Context.TraceId128.Lower);
+                    actualSpanLink.SpanId.Should().Be(expectedSpanlink.Context.SpanId);
+                    var expectedTraceState = W3CTraceContextPropagator.CreateTraceStateHeader(expectedSpanlink.Context);
                     if (string.IsNullOrEmpty(expectedTraceState))
                     {
                         actualSpanLink.TraceState.Should().Be(expectedTraceState);
                     }
 
                     // 3 possible values, 1, 0 or null
-                    var samplingPriority = expectedSpanlink.SpanLinkContext.TraceContext?.SamplingPriority ?? expectedSpanlink.SpanLinkContext.SamplingPriority;
+                    var samplingPriority = expectedSpanlink.Context.TraceContext?.SamplingPriority ?? expectedSpanlink.Context.SamplingPriority;
                     var expectedTraceFlags = samplingPriority switch
                     {
                         null => 0u,

@@ -125,7 +125,7 @@ namespace Datadog.Trace
 
         internal SpanContext Context { get; }
 
-        internal List<SpanLink> SpanLinkList { get; set; }
+        internal List<SpanLink> SpanLinks { get; set; }
 
         internal DateTimeOffset StartTime { get; private set; }
 
@@ -549,11 +549,11 @@ namespace Datadog.Trace
                 new object[] { Context.RawSpanId, Context.ParentIdInternal, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags, ToString() });
         }
 
-        internal void AddSpanLink(Span spanLinkToAdd, Dictionary<string, object> optionalAttributes = null)
+        internal void AddSpanLink(Span spanLinkToAdd, List<KeyValuePair<string, object>> optionalAttributes = null)
         {
-            SpanLinkList ??= new List<SpanLink>();
+            SpanLinks ??= new List<SpanLink>();
             var spanLink = new SpanLink(spanLinkToAdd, optionalAttributes);
-            SpanLinkList.Add(spanLink);
+            SpanLinks.Add(spanLink);
         }
     }
 }
