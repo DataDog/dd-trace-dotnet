@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         {
             if (info is not null)
             {
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
                 return CreateScope(info.FileName, info.UseShellExecute ? null : info.Environment, info.UseShellExecute, info.Arguments, info.ArgumentList);
 #else
                 return CreateScope(info.FileName, info.UseShellExecute ? null : info.Environment, info.UseShellExecute, info.Arguments);

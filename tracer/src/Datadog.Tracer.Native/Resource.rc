@@ -90,8 +90,8 @@ END
 // ASSEMBLY
 //
 
-NETCOREAPP20_MANAGED_ENTRYPOINT_DLL ASSEMBLY "..\\bin\\ProfilerResources\\netcoreapp2.0\\Datadog.Trace.ClrProfiler.Managed.Loader.dll"
-NETCOREAPP20_MANAGED_ENTRYPOINT_SYMBOLS SYMBOLS "..\\bin\\ProfilerResources\\netcoreapp2.0\\Datadog.Trace.ClrProfiler.Managed.Loader.pdb"
+NETCOREAPP21_MANAGED_ENTRYPOINT_DLL ASSEMBLY "..\\bin\\ProfilerResources\\netcoreapp2.1\\Datadog.Trace.ClrProfiler.Managed.Loader.dll"
+NETCOREAPP21_MANAGED_ENTRYPOINT_SYMBOLS SYMBOLS "..\\bin\\ProfilerResources\\netcoreapp2.1\\Datadog.Trace.ClrProfiler.Managed.Loader.pdb"
 NET461_MANAGED_ENTRYPOINT_DLL ASSEMBLY "..\\bin\\ProfilerResources\\net461\\Datadog.Trace.ClrProfiler.Managed.Loader.dll"
 NET461_MANAGED_ENTRYPOINT_SYMBOLS SYMBOLS "..\\bin\\ProfilerResources\\net461\\Datadog.Trace.ClrProfiler.Managed.Loader.pdb"
 

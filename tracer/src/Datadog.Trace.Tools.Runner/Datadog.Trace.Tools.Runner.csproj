@@ -159,7 +159,7 @@
     <ProjectReference Include="..\Datadog.InstrumentedAssemblyVerification\Datadog.InstrumentedAssemblyVerification.csproj" />
     <ProjectReference Include="..\Datadog.Trace.Tools.Shared\Datadog.Trace.Tools.Shared.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
-    <ProjectReference Include="..\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj" Aliases="DatadogTraceCollector" />
   </ItemGroup>
 
   <Target Name="RemoveDuplicate" AfterTargets="ComputeFilesToPublish" BeforeTargets="_HandleFileConflictsForPublish">
