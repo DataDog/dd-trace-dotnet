@@ -296,7 +296,7 @@ namespace Datadog.Trace
         {
             // var apiRequestFactory = TracesTransportStrategy.Get(settings.ExporterInternal);
             // var api = new Api(apiRequestFactory, statsd, updateSampleRates, settings.ExporterInternal.PartialFlushEnabledInternal);
-            var api = new NativeApi(updateSampleRates, settings.ExporterInternal.PartialFlushEnabledInternal);
+            var api = new NativeApi(updateSampleRates, settings);
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 

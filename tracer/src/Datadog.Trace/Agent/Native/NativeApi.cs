@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 
@@ -20,7 +21,7 @@ namespace Datadog.Trace.Agent.Native
 
         public NativeApi(
             Action<Dictionary<string, float>> updateSampleRates,
-            bool partialFlushEnabled,
+            ImmutableTracerSettings settings,
             IDatadogLogger log = null)
         {
             // optionally injecting a log instance in here for testing purposes
@@ -30,8 +31,8 @@ namespace Datadog.Trace.Agent.Native
             try
             {
                 if (!ExporterBindings.TryInitializeExporter(
-                        "localhost",
-                        8126,
+                        settings.ExporterInternal.AgentUriInternal.Host,
+                        settings.ExporterInternal.AgentUriInternal.Port,
                         TracerConstants.AssemblyVersion,
                         ".NET",
                         FrameworkDescription.Instance.ProductVersion,
