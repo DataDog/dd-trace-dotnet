@@ -18,7 +18,7 @@ The .NET tracer v3.0.0 includes breaking changes that you must be aware of befor
 	- **Changes in behavior**. The semantic requirements and meaning of some settings have changed, as have some of the tags added to traces.  See below for more details.
 	- **The 32-bit MSI installer will no longer be available**. The 64-bit MSI installer already includes support for tracing 32-bit processes, so you should use this installer instead. 
 - Deprecation notices
-	- **.NET Core 2.1 is marked EOL** in v3.0.0+ of the tracer. That means versions  2.0, 2.1, 2.2 and 3.0 of .NET Core are now EOL. .NET Core 2.1 may still work with v3.0.0+, but is will no longer receive significant testing and you will receive limited support for issues arising with EOL versions.
+	- **.NET Core 2.1 is marked EOL** in v3.0.0+ of the tracer. That means versions  2.1, 2.2 and 3.0 of .NET Core are now EOL. .NET Core 2.1 may still work with v3.0.0+, but is will no longer receive significant testing and you will receive limited support for issues arising with EOL versions.
 	- **Datadog.Trace.OpenTracing is now obsolete**. OpenTracing is considered deprecated, and so _Datadog.Trace.OpenTracing_ is considered deprecated. See the following details on future deprecation.
 - Major version policy and future deprecation
 	- **Announcing a major version roadmap**. We intend to make yearly major releases, starting from v3.0.0 in 2024, and v4.0.0 in 2025. We clearly will aim for minimal breaking changes, with the primary focus being on maintaining support for new versions of .NET and removal of EOL frameworks and operating systems.
