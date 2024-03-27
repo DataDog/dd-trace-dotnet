@@ -3874,7 +3874,7 @@ stages:
 
 - stage: throughput
   condition: and(succeeded(), eq(variables.isMainRepository, true))
-  dependsOn: [package_linux, package_arm64, build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -3885,7 +3885,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Linux64, Windows64, LinuxArm64, AsmLinux64]
+      jobs: [AsmLinux64]
       allowSkipped: true
   #### Throughput Linux 64, windows 64, linux arm 64
 
