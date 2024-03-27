@@ -10,6 +10,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -33,8 +34,9 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         private readonly string? _env;
         private readonly string? _version;
         private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider;
-        private bool _gitMetadataAdded;
+        private readonly bool _use128Bits;
 
+        private bool _gitMetadataAdded;
         private string? _ciVisibilityDdTags;
 
         public LogFormatter(
@@ -46,16 +48,16 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             string version,
             IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
-            _gitMetadataTagsProvider = gitMetadataTagsProvider;
             _source = string.IsNullOrEmpty(directLogSettings.Source) ? null : directLogSettings.Source;
             _service = string.IsNullOrEmpty(serviceName) ? null : serviceName;
             _host = string.IsNullOrEmpty(directLogSettings.Host) ? null : directLogSettings.Host;
-
-            var globalTags = directLogSettings.GlobalTags is { Count: > 0 } ? directLogSettings.GlobalTags : settings.GlobalTagsInternal;
-
-            Tags = EnrichTagsWithAasMetadata(StringifyGlobalTags(globalTags), aasSettings);
             _env = string.IsNullOrEmpty(env) ? null : env;
             _version = string.IsNullOrEmpty(version) ? null : version;
+            _gitMetadataTagsProvider = gitMetadataTagsProvider;
+            _use128Bits = settings.TraceId128BitLoggingEnabled;
+
+            var globalTags = directLogSettings.GlobalTags is { Count: > 0 } ? directLogSettings.GlobalTags : settings.GlobalTagsInternal;
+            Tags = EnrichTagsWithAasMetadata(StringifyGlobalTags(globalTags), aasSettings);
         }
 
         internal delegate LogPropertyRenderingDetails FormatDelegate<T>(JsonTextWriter writer, in T state);
@@ -373,14 +375,14 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                     service = span.ServiceName;
                 }
 
-                // encode all 128 bits of the trace id as a hex string, or
-                // encode only the lower 64 bits of the trace ids as decimal (not hex)
-                writer.WritePropertyName("dd.trace_id", escape: false);
-                writer.WriteValue(span.GetTraceIdStringForLogs());
+                if (LogContext.TryGetValues(span.Context, out var traceId, out var spanId, _use128Bits))
+                {
+                    writer.WritePropertyName("dd.trace_id", escape: false);
+                    writer.WriteValue(traceId);
 
-                // 64-bit span ids are always encoded as decimal (not hex)
-                writer.WritePropertyName("dd.span_id", escape: false);
-                writer.WriteValue(span.SpanId.ToString(CultureInfo.InvariantCulture));
+                    writer.WritePropertyName("dd.span_id", escape: false);
+                    writer.WriteValue(spanId);
+                }
 
                 if (span.GetTag(TestTags.Suite) is { } suite)
                 {
