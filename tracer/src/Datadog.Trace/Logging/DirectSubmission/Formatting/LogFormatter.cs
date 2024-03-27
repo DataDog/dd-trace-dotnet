@@ -324,7 +324,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             writer.WriteEndObject();
         }
 
-        internal void FormatCIVisibilityLog(StringBuilder sb, string source, string? logLevel, string message, ISpan? span)
+        internal void FormatCIVisibilityLog(StringBuilder sb, string source, string? logLevel, string message, Span? span)
         {
             using var writer = GetJsonWriter(sb);
 
