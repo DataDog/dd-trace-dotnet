@@ -93,10 +93,6 @@ std::vector<std::pair<uintptr_t, std::string>> CrashReportingLinux::GetThreadFra
         {
             std::cout << symbol << "(managed)\n";
         }
-
-        // unw_word_t offset;
-        // unw_get_proc_name(&cursor, symbol, sizeof(symbol), &offset);
-        std::cout << symbol << "\n";
     } while (unw_step(&cursor) > 0);
 
     // if (ptrace(PTRACE_DETACH, tid, NULL, NULL) == -1) {

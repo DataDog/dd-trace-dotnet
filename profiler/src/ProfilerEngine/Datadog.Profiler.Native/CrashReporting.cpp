@@ -45,6 +45,8 @@ void CrashReporting::ReportCrash(int32_t pid, ResolveManagedMethod resolveCallba
 
     for (auto threadId : threads)
     {
+        std::cout << "Inspecting thread " << threadId << "\n";
+
         auto frames = GetThreadFrames(pid, threadId, resolveCallback);
 
         ddog_prof_Slice_StackFrame stackTrace;
@@ -84,6 +86,8 @@ void CrashReporting::ReportCrash(int32_t pid, ResolveManagedMethod resolveCallba
 
         auto threadIdStr = std::to_string(threadId);
 
+        std::cout << "set_stacktrace\n";
+
         auto result = ddog_crashinfo_set_stacktrace(crashInfo, { threadIdStr.c_str(), threadIdStr.length() }, stackTrace);
 
         if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
@@ -92,10 +96,16 @@ void CrashReporting::ReportCrash(int32_t pid, ResolveManagedMethod resolveCallba
             return;
         }
 
+        std::cout << "freeing memory\n";
+
         delete[] stackFrames;
         delete[] stackFrameNames;
         delete[] strings;
+
+        std::cout << "Done inspecting thread " << threadId << "\n";
     }
+
+    std::cout << "Finished inspecting threads\n";
 
     //auto sigInfo = "NullReferenceException";
 
