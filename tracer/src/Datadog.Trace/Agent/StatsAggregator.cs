@@ -80,8 +80,8 @@ namespace Datadog.Trace.Agent
 
         public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings, IDiscoveryService discoveryService)
         {
-            // return settings.StatsComputationEnabledInternal ? new StatsAggregator(api, settings, discoveryService) : new NullStatsAggregator();
-            return settings.StatsComputationEnabledInternal ? new NativeStatsAggregator(settings, discoveryService) : new NullStatsAggregator();
+            return settings.StatsComputationEnabledInternal ? new StatsAggregator(api, settings, discoveryService) : new NullStatsAggregator();
+            // return settings.StatsComputationEnabledInternal ? new NativeStatsAggregator(settings, discoveryService) : new NullStatsAggregator();
         }
 
         public Task DisposeAsync()
