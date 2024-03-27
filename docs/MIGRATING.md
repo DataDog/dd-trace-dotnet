@@ -118,7 +118,7 @@ Some settings have changed their behavior, and there are some changes to reporte
 - The `language` tag is [now added to added to all spans](https://github.com/DataDog/dd-trace-dotnet/pull/4839) with the value `dotnet`. Previously, some spans were not tagged, but were subsequently tagged with the value `.NET`. This change removes the inconsistency
 - `DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON` now refers to an absolute file path instead of providing the template content directly. This makes it easier to provide custom values.
 - `DD_APPSEC_HTTP_BLOCKED_TEMPLATE_HTML` now refers to an absolute file path instead of providing the template content directly. This makes it easier to provide custom values.
-- `DD_API_SECURITY_REQUEST_SAMPLING ` now requires a ration from 0 to 1.0, not a percentage from 0 to 100.
+- `DD_API_SECURITY_REQUEST_SAMPLING ` now requires a value from 0 to 1.0, not a percentage from 0 to 100.
 
 **What action should you take?**
 If you require the previous `DD_TRACE_HEADER_TAGS` normalization behavior, you must apply this normalization yourself, replacing periods and spaces with underscores in the value you pass to `DD_TRACE_HEADER_TAGS`.
