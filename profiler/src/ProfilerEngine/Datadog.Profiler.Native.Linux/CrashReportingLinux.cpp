@@ -66,7 +66,7 @@ std::vector<std::pair<uintptr_t, std::string>> CrashReportingLinux::GetThreadFra
     {
         unw_get_reg(&cursor, UNW_REG_IP, &ip);
 
-        std::cout << " - " << std::hex << ip << "\n";
+        std::cout << " - " << std::hex << ip << " -- ";
 
         char symbol[256];
 

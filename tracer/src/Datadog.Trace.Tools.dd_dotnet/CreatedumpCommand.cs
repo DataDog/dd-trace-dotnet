@@ -45,7 +45,7 @@ internal class CreatedumpCommand : Command
             return 1;
         }
 
-        string name = method.Name ?? "<unknown>";
+        string name = $"{Path.GetFileName(method.Type.Module.AssemblyName)}!{method.Type}.{method.Name} +{method.GetILOffset((ulong) pc):x2}";
 
         var length = Encoding.ASCII.GetByteCount(name);
 
@@ -57,7 +57,6 @@ internal class CreatedumpCommand : Command
 
         Encoding.ASCII.GetBytes(name, new Span<byte>(buffer, bufferSize));
 
-        // Add the \0
         buffer[length] = (byte)'\0';
 
         return 0;
