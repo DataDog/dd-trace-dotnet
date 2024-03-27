@@ -50,6 +50,12 @@ namespace Datadog.Trace
         ulong TraceId { get; }
 
         /// <summary>
+        /// Gets the trace's unique 128-bit identifier as a hexadecimal string
+        /// of length 32, padded with zeros to the left if the identifier is 64-bit.
+        /// </summary>
+        string? RawTraceId { get; }
+
+        /// <summary>
         /// Gets the span's unique 64-bit identifier.
         /// </summary>
         ulong SpanId { get; }

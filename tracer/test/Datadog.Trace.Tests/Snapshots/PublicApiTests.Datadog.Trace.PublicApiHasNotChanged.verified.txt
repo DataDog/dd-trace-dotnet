@@ -388,6 +388,7 @@ namespace Datadog.Trace
         Datadog.Trace.ISpanContext Context { get; }
         bool Error { get; set; }
         string OperationName { get; set; }
+        string? RawTraceId { get; }
         string ResourceName { get; set; }
         string ServiceName { get; set; }
         ulong SpanId { get; }

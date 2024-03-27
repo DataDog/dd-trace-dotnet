@@ -58,6 +58,19 @@ public static class CorrelationIdentifier
     }
 
     /// <summary>
+    /// Gets the trace's unique 128-bit identifier as a hexadecimal string
+    /// of length 32, padded with zeros to the left if the identifier is 64-bit.
+    /// </summary>
+    /// <returns>The id of the active trace. If there is no active trace, returns null.</returns>
+    public static string? RawTraceId
+    {
+        get
+        {
+            return Tracer.Instance.ActiveScope?.Span.RawTraceId;
+        }
+    }
+
+    /// <summary>
     /// Gets the id of the active span.
     /// </summary>
     /// <returns>The id of the active span. If there is no active span, returns zero.</returns>

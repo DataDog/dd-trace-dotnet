@@ -18,6 +18,7 @@ using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tests.PlatformHelpers;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
@@ -715,6 +716,8 @@ namespace Datadog.Trace.Tests
             public string ServiceName { get; set; }
 
             public ulong TraceId => 1ul;
+
+            public string RawTraceId => HexString.ToHexString(TraceId);
 
             public ulong SpanId => 1ul;
 

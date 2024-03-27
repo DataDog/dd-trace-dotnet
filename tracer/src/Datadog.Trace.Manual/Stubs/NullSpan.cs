@@ -45,6 +45,8 @@ internal class NullSpan : ISpan
 
     public ulong TraceId => Context.TraceId;
 
+    public string? RawTraceId => null;
+
     public ulong SpanId => Context.SpanId;
 
     public ISpanContext Context => NullSpanContext.Instance;
