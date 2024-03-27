@@ -89,7 +89,9 @@ Configuration::Configuration()
     }
 
     _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, false);
-     ExtractSsiState(_isSsiDeployed, _isSsiActivated);
+    ExtractSsiState(_isSsiDeployed, _isSsiEnabled);
+    _isProfilerEnabled = GetEnvironmentValue(EnvironmentVariables::ProfilerEnabled, false);
+    _ssiShortLivedThreshold = GetEnvironmentValue(EnvironmentVariables::SsiShortLivedThreshold, 30);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -542,9 +544,19 @@ bool Configuration::IsSsiDeployed() const
     return _isSsiDeployed;
 }
 
-bool Configuration::IsSsiActivated() const
+bool Configuration::IsSsiEnabled() const
 {
-    return _isSsiActivated;
+    return _isSsiEnabled;
+}
+
+bool Configuration::IsProfilerEnabled() const
+{
+    return _isProfilerEnabled;
+}
+
+int32_t Configuration::SsiShortLivedThreshold() const
+{
+    return _ssiShortLivedThreshold;
 }
 
 
@@ -621,7 +633,7 @@ void Configuration::ExtractSsiState(bool& ssiDeployed, bool& ssiEnabled)
     // if the profiler has been deployed via Single Step Instrumentation,
     // the DD_INJECTION_ENABLED env var exists.
     // if the profiler has been activated via Single Step Instrumentation,
-    // the DD_INJECTION_ENABLED env var should contain "profiling" (it is a list of SSI installed products)
+    // the DD_INJECTION_ENABLED env var should contain "profiler" (it is a list of SSI installed products)
     //
     if (!shared::EnvironmentExist(EnvironmentVariables::SsiDeployed))
     {
@@ -639,6 +651,6 @@ void Configuration::ExtractSsiState(bool& ssiDeployed, bool& ssiEnabled)
         return;
     }
 
-    auto pos = r.find(WStr("profiling"));
+    auto pos = r.find(WStr("profiler"));
     ssiEnabled = (pos != shared::WSTRING::npos);
 }

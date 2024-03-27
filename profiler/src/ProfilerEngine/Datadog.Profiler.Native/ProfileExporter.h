@@ -98,6 +98,7 @@ private:
     std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
     std::string GetMetadata() const;
 
+private:
     static tags CommonTags;
     static std::string const ProcessId;
     static int const RequestTimeOutMs;

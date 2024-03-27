@@ -55,29 +55,49 @@ bool IsProfilingEnabled()
     //  - supporting scenarios where CORECLR_PROFILER_XXX point to the shared native loader, where some of the suit's products
     //    are enabled, but profiling is explicitly disabled;
     //  - supporting a scenario where CORECLR_PROFILER_XXX is set machine-wide and DD_PROFILING_ENABLED is set per service.
-    shared::WSTRING isProfilingEnabledConfigStr = shared::GetEnvironmentValue(EnvironmentVariables::ProfilingEnabled);
+    //  - supporting Single Step Instrumentation (SSI) scenarios where the profiler is loaded but it only sends telemetry metrics.
     bool isEnabled = false;  // disabled by default
+    bool isSsiDeployed = shared::EnvironmentExist(EnvironmentVariables::SsiDeployed);
+    shared::WSTRING isProfilingEnabledConfigStr = shared::GetEnvironmentValue(EnvironmentVariables::ProfilerEnabled);
 
+    // if profiler is not enabled, check for SSI deployment
     if (isProfilingEnabledConfigStr.empty())
     {
-        Log::Info("No \"", EnvironmentVariables::ProfilingEnabled, "\" environment variable has been found.",
-                  " Using default (", isEnabled, ").");
-    }
-    else
-    {
-        if (!shared::TryParseBooleanEnvironmentValue(isProfilingEnabledConfigStr, isEnabled))
+        if (isSsiDeployed)
         {
-            Log::Info("Invalid value \"", isProfilingEnabledConfigStr, "\" for \"",
-                      EnvironmentVariables::ProfilingEnabled, "\" environment variable.",
-                      " Using default (", isEnabled, ").");
+            Log::Info("No \"", EnvironmentVariables::ProfilerEnabled, "\" environment variable has been found.",
+                "Using Single Step Instrumentation limited activation");
         }
         else
         {
-            Log::Info("Value \"", isProfilingEnabledConfigStr, "\" for \"",
-                      EnvironmentVariables::ProfilingEnabled, "\" environment variable.",
-                      " Enable = ", isEnabled);
+            Log::Info("No \"", EnvironmentVariables::ProfilerEnabled, "\" environment variable has been found.",
+                " Using default (", isEnabled, ").");
         }
+
+        return isSsiDeployed;
     }
+
+    if (!shared::TryParseBooleanEnvironmentValue(isProfilingEnabledConfigStr, isEnabled))
+    {
+        if (isSsiDeployed)
+        {
+            Log::Info("Invalid value \"", isProfilingEnabledConfigStr, "\" for \"",
+                        EnvironmentVariables::ProfilerEnabled, "\" environment variable.",
+                "Using Single Step Instrumentation limited activation");
+        }
+        else
+        {
+            Log::Info("Invalid value \"", isProfilingEnabledConfigStr, "\" for \"",
+                        EnvironmentVariables::ProfilerEnabled, "\" environment variable.",
+                        " Using default (", isEnabled, ").");
+        }
+
+        return isSsiDeployed;
+    }
+
+    Log::Info("Value \"", isProfilingEnabledConfigStr, "\" for \"",
+                EnvironmentVariables::ProfilerEnabled, "\" environment variable.",
+                " Enable = ", isEnabled);
 
     return isEnabled;
 }

@@ -12,6 +12,7 @@
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
 #include "ISamplesProvider.h"
+#include "IProfilerTelemetry.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "TagsHelper.h"
@@ -71,7 +72,9 @@ public:
     MOCK_METHOD(std::uint64_t, GetCIVisibilitySpanId, (), (const override));
     MOCK_METHOD(bool, IsEtwEnabled, (), (const override));
     MOCK_METHOD(bool, IsSsiDeployed, (), (const override));
-    MOCK_METHOD(bool, IsSsiActivated, (), (const override));
+    MOCK_METHOD(bool, IsSsiEnabled, (), (const override));
+    MOCK_METHOD(bool, IsProfilerEnabled, (), (const override));
+    MOCK_METHOD(int32_t, SsiShortLivedThreshold, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -152,6 +155,52 @@ public:
     MOCK_METHOD(std::unique_ptr<SamplesEnumerator>, GetSamples, (), (override));
     MOCK_METHOD(const char*, GetName, (), (override));
 };
+
+class ProfilerTelemetryForTest : public IProfilerTelemetry
+{
+public:
+    ProfilerTelemetryForTest()
+    {
+        _deployment = DeploymentMode::Unknown;
+        _duration = 0;
+        _heuristic = SkipProfileHeuristicType::AllTriggered;
+    }
+
+    void ProcessStart(DeploymentMode deployment) override
+    {
+        _deployment = deployment;
+    }
+
+    void ProcessEnd(uint64_t duration, uint64_t sentProfiles, SkipProfileHeuristicType heuristics) override
+    {
+        _duration = duration;
+        _sentProfiles = sentProfiles;
+        _heuristic = heuristics;
+    }
+
+public:
+    DeploymentMode GetDeployment() const
+    {
+        return _deployment;
+    }
+
+    uint64_t GetDuration() const
+    {
+        return _duration;
+    }
+
+    SkipProfileHeuristicType GetHeuristic() const
+    {
+        return _heuristic;
+    }
+
+private:
+    DeploymentMode _deployment;
+    uint64_t _duration;
+    uint64_t _sentProfiles;
+    SkipProfileHeuristicType _heuristic;
+};
+
 
 template <typename T, typename U, typename... Args>
 std::pair<std::unique_ptr<T>, U&> CreateMockForUniquePtr(Args... args)

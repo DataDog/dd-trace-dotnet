@@ -19,6 +19,7 @@
 #include "IExporter.h"
 #include "IFrameStore.h"
 #include "IMetricsSender.h"
+#include "IProfilerTelemetry.h"
 #include "ISamplesProvider.h"
 #include "WallTimeProvider.h"
 #include "CpuTimeProvider.h"
@@ -35,6 +36,7 @@
 #include "ThreadLifetimeProvider.h"
 #include "shared/src/native-src/string.h"
 #include "IEtwEventsManager.h"
+#include "ISsiManager.h"
 
 #include <atomic>
 #include <memory>
@@ -47,7 +49,6 @@ class IManagedThreadList;
 class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
-
 
 #ifdef LINUX
 class SystemCallsShield;
@@ -206,6 +207,7 @@ public:
     IStackSamplerLoopManager* GetStackSamplerLoopManager() { return _pStackSamplerLoopManager; }
     IApplicationStore* GetApplicationStore() { return _pApplicationStore; }
     IExporter* GetExporter() { return _pExporter.get(); }
+    void TraceContextHasBeenSet() { _pSsiManager->OnSpanCreated(); }
 
 private :
     static CorProfilerCallback* _this;
@@ -259,10 +261,17 @@ private :
     std::shared_ptr<ProxyMetric> _managedThreadsMetric;
     std::shared_ptr<ProxyMetric> _managedThreadsWithContextMetric;
 
-    std::unique_ptr<ISamplesProvider> _gcThreadsCpuProvider;
-    std::unique_ptr<IMetadataProvider> _pMetadataProvider;
-    std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
+    std::unique_ptr<ISamplesProvider> _gcThreadsCpuProvider = nullptr;
+    std::unique_ptr<IMetadataProvider> _pMetadataProvider = nullptr;
+    std::unique_ptr<IEtwEventsManager> _pEtwEventsManager = nullptr;
     bool _isETWStarted = false;
+
+    // today, only the SSI manager is using telemetry
+    // but we could have more telemetry in the future
+    // so keep it at the CorProfilerCallback level
+    // instead of hidding it inside the SSI manager
+    std::unique_ptr<IProfilerTelemetry> _pProfilerTelemetry = nullptr;
+    std::unique_ptr<ISsiManager> _pSsiManager = nullptr;
 
 private:
     static void ConfigureDebugLog();
@@ -273,7 +282,7 @@ private:
 
     void InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType);
     void DisposeInternal();
-    bool InitializeServices();
+    void InitializeServices();
     bool DisposeServices();
     bool StartServices();
     bool StopServices();

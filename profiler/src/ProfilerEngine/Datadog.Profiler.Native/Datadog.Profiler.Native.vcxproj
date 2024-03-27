@@ -246,8 +246,11 @@
     <ClInclude Include="ExporterBuilder.h" />
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
+    <ClInclude Include="ISsiManager.h" />
+    <ClInclude Include="ProfilerTelemetry.h" />
     <ClInclude Include="RawSamples.hpp" />
     <ClInclude Include="SamplesEnumerator.h" />
+    <ClInclude Include="SsiManager.h" />
     <ClInclude Include="Success.h" />
     <ClInclude Include="Exception.h" />
     <ClInclude Include="Exporter.h" />
@@ -384,6 +387,9 @@
     <ClCompile Include="ExporterBuilder.cpp" />
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
+    <ClCompile Include="IProfilerTelemetry.h" />
+    <ClCompile Include="ProfilerTelemetry.cpp" />
+    <ClCompile Include="SsiManager.cpp" />
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />

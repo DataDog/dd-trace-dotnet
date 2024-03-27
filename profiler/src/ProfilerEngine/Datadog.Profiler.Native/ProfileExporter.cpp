@@ -20,6 +20,7 @@
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 #include "Profile.h"
+#include "ProfilerTelemetry.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "ScopeFinalizer.h"
@@ -527,6 +528,8 @@ bool ProfileExporter::Export()
         if (profile == nullptr || samplesCount == 0)
         {
             Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
+
+            // TODO: send telemetry about empty profiles
             continue;
         }
 
@@ -570,6 +573,8 @@ bool ProfileExporter::Export()
         if (!error_code)
         {
             Log::Error(error_code.message());
+
+            // TODO: send telemetry about failed sendings
         }
         exported &= error_code;
     }

@@ -41,10 +41,12 @@
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 #include "ProfilerEngineStatus.h"
+#include "ProfilerTelemetry.h"
 #include "RuntimeIdStore.h"
 #include "RuntimeInfo.h"
 #include "Sample.h"
 #include "SampleValueTypeProvider.h"
+#include "SsiManager.h"
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
@@ -104,7 +106,7 @@ CorProfilerCallback::~CorProfilerCallback()
 #endif
 }
 
-bool CorProfilerCallback::InitializeServices()
+void CorProfilerCallback::InitializeServices()
 {
     _metricsSender = IMetricsSenderFactory::Create();
 
@@ -529,15 +531,6 @@ bool CorProfilerCallback::InitializeServices()
             _pSamplesCollector->Register(_pGarbageCollectionProvider);
         }
     }
-
-    auto started = StartServices();
-    if (!started)
-    {
-        Log::Error("One or multiple services failed to start. Stopping all services.");
-        StopServices();
-    }
-
-    return started;
 }
 
 bool CorProfilerCallback::StartServices()
@@ -978,6 +971,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     _pMetadataProvider->Initialize();
     PrintEnvironmentVariables();
 
+    _pProfilerTelemetry = std::make_unique<ProfilerTelemetry>(_pConfiguration.get());
+    _pSsiManager = std::make_unique<SsiManager>(_pConfiguration.get(), _pProfilerTelemetry.get());
+    _pSsiManager->ProcessStart();
+
     double coresThreshold = _pConfiguration->MinimumCores();
     double cpuLimit = 0;
     if (!OpSysTools::IsSafeToStartProfiler(coresThreshold, cpuLimit))
@@ -1095,11 +1092,29 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Init global state:
     OpSysTools::InitHighPrecisionTimer();
 
-    // Init global services:
-    if (!InitializeServices())
+    // if the profiler is not enabled (either manually or via SSI), nothing is profiled
+    if (!_pSsiManager->IsProfilerEnabled())
     {
-        Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
-        return E_FAIL;
+        Log::Info("Profiler is not enabled: nothing will be profiled.");
+        return S_OK;
+    }
+
+    // create services without starting them
+    InitializeServices();
+
+    // Start services only if the profiler is activated
+    // For SSI deployment, the services will be started later based on heuristics
+    if (_pConfiguration->IsProfilerEnabled())
+    {
+        auto started = StartServices();
+        if (!started)
+        {
+            Log::Error("One or multiple services failed to start. Stopping all services.");
+            StopServices();
+
+            Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
+            return E_FAIL;
+        }
     }
 
     // Configure which profiler callbacks we want to receive by setting the event mask:
@@ -1198,6 +1213,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 {
     Log::Info("CorProfilerCallback::Shutdown()");
+
+    _pSsiManager->ProcessEnd();
 
     // A final .pprof should be generated before exiting
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
@@ -1399,7 +1416,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
         return S_OK;
     }
 
-    if (!_isETWStarted && (_pEtwEventsManager != nullptr))
+    // ETW listening is not started in SSI deployment mode
+    if (_pConfiguration->IsProfilerEnabled() && !_isETWStarted && (_pEtwEventsManager != nullptr))
     {
         _isETWStarted = true;
         auto success = _pEtwEventsManager->Start();
@@ -1678,7 +1696,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownOb
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
-        _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
+        if (_pSsiManager->IsProfilerActivated())
+        {
+            _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
+        }
     }
 
     return S_OK;
@@ -1893,19 +1914,22 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
 {
     if (_pEventPipeEventsManager != nullptr)
     {
-        _pEventPipeEventsManager->ParseEvent(
-            provider,
-            eventId,
-            eventVersion,
-            cbMetadataBlob,
-            metadataBlob,
-            cbEventData,
-            eventData,
-            pActivityId,
-            pRelatedActivityId,
-            eventThread,
-            numStackFrames,
-            stackFrames);
+        if (_pSsiManager->IsProfilerActivated())
+        {
+            _pEventPipeEventsManager->ParseEvent(
+                provider,
+                eventId,
+                eventVersion,
+                cbMetadataBlob,
+                metadataBlob,
+                cbEventData,
+                eventData,
+                pActivityId,
+                pRelatedActivityId,
+                eventThread,
+                numStackFrames,
+                stackFrames);
+        }
     }
 
     return S_OK;
