@@ -61,7 +61,7 @@ TEST(LinkedListTest, Move)
 
     LinkedList<Person> other = std::move(l);
 
-    ASSERT_EQ(0, l.Size());
+    ASSERT_EQ(l.Size(), 0);
 
     ASSERT_EQ(other.Size(), 4);
 
@@ -70,17 +70,17 @@ TEST(LinkedListTest, Move)
     ASSERT_EQ((*it).Name, "Georges");
     ASSERT_EQ((*it).Age, 42);
 
-    ++it;
+    it++;
 
     ASSERT_EQ((*it).Name, "Ralph");
     ASSERT_EQ((*it).Age, 101);
 
-    ++it;
+    it++;
 
     ASSERT_EQ((*it).Name, "jordy");
     ASSERT_EQ((*it).Age, 21);
 
-    ++it;
+    it++;
 
     ASSERT_EQ((*it).Name, "Bob");
     ASSERT_EQ((*it).Age, 1);
@@ -135,7 +135,7 @@ TEST(LinkedListTest, ObjectDtorCalled)
 {
     // Dummy class is moveable-only.
     // We make sure that we do not set _dtorCalled field to true when destroying temporary instances
-    // but only only one instance.
+    // but only one instance.
     class Dummy
     {
     public:

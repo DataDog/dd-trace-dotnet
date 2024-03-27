@@ -47,6 +47,7 @@ public:
         while (current != nullptr)
         {
             auto* next = current->Next;
+            // call Node dtor
             std::destroy_at(current);
             _allocator->deallocate(current, sizeof(Node));
             current = next;
