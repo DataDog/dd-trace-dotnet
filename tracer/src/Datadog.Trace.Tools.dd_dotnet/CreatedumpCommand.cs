@@ -45,7 +45,7 @@ internal class CreatedumpCommand : Command
             return 1;
         }
 
-        string name = $"{Path.GetFileName(method.Type.Module.AssemblyName)}!{method.Type}.{method.Name} +{method.GetILOffset((ulong) pc):x2}";
+        string name = $"{Path.GetFileName(method.Type.Module.AssemblyName)}!{method.Type}.{method.Name} +{method.GetILOffset((ulong)ip):x2}";
 
         var length = Encoding.ASCII.GetByteCount(name);
 
