@@ -299,6 +299,7 @@ namespace Datadog.Trace
     public static class CorrelationIdentifier
     {
         public static string Env { get; }
+        public static string? RawTraceId { get; }
         public static string Service { get; }
         public static ulong SpanId { get; }
         public static ulong TraceId { get; }
@@ -325,6 +326,7 @@ namespace Datadog.Trace
         Datadog.Trace.ISpanContext Context { get; }
         bool Error { get; set; }
         string OperationName { get; set; }
+        string? RawTraceId { get; }
         string ResourceName { get; set; }
         string ServiceName { get; set; }
         ulong SpanId { get; }
