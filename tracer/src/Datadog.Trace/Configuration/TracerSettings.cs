@@ -287,11 +287,11 @@ namespace Datadog.Trace.Configuration
 
             DelayWcfInstrumentationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
-                                            .AsBool(defaultValue: false);
+                                            .AsBool(defaultValue: true);
 
             WcfWebHttpResourceNamesEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.WcfWebHttpResourceNamesEnabled)
-                                            .AsBool(defaultValue: false);
+                                            .AsBool(defaultValue: true);
 
             WcfObfuscationEnabled = config
                                    .WithKeys(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled)
