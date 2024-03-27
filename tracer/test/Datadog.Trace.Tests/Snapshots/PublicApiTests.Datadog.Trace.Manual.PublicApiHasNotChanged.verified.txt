@@ -345,6 +345,7 @@ namespace Datadog.Trace
     public interface ISpanContextExtractor
     {
         Datadog.Trace.ISpanContext? Extract<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter);
+        Datadog.Trace.ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter, string messageType, string source);
     }
     public interface ITracer
     {
@@ -374,6 +375,7 @@ namespace Datadog.Trace
     {
         public SpanContextExtractor() { }
         public Datadog.Trace.ISpanContext? Extract<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter) { }
+        public Datadog.Trace.ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter, string messageType, string source) { }
     }
     public sealed class SpanContextInjector
     {

@@ -24,5 +24,9 @@ namespace Datadog.Trace
         [Instrumented]
         public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
             => null;
+
+        /// <inheritdoc />
+        public ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string messageType, string source)
+            => null;
     }
 }
