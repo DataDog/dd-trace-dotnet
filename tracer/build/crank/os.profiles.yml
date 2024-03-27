@@ -52,7 +52,7 @@ profiles:
         options:
           requiredOperatingSystem: linux
           requiredArchitecture: x64
-          buildFiles:
+          outputFiles:
           - "../../tracer-home-linux/**;{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux"
           downloadFiles: 
           - "./logs/*"
