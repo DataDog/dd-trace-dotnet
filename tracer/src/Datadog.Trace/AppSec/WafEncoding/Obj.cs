@@ -58,9 +58,10 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
         public void DisposeAllChildren(WafLibraryInvoker wafLibraryInvoker)
         {
-            if (_handle is not null)
+            if (_handle is not null && _handle.Value.Target is not null)
             {
-                wafLibraryInvoker.ObjectFreePtr(_handle.Value.AddrOfPinnedObject());
+                var item = (DdwafObjectStruct)_handle.Value.Target;
+                wafLibraryInvoker.ObjectFree(ref item);
                 _handle.Value.Free();
             }
         }

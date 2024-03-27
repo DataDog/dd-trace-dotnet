@@ -7,7 +7,6 @@ using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.Initialization;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 #pragma warning disable SA1401
 
@@ -42,12 +41,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly ObjectMapAddDelegateX86 _objectMapAddFieldX86;
         private readonly FreeResultDelegate _freeResultField;
         private readonly FreeObjectDelegate _freeObjectField;
-        private readonly IntPtr _freeObjectFuncField;
         private readonly SetupLoggingDelegate _setupLogging;
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
         private readonly UpdateDelegate _updateField;
         private string _version = null;
-        internal static int SizeOfDdWafObject = Marshal.SizeOf(typeof(DdwafObjectStruct));
 
         private WafLibraryInvoker(IntPtr libraryHandle)
         {
@@ -73,7 +70,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 Environment.Is64BitProcess ? GetDelegateForNativeFunction<ObjectMapAddDelegateX64>(libraryHandle, "ddwaf_object_map_addl") : null;
             _objectMapAddFieldX86 =
                 Environment.Is64BitProcess ? null : GetDelegateForNativeFunction<ObjectMapAddDelegateX86>(libraryHandle, "ddwaf_object_map_addl");
-            _freeObjectField = GetDelegateForNativeFunction<FreeObjectDelegate>(libraryHandle, "ddwaf_object_free", out _freeObjectFuncField);
+            _freeObjectField = GetDelegateForNativeFunction<FreeObjectDelegate>(libraryHandle, "ddwaf_object_free");
             _freeResultField = GetDelegateForNativeFunction<FreeResultDelegate>(libraryHandle, "ddwaf_result_free");
             _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(libraryHandle, "ddwaf_get_version");
             // setup logging
@@ -124,7 +121,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate bool ObjectMapAddDelegateX86(ref DdwafObjectStruct map, string entryName, uint entryNameLength, ref DdwafObjectStruct entry);
 
-        private delegate void FreeObjectDelegate(IntPtr input);
+        private delegate void FreeObjectDelegate(ref DdwafObjectStruct input);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate void SetupLogCallbackDelegate(
@@ -148,8 +145,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         }
 
         internal bool ExportErrorHappened { get; private set; }
-
-        internal IntPtr ObjectFreeFuncPtr => _freeObjectFuncField;
 
         /// <summary>
         /// Initializes static members of the <see cref="WafLibraryInvoker"/> class.
@@ -345,10 +340,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
         internal bool ObjectMapAdd(ref DdwafObjectStruct map, string entryName, ulong entryNameLength, ref DdwafObjectStruct entry) => Environment.Is64BitProcess ? _objectMapAddFieldX64!(ref map, entryName, entryNameLength, ref entry) : _objectMapAddFieldX86!(ref map, entryName, (uint)entryNameLength, ref entry);
 
-        internal void ObjectFreePtr(IntPtr input)
-        {
-            _freeObjectField(input);
-        }
+        internal void ObjectFree(ref DdwafObjectStruct input) => _freeObjectField(ref input);
 
         internal void ResultFree(ref DdwafResultStruct output) => _freeResultField(ref output);
 

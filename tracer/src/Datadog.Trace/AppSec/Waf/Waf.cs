@@ -106,7 +106,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             try
             {
-                var initResult = wafConfigurator.Configure(rulesObj, encoder, configWafStruct, ref diagnostics, rulesFromRcm == null ? embeddedRulesetPath : "RemoteConfig");
+                var initResult = wafConfigurator.Configure(ref rulesObj, encoder, configWafStruct, ref diagnostics, rulesFromRcm == null ? embeddedRulesetPath : "RemoteConfig");
                 initResult.EmbeddedRules = jtokenRoot;
                 return initResult;
             }
@@ -122,7 +122,7 @@ namespace Datadog.Trace.AppSec.Waf
                     Marshal.FreeHGlobal(valueRegex);
                 }
 
-                wafLibraryInvoker.ObjectFreePtr((IntPtr)(&diagnostics));
+                wafLibraryInvoker.ObjectFree(ref diagnostics);
 
                 if (useUnsafeEncoder)
                 {
@@ -159,7 +159,7 @@ namespace Datadog.Trace.AppSec.Waf
             finally
             {
                 res ??= new(diagnosticsValue, false);
-                _wafLibraryInvoker.ObjectFreePtr((IntPtr)(&diagnosticsValue));
+                _wafLibraryInvoker.ObjectFree(ref diagnosticsValue);
                 updateData.Dispose();
             }
 

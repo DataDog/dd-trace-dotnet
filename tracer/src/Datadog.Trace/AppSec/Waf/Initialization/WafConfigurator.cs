@@ -112,7 +112,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return root;
         }
 
-        internal InitResult Configure(DdwafObjectStruct rulesObj, IEncoder encoder, DdwafConfigStruct configStruct, ref DdwafObjectStruct diagnostics, string? rulesFile)
+        internal InitResult Configure(ref DdwafObjectStruct rulesObj, IEncoder encoder, DdwafConfigStruct configStruct, ref DdwafObjectStruct diagnostics, string? rulesFile)
         {
             var wafHandle = _wafLibraryInvoker.Init(ref rulesObj, ref configStruct, ref diagnostics);
             if (wafHandle == IntPtr.Zero)

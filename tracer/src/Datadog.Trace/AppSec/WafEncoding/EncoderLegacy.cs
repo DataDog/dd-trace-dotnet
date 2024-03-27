@@ -31,22 +31,7 @@ internal class EncoderLegacy : IEncoder
         _wafLibraryInvoker = wafLibraryInvoker;
     }
 
-    public static ObjType DecodeArgsType(DDWAF_OBJ_TYPE t)
-    {
-        return t switch
-        {
-            DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID => ObjType.Invalid,
-            DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED => ObjType.SignedNumber,
-            DDWAF_OBJ_TYPE.DDWAF_OBJ_UNSIGNED => ObjType.UnsignedNumber,
-            DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING => ObjType.String,
-            DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL => ObjType.Bool,
-            DDWAF_OBJ_TYPE.DDWAF_OBJ_DOUBLE => ObjType.Double,
-            DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY => ObjType.Array,
-            DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP => ObjType.Map,
-            DDWAF_OBJ_TYPE.DDWAF_OBJ_NULL => ObjType.Null,
-            _ => throw new Exception($"Invalid DDWAF_INPUT_TYPE {t}")
-        };
-    }
+    public static ObjType DecodeArgsType(DDWAF_OBJ_TYPE t) => (ObjType)t;
 
     private static string TruncateLongString(string s) => s.Length > WafConstants.MaxStringLength ? s.Substring(0, WafConstants.MaxStringLength) : s;
 
@@ -64,7 +49,6 @@ internal class EncoderLegacy : IEncoder
         }
 
         var s = o?.ToString() ?? string.Empty;
-
         return CreateNativeString(s, applyLimits: true, wafLibraryInvoker);
     }
 
@@ -114,12 +98,7 @@ internal class EncoderLegacy : IEncoder
                 _ => EncodeUnknownType(args, wafLibraryInvoker)
             };
 
-        if (parentObj)
-        {
-            return new Obj(ref value.InnerStruct, parentObj);
-        }
-
-        return value;
+        return parentObj ? new Obj(ref value.InnerStruct, parentObj) : value;
     }
 
     private static Obj EncodeList<T>(IEnumerable<T> objEnumerator, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
