@@ -127,7 +127,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 members = new MethodScopeMembers(0, 0);
             }
 
-            using var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, location: ProbeLocation.Method, hasCondition: false, Array.Empty<string>(), members);
+            using var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, location: ProbeLocation.Method, hasCondition: false, Array.Empty<string>(), members, maxInfo: default);
 
             _snapshotId = snapshotCreator.SnapshotId;
 

@@ -20,6 +20,7 @@ namespace Datadog.Trace.Debugger
         public const int DefaultMaxSerializationTimeInMilliseconds = 200;
         public const int DefaultMaxNumberOfItemsInCollectionToCopy = 100;
         public const int DefaultMaxNumberOfFieldsToCopy = 20;
+        public const int DefaultMaxStringLength = 1000;
 
         private const int DefaultUploadBatchSize = 100;
         public const int DefaultSymbolBatchSizeInBytes = 100000;
