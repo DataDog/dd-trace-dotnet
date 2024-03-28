@@ -1514,16 +1514,14 @@ partial class Build
             }
         });
 
-
     Target CompileSamples => _ => _
         .Description("Compiles all the sample projects, including multi-version samples")
+        .Unlisted()
+        .After(Clean)
         .DependsOn(HackForMissingMsBuildLocation)
-        .After(CompileDependencyLibs)
-        .After(CompileFrameworkReproductions)
-        .Requires(() => MonitoringHomeDirectory != null)
-        // .Requires(() => Framework)
         .Executes(() =>
         {
+            // TODO: set Samples.Trimming as don't build, as we're going to publish anyway
             // Just try building the solution and seeing what happens
             DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
@@ -1532,179 +1530,89 @@ partial class Build
                 .SetProperty("BuildInParallel", "true")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .SetProjectFile(SamplesSolution));
-            
-            // // This does some "unnecessary" rebuilding and restoring
-            // var integrationsSamples = TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
-            // // Don't build aspnet full framework sample in this step
-            // var securitySamples = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
-            //
-            // var typeConverter = new TargetFramework.TargetFrameworkTypeConverter();
-            // var projectAndFrameworks = integrationsSamples
-            //     .Concat(securitySamples)
-            //     .Select(x => Solution.GetProject(x))
-            //     .Select(project => (Project: project, Targets: project.TryGetTargetFrameworks()))
-            //     .Where(x => x switch
-            //     {
-            //         _ when !string.IsNullOrWhiteSpace(SampleName) => x.Project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-            //         _ when !string.IsNullOrWhiteSpace(Framework?.ToString()) => x.Targets.Contains(Framework),
-            //         // (_, { } targets, _) => targets.Contains(Framework),
-            //         _ => true,
-            //     })
-            //    .SelectMany(x => x.Targets.Select(framework => (Project: x.Project, Target: framework)));
-            //    // .Where(x => TestingFrameworks.Contains(typeConverter.ConvertFrom(x.Target)));
-            //
-            //    Console.WriteLine(string.Join(",", projectAndFrameworks.Where(x=>x.Target == "netstandard1.0").Select(x => x.Project.Name).Distinct()));
-            //
-            // // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-            // DotNetBuild(config => config
-            //     .SetConfiguration(BuildConfiguration)
-            //     .SetTargetPlatformAnyCPU()
-            //     // .EnableNoDependencies()
-            //     .SetProperty("BuildInParallel", "true") // This won't do anything, we should probably use a solution to build instead
-            //     .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-            //     .CombineWith(projectAndFrameworks, (s, project) => s
-            //         // we have to build this one for all frameworks (because of reasons)
-            //         // .When(!project.Name.Contains("MultiDomainHost"), x => x.SetFramework(Framework))
-            //         .SetFramework(project.Target)
-            //         .SetProjectFile(project.Project)));
-            //
-            // foreach (var framework in TestingFrameworks)
-            // {
-            //     var projectsToPublish = integrationsSamples
-            //         .Select(x => Solution.GetProject(x))
-            //         .Where(x => x.Name switch
-            //         {
-            //             "Samples.Trimming" => framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0),
-            //             _ => false,
-            //         });
-            //
-            //     // publish for all rids as used everywhere
-            //     var rids= "win-x64;linux-x64;osx-x64;linux-arm64";
-            //     DotNetPublish(config => config
-            //         .SetConfiguration(BuildConfiguration)
-            //         .SetFramework(framework)
-            //         .SetRuntime(rids)
-            //         .CombineWith(projectsToPublish, (s, project) => s.SetProject(project)));
-            // }
-            //
-            // if (TestAllPackageVersions)
-            // {
-            //     // TODO this is hacky as I couldn't figure out what was going on here so I opted to just delete everything each time
-            //     //      for some reason projects that declare specific TargetFrameworks in the project file
-            //     //      will duplicate their package versions
-            //     //      e.g. Samples.GraphQL4\bin\4.1.0\Debug\net7.0\bin\4.3.0
-            //     //      this will go on and create a ton of folders/files
-            //     //      my hacky workaround for this at the moment is to simply remove the bin/obj directories beforehand
-            //     //      GrpcDotNet, GraphQL4, and HotChocolate samples had this issue
-            //     // Logger.Information("Cleaning up sample projects that use multiple package versions");
-            //     //
-            //     // var multiPackageProjects = new List<string>();
-            //     // var samplesFile = BuildDirectory / "PackageVersionsGeneratorDefinitions.json";
-            //     // using var fs = File.OpenRead(samplesFile);
-            //     // var json = JsonDocument.Parse(fs);
-            //     // multiPackageProjects = json.RootElement
-            //     //                            .EnumerateArray()
-            //     //                            .Select(e => e.GetProperty("SampleProjectName").GetString())
-            //     //                            .Distinct()
-            //     //                            .Where(name => name switch
-            //     //                            {
-            //     //                                "Samples.MySql" => false, // the "non package version" is _ALSO_ tested separately
-            //     //                                _ => true
-            //     //                            })
-            //     //                            .ToList();
-            //
-            //     // var patterns = new List<string>();
-            //     //
-            //     // foreach (var dir in multiPackageProjects)
-            //     // {
-            //     //     patterns.Add($"test/test-applications/integrations/{dir}/bin");
-            //     //     patterns.Add($"test/test-applications/integrations/{dir}/obj");
-            //     // }
-            //     //
-            //     // TracerDirectory.GlobDirectories(patterns.ToArray()).ForEach(x => DeleteDirectory(x));
-            //
-            //     // these are defined in the Datadog.Trace.proj - they only build the projects that have multiple package versions of their NuGet
-            //     var targets = new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
-            //
-            //     // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-            //     // /nowarn:NETSDK1138 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-            //     foreach (var framework in TestingFrameworks)
-            //     {
-            //         foreach (var target in targets)
-            //         {
-            //             MSBuild(x => x
-            //                 .SetTargetPath(MsBuildProject)
-            //                 .SetTargets(target)
-            //                 .SetConfiguration(BuildConfiguration)
-            //                 // .EnableNoDependencies()
-            //                 .SetProperty("TargetFramework", framework.ToString())
-            //                 .SetProperty("BuildInParallel", "true")
-            //                 .SetProperty("CheckEolTargetFramework", "false")
-            //                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
-            //                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-            //                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
-            //                 .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-            //             );
-            //         }
-            //     }
-            // }
-            // else
-            // {
-            //     // This does some "unnecessary" rebuilding and restoring
-            //     var includeIntegration = TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
-            //     // Don't build aspnet full framework sample in this step
-            //     var includeSecurity = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
-            //
-            //     var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj")
-            //                                  .Concat(TracerDirectory.GlobFiles("test/test-applications/debugger/dependency-libs/**/*.csproj"))
-            //                                  .Concat(TracerDirectory.GlobFiles("test/test-applications/integrations/Samples.AzureServiceBus/*.csproj"));
-            //
-            //     var projects = includeIntegration
-            //         .Concat(includeSecurity)
-            //         .Select(x => Solution.GetProject(x))
-            //         .Where(project =>
-            //         (project, project.TryGetTargetFrameworks(), project.RequiresDockerDependency()) switch
-            //         {
-            //             _ when exclude.Contains(project.Path) => false,
-            //             _ when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-            //             (_, _, DockerDependencyType.All) => false, // can't use docker on Windows
-            //             // (_, { } targets, _) => targets.Contains(Framework),
-            //             _ => true,
-            //         }
-            //     );
-            //
-            //     // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-            //     DotNetBuild(config => config
-            //         .SetConfiguration(BuildConfiguration)
-            //         .SetTargetPlatformAnyCPU()
-            //         // .EnableNoDependencies()
-            //         .SetProperty("BuildInParallel", "true")
-            //         .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-            //         .CombineWith(projects, (s, project) => s
-            //             // we have to build this one for all frameworks (because of reasons)
-            //             // .When(!project.Name.Contains("MultiDomainHost"), x => x.SetFramework(Framework))
-            //             .SetProjectFile(project)));
-            //
-            //     foreach (var framework in TestingFrameworks)
-            //     {
-            //         var projectsToPublish = includeIntegration
-            //             .Select(x => Solution.GetProject(x))
-            //             .Where(x => x.Name switch
-            //             {
-            //                 "Samples.Trimming" => framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0),
-            //                 _ => false,
-            //             });
-            //
-            //         var rid = IsArm64 ? "win-arm64" : "win-x64";
-            //         DotNetPublish(config => config
-            //             .SetConfiguration(BuildConfiguration)
-            //             .SetFramework(framework)
-            //             .SetRuntime(rid)
-            //             .CombineWith(projectsToPublish, (s, project) => s.SetProject(project)));
-            //     }
-            // }
         });
-    
+
+    Target CompileTrimmingSamples => _ => _
+        .Description("Compiles the trimming samples")
+        .Requires(() => Framework)
+        .Unlisted()
+        .After(Clean)
+        .DependsOn(HackForMissingMsBuildLocation)
+        .Executes(() =>
+        {
+            // We can only publish for the actual platform we're on, so will need to split this to somewhere else
+            var trimmingSamples = new []
+            {
+                (project: "Samples.Trimming",include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), r2r: false),
+                (project: "Samples.ManualInstrumentation",include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: true),
+            };
+            var projectsToPublish = trimmingSamples
+                                   .Select(x => (project: Solution.GetProject(x.project), x.include, x.r2r))
+                                   .Where(x => (x, x.project.TryGetTargetFrameworks(), x.project.RequiresDockerDependency()) switch
+                                    {
+                                        ({include: false }, _, _) => false,
+                                        _ when !string.IsNullOrWhiteSpace(SampleName) => x.project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase),
+                                        (_, _, DockerDependencyType.All) => false, // can't use docker on Windows
+                                        (_, { } targets, _) => targets.Contains(Framework),
+                                        _ => true,
+                                    });
+            var rid = (Platform, TargetPlatform.ToString()) switch
+            {
+                (PlatformFamily.Linux, "x64") => IsAlpine ? "linux-musl-x64" : "linux-x64",
+                (PlatformFamily.Linux, "ARM64") => IsAlpine ? "linux-musl-arm64" : "linux-arm64",
+                (PlatformFamily.OSX, "x64") => "osx-x64",
+                (PlatformFamily.OSX, "ARM64") => "osx-arm64",
+                (PlatformFamily.Windows, "ARM64" or "ARM64EC") => "win-arm64",
+                (PlatformFamily.Windows, "x64") => "win-x64",
+                (PlatformFamily.Windows, "x86") => "win-x86",
+                _ => throw new InvalidOperationException($"Unknown platform {Platform} ({RuntimeInformation.ProcessArchitecture})"),
+            };
+
+            DotNetPublish(config => config
+                .SetConfiguration(BuildConfiguration)
+                .SetRuntime(rid)
+                .SetFramework(Framework)
+                .CombineWith(projectsToPublish,
+                    (s, project) => s
+                        .SetProject(project.project)
+                        .When(project.r2r, x => x.SetPublishReadyToRun(true))));
+        });
+
+    Target CompileMultiPackageSamples => _ => _
+        .Description("Compiles all the sample projects, including multi-version samples")
+        .Unlisted()
+        .After(Clean)
+        .DependsOn(HackForMissingMsBuildLocation)
+        .DependsOn(CompileSamples) // Compiles the prerequisites
+        .OnlyWhenStatic(() => TestAllPackageVersions) // Do we still need this? we'll see 
+        .Executes(() =>
+        {
+            // these are defined in the Datadog.Trace.proj - they only build the projects that have multiple package versions of their NuGet
+            var targets = new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
+            
+            foreach (var framework in TestingFrameworks)
+            {
+                foreach (var target in targets)
+                {
+                    // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
+                    // /nowarn:NETSDK1138 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
+                    MSBuild(x => x
+                        .SetTargetPath(MsBuildProject)
+                        .SetTargets(target)
+                        .SetConfiguration(BuildConfiguration)
+                        .SetProperty("TargetFramework", framework.ToString())
+                        .SetProperty("BuildInParallel", "true")
+                        .SetProperty("CheckEolTargetFramework", "false")
+                        .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
+                        .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                        // .SetProcessArgumentConfigurator(arg => arg.Add($"/bl:build_{DateTime.UtcNow.Ticks}.binlog"))
+                        .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                        .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                    );
+                }
+            }
+        });
+
     Target PublishIisSamples => _ => _
         .Unlisted()
         .After(CompileManagedTestHelpers)
