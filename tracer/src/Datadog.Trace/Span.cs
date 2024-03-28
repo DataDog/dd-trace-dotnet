@@ -177,7 +177,10 @@ namespace Datadog.Trace
             sb.AppendLine($"Duration: {Duration}");
             sb.AppendLine($"End: {StartTime.Add(Duration).ToString("O")}");
             sb.AppendLine($"Error: {Error}");
-            sb.AppendLine($"TraceSamplingPriority: {(Context.TraceContext.SamplingPriority?.ToString(CultureInfo.InvariantCulture) ?? "not set")}");
+
+            var samplingPriority = Context.TraceContext?.GetSamplingPriority();
+            sb.AppendLine($"TraceSamplingPriority: {SamplingPriorityValues.ToString(samplingPriority) ?? "not set"}");
+
             sb.AppendLine($"Meta: {Tags}");
 
             return StringBuilderCache.GetStringAndRelease(sb);
@@ -448,7 +451,8 @@ namespace Datadog.Trace
             switch (key)
             {
                 case Trace.Tags.SamplingPriority:
-                    return Context.TraceContext?.SamplingPriority?.ToString();
+                    var samplingPriority = Context.TraceContext?.GetSamplingPriority();
+                    return SamplingPriorityValues.ToString(samplingPriority);
                 case Trace.Tags.Env:
                     return Context.TraceContext?.Environment;
                 case Trace.Tags.Version:

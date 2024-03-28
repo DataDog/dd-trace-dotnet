@@ -67,7 +67,7 @@ namespace Datadog.Trace.Configuration
             internal const string OperatingSystemKey = "WEBSITE_OS";
 
             /// <summary>
-            /// Used to force the loader to start the tracer agent (in case automatic instrumentation is disabled)
+            /// Used to force the loader to start the trace agent (in case automatic instrumentation is disabled)
             /// </summary>
             public const string AasEnableCustomTracing = "DD_AAS_ENABLE_CUSTOM_TRACING";
 

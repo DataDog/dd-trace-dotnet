@@ -3,6 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+
 namespace Datadog.Trace
 {
     internal static class SamplingPriorityValues
@@ -32,5 +37,23 @@ namespace Datadog.Trace
         /// code or configuration (e.g. the rules sampler).
         /// </summary>
         public const int UserKeep = 2;
+
+        [return: NotNullIfNotNull("samplingPriority")]
+        internal static string? ToString(int? samplingPriority)
+        {
+            return samplingPriority switch
+            {
+                2 => "2",
+                1 => "1",
+                0 => "0",
+                -1 => "-1",
+                null => null,
+                not null => samplingPriority.Value.ToString(CultureInfo.InvariantCulture)
+            };
+        }
+
+        internal static bool IsKeep(int? samplingPriority) => samplingPriority > 0;
+
+        internal static bool IsDrop(int? samplingPriority) => samplingPriority <= 0;
     }
 }

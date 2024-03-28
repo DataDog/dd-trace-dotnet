@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
@@ -35,14 +34,15 @@ namespace Datadog.Trace
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
         private int? _samplingPriority;
-        // _rootSpan was chosen at some point to be used as the key for a lock that protects
+
+        // _rootSpan was chosen in #4125 to be the lock that protects
         // * _spans
         // * _openSpans
         // although it's a nullable field, the _rootSpan must always be set before operations on
         // _spans & _samplingPriority take place, so it's okay to use it as a lock key
         // even though we need to override the nullable warnings in some places.
-        // The reason _rootSpan was chosen is unknown, we're assuming it's to avoid
-        // allocation a separate field for the lock
+        // The reason _rootSpan was chosen is to avoid
+        // allocating a separate object for the lock.
         private Span? _rootSpan;
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection? tags = null)
@@ -81,16 +81,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the collection of trace-level tags.
         /// </summary>
-        [NotNull]
         public TraceTagCollection Tags { get; }
-
-        /// <summary>
-        /// Gets the trace's sampling priority.
-        /// </summary>
-        public int? SamplingPriority
-        {
-            get => _samplingPriority;
-        }
 
         public string? Environment { get; set; }
 
@@ -109,6 +100,8 @@ namespace Datadog.Trace
         /// Gets the IAST context.
         /// </summary>
         internal IastRequestContext? IastRequestContext => _iastRequestContext;
+
+        internal static TraceContext? GetTraceContext(in ArraySegment<Span> spans) => spans.Count > 0 ? spans.Array![spans.Offset].Context.TraceContext : null;
 
         internal void AddWafSecurityEvents(IReadOnlyCollection<object> events)
         {
@@ -134,12 +127,6 @@ namespace Datadog.Trace
             if (Interlocked.CompareExchange(ref _rootSpan, span, null) == null)
             {
                 span.MarkSpanForExceptionDebugging();
-
-                // if we don't have a sampling priority yet, make a sampling decision now
-                if (_samplingPriority == null)
-                {
-                    SetSamplingPriority(CurrentTraceSettings?.TraceSampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default);
-                }
             }
 
             lock (_rootSpan)
@@ -155,7 +142,7 @@ namespace Datadog.Trace
             ArraySegment<Span> spansToWrite = default;
 
             // Propagate the resource name to the profiler for root web spans
-            if (span.IsRootSpan && span.Type == SpanTypes.Web)
+            if (span is { IsRootSpan: true, Type: SpanTypes.Web })
             {
                 Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
 
@@ -173,10 +160,7 @@ namespace Datadog.Trace
                     }
                 }
 
-                if (_appSecRequestContext != null)
-                {
-                    _appSecRequestContext.CloseWebSpan(Tags);
-                }
+                _appSecRequestContext?.CloseWebSpan(Tags);
             }
 
             if (!string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
@@ -215,6 +199,8 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
+                _ = GetSamplingPriority(triggerSamplingDecision: true);
+
                 RunSpanSampler(spansToWrite);
                 Tracer.Write(spansToWrite);
             }
@@ -233,9 +219,36 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
+                _ = GetSamplingPriority(triggerSamplingDecision: true);
+
                 RunSpanSampler(spansToWrite);
                 Tracer.Write(spansToWrite);
             }
+        }
+
+        /// <summary>
+        /// Gets the trace's sampling priority, optionally triggering a sampling decision.
+        /// </summary>
+        public int? GetSamplingPriority(bool triggerSamplingDecision = false)
+        {
+            if (_samplingPriority == null && triggerSamplingDecision)
+            {
+                // this call sets _samplingPriority
+                MakeSamplingDecision();
+            }
+
+            return _samplingPriority;
+        }
+
+        private void MakeSamplingDecision()
+        {
+            if (_rootSpan is null)
+            {
+                return;
+            }
+
+            var samplingDecision = CurrentTraceSettings.TraceSampler?.MakeSamplingDecision(_rootSpan) ?? SamplingDecision.Default;
+            SetSamplingPriority(samplingDecision);
         }
 
         public void SetSamplingPriority(SamplingDecision decision, bool notifyDistributedTracer = true)
@@ -277,11 +290,13 @@ namespace Datadog.Trace
                 return;
             }
 
-            if (spans.Array![spans.Offset].Context.TraceContext?.SamplingPriority <= 0)
+            var samplingPriority = GetSamplingPriority();
+
+            if (SamplingPriorityValues.IsDrop(samplingPriority))
             {
                 for (int i = 0; i < spans.Count; i++)
                 {
-                    CurrentTraceSettings.SpanSampler.MakeSamplingDecision(spans.Array[i + spans.Offset]);
+                    CurrentTraceSettings.SpanSampler.MakeSamplingDecision(spans.Array![i + spans.Offset]);
                 }
             }
         }

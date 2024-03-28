@@ -35,7 +35,12 @@ namespace Datadog.Trace.Util
         internal static bool SampleByRate(ulong id, double rate) =>
             ((id * KnuthFactor) % Modulo) <= (rate * Modulo);
 
-        internal static bool IsKeptBySamplingPriority(ArraySegment<Span> trace) =>
-            trace.Array![trace.Offset].Context.TraceContext?.SamplingPriority > 0;
+        internal static bool IsKeptBySamplingPriority(ArraySegment<Span> trace)
+        {
+            var samplingPriority = TraceContext.GetTraceContext(trace)
+                                              ?.GetSamplingPriority(triggerSamplingDecision: true);
+
+            return SamplingPriorityValues.IsKeep(samplingPriority);
+        }
     }
 }

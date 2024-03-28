@@ -24,8 +24,6 @@ src/Datadog.Trace/OSPlatformName.cs
 src/Datadog.Trace/ProcessArchitecture.cs
 src/Datadog.Trace/PropagationErrorTagValues.cs
 src/Datadog.Trace/ReadOnlySpanContext.cs
-src/Datadog.Trace/SamplingPriority.cs
-src/Datadog.Trace/SamplingPriorityValues.cs
 src/Datadog.Trace/Scope.cs
 src/Datadog.Trace/Scope.IScope.cs
 src/Datadog.Trace/Span.cs
@@ -86,7 +84,6 @@ src/Datadog.Trace/Ci/IEvent.cs
 src/Datadog.Trace/ClrProfiler/AutomaticTracer.cs
 src/Datadog.Trace/ClrProfiler/CallTargetKind.cs
 src/Datadog.Trace/ClrProfiler/ClrNames.cs
-src/Datadog.Trace/ClrProfiler/CommonTracer.cs
 src/Datadog.Trace/ClrProfiler/DistributedTracer.cs
 src/Datadog.Trace/ClrProfiler/IAutomaticTracer.cs
 src/Datadog.Trace/ClrProfiler/ICommonTracer.cs
