@@ -9,8 +9,8 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
-using Samples.GrpcDotNet;
-using Samples.GrpcDotNet.Services;
+using Samples.Security.GrpcDotNet;
+using Samples.Security.GrpcDotNet.Services;
 using IApplicationLifetime = Microsoft.AspNetCore.Hosting.IApplicationLifetime;
 
 #nullable enable

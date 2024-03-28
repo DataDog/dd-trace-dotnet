@@ -8,18 +8,17 @@ using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Samples.GrpcDotNet.Services;
+using Samples.Security.GrpcDotNet.Services;
 using IApplicationLifetime = Microsoft.AspNetCore.Hosting.IApplicationLifetime;
 
 #nullable enable
 
-namespace Samples.GrpcDotNet;
+namespace Samples.Security.GrpcDotNet;
 
 public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
     private readonly IApplicationLifetime _lifetime;
-    private static readonly ErrorType[] ErrorTypes = (ErrorType[])Enum.GetValues(typeof(ErrorType));
 
     public Worker(ILogger<Worker> logger, IApplicationLifetime lifetime)
     {
@@ -50,22 +49,18 @@ public class Worker : BackgroundService
             _logger.LogInformation("Creating GRPC client");
             var callInvoker = channel.Intercept(meta =>
             {
-                meta.Add("client-value1", "some-client-value");
+                meta.Add("client-value1", "some-client-value"); // <-- TODO: Maybe need to taint these headers
                 meta.Add("client-value2", "other-client-value");
                 return meta;
             });
             var client = new Greeter.GreeterClient(callInvoker);
 
-            // await SendUnaryRequestAsync(client);
-            // await SendServerStreamingRequest(client, stoppingToken);
-            // await SendClientStreamingRequest(client, stoppingToken);
+            await SendUnaryRequestAsync(client);
+            await SendServerStreamingRequest(client, stoppingToken);
+            // await SendClientStreamingRequest(client, stoppingToken); <-- TODO: Need to aspect these methods
             // await SendBothStreamingRequest(client, stoppingToken);
-            // await SendErrorsAsync(client);
-            // await SendVerySlowRequestAsync(client);
 
-            SendUnaryRequest(client);
-            // SendErrors(client);
-            // SendVerySlowRequest(client);
+            //SendUnaryRequest(client);
         }
         catch (Exception ex)
         {
@@ -79,7 +74,6 @@ public class Worker : BackgroundService
         _lifetime.StopApplication();
     }
     
-    /*
     private async Task SendUnaryRequestAsync(Greeter.GreeterClient client)
     {
         using var scope = CreateScope();
@@ -89,7 +83,6 @@ public class Worker : BackgroundService
 
         _logger.LogInformation("Received async reply message: {Reply}", reply.Message);
     }
-    */
 
     private void SendUnaryRequest(Greeter.GreeterClient client)
     {
@@ -99,8 +92,7 @@ public class Worker : BackgroundService
 
         _logger.LogInformation("Received reply message: {Reply}", reply.Message);
     }
-
-    /*
+    
     private async Task SendServerStreamingRequest(Greeter.GreeterClient client, CancellationToken ct)
     {
         using var scope = CreateScope();
@@ -116,7 +108,7 @@ public class Worker : BackgroundService
 
         _logger.LogInformation("Received all streaming server responses");
     }
-
+    
     private async Task SendClientStreamingRequest(Greeter.GreeterClient client, CancellationToken ct)
     {
         using var scope = CreateScope();
@@ -163,81 +155,6 @@ public class Worker : BackgroundService
         await readTask;
         _logger.LogInformation("Both streaming server responses done");
     }
-
-    private void SendErrors(Greeter.GreeterClient client)
-    {
-        foreach (var errorType in ErrorTypes)
-        {
-            using var scope = SampleHelpers.CreateScope($"SendErrors_{errorType}");
-            try
-            {
-                _logger.LogInformation("Sending erroring request to self with {ErrorType}", errorType);
-                var reply = client.ErroringMethod(new CreateErrorRequest { ErrorType = (int)errorType });
-
-                _logger.LogError("Received reply message: {Reply}, but expected exception", reply.Message);
-                throw new InvalidOperationException("Expected an exception");
-            }
-            catch (RpcException ex)
-            {
-                _logger.LogInformation("Received RPC exception with StatusCode {Status}", ex.Status);
-                // expected
-            }
-        }
-    }
-
-    private async Task SendErrorsAsync(Greeter.GreeterClient client)
-    {
-        foreach (var errorType in ErrorTypes)
-        {
-            using var scope = SampleHelpers.CreateScope($"SendErrorsAsync_{errorType}");
-            try
-            {
-                _logger.LogInformation("Sending erroring request to self with {ErrorType}", errorType);
-                var reply = await client.ErroringMethodAsync(new CreateErrorRequest { ErrorType = (int)errorType });
-
-                _logger.LogError("Received reply message: {Reply}, but expected exception", reply.Message);
-                throw new InvalidOperationException("Expected an exception");
-            }
-            catch (RpcException ex)
-            {
-                _logger.LogInformation("Received RPC exception with StatusCode {Status}", ex.Status);
-                // expected
-            }
-        }
-    }
-
-    private async Task SendVerySlowRequestAsync(Greeter.GreeterClient client)
-    {
-        using var scope = CreateScope();
-        try
-        {
-            _logger.LogInformation("Sending very slow request to self");
-            await client.VerySlowAsync(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddSeconds(2));
-
-            throw new Exception("Received reply, when should have exceeded deadline");
-        }
-        catch(RpcException ex) when (ex.StatusCode == StatusCode.DeadlineExceeded)
-        {
-            _logger.LogInformation("Received deadline exceeded response " + ex.Message);
-        }
-    }
-
-    private void SendVerySlowRequest(Greeter.GreeterClient client)
-    {
-        using var scope = CreateScope();
-        try
-        {
-            _logger.LogInformation("Sending very slow request to self");
-            client.VerySlow(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddSeconds(2));
-
-            throw new Exception("Received reply, when should have exceeded deadline");
-        }
-        catch(RpcException ex) when (ex.StatusCode == StatusCode.DeadlineExceeded)
-        {
-            _logger.LogInformation("Received deadline exceeded response " + ex.Message);
-        }
-    }
-    */
 
     private static GrpcChannelOptions GetChannelOptions(string serverAddress)
     {

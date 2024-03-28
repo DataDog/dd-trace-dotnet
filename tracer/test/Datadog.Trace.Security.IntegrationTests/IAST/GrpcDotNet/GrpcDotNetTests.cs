@@ -31,7 +31,7 @@ public class GrpcDotNetTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task SubmitsTraces()
     {
-        const int expectedSpanCount = 3;
+        const int expectedSpanCount = 10;
         var filename = "Iast.GrpcDotNetTests.BodyPropagation.SubmitsTraces";
         using var agent = EnvironmentHelper.GetMockAgent();
         using var process = await RunSampleAndWaitForExit(agent);
