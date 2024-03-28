@@ -1233,6 +1233,14 @@ stages:
 
     - job: build
       timeoutInMinutes: 60 #default value
+      strategy:
+        matrix:
+          Standalone:
+            target: CompileSamples
+            artifact: samples-bin-standalone
+          MultiPackage:
+            target: CompileMultiPackageSamples -TestAllPackageVersions
+            artifact: samples-bin-multi-package
       pool:
         name: azure-windows-scale-set
       steps:
@@ -1242,13 +1250,13 @@ stages:
             targetBranch: $(targetBranch)
         - template: steps/install-latest-dotnet-sdk.yml
 
-        - script: tracer\build.cmd CompileSamples
+        - script: tracer\build.cmd $(target)
           displayName: Build sample projects
           retryCountOnTaskFailure: 1
 
         - publish: $(outputDir)/bin
           displayName: Upload artifact samples (bin only)
-          artifact: samples-bin
+          artifact: $(artifact)
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
