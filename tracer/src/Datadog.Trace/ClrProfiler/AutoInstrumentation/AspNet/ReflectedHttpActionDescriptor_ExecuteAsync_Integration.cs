@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             return CallTargetState.GetDefault();
         }
 
-        internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
+        internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, [MayBeNull] TResponse response, Exception? exception, in CallTargetState state)
         {
             var security = Security.Instance;
             // response can be null if action returns null
