@@ -52,6 +52,8 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     SET(ISMACOS true)
 endif()
 
+option (UNIVERSAL_BINARY "Build native binaries in Universal mode" ON)
+
 # Detect bitness of the build
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(STATUS "Setting compilation for 64bits processor")

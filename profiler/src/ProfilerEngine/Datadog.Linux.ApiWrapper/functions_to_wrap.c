@@ -224,3 +224,58 @@ pid_t fork()
 }
 
 #endif
+
+#if DD_UNIVERSAL_BINARY
+char* dlerror(void) __attribute__((weak));
+
+static __typeof(dlerror)* s_dlerror = &dlerror;
+static __typeof(dlopen)* s_dlopen = &dlopen;
+int pthread_cancel(pthread_t thread) __attribute__((weak));
+
+double log(double x) __attribute__((weak));
+
+// NOLINTNEXTLINE cert-dcl51-cpp
+void* __libc_dlopen_mode(const char* filename, int flag) __attribute__((weak));
+
+static void* my_dlopen(const char* filename, int flags)
+{
+    if (!s_dlopen)
+    {
+        // if libdl.so is not loaded, use __libc_dlopen_mode
+        s_dlopen = __libc_dlopen_mode;
+    }
+    if (s_dlopen)
+    {
+        void* ret = s_dlopen(filename, flags);
+        if (!ret && s_dlerror)
+        {
+            fprintf(stderr, "Failed to dlopen %s (%s)\n", filename, s_dlerror());
+        }
+        return ret;
+    }
+    // Should not happen
+    return NULL;
+}
+
+static void ensure_libm_is_loaded()
+{
+    if (!log)
+    {
+        my_dlopen("libm.so.6", RTLD_GLOBAL | RTLD_NOW);
+    }
+}
+
+static void ensure_libpthread_is_loaded()
+{
+    if (!pthread_cancel)
+    {
+        my_dlopen("libpthread.so.0", RTLD_GLOBAL | RTLD_NOW);
+    }
+}
+
+static void __attribute__((constructor)) loader()
+{
+    ensure_libm_is_loaded();
+    ensure_libpthread_is_loaded();
+}
+#endif
