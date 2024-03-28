@@ -18,8 +18,4 @@
   <ItemGroup Condition="'$(MANUAL_INSTRUMENTATION)' == 'true' AND '$(VERSION_MISMATCH)' == 'true'">
     <PackageReference Include="Datadog.Trace" Version="2.22.0" />
   </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" />
-  </ItemGroup>
 </Project>
