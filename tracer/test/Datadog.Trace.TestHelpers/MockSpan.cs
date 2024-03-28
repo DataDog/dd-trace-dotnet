@@ -49,6 +49,9 @@ namespace Datadog.Trace.TestHelpers
         [Key("metrics")]
         public Dictionary<string, double> Metrics { get; set; }
 
+        [Key("span_links")]
+        public List<MockSpanLink> SpanLinks { get; set; }
+
         public string GetTag(string key)
         {
             if (Tags.TryGetValue(key, out string value))
