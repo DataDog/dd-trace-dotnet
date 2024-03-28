@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
@@ -443,12 +444,24 @@ namespace Datadog.Trace
                 traceContext.SetSamplingPriority(samplingPriority);
 
                 if (traceId == TraceId.Zero &&
-                    Activity.ActivityListener.GetCurrentActivity() is Activity.DuckTypes.IW3CActivity { TraceId: { } activityTraceId })
+                    Activity.ActivityListener.GetCurrentActivity() is Activity.DuckTypes.IW3CActivity { TraceId: { } activityTraceId } activity)
                 {
-                    // if there's an existing Activity we try to use its TraceId,
-                    // but if Activity.IdFormat is not ActivityIdFormat.W3C, it may be null or unparsable
-                    rawTraceId = activityTraceId;
-                    HexString.TryParseTraceId(activityTraceId, out traceId);
+                    bool useActivityTraceId = true;
+
+                    // Handlers[0] is the IgnoreActivityHandler - if it _should_ listen to an activity, that activity _should_ be ignored
+                    if (activity is Activity.DuckTypes.IActivity5 activity5 && ActivityHandlersRegister.Handlers[0].ShouldListenTo(activity5.Source.Name, activity5.Source.Version))
+                    {
+                        // if the activity was ignored, we don't want to use its traceID as it'd create orphaned spans in the traces
+                        useActivityTraceId = false;
+                    }
+
+                    if (useActivityTraceId)
+                    {
+                        // if there's an existing Activity we try to use its TraceId,
+                        // but if Activity.IdFormat is not ActivityIdFormat.W3C, it may be null or unparsable
+                        rawTraceId = activityTraceId;
+                        HexString.TryParseTraceId(activityTraceId, out traceId);
+                    }
                 }
             }
 
