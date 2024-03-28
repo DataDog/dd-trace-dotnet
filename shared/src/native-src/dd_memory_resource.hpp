@@ -15,6 +15,7 @@ namespace pmr {
 using namespace std::experimental::pmr;
 }
 #else // Not found at all
+// cppcheck-suppress preprocessorErrorDirective
 #error "Missing <memory_resource>"
 #endif
 #endif
