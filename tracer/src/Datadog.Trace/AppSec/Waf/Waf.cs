@@ -15,7 +15,6 @@ using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -58,7 +57,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// <param name="useUnsafeEncoder">use legacy encoder</param>
         /// <param name="wafDebugEnabled">if debug level logs should be enabled for the WAF</param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static unsafe InitResult Create(
+        internal static InitResult Create(
             WafLibraryInvoker wafLibraryInvoker,
             string obfuscationParameterKeyRegex,
             string obfuscationParameterValueRegex,
@@ -79,7 +78,6 @@ namespace Datadog.Trace.AppSec.Waf
                 return InitResult.FromUnusableRuleFile();
             }
 
-            DdwafObjectStruct rulesObj;
             DdwafConfigStruct configWafStruct = default;
             var keyRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterKeyRegex);
             var valueRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterValueRegex);
@@ -87,7 +85,7 @@ namespace Datadog.Trace.AppSec.Waf
             configWafStruct.ValueRegex = valueRegex;
             IEncoder encoder = useUnsafeEncoder ? new Encoder() : new EncoderLegacy(wafLibraryInvoker);
             var result = encoder.Encode(jtokenRoot, applySafetyLimits: false);
-            rulesObj = result.ResultDdwafObject;
+            var rulesObj = result.ResultDdwafObject;
 
             var diagnostics = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
 
