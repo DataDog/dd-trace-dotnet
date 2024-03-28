@@ -81,26 +81,13 @@ namespace Datadog.Trace.AppSec.Waf
 
             DdwafObjectStruct rulesObj;
             DdwafConfigStruct configWafStruct = default;
-            IEncodeResult? result = null;
-            IEncoder encoder;
             var keyRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterKeyRegex);
             var valueRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterValueRegex);
             configWafStruct.KeyRegex = keyRegex;
             configWafStruct.ValueRegex = valueRegex;
-            // here we decide not to configure any free function like `configWafStruct.FreeWafFunction = wafLibraryInvoker.ObjectFreeFuncPtr`
-            // as we free the object ourselves in both cases calling for the legacy encoder wafLibraryInvoker.ObjectFreeFuncPtr manually and for the other ones, handling our own allocations
-            if (useUnsafeEncoder)
-            {
-                encoder = new Encoder();
-                result = encoder.Encode(jtokenRoot, applySafetyLimits: false);
-                rulesObj = result.ResultDdwafObject;
-            }
-            else
-            {
-                encoder = new EncoderLegacy(wafLibraryInvoker);
-                var configObjWrapper = encoder.Encode(jtokenRoot, applySafetyLimits: false);
-                rulesObj = configObjWrapper.ResultDdwafObject;
-            }
+            IEncoder encoder = useUnsafeEncoder ? new Encoder() : new EncoderLegacy(wafLibraryInvoker);
+            var result = encoder.Encode(jtokenRoot, applySafetyLimits: false);
+            rulesObj = result.ResultDdwafObject;
 
             var diagnostics = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
 
@@ -123,11 +110,7 @@ namespace Datadog.Trace.AppSec.Waf
                 }
 
                 wafLibraryInvoker.ObjectFree(ref diagnostics);
-
-                if (useUnsafeEncoder)
-                {
-                    result?.Dispose();
-                }
+                result.Dispose();
             }
         }
 
