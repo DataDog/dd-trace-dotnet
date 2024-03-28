@@ -17,7 +17,8 @@ namespace Datadog.Trace.Debugger.Expressions
         string MetricName,
         bool HasCondition,
         string[] Tags,
-        TargetSpan? TargetSpan)
+        TargetSpan? TargetSpan,
+        MaxInfo MaxInfo)
     {
         internal string ProbeId { get; } = ProbeId;
 
@@ -40,5 +41,22 @@ namespace Datadog.Trace.Debugger.Expressions
         internal string[] Tags { get; } = Tags;
 
         public TargetSpan? TargetSpan { get; } = TargetSpan;
+
+        public MaxInfo MaxInfo { get; } = MaxInfo;
+    }
+
+    internal readonly record struct MaxInfo(
+        int MaxReferenceDepth,
+        int MaxCollectionSize,
+        int MaxLength,
+        int MaxFieldCount)
+    {
+        public int MaxReferenceDepth { get; } = MaxReferenceDepth;
+
+        public int MaxCollectionSize { get; } = MaxCollectionSize;
+
+        public int MaxLength { get; } = MaxLength;
+
+        public int MaxFieldCount { get; } = MaxFieldCount;
     }
 }
