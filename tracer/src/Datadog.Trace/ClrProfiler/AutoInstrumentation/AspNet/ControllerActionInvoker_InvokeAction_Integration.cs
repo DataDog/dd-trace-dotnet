@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -82,10 +83,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>Return value of the method</returns>
-        internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<TResult?> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult? returnValue, Exception exception, in CallTargetState state)
         {
             var security = Security.Instance;
-            if (security.Enabled)
+            if (security.Enabled && returnValue is not null)
             {
                 if (returnValue.TryDuckCast<IJsonResultMvc>(out var actionResult))
                 {
@@ -94,17 +95,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     {
                         var context = HttpContext.Current;
                         var scope = SharedItems.TryPeekScope(context, AspNetMvcIntegration.HttpContextKey);
-                        var securityTransport = new SecurityCoordinator(security, context, scope.Span);
-                        if (!securityTransport.IsBlocked)
+                        if (scope is not null)
                         {
-                            var inputData = new Dictionary<string, object> { { AddressesConstants.ResponseBody, ObjectExtractor.Extract(responseObject) } };
-                            securityTransport.CheckAndBlock(inputData);
+                            var securityTransport = new SecurityCoordinator(security, context, scope.Span);
+                            if (!securityTransport.IsBlocked)
+                            {
+                                var extractedObject = ObjectExtractor.Extract(responseObject);
+                                if (extractedObject is not null)
+                                {
+                                    var inputData = new Dictionary<string, object> { { AddressesConstants.ResponseBody, extractedObject } };
+                                    securityTransport.CheckAndBlock(inputData);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Log.Warning("Scope was null in ControllerActionInvoker_InvokeAction_Integration.OnMethodEnd, cannot check security");
                         }
                     }
                 }
             }
 
-            return new CallTargetReturn<TResult>(returnValue);
+            return new CallTargetReturn<TResult?>(returnValue);
         }
     }
 }

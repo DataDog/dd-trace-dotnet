@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
@@ -71,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             return CallTargetState.GetDefault();
         }
 
-        internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, [MayBeNull] TResponse response, Exception? exception, in CallTargetState state)
+        internal static TResponse? OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse? response, Exception? exception, in CallTargetState state)
         {
             var security = Security.Instance;
             // response can be null if action returns null
@@ -89,8 +91,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                             var securityTransport = new SecurityCoordinator(security, context, scope.Span);
                             if (!securityTransport.IsBlocked)
                             {
-                                var inputData = new Dictionary<string, object> { { AddressesConstants.ResponseBody, ObjectExtractor.Extract(responseObject) } };
-                                securityTransport.CheckAndBlock(inputData);
+                                var extractedObj = ObjectExtractor.Extract(responseObject);
+                                if (extractedObj is not null)
+                                {
+                                    var inputData = new Dictionary<string, object> { { AddressesConstants.ResponseBody, extractedObj } };
+                                    securityTransport.CheckAndBlock(inputData);
+                                }
                             }
                         }
                         else
