@@ -26,9 +26,9 @@ jobs:
         id: select_branch
         run: |
           if( "${{ github.event.release.tag_name}}".StartsWith("v1.")) {
-            echo "::set-output name=ref::release/1.x"
+            echo "ref=release/1.x" >> "$GITHUB_OUTPUT"
           } else {
-            echo "::set-output name=ref::master"
+            echo "ref=master" >> "$GITHUB_OUTPUT"
           }
 
       - name: Checkout
