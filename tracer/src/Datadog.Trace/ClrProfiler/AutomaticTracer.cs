@@ -22,6 +22,8 @@ namespace Datadog.Trace.ClrProfiler
 
         bool IDistributedTracer.IsChildTracer => false;
 
+        public bool HasChild => _child is not null;
+
         IReadOnlyDictionary<string, string> IDistributedTracer.GetSpanContextRaw()
         {
             if (_child is null)
