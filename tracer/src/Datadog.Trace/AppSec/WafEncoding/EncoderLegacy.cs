@@ -31,8 +31,6 @@ internal class EncoderLegacy : IEncoder
         _wafLibraryInvoker = wafLibraryInvoker;
     }
 
-    public static ObjType DecodeArgsType(DDWAF_OBJ_TYPE t) => (ObjType)t;
-
     private static string TruncateLongString(string s) => s.Length > WafConstants.MaxStringLength ? s.Substring(0, WafConstants.MaxStringLength) : s;
 
     public IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
@@ -41,7 +39,7 @@ internal class EncoderLegacy : IEncoder
         return new EncodeResult(result, _wafLibraryInvoker);
     }
 
-    private static Obj EncodeUnknownType(object? o, WafLibraryInvoker wafLibraryInvoker)
+    private static DdwafObjectStruct EncodeUnknownType(object? o, WafLibraryInvoker wafLibraryInvoker)
     {
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
@@ -52,7 +50,7 @@ internal class EncoderLegacy : IEncoder
         return CreateNativeString(s, applyLimits: true, wafLibraryInvoker);
     }
 
-    private static Obj EncodeInternal<T>(T o, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker, bool parentObj = false)
+    private static DdwafObjectStruct EncodeInternal<T>(T o, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker, bool parentObj = false)
     {
         object args = o!;
         var value =
@@ -101,7 +99,7 @@ internal class EncoderLegacy : IEncoder
         return value;
     }
 
-    private static Obj EncodeList<T>(IEnumerable<T> objEnumerator, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
+    private static DdwafObjectStruct EncodeList<T>(IEnumerable<T> objEnumerator, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
     {
         var arrNat = wafLibraryInvoker.ObjectArray();
 
@@ -113,7 +111,7 @@ internal class EncoderLegacy : IEncoder
                 Log.Debug("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", objEnumerator));
             }
 
-            return new Obj(ref arrNat);
+            return arrNat;
         }
 
         var count = objEnumerator is IList<object> objs ? objs.Count : objEnumerator.Count();
@@ -131,14 +129,13 @@ internal class EncoderLegacy : IEncoder
         foreach (var o in objEnumerator)
         {
             var value = EncodeInternal(o, remainingDepth, applyLimits, wafLibraryInvoker);
-            var innerStruct = value.InnerStruct;
-            wafLibraryInvoker.ObjectArrayAdd(ref arrNat, ref innerStruct);
+            wafLibraryInvoker.ObjectArrayAdd(ref arrNat, ref value);
         }
 
-        return new Obj(ref arrNat);
+        return arrNat;
     }
 
-    private static Obj EncodeDictionary<T>(IEnumerable<KeyValuePair<string, T>> objDictEnumerator, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
+    private static DdwafObjectStruct EncodeDictionary<T>(IEnumerable<KeyValuePair<string, T>> objDictEnumerator, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
     {
         var mapNat = wafLibraryInvoker.ObjectMap();
 
@@ -150,7 +147,7 @@ internal class EncoderLegacy : IEncoder
                 Log.Debug("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", objDictEnumerator.Select(x => $"{x.Key}, {x.Value}")));
             }
 
-            return new Obj(ref mapNat);
+            return mapNat;
         }
 
         var count = objDictEnumerator is IDictionary<string, object> objDict ? objDict.Count : objDictEnumerator.Count();
@@ -172,7 +169,7 @@ internal class EncoderLegacy : IEncoder
             if (name != null)
             {
                 var value = EncodeInternal(o.Value, remainingDepth, applyLimits, wafLibraryInvoker);
-                wafLibraryInvoker.ObjectMapAdd(ref mapNat, name, Convert.ToUInt64(name.Length), ref value.InnerStruct);
+                wafLibraryInvoker.ObjectMapAdd(ref mapNat, name, Convert.ToUInt64(name.Length), ref value);
             }
             else
             {
@@ -183,47 +180,47 @@ internal class EncoderLegacy : IEncoder
             }
         }
 
-        return new Obj(ref mapNat);
+        return mapNat;
     }
 
-    private static Obj CreateNativeString(string s, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
+    private static DdwafObjectStruct CreateNativeString(string s, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
     {
         var encodeString =
             applyLimits
                 ? TruncateLongString(s)
                 : s;
         var objectStringLength = wafLibraryInvoker.ObjectStringLength(encodeString, Convert.ToUInt64(encodeString.Length));
-        return new Obj(ref objectStringLength);
+        return objectStringLength;
     }
 
-    private static Obj CreateNativeBool(bool b, WafLibraryInvoker wafLibraryInvoker)
+    private static DdwafObjectStruct CreateNativeBool(bool b, WafLibraryInvoker wafLibraryInvoker)
     {
         var ddwafObjectStruct = wafLibraryInvoker.ObjectBool(b);
-        return new(ref ddwafObjectStruct);
+        return ddwafObjectStruct;
     }
 
-    private static Obj CreateNativeLong(long value, WafLibraryInvoker wafLibraryInvoker)
+    private static DdwafObjectStruct CreateNativeLong(long value, WafLibraryInvoker wafLibraryInvoker)
     {
         var ddwafObjectStruct = wafLibraryInvoker.ObjectLong(value);
-        return new(ref ddwafObjectStruct);
+        return ddwafObjectStruct;
     }
 
-    private static Obj CreateNativeNull(WafLibraryInvoker wafLibraryInvoker)
+    private static DdwafObjectStruct CreateNativeNull(WafLibraryInvoker wafLibraryInvoker)
     {
         var ddwafObjectStruct = wafLibraryInvoker.ObjectNull();
-        return new(ref ddwafObjectStruct);
+        return ddwafObjectStruct;
     }
 
-    private static Obj CreateNativeUlong(ulong value, WafLibraryInvoker wafLibraryInvoker)
+    private static DdwafObjectStruct CreateNativeUlong(ulong value, WafLibraryInvoker wafLibraryInvoker)
     {
         var ddwafObjectStruct = wafLibraryInvoker.ObjectUlong(value);
-        return new(ref ddwafObjectStruct);
+        return ddwafObjectStruct;
     }
 
-    private static Obj CreateNativeDouble(double value, WafLibraryInvoker wafLibraryInvoker)
+    private static DdwafObjectStruct CreateNativeDouble(double value, WafLibraryInvoker wafLibraryInvoker)
     {
         var ddwafObjectStruct = wafLibraryInvoker.ObjectDouble(value);
-        return new(ref ddwafObjectStruct);
+        return ddwafObjectStruct;
     }
 
     public static string FormatArgs(object o)
@@ -328,17 +325,17 @@ internal class EncoderLegacy : IEncoder
 
     private class EncodeResult : IEncodeResult
     {
-        private readonly Obj _obj;
         private readonly WafLibraryInvoker _wafLibraryInvoker;
+        private DdwafObjectStruct _resultDdwafObject;
 
-        internal EncodeResult(Obj obj, WafLibraryInvoker wafLibraryInvoker)
+        internal EncodeResult(DdwafObjectStruct obj, WafLibraryInvoker wafLibraryInvoker)
         {
-            _obj = obj;
+            _resultDdwafObject = obj;
             _wafLibraryInvoker = wafLibraryInvoker;
         }
 
-        public ref DdwafObjectStruct ResultDdwafObject => ref _obj.InnerStruct;
+        public ref DdwafObjectStruct ResultDdwafObject => ref _resultDdwafObject;
 
-        public void Dispose() => _obj.DisposeAllChildren(_wafLibraryInvoker);
+        public void Dispose() => _wafLibraryInvoker.ObjectFree(ref _resultDdwafObject);
     }
 }
