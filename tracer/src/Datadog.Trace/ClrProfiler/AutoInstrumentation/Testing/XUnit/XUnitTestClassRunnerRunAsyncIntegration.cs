@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 /// Xunit.Sdk.TestClassRunner`1.RunAsync calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
-    AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
+    AssemblyNames = ["xunit.execution.dotnet", "xunit.execution.desktop"],
     TypeName = "Xunit.Sdk.TestClassRunner`1",
     MethodName = "RunAsync",
     ReturnTypeName = "System.Threading.Tasks.Task`1[Xunit.Sdk.RunSummary]",
@@ -40,9 +40,9 @@ public static class XUnitTestClassRunnerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        var classRunnerInstance = instance.DuckCast<TestClassRunnerStruct>();
         if (TestModule.Current is { } testModule)
         {
+            var classRunnerInstance = instance.DuckCast<TestClassRunnerStruct>();
             return new CallTargetState(null, testModule.InternalGetOrCreateSuite(classRunnerInstance.TestClass.Class.Name ?? string.Empty));
         }
 
@@ -84,7 +84,7 @@ public static class XUnitTestClassRunnerRunAsyncIntegration
     /// <param name="exception">Exception instance in case the original code threw an exception.</param>
     /// <param name="state">Calltarget state value</param>
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
         if (state.State is TestSuite testSuite)
         {

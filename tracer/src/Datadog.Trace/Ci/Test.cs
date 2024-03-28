@@ -79,6 +79,8 @@ public sealed class Test
         }
     }
 
+    internal bool IsClosed => Interlocked.CompareExchange(ref _finished, 0, 0) == 1;
+
     /// <summary>
     /// Gets the test name
     /// </summary>

@@ -18,11 +18,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 /// Xunit.Sdk.TestOutputHelper.QueueTestOutput calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
-    AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
+    AssemblyNames = ["xunit.execution.dotnet", "xunit.execution.desktop"],
     TypeName = "Xunit.Sdk.TestOutputHelper",
     MethodName = "QueueTestOutput",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = new[] { ClrNames.String },
+    ParameterTypeNames = [ClrNames.String],
     MinimumVersion = "2.2.0",
     MaximumVersion = "2.*.*",
     IntegrationName = XUnitIntegration.IntegrationName)]

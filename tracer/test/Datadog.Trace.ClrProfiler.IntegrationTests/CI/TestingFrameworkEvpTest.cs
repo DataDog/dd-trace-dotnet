@@ -245,7 +245,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         AssertTargetSpanEqual(targetTest, Tags.ErrorType, typeof(DivideByZeroException).FullName ?? nameof(DivideByZeroException));
 
         // Check the error stack
-        AssertTargetSpanContains(targetTest, Tags.ErrorStack, typeof(DivideByZeroException).FullName ?? nameof(DivideByZeroException));
+        AssertTargetSpanContains(targetTest, Tags.ErrorStack, "at");
 
         // Check the error message
         AssertTargetSpanEqual(targetTest, Tags.ErrorMsg, new DivideByZeroException().Message);

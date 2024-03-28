@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 /// Xunit.Sdk.TestAssemblyRunner`1.BeforeTestAssemblyFinishedAsync calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
-    AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
+    AssemblyNames = ["xunit.execution.dotnet", "xunit.execution.desktop"],
     TypeName = "Xunit.Sdk.TestAssemblyRunner`1",
     MethodName = "BeforeTestAssemblyFinishedAsync",
     ReturnTypeName = ClrNames.Task,
@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
     MaximumVersion = "2.*.*",
     IntegrationName = XUnitIntegration.IntegrationName)]
 [InstrumentMethod(
-    AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
+    AssemblyNames = ["xunit.execution.dotnet", "xunit.execution.desktop"],
     TypeName = "Xunit.Sdk.TestAssemblyRunner`1",
     MethodName = "BeforeTestAssemblyFinishedAsync",
     ReturnTypeName = ClrNames.Task,

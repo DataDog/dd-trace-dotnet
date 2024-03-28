@@ -1,4 +1,4 @@
-// <copyright file="ITestRunnerSkippable.cs" company="Datadog">
+// <copyright file="ITestRunner.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,7 +6,13 @@
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
-internal interface ITestRunnerSkippable
+internal interface ITestRunner
 {
+    string DisplayName { get; }
+
     string? SkipReason { get; set; }
+
+    object MessageBus { get; set; }
+
+    object RunAsync();
 }

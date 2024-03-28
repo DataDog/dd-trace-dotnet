@@ -271,8 +271,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             switch (targetTest.Meta[TestTags.Name])
                             {
                                 case "SimplePassTest":
-                                case "Test" when !suite.Contains("SetupError"):
-                                case "IsNull" when !suite.Contains("SetupError"):
+                                case "Test" when !suite.Contains("SetupError") && !suite.Contains("TearDownError"):
+                                case "IsNull" when !suite.Contains("SetupError") && !suite.Contains("TearDownError"):
                                     CheckSimpleTestSpan(targetTest);
                                     break;
 
@@ -354,8 +354,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 case "Test03" when suite.Contains("SetupError"):
                                 case "Test04" when suite.Contains("SetupError"):
                                 case "Test05" when suite.Contains("SetupError"):
-                                case "IsNull" when suite.Contains("SetupError"):
-                                    CheckSetupErrorTest(targetTest);
+                                case "IsNull" when suite.Contains("SetupError") || suite.Contains("TearDownError"):
+                                    CheckSetupOrTearDownErrorTest(targetTest);
                                     break;
 
                                 case "UnskippableTest":
@@ -410,7 +410,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 "{\"Category\":[\"ParemeterizedTest\",\"ThirdCase\"]}");
         }
 
-        private void CheckSetupErrorTest(MockCIVisibilityTest targetTest)
+        private void CheckSetupOrTearDownErrorTest(MockCIVisibilityTest targetTest)
         {
             // Check the Test Status
             AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusFail);
@@ -419,10 +419,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             Assert.Equal(1, targetTest.Error);
 
             // Check the error type
-            AssertTargetSpanAnyOf(targetTest, Tags.ErrorType, "SetUpException", "Exception");
+            AssertTargetSpanAnyOf(targetTest, Tags.ErrorType, "SetUpException", "System.Exception", "TearDownException");
 
             // Check the error message
-            AssertTargetSpanEqual(targetTest, Tags.ErrorMsg, "System.Exception : SetUp exception.");
+            AssertTargetSpanAnyOf(targetTest, Tags.ErrorMsg, "SetUp exception.", "TearDown exception.");
 
             // Remove the stacktrace
             targetTest.Meta.Remove(Tags.ErrorStack);
