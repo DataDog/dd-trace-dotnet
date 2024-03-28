@@ -378,3 +378,7 @@ cmake-build-debug/
 
 #jetbrains cache folder
 .cache/jb
+
+#debugger test artifacts
+tracer/test/test-applications/debugger/Samples.Probes/probes_definition.json
+
