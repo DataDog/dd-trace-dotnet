@@ -212,7 +212,7 @@ namespace Datadog.Trace.Activity
                 _ => SpanKinds.Internal,
             };
 
-        internal static void SetTagObject(Span span, string key, object? value)
+        internal static void SetTagObject(Span span, string key, object? value, bool allowUnrolling = true)
         {
             if (value is null)
             {
@@ -222,7 +222,7 @@ namespace Datadog.Trace.Activity
 
             switch (value)
             {
-                case char c: // TODO: Can't get here from OTEL API, test with Activity API
+                case char c:
                     AgentSetOtlpTag(span, key, c.ToString());
                     break;
                 case string s:
@@ -231,38 +231,59 @@ namespace Datadog.Trace.Activity
                 case bool b:
                     AgentSetOtlpTag(span, key, b ? "true" : "false");
                     break;
-                case byte b: // TODO: Can't get here from OTEL API, test with Activity API
+                case byte b:
                     span.SetMetric(key, b);
                     break;
-                case sbyte sb: // TODO: Can't get here from OTEL API, test with Activity API
+                case sbyte sb:
                     span.SetMetric(key, sb);
                     break;
-                case short sh: // TODO: Can't get here from OTEL API, test with Activity API
+                case short sh:
                     span.SetMetric(key, sh);
                     break;
-                case ushort us: // TODO: Can't get here from OTEL API, test with Activity API
+                case ushort us:
                     span.SetMetric(key, us);
                     break;
-                case int i: // TODO: Can't get here from OTEL API, test with Activity API
+                case int i:
                     span.SetMetric(key, i);
                     break;
-                case uint ui: // TODO: Can't get here from OTEL API, test with Activity API
+                case uint ui:
                     span.SetMetric(key, ui);
                     break;
-                case long l: // TODO: Can't get here from OTEL API, test with Activity API
+                case long l:
                     span.SetMetric(key, l);
                     break;
-                case ulong ul: // TODO: Can't get here from OTEL API, test with Activity API
+                case ulong ul:
                     span.SetMetric(key, ul);
                     break;
-                case float f: // TODO: Can't get here from OTEL API, test with Activity API
+                case float f:
                     span.SetMetric(key, f);
                     break;
                 case double d:
                     span.SetMetric(key, d);
                     break;
                 case IEnumerable enumerable:
-                    AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(enumerable));
+                    if (allowUnrolling)
+                    {
+                        var index = 0;
+                        foreach (var element in (enumerable))
+                        {
+                            // we are only supporting a single level of unrolling
+                            SetTagObject(span, $"{key}.{index}", element, allowUnrolling: false);
+                            index++;
+                        }
+
+                        if (index == 0)
+                        {
+                            // indicates that it was an empty array, we need to add the tag
+                            AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(value));
+                        }
+                    }
+                    else
+                    {
+                        // we've already unrolled once, don't do it again for IEnumerable values
+                        AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(value));
+                    }
+
                     break;
                 default:
                     AgentSetOtlpTag(span, key, value.ToString());
