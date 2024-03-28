@@ -12,6 +12,7 @@ using System.IO;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Iast.Helpers;
 using Datadog.Trace.Logging;
 
@@ -48,7 +49,7 @@ public class PipeExtensionsReadSingleMessageAsyncIntegration
     {
         try
         {
-            TaintVisitor.Visit(returnValue, 10, 1000);
+            TaintVisitor.Visit(returnValue, SourceType.GrpcRequestBody, 10, 1000);
         }
         catch (Exception ex)
         {

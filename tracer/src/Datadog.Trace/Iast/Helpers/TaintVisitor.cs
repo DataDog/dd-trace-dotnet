@@ -15,16 +15,19 @@ internal class TaintVisitor
     private readonly HashSet<object> _visited = new();
     private readonly int _maxDepth;
     private readonly int _maxVisitedObjects;
+
+    private readonly SourceType _sourceType;
     private readonly TaintedObjects _taintedObjects;
 
-    private TaintVisitor(int maxDepth, int maxVisitedObjects, TaintedObjects taintedObjects)
+    private TaintVisitor(int maxDepth, int maxVisitedObjects, TaintedObjects taintedObjects, SourceType sourceType)
     {
         _maxDepth = maxDepth;
         _maxVisitedObjects = maxVisitedObjects;
         _taintedObjects = taintedObjects;
+        _sourceType = sourceType;
     }
 
-    public static void Visit(object? obj, int maxDepth, int maxVisitedObjects)
+    public static void Visit(object? obj, SourceType sourceType, int maxDepth, int maxVisitedObjects)
     {
         var taintedObjects = IastModule.GetIastContext()?.GetTaintedObjects();
         if (taintedObjects == null)
@@ -32,7 +35,7 @@ internal class TaintVisitor
             return;
         }
 
-        new TaintVisitor(maxDepth, maxVisitedObjects, taintedObjects).Visit(obj);
+        new TaintVisitor(maxDepth, maxVisitedObjects, taintedObjects, sourceType).Visit(obj);
     }
 
     private void Visit(object? obj, int currentDepth = 0)
@@ -52,14 +55,14 @@ internal class TaintVisitor
 
         if (type == typeof(string))
         {
-            Taint(obj);
+            Taint(obj, obj, _sourceType);
         }
 
         foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
             if (property.PropertyType == typeof(string))
             {
-                Taint(property.GetValue(obj));
+                Taint(property.Name, property.GetValue(obj), _sourceType);
             }
             else if (!property.PropertyType.IsPrimitive)
             {
@@ -68,13 +71,13 @@ internal class TaintVisitor
         }
     }
 
-    private void Taint(object? value)
+    private void Taint(object? name, object? value, SourceType sourceType)
     {
-        if (value is not string valueStr)
+        if (name is not string nameStr || value is not string valueStr)
         {
             return;
         }
 
-        _taintedObjects.TaintInputString(valueStr, new Source(SourceType.RequestBody, valueStr, valueStr));
+        _taintedObjects.TaintInputString(valueStr, new Source(sourceType, nameStr, valueStr));
     }
 }
