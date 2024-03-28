@@ -24,6 +24,7 @@ class IRuntimeIdStore;
 class IConfiguration;
 class ISampledAllocationsListener;
 class SampleValueTypeProvider;
+class CallstackPool;
 
 class LiveObjectsProvider : public IService,
                             public IBatchedSamplesProvider,

@@ -12,6 +12,7 @@
 #include "StackFramesCollectorBase.h"
 #include <winternl.h>
 
+class CallstackPool;
 class StackSnapshotResultReusableBuffer;
 struct ManagedThreadInfo;
 class IManagedThreadList;
@@ -23,7 +24,7 @@ class Windows64BitStackFramesCollector : public StackFramesCollectorBase
     // ----------- 64 bit specific implementation: -----------
 
 public:
-    explicit Windows64BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, IConfiguration const* configuration);
+    explicit Windows64BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, IConfiguration const* configuration, CallstackPool* callstackPool);
     ~Windows64BitStackFramesCollector() override;
 
     bool SuspendTargetThreadImplementation(ManagedThreadInfo* pThreadInfo,
@@ -51,8 +52,8 @@ private:
     // (This collector is not meant for 32 bit builds. Use the 32 bit collector instead.)
 
 public:
-    Windows64BitStackFramesCollector(ICorProfilerInfo4* const _, IConfiguration const* configuration) :
-        StackFramesCollectorBase(configuration)
+    Windows64BitStackFramesCollector(ICorProfilerInfo4* const _, IConfiguration const* configuration, CallstackPool* callstackPool) :
+        StackFramesCollectorBase(configuration, callstackPool)
     {
         Log::Error("Windows64BitStackFramesCollector used in a 32 bit build."
                    " This was not intended. Use Windows32BitStackFramesCollector instead.");

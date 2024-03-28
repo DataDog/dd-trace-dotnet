@@ -121,7 +121,7 @@ public:
     // with std::shared_ptr<Sample> as out parameter (avoid alloc/dealloc and add up overhead)
     std::shared_ptr<Sample> TransformRawSample(const TRawSample& rawSample)
     {
-        auto sample = std::make_shared<Sample>(0, std::string_view(), rawSample.Stack.size());
+        auto sample = std::make_shared<Sample>(0, std::string_view(), rawSample.Stack.Size());
 
         TransformRawSample(rawSample, sample);
 
@@ -216,7 +216,7 @@ private:
                 (rawSample.LocalRootSpanId == 0) &&
                 (rawSample.SpanId == 0) &&
                 (rawSample.AppDomainId == 0) &&
-                (rawSample.Stack.size() == 0))
+                (rawSample.Stack.Size() == 0))
             {
                 sample->SetThreadId("GC");
                 sample->SetThreadName("CLR thread (garbage collector)");

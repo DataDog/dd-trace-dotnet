@@ -4,9 +4,11 @@
 #include <string>
 #include <vector>
 
+
 #include "GarbageCollection.h"
 #include "IConfiguration.h"
 #include "LiveObjectsProvider.h"
+#include "CallstackPool.h"
 #include "OpSysTools.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
@@ -47,7 +49,8 @@ LiveObjectsProvider::LiveObjectsProvider(
         pRuntimeIdStore,
         pConfiguration,
         nullptr,
-        metricsRegistry);
+        metricsRegistry,
+        nullptr); // safe to pass nullptr for the pool. This provider does not collect callstack
 }
 
 const char* LiveObjectsProvider::GetName()

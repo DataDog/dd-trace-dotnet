@@ -191,7 +191,7 @@ TEST(LinkedListTest, ObjectDtorCalled)
 
 TEST(LinkedListTest, CannotAllocate)
 {
-    class null_memory_resource : public pmr::memory_resource
+    class null_memory_resource : public shared::pmr::memory_resource
     {
     private:
         void* do_allocate(size_t _Bytes, size_t _Align) override

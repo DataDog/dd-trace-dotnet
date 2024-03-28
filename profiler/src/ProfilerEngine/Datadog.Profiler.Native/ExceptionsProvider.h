@@ -17,6 +17,9 @@
 #include "CounterMetric.h"
 #include "IUpscaleProvider.h"
 
+#include <memory>
+
+class CallstackPool;
 class IConfiguration;
 class SampleValueTypeProvider;
 
@@ -34,7 +37,8 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        CallstackPool* pool);
 
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID thrownObjectId);
@@ -71,4 +75,5 @@ private:
     IConfiguration const* const _pConfiguration;
     std::shared_ptr<CounterMetric> _exceptionsCountMetric;
     std::shared_ptr<CounterMetric> _sampledExceptionsCountMetric;
+    CallstackPool* _callstackPool;
 };

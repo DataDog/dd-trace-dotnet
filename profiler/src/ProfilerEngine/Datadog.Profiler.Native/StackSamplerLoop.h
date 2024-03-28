@@ -112,7 +112,7 @@ private:
     static void UpdateSnapshotInfos(StackSnapshotResultBuffer* pStackSnapshotResult, int64_t representedDurationNanosecs, time_t currentUnixTimestamp);
     void UpdateStatistics(HRESULT hrCollectStack, std::size_t countCollectedStackFrames);
     static time_t GetCurrentTimestamp();
-    void PersistStackSnapshotResults(StackSnapshotResultBuffer const* pSnapshotResult,
+    void PersistStackSnapshotResults(StackSnapshotResultBuffer* pSnapshotResult,
                                      std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
                                      PROFILING_TYPE profilingType);
 };

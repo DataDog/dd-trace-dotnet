@@ -235,6 +235,9 @@
   <ItemGroup>
     <ClInclude Include="AdaptiveSampler.h" />
     <ClInclude Include="AllocationsRecorder.h" />
+    <ClInclude Include="Callstack.h" />
+    <ClInclude Include="CallstackPool.h" />
+    <ClInclude Include="CallstackPoolManager.h" />
     <ClInclude Include="CounterMetric.h" />
     <ClInclude Include="DebugInfoStore.h" />
     <ClInclude Include="EnabledProfilers.h" />
@@ -245,6 +248,7 @@
     <ClInclude Include="EventPipeEventsManager.h" />
     <ClInclude Include="ExporterBuilder.h" />
     <ClInclude Include="FileHelper.h" />
+    <ClInclude Include="FixedSizeAllocator.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
     <ClInclude Include="LinkedList.hpp" />
     <ClInclude Include="RawSamples.hpp" />
@@ -369,6 +373,9 @@
     <ClCompile Include="AllocationsRecorder.cpp" />
     <ClCompile Include="AppDomainStore.cpp" />
     <ClCompile Include="ApplicationStore.cpp" />
+    <ClCompile Include="Callstack.cpp" />
+    <ClCompile Include="CallstackPool.cpp" />
+    <ClCompile Include="CallstackPoolManager.cpp" />
     <ClCompile Include="ClrEventsParser.cpp" />
     <ClCompile Include="cgroup.cpp" />
     <ClCompile Include="ClrLifetime.cpp" />
@@ -384,6 +391,7 @@
     <ClCompile Include="EventPipeEventsManager.cpp" />
     <ClCompile Include="ExporterBuilder.cpp" />
     <ClCompile Include="FileHelper.cpp" />
+    <ClCompile Include="FixedSizeAllocator.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />

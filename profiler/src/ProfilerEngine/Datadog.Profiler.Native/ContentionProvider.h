@@ -15,6 +15,9 @@
 #include "MetricsRegistry.h"
 #include "RawContentionSample.h"
 
+#include <memory>
+
+class CallstackPool;
 class IConfiguration;
 class IManagedThreadList;
 class IFrameStore;
@@ -39,7 +42,8 @@ public:
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        CallstackPool* pool);
 
     // IContentionListener implementation
     void OnContention(double contentionDurationNs) override;
@@ -67,4 +71,6 @@ private:
     std::shared_ptr<CounterMetric> _sampledLockContentionsCountMetric;
     std::shared_ptr<MeanMaxMetric> _sampledLockContentionsDurationMetric;
     std::mutex _contentionsLock;
+
+    CallstackPool* _callstackPool;
 };

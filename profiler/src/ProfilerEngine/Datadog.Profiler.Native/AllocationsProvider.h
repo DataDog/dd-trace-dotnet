@@ -12,6 +12,9 @@
 #include "RawAllocationSample.h"
 #include "SumMetric.h"
 
+#include <memory>
+
+class CallstackPool;
 class IConfiguration;
 class IManagedThreadList;
 class IFrameStore;
@@ -38,7 +41,8 @@ public:
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
         ISampledAllocationsListener* pListener,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        CallstackPool* pool);
 
     AllocationsProvider(
         std::vector<SampleValueTypeProvider::Offset> valueTypeProvider,
@@ -50,7 +54,8 @@ public:
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
         ISampledAllocationsListener* pListener,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        CallstackPool* pool);
 
     void OnAllocation(uint32_t allocationKind,
                       ClassID classId,
@@ -75,4 +80,5 @@ private:
     std::shared_ptr<CounterMetric> _sampledAllocationsCountMetric;
     std::shared_ptr<MeanMaxMetric> _sampledAllocationsSizeMetric;
     std::shared_ptr<SumMetric> _totalAllocationsSizeMetric;
+    CallstackPool* _callstackPool;
 };

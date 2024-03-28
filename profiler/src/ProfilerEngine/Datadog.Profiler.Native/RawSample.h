@@ -9,6 +9,8 @@
 
 #include "cor.h"
 #include "corprof.h"
+
+#include "Callstack.h"
 #include "IThreadInfo.h"
 #include "SampleValueTypeProvider.h"
 
@@ -37,5 +39,5 @@ public:
     std::shared_ptr<IThreadInfo> ThreadInfo;
 
     // array of instruction pointers (32 or 64 bit address)
-    std::vector<std::uintptr_t> Stack;
+    Callstack Stack;
 };

@@ -26,7 +26,6 @@ typedef std::vector<Label> Labels;
 typedef std::pair<std::string_view, int64_t> NumericLabel;
 typedef std::pair<std::string_view, uint64_t> SpanLabel;
 typedef std::vector<NumericLabel> NumericLabels;
-typedef std::vector<FrameInfoView> CallStack;
 
 class Sample
 {
@@ -49,7 +48,7 @@ private:
 public:
     uint64_t GetTimeStamp() const;
     const Values& GetValues() const;
-    const CallStack& GetCallstack() const;
+    const std::vector<FrameInfoView>& GetCallstack() const;
     const Labels& GetLabels() const;
     const NumericLabels& GetNumericLabels() const;
     std::string_view GetRuntimeId() const;
@@ -174,7 +173,7 @@ public:
 
 private:
     uint64_t _timestamp;
-    CallStack _callstack;
+    std::vector<FrameInfoView> _callstack;
     Values _values;
     Labels _labels;
     NumericLabels _numericLabels;

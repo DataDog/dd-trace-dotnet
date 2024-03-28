@@ -31,6 +31,7 @@
 #include "EnabledProfilers.h"
 #include "EnvironmentVariables.h"
 #include "ExceptionsProvider.h"
+#include "CallstackPoolManager.h"
 #include "FrameStore.h"
 #include "GCThreadsCpuProvider.h"
 #include "IMetricsSender.h"
@@ -179,7 +180,8 @@ bool CorProfilerCallback::InitializeServices()
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
             pRuntimeIdStore,
-            _metricsRegistry);
+            _metricsRegistry,
+            CallstackPoolManager::GetDefault());
     }
 
     // _pCorProfilerInfoEvents must have been set for any .NET 5+ CLR events-based profiler to work
@@ -211,7 +213,8 @@ bool CorProfilerCallback::InitializeServices()
                     pRuntimeIdStore,
                     _pConfiguration.get(),
                     _pLiveObjectsProvider,
-                    _metricsRegistry
+                    _metricsRegistry,
+                    CallstackPoolManager::GetDefault()
                     );
 
                 if (!_pConfiguration->IsAllocationProfilingEnabled())
@@ -238,7 +241,8 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 nullptr, // no listener
-                _metricsRegistry
+                _metricsRegistry,
+                CallstackPoolManager::GetDefault()
                 );
         }
 
@@ -253,7 +257,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
                 _pConfiguration.get(),
-                _metricsRegistry
+                _metricsRegistry,
+                CallstackPoolManager::GetDefault()
                 );
         }
 
@@ -316,7 +321,8 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 nullptr, // no listener
-                _metricsRegistry);
+                _metricsRegistry,
+                CallstackPoolManager::GetDefault());
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
@@ -330,7 +336,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
                 _pConfiguration.get(),
-                _metricsRegistry);
+                _metricsRegistry,
+                CallstackPoolManager::GetDefault());
         }
 
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
@@ -408,6 +415,8 @@ bool CorProfilerCallback::InitializeServices()
     auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
+    _callstackAllocator = std::make_unique<FixedSizeAllocator>(Callstack::MaxSize, 500);
+    auto* pool = _callstackPoolManager->Get(_callstackAllocator.get());
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
         _pConfiguration.get(),
@@ -418,7 +427,8 @@ bool CorProfilerCallback::InitializeServices()
         _pCodeHotspotsThreadList,
         _pWallTimeProvider,
         _pCpuTimeProvider,
-        _metricsRegistry);
+        _metricsRegistry,
+        pool);
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 
@@ -977,6 +987,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     _pMetadataProvider = std::make_unique<MetadataProvider>();
     _pMetadataProvider->Initialize();
     PrintEnvironmentVariables();
+
+    _callstackPoolManager = std::make_unique<CallstackPoolManager>();
 
     double coresThreshold = _pConfiguration->MinimumCores();
     double cpuLimit = 0;
