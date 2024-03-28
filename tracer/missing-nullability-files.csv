@@ -76,7 +76,6 @@ src/Datadog.Trace/AppSec/IEvent.cs
 src/Datadog.Trace/AppSec/SecurityConstants.cs
 src/Datadog.Trace/AppSec/SpanExtensions.cs
 src/Datadog.Trace/AspNet/MimeTypes.cs
-src/Datadog.Trace/AspNet/SharedItems.cs
 src/Datadog.Trace/AspNet/TracingHttpModule.cs
 src/Datadog.Trace/Ci/CITracerManager.cs
 src/Datadog.Trace/Ci/CITracerManagerFactory.cs
@@ -500,7 +499,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AspNetMvcIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AspNetWebApi2Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AsyncControllerActionInvoker_BeginInvokeAction_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AsyncControllerActionInvoker_EndInvokeAction_Integration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ControllerActionInvoker_InvokeAction_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ControllerContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ExceptionHandlerExtensions_HandleAsync_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpConfigurationStruct.cs
@@ -521,7 +519,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/IRequestHeaders.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/IThreadContext.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/OwinContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/OwinRequestStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ReflectedHttpActionDescriptor_ExecuteAsync_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/RequestContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ViewContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/AspNetCoreBlockMiddlewareIntegrationEnd.cs
