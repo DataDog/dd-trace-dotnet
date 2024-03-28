@@ -32,6 +32,7 @@ namespace Datadog.Trace
             Keys.RawSpanId,
             Keys.PropagatedTags,
             Keys.AdditionalW3CTraceState,
+            Keys.LastParentId,
 
             // For mismatch version support we need to keep supporting old keys.
             HttpHeaderNames.TraceId,
@@ -70,6 +71,7 @@ namespace Datadog.Trace
             // - samplingPriority: SamplingPriority? => int?
             SpanId = spanId;
             SamplingPriority = (int?)samplingPriority;
+            IsRemote = true;
         }
 
         /// <summary>
@@ -88,6 +90,7 @@ namespace Datadog.Trace
             SpanId = spanId;
             SamplingPriority = samplingPriority;
             Origin = origin;
+            IsRemote = true;
         }
 
         /// <summary>
@@ -110,6 +113,7 @@ namespace Datadog.Trace
             Origin = origin;
             _rawTraceId = rawTraceId;
             _rawSpanId = rawSpanId;
+            IsRemote = true;
         }
 
         /// <summary>
@@ -255,6 +259,17 @@ namespace Datadog.Trace
         /// </summary>
         internal string AdditionalW3CTraceState { get; set; }
 
+        /// <summary>
+        /// Gets or sets the last span ID of the most recently seen Datadog span that will be propagated downstream
+        /// to allow for the re-parenting of spans in cases where spans in distributed traces have missing spans.
+        /// </summary>
+        internal string LastParentId { get; set; }
+
+        /// <summary>
+        ///  Gets a value indicating whether this <see cref="SpanContext"/> was propagated from a remote parent.
+        /// </summary>
+        internal bool IsRemote { get; private set; }
+
         internal PathwayContext? PathwayContext { get; private set; }
 
         /// <inheritdoc/>
@@ -372,6 +387,10 @@ namespace Datadog.Trace
                     value = TraceContext?.AdditionalW3CTraceState ?? AdditionalW3CTraceState;
                     return true;
 
+                case Keys.LastParentId:
+                    value = LastParentId;
+                    return true;
+
                 default:
                     value = null;
                     return false;
@@ -381,17 +400,17 @@ namespace Datadog.Trace
         private static TraceId GetTraceId(ISpanContext context, TraceId fallback)
         {
             return context switch
-                   {
-                       // if there is no context or it has a zero trace id,
-                       // use the specified fallback value
-                       null or { TraceId: 0 } => fallback,
+            {
+                // if there is no context or it has a zero trace id,
+                // use the specified fallback value
+                null or { TraceId: 0 } => fallback,
 
-                       // use the 128-bit trace id from SpanContext if possible
-                       SpanContext sc => sc.TraceId128,
+                // use the 128-bit trace id from SpanContext if possible
+                SpanContext sc => sc.TraceId128,
 
-                       // otherwise use the 64-bit trace id from ISpanContext
-                       _ => (TraceId)context.TraceId
-                   };
+                // otherwise use the 64-bit trace id from ISpanContext
+                _ => (TraceId)context.TraceId
+            };
         }
 
         [return: MaybeNull]
@@ -470,6 +489,7 @@ namespace Datadog.Trace
             public const string RawSpanId = $"{Prefix}RawSpanId";
             public const string PropagatedTags = $"{Prefix}PropagatedTags";
             public const string AdditionalW3CTraceState = $"{Prefix}AdditionalW3CTraceState";
+            public const string LastParentId = $"{Prefix}LastParentId";
         }
     }
 }

@@ -58,6 +58,7 @@ namespace Datadog.Trace.Tests
                                    "__DistributedKey-RawSpanId",
                                    "__DistributedKey-PropagatedTags",
                                    "__DistributedKey-AdditionalW3CTraceState",
+                                   "__DistributedKey-LastParentId",
                                    "x-datadog-trace-id",
                                    "x-datadog-parent-id",
                                    "x-datadog-sampling-priority",
@@ -88,6 +89,7 @@ namespace Datadog.Trace.Tests
                                      "2b",
                                      "_dd.p.key1=value1,_dd.p.key2=value2",
                                      "key3=value3,key4=value4",
+                                     "0123456789abcdef",
                                  };
 
             var context = CreateSpanContext();
@@ -111,6 +113,8 @@ namespace Datadog.Trace.Tests
                                     new("__DistributedKey-RawSpanId", "2b"),
                                     new("__DistributedKey-PropagatedTags", "_dd.p.key1=value1,_dd.p.key2=value2"),
                                     new("__DistributedKey-AdditionalW3CTraceState", "key3=value3,key4=value4"),
+                                    new("__DistributedKey-LastParentId", "0123456789abcdef"),
+
                                     new("x-datadog-trace-id", "1"),
                                     new("x-datadog-parent-id", "2"),
                                     new("x-datadog-sampling-priority", "-1"),
@@ -137,6 +141,7 @@ namespace Datadog.Trace.Tests
             const int samplingPriority = SamplingPriorityValues.UserReject;
             const string origin = "origin";
             const string additionalW3CTraceState = "key3=value3,key4=value4";
+            const string lastParentId = "0123456789abcdef";
 
             var propagatedTags = new TraceTagCollection();
             propagatedTags.SetTag("_dd.p.key1", "value1");
@@ -154,7 +159,10 @@ namespace Datadog.Trace.Tests
                 traceId,
                 spanId,
                 rawTraceId,
-                rawSpanId);
+                rawSpanId)
+            {
+                LastParentId = lastParentId
+            };
         }
     }
 }
