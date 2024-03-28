@@ -206,6 +206,7 @@ public:
     IStackSamplerLoopManager* GetStackSamplerLoopManager() { return _pStackSamplerLoopManager; }
     IApplicationStore* GetApplicationStore() { return _pApplicationStore; }
     IExporter* GetExporter() { return _pExporter.get(); }
+    SamplesCollector* GetSamplesCollector() { return _pSamplesCollector; }
 
 private :
     static CorProfilerCallback* _this;
