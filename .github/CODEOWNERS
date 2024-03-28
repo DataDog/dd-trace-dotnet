@@ -17,6 +17,7 @@ missing-nullability-files.csv             @DataDog/apm-dotnet
 # CI
 /tracer/src/Datadog.Trace/Ci/             @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/CI/   @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace/PDBs/MethodSymbolResolver.cs        @DataDog/ci-app-libraries-dotnet
 
 # ASM
 /tracer/src/Datadog.Trace/AppSec/         @DataDog/asm-dotnet
@@ -41,7 +42,7 @@ AspectsDefinitions.g.cs 				@DataDog/asm-dotnet
 # Debugger
 /tracer/src/Datadog.Trace/Debugger/        @DataDog/debugger-dotnet
 /tracer/test/Datadog.Trace.Tests/Debugger/ @DataDog/debugger-dotnet
-/tracer/src/Datadog.Trace/PDBs/            @DataDog/debugger-dotnet @DataDog/ci-app-libraries-dotnet
+/tracer/src/Datadog.Trace/PDBs/            @DataDog/debugger-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Debugger/ @DataDog/debugger-dotnet
 /tracer/test/test-applications/debugger/   @DataDog/debugger-dotnet
 debugger_*.cpp                             @DataDog/debugger-dotnet
