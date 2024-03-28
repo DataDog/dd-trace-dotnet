@@ -6,8 +6,6 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Sampling
 {
@@ -25,7 +23,7 @@ namespace Datadog.Trace.Sampling
 
         // if there are no rules, this normally means we haven't sent any payloads to the Agent yet (aka cold start), so the mechanism is "Default".
         // if there are rules, there should always be at least one match (the fallback "service:,env:") and the mechanism is "AgentRate".
-        public int SamplingMechanism => _sampleRates.Count == 0 && _defaultSamplingRate == null ?
+        public string SamplingMechanism => _sampleRates.Count == 0 && _defaultSamplingRate == null ?
                                             Datadog.Trace.Sampling.SamplingMechanism.Default :
                                             Datadog.Trace.Sampling.SamplingMechanism.AgentRate;
 
@@ -41,47 +39,32 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
-            Log.Debug("Using the default sampling logic");
-            float defaultRate;
-
-            if (_sampleRates.Count == 0)
+            if (_sampleRates.Count > 0)
             {
-                // either we don't have sampling rate from the agent yet (cold start),
-                // or the only rate we received is for "service:,env:", which is not added to _sampleRates
-                defaultRate = _defaultSamplingRate ?? 1;
-                SetSamplingAgentDecision(span, defaultRate); // Keep it to ease investigations
-                return defaultRate;
+                var service = span.ServiceName;
+                var env = span.Context.TraceContext.Environment;
+                var key = new SampleRateKey(service, env);
+
+                if (_sampleRates.TryGetValue(key, out var sampleRate))
+                {
+                    Log.Debug("Using agent sampling rate {Rate} for trace {TraceId} after matching \"service:{Service},env:{Env}\".", sampleRate, span.TraceId128, service, env);
+                    SetSamplingAgentDecision(span, sampleRate, SamplingMechanism);
+                    return sampleRate;
+                }
             }
 
-            var env = span.Context.TraceContext.Environment;
-            var service = span.ServiceName;
+            var defaultRate = _defaultSamplingRate ?? 1;
 
-            var key = new SampleRateKey(service, env);
-
-            if (_sampleRates.TryGetValue(key, out var sampleRate))
-            {
-                SetSamplingAgentDecision(span, sampleRate);
-                return sampleRate;
-            }
-
-            if (Log.IsEnabled(LogEventLevel.Debug))
-            {
-                Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {Rate}", span.Context.RawTraceId, _defaultSamplingRate);
-            }
-
-            defaultRate = _defaultSamplingRate ?? 1;
-            SetSamplingAgentDecision(span, defaultRate);
+            Log.Debug("Using default agent sampling rate {Rate} for trace {TraceId}.", defaultRate, span.TraceId128);
+            SetSamplingAgentDecision(span, defaultRate, SamplingMechanism);
             return defaultRate;
 
-            static void SetSamplingAgentDecision(Span span, float sampleRate)
+            static void SetSamplingAgentDecision(Span span, float sampleRate, string mechanism)
             {
-                if (span.Tags is CommonTags commonTags)
+                if (span.Context.TraceContext is not null)
                 {
-                    commonTags.SamplingAgentDecision = sampleRate;
-                }
-                else
-                {
-                    span.SetMetric(Metrics.SamplingAgentDecision, sampleRate);
+                    span.Context.TraceContext.InitialSamplingRate ??= sampleRate;
+                    span.Context.TraceContext.InitialSamplingMechanism ??= mechanism;
                 }
             }
         }
@@ -124,8 +107,8 @@ namespace Datadog.Trace.Sampling
 
         private readonly struct SampleRateKey : IEquatable<SampleRateKey>
         {
-            private static readonly char[] PartSeparator = new[] { ',' };
-            private static readonly char[] ValueSeparator = new[] { ':' };
+            private static readonly char[] PartSeparator = [','];
+            private static readonly char[] ValueSeparator = [':'];
 
             private readonly string _service;
             private readonly string _env;
@@ -149,14 +132,14 @@ namespace Datadog.Trace.Sampling
 
                 var serviceParts = parts[0].Split(ValueSeparator, 2);
 
-                if (serviceParts.Length != 2)
+                if (serviceParts.Length != 2 || serviceParts[0] != "service")
                 {
                     return null;
                 }
 
                 var envParts = parts[1].Split(ValueSeparator, 2);
 
-                if (envParts.Length != 2)
+                if (envParts.Length != 2 || envParts[0] != "env")
                 {
                     return null;
                 }

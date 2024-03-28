@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
@@ -81,7 +80,6 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the collection of trace-level tags.
         /// </summary>
-        [NotNull]
         public TraceTagCollection Tags { get; }
 
         /// <summary>
@@ -97,6 +95,10 @@ namespace Datadog.Trace
         public string? ServiceVersion { get; set; }
 
         public string? Origin { get; set; }
+
+        public double? InitialSamplingRate { get; set; }
+
+        public string? InitialSamplingMechanism { get; set; }
 
         /// <summary>
         /// Gets or sets additional key/value pairs from upstream "tracestate" header that we will propagate downstream.
@@ -243,7 +245,7 @@ namespace Datadog.Trace
             SetSamplingPriority(decision.Priority, decision.Mechanism, notifyDistributedTracer);
         }
 
-        public void SetSamplingPriority(int? priority, int? mechanism = null, bool notifyDistributedTracer = true)
+        public void SetSamplingPriority(int? priority, string? mechanism = null, bool notifyDistributedTracer = true)
         {
             if (priority == null)
             {
@@ -251,17 +253,16 @@ namespace Datadog.Trace
             }
 
             _samplingPriority = priority;
-
-            const string tagName = Trace.Tags.Propagated.DecisionMaker;
+            InitialSamplingMechanism = mechanism;
 
             if (priority > 0 && mechanism != null)
             {
-                Tags.TryAddTag(tagName, SamplingMechanism.GetTagValue(mechanism.Value));
+                Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, mechanism);
             }
             else if (priority <= 0)
             {
                 // remove tag if priority is AUTO_DROP (0) or USER_DROP (-1)
-                Tags.RemoveTag(tagName);
+                Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
             }
 
             if (notifyDistributedTracer)

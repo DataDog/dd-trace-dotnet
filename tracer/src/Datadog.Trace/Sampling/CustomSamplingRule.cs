@@ -55,7 +55,7 @@ namespace Datadog.Trace.Sampling
 
         public string RuleName { get; }
 
-        public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.TraceSamplingRule;
+        public string SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.TraceSamplingRule;
 
         /// <summary>
         /// Gets or sets the priority of the rule.
@@ -129,7 +129,14 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
-            span.SetMetric(Metrics.SamplingRuleDecision, _samplingRate);
+            Log.Debug("Using the sampling rate {Rate} from custom sampling rule for trace {TraceId}", _samplingRate, span.TraceId128);
+
+            if (span.Context.TraceContext is not null)
+            {
+                span.Context.TraceContext.InitialSamplingRate ??= _samplingRate;
+                span.Context.TraceContext.InitialSamplingMechanism ??= SamplingMechanism;
+            }
+
             return _samplingRate;
         }
 

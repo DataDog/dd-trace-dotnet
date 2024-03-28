@@ -25,7 +25,7 @@ namespace Datadog.Trace.Sampling
         /// </summary>
         public int Priority => 0;
 
-        public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.TraceSamplingRule;
+        public string SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.TraceSamplingRule;
 
         public bool IsMatch(Span span)
         {
@@ -34,8 +34,14 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
-            Log.Debug("Using the global sampling rate: {Rate}", _globalRate);
-            span.SetMetric(Metrics.SamplingRuleDecision, _globalRate);
+            Log.Debug("Using the global sampling rate {Rate} for trace {TraceId}", _globalRate, span.TraceId128);
+
+            if (span.Context.TraceContext is not null)
+            {
+                span.Context.TraceContext.InitialSamplingRate ??= _globalRate;
+                span.Context.TraceContext.InitialSamplingMechanism ??= SamplingMechanism;
+            }
+
             return _globalRate;
         }
     }

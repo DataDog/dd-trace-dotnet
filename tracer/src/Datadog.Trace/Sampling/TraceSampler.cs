@@ -81,7 +81,7 @@ namespace Datadog.Trace.Sampling
             _rules.Add(rule);
         }
 
-        private SamplingDecision MakeSamplingDecision(Span span, float rate, int mechanism)
+        private SamplingDecision MakeSamplingDecision(Span span, float rate, string mechanism)
         {
             // make a sampling decision as a function of traceId and sampling rate.
             var sample = SamplingHelpers.SampleByRate(span.TraceId128, rate);

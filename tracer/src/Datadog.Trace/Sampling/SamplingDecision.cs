@@ -18,15 +18,15 @@ internal readonly struct SamplingDecision
 
     public readonly int Priority;
 
-    public readonly int? Mechanism;
+    public readonly string Mechanism;
 
-    public SamplingDecision(int priority, int? mechanism)
+    public SamplingDecision(int priority, string mechanism)
     {
         Priority = priority;
         Mechanism = mechanism;
     }
 
-    public void Deconstruct(out int priority, out int? mechanism)
+    public void Deconstruct(out int priority, out string mechanism)
     {
         priority = Priority;
         mechanism = Mechanism;
