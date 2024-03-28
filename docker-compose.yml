@@ -377,7 +377,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
+    command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests --RunTestsWithTracerOnly ${runTestsWithTracerOnly:-false}
     volumes:
       - ./:/project
     cap_add:
