@@ -9,22 +9,38 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "AsyncVoid",
-                "value": "AsyncVoid"
+                "type": "AsyncMethodWithNotHoistedLocals",
+                "value": "AsyncMethodWithNotHoistedLocals"
+              },
+              "value": {
+                "type": "String",
+                "value": "RunAsync"
               }
             }
           },
           "return": {
             "arguments": {
               "this": {
-                "type": "AsyncVoid",
-                "value": "AsyncVoid"
+                "type": "AsyncMethodWithNotHoistedLocals",
+                "value": "AsyncMethodWithNotHoistedLocals"
+              },
+              "value": {
+                "type": "String",
+                "value": "RunAsync"
               }
             },
             "locals": {
-              "e": {
+              "@return": {
+                "type": "Int32",
+                "value": "8"
+              },
+              "otherValue": {
                 "notCapturedReason": "The value of this variable in not available in the specified probe location. Place a line probe closer to where the variable was assigned or used to obtain its value.",
-                "type": "AccessViolationException"
+                "type": "String"
+              },
+              "result": {
+                "notCapturedReason": "The value of this variable in not available in the specified probe location. Place a line probe closer to where the variable was assigned or used to obtain its value.",
+                "type": "String"
               }
             }
           }
@@ -35,8 +51,8 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "VoidTaskMethod",
-            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncVoid"
+            "method": "Foo",
+            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncMethodWithNotHoistedLocals"
           },
           "version": 0
         },
@@ -45,8 +61,8 @@
       }
     },
     "logger": {
-      "method": "VoidTaskMethod",
-      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncVoid",
+      "method": "Foo",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncMethodWithNotHoistedLocals",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
