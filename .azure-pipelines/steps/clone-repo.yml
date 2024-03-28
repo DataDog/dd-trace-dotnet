@@ -35,6 +35,7 @@ steps:
       git clean -ffdx
     displayName: checkout
     condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
+    retryCountOnTaskFailure: 3
 
   - bash: |
       echo "Updating credentials ..."
@@ -57,6 +58,7 @@ steps:
       git status
     displayName: merge
     condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
+    retryCountOnTaskFailure: 3
 
   - powershell: |
       # As this is a pull request, we need to do a fake merge
@@ -98,6 +100,7 @@ steps:
       git clean -ffdx
     displayName: checkout
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+    retryCountOnTaskFailure: 3
 
   - powershell: |
       echo "Updating credentials ..."
@@ -119,6 +122,7 @@ steps:
       git status
     displayName: merge
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+    retryCountOnTaskFailure: 3
 
 - ${{ else }}:
   - checkout: self
